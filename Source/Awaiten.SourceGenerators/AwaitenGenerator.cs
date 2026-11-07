@@ -489,7 +489,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			Dispatchable(graph.External.ServiceTypes, graph.External.ServiceTypes.Open),
 			new EquatableArray<RegistrationFactory>(graph.Factories.Factories.ToArray()),
 			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
-			RecordedFaults(graph.Factories, compilation));
+			RecordedFaults(graph.Factories, compilation),
+			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()));
 	}
 
 	/// <summary>

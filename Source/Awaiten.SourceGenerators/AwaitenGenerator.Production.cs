@@ -119,6 +119,7 @@ partial class AwaitenGenerator
 
 		RecordBaseFactory(new BaseFactoryRequest(info, producer, resolverType, members, activationHook, releaseHook), context);
 		RecordBaseWrappers(info, producer, activationHook, releaseHook, context);
+		RecordHiddenInjectedProperty(info, context);
 
 		// An implementation hidden in its module is built through the module's factory, which returns its service.
 		bool viaModuleFactory = info.ConstructVia is not null;

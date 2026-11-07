@@ -23,7 +23,48 @@ partial class AwaitenGenerator
 		public List<MemberWrapper> Wrappers { get; } = new();
 
 		public Dictionary<string, FactoryFault> Faults { get; } = new(StringComparer.Ordinal);
+
+		/// <summary>The records of the types whose <c>[Inject]</c> property another assembly cannot see (see <see cref="RecordHiddenInjectedProperty" />).</summary>
+		public List<SkippedRegistration> HiddenProperties { get; } = new();
 	}
+
+	/// <summary>
+	///     Records a public type the container constructs itself, from its own registration, scan, decorator or composite,
+	///     with an <c>[Inject]</c> property another assembly cannot see (see
+	///     <see cref="HasInjectedPropertyHiddenFromOtherAssemblies" />). A container that extends this one in an
+	///     assembly without <c>InternalsVisibleTo</c> would construct the type without the property, so the record, a public
+	///     constant naming the property, tells it to report the type instead (AWT226). Only a container without
+	///     <c>Extends</c> that another assembly can name records any.
+	/// </summary>
+	private static void RecordHiddenInjectedProperty(ImplInfo info, BuildContext context)
+	{
+		if (context.Factories is not { } factories
+		    || info.Origin is not null
+		    || info.Production != ProductionKind.Constructor
+		    || info.ConstructVia is not null
+		    || !IsExternallyAccessible(context.ContainerSymbol)
+		    || !IsExternallyAccessible(info.Symbol)
+		    || HiddenInjectedProperty(info.Symbol.OriginalDefinition) is not { } property)
+		{
+			return;
+		}
+
+		string name = HiddenPropertyMarkerName(info.Symbol);
+		if (factories.HiddenProperties.All(existing => existing.MarkerName != name))
+		{
+			factories.HiddenProperties.Add(new SkippedRegistration(name, property));
+		}
+	}
+
+	/// <summary>The first <c>[Inject]</c> property of <paramref name="type" /> another assembly cannot set, or <see langword="null" />.</summary>
+	private static string? HiddenInjectedProperty(INamedTypeSymbol type)
+		=> InjectedProperties(type).FirstOrDefault(property =>
+			property.DeclaredAccessibility is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal
+			|| property.SetMethod?.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal)?.Name;
+
+	/// <summary>A deterministic name for the record of <see cref="RecordHiddenInjectedProperty" />, derived from the type's definition.</summary>
+	private static string HiddenPropertyMarkerName(INamedTypeSymbol type)
+		=> $"HiddenProperty_{type.Name}_{Fnv1a(type.OriginalDefinition.ToDisplayString(FullyQualified)):x8}";
 
 	/// <summary>Why an owner generates no factory for an implementation, and what the user can do about it.</summary>
 	internal readonly record struct FactoryFault(string Reason, string Remedy);

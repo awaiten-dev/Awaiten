@@ -54,10 +54,17 @@ partial class AwaitenGenerator
 		foreach (ImportedModule module in modules)
 		{
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
+			List<DiagnosticInfo> moduleDiagnostics = module.Inherited ? new List<DiagnosticInfo>() : diagnostics;
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, module.Inherited ? new List<DiagnosticInfo>() : diagnostics, sameCompilationModules, module.Inherited, inheritance),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
+
+			// The base sees the [Inject] property of a type this container cannot build without the module's factory.
+			if (module.Inherited)
+			{
+				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled));
+			}
 		}
 
 		// The container's own scan matches must outrank a module's within the scan tier (the container wins ties
@@ -385,7 +392,9 @@ partial class AwaitenGenerator
 	///     AWT231 once per implementation when the module recorded why it generated no factory for it or cannot carry
 	///     one (see <see cref="ModuleShapeReason" />), else AWT154
 	///     once per module when the module carries no generated factory for it. A module inherited through
-	///     <c>Extends</c> keeps such a registration instead, which the inheritance reports as inaccessible (AWT226).
+	///     <c>Extends</c> keeps such a registration instead, which the inheritance reports as inaccessible (AWT226),
+	///     except one of an implementation with an <c>[Inject]</c> property this container does not see, which it builds
+	///     through the factory like an imported module's or reports with AWT231.
 	/// </summary>
 	private static RawRegistration? SelfCompiledRegistration(
 		RawRegistration registration,
@@ -400,7 +409,6 @@ partial class AwaitenGenerator
 		// A container that the module's assembly grants no InternalsVisibleTo does not see an internal [Inject] property
 		// in metadata, so it cannot tell that the module self-compiles the implementation, but finds what the module generated for it.
 		bool hiddenMembers = !sameCompilation
-		                     && !context.Inherited
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
 		                     && (GeneratedFactory(module, implementation, compilation) is not null || SkippedRegistrationReason(module, implementation) is not null);
 		if (registration.ServiceSymbol is not { } service || (!SelfCompilesRegistration(module, implementation, service, compilation) && !hiddenMembers))
@@ -440,7 +448,7 @@ partial class AwaitenGenerator
 		// calls the internal factory that takes them directly, which the module generates when the public one takes handles.
 		if ((GeneratedFactoryNamed(module, InternalRegistrationFactoryName(implementation), compilation) ?? GeneratedFactory(module, implementation, compilation)) is not { } factory)
 		{
-			if (context.Inherited)
+			if (context.Inherited && !hiddenMembers)
 			{
 				return registration;
 			}
@@ -474,7 +482,7 @@ partial class AwaitenGenerator
 			    && InternalsMembers(module, RegistrationHookWrapperName(implementation, release, hook)).IsEmpty
 			    && SkippedHookReason(module, implementation, release, hook) is { } hookReason)
 			{
-				if (context.Inherited)
+				if (context.Inherited && !hiddenMembers)
 				{
 					return registration;
 				}

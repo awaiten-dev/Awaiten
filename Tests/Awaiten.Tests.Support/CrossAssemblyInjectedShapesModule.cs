@@ -94,3 +94,15 @@ public sealed class SupportShapeUser : IInjectedShapeUser
 [Singleton<SupportHiddenKettle, ISupportHiddenKettle>]
 [Transient<SupportShapeUser, IInjectedShapeUser>]
 public static partial class CrossAssemblyInjectedShapesModule;
+
+/// <summary>A <c>[Module]</c> that registers <see cref="SupportShapeUser" /> for <see cref="CrossAssemblyInjectedShapesBaseContainer" />.</summary>
+[Module]
+[Singleton<SupportShapeKettle, IInjectedShapeKettle>]
+[Singleton<SupportHiddenKettle, ISupportHiddenKettle>]
+[Transient<SupportShapeUser, IInjectedShapeUser>]
+public static partial class CrossAssemblyInjectedShapeUserModule;
+
+/// <summary>A container that another assembly extends, inheriting the registrations of <see cref="CrossAssemblyInjectedShapeUserModule" />.</summary>
+[Container]
+[Import(typeof(CrossAssemblyInjectedShapeUserModule))]
+public static partial class CrossAssemblyInjectedShapesBaseContainer;

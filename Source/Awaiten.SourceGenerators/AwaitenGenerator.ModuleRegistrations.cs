@@ -52,9 +52,7 @@ partial class AwaitenGenerator
 	///     call. A protected or private setter of a visible property is no reason: every container reports it (AWT136).
 	/// </summary>
 	private static bool HasInjectedPropertyHiddenFromOtherAssemblies(INamedTypeSymbol implementation)
-		=> InjectedProperties(implementation).Any(property =>
-			property.DeclaredAccessibility is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal
-			|| property.SetMethod?.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal);
+		=> HiddenInjectedProperty(implementation) is not null;
 
 	/// <summary>
 	///     Whether <paramref name="module" /> can access <paramref name="type" /> but the rest of its assembly cannot,

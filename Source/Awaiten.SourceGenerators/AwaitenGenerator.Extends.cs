@@ -326,7 +326,9 @@ partial class AwaitenGenerator
 	///     drops it: the generated container would otherwise not compile, or silently lack a scan match its base has.
 	///     The dropped service no longer reports a missing dependency (AWT101) in its consumers, so the one cause is
 	///     reported once. A registration built through an owner's generated factory needs neither the type nor its
-	///     constructor.
+	///     constructor. A constructed registration of the base whose type has an <c>[Inject]</c> property the container
+	///     does not see (see <see cref="Inheritance.HiddenPropertyFault" />) is dropped the same way, so it is never built
+	///     without the property.
 	/// </summary>
 	private static void DropInaccessibleInherited(
 		Inheritance inheritance,
@@ -336,9 +338,23 @@ partial class AwaitenGenerator
 	{
 		registrations.RemoveAll(registration =>
 		{
-			if (!inheritance.Owns(registration.Origin) || registration.ConstructVia is not null || InaccessiblePart(registration) is not { } subject)
+			if (!inheritance.Owns(registration.Origin) || registration.ConstructVia is not null)
 			{
 				return false;
+			}
+
+			if (InaccessiblePart(registration) is not { } subject)
+			{
+				if (!SymbolEqualityComparer.Default.Equals(registration.Origin, inheritance.Base)
+				    || registration.Production != ProductionKind.Constructor
+				    || inheritance.HiddenPropertyFault(registration.Implementation) is not { } hiddenProperty)
+				{
+					return false;
+				}
+
+				inheritance.ReportUnbuildable(registration, hiddenProperty, diagnostics);
+				constraintRejected.Add(registration.ServiceType);
+				return true;
 			}
 
 			if (registration.IsScan && PrivateToBase(registration) is { } hidden)
@@ -404,9 +420,9 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether the decorator or composite an inherited <c>[Decorate]</c>/<c>[Composite]</c> names (its first type,
-	///     generic or <c>typeof</c> form) cannot be constructed from the extending container, reporting AWT226 if so. A
-	///     closed one private to the base is built through the factory the base generates for it, returned in
-	///     <paramref name="via" />.
+	///     generic or <c>typeof</c> form) cannot be constructed from the extending container, or only without an
+	///     <c>[Inject]</c> property it does not see, reporting AWT226 if so. A closed one private to the base is built
+	///     through the factory the base generates for it, returned in <paramref name="via" />.
 	/// </summary>
 	private static bool InaccessibleInheritedType(
 		AttributeData attribute,
@@ -419,9 +435,23 @@ partial class AwaitenGenerator
 		ITypeSymbol? type = attributeClass.IsGenericType
 			? attributeClass.TypeArguments.FirstOrDefault()
 			: attribute.ConstructorArguments.FirstOrDefault().Value as ITypeSymbol;
-		if (type is not INamedTypeSymbol named || inheritance.InaccessibleConstructedType(named) is not { } subject)
+		if (type is not INamedTypeSymbol named)
 		{
 			return false;
+		}
+
+		if (inheritance.InaccessibleConstructedType(named) is not { } subject)
+		{
+			if (inheritance.HiddenPropertyFault(named) is not { } hiddenProperty)
+			{
+				return false;
+			}
+
+			inheritance.ReportPrivate(
+				$"The {(attributeClass.Name == "CompositeAttribute" ? "composite" : "decorator")} '{Display(named.ToDisplayString(FullyQualified))}'",
+				hiddenProperty,
+				diagnostics);
+			return true;
 		}
 
 		if (inheritance.HiddenInBase(named))
@@ -629,6 +659,26 @@ partial class AwaitenGenerator
 					$"'{baseName}' builds it through an internal generated factory",
 					$"grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
 			return null;
+		}
+
+		/// <summary>
+		///     Why the container cannot build <paramref name="type" />, which the base records as a type with an
+		///     <c>[Inject]</c> property another assembly does not see (see <see cref="RecordHiddenInjectedProperty" />), or
+		///     <see langword="null" /> when the base records none or the container sees the property, because it shares the
+		///     base's assembly or is granted <c>InternalsVisibleTo</c>.
+		/// </summary>
+		public FactoryFault? HiddenPropertyFault(INamedTypeSymbol type)
+		{
+			if (SymbolEqualityComparer.Default.Equals(Base.ContainingAssembly, Container.ContainingAssembly)
+			    || Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly)
+			    || InternalsMembers(Base, HiddenPropertyMarkerName(type)).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(name => name is not null) is not { } property)
+			{
+				return null;
+			}
+
+			return new FactoryFault(
+				$"its [Inject] property '{property}' is not visible outside the assembly of '{Display(Base.ToDisplayString(FullyQualified))}'",
+				$"make the property and its setter public, or grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
 		}
 
 		/// <summary>

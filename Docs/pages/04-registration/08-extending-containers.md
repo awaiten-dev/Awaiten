@@ -137,6 +137,8 @@ When the base's assembly grants `InternalsVisibleTo` to any assembly, the base g
 
 The same applies to the base's `[Scan]`: it sweeps the base's assembly and matches what the base sees, and a match the extending container cannot access is an error rather than a silently missing service.
 
+An `[Inject]` property that is `internal`, or has an `internal` setter, is invisible to an extending container in another assembly without `InternalsVisibleTo`. When a [module](./07-modules.md#internal-implementations) the base imports registers the type, the extending container builds it through the module's generated factory, which sets the property. When the base registers, scans, decorates or composes such a type itself, it records the property in its `Internals` class, which is then public, and the extending container reports the type ([AWT226](../09-diagnostics.md#awt226)) instead of building it without the property. Make the property public, or grant the extending container's assembly `InternalsVisibleTo`.
+
 An implementation nested privately in the base, or in a class that contains the base, is built by the base. The extending container cannot construct such a type, so the base generates an `internal` factory for it, and the extending container calls that factory. Everything else the registration declares still applies: the lifetime, `Eager`, keys, `WhenInjectedInto`, `Fallback`, collections, lifecycle hooks, async initialization and disposal. A private match of the base's scan is built the same way, so the test graph holds the same services as the production graph.
 
 ```csharp

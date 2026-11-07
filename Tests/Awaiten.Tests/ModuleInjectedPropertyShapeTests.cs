@@ -7,7 +7,8 @@ namespace Awaiten.Tests;
 ///     The <c>[Inject]</c> property shapes of a module's registrations, for a container in the module's assembly, one
 ///     in another assembly that builds the implementations through the module's generated factories
 ///     (<see cref="CrossAssemblyInjectedShapesModule" />) and one in an assembly the module grants
-///     <c>InternalsVisibleTo</c> (<see cref="CrossAssemblyFriendInjectedShapesModule" />). All three fill them alike.
+///     <c>InternalsVisibleTo</c> (<see cref="CrossAssemblyFriendInjectedShapesModule" />). All three fill them alike, and
+///     so does a container that inherits the registrations from a container of another assembly through <c>Extends</c>.
 /// </summary>
 public class ModuleInjectedPropertyShapeTests
 {
@@ -76,6 +77,17 @@ public class ModuleInjectedPropertyShapeTests
 		public async Task InaccessibleProperties_AreSet()
 		{
 			using SupportShapesContainer.Root container = new();
+
+			await ExpectKettles(container.Resolve<IInjectedShapeUser>(), container.Resolve<IInjectedShapeKettle>());
+		}
+	}
+
+	public class ExtendingContainerInAnotherAssembly
+	{
+		[Test]
+		public async Task InaccessibleProperties_AreSet()
+		{
+			using ExtendingSupportShapesContainer.Root container = new();
 
 			await ExpectKettles(container.Resolve<IInjectedShapeUser>(), container.Resolve<IInjectedShapeKettle>());
 		}
@@ -232,6 +244,9 @@ public static partial class SupportShapesWithNullClockContainer
 {
 	private static IInjectedShapeClock NoClock() => null!;
 }
+
+[Container(Extends = typeof(CrossAssemblyInjectedShapesBaseContainer))]
+public static partial class ExtendingSupportShapesContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyFriendInjectedShapesModule))]
