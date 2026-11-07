@@ -341,6 +341,8 @@ partial class AwaitenGenerator
 					ConstructVia = reg.ConstructVia,
 					ConstructViaType = reg.ConstructViaType,
 					Constructor = reg.Constructor,
+					Unlisted = reg.Unlisted,
+					Hidden = reg.Hidden,
 				};
 				info.OnActivatedMarkers.AddRange(reg.OnActivatedMarkers ?? []);
 				info.OnReleaseMarkers.AddRange(reg.OnReleaseMarkers ?? []);
