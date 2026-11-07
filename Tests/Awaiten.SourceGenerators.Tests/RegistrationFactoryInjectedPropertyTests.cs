@@ -227,6 +227,22 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task OfAnExplicitlyRegisteredCollection_IsFilledEverywhereWithoutAWarning()
+		{
+			string module = Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;");
+			const string registration = "[Transient<System.Collections.Generic.IEnumerable<IClock>>(Factory = nameof(Clocks))]";
+			const string factory = "{ private static System.Collections.Generic.IEnumerable<IClock> Clocks() => []; }";
+
+			Analyses analyses = await AnalyzeEverywhere(
+				WithLibraryContainer(module, clock: false).Replace("public static partial class LibContainer { }", $"{registration}\npublic static partial class LibContainer {factory}"),
+				module,
+				Consumer.Replace("public static partial class AppContainer { }", $"{registration}\npublic static partial class AppContainer {factory}"));
+
+			await That(analyses.AllDiagnostics).IsEmpty()
+				.Because("a collection-typed property is never omitted, whether it is synthesized or registered as a whole");
+		}
+
+		[Test]
 		public async Task OfACollection_IsFilledEverywhereWithoutAWarning()
 		{
 			string module = Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;");
