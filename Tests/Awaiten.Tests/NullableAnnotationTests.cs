@@ -1,0 +1,111 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
+namespace Awaiten.Tests;
+
+/// <summary>
+///     A consumer whose dependency carries a nullable annotation that the registration does not, nested in the service
+///     type (<c>IRepo&lt;string?&gt;</c> against <c>IRepo&lt;&gt;</c>) or in a collection (<c>Task&lt;IStore?[]&gt;</c>,
+///     <c>IReadOnlyDictionary&lt;string, IStore?&gt;</c>). The registration is found without the annotation, and the
+///     consumer gets the registered instances.
+/// </summary>
+public sealed partial class NullableAnnotationTests
+{
+	public interface IInitializable
+	{
+		Task InitializeAsync(CancellationToken cancellationToken);
+	}
+
+	public interface IRepo<T>
+	{
+		bool Initialized { get; }
+	}
+
+	public sealed class Repo<T> : IRepo<T>, IInitializable
+	{
+		public bool Initialized { get; private set; }
+
+		public async Task InitializeAsync(CancellationToken cancellationToken)
+		{
+			await Task.Yield();
+			Initialized = true;
+		}
+	}
+
+	public interface IStore
+	{
+		string Name { get; }
+	}
+
+	public sealed class MainStore : IStore
+	{
+		public string Name => "main";
+	}
+
+	public sealed class BackupStore : IStore
+	{
+		public string Name => "backup";
+	}
+
+	public sealed class Clock<T>
+	{
+	}
+
+	public sealed class Consumer(
+		IRepo<string?> repo,
+		Task<IRepo<string?>> repoTask,
+		Func<Task<IRepo<string?>>> repoFactory,
+		Task<IStore?[]> stores,
+		IReadOnlyDictionary<string, IStore?> keyed,
+		Task<IReadOnlyDictionary<string, IStore?>> keyedTask,
+		Clock<string> clock)
+	{
+		public IRepo<string?> Repo => repo;
+
+		public Task<IRepo<string?>> RepoTask => repoTask;
+
+		public Func<Task<IRepo<string?>>> RepoFactory => repoFactory;
+
+		public Task<IStore?[]> Stores => stores;
+
+		public IReadOnlyDictionary<string, IStore?> Keyed => keyed;
+
+		public Task<IReadOnlyDictionary<string, IStore?>> KeyedTask => keyedTask;
+
+		public Clock<string> Clock => clock;
+	}
+
+	[Test]
+	public async Task NestedAnnotations_ResolveTheRegisteredInstances()
+	{
+		await using NullableShop.Root shop = new();
+		await using NullableShop.Scope scope = shop.CreateScope();
+
+		Consumer consumer = await scope.ResolveAsync<Consumer>();
+
+		await That(consumer.Repo.Initialized).IsTrue()
+			.Because("IRepo<string?> resolves the open generic registration IRepo<>, initialized before it is injected");
+		await That(await consumer.RepoTask).IsSameAs(consumer.Repo);
+		await That(await consumer.RepoFactory()).IsSameAs(consumer.Repo);
+		await That((await consumer.Stores).Select(store => store?.Name)).IsEqualTo(["main",])
+			.Because("the awaited collection holds the unkeyed registration");
+		await That(consumer.Keyed.Keys).IsEqualTo(["main", "backup",]).InAnyOrder();
+		await That((await consumer.KeyedTask)["backup"]).IsSameAs(consumer.Keyed["backup"]);
+		await That(consumer.Clock).IsSameAs(await shop.ResolveAsync<Clock<string>>())
+			.Because("a factory returning Clock<string?> produces the singleton registered as Clock<string>");
+	}
+
+	[Container]
+	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+	[Scoped(typeof(Repo<>), typeof(IRepo<>))]
+	[Scoped<MainStore, IStore>]
+	[Scoped<MainStore, IStore>(Key = "main")]
+	[Scoped<BackupStore, IStore>(Key = "backup")]
+	[Singleton<Clock<string>>(Factory = nameof(CreateClock))]
+	[Transient<Consumer>]
+	public static partial class NullableShop
+	{
+		private static Clock<string?> CreateClock() => new();
+	}
+}

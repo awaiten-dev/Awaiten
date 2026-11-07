@@ -237,18 +237,18 @@ internal static partial class Sources
 
 		// The root scope this scope resolves singletons through: holding it directly devirtualizes the singleton
 		// call. Synchronization is on a private gate object, not the owner, so consumer code (lock (scope)) cannot
-		// interfere with resolution and disposal. The disposables list is lazy. All protected so the Root's
+		// interfere with resolution and disposal. The disposables list is lazy. All private protected so the Root's
 		// singleton overrides share the same gate and list.
 		Separate(fields);
-		Indent(fields, body).AppendLine("protected readonly Root __root;");
-		Indent(fields, body).AppendLine("protected readonly object __gate = new object();");
-		Indent(fields, body).AppendLine("protected volatile bool __disposed;");
-		Indent(fields, body).AppendLine("protected global::System.Collections.Generic.List<object>? __disposables;");
+		Indent(fields, body).AppendLine("private protected readonly Root __root;");
+		Indent(fields, body).AppendLine("private protected readonly object __gate = new object();");
+		Indent(fields, body).AppendLine("private protected volatile bool __disposed;");
+		Indent(fields, body).AppendLine("private protected global::System.Collections.Generic.List<object>? __disposables;");
 		// The queued OnRelease actions, run (reverse creation order) ahead of __disposables on teardown. Emitted
 		// only when some registration names an OnRelease hook, so containers without one carry no extra field.
 		if (HasReleaseHooks(instances))
 		{
-			Indent(fields, body).Append("protected global::System.Collections.Generic.List<").Append(ReleaseEntryType(context.AsyncReleases)).AppendLine(">? __releases;");
+			Indent(fields, body).Append("private protected global::System.Collections.Generic.List<").Append(ReleaseEntryType(context.AsyncReleases)).AppendLine(">? __releases;");
 		}
 
 		if (NeedsWiringSupport(instances))
@@ -256,7 +256,7 @@ internal static partial class Sources
 			// The nesting depth of the wiring episode in progress on this owner (touched only under __gate). The
 			// outermost frame commits every wiring flag (or rolls back) once, so a nested participant is never
 			// flagged wired while an outer participant that references it is still half-wired.
-			Indent(fields, body).AppendLine("protected int __wiring;");
+			Indent(fields, body).AppendLine("private protected int __wiring;");
 		}
 
 		EmitCacheFields(fields, body, instances, names, Lifetime.Scoped);

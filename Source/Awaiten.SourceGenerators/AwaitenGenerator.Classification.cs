@@ -565,6 +565,12 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static ParameterModel ClassifyDependency(ITypeSymbol type, ImmutableArray<AttributeData> attributes, bool asyncFactory, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
 	{
+		ParameterModel model = ClassifyDeclaredType(type, attributes, asyncFactory, location, externalServiceTypes);
+		return HasNestedNullableAnnotation(type) ? model with { NestedNullable = true, } : model;
+	}
+
+	private static ParameterModel ClassifyDeclaredType(ITypeSymbol type, ImmutableArray<AttributeData> attributes, bool asyncFactory, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
+	{
 		externalServiceTypes.RecordClosings(type);
 
 		if (HasArgAttribute(attributes))
@@ -655,7 +661,7 @@ partial class AwaitenGenerator
 		// A bare Owned<T> dependency: resolve T into a throwaway scope and hand the caller the disposal handle.
 		if (IsOwned(type, out ITypeSymbol ownedInner))
 		{
-			return new ParameterModel(ownedInner.ToDisplayString(FullyQualified), DependencyKind.Owned, Key: key, Location: location, NullableService: IsNullableReference(ownedInner));
+			return new ParameterModel(ownedInner.ToDisplayString(FullyQualified), DependencyKind.Owned, Key: key, Location: location);
 		}
 
 		// A bare Task<T> dependency: an awaitable that resolves (and initializes) T. Task lives in
@@ -700,12 +706,24 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static ParameterModel ClassifyTask(ITypeSymbol taskResult, string? key, LocationInfo? location)
 		=> IsOwned(taskResult, out ITypeSymbol taskOwnedInner)
-			? new ParameterModel(taskOwnedInner.ToDisplayString(FullyQualified), DependencyKind.Task, Key: key, Location: location, ProducesOwned: true, NullableService: IsNullableReference(taskOwnedInner))
-			: new ParameterModel(taskResult.ToDisplayString(FullyQualified), DependencyKind.Task, Key: key, Location: location, NullableService: IsNullableReference(taskResult));
+			? new ParameterModel(taskOwnedInner.ToDisplayString(FullyQualified), DependencyKind.Task, Key: key, Location: location, ProducesOwned: true)
+			: new ParameterModel(taskResult.ToDisplayString(FullyQualified), DependencyKind.Task, Key: key, Location: location);
 
-	/// <summary>Whether a relationship's service is a nullable-annotated reference type (see <see cref="ParameterModel.NullableService" />).</summary>
-	private static bool IsNullableReference(ITypeSymbol service)
-		=> service is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated, };
+	/// <summary>
+	///     Whether a nullable reference annotation sits below the top level of <paramref name="type" />, in a type
+	///     argument or array element at any depth (see <see cref="ParameterModel.NestedNullable" />).
+	/// </summary>
+	private static bool HasNestedNullableAnnotation(ITypeSymbol type)
+		=> type switch
+		{
+			IArrayTypeSymbol array => IsOrHasNullableAnnotation(array.ElementType),
+			INamedTypeSymbol named => named.TypeArguments.Any(IsOrHasNullableAnnotation)
+			                          || (named.ContainingType is { } outer && HasNestedNullableAnnotation(outer)),
+			_ => false,
+		};
+
+	private static bool IsOrHasNullableAnnotation(ITypeSymbol type)
+		=> type is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated, } || HasNestedNullableAnnotation(type);
 
 	private static ParameterModel? ClassifyRelationship(INamedTypeSymbol named, string? key, LocationInfo? location)
 	{
@@ -713,8 +731,8 @@ partial class AwaitenGenerator
 		{
 			// Lazy<Task<T>> is the async counterpart of Lazy<T>: a memoized awaitable dependency.
 			return IsTask(named.TypeArguments[0], out ITypeSymbol lazyTaskResult)
-				? new ParameterModel(lazyTaskResult.ToDisplayString(FullyQualified), DependencyKind.LazyTask, Key: key, Location: location, NullableService: IsNullableReference(lazyTaskResult))
-				: new ParameterModel(named.TypeArguments[0].ToDisplayString(FullyQualified), DependencyKind.Lazy, Key: key, Location: location, NullableService: IsNullableReference(named.TypeArguments[0]));
+				? new ParameterModel(lazyTaskResult.ToDisplayString(FullyQualified), DependencyKind.LazyTask, Key: key, Location: location)
+				: new ParameterModel(named.TypeArguments[0].ToDisplayString(FullyQualified), DependencyKind.Lazy, Key: key, Location: location);
 		}
 
 		if (named is not { Name: "Func", TypeArguments.Length: >= 1, })
@@ -739,10 +757,10 @@ partial class AwaitenGenerator
 			return IsOwned(funcTaskResult, out ITypeSymbol funcTaskOwnedInner)
 				? new ParameterModel(
 					funcTaskOwnedInner.ToDisplayString(FullyQualified), DependencyKind.FuncTask,
-					new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true, NullableService: IsNullableReference(funcTaskOwnedInner))
+					new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true)
 				: new ParameterModel(
 					funcTaskResult.ToDisplayString(FullyQualified), DependencyKind.FuncTask,
-					new EquatableArray<string>(argTypes), Key: key, Location: location, NullableService: IsNullableReference(funcTaskResult));
+					new EquatableArray<string>(argTypes), Key: key, Location: location);
 		}
 
 		// Func<…, Owned<T>> is the leak-free factory: its produced value is an Owned<T> disposal handle.
@@ -750,7 +768,7 @@ partial class AwaitenGenerator
 		{
 			return new ParameterModel(
 				funcOwnedInner.ToDisplayString(FullyQualified), DependencyKind.Func,
-				new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true, NullableService: IsNullableReference(funcOwnedInner));
+				new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true);
 		}
 
 		// Func<…, T> over a relationship type (nesting beyond one level) falls through to a direct dependency.

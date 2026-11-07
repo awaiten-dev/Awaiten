@@ -1,0 +1,393 @@
+namespace Awaiten.SourceGenerators.Tests;
+
+/// <summary>
+///     A nullable-enabled consumer whose dependency carries a nullable annotation that the registration does not
+///     (<c>IRepo&lt;string?&gt;</c> against <c>IRepo&lt;&gt;</c>, <c>Task&lt;IStore?[]&gt;</c>). The registration is
+///     found without the annotation, and the generated value must still convert to the declared type without a
+///     nullability warning (CS8619, CS8620), which breaks a build with warnings as errors.
+/// </summary>
+public class NullableAnnotationTests
+{
+	private static string Source(string lifetime, string parameter, bool asyncInitialized, string members = "", string registrations = "")
+		=> $$"""
+		     #nullable enable
+		     using Awaiten;
+		     using System;
+		     using System.Collections.Generic;
+		     using System.Threading;
+		     using System.Threading.Tasks;
+
+		     namespace MyCode;
+
+		     public interface IInitializable { Task InitializeAsync(CancellationToken cancellationToken); }
+		     public interface IRepo<T> { }
+		     public sealed class Repo<T> : IRepo<T>{{(asyncInitialized ? ", IInitializable" : "")}}
+		     {
+		         public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+		     }
+		     public interface IStore { }
+		     public sealed class Store : IStore{{(asyncInitialized ? ", IInitializable" : "")}}
+		     {
+		         public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+		     }
+		     public sealed class Consumer
+		     {
+		         public Consumer({{parameter}} dependency) { }
+		     }
+
+		     [Container]
+		     [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+		     [{{lifetime}}(typeof(Repo<>), typeof(IRepo<>))]
+		     [{{lifetime}}<Store, IStore>]
+		     [{{lifetime}}<Store, IStore>(Key = "main")]
+		     {{registrations}}
+		     [Transient<Consumer>]
+		     public static partial class MyContainer
+		     {
+		     {{members}}
+		     }
+		     """;
+
+	[Test]
+	[Arguments("Singleton", "IRepo<string?>")]
+	[Arguments("Scoped", "IRepo<string?>")]
+	[Arguments("Transient", "IRepo<string?>")]
+	[Arguments("Scoped", "IRepo<string?>?")]
+	[Arguments("Scoped", "Func<IRepo<string?>>")]
+	[Arguments("Scoped", "Lazy<IRepo<string?>>")]
+	[Arguments("Singleton", "Owned<IRepo<string?>>")]
+	[Arguments("Scoped", "Owned<IRepo<string?>>")]
+	[Arguments("Scoped", "Func<Owned<IRepo<string?>>>")]
+	[Arguments("Singleton", "Task<IRepo<string?>>")]
+	[Arguments("Scoped", "Task<IRepo<string?>>")]
+	[Arguments("Transient", "Task<IRepo<string?>>")]
+	[Arguments("Scoped", "Func<Task<IRepo<string?>>>")]
+	[Arguments("Scoped", "Lazy<Task<IRepo<string?>>>")]
+	[Arguments("Singleton", "Task<Owned<IRepo<string?>>>")]
+	[Arguments("Transient", "Func<Task<Owned<IRepo<string?>>>>")]
+	[Arguments("Scoped", "IEnumerable<IRepo<string?>>")]
+	[Arguments("Scoped", "IRepo<string?>[]")]
+	[Arguments("Scoped", "IAsyncEnumerable<IRepo<string?>>")]
+	[Arguments("Scoped", "IStore?[]")]
+	[Arguments("Singleton", "Task<IEnumerable<IStore?>>")]
+	[Arguments("Scoped", "Task<IStore?[]>")]
+	[Arguments("Transient", "Task<IReadOnlyList<IStore?>>")]
+	[Arguments("Scoped", "Task<IEnumerable<IRepo<string?>>>")]
+	[Arguments("Singleton", "IReadOnlyDictionary<string, IStore?>")]
+	[Arguments("Scoped", "IReadOnlyDictionary<string, IStore?>")]
+	[Arguments("Scoped", "Task<IReadOnlyDictionary<string, IStore?>>")]
+	[Arguments("Scoped", "Task<IStore?>")]
+	[Arguments("Scoped", "Lazy<IStore?>")]
+	[Arguments("Scoped", "Owned<IStore?>")]
+	public async Task SynchronousImplementation_CompilesWithoutWarnings(string lifetime, string parameter)
+	{
+		GeneratorResult result = Generator.Run(Source(lifetime, parameter, asyncInitialized: false));
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the generated value converts to the declared type even though its nullable annotations differ from the registration");
+	}
+
+	[Test]
+	[Arguments("Singleton", "IRepo<string?>")]
+	[Arguments("Scoped", "IRepo<string?>")]
+	[Arguments("Transient", "IRepo<string?>")]
+	[Arguments("Singleton", "Task<IRepo<string?>>")]
+	[Arguments("Scoped", "Task<IRepo<string?>>")]
+	[Arguments("Transient", "Task<IRepo<string?>>")]
+	[Arguments("Scoped", "Func<Task<IRepo<string?>>>")]
+	[Arguments("Singleton", "Lazy<Task<IRepo<string?>>>")]
+	[Arguments("Singleton", "Task<Owned<IRepo<string?>>>")]
+	[Arguments("Scoped", "Task<Owned<IRepo<string?>>>")]
+	[Arguments("Transient", "Func<Task<Owned<IRepo<string?>>>>")]
+	[Arguments("Scoped", "IAsyncEnumerable<IRepo<string?>>")]
+	[Arguments("Singleton", "Task<IEnumerable<IStore?>>")]
+	[Arguments("Scoped", "Task<IStore?[]>")]
+	[Arguments("Transient", "Task<IReadOnlyList<IStore?>>")]
+	[Arguments("Singleton", "Task<IReadOnlyDictionary<string, IStore?>>")]
+	[Arguments("Scoped", "Task<IReadOnlyDictionary<string, IStore?>>")]
+	[Arguments("Scoped", "Task<IStore?>")]
+	public async Task AsyncInitializedImplementation_CompilesWithoutWarnings(string lifetime, string parameter)
+	{
+		GeneratorResult result = Generator.Run(Source(lifetime, parameter, asyncInitialized: true));
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the awaited value converts to the declared type even though its nullable annotations differ from the registration");
+	}
+
+	[Test]
+	public async Task KeyedClosedRegistration_CompilesWithoutWarnings()
+	{
+		GeneratorResult result = Generator.Run(Source("Scoped", "[FromKey(\"main\")] IRepo<string?>", asyncInitialized: false,
+			registrations: "[Scoped<Repo<string>, IRepo<string>>(Key = \"main\")]"));
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a closed registration, which cannot spell a nullable annotation in its attribute, is found without it");
+	}
+
+	[Test]
+	public async Task NoNestedAnnotation_EmitsNoNullForgivingOperator()
+	{
+		GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string>", asyncInitialized: false));
+
+		await That(result.Diagnostics).IsEmpty();
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain(")!")
+			.Because("a dependency whose declared type matches the registration needs no conversion");
+	}
+
+	[Test]
+	public async Task NestedAnnotation_IsForgivenOnTheWholeValue()
+	{
+		GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string?>", asyncInitialized: false));
+
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+			.Contains("new global::MyCode.Consumer((ResolveRepo(__s))!)")
+			.Because("nullable annotations do not exist at run time, so the value converts as is");
+	}
+
+	public sealed class Producers
+	{
+		[Test]
+		[Arguments("Repo<string?>", "Repo<string>, IRepo<string>")]
+		[Arguments("IRepo<string?>", "IRepo<string>")]
+		public async Task Factory_ReturningANestedAnnotation_CompilesWithoutWarnings(string returnType, string registration)
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string>", asyncInitialized: false,
+				members: $"private static {returnType} Create() => new Repo<string?>();")
+				.Replace("[Scoped(typeof(Repo<>), typeof(IRepo<>))]", $"[Scoped<{registration}>(Factory = nameof(Create))]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task AsyncFactory_ReturningANestedAnnotation_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "Task<IRepo<string>>", asyncInitialized: false,
+				members: "private static Task<Repo<string?>> Create() => Task.FromResult(new Repo<string?>());")
+				.Replace("[Scoped(typeof(Repo<>), typeof(IRepo<>))]", "[Scoped<Repo<string>, IRepo<string>>(Factory = nameof(Create))]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task Instance_OfANestedAnnotation_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Singleton", "IRepo<string>", asyncInitialized: false,
+				members: "private static Repo<string?> Repo { get; } = new Repo<string?>();")
+				.Replace("[Singleton(typeof(Repo<>), typeof(IRepo<>))]", "[Singleton<Repo<string>, IRepo<string>>(Instance = nameof(Repo))]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+	}
+
+	public sealed class Modules
+	{
+		[Test]
+		public async Task SelfCompiledScanInAnotherAssembly_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				#nullable enable
+				using Awaiten;
+				using System.Threading.Tasks;
+
+				namespace Lib;
+
+				public interface IRepo<T> { }
+				public sealed class Repo<T> : IRepo<T> { }
+				public interface IPlugin { }
+				public interface IRoaster { }
+
+				internal sealed class Roaster : IPlugin, IRoaster
+				{
+				    public Roaster(IRepo<string?> repo, Task<IRepo<string?>> repoTask) { }
+				}
+
+				[Module]
+				[Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+				public static partial class PluginModule { }
+				""", """
+				#nullable enable
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(PluginModule))]
+				[Singleton(typeof(Repo<>), typeof(IRepo<>))]
+				public static partial class MyContainer
+				{
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the module's factory keeps the annotations of the constructor, and the container forgives its values");
+		}
+
+		[Test]
+		public async Task FactoryOfAModule_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run("""
+				#nullable enable
+				using Awaiten;
+
+				namespace MyCode;
+
+				public interface IRepo<T> { }
+				public sealed class Repo<T> : IRepo<T> { }
+				public sealed class Consumer { public Consumer(IRepo<string?> repo) { } }
+
+				[Module]
+				[Singleton<Repo<string>, IRepo<string>>(Factory = nameof(Create))]
+				public static partial class RepoModule
+				{
+				    internal static Repo<string?> Create() => new Repo<string?>();
+				}
+
+				[Container]
+				[Import(typeof(RepoModule))]
+				[Transient<Consumer>]
+				public static partial class MyContainer
+				{
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task PrivateFactoryOfAModuleForAnInternalService_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run("""
+				#nullable enable
+				using Awaiten;
+
+				namespace MyCode;
+
+				internal interface IRepo<T> { }
+				internal sealed class Repo<T> : IRepo<T> { }
+				internal sealed class Consumer { public Consumer(IRepo<string?> repo) { } }
+
+				[Module]
+				[Singleton<Repo<string>, IRepo<string>>(Factory = nameof(Create))]
+				public static partial class RepoModule
+				{
+				    private static Repo<string?> Create() => new Repo<string?>();
+				}
+
+				[Container]
+				[Import(typeof(RepoModule))]
+				[Transient<Consumer>]
+				internal static partial class MyContainer
+				{
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the module's wrapper of the private factory keeps its return type, whose value the container forgives");
+		}
+	}
+
+	public sealed class Consumers
+	{
+		[Test]
+		public async Task FactoryParameter_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string>", asyncInitialized: false,
+				members: "private static Consumer Create(IRepo<string?> repo, Task<IStore?[]> stores) => new Consumer(new Repo<string>());")
+				.Replace("[Transient<Consumer>]", "[Transient<Consumer>(Factory = nameof(Create))]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task Decorator_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string>", asyncInitialized: false,
+				registrations: "[Decorate(typeof(LoggingRepo<>), typeof(IRepo<>))]") + """
+
+				public sealed class LoggingRepo<T> : IRepo<T>
+				{
+				    public LoggingRepo(IRepo<T?> inner) { }
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task Composite_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "IStore", asyncInitialized: false,
+				registrations: "[Composite<CompositeStore, IStore>]") + """
+
+				public sealed class CompositeStore : IStore
+				{
+				    public CompositeStore(IReadOnlyList<IStore?> stores) { }
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task Hook_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "IStore", asyncInitialized: false,
+					members: "private static void Activate(Consumer consumer, IRepo<string?> repo, Task<IReadOnlyDictionary<string, IStore?>> stores) { }")
+				.Replace("[Transient<Consumer>]", "[Transient<Consumer>(OnActivated = nameof(Activate))]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task InjectedProperty_CompilesWithoutWarnings(bool deferred)
+		{
+			GeneratorResult result = Generator.Run((Source("Scoped", "IStore", asyncInitialized: false) + $$"""
+
+				public sealed class Holder
+				{
+				    [Inject{{(deferred ? "(Deferred = true)" : "")}}]
+				    public IRepo<string?> Repo { get; set; } = null!;
+
+				    [Inject]
+				    public Lazy<IRepo<string?>> LazyRepo { get; set; } = null!;
+				}
+				""").Replace("[Transient<Consumer>]", "[Transient<Consumer>]\n[Transient<Holder>]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task FuncWithRuntimeArguments_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "Func<string?, IRepo<string>, Widget<string?>>", asyncInitialized: false,
+				registrations: "[Transient(typeof(Widget<>))]") + """
+
+				public sealed class Widget<T>
+				{
+				    public Widget([Arg] string? name, [Arg] IRepo<string?> other, IRepo<T> repo) { }
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task ExternalDependency_CompilesWithoutWarnings()
+		{
+			GeneratorResult result = Generator.Run((Source("Scoped", "IStore", asyncInitialized: false,
+				registrations: "[ImportService<IFeed<string>>]") + """
+
+				public interface IFeed<T> { }
+				public sealed class Reader
+				{
+				    public Reader(IFeed<string?> feed) { }
+				}
+				""").Replace("[Transient<Consumer>]", "[Transient<Consumer>]\n[Transient<Reader>]"));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+	}
+}

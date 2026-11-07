@@ -1440,7 +1440,7 @@ internal static partial class Sources
 	/// </summary>
 	private static void EmitResolveExternal(StringBuilder builder, int depth)
 	{
-		Indent(builder, depth).AppendLine("protected object __ResolveExternal(global::System.Type serviceType, object? serviceKey)");
+		Indent(builder, depth).AppendLine("private protected object __ResolveExternal(global::System.Type serviceType, object? serviceKey)");
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("if (__TryResolveExternal(serviceType, serviceKey, out object? instance))");
 		Indent(builder, depth + 1).AppendLine("{");

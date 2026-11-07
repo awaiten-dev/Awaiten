@@ -153,7 +153,8 @@ partial class AwaitenGenerator
 			IsAsyncActivation: activationHook is not null && IsAsyncHookReturn(activationHook.ReturnType, compilation),
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
-			Unlisted: info.Unlisted);
+			Unlisted: info.Unlisted,
+			NestedNullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNestedNullableProduct(disposalType));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -322,7 +323,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> diagnostics,
 		SameCompilationModules modules)
 	{
-		ValidateInstanceMember(containerSymbol, info, compilation, diagnostics, modules);
+		ITypeSymbol? memberType = ValidateInstanceMember(containerSymbol, info, compilation, diagnostics, modules);
 		// AWT165: a lifecycle hook on a pre-built Instance is a silent no-op (the caller, not the container,
 		// owns and tears down the instance), so reject it rather than construct with hooks that never run.
 		if (info.OnActivated is not null || info.OnRelease is not null)
@@ -355,8 +356,17 @@ partial class AwaitenGenerator
 			QualifiedProductionMember(info, compilation, modules),
 			EmitType: EmitTypeOf(info),
 			Eager: info.Eager && info.Lifetime == Lifetime.Singleton,
-			PrivateServices: PrivateServices(info, containerSymbol));
+			PrivateServices: PrivateServices(info, containerSymbol),
+			NestedNullableProduct: memberType is not null && IsNestedNullableProduct(memberType));
 	}
+
+	/// <summary>
+	///     Whether a Factory or Instance member's declared type carries a nullable annotation below its top level (see
+	///     <see cref="InstanceModel.NestedNullableProduct" />). A top-level <c>?</c> is left alone: the member may then
+	///     really produce <see langword="null" />, which the consumer's compiler rightly warns about.
+	/// </summary>
+	private static bool IsNestedNullableProduct(ITypeSymbol produced)
+		=> produced.NullableAnnotation != NullableAnnotation.Annotated && HasNestedNullableAnnotation(produced);
 
 	/// <summary>
 	///     The service types of <paramref name="info" /> that are private or protected nested types the generated
@@ -1327,9 +1337,10 @@ partial class AwaitenGenerator
 	///     <see cref="Diagnostics.InvalidInstance">AWT109</see> when no field or property of that name (on the
 	///     owner or an accessible base type) holds the registered type, and
 	///     <see cref="Diagnostics.InaccessibleModuleMember">AWT153</see> when a module member matches but is
-	///     inaccessible from the generated container.
+	///     inaccessible from the generated container. Returns the declared type of the matching member, or
+	///     <see langword="null" /> when it reported.
 	/// </summary>
-	private static void ValidateInstanceMember(
+	private static ITypeSymbol? ValidateInstanceMember(
 		INamedTypeSymbol containerSymbol,
 		ImplInfo info,
 		Compilation compilation,
@@ -1349,7 +1360,7 @@ partial class AwaitenGenerator
 			{
 				if (info.Origin is null || compilation.IsSymbolAccessibleWithin(member, containerSymbol) || SameCompilationMemberWrapper(info, compilation, modules) is not null)
 				{
-					return;
+					return memberType;
 				}
 
 				inaccessibleMatch = true;
@@ -1359,13 +1370,14 @@ partial class AwaitenGenerator
 		if (inaccessibleMatch)
 		{
 			ReportInaccessibleModuleMember(info, diagnostics);
-			return;
+			return null;
 		}
 
 		diagnostics.Add(new DiagnosticInfo(
 			Diagnostics.InvalidInstance,
 			info.Location,
 			new EquatableArray<string>([Display(info.OwningServiceOrImpl), info.ProductionMember!, DescribeOwner(info),])));
+		return null;
 	}
 
 	/// <summary>

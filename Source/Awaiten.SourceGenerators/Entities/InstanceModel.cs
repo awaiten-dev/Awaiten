@@ -40,6 +40,9 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="TracksHandleDisposal" /> marks an alias that serves an instance from a transient instance handle the
 ///     container tracks for teardown, so building the alias accumulates on its owner like the implementation would,
 ///     though the alias owns nothing itself.
+///     <see cref="NestedNullableProduct" /> marks a Factory or Instance member whose declared type carries a nullable
+///     annotation below its top level (<c>Repo&lt;string?&gt;</c>), which the registered type cannot spell, so the
+///     generated code forgives the produced value's nullability.
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -71,7 +74,8 @@ internal sealed record InstanceModel(
 	bool IsAsyncRelease = false,
 	string? AsyncReleaseHookName = null,
 	bool Unlisted = false,
-	bool TracksHandleDisposal = false)
+	bool TracksHandleDisposal = false,
+	bool NestedNullableProduct = false)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated

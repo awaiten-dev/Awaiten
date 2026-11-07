@@ -29,10 +29,10 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     including the empty case where no keyed registration exists to derive it from (null for every other kind).
 ///     <c>DispatchMembers</c> are the entries of a <see cref="DependencyKind.TypeDispatch" /> dictionary, whose
 ///     <c>ServiceType</c> is the base interface <c>TBase</c> (empty for every other kind).
-///     <c>NullableService</c> marks a relationship over a nullable-annotated reference service (<c>Task&lt;IStore?&gt;</c>):
-///     <c>ServiceType</c> drops the <c>?</c> to find the registration, and the generated relationship spells it again,
-///     since <c>Task&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c> and <c>Owned&lt;T&gt;</c> are invariant and a nullable-enabled
-///     consumer would otherwise get CS8620.
+///     <c>NestedNullable</c> marks a declared type with a nullable annotation below its top level
+///     (<c>IRepo&lt;string?&gt;</c>, <c>Task&lt;IStore?&gt;</c>, <c>IStore?[]</c>): the generated code spells every type
+///     without annotations, like the registration it finds, so it forgives the value's nullability, which a
+///     nullable-enabled consumer would otherwise get as CS8619 or CS8620.
 /// </summary>
 internal sealed record ParameterModel(
 	string ServiceType,
@@ -44,4 +44,4 @@ internal sealed record ParameterModel(
 	string? AwaitedCollectionType = null,
 	string? KeyType = null,
 	EquatableArray<DispatchMember> DispatchMembers = default,
-	bool NullableService = false);
+	bool NestedNullable = false);
