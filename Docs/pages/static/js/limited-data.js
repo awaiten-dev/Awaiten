@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "d7651068b2e20d8a4979a3d0fabe43d4f4109795",
-        "author": "dependabot[bot]",
-        "date": "Wed Nov 4 18:24:21 2026 \u002B0100",
-        "message": "chore: Bump TUnit.Engine from 1.76.45 to 1.80.0 (#239)"
-      },
-      {
         "sha": "9461c205d881982d76dac60aa77003ef7f546b31",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 4 18:30:12 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
         "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
+      },
+      {
+        "sha": "a0feb99025f71a397c42970448fce0a423e8bfd5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:13:18 2026 \u002B0100",
+        "message": "feat!: fill every [Inject] property shape through a module\u0027s generated factories (#310)"
       }
     ],
     "labels": [
-      "d7651068",
       "9461c205",
       "8741c01e",
       "0d10add3",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "68538ab5",
       "87c4b754",
       "ee4aac92",
-      "bb522bb3"
+      "bb522bb3",
+      "a0feb990"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.762645946194728,
           7.149643907944362,
           5.322520327568054,
           5.919094953153815,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           5.709839089558675,
           7.140513130596706,
           7.137726827309682,
-          7.771003018204983
+          7.771003018204983,
+          7.763078451156616
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.473508606354396,
           9.158494738737742,
           6.715461328625679,
           7.735501890735967,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.579793007246086,
           7.3652431679268675,
           7.541519619524479,
-          7.882109900315602
+          7.882109900315602,
+          7.28659177677972
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          105.03466132481893,
           114.05617818037669,
           86.07262041018559,
           86.50491321086884,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           86.58120951482228,
           102.85433978693825,
           107.24515820466556,
-          122.47918230692545
+          122.47918230692545,
+          116.71404671669006
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.836166800061863,
           9.017039952675502,
           6.816527555031436,
           7.103269259134929,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           6.970456128319104,
           9.72702587715217,
           9.464410988489787,
-          9.000424682100613
+          9.000424682100613,
+          9.30560349225998
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.006330210963885,
           10.949353192861263,
           8.1456529039603,
           8.470036530150818,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           8.492893776545921,
           10.793853773425022,
           11.374709489090103,
-          10.745668768882751
+          10.745668768882751,
+          11.280010571846596
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "d7651068b2e20d8a4979a3d0fabe43d4f4109795",
-        "author": "dependabot[bot]",
-        "date": "Wed Nov 4 18:24:21 2026 \u002B0100",
-        "message": "chore: Bump TUnit.Engine from 1.76.45 to 1.80.0 (#239)"
-      },
-      {
         "sha": "9461c205d881982d76dac60aa77003ef7f546b31",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 4 18:30:12 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
         "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
+      },
+      {
+        "sha": "a0feb99025f71a397c42970448fce0a423e8bfd5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:13:18 2026 \u002B0100",
+        "message": "feat!: fill every [Inject] property shape through a module\u0027s generated factories (#310)"
       }
     ],
     "labels": [
-      "d7651068",
       "9461c205",
       "8741c01e",
       "0d10add3",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "68538ab5",
       "87c4b754",
       "ee4aac92",
-      "bb522bb3"
+      "bb522bb3",
+      "a0feb990"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.403911831123489,
           8.487805988926153,
           5.99936413535705,
           6.54257314079083,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.583230157693227,
           8.223813093134336,
           8.211599350968998,
-          8.480400827314172
+          8.480400827314172,
+          8.462621819760118
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.227567456662655,
           8.249286541342736,
           6.494943445920944,
           6.713623075435559,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           6.743554876319,
           7.299930501197066,
           7.333008206884066,
-          7.916242078940074
+          7.916242078940074,
+          7.288938575983048
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          104.89045669351306,
           117.98425749142964,
           90.04734478791555,
           85.37257970174154,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           90.39498796860377,
           103.68475595542363,
           106.75491886933645,
-          121.21116976737976
+          121.21116976737976,
+          111.30885116259257
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.701000481843948,
           8.934438926974932,
           6.524759377042453,
           7.305729911228021,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           6.944638299942016,
           9.703860342502594,
           9.451715378959973,
-          8.808788904547692
+          8.808788904547692,
+          9.189001728097598
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.671893225113552,
           14.654739752411842,
           11.215700249259289,
           11.656738718350729,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           11.716142004089695,
           14.133045094353813,
           14.916898899844714,
-          14.06814720424322
+          14.06814720424322,
+          14.85359894434611
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "d7651068b2e20d8a4979a3d0fabe43d4f4109795",
-        "author": "dependabot[bot]",
-        "date": "Wed Nov 4 18:24:21 2026 \u002B0100",
-        "message": "chore: Bump TUnit.Engine from 1.76.45 to 1.80.0 (#239)"
-      },
-      {
         "sha": "9461c205d881982d76dac60aa77003ef7f546b31",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 4 18:30:12 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
         "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
+      },
+      {
+        "sha": "a0feb99025f71a397c42970448fce0a423e8bfd5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:13:18 2026 \u002B0100",
+        "message": "feat!: fill every [Inject] property shape through a module\u0027s generated factories (#310)"
       }
     ],
     "labels": [
-      "d7651068",
       "9461c205",
       "8741c01e",
       "0d10add3",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "68538ab5",
       "87c4b754",
       "ee4aac92",
-      "bb522bb3"
+      "bb522bb3",
+      "a0feb990"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          23.484134445587795,
           23.683645168940227,
           10.936119579275449,
           12.697218151887258,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           23.5335695485274,
           15.214888906478881,
           10.9978564328381,
-          16.070142950614294
+          16.070142950614294,
+          10.702754971385001
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1376.2998037338257,
           1614.151515197754,
           745.2699540683201,
           860.4983755258413,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1585.815363820394,
           1267.269728733943,
           812.5211121695382,
-          1151.2938465390887
+          1151.2938465390887,
+          732.0696478623611
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          19835.29683794294,
           30803.78963797433,
           17834.657283528646,
           18526.842742919922,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           24741.24442138672,
           25451.768205915178,
           17868.11732381185,
-          18891.525028483073
+          18891.525028483073,
+          16896.121721540178
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32474,
           32482,
           32478,
           32476,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32474,
           32478,
           32477,
-          32474
+          32474,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          558.2312021936689,
           746.2986048062643,
           389.1144668715341,
           407.30850866862704,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           708.7239242281232,
           590.1690015157063,
           411.528767935435,
-          555.7103859094473
+          555.7103859094473,
+          379.6697268486023
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          9632.620337350028,
           12904.527733357747,
           6644.338011169433,
           6960.590747833252,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11830.486079915365,
           8814.775025431316,
           6293.872926984514,
-          8469.176342773437
+          8469.176342773437,
+          6185.367768968855
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2888,7 +2888,6 @@ window.BENCHMARK_DATA = {
         "data": [
           24760,
           24760,
-          24760,
           24761,
           24760,
           24761,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "d7651068b2e20d8a4979a3d0fabe43d4f4109795",
-        "author": "dependabot[bot]",
-        "date": "Wed Nov 4 18:24:21 2026 \u002B0100",
-        "message": "chore: Bump TUnit.Engine from 1.76.45 to 1.80.0 (#239)"
-      },
       {
         "sha": "9461c205d881982d76dac60aa77003ef7f546b31",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
         "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
+      },
+      {
+        "sha": "a0feb99025f71a397c42970448fce0a423e8bfd5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:13:18 2026 \u002B0100",
+        "message": "feat!: fill every [Inject] property shape through a module\u0027s generated factories (#310)"
       }
     ],
     "labels": [
-      "d7651068",
       "9461c205",
       "8741c01e",
       "0d10add3",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "68538ab5",
       "87c4b754",
       "ee4aac92",
-      "bb522bb3"
+      "bb522bb3",
+      "a0feb990"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          217.3606320222219,
           224.67191376686097,
           73.3378762465257,
           79.68939711252848,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           266.31331024169924,
           112.01884396076203,
           75.26445881525676,
-          169.4822769165039
+          169.4822769165039,
+          74.59815274752103
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          11298.37360127767,
           16781.166432698566,
           7187.232365744455,
           7510.431163242885,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14060.486604817708,
           10647.108286539713,
           7191.601908002581,
-          9529.737021813025
+          9529.737021813025,
+          6984.977747235979
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          462812.1435872396,
           763737.205485026,
           431494.51764322916,
           455638.4208658854,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           582953.9108537947,
           635929.2818777902,
           418225.4836425781,
-          427590.9566932091
+          427590.9566932091,
+          410541.86788504466
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          718982,
           739020,
           739750,
           735271,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           721116,
           736857,
           720482,
-          718750
+          718750,
+          740300
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          32108.122802734375,
           45317.22958577474,
           24935.814093956582,
           24333.139021653395,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           41137.15752360026,
           35138.31044514974,
           22835.706540788924,
-          31847.48944091797
+          31847.48944091797,
+          22465.062754313152
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80958,
           80065,
           80005,
           79669,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80958,
           80965,
           80971,
-          80317
+          80317,
+          80302
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          263480.0763811384,
           387020.14490685094,
           208506.69430338542,
           204315.4891531808,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           341307.4998046875,
           265616.620703125,
           194067.91495768228,
-          240502.93141276043
+          240502.93141276043,
+          185321.5199544271
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          571192,
           573107,
           573072,
           573057,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           571183,
           573091,
           573043,
-          571205
+          571205,
+          573104
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "d7651068b2e20d8a4979a3d0fabe43d4f4109795",
-        "author": "dependabot[bot]",
-        "date": "Wed Nov 4 18:24:21 2026 \u002B0100",
-        "message": "chore: Bump TUnit.Engine from 1.76.45 to 1.80.0 (#239)"
-      },
       {
         "sha": "9461c205d881982d76dac60aa77003ef7f546b31",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
         "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
+      },
+      {
+        "sha": "a0feb99025f71a397c42970448fce0a423e8bfd5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:13:18 2026 \u002B0100",
+        "message": "feat!: fill every [Inject] property shape through a module\u0027s generated factories (#310)"
       }
     ],
     "labels": [
-      "d7651068",
       "9461c205",
       "8741c01e",
       "0d10add3",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "68538ab5",
       "87c4b754",
       "ee4aac92",
-      "bb522bb3"
+      "bb522bb3",
+      "a0feb990"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          266.4997080485026,
           458.10905561447146,
           204.23561312357586,
           271.4857806818826,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           285.6545634587606,
           150.35121334393818,
           265.1199523485624,
-          261.8921848932902
+          261.8921848932902,
+          289.5723221143087
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          595.0477149009705,
           599.5031221934727,
           467.12575062115985,
           468.0973227183024,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           638.0361083348593,
           374.8488972737239,
           633.747166633606,
-          631.4407441799457
+          631.4407441799457,
+          651.45890551347
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6831.577746073405,
           6679.579651387533,
           5107.285751342773,
           4637.310643122746,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6964.38586324056,
           3250.3623600006104,
           6724.872053879958,
-          6888.866316986084
+          6888.866316986084,
+          5131.378002929688
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          433.37170356114706,
           388.22634906035205,
           353.3806939125061,
           340.04315315882366,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           440.84378954569496,
           235.11512303352356,
           395.68062025705973,
-          414.1738972981771
+          414.1738972981771,
+          423.18393580118817
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          693.5834440231323,
           690.5911600112915,
           588.9221775690714,
           568.9445431391398,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           806.4628507614136,
           371.7144867011479,
           739.9534690221151,
-          742.2843753178914
+          742.2843753178914,
+          730.9944588979085
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
