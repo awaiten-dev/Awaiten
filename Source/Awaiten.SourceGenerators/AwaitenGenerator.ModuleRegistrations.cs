@@ -926,7 +926,8 @@ partial class AwaitenGenerator
 	///     setter wrapper the consumer calls after it built and cached the instance, whose value parameter has a default
 	///     when the property is optional too. Reports AWT200 and returns <see langword="false" /> for what the factory
 	///     cannot express: what no container supports (an optional property that is required, a deferred one that is
-	///     init-only or required), one without a setter the module can reach, one named like a constructor parameter,
+	///     init-only or required), one without a setter the module can reach, more than
+	///     <see cref="MaxInitOnlyOptionalMembers" /> init-only optional ones, one named like a constructor parameter,
 	///     and one whose type another assembly cannot name.
 	/// </summary>
 	private static bool TryMirrorInjectedProperties(
@@ -963,6 +964,10 @@ partial class AwaitenGenerator
 			else if (isOptional && property.IsRequired)
 			{
 				reason = "is marked [Inject(Optional = true)] and is required (which no container supports)";
+			}
+			else if (isOptional && !isDeferred && setter.IsInitOnly && initOnly.Count == MaxInitOnlyOptionalMembers)
+			{
+				reason = $"is one of more than {MaxInitOnlyOptionalMembers} init-only optional [Inject] properties (each doubles the object initializers of the factory, so give the others a plain set accessor)";
 			}
 			else if (mirrored.Concat(optionalParameters).Any(parameter => parameter.Name == property.Name || parameter.Name == PresenceFlagName(property.Name, property.SetMethod?.IsInitOnly == true)))
 			{
@@ -1074,6 +1079,12 @@ partial class AwaitenGenerator
 	private const string PresenceFlagPrefix = "awaiten__has_";
 
 	private const string InitOnlyPresenceFlagPrefix = "awaiten__init_";
+
+	/// <summary>
+	///     The most init-only optional <c>[Inject]</c> properties a generated factory fills. It needs one object
+	///     initializer per combination of present ones, so the code doubles with each.
+	/// </summary>
+	private const int MaxInitOnlyOptionalMembers = 4;
 
 	/// <summary>
 	///     The <c>[Inject]</c> properties a generated factory fills (see <see cref="TryMirrorInjectedProperties" />): the

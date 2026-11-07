@@ -236,6 +236,28 @@ public class RegistrationFactoryInjectedPropertyTests
 			await That(result.Diagnostics).IsEmpty()
 				.Because("each combination of present init-only properties gets its own object initializer");
 		}
+
+		[Test]
+		public async Task FourOfThem_AreFilledEverywhere()
+		{
+			Containers containers = RunEverywhere(Library(InitOnlyClocks(4)), clock: false);
+
+			await That(containers.AllDiagnostics.Where(diagnostic => !diagnostic.Contains("AWT158"))).IsEmpty()
+				.Because("four init-only optional properties need sixteen object initializers, which the factory still emits");
+		}
+
+		[Test]
+		public async Task MoreThanFour_AreReportedByTheModule()
+		{
+			GeneratorResult result = Generator.Run(Library(InitOnlyClocks(5)));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).Contains("*AWT200*Lib.Greeter*'Clock4' is one of more than 4 init-only optional [Inject] properties*").AsWildcard()
+				.Because("each further init-only optional property doubles the object initializers the factory needs");
+		}
+
+		private static string InitOnlyClocks(int count)
+			=> string.Join("\n", Enumerable.Range(0, count).Select(index => $"[Inject(Optional = true)] public IClock Clock{index} {{ get; init; }} = null!;"));
 	}
 
 	public class OptionalPropertyOfAnInternalService
