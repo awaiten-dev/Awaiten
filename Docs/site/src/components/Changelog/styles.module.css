@@ -99,16 +99,15 @@
   position: absolute;
   left: -1.3rem;
   top: 0.25rem;
-  display: grid;
-  place-items: center;
   box-sizing: border-box;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
   background: var(--ifm-color-primary);
-  color: var(--changelog-background);
-  font-size: 0.9rem;
-  font-weight: var(--ifm-font-weight-bold);
+  /* The hairline ring of the logo's terminals; it also hides the timeline line behind the medal. */
+  box-shadow:
+    inset 0 0 0 5.4px var(--ifm-color-primary),
+    inset 0 0 0 8.1px var(--changelog-background);
 }
 
 .head {

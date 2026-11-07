@@ -6,9 +6,19 @@
       .amber { fill: #F5B85A; }
     }
   </style>
-  <path d="M26.55 70.25A36 36 0 1 1 44 95.18" class="teal" fill="none" stroke="#0E6E6E" stroke-width="20" stroke-linecap="round"/>
-  <path d="M98 28V100" class="teal" stroke="#0E6E6E" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="98" cy="28" r="14" class="teal-fill" fill="#0E6E6E"/>
-  <circle cx="98" cy="100" r="14" class="teal-fill" fill="#0E6E6E"/>
-  <circle cx="26.55" cy="70.25" r="14" class="amber" fill="#E9962B"/>
+  <mask id="rings" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+    <rect width="128" height="128" fill="#fff"/>
+    <g fill="none" stroke="#000" stroke-width="1.91">
+      <circle cx="98" cy="28" r="9.24"/>
+      <circle cx="98" cy="100" r="9.24"/>
+      <circle cx="26.55" cy="70.25" r="9.24"/>
+    </g>
+  </mask>
+  <g mask="url(#rings)">
+    <path d="M26.55 70.25A36 36 0 1 1 44 95.18" class="teal" fill="none" stroke="#0E6E6E" stroke-width="20" stroke-linecap="round"/>
+    <path d="M98 28V100" class="teal" stroke="#0E6E6E" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="98" cy="28" r="14" class="teal-fill" fill="#0E6E6E"/>
+    <circle cx="98" cy="100" r="14" class="teal-fill" fill="#0E6E6E"/>
+    <circle cx="26.55" cy="70.25" r="14" class="amber" fill="#E9962B"/>
+  </g>
 </svg>
