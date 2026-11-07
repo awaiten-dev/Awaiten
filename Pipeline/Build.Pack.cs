@@ -32,16 +32,11 @@ partial class Build
 				$"[![Changelog](https://img.shields.io/badge/Changelog-v{version}-blue)](https://github.com/awaiten-dev/Awaiten/releases/tag/v{version})");
 			foreach (string line in lines.Skip(1))
 			{
-				if (line.StartsWith("[![Build](https://github.com/awaiten-dev/Awaiten/actions/workflows/build.yml") ||
-				    line.StartsWith("[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure"))
+				if (line.StartsWith("[![Nuget](https://img.shields.io/nuget/v/Awaiten)") ||
+				    line.StartsWith("[![Build](https://github.com/awaiten-dev/Awaiten/actions/workflows/build.yml") ||
+				    line.StartsWith("[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure") ||
+				    line.StartsWith("[![Coverage](https://sonarcloud.io/api/project_badges/measure"))
 				{
-					continue;
-				}
-
-				if (line.StartsWith("[![Coverage](https://sonarcloud.io/api/project_badges/measure"))
-				{
-					sb.AppendLine(line
-						.Replace(")", $"&branch=release/v{version})"));
 					continue;
 				}
 
