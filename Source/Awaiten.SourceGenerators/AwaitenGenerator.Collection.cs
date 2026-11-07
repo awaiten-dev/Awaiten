@@ -258,6 +258,7 @@ partial class AwaitenGenerator
 		Location? fallbackLocation = context.FallbackLocation;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
 		bool reportedNotSelfCompiled = false;
+		HashSet<INamedTypeSymbol> implicitHandles = new(SymbolEqualityComparer.Default);
 		bool fromModule = origin is not null && HasAwaitenAttribute(context.Owner.GetAttributes(), "ModuleAttribute");
 		foreach (AttributeData attribute in context.Owner.GetAttributes())
 		{
@@ -334,6 +335,13 @@ partial class AwaitenGenerator
 				SuppressDisposal: NamedFlag(attribute, "SuppressDisposal"),
 				WhenInjectedInto: whenInjectedInto);
 
+			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations
+			    && ThroughHandle(registration, context.Compilation, implicitHandles) is { } handled)
+			{
+				result.AddRange(handled);
+				continue;
+			}
+
 			RawRegistration? collected = fromModule && production == ProductionKind.Constructor && !conflictingDirectives
 				? SelfCompiledRegistration(registration, context, skipGeneratedScanRegistrations, ref reportedNotSelfCompiled)
 				: WithCallableHooks(ThroughMemberWrapper(registration, origin, context.Compilation, !skipGeneratedScanRegistrations), context, fromModule && !skipGeneratedScanRegistrations);
@@ -372,14 +380,26 @@ partial class AwaitenGenerator
 		Compilation compilation = context.Compilation;
 		if (registration.ServiceSymbol is not { } service || !SelfCompilesRegistration(module, implementation, service, compilation))
 		{
-			return !sameCompilation
-			       && !context.Inherited
-			       && registration.ServiceSymbol is { } inaccessible
-			       && !compilation.IsSymbolAccessibleWithin(inaccessible, compilation.Assembly)
-			       && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, }
-			       && !CanConstruct(implementation, compilation)
-				? null
-				: registration;
+			if (!sameCompilation
+			    && !context.Inherited
+			    && registration.ServiceSymbol is { } inaccessible
+			    && !compilation.IsSymbolAccessibleWithin(inaccessible, compilation.Assembly)
+			    && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, }
+			    && !CanConstruct(implementation, compilation))
+			{
+				if (registration.Lifetime == Lifetime.Singleton
+				    && (registration.Eager || TraitsOf(implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
+				{
+					ReportNotSelfCompiled(
+						context, module, implementation, "handle",
+						ModuleShapeReason(module) ?? "it leaves the singleton to the assemblies it grants InternalsVisibleTo",
+						$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
+				}
+
+				return null;
+			}
+
+			return registration;
 		}
 
 		if (sameCompilation && IsHiddenInModule(implementation, module, compilation))
@@ -1204,8 +1224,13 @@ partial class AwaitenGenerator
 			{
 				if (ContributedPair(attribute, attributeClass) is ({ } decorator, { } service))
 				{
+					// A module of another assembly builds a decorator of an internal service into the service's handle, which the chain then decorates.
+					bool throughHandle = via?.Producer is { MethodKind: MethodKind.Ordinary, ReturnType: INamedTypeSymbol handle, }
+					                     && handle.Name == HiddenHandleName(service)
+					                     && !compilation.IsSymbolAccessibleWithin(service, compilation.Assembly);
+					INamedTypeSymbol decorated = throughHandle ? (INamedTypeSymbol)via!.Producer.ReturnType : service;
 					closed.Add(new DecorateRegistration(
-						service.ToDisplayString(FullyQualified), service, decorator, order, declarationOrder, location, keys, inherited, via, module));
+						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, throughHandle));
 				}
 			}
 			else if (attribute.ConstructorArguments.Length == 2

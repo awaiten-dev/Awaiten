@@ -82,8 +82,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
-	///     Builds the <see cref="ModuleScanModel" /> for a <c>[Module]</c> that declares a <c>[Scan]</c> or a
-	///     self-compiled registration (see <see cref="SelfCompilesRegistration" />), returning
+	///     Builds the <see cref="ModuleScanModel" /> for a <c>[Module]</c> that declares a <c>[Scan]</c>, a
+	///     self-compiled registration (see <see cref="SelfCompilesRegistration" />), an eager or async-initialized
+	///     singleton under an internal type (see <see cref="StartedHiddenSingleton" />), or other generated members, returning
 	///     <see langword="null" /> for any other module, which self-compiles nothing. The module must be
 	///     non-generic (AWT201) and <c>partial</c>, as must every type enclosing a nested module, to receive the
 	///     generated factories and registration attributes (AWT194), unless it declares no <c>[Scan]</c> and its
@@ -100,8 +101,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			return null;
 		}
 
-		// Only a module that declares a [Scan] or a registration another assembly cannot construct self-compiles; any
-		// other [Module] carries no generated code (and pays no analysis cost beyond this check).
+		// A module that declares nothing a container in another assembly cannot build carries no generated code, and one
+		// that declares nothing internal never reads the other modules of its assembly (see MayBuildThroughHandles).
 		Compilation compilation = context.SemanticModel.Compilation;
 
 		// The module's [AsyncInitializer<T>] conventions are reported here (AWT233), once, rather than by every
@@ -116,14 +117,17 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		bool declaresScan = HasAwaitenAttribute(moduleSymbol.GetAttributes(), "ScanAttribute");
 		ModuleRegistration? selfCompiled = declaresScan ? null : FirstSelfCompiledRegistration(moduleSymbol, compilation);
+		(ModuleRegistration Registration, bool Eager)? started = declaresScan || selfCompiled is not null ? null : StartedHiddenSingleton(moduleSymbol, compilation);
 
 		// Member wrappers and the factories of decorators are generated only into a module that can receive them, so a
 		// module that cannot keeps building without them, as it did before they existed.
 		bool receives = ReceivesGeneratedMembers(moduleSymbol);
 		List<SkippedRegistration> skipped = new();
 		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
-		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation) : new();
-		if (!declaresScan && selfCompiled is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0)
+		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation) : null;
+		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden) : new();
+		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
+		    && hidden is not { Implementations.Count: > 0, SeveralModules: true, })
 		{
 			return diagnostics.Count == 0
 				? null
@@ -131,11 +135,15 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		// Under a grant a registration-only module builds anyway, so the message says why a scan module does not.
-		string reason = selfCompiled is null
-			? GrantsInternalsVisibleTo(compilation.Assembly)
+		string reason = (selfCompiled, started) switch
+		{
+			({ } registration, _) => $"registers '{Display(registration.Implementation.ToDisplayString(FullyQualified))}', which another assembly cannot construct,",
+			(null, { Eager: true, } singleton) => $"registers the eager internal singleton '{Display(singleton.Registration.Implementation.ToDisplayString(FullyQualified))}', which a container in another assembly builds through a generated handle,",
+			(null, { } singleton) => $"registers the async-initialized internal singleton '{Display(singleton.Registration.Implementation.ToDisplayString(FullyQualified))}', which a container in another assembly initializes through a generated handle,",
+			_ => GrantsInternalsVisibleTo(compilation.Assembly)
 				? "declares a [Scan], whose matches a consumer reads from generated metadata even when the assembly grants InternalsVisibleTo,"
-				: "declares a [Scan]"
-			: $"registers '{Display(selfCompiled.Implementation.ToDisplayString(FullyQualified))}', which another assembly cannot construct,";
+				: "declares a [Scan]",
+		};
 
 		// The module must be partial for the generator to add the factories and registration attributes. Every part
 		// of a partial type carries the partial modifier, so the declaration bearing the [Module] attribute suffices.
@@ -147,9 +155,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		List<ModuleFactory> factories = new();
 		List<RegistrationFactory> registrations = new();
+		List<HiddenHandle> handles = new();
+		List<HiddenAlias> aliases = new();
+		List<HiddenInitializer> initializers = new();
 		bool expanded = false;
 		string? notPartialMarker = null;
-		if (selfCompiled is not null && moduleSymbol.IsStatic && (HasOpenTypeParameters(moduleSymbol) || !isPartial) && FriendsConstructEveryRegistration(moduleSymbol, compilation))
+		if ((selfCompiled is not null || started is not null) && moduleSymbol.IsStatic && (HasOpenTypeParameters(moduleSymbol) || !isPartial) && FriendsConstructEveryRegistration(moduleSymbol, compilation))
 		{
 			// A registration-only module that cannot receive the factories leaves construction to the assemblies granted
 			// InternalsVisibleTo, as before modules generated factories. A consumer sees a generic module from metadata,
@@ -186,15 +197,28 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		{
 			if (declaresScan)
 			{
-				factories = CollectModuleScanFactories(moduleSymbol, compilation, diagnostics, cancellationToken)
+				// An assembly granted InternalsVisibleTo calls the scan factories too, and it resolves the internal
+				// services themselves rather than their handles, so scans take handles only without such a grant.
+				factories = CollectModuleScanFactories(moduleSymbol, compilation, diagnostics, cancellationToken, hidden is { Friends: false, } ? hidden : null)
 					.Select(expansion => expansion.Factory)
 					.ToList();
 			}
 
-			registrations = CollectModuleRegistrationFactories(moduleSymbol, compilation, diagnostics, factories, skipped);
+			if (hidden is not null)
+			{
+				RejectScannedHiddenImplementations(hidden, factories, diagnostics);
+			}
+
+			registrations = CollectModuleRegistrationFactories(moduleSymbol, compilation, diagnostics, factories, skipped, hidden);
 			wrappers.RemoveAll(wrapper => registrations.Any(registration => registration.Hooks.AsArray().Any(hook => hook.Hook.WrapperName == wrapper.Name)));
 			skipped = skipped.GroupBy(entry => entry.MarkerName, StringComparer.Ordinal).Select(group => group.First()).ToList();
 			registrations.AddRange(contributions);
+			if (hidden is not null)
+			{
+				(List<RegistrationFactory> hiddenFactories, handles, aliases, initializers) = CompleteHiddenServices(hidden, compilation, diagnostics);
+				registrations.AddRange(hiddenFactories);
+			}
+
 			expanded = true;
 		}
 
@@ -227,7 +251,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<RegistrationFactory>(registrations.ToArray()),
 			new EquatableArray<SkippedRegistration>(skipped.ToArray()),
 			notPartialMarker,
-			new EquatableArray<MemberWrapper>(expanded ? wrappers.ToArray() : []));
+			new EquatableArray<MemberWrapper>(expanded ? wrappers.ToArray() : []),
+			new EquatableArray<HiddenHandle>(handles.ToArray()),
+			new EquatableArray<HiddenAlias>(aliases.ToArray()),
+			new EquatableArray<HiddenInitializer>(initializers.ToArray()));
 	}
 
 	/// <summary>
@@ -404,6 +431,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			DetectEagerAsyncSingletons(graph.Instances, graph.InstanceLocations, diagnostics);
 		}
 
+		NameHiddenServices(containerSymbol, compilation, diagnostics);
 		return (graph, diagnostics);
 	}
 
@@ -608,7 +636,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// A scan match a module's generated factory builds shares the instance of every other registration of its
 		// implementation, as it would in the module's own assembly.
-		ShareScannedInstances(raw, compilation, diagnostics);
+		ShareScannedInstances(raw, containerSymbol, compilation, diagnostics);
 
 		// A scanned private nested type the resolvers cannot stand in for is skipped with AWT193, not the AWT216 error.
 		DropUnsupportedPrivateScanMatches(raw, containerSymbol, compilation, diagnostics);
@@ -620,6 +648,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Coalesce registrations by (service type, key): first per key wins, and registrations of the same
 		// implementation share one instance. Conflicting lifetimes are AWT107; a duplicate key is AWT117.
+		SettleHandleDirectives(raw, containerSymbol, diagnostics);
 		AssignMemberIdentities(raw, containerSymbol);
 		(List<ImplInfo> implOrder, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<ServiceKey, List<string>> serviceMembers, List<ServiceKey> serviceMemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> varianceCandidates, Dictionary<string, List<KeyedMember>> keyedMembers, List<string> keyedMemberOrder) =
 			CoalesceByImplementation(raw, containerSymbol, diagnostics);
@@ -696,6 +725,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		LinkOutermostDecorators(implOrder, instances, implToIndex);
+		MarkAliasesOfTrackedHandles(instances, serviceToImpl, implToIndex);
 
 		// AWT167: a contextual registration whose named consumer never redirected to its context key (no unkeyed
 		// direct dependency on the service) is never reached, so report it now that every instance is built.

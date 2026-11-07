@@ -36,10 +36,11 @@ partial class AwaitenGenerator
 		INamedTypeSymbol module,
 		Compilation compilation,
 		List<DiagnosticInfo> diagnostics,
-		CancellationToken cancellationToken)
+		CancellationToken cancellationToken,
+		HiddenServices? hidden = null)
 	{
 		List<ModuleScanExpansion> factories = new();
-		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal));
+		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal), hidden);
 
 		foreach (AttributeData attribute in module.GetAttributes())
 		{
@@ -95,12 +96,15 @@ partial class AwaitenGenerator
 	///     all of the module's scans - so an overlapping scan re-naming the same failed hook re-resolves it (the
 	///     slot merge needs the outcome) without repeating the first scan's diagnostic; a successful re-resolution
 	///     clears the record, so a later failure reports afresh (see <see cref="ResolveModuleHook" />).
+	///     <see cref="Hidden" /> holds the services the module registers under internal types, which a generated
+	///     factory takes through their handles, in the module's own build only.
 	/// </summary>
 	private readonly record struct ModuleScanContext(
 		INamedTypeSymbol Module,
 		Compilation Compilation,
 		List<DiagnosticInfo> Diagnostics,
-		HashSet<string> FailedHooks);
+		HashSet<string> FailedHooks,
+		HiddenServices? Hidden = null);
 
 	/// <summary>
 	///     Expands one module <c>[Scan]</c> over its candidates, mirroring <see cref="ExpandScan" /> but emitting a
@@ -648,13 +652,21 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
-			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error)
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context);
+			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
+			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
 				context.Diagnostics.Add(error);
 				return false;
 			}
 
-			mirrored.Add(new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name));
+			if (handle is { Error: { } hiddenError, })
+			{
+				context.Diagnostics.Add(hiddenError.WithLocation(location, subject, $"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook"));
+				return false;
+			}
+
+			mirrored.Add(handle?.Parameter ?? new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name));
 		}
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
@@ -1033,38 +1045,74 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in constructor.Parameters)
 		{
-			ImmutableArray<AttributeData> parameterAttributes = parameter.GetAttributes();
-			if (UnmirroredAttribute(parameterAttributes) is { } attributeName)
+			if (!TryMirrorParameter(parameter, context, location, subject, $"its constructor parameter '{parameter.Name}'", out FactoryParameter mirror))
 			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.ModuleScanInjectionMetadata,
-					LocationInfo.From(location),
-					new EquatableArray<string>([subject.Subject, $"its constructor parameter '{parameter.Name}' is marked {attributeName}", subject.Remedy,])));
 				return false;
 			}
 
-			if (TypeHiddenInModule(parameter.Type, context.Module, context.Compilation) is { } hidden)
-			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.ModuleParameterHiddenInModule,
-					LocationInfo.From(location),
-					new EquatableArray<string>([subject.Subject, parameter.Name, Display(hidden.ToDisplayString(FullyQualified)),])));
-				return false;
-			}
-
-			if (!FitsFactorySignature(parameter.Type, context))
-			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.ModuleScanParameterInaccessible,
-					LocationInfo.From(location),
-					new EquatableArray<string>([subject.Subject, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,])));
-				return false;
-			}
-
-			mirrored.Add(MirrorParameter(parameter));
+			mirrored.Add(mirror);
 		}
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
+		return true;
+	}
+
+	/// <summary>
+	///     Mirrors one constructor or factory member parameter onto a generated factory (see
+	///     <see cref="TryMirrorFactoryParameters" />), or reports why it cannot, naming it as <paramref name="label" />,
+	///     and returns <see langword="false" />.
+	/// </summary>
+	private static bool TryMirrorParameter(IParameterSymbol parameter, ModuleScanContext context, Location? location, SelfCompiledSubject subject, string label, out FactoryParameter mirrored)
+	{
+		mirrored = default;
+		List<DiagnosticInfo> diagnostics = context.Diagnostics;
+		ImmutableArray<AttributeData> parameterAttributes = parameter.GetAttributes();
+		if (UnmirroredAttribute(parameterAttributes) is { } attributeName)
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.ModuleScanInjectionMetadata,
+				LocationInfo.From(location),
+				new EquatableArray<string>([subject.Subject, $"{label} is marked {attributeName}", subject.Remedy,])));
+			return false;
+		}
+
+		if (MirrorHiddenService(parameter.Type, parameter.Name, parameterAttributes, context) is { } handle)
+		{
+			if (handle.Error is { } error)
+			{
+				diagnostics.Add(error.WithLocation(location, subject, label));
+				return false;
+			}
+
+			mirrored = handle.Parameter;
+			return true;
+		}
+
+		if (InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
+		{
+			diagnostics.Add(otherModule.WithLocation(location, subject, label));
+			return false;
+		}
+
+		if (TypeHiddenInModule(parameter.Type, context.Module, context.Compilation) is { } hidden)
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.ModuleParameterHiddenInModule,
+				LocationInfo.From(location),
+				new EquatableArray<string>([subject.Subject, parameter.Name, Display(hidden.ToDisplayString(FullyQualified)),])));
+			return false;
+		}
+
+		if (!FitsFactorySignature(parameter.Type, context))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.ModuleScanParameterInaccessible,
+				LocationInfo.From(location),
+				new EquatableArray<string>([subject.Subject, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,])));
+			return false;
+		}
+
+		mirrored = MirrorParameter(parameter);
 		return true;
 	}
 
