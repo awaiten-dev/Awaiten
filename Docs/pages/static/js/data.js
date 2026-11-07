@@ -1368,6 +1368,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:08:52 2026 \u002B0100",
         "message": "feat: let every container produce an internal service through a private module member (#308)"
+      },
+      {
+        "sha": "bb522bb33919405d984d1f84c0e98962aabe8b57",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
+        "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
       }
     ],
     "labels": [
@@ -1598,7 +1604,8 @@ window.BENCHMARK_DATA = {
       "370b625e",
       "68538ab5",
       "87c4b754",
-      "ee4aac92"
+      "ee4aac92",
+      "bb522bb3"
     ],
     "datasets": [
       {
@@ -1832,7 +1839,8 @@ window.BENCHMARK_DATA = {
           7.796339565267165,
           5.709839089558675,
           7.140513130596706,
-          7.137726827309682
+          7.137726827309682,
+          7.771003018204983
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1844,6 +1852,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2313,7 +2322,8 @@ window.BENCHMARK_DATA = {
           8.697762619990568,
           7.579793007246086,
           7.3652431679268675,
-          7.541519619524479
+          7.541519619524479,
+          7.882109900315602
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2325,6 +2335,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2794,7 +2805,8 @@ window.BENCHMARK_DATA = {
           111.14538760185242,
           86.58120951482228,
           102.85433978693825,
-          107.24515820466556
+          107.24515820466556,
+          122.47918230692545
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2806,6 +2818,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3271,7 +3284,8 @@ window.BENCHMARK_DATA = {
           9.030579051146141,
           6.970456128319104,
           9.72702587715217,
-          9.464410988489787
+          9.464410988489787,
+          9.000424682100613
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3283,6 +3297,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3744,7 +3759,8 @@ window.BENCHMARK_DATA = {
           11.213501382332582,
           8.492893776545921,
           10.793853773425022,
-          11.374709489090103
+          11.374709489090103,
+          10.745668768882751
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3756,6 +3772,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5361,6 +5378,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:08:52 2026 \u002B0100",
         "message": "feat: let every container produce an internal service through a private module member (#308)"
+      },
+      {
+        "sha": "bb522bb33919405d984d1f84c0e98962aabe8b57",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
+        "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
       }
     ],
     "labels": [
@@ -5591,7 +5614,8 @@ window.BENCHMARK_DATA = {
       "370b625e",
       "68538ab5",
       "87c4b754",
-      "ee4aac92"
+      "ee4aac92",
+      "bb522bb3"
     ],
     "datasets": [
       {
@@ -5825,7 +5849,8 @@ window.BENCHMARK_DATA = {
           8.386247757290091,
           6.583230157693227,
           8.223813093134336,
-          8.211599350968998
+          8.211599350968998,
+          8.480400827314172
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -5837,6 +5862,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6306,7 +6332,8 @@ window.BENCHMARK_DATA = {
           7.240685649789297,
           6.743554876319,
           7.299930501197066,
-          7.333008206884066
+          7.333008206884066,
+          7.916242078940074
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6318,6 +6345,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6787,7 +6815,8 @@ window.BENCHMARK_DATA = {
           107.40489029884338,
           90.39498796860377,
           103.68475595542363,
-          106.75491886933645
+          106.75491886933645,
+          121.21116976737976
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -6799,6 +6828,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7264,7 +7294,8 @@ window.BENCHMARK_DATA = {
           9.225028793017069,
           6.944638299942016,
           9.703860342502594,
-          9.451715378959973
+          9.451715378959973,
+          8.808788904547692
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7276,6 +7307,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7737,7 +7769,8 @@ window.BENCHMARK_DATA = {
           15.215904714663823,
           11.716142004089695,
           14.133045094353813,
-          14.916898899844714
+          14.916898899844714,
+          14.06814720424322
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -7749,6 +7782,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9354,6 +9388,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:08:52 2026 \u002B0100",
         "message": "feat: let every container produce an internal service through a private module member (#308)"
+      },
+      {
+        "sha": "bb522bb33919405d984d1f84c0e98962aabe8b57",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
+        "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
       }
     ],
     "labels": [
@@ -9584,7 +9624,8 @@ window.BENCHMARK_DATA = {
       "370b625e",
       "68538ab5",
       "87c4b754",
-      "ee4aac92"
+      "ee4aac92",
+      "bb522bb3"
     ],
     "datasets": [
       {
@@ -9818,7 +9859,8 @@ window.BENCHMARK_DATA = {
           17.331699498494466,
           23.5335695485274,
           15.214888906478881,
-          10.9978564328381
+          10.9978564328381,
+          16.070142950614294
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -9980,6 +10022,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10299,7 +10342,8 @@ window.BENCHMARK_DATA = {
           1238.0439668382917,
           1585.815363820394,
           1267.269728733943,
-          812.5211121695382
+          812.5211121695382,
+          1151.2938465390887
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10311,6 +10355,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -10780,7 +10825,8 @@ window.BENCHMARK_DATA = {
           20687.157112630208,
           24741.24442138672,
           25451.768205915178,
-          17868.11732381185
+          17868.11732381185,
+          18891.525028483073
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11019,7 +11065,8 @@ window.BENCHMARK_DATA = {
           32476,
           32474,
           32478,
-          32477
+          32477,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11257,7 +11304,8 @@ window.BENCHMARK_DATA = {
           568.2726034751305,
           708.7239242281232,
           590.1690015157063,
-          411.528767935435
+          411.528767935435,
+          555.7103859094473
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11287,6 +11335,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -11730,7 +11779,8 @@ window.BENCHMARK_DATA = {
           9533.815707906087,
           11830.486079915365,
           8814.775025431316,
-          6293.872926984514
+          6293.872926984514,
+          8469.176342773437
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11965,7 +12015,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13347,6 +13398,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:08:52 2026 \u002B0100",
         "message": "feat: let every container produce an internal service through a private module member (#308)"
+      },
+      {
+        "sha": "bb522bb33919405d984d1f84c0e98962aabe8b57",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
+        "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
       }
     ],
     "labels": [
@@ -13577,7 +13634,8 @@ window.BENCHMARK_DATA = {
       "370b625e",
       "68538ab5",
       "87c4b754",
-      "ee4aac92"
+      "ee4aac92",
+      "bb522bb3"
     ],
     "datasets": [
       {
@@ -13811,7 +13869,8 @@ window.BENCHMARK_DATA = {
           175.78983709017436,
           266.31331024169924,
           112.01884396076203,
-          75.26445881525676
+          75.26445881525676,
+          169.4822769165039
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13973,6 +14032,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -14292,7 +14352,8 @@ window.BENCHMARK_DATA = {
           10740.553206380207,
           14060.486604817708,
           10647.108286539713,
-          7191.601908002581
+          7191.601908002581,
+          9529.737021813025
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14304,6 +14365,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -14773,7 +14835,8 @@ window.BENCHMARK_DATA = {
           520693.158984375,
           582953.9108537947,
           635929.2818777902,
-          418225.4836425781
+          418225.4836425781,
+          427590.9566932091
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15012,7 +15075,8 @@ window.BENCHMARK_DATA = {
           740392,
           721116,
           736857,
-          720482
+          720482,
+          718750
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15250,7 +15314,8 @@ window.BENCHMARK_DATA = {
           34152.92017211914,
           41137.15752360026,
           35138.31044514974,
-          22835.706540788924
+          22835.706540788924,
+          31847.48944091797
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15485,7 +15550,8 @@ window.BENCHMARK_DATA = {
           79997,
           80958,
           80965,
-          80971
+          80971,
+          80317
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15723,7 +15789,8 @@ window.BENCHMARK_DATA = {
           303288.9976074219,
           341307.4998046875,
           265616.620703125,
-          194067.91495768228
+          194067.91495768228,
+          240502.93141276043
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15958,7 +16025,8 @@ window.BENCHMARK_DATA = {
           571193,
           571183,
           573091,
-          573043
+          573043,
+          571205
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17316,6 +17384,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:08:52 2026 \u002B0100",
         "message": "feat: let every container produce an internal service through a private module member (#308)"
+      },
+      {
+        "sha": "bb522bb33919405d984d1f84c0e98962aabe8b57",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 00:11:09 2026 \u002B0100",
+        "message": "fix: keep the nullable annotation of the service in Task, Lazy and Owned relationships (#309)"
       }
     ],
     "labels": [
@@ -17542,7 +17616,8 @@ window.BENCHMARK_DATA = {
       "370b625e",
       "68538ab5",
       "87c4b754",
-      "ee4aac92"
+      "ee4aac92",
+      "bb522bb3"
     ],
     "datasets": [
       {
@@ -17772,7 +17847,8 @@ window.BENCHMARK_DATA = {
           250.3774986607688,
           285.6545634587606,
           150.35121334393818,
-          265.1199523485624
+          265.1199523485624,
+          261.8921848932902
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -17807,6 +17883,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -18245,7 +18322,8 @@ window.BENCHMARK_DATA = {
           590.6739802360535,
           638.0361083348593,
           374.8488972737239,
-          633.747166633606
+          633.747166633606,
+          631.4407441799457
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -18257,6 +18335,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -18718,7 +18797,8 @@ window.BENCHMARK_DATA = {
           6347.971502176921,
           6964.38586324056,
           3250.3623600006104,
-          6724.872053879958
+          6724.872053879958,
+          6888.866316986084
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18802,6 +18882,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -19191,7 +19272,8 @@ window.BENCHMARK_DATA = {
           401.7365409533183,
           440.84378954569496,
           235.11512303352356,
-          395.68062025705973
+          395.68062025705973,
+          414.1738972981771
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19203,6 +19285,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -19664,7 +19747,8 @@ window.BENCHMARK_DATA = {
           700.3314395904541,
           806.4628507614136,
           371.7144867011479,
-          739.9534690221151
+          739.9534690221151,
+          742.2843753178914
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19676,6 +19760,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
