@@ -288,7 +288,7 @@ export default function Changelog({changelog: {releases}}: Props): ReactElement 
             <React.Fragment key={major}>
               <div className={clsx(styles.when, styles.chapterWhen)}>{last.date.substring(0, 4)}</div>
               <div className={clsx(styles.body, styles.chapter)}>
-                <span className={styles.medal} aria-hidden="true">v{major}</span>
+                <span className={styles.medal} aria-hidden="true" />
                 <h2 id={`version-${major}`}>Version {major}</h2>
                 <p className={styles.span}>
                   {plural(majorReleases.length, 'release', 'releases')} · {from === to ? from : `${from} to ${to}`}

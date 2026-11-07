@@ -120,6 +120,9 @@
   height: 28px;
   border-radius: 50%;
   background: var(--ifm-color-primary);
+  /* The hairline ring of the logo's terminals, scaled from r 11 to r 14. */
+  -webkit-mask: radial-gradient(circle closest-side, #000 8.05px, transparent 8.55px 9.95px, #000 10.45px);
+  mask: radial-gradient(circle closest-side, #000 8.05px, transparent 8.55px 9.95px, #000 10.45px);
   flex: none;
 }
 
