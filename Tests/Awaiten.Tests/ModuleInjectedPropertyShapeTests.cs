@@ -170,8 +170,10 @@ internal sealed class LocalShapes : IInjectedShapes
 	[Inject(Optional = true)]
 	public IInjectedShapeClock? Clock { get; set; } = FallbackInjectedShapeClock.Instance;
 
+#pragma warning disable AWT158
 	[Inject(Optional = true)]
 	public IInjectedShapeClock? InitClock { get; init; } = FallbackInjectedShapeClock.Instance;
+#pragma warning restore AWT158
 
 	[Inject(Optional = true)]
 	public Owned<IInjectedShapeClock> OwnedValue { get; set; }
@@ -228,6 +230,7 @@ public static partial class LocalShapesWithNullClockContainer
 	private static IInjectedShapeClock NoClock() => null!;
 }
 
+#pragma warning disable AWT158
 [Container]
 [Import(typeof(CrossAssemblyInjectedShapesModule))]
 public static partial class SupportShapesContainer;
@@ -245,9 +248,6 @@ public static partial class SupportShapesWithNullClockContainer
 	private static IInjectedShapeClock NoClock() => null!;
 }
 
-[Container(Extends = typeof(CrossAssemblyInjectedShapesBaseContainer))]
-public static partial class ExtendingSupportShapesContainer;
-
 [Container]
 [Import(typeof(CrossAssemblyFriendInjectedShapesModule))]
 public static partial class FriendShapesContainer;
@@ -264,3 +264,7 @@ public static partial class FriendShapesWithNullClockContainer
 {
 	private static IInjectedShapeClock NoClock() => null!;
 }
+#pragma warning restore AWT158
+
+[Container(Extends = typeof(CrossAssemblyInjectedShapesBaseContainer))]
+public static partial class ExtendingSupportShapesContainer;

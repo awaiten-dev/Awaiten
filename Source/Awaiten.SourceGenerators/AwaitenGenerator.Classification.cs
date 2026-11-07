@@ -98,7 +98,7 @@ partial class AwaitenGenerator
 				{
 					context.Diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.OptionalPropertyIsInitOnly,
-						null,
+						info.Location,
 						new EquatableArray<string>([parameter.Name.Substring(InitOnlyPresenceFlagPrefix.Length), DisplayInstance(info.ImplementationType),])));
 				}
 
@@ -421,8 +421,9 @@ partial class AwaitenGenerator
 		ExternalServiceTypes externalServiceTypes = context.ExternalServiceTypes;
 
 		// A container-side entry points its diagnostics at the [InjectProperty] attribute the author edits; an
-		// [Inject] property (EntryLocation null) points at the property declaration.
-		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault());
+		// [Inject] property (EntryLocation null) points at the property declaration, or at the registration for a
+		// property read from another assembly.
+		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault()) ?? info.Location;
 
 		// AWT136: an injected property must have a set/init accessor the container can assign through the object
 		// initializer. The container is not a derived type, so a protected/private-protected setter (and an

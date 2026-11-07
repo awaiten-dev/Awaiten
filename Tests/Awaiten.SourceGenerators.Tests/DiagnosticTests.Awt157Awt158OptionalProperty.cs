@@ -90,7 +90,7 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task ReportsAwt158WhenOptionalPropertyIsInitOnly_AndUnregistered()
 		{
-			GeneratorResult result = Generator.Run("""
+			const string source = """
 			                                       using Awaiten;
 
 			                                       namespace MyCode;
@@ -108,9 +108,11 @@ public partial class DiagnosticTests
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
-			                                       """);
+			                                       """;
 
-			await That(result.Diagnostics).Contains("*AWT158*").AsWildcard()
+			GeneratorResult result = Generator.Run(source);
+
+			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).Contains("*AWT158*").AsWildcard()
 				.Because("an optional init-only property left unset when unregistered can never be filled afterwards, so it is warned about");
 			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard()
 				.Because("the property is still optional, so a missing registration is not the AWT101 error");
@@ -119,7 +121,7 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task ReportsAwt158WhenOptionalPropertyIsInitOnly_EvenWhenRegistered()
 		{
-			GeneratorResult result = Generator.Run("""
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
 			                                       using Awaiten;
 
 			                                       namespace MyCode;
@@ -138,7 +140,7 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT158*").AsWildcard()
+			await That(diagnostics).Contains("*AWT158*").AsWildcard()
 				.Because("AWT158 flags the init-only optional declaration itself: if the registration is ever removed the property would silently and permanently be default");
 		}
 
@@ -172,7 +174,7 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task OptionalInitOnlyCollectionProperty_DoesNotReportAwt158()
 		{
-			GeneratorResult result = Generator.Run("""
+			const string source = """
 			                                       using System.Collections.Generic;
 			                                       using Awaiten;
 
@@ -191,9 +193,11 @@ public partial class DiagnosticTests
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
-			                                       """);
+			                                       """;
 
-			await That(result.Diagnostics).DoesNotContain("*AWT158*").AsWildcard()
+			GeneratorResult result = Generator.Run(source);
+
+			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).DoesNotContain("*AWT158*").AsWildcard()
 				.Because("Optional has no effect on a collection, which is always filled, so the init-only-stays-default warning does not apply");
 			await That(result.Diagnostics).IsEmpty()
 				.Because("an optional init-only collection is well-defined and reports nothing");

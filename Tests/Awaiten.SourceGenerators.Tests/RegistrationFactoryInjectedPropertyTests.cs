@@ -60,6 +60,20 @@ public class RegistrationFactoryInjectedPropertyTests
 		public string[] AllDiagnostics => [..Same.Diagnostics, ..Other.Diagnostics, ..Friend.Diagnostics,];
 	}
 
+	private static async Task<Analyses> AnalyzeEverywhere(string library, bool clock)
+		=> await AnalyzeEverywhere(WithLibraryContainer(library, clock), library, clock ? ClockConsumer : Consumer);
+
+	private static async Task<Analyses> AnalyzeEverywhere(string same, string library, string consumer)
+		=> new(
+			await Analyzer.Run<AwaitenAnalyzer>(same),
+			await Analyzer.RunWithReferencedAssembly<AwaitenAnalyzer>(library, consumer),
+			await Analyzer.RunWithReferencedAssembly<AwaitenAnalyzer>(Granted(library), consumer));
+
+	private sealed record Analyses(string[] Same, string[] Other, string[] Friend)
+	{
+		public string[] AllDiagnostics => [..Same, ..Other, ..Friend,];
+	}
+
 	private static string Library(string members, string type = "internal sealed class Greeter : IGreeter")
 		=> $$"""
 		     using Awaiten;
@@ -180,51 +194,82 @@ public class RegistrationFactoryInjectedPropertyTests
 		public async Task IsFilledEverywhere_WithTheSameWarning()
 		{
 			Containers containers = RunEverywhere(Module, clock: true);
+			Analyses analyses = await AnalyzeEverywhere(Module, clock: true);
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("the analyzer reports the warning, so it can be suppressed in source");
+			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
 				.Because("a container in another assembly warns about the init-only optional property like one that sees it");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+		}
+
+		[Test]
+		public async Task TheWarningOfAContainerInAnotherAssembly_IsReportedAtItsImport()
+		{
+			Analyses analyses = await AnalyzeEverywhere(WithLibraryContainer(Module, clock: true), Module, ClockConsumer);
+
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+				.Because("a warning with a location can be suppressed where it arises instead of for the whole project");
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+				.Because("a property read from another assembly has no location of its own");
+		}
+
+		[Test]
+		public async Task TheWarning_CanBeSuppressedAtTheImport()
+		{
+			string suppressed = ClockConsumer.Replace("[Import(typeof(GreetingModule))]", "#pragma warning disable AWT158\n[Import(typeof(GreetingModule))]\n#pragma warning restore AWT158");
+
+			Analyses analyses = await AnalyzeEverywhere(WithLibraryContainer(Module, clock: true), Module, suppressed);
+
+			await That(analyses.Other).IsEmpty();
+			await That(analyses.Friend).IsEmpty();
 		}
 
 		[Test]
 		public async Task OfACollection_IsFilledEverywhereWithoutAWarning()
 		{
-			Containers containers = RunEverywhere(Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;"), clock: false);
+			string module = Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;");
 
-			await That(containers.AllDiagnostics).IsEmpty()
+			Containers containers = RunEverywhere(module, clock: false);
+			Analyses analyses = await AnalyzeEverywhere(module, clock: false);
+
+			await That([..containers.AllDiagnostics, ..analyses.AllDiagnostics,]).IsEmpty()
 				.Because("a collection is always filled, empty without a registration, so its init-only accessor loses nothing");
 		}
 
 		[Test]
 		public async Task OfAPrivateNestedType_IsMarkedPresentByAContainerInTheSameAssembly()
 		{
-			GeneratorResult result = Generator.Run("""
-			                                       using Awaiten;
+			const string source = """
+			                      using Awaiten;
 
-			                                       namespace Lib;
+			                      namespace Lib;
 
-			                                       public interface IGreeter { }
-			                                       public interface IClock { }
-			                                       public sealed class SystemClock : IClock { }
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class SystemClock : IClock { }
 
-			                                       [Module]
-			                                       [Transient<GreetingModule.Greeter, IGreeter>]
-			                                       public static partial class GreetingModule
-			                                       {
-			                                           private sealed class Greeter : IGreeter
-			                                           {
-			                                               [Inject(Optional = true)] public IClock Clock { get; init; } = null!;
-			                                           }
-			                                       }
+			                      [Module]
+			                      [Transient<GreetingModule.Greeter, IGreeter>]
+			                      public static partial class GreetingModule
+			                      {
+			                          private sealed class Greeter : IGreeter
+			                          {
+			                              [Inject(Optional = true)] public IClock Clock { get; init; } = null!;
+			                          }
+			                      }
 
-			                                       [Container]
-			                                       [Import(typeof(GreetingModule))]
-			                                       [Transient<SystemClock, IClock>]
-			                                       public static partial class LibContainer { }
-			                                       """);
+			                      [Container]
+			                      [Import(typeof(GreetingModule))]
+			                      [Transient<SystemClock, IClock>]
+			                      public static partial class LibContainer { }
+			                      """;
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			GeneratorResult result = Generator.Run(source);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
 			await That(ContainerSource(result, "LibContainer")).Contains("awaiten__init_Clock: true");
 		}
 
@@ -245,7 +290,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			Containers containers = RunEverywhere(Library(InitOnlyClocks(4)), clock: false);
 
-			await That(containers.AllDiagnostics.Where(diagnostic => !diagnostic.Contains("AWT158"))).IsEmpty()
+			await That(containers.AllDiagnostics).IsEmpty()
 				.Because("four init-only optional properties need sixteen object initializers, which the factory still emits");
 		}
 
@@ -293,11 +338,13 @@ public class RegistrationFactoryInjectedPropertyTests
 			                """;
 
 			Containers containers = RunEverywhere(module, clock: false);
+			Analyses analyses = await AnalyzeEverywhere(module, clock: false);
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
+			await That(containers.AllDiagnostics).IsEmpty()
 				.Because("the factory takes the internal service through its handle, whose value it assigns when the flag says the handle is present");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
 		}
 	}
 

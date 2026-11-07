@@ -530,9 +530,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179 is reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not tied to a
-		// syntax tree, so it could not be suppressed in source.
-		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty));
+		// AWT179 and AWT158 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not tied
+		// to a syntax tree, so it could not be suppressed in source.
+		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
 

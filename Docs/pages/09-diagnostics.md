@@ -1366,6 +1366,8 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+It is reported at the property, or, for a type from another assembly, at the registration or the `[Import]` of its module. To keep the init-only accessor on purpose, suppress the warning there with `#pragma warning disable AWT158`.
+
 **Fix:** Give the property a plain `set` accessor, so a value can still be assigned after construction when the dependency is not registered.
 
 ### AWT177
