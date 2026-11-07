@@ -520,6 +520,35 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task OfAnInternalTypeTheFactoryCannotTake_IsReportedWithTheRemedyForThePublicImplementation()
+		{
+			string module = Library("[Inject] internal Helper Helper { get; set; } = null!;", UserType)
+				.Replace("public sealed class SystemClock", "internal sealed class Helper { }\npublic sealed class SystemClock");
+
+			GeneratorResult result = Generator.Run(module);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).Contains("*'Lib.Greeter' is self-compiled from a module registration because its [Inject] property 'Helper' is not public*make the [Inject] property 'Helper', its setter and its type public*").AsWildcard()
+				.Because("the implementation and its constructor are public already, so only the hidden property keeps another assembly from constructing it");
+		}
+
+		[Test]
+		public async Task OfAPublicImplementationWithARecordedSkip_IsReportedWithTheRealCause()
+		{
+			string module = GrantedToAnother(Library("""
+			                                         public Greeter(IClock Clock) { }
+
+			                                             [Inject] internal IClock Clock { get; set; } = null!;
+			                                         """, UserType));
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"));
+			await That(result.Diagnostics).Contains("*registers 'Lib.Greeter', whose [Inject] property this container does not see*make the [Inject] properties of 'Lib.Greeter' and their setters public*").AsWildcard()
+				.Because("the container can construct the public implementation, but not set the property it does not see");
+		}
+
+		[Test]
 		public async Task WithAProtectedSetter_IsReportedByEveryContainer()
 		{
 			string module = Library("[Inject] public IClock Clock { get; protected set; } = null!;", "public class Greeter : IGreeter");

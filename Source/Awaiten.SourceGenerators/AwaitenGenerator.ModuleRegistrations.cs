@@ -590,7 +590,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static RegistrationFactory? ContributionFactory(INamedTypeSymbol type, INamedTypeSymbol service, string name, ModuleScanContext context, Location? location = null)
 	{
-		SelfCompiledSubject subject = RegistrationSubject(type.ToDisplayString(FullyQualified));
+		SelfCompiledSubject subject = RegistrationSubject(type);
 		return FactoryReturnType(type, [service,], context) is { } returnType
 		       && FitsFactorySignature(returnType, context)
 		       && TryMirrorFactoryParameters(type, context, location, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true)
@@ -786,7 +786,7 @@ partial class AwaitenGenerator
 	{
 		INamedTypeSymbol implementation = first.Implementation;
 		string typeName = implementation.ToDisplayString(FullyQualified);
-		SelfCompiledSubject subject = RegistrationSubject(typeName);
+		SelfCompiledSubject subject = RegistrationSubject(implementation);
 		List<DiagnosticInfo> rejections = new();
 
 		string[] services = all.Select(registration => registration.Service.ToDisplayString(FullyQualified)).Distinct().ToArray();
@@ -1233,9 +1233,22 @@ partial class AwaitenGenerator
 	private static bool GrantsInternalsVisibleTo(IAssemblySymbol assembly)
 		=> assembly.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() == "System.Runtime.CompilerServices.InternalsVisibleToAttribute");
 
-	/// <summary>The subject of a self-compilation diagnostic about a module registration.</summary>
-	private static SelfCompiledSubject RegistrationSubject(string typeName)
-		=> new(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public", "self-compiled from a module registration");
+	/// <summary>
+	///     The subject of a self-compilation diagnostic about a module registration, decorator or composite. A type every
+	///     assembly could construct is self-compiled only for its <c>[Inject]</c> property another assembly cannot see, so
+	///     the subject names that property and the remedy makes it public.
+	/// </summary>
+	private static SelfCompiledSubject RegistrationSubject(INamedTypeSymbol type)
+	{
+		string typeName = type.ToDisplayString(FullyQualified);
+		return ConstructibleEverywhere(type) && HiddenInjectedProperty(type) is { } property
+			? new SelfCompiledSubject(
+				typeName,
+				$"'{Display(typeName)}' is self-compiled from a module registration because its [Inject] property '{property}' is not public",
+				$"make the [Inject] property '{property}', its setter and its type public",
+				"self-compiled from a module registration")
+			: new SelfCompiledSubject(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public", "self-compiled from a module registration");
+	}
 
 	/// <summary>
 	///     A deterministic name for the factory of a self-compiled registration, derived from the implementation's

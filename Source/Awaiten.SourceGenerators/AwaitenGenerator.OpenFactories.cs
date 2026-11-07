@@ -243,7 +243,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		SelfCompiledSubject subject = RegistrationSubject(typeName);
+		SelfCompiledSubject subject = RegistrationSubject(definition);
 		List<DiagnosticInfo> rejections = new();
 		MirroredMembers members = default;
 		if (module && ModuleAsyncInitializerFault(definition, signature, subject, contribution.Location) is { } initializerFault)

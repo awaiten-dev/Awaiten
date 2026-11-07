@@ -63,7 +63,7 @@ partial class AwaitenGenerator
 			// The base sees the [Inject] property of a type this container cannot build without the module's factory.
 			if (module.Inherited)
 			{
-				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled));
+				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet));
 			}
 		}
 
@@ -455,7 +455,8 @@ partial class AwaitenGenerator
 
 			if (SkippedRegistrationReason(module, implementation) is { } reason)
 			{
-				ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public");
+				ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public",
+					hiddenMembers && CanConstruct(implementation, compilation) ? Diagnostics.ModuleRegistrationPropertyNotSet : Diagnostics.ModuleRegistrationNotSelfCompiled);
 			}
 			else if (ModuleShapeReason(module) is { } shape)
 			{
@@ -518,11 +519,13 @@ partial class AwaitenGenerator
 	///     Reports AWT231 at the consumer's <c>[Import]</c>, once per implementation and missing piece: the imported
 	///     module generated no <paramref name="missing" /> for <paramref name="implementation" /> for the recorded
 	///     <paramref name="reason" />, and this container cannot construct it either.
+	///     <paramref name="descriptor" /> picks the form for a type the container could construct but whose <c>[Inject]</c>
+	///     property it does not see.
 	/// </summary>
-	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy)
+	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy, DiagnosticDescriptor? descriptor = null)
 	{
 		DiagnosticInfo diagnostic = new(
-			Diagnostics.ModuleRegistrationNotSelfCompiled,
+			descriptor ?? Diagnostics.ModuleRegistrationNotSelfCompiled,
 			LocationInfo.From(context.FallbackLocation),
 			new EquatableArray<string>([
 				Display(module.ToDisplayString(FullyQualified)),
