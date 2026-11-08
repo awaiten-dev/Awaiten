@@ -1024,7 +1024,10 @@ partial class AwaitenGenerator
 	///     fill it. A parameter whose type is not nameable outside the assembly is AWT195, the v1 limitation, because
 	///     it appears on the <c>public</c> factory signature and is resolved from the consumer's graph. A parameter type
 	///     private to the module or a class containing it is AWT195 with its own remedy: no container can resolve it as
-	///     a service, and building it in the factory would bypass the lifetime and disposal the graph gives it.
+	///     a service, and building it in the factory would bypass the lifetime and disposal the graph gives it. The inner
+	///     parameter of a decorator of the internal service <paramref name="decorated" /> takes the service's handle even
+	///     when its type is a base type of the service, so a consumer finds the inner parameter on the factory as a
+	///     container in the module's own assembly finds it on the constructor.
 	/// </summary>
 	private static bool TryMirrorFactoryParameters(
 		INamedTypeSymbol type,
@@ -1032,7 +1035,8 @@ partial class AwaitenGenerator
 		Location? location,
 		SelfCompiledSubject subject,
 		out EquatableArray<FactoryParameter> parameters,
-		bool mirrorProperties = false)
+		bool mirrorProperties = false,
+		INamedTypeSymbol? decorated = null)
 	{
 		parameters = default;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
@@ -1058,9 +1062,19 @@ partial class AwaitenGenerator
 			return false;
 		}
 
+		IParameterSymbol? inner = decorated is not null && context.Hidden is not null ? InnerParameter(constructor, decorated, context.Compilation) : null;
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in constructor.Parameters)
 		{
+			if (inner is not null
+			    && SymbolEqualityComparer.Default.Equals(parameter, inner)
+			    && !SymbolEqualityComparer.Default.Equals(parameter.Type, decorated)
+			    && UnmirroredAttribute(parameter.GetAttributes()) is null)
+			{
+				mirrored.Add(new FactoryParameter(context.Hidden!.HandleType(decorated!), parameter.Name, Argument: $"@{parameter.Name}.Value"));
+				continue;
+			}
+
 			if (!TryMirrorParameter(parameter, context, location, subject, $"its constructor parameter '{parameter.Name}'", out FactoryParameter mirror))
 			{
 				return false;

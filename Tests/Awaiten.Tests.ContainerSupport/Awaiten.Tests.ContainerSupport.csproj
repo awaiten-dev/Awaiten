@@ -23,6 +23,17 @@
 		<ProjectReference Include="..\Awaiten.Tests.Support\Awaiten.Tests.Support.csproj" />
 	</ItemGroup>
 
+	<!-- The decorator and composite shapes of internal services that Awaiten.Tests.Support declares too, compiled here
+	     once more so a container in this assembly and one granted InternalsVisibleTo build exactly the shapes that a
+	     container in Awaiten.Tests builds without it. -->
+	<PropertyGroup>
+		<DefineConstants>$(DefineConstants);CONTAINER_SUPPORT</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\Awaiten.Tests.Support\CrossAssemblyHiddenDecoratorShapes.cs" Link="CrossAssemblyHiddenDecoratorShapes.cs" />
+	</ItemGroup>
+
 	<!-- The init accessors of CrossAssemblyFriendInjectedShapesModule on net48. Awaiten.Tests, which this assembly
 	     grants InternalsVisibleTo, uses this copy too, since a second one would conflict (CS0436). -->
 	<ItemGroup>

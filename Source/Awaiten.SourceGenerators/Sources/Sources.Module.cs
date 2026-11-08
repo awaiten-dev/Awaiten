@@ -192,6 +192,12 @@ internal static partial class Sources
 					"Generated from a module registration: why no generic factory builds this open generic type. A consuming",
 					"container that cannot construct it reports this reason.");
 			}
+			else if (skipped.Contribution)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module registration: the type that keeps the module from building this decorator or",
+					"composite of an internal service, which a consuming container reports as a container in this assembly does.");
+			}
 			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,

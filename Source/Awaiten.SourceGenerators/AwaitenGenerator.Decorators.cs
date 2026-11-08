@@ -800,13 +800,42 @@ partial class AwaitenGenerator
 				return CompositeCollectionKind.Exact;
 			}
 
-			if (relatedElement is null && compilation.HasImplicitConversion(service, element!))
+			if (relatedElement is not null)
 			{
-				relatedElement = element!.ToDisplayString(FullyQualified);
+				continue;
+			}
+
+			INamedTypeSymbol? hidden = registration.HiddenService;
+			ITypeSymbol judged = hidden is not null && HandledBase(hidden, element!) is { } handled ? handled : element!;
+			if (compilation.HasImplicitConversion(service, judged) || (hidden is not null && compilation.HasImplicitConversion(hidden, judged)))
+			{
+				relatedElement = judged.ToDisplayString(FullyQualified);
 			}
 		}
 
 		return relatedElement is null ? CompositeCollectionKind.Missing : CompositeCollectionKind.RelatedElement;
+	}
+
+	/// <summary>
+	///     The base type of the internal service <paramref name="hidden" /> that <paramref name="element" /> is the generated
+	///     handle of, or <see langword="null" />: a module's factory takes an internal base type through its handle.
+	/// </summary>
+	private static INamedTypeSymbol? HandledBase(INamedTypeSymbol hidden, ITypeSymbol element)
+	{
+		if (element is not INamedTypeSymbol { ContainingType.Name: InternalsClass, } handle)
+		{
+			return null;
+		}
+
+		for (INamedTypeSymbol? type = hidden.BaseType; type is not null; type = type.BaseType)
+		{
+			if (handle.Name == HiddenHandleName(type))
+			{
+				return type;
+			}
+		}
+
+		return hidden.AllInterfaces.FirstOrDefault(candidate => handle.Name == HiddenHandleName(candidate));
 	}
 
 	/// <summary>
