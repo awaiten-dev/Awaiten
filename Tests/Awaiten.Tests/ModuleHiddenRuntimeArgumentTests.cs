@@ -196,6 +196,22 @@ public class ModuleHiddenRuntimeArgumentTests
 	[Arguments(Kind.SameAssembly)]
 	[Arguments(Kind.Friend)]
 	[Arguments(Kind.External)]
+	public async Task ScanMatchOfAnImplementationAnotherModuleBuildsThroughAHandle_IsBuiltFromTheArguments(Kind kind)
+	{
+		await using IAwaitenRoot container = Container(kind);
+		await using IAwaitenScope scope = await container.CreateScopeAsync();
+		ArgumentOrder order = new("macchiato");
+
+		Func<ArgumentOrder, IArgumentScanned> scanned = await scope.ResolveAsync<Func<ArgumentOrder, IArgumentScanned>>();
+
+		await That(scanned(order).Order).IsSameAs(order)
+			.Because("the scan match forwards the runtime argument to the instance handle of the module that builds the implementation");
+	}
+
+	[Test]
+	[Arguments(Kind.SameAssembly)]
+	[Arguments(Kind.Friend)]
+	[Arguments(Kind.External)]
 	public async Task Barista_IsSharedWithinAScope(Kind kind)
 	{
 		await using IAwaitenRoot container = Container(kind);
@@ -214,10 +230,12 @@ public class ModuleHiddenRuntimeArgumentTests
 
 [Container]
 [Import(typeof(Support.HiddenArgumentModule))]
+[Import(typeof(Support.HiddenArgumentScanModule))]
 [Transient<ArgumentReceiptDesk>]
 public static partial class ExternalArgumentShapeContainer;
 
 [Container]
 [Import(typeof(ContainerSupport.FriendHiddenArgumentModule))]
+[Import(typeof(ContainerSupport.FriendHiddenArgumentScanModule))]
 [Transient<ArgumentReceiptDesk>]
 public static partial class FriendArgumentShapeContainer;

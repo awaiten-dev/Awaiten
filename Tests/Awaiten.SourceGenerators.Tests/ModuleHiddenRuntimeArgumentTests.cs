@@ -406,6 +406,77 @@ public class ModuleHiddenRuntimeArgumentTests
 		}
 	}
 
+	public class ScanMatches
+	{
+		private const string ScanContainer = """
+			using Awaiten;
+			using Lib;
+
+			namespace MyCode;
+
+			[Container]
+			[Import(typeof(KettleModule))]
+			[Import(typeof(ScanModule))]
+			public static partial class MyContainer;
+			""";
+
+		private static string Library(string kettle) => $$"""
+			using System;
+			using System.Threading.Tasks;
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IWater { }
+			public interface IAppliance { }
+			internal interface IHiddenKettle { }
+			{{kettle}}
+
+			[Module]
+			[Transient<Kettle, IHiddenKettle>]
+			public static partial class KettleModule { }
+
+			[Module]
+			[Scan<IAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Transient)]
+			public static partial class ScanModule { }
+			""";
+
+		private static (GeneratorResult Same, GeneratorResult External, GeneratorResult Friend) RunContainers(string library)
+			=> (Generator.Run(library + string.Join("\n", ScanContainer.Split('\n').Where(line => !line.StartsWith("using ", StringComparison.Ordinal) && !line.StartsWith("namespace ", StringComparison.Ordinal)))),
+				Generator.RunWithGeneratedReferencedAssembly(library, ScanContainer),
+				Generator.RunWithGeneratedReferencedAssembly(library.Replace("using Awaiten;", "using Awaiten;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]"), ScanContainer));
+
+		[Test]
+		public async Task OfAnImplementationAnotherModuleBuildsThroughAHandle_SharesTheHandleInEveryContainer()
+		{
+			string library = Library("internal sealed class Kettle : IAppliance, IHiddenKettle { public Kettle([Arg] IWater water) { } }");
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library);
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the scanning module serves the match from a factory of the other module's instance handle, which takes the runtime argument");
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.ScanModule.Internals.Alias_Kettle_")
+				.And.DoesNotContain("Scan_Kettle_");
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task OfAnAsyncInitializedImplementationAnotherModuleBuildsThroughAHandle_SharesTheHandleInEveryContainer()
+		{
+			string library = Library("internal sealed class Kettle : IAppliance, IHiddenKettle { public Kettle([Arg] IWater water) { } public Task StartAsync() => Task.CompletedTask; }")
+				.Replace("[Transient<Kettle, IHiddenKettle>]", "[AsyncInitializer<Kettle>(nameof(Kettle.StartAsync))]\n[Transient<Kettle, IHiddenKettle>]");
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the scanning module serves the match from an async factory of the instance handle too");
+			await That(friend.Diagnostics).IsEmpty();
+		}
+	}
+
 	public class Rejections
 	{
 		[Test]

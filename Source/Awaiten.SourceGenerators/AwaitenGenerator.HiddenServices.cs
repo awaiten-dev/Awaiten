@@ -1506,8 +1506,6 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static IEnumerable<HiddenAlias> HiddenAliases(HiddenImplementation candidate, HiddenServices hidden, Compilation compilation, string[] arguments)
 	{
-		string call = $"@awaiten__handle({string.Join(", ", arguments.Select((_, index) => $"@awaiten__arg{index + 1}"))})";
-		string handle = arguments.Length == 0 ? "@awaiten__handle" : call;
 		INamedTypeSymbol implementation = candidate.Implementation;
 		IEnumerable<INamedTypeSymbol> services = candidate.Registrations.Select(registration => registration.Service);
 		if (IsExternallyAccessible(implementation))
@@ -1524,20 +1522,26 @@ partial class AwaitenGenerator
 			}
 
 			string returnType = internalService ? hidden.HandleType(service) : service.ToDisplayString(FullyQualified);
-			yield return new HiddenAlias(
-				HiddenAliasName(implementation, service),
-				returnType,
-				hidden.InstanceHandleType(implementation),
-				Body(handle),
-				new EquatableArray<string>(arguments),
-				arguments.Length == 0 ? null : Body($"(await {call}.ConfigureAwait(false))"));
-
-			string Body(string instanceHandle)
+			string serviceType = service.ToDisplayString(FullyQualified);
+			yield return AliasOf(HiddenAliasName(implementation, service), returnType, hidden.InstanceHandleType(implementation), arguments, handle =>
 			{
-				string value = InstanceValue(implementation, service.ToDisplayString(FullyQualified), compilation, instanceHandle);
+				string value = InstanceValue(implementation, serviceType, compilation, handle);
 				return internalService ? $"new {returnType}({value})" : value;
-			}
+			});
 		}
+	}
+
+	/// <summary>
+	///     An alias named <paramref name="name" /> that returns <paramref name="body" /> of the instance handle it takes, or,
+	///     for an implementation built from runtime <paramref name="arguments" />, of the handle a factory of it builds from
+	///     them, with the async counterpart that awaits an async factory of the handle.
+	/// </summary>
+	private static HiddenAlias AliasOf(string name, string returnType, string handleType, string[] arguments, Func<string, string> body)
+	{
+		string call = $"@awaiten__handle({string.Join(", ", arguments.Select((_, index) => $"@awaiten__arg{index + 1}"))})";
+		return arguments.Length == 0
+			? new HiddenAlias(name, returnType, handleType, body("@awaiten__handle"))
+			: new HiddenAlias(name, returnType, handleType, body(call), new EquatableArray<string>(arguments), body($"(await {call}.ConfigureAwait(false))"));
 	}
 
 	/// <summary>
@@ -1559,7 +1563,8 @@ partial class AwaitenGenerator
 	///     The aliases of the matches of the module's scans whose implementation only other modules of the assembly
 	///     build through a handle: one per match, returning the instance from the implementation's instance handle as the
 	///     match's service, through which a consuming container serves the match from the handle instead of building a
-	///     second instance (see <c>ShareHandledInstances</c>), as a container in the module's own assembly shares one.
+	///     second instance (see <c>ShareHandledInstances</c>), as a container in the module's own assembly shares one. A
+	///     match built from runtime arguments takes them and a factory of the handle, like the aliases of the handle's module.
 	/// </summary>
 	private static IEnumerable<HiddenAlias> ScanAliases(HiddenServices hidden, List<ModuleFactory> scanFactories)
 	{
@@ -1575,7 +1580,9 @@ partial class AwaitenGenerator
 			}
 
 			hidden.ScanAliased.Add(implementation);
-			yield return new HiddenAlias(HiddenAliasName(implementation, factory.ServiceType), factory.ServiceType, hidden.InstanceHandleType(implementation), InstanceValue(implementation, factory.ServiceType, hidden.Compilation));
+			string[] arguments = factory.Parameters.AsArray().Where(parameter => parameter.Attributes == ArgAttribute).Select(parameter => parameter.Type).ToArray();
+			yield return AliasOf(HiddenAliasName(implementation, factory.ServiceType), factory.ServiceType, hidden.InstanceHandleType(implementation), arguments,
+				handle => InstanceValue(implementation, factory.ServiceType, hidden.Compilation, handle));
 		}
 	}
 

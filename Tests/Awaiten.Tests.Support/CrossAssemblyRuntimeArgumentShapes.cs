@@ -77,6 +77,16 @@ public interface IArgumentStartedReceipt
 	bool Started { get; }
 }
 
+/// <summary>
+///     The marker a module scans for, whose internal implementation is built from a runtime argument through the handle of
+///     another module.
+/// </summary>
+public interface IArgumentScanned
+{
+	/// <summary>The order the scanned service was built from.</summary>
+	ArgumentOrder Order { get; }
+}
+
 /// <summary>A desk a container registers, which takes an async factory of <see cref="IArgumentStartedReceipt" />.</summary>
 public sealed class ArgumentReceiptDesk(Func<ArgumentOrder, System.Threading.Tasks.Task<IArgumentStartedReceipt>> receipts)
 {
@@ -116,6 +126,13 @@ internal sealed class MemberArgumentBrew(ArgumentOrder order, int shots) : Argum
 }
 
 internal sealed class ArgumentReceipt([Arg] ArgumentOrder order) : IArgumentReceipt, IArgumentTicket
+{
+	public ArgumentOrder Order { get; } = order;
+}
+
+internal interface IHiddenScannedReceipt;
+
+internal sealed class ScannedArgumentReceipt([Arg] ArgumentOrder order) : IArgumentScanned, IHiddenScannedReceipt
 {
 	public ArgumentOrder Order { get; } = order;
 }
@@ -176,6 +193,7 @@ internal sealed class ArgumentBarista(
 [Transient<ArgumentTill, IArgumentTill>]
 [Transient<ArgumentReceipt, IArgumentReceipt>]
 [Transient<ArgumentReceipt, IArgumentTicket>]
+[Transient<ScannedArgumentReceipt, IHiddenScannedReceipt>]
 #if CONTAINER_SUPPORT
 public static partial class FriendHiddenArgumentModule
 #else
@@ -184,11 +202,21 @@ public static partial class HiddenArgumentModule
 {
 	private static IHiddenArgumentBrew MakeBrew([Arg] ArgumentOrder order, [Arg] int shots) => new MemberArgumentBrew(order, shots);
 }
+
+/// <summary>A <c>[Module]</c> whose scan matches an implementation built from a runtime argument that another module builds through a handle.</summary>
+[Module]
+[Scan<IArgumentScanned>(As = ScanAs.Marker, Lifetime = Lifetime.Transient)]
+#if CONTAINER_SUPPORT
+public static partial class FriendHiddenArgumentScanModule;
+#else
+public static partial class HiddenArgumentScanModule;
+#endif
 #if CONTAINER_SUPPORT
 
 /// <summary>A container in the module's own assembly that imports <see cref="FriendHiddenArgumentModule" />.</summary>
 [Container]
 [Import(typeof(FriendHiddenArgumentModule))]
+[Import(typeof(FriendHiddenArgumentScanModule))]
 [Transient<ArgumentReceiptDesk>]
 public static partial class LocalArgumentShapeContainer;
 #endif

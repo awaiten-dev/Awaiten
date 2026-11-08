@@ -92,8 +92,8 @@ partial class AwaitenGenerator
 			// for a public implementation, under the implementation itself.
 			if (handles.Select(entry => entry.Origin).Prepend(match.Origin).OfType<INamedTypeSymbol>()
 				    .SelectMany(module => new[] { service, implementation, }.Select(aliased => (Module: module, Alias: GeneratedFactoryNamed(module, HiddenAliasName(implementation, aliased), compilation))))
-				    .FirstOrDefault(candidate => candidate.Alias is { Parameters.Length: 1, } generated
-				                                 && generated.Parameters[0].Type.ToDisplayString(FullyQualified) == handle.ServiceType
+				    .FirstOrDefault(candidate => candidate.Alias is { } generated
+				                                 && TakesHandle(generated, handle.ServiceType)
 				                                 && compilation.HasImplicitConversion(generated.ReturnType, service)) is ({ } owner, { } shared))
 			{
 				raw[index] = ThroughAlias(match with { Lifetime = handle.Lifetime, }, owner, implementation, shared, compilation);
@@ -112,6 +112,17 @@ partial class AwaitenGenerator
 			raw.RemoveAt(index);
 		}
 	}
+
+	/// <summary>
+	///     Whether the generated <paramref name="alias" /> takes the instance handle <paramref name="handle" />, or, for an
+	///     implementation built from runtime arguments, a factory of it and the arguments it passes to that factory.
+	/// </summary>
+	private static bool TakesHandle(IMethodSymbol alias, string handle)
+		=> alias.Parameters.Length > 0
+		   && (alias.Parameters[0].Type is INamedTypeSymbol { Name: "Func", TypeArguments.Length: > 1, } factory
+			   ? factory.TypeArguments[factory.TypeArguments.Length - 1].ToDisplayString(FullyQualified) == handle
+			     && alias.Parameters.Skip(1).Select(parameter => parameter.Type).SequenceEqual(factory.TypeArguments.Take(factory.TypeArguments.Length - 1), SymbolEqualityComparer.Default)
+			   : alias.Parameters.Length == 1 && alias.Parameters[0].Type.ToDisplayString(FullyQualified) == handle);
 
 	/// <summary>
 	///     Gives the scan match of a module in another assembly the identity of the implementation its generated factory
