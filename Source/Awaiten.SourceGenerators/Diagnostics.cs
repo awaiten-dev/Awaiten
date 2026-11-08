@@ -1538,6 +1538,20 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="ModuleScanParameterInaccessible">AWT195</see> for a type private to the module whose
+	///     constructor or factory member parameter, named with the internal service by the second argument, needs a
+	///     service the module registers but cannot build. The module reports why it cannot build the service; once that is
+	///     fixed, the factory takes it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleParameterNeedsUnbuildableService = new(
+		"AWT195",
+		ModuleScanParameterInaccessible.Title,
+		"{0}, but {1}, so the generated factory cannot take it; fix what keeps the module from building that service",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> matched a type but no exposure selected an interface accessible
 	///     outside the module's assembly, so a consumer could never name what the match registers under and the
 	///     match is skipped. A <c>ScanAs.Self</c> exposure of an <c>internal</c> implementation hits this (the

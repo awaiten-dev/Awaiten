@@ -1402,14 +1402,30 @@ partial class AwaitenGenerator
 	///     build (see <see cref="HiddenServices.UnbuildableNeeds" />), whose cause the module reports, so a consumer names
 	///     the service instead of a second, misleading cause. Returns the reason a consumer reports for
 	///     <paramref name="implementation" /> when no other rejection remains, else <see langword="null" />. An
-	///     implementation private to the module keeps its rejections, since no consumer constructs it.
+	///     implementation private to the module keeps its rejections, since no consumer constructs it, but each names the
+	///     service the module cannot build (see <see cref="Diagnostics.ModuleParameterNeedsUnbuildableService" />).
 	/// </summary>
 	private static string? UnbuildableNeedsOnly(INamedTypeSymbol implementation, List<DiagnosticInfo> rejections, ModuleScanContext context)
 	{
 		if (context.Hidden is not { } hidden
-		    || TypeHiddenInModule(implementation, context.Module, context.Compilation) is not null
 		    || rejections.Find(hidden.UnbuildableNeeds.ContainsKey) is not { } need)
 		{
+			return null;
+		}
+
+		if (TypeHiddenInModule(implementation, context.Module, context.Compilation) is not null)
+		{
+			for (int index = 0; index < rejections.Count; index++)
+			{
+				if (hidden.UnbuildableNeeds.TryGetValue(rejections[index], out string? reason))
+				{
+					rejections[index] = new DiagnosticInfo(
+						Diagnostics.ModuleParameterNeedsUnbuildableService,
+						rejections[index].Location,
+						new EquatableArray<string>([rejections[index].MessageArgs.AsArray()[0], reason,]));
+				}
+			}
+
 			return null;
 		}
 

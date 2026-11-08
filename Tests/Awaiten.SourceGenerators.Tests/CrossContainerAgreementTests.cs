@@ -65,6 +65,41 @@ public class CrossContainerAgreementTests
 		}
 	}
 
+	public class UnbuildableInternalService
+	{
+		private const string PrivateImplementation = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IGreeter { }
+			internal interface ISecret { }
+			internal interface IPot { }
+			internal sealed class Secret : ISecret { public Secret(System.Func<IPot> pot) { } }
+
+			[Module]
+			[Singleton<Secret, ISecret>]
+			[Singleton<CoffeeModule.Greeter, IGreeter>]
+			public static partial class CoffeeModule
+			{
+				private sealed class Greeter : IGreeter { public Greeter(ISecret secret) { } }
+			}
+			""";
+
+		[Test]
+		public async Task OfAPrivateImplementation_NamesTheServiceTheModuleCannotBuild()
+		{
+			GeneratorResult library = Generator.Run(PrivateImplementation);
+			GeneratorResult friend = Generator.Run(Friend(PrivateImplementation));
+
+			await That(library.Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Greeter'*its constructor parameter 'secret' needs the internal service 'Lib.ISecret', which the module cannot build*").AsWildcard()
+				.Because("the private implementation fails only because of the service, whose own cause the module reports, not because the service is internal");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("needs the internal service 'Lib.ISecret'"))
+				.Because("under InternalsVisibleTo the parameter type is accessible to the friends, so the message does not claim it is not");
+			await That(library.Diagnostics).DoesNotContain("*'Lib.ISecret', which is not accessible outside the module's assembly*").AsWildcard();
+		}
+	}
+
 	public class ImplementationOfTwoModules
 	{
 		private static string Library() => """
