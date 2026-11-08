@@ -407,14 +407,16 @@ internal static class Diagnostics
 	/// <summary>
 	///     A closed generic required from the graph cannot be constructed from an open generic
 	///     registration because its type arguments violate the implementation's type-parameter
-	///     constraints (e.g. <c>Repository&lt;int&gt;</c> where the implementation declares <c>where T : class</c>).
-	///     An error because the dependency is then unsatisfiable. The decorator/composite analogue, where the base
-	///     service still resolves, is the warning <see cref="DecoratorClosingConstraintViolation">AWT171</see>.
+	///     constraints (e.g. <c>Repository&lt;int&gt;</c> where the implementation declares <c>where T : class</c>), and
+	///     no other registration of the closed service accepts them. A registration whose constraints reject a closing
+	///     another registration builds is skipped for it without a diagnostic. An error because the dependency is then
+	///     unsatisfiable. The decorator/composite analogue, where the base service still resolves, is the warning
+	///     <see cref="DecoratorClosingConstraintViolation">AWT171</see>.
 	/// </summary>
 	public static readonly DiagnosticDescriptor OpenGenericConstraintViolation = new(
 		"AWT126",
 		"Open generic constraint violation",
-		"'{0}' cannot be constructed from the open generic '{1}': the type argument(s) violate its type-parameter constraints",
+		"'{0}' cannot be constructed from the open generic '{1}': the type argument(s) violate its type-parameter constraints, and no other registration of '{2}' accepts them{3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -1779,7 +1781,8 @@ internal static class Diagnostics
 	///     A closing of an open generic <c>typeof</c> registration with a generic <c>Factory</c> violates the factory
 	///     method's type-parameter constraints, so the factory cannot be called for it. The closing is skipped, like a
 	///     closing that violates the implementation's own constraints (<see cref="OpenGenericConstraintViolation">AWT126</see>),
-	///     and an error because the dependency that asked for it is then unsatisfiable.
+	///     and reported only when no other registration of the closed service accepts it, as an error because the
+	///     dependency that asked for it is then unsatisfiable.
 	/// </summary>
 	public static readonly DiagnosticDescriptor GenericFactoryConstraintViolation = new(
 		"AWT209",

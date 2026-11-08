@@ -115,5 +115,282 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard()
 				.Because("the constraint violation is the single root cause; the consumer's now-unregistered IRepository<NotComparable> must not also raise AWT101");
 		}
+
+		public class SeveralOpenRegistrations
+		{
+			private const string Formatters = """
+			                                  using System.Collections.Generic;
+			                                  using Awaiten;
+
+			                                  namespace MyCode;
+
+			                                  public interface IText { }
+			                                  public interface IBinary { }
+			                                  public sealed class Receipt : IText { }
+			                                  public sealed class Label : IBinary { }
+			                                  public sealed class Sticker : IText, IBinary { }
+			                                  public sealed class Plain { }
+
+			                                  public interface IFormatter<T> { }
+			                                  public sealed class TextFormatter<T> : IFormatter<T> where T : IText { }
+			                                  public sealed class BinaryFormatter<T> : IFormatter<T> where T : IBinary { }
+
+			                                  """;
+
+			private static string ContainerSource(GeneratorResult result)
+				=> result.Sources.Single(source => source.Key.Contains("Shop", StringComparison.Ordinal)).Value;
+
+			[Test]
+			public async Task EachImplementation_CoversTheClosingsItsConstraintsAllow()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Receipt> receipts, IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("each closing has one registration whose constraints it satisfies, and the other is skipped for it");
+				await That(ContainerSource(result)).Contains("new global::MyCode.TextFormatter<global::MyCode.Receipt>()").And
+					.Contains("new global::MyCode.BinaryFormatter<global::MyCode.Label>()").And
+					.DoesNotContain("TextFormatter<global::MyCode.Label>").And
+					.DoesNotContain("BinaryFormatter<global::MyCode.Receipt>");
+			}
+
+			[Test]
+			public async Task ReportsEveryCandidate_WhenNoneAcceptsTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Plain> plain) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasCount(2);
+				await That(result.Diagnostics).Contains(
+						"*AWT126*'MyCode.TextFormatter<MyCode.Plain>'*'MyCode.TextFormatter<T>'*no other registration of 'MyCode.IFormatter<MyCode.Plain>' accepts them (also rejected: 'MyCode.BinaryFormatter<T>')*")
+					.AsWildcard()
+					.Because("the message names the required closing and the other candidate that cannot build it either");
+				await That(result.Diagnostics).Contains(
+						"*AWT126*'MyCode.BinaryFormatter<MyCode.Plain>'*'MyCode.BinaryFormatter<T>'*no other registration of 'MyCode.IFormatter<MyCode.Plain>' accepts them (also rejected: 'MyCode.TextFormatter<T>')*")
+					.AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsTheSingleCandidate_WithoutAnAlsoRejectedList()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
+						diagnostic.Contains("AWT126")
+						&& diagnostic.EndsWith("no other registration of 'MyCode.IFormatter<MyCode.Label>' accepts them", StringComparison.Ordinal))
+					.Because("with one candidate there is nothing else to list");
+			}
+
+			[Test]
+			public async Task DoesNotReport_WhenAClosedRegistrationServesTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Receipt> receipts, IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the closed registration serves IFormatter<Label>, so the open one is skipped for the closing it cannot build");
+			}
+
+			[Test]
+			public async Task AGenericFactoryRejectingTheClosing_IsSkippedWhenAnotherRegistrationAcceptsIt()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Receipt> receipts, IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(IFormatter<>), Factory = nameof(CreateText))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop
+				                                                    {
+				                                                        private static IFormatter<T> CreateText<T>() where T : IText => new TextFormatter<T>();
+				                                                    }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("a generic factory's constraints select its closings like an implementation's (no AWT126 or AWT209)");
+			}
+
+			[Test]
+			public async Task SeveralAcceptingRegistrations_FollowTheRulesForSeveralRegistrations()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Sticker> sticker, IEnumerable<IFormatter<Sticker>> all, IFormatter<Receipt> receipt) { }
+				                                                    }
+
+				                                                    [Module]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    public static partial class TextModule { }
+
+				                                                    [Module]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
+				                                                    public static partial class BinaryModule { }
+
+				                                                    [Container]
+				                                                    [Import(typeof(TextModule))]
+				                                                    [Import(typeof(BinaryModule))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT155") && diagnostic.Contains("IFormatter<MyCode.Sticker>"))
+					.Because("only Sticker satisfies both modules' registrations, so only its closing is registered by both");
+			}
+
+			[Test]
+			public async Task AKeyedRegistration_IsSkippedForAClosingAnotherKeyBuilds()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Receipt> receipts) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>), Key = "binary")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("nothing asks for the closing under the key 'binary', so its registration is skipped for Receipt without an error");
+			}
+
+			[Test]
+			public async Task AClosingOnlyAnotherKeyBuilds_IsAMissingRegistration()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>), Key = "binary")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'MyCode.IFormatter<MyCode.Label>'"))
+					.Because("a registration builds IFormatter<Label>, but only under a key, so the unkeyed request is missing as for a keyed closed registration");
+			}
+
+			[Test]
+			public async Task AConstraint_EndsARecursionAnotherRegistrationCloses()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public interface INode<T> { }
+				                                                    public sealed class Node<T> : INode<T> where T : IText { public Node(INode<List<T>> next) { } }
+				                                                    public sealed class Leaf<T> : INode<T> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(INode<Receipt> receipts) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(Node<>), typeof(INode<>))]
+				                                                    [Transient(typeof(Leaf<>), typeof(INode<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("Node<T> rejects List<Receipt>, so Leaf<T> builds INode<List<Receipt>> and the expansion neither recurses (AWT129) nor fails (AWT126)");
+				await That(ContainerSource(result)).Contains("new global::MyCode.Leaf<global::System.Collections.Generic.List<global::MyCode.Receipt>>()").And
+					.DoesNotContain("new global::MyCode.Node<global::System.Collections.Generic.List<");
+			}
+
+			[Test]
+			public async Task AModuleInAnotherAssembly_ClosesOnlyTheFactoriesWhoseConstraintsHold()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				                                                                      using Awaiten;
+
+				                                                                      namespace Lib;
+
+				                                                                      public interface IText { }
+				                                                                      public interface IBinary { }
+				                                                                      public interface IFormatter<T> { }
+				                                                                      internal sealed class TextFormatter<T> : IFormatter<T> where T : IText { }
+				                                                                      internal sealed class BinaryFormatter<T> : IFormatter<T> where T : IBinary { }
+
+				                                                                      [Module]
+				                                                                      [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                                      [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
+				                                                                      public static partial class FormatterModule { }
+				                                                                      """, """
+				                                                                           using Awaiten;
+				                                                                           using Lib;
+
+				                                                                           namespace App;
+
+				                                                                           public sealed class Receipt : IText { }
+				                                                                           public sealed class Label : IBinary { }
+
+				                                                                           public sealed class Printer
+				                                                                           {
+				                                                                               public Printer(IFormatter<Receipt> receipts, IFormatter<Label> labels) { }
+				                                                                           }
+
+				                                                                           [Container]
+				                                                                           [Import(typeof(FormatterModule))]
+				                                                                           [Transient<Printer>]
+				                                                                           public static partial class Shop { }
+				                                                                           """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the generated generic factories carry the implementations' constraints, which select the closings like in the module's assembly");
+			}
+		}
 	}
 }

@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Awaiten.SourceGenerators.Tests;
 
 public partial class DiagnosticTests
@@ -94,7 +96,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task ReportsOnlyTheFactoryWhoseConstraintsTheClosingViolates()
+		public async Task SkipsTheFactoryWhoseConstraintsTheClosingViolates_WhenAnotherFactoryAcceptsIt()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -116,8 +118,37 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT209") && diagnostic.Contains("CreateA"))
-				.Because("each open factory is checked against the closing on its own, so only CreateA<int> is rejected");
+			await That(result.Diagnostics).IsEmpty()
+				.Because("CreateB builds IRepository<int>, so CreateA is skipped for the closing its constraints reject");
+		}
+
+		[Test]
+		public async Task ReportsEveryFactory_WhenNoneAcceptsTheClosing()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IRepository<T> { }
+			                                       public sealed class Repository<T> : IRepository<T> { }
+			                                       public sealed class Root { public Root(IRepository<int>[] numbers) { } }
+
+			                                       [Container]
+			                                       [Transient(typeof(IRepository<>), Factory = nameof(CreateA))]
+			                                       [Transient(typeof(IRepository<>), Factory = nameof(CreateB))]
+			                                       [Transient<Root>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static IRepository<T> CreateA<T>() where T : class => new Repository<T>();
+			                                       	private static IRepository<T> CreateB<T>() where T : IDisposable => new Repository<T>();
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasCount(2);
+			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT209"))).IsEqualTo(2)
+				.Because("each open factory is checked against the closing on its own, and neither accepts IRepository<int>");
 		}
 	}
 }
