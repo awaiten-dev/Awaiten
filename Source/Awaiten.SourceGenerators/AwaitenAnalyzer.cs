@@ -7,6 +7,7 @@ using System.Threading;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -67,8 +68,9 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 		context.RegisterCompilationStartAction(static start =>
 		{
+			// Below its minimum language version the generator reports AWT243 instead of generating any container.
 			INamedTypeSymbol? containerAttribute = start.Compilation.GetTypeByMetadataName(ContainerAttributeName);
-			if (containerAttribute is null)
+			if (containerAttribute is null || start.Compilation is CSharpCompilation { LanguageVersion: < AwaitenGenerator.MinimumLanguageVersion, })
 			{
 				return;
 			}

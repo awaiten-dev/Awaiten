@@ -66,7 +66,7 @@ internal static partial class Sources
 		// miss returns false.
 		AppendXmlSummary(builder, depth,
 			"Attempts to resolve <paramref name=\"serviceType\" /> under <paramref name=\"key\" />, returning <see langword=\"false\" /> when it is not resolvable.");
-		Indent(builder, depth).AppendLine("public bool TryResolve(global::System.Type serviceType, object? key, [global::System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out object? instance)");
+		Indent(builder, depth).Append("public bool TryResolve(global::System.Type serviceType, object? key, ").Append(TryResolveOut(context.NotNullWhen)).AppendLine(")");
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("if (key is null)");
 		Indent(builder, depth + 1).AppendLine("{");

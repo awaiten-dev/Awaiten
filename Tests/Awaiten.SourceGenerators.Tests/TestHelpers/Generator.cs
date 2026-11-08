@@ -22,6 +22,16 @@ public static class Generator
 		=> Run(source, additionalReferences: [], assemblyTypes);
 
 	/// <summary>
+	///     Like <see cref="Run(string, Type[])" />, but parses <paramref name="source" /> and the generated code at
+	///     <paramref name="languageVersion" /> under the project-level <paramref name="nullable" /> context.
+	/// </summary>
+	public static GeneratorResult Run(
+		LanguageVersion languageVersion,
+		[StringSyntax("c#-test")] string source,
+		NullableContextOptions nullable = NullableContextOptions.Disable)
+		=> Collect(RunGenerator(source, [], [], languageVersion: languageVersion, nullable: nullable));
+
+	/// <summary>
 	///     Compiles <paramref name="referencedSource" /> into a separate referenced assembly first, then runs the
 	///     generator over <paramref name="source" />. For cross-assembly scenarios such as a <c>[Module]</c> in
 	///     another project.
@@ -55,6 +65,20 @@ public static class Generator
 	}
 
 	/// <summary>
+	///     Like <see cref="RunWithGeneratedReferencedAssembly(string, string)" />, but compiles each assembly at its own
+	///     language version.
+	/// </summary>
+	public static GeneratorResult RunWithGeneratedReferencedAssembly(
+		LanguageVersion referencedLanguageVersion,
+		[StringSyntax("c#-test")] string referencedSource,
+		LanguageVersion languageVersion,
+		[StringSyntax("c#-test")] string source)
+	{
+		(Compilation referencedOutput, _) = RunGenerator(referencedSource, [], [], "ReferencedAssembly", referencedLanguageVersion);
+		return Collect(RunGenerator(source, [EmitToReference(referencedOutput),], [], languageVersion: languageVersion));
+	}
+
+	/// <summary>
 	///     Like <see cref="RunWithGeneratedReferencedAssembly" />, but with two independent generated referenced
 	///     assemblies, for example two libraries that declare a type of the same name.
 	/// </summary>
@@ -72,9 +96,11 @@ public static class Generator
 		[StringSyntax("c#-test")] string source,
 		MetadataReference[] additionalReferences,
 		params Type[] assemblyTypes)
+		=> Collect(RunGenerator(source, additionalReferences, assemblyTypes));
+
+	private static GeneratorResult Collect((Compilation Output, GeneratorDriverRunResult Result) run)
 	{
-		(Compilation outputCompilation, GeneratorDriverRunResult runResult) =
-			RunGenerator(source, additionalReferences, assemblyTypes);
+		(Compilation outputCompilation, GeneratorDriverRunResult runResult) = run;
 
 		ImmutableArray<Diagnostic> compilationDiagnostics = outputCompilation.GetDiagnostics();
 		Dictionary<string, string> generatedSources = runResult.Results
@@ -97,16 +123,18 @@ public static class Generator
 		[StringSyntax("c#-test")] string source,
 		MetadataReference[] additionalReferences,
 		Type[] assemblyTypes,
-		string assemblyName = "TestAssembly")
+		string assemblyName = "TestAssembly",
+		LanguageVersion languageVersion = LanguageVersion.Latest,
+		NullableContextOptions nullable = NullableContextOptions.Disable)
 	{
-		CSharpParseOptions parseOptions = new(LanguageVersion.Latest);
+		CSharpParseOptions parseOptions = new(languageVersion);
 		SyntaxTree[] syntaxTrees = [CSharpSyntaxTree.ParseText(source, parseOptions),];
 
 		CSharpCompilation compilation = CSharpCompilation.Create(
 			assemblyName,
 			syntaxTrees,
 			[..References.For(assemblyTypes), ..additionalReferences,],
-			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: nullable));
 
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(
 			[new AwaitenGenerator().AsSourceGenerator(),],

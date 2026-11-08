@@ -20,6 +20,15 @@ partial class AwaitenGenerator
 			: compilation.GetTypeByMetadataName("System.IAsyncDisposable");
 
 	/// <summary>
+	///     Whether the consumer's compilation can apply <c>NotNullWhenAttribute</c>. .NET Framework and netstandard2.0 do not
+	///     have it, and the copy in Awaiten's netstandard2.0 asset is internal, so there it takes a polyfill such as the
+	///     Nullable package.
+	/// </summary>
+	private static bool NotNullWhenSupport(Compilation compilation)
+		=> compilation.GetTypesByMetadataName("System.Diagnostics.CodeAnalysis.NotNullWhenAttribute")
+			.Any(attribute => compilation.IsSymbolAccessibleWithin(attribute, compilation.Assembly));
+
+	/// <summary>
 	///     Reads the container's <c>LifetimeSafety</c> from its <c>[Container]</c> attribute, or from its base's when it
 	///     extends one (see <see cref="ReadContainerOption" />). Strict (the default, enum value 0) unless the attribute
 	///     explicitly sets <c>Loose</c>.
