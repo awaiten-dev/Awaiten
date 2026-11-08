@@ -81,6 +81,16 @@ public class ModuleScanInstanceHandleTests
 	}
 
 	[Test]
+	public async Task TheHandleSummary_DescribesTheScan()
+	{
+		string module = ModuleSource(Generator.Run(Library()));
+
+		await That(module).Contains("Generated from a module [Scan]: holds the instance of an implementation the module's scans expose under several")
+			.And.DoesNotContain("registers under an internal")
+			.Because("the scan's handle holds an implementation, not a service the module registers under an internal type");
+	}
+
+	[Test]
 	public async Task ADiagnosticAboutTheHandle_NamesTheImplementation()
 	{
 		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer.Replace("[Singleton<SystemClock, IClock>]", "[Scoped<SystemClock, IClock>]"));

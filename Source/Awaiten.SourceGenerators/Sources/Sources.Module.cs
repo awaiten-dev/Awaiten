@@ -121,7 +121,7 @@ internal static partial class Sources
 			if (factory is { Skip: null, Shared: { } handle, })
 			{
 				builder.AppendLine();
-				EmitHiddenHandle(builder, depth + 2, handle.Declaration);
+				EmitHiddenHandle(builder, depth + 2, handle.Declaration, scan: true);
 				EmitAliases(builder, depth + 2, handle.Aliases.AsArray());
 				EmitInitializers(builder, depth + 2, handle.Initializers.AsArray());
 			}
@@ -394,11 +394,21 @@ internal static partial class Sources
 	///     public class another assembly can name but neither create nor unwrap, plus a sealed variant for each disposal
 	///     shape an implementation of the service needs, which forwards disposal to the instance.
 	/// </summary>
-	private static void EmitHiddenHandle(StringBuilder builder, int depth, HiddenHandle handle)
+	private static void EmitHiddenHandle(StringBuilder builder, int depth, HiddenHandle handle, bool scan = false)
 	{
-		AppendXmlSummary(builder, depth,
-			"Generated from a module registration: holds an instance of a service the module registers under an internal",
-			"type, so a consuming container in another assembly depends on it without naming the service. Not intended to be used directly.");
+		if (scan)
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated from a module [Scan]: holds the instance of an implementation the module's scans expose under several",
+				"interfaces, so a consuming container in another assembly shares it without naming the implementation. Not intended to be used directly.");
+		}
+		else
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated from a module registration: holds an instance of a service the module registers under an internal",
+				"type, so a consuming container in another assembly depends on it without naming the service. Not intended to be used directly.");
+		}
+
 		Indent(builder, depth).AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
 		Indent(builder, depth).Append("public class ").AppendLine(handle.Name);
 		Indent(builder, depth).AppendLine("{");
