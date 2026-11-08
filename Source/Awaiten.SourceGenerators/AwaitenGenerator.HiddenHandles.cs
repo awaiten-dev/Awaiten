@@ -109,8 +109,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reports AWT238 at the <c>[Import]</c> of a module of another assembly whose generated members take the handle
 	///     of an internal service that another module of that assembly declares, when no imported module of that assembly
-	///     registers the service and the container does not import that other module, and drops the AWT101, AWT123 or
-	///     AWT210 the missing handle registration causes, since the import is the one fix.
+	///     registers the service and the container does not import that other module, and drops the AWT101, AWT242, AWT123
+	///     or AWT210 the missing handle registration causes, since the import is the one fix.
 	///     Returns the modules that declare a handle an imported module takes, which name those handles in diagnostics.
 	/// </summary>
 	private static List<INamedTypeSymbol> ReportMissingHandleProviders(List<ImportedModule> imported, List<INamedTypeSymbol> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
@@ -145,6 +145,7 @@ partial class AwaitenGenerator
 
 				string missing = Display(handle.ToDisplayString(FullyQualified));
 				diagnostics.RemoveAll(diagnostic => (diagnostic.Descriptor == Diagnostics.MissingDependency
+				                                     || diagnostic.Descriptor == Diagnostics.RelationshipOverImportedService
 				                                     || diagnostic.Descriptor == Diagnostics.DecoratedServiceNotRegistered
 				                                     || diagnostic.Descriptor == Diagnostics.DecoratedKeyNotRegistered)
 				                                    && diagnostic.MessageArgs.AsArray().Any(argument => argument.StartsWith(missing, StringComparison.Ordinal)));
