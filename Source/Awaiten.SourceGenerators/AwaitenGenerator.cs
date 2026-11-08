@@ -775,8 +775,13 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Collect also expands [Scan]s into overridable registrations (IsScan), ordered after the explicit ones
 		// so an explicit registration wins single resolution while every match still joins its collection.
-		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<string, (Lifetime Lifetime, string? Implementation)> openServices) = Collect(
+		(List<RawRegistration> raw, HashSet<string> constraintRejected, List<OpenRegistration> open) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
+
+		if (factories is not null)
+		{
+			RecordHiddenInjectedProperties(containerSymbol, open, openDecorators, openComposites, factories);
+		}
 
 		// A scan match a module's generated factory builds shares the instance of every other registration of its
 		// implementation, as it would in the module's own assembly.
@@ -947,7 +952,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			varianceCandidateTypes.Add(serviceType);
 		}
 
-		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, openServices, factories ?? new BaseFactories());
+		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, OpenServices(open), factories ?? new BaseFactories());
 	}
 
 	/// <summary>

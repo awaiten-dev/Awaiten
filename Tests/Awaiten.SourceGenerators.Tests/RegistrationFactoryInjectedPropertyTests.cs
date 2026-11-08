@@ -979,6 +979,39 @@ public class RegistrationFactoryInjectedPropertyTests
 			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("decorator 'Lib.LoudGreeter'"));
 			await That(friend.Diagnostics).IsEmpty();
 		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsAClosingOfAnOpenRegistrationOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGen<T> { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Gen<T> : IGen<T>
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient(typeof(Gen<>), typeof(IGen<>))]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+			string extending = Extending.Replace("public static partial class AppContainer { }", "[Transient<Consumer>]\npublic static partial class AppContainer { }\n\npublic sealed class Consumer(IGen<int> gen) { public IGen<int> Gen { get; } = gen; }");
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Gen<int>") && diagnostic.Contains("'Clock'"))
+				.Because("the base records the hidden property of its open registration, so no closing is built without it, even one the base never builds itself");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
+		}
 	}
 
 	public class PrivateDecorator

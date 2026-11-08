@@ -16,7 +16,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const string ScanKeyMarker = "@scan:";
 
-	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, Dictionary<string, (Lifetime Lifetime, string? Implementation)> OpenServices) Collect(
+	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, List<OpenRegistration> Open) Collect(
 		INamedTypeSymbol containerSymbol,
 		List<ImportedModule> modules,
 		Compilation compilation,
@@ -124,7 +124,7 @@ partial class AwaitenGenerator
 			result.AddRange(scanMatches);
 		}
 
-		return (result, constraintRejected, OpenServices(open));
+		return (result, constraintRejected, open);
 	}
 
 	/// <summary>

@@ -38,18 +38,46 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void RecordHiddenInjectedProperty(ImplInfo info, BuildContext context)
 	{
-		if (context.Factories is not { } factories
-		    || info.Origin is not null
-		    || info.Production != ProductionKind.Constructor
-		    || info.ConstructVia is not null
-		    || !IsExternallyAccessible(context.ContainerSymbol)
-		    || !IsExternallyAccessible(info.Symbol)
-		    || HiddenInjectedProperty(info.Symbol.OriginalDefinition) is not { } property)
+		if (context.Factories is { } factories
+		    && info.Origin is null
+		    && info.Production == ProductionKind.Constructor
+		    && info.ConstructVia is null)
+		{
+			RecordHiddenType(info.Symbol, context.ContainerSymbol, factories);
+		}
+	}
+
+	/// <summary>
+	///     Records the definition of each open generic registration, decorator and composite the container declares
+	///     itself (see <see cref="RecordHiddenInjectedProperty" />), so a container that extends it reports every
+	///     closing, also one this container never builds.
+	/// </summary>
+	private static void RecordHiddenInjectedProperties(
+		INamedTypeSymbol container,
+		List<OpenRegistration> open,
+		List<OpenDecorateRegistration> openDecorators,
+		List<OpenCompositeRegistration> openComposites,
+		BaseFactories factories)
+	{
+		IEnumerable<INamedTypeSymbol> definitions = open.Where(registration => registration is { Origin: null, Factory: null, }).Select(registration => registration.Implementation)
+			.Concat(openDecorators.Where(decorator => decorator.Owner is null).Select(decorator => decorator.Decorator))
+			.Concat(openComposites.Where(composite => composite.Owner is null).Select(composite => composite.Composite));
+		foreach (INamedTypeSymbol definition in definitions)
+		{
+			RecordHiddenType(definition, container, factories);
+		}
+	}
+
+	private static void RecordHiddenType(INamedTypeSymbol type, INamedTypeSymbol container, BaseFactories factories)
+	{
+		if (!IsExternallyAccessible(container)
+		    || !IsExternallyAccessible(type.OriginalDefinition)
+		    || HiddenInjectedProperty(type.OriginalDefinition) is not { } property)
 		{
 			return;
 		}
 
-		string name = HiddenPropertyMarkerName(info.Symbol);
+		string name = HiddenPropertyMarkerName(type);
 		if (factories.HiddenProperties.All(existing => existing.MarkerName != name))
 		{
 			factories.HiddenProperties.Add(new SkippedRegistration(name, property));
