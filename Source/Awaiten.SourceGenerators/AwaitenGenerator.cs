@@ -488,8 +488,21 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			Dispatchable(graph.External.ServiceTypes, graph.External.ServiceTypes.Closed),
 			Dispatchable(graph.External.ServiceTypes, graph.External.ServiceTypes.Open),
 			new EquatableArray<RegistrationFactory>(graph.Factories.Factories.ToArray()),
-			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()));
+			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
+			RecordedFaults(graph.Factories, compilation));
 	}
+
+	/// <summary>
+	///     The faults of <paramref name="factories" /> the container records for an extending container in another assembly,
+	///     which reads them through <c>InternalsVisibleTo</c>, so a container whose assembly grants none records none.
+	/// </summary>
+	private static EquatableArray<RecordedFactoryFault> RecordedFaults(BaseFactories factories, Compilation compilation)
+		=> GrantsInternalsVisibleTo(compilation.Assembly)
+			? new EquatableArray<RecordedFactoryFault>(factories.Faults
+				.OrderBy(fault => fault.Key, StringComparer.Ordinal)
+				.Select(fault => new RecordedFactoryFault(fault.Key, fault.Value.Reason, fault.Value.Remedy))
+				.ToArray())
+			: default;
 
 	/// <summary>
 	///     Builds the container's graph and runs every check the generator reports on it.

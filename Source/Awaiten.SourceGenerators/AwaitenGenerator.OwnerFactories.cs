@@ -10,8 +10,9 @@ partial class AwaitenGenerator
 {
 	/// <summary>
 	///     The factories a container generates for the implementations private to it (see <see cref="RecordBaseFactory" />),
-	///     by implementation, and why it generates none for the others, so an extending container in the same assembly
-	///     can name the reason in AWT226.
+	///     and why it generates none for the others, by factory name, so an extending container can name the reason in
+	///     AWT226: in the same assembly from here, in another from the constants the container records it in (see
+	///     <see cref="RecordedBaseFault" />).
 	/// </summary>
 	/// <remarks>Lives only inside one graph build and never reaches a model; the emitted factories travel as <see cref="ContainerModel.Factories" />.</remarks>
 	internal sealed class BaseFactories
@@ -26,6 +27,26 @@ partial class AwaitenGenerator
 
 	/// <summary>Why an owner generates no factory for an implementation, and what the user can do about it.</summary>
 	internal readonly record struct FactoryFault(string Reason, string Remedy);
+
+	/// <summary>The name of the constant that records the reason of the <see cref="FactoryFault" /> of the factory <paramref name="factoryName" />.</summary>
+	internal static string FaultReasonName(string factoryName) => "FaultReason_" + factoryName;
+
+	/// <summary>The name of the constant that records the remedy of the <see cref="FactoryFault" /> of the factory <paramref name="factoryName" />.</summary>
+	internal static string FaultRemedyName(string factoryName) => "FaultRemedy_" + factoryName;
+
+	/// <summary>
+	///     The <see cref="FactoryFault" /> a base container of another assembly recorded for the factory
+	///     <paramref name="factoryName" /> it generates none for, or <see langword="null" /> when it recorded none.
+	/// </summary>
+	private static FactoryFault? RecordedBaseFault(INamedTypeSymbol owner, string factoryName)
+	{
+		return Constant(FaultReasonName(factoryName)) is { } reason && Constant(FaultRemedyName(factoryName)) is { } remedy
+			? new FactoryFault(reason, remedy)
+			: null;
+
+		string? Constant(string name)
+			=> InternalsMembers(owner, name).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(value => value is not null);
+	}
 
 	/// <summary>What <see cref="RecordBaseFactory" /> needs of one built instance.</summary>
 	private readonly record struct BaseFactoryRequest(
@@ -72,7 +93,7 @@ partial class AwaitenGenerator
 
 		if (BaseFactoryFault(request, context) is { } fault)
 		{
-			factories.Faults[factoryName == RegistrationFactoryName(info.Symbol) ? info.ImplementationType : factoryName] = fault;
+			factories.Faults[factoryName] = fault;
 			return;
 		}
 

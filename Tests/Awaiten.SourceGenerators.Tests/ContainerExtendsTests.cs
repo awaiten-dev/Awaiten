@@ -760,6 +760,78 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		[Arguments("[Inject(Optional = true)] public IClock? Clock { get; set; }", "its property 'Clock' is injected only when its service is registered")]
+		[Arguments("[Inject(Deferred = true)] public IClock Clock { get; set; } = null!;", "its property 'Clock' is injected after construction")]
+		public async Task APrivateImplementationTheFactoryCannotMirrorInABaseOfAnotherAssembly_ReportsAwt226WithTheReason(string property, string reason)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                       using Awaiten;
+			                                                                       [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			                                                                       namespace Production;
+
+			                                                                       public interface IClock { }
+			                                                                       public interface IGrinder { }
+			                                                                       public sealed class SystemClock : IClock { }
+
+			                                                                       [Container]
+			                                                                       [Singleton<SystemClock, IClock>]
+			                                                                       [Singleton<Grinder, IGrinder>]
+			                                                                       public static partial class Shop
+			                                                                       {
+			                                                                           private sealed class Grinder : IGrinder
+			                                                                           {
+			                                                                               {{property}}
+			                                                                           }
+			                                                                       }
+			                                                                       """, """
+			                                                                            using Awaiten;
+
+			                                                                            namespace MyCode;
+
+			                                                                            [Container(Extends = typeof(Production.Shop))]
+			                                                                            public static partial class TestShop
+			                                                                            {
+			                                                                            }
+			                                                                            """);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).Contains($"*error AWT226*The type 'Production.Shop.Grinder'*{reason}*make 'Production.Shop.Grinder' internal*").AsWildcard()
+				.Because("the base records why it generates no factory, so an extending container in another assembly names it like one in the base's assembly");
+		}
+
+		[Test]
+		public async Task APrivateDecoratorTheFactoryCannotMirrorInABaseOfAnotherAssembly_ReportsAwt226WithTheReason()
+		{
+			const string decorator = """
+			                         [Container]
+			                         [Singleton<SystemClock, IClock>]
+			                         [Decorate<AuditedClock, IClock>]
+			                         public static partial class Shop
+			                         {
+			                             private sealed class AuditedClock : IClock
+			                             {
+			                                 public AuditedClock(IClock inner) { }
+
+			                                 [Inject(Optional = true)]
+			                                 public ILog? Log { get; set; }
+			                             }
+			                         }
+			                         """;
+			const string types = "public interface IClock { }\npublic interface ILog { }\npublic sealed class SystemClock : IClock { }\n";
+			const string extending = "\n[Container(Extends = typeof(Shop))]\npublic static partial class TestShop;\n";
+
+			GeneratorResult same = Generator.Run("using Awaiten;\n\nnamespace Production;\n\n" + types + decorator + extending);
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(
+				"using Awaiten;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Production;\n\n" + types + decorator,
+				"using Awaiten;\nusing Production;\n\nnamespace MyCode;\n" + extending);
+
+			await That(same.Diagnostics).Contains("*error AWT226*'Production.Shop.AuditedClock'*its property 'Log' is injected only when its service is registered*").AsWildcard();
+			await That(other.Diagnostics).Contains("*error AWT226*'Production.Shop.AuditedClock'*its property 'Log' is injected only when its service is registered*").AsWildcard()
+				.Because("a decorator's factory fault is recorded like a registration's");
+		}
+
+		[Test]
 		public async Task PrivateDecoratorsCompositesAndOpenGenericsOfTheBase_AreBuiltThroughItsFactories()
 		{
 			GeneratorResult result = Generator.Run("""
