@@ -417,6 +417,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		string hintName = containerNamespace is null
 			? $"Awaiten.{typePath}.g.cs"
 			: $"Awaiten.{containerNamespace}.{typePath}.g.cs";
+
 		if (SkipsAScanModule(context))
 		{
 			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true);

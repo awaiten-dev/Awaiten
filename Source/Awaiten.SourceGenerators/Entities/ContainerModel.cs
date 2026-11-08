@@ -6,8 +6,8 @@ namespace Awaiten.SourceGenerators.Entities;
 /// <summary>
 ///     The fully-resolved, equatable model of a single <c>[Container]</c> partial class, ready for
 ///     emission. <see cref="ErrorsElsewhere" /> marks a container whose graph is broken by an error another declaration
-///     reports, its extended base or a module of its assembly that AWT243 skips, so only its shell is emitted. <see cref="ImportServices" />,
-///     <see cref="ImportedServices" /> and <see cref="ImportedDefinitions" /> are the types the container leaves to
+///     reports, its extended base or a module of its assembly that AWT243 skips, so only its shell is emitted.
+///     <see cref="ImportServices" />, <see cref="ImportedServices" /> and <see cref="ImportedDefinitions" /> are the types the container leaves to
 ///     the host: <c>[ImportServices]</c>, the closed <c>[ImportService]</c> types and the unbound generic
 ///     definitions of the open ones. <see cref="Factories" /> are the factories the container generates for its private
 ///     implementations, so a container that extends it can build them, and <see cref="Wrappers" /> forward to its private
