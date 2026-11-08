@@ -894,8 +894,8 @@ partial class AwaitenGenerator
 		// explicit registration's, since it generates one factory per implementation.
 		if (info.ConstructVia is { } via && origin is not null)
 		{
-			// The closing of a generic factory runs the generic wrapper of the open definition, closed alike, whose hook
-			// binds its type arguments from the closing's marker as the owner bound them from the open service.
+			// The closing of a generic factory runs the generic wrapper of the open definition, closed alike, so it runs
+			// the hook the owner bound for the open service, closed with the closing's type arguments.
 			bool open = via.IndexOf('<') >= 0;
 			List<INamedTypeSymbol>? markers = null;
 			if (info.IsScan || open)
