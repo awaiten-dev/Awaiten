@@ -465,10 +465,11 @@ internal static partial class Sources
 			.Select((member, index) => (Member: member, Argument: parameters[first + members.Length + index].ArgumentExpression))
 			.Where(entry => factory.InitOnlyMembers.AsArray().Contains(entry.Member))
 			.ToList();
+		string instance = UnusedName("awaiten__instance", parameters);
 		Indent(builder, depth).Append(accessibility).Append(" static ").Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append(factory.TypeParameters)
 			.Append('(').Append(signature).Append(')').AppendLine(factory.Constraints);
 		Indent(builder, depth).AppendLine("{");
-		Indent(builder, depth + 1).Append("var awaiten__instance = ").Append(Construction(0, required)).AppendLine(";");
+		Indent(builder, depth + 1).Append("var ").Append(instance).Append(" = ").Append(Construction(0, required)).AppendLine(";");
 		for (int index = 0; index < optional.Length; index++)
 		{
 			if (factory.InitOnlyMembers.AsArray().Contains(optional[index]))
@@ -479,11 +480,11 @@ internal static partial class Sources
 			FactoryParameter parameter = parameters[first + members.Length + index];
 			Indent(builder, depth + 1).Append("if (").Append(AwaitenGenerator.PresenceFlagName(parameter.Name, initOnly: false)).AppendLine(")");
 			Indent(builder, depth + 1).AppendLine("{");
-			Indent(builder, depth + 2).Append("awaiten__instance.").Append(optional[index]).Append(" = ").Append(parameter.ArgumentExpression).AppendLine(";");
+			Indent(builder, depth + 2).Append(instance).Append('.').Append(optional[index]).Append(" = ").Append(parameter.ArgumentExpression).AppendLine(";");
 			Indent(builder, depth + 1).AppendLine("}");
 		}
 
-		Indent(builder, depth + 1).Append("return ").Append(factory.Handle is null ? "awaiten__instance" : $"new {factory.Handle}(awaiten__instance)").AppendLine(";");
+		Indent(builder, depth + 1).Append("return ").Append(factory.Handle is null ? instance : $"new {factory.Handle}({instance})").AppendLine(";");
 		Indent(builder, depth).AppendLine("}");
 
 		string Construction(int index, List<string> assignments)
@@ -511,16 +512,32 @@ internal static partial class Sources
 	{
 		foreach (FactoryParameter parameter in factory.DeferredMembers.AsArray())
 		{
+			string instance = UnusedName("awaiten__instance", [parameter,]);
 			builder.AppendLine();
 			AppendXmlSummary(builder, depth,
 				"Generated from a registration: assigns a property marked [Inject(Deferred = true)] after a consuming",
 				"container built and cached the instance, so it can break a cycle.");
 			Indent(builder, depth).Append(factory.IsInternal ? "internal" : "public").Append(" static void ").Append(AwaitenGenerator.DeferredSetterName(factory.FactoryName, parameter.Name)).Append(factory.TypeParameters).Append('(')
-				.Append(factory.ReturnType).Append(" @awaiten__instance, ").Append(MirroredParameter(parameter))
+				.Append(factory.ReturnType).Append(" @").Append(instance).Append(", ").Append(MirroredParameter(parameter))
 				.Append(factory.OptionalDeferredMembers.AsArray().Contains(parameter.Name) ? " = default!" : string.Empty).Append(')').Append(factory.Constraints).Append(" => ((")
-				.Append(factory.ImplementationType).Append(")@awaiten__instance").Append(factory.Handle is null ? string.Empty : ".Value").Append(").")
+				.Append(factory.ImplementationType).Append(")@").Append(instance).Append(factory.Handle is null ? string.Empty : ".Value").Append(").")
 				.Append(parameter.Name).Append(" = ").Append(parameter.ArgumentExpression).AppendLine(";");
 		}
+	}
+
+	/// <summary>
+	///     <paramref name="candidate" />, suffixed away from the name of any of the mirrored <paramref name="parameters" />,
+	///     for a parameter or local of the generated code itself.
+	/// </summary>
+	private static string UnusedName(string candidate, IReadOnlyCollection<FactoryParameter> parameters)
+	{
+		string name = candidate;
+		while (parameters.Any(parameter => parameter.Name == name))
+		{
+			name += "_";
+		}
+
+		return name;
 	}
 
 	/// <summary>

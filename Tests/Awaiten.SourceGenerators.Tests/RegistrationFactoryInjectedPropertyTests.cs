@@ -143,6 +143,41 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		[Arguments("[Inject(Optional = true)] public IClock A { get; set; } = null!;", "[Inject(Optional = true)] public IClock awaiten__has_A { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true)] public IClock awaiten__has_A { get; set; } = null!;", "[Inject(Optional = true)] public IClock A { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true)] public IClock A { get; init; } = null!;", "[Inject] public IClock awaiten__init_A { get; set; } = null!;")]
+		public async Task NamedLikeThePresenceFlagOfAnother_IsReportedByTheModuleInAnyOrder(string first, string second)
+		{
+			GeneratorResult result = Generator.Run(Library($"{first}\n{second}"));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("presence flag"))
+				.Because("the factory would declare two parameters of the same name, so the module reports the property instead of emitting code that does not compile");
+		}
+
+		[Test]
+		[Arguments("[Inject(Optional = true)] public IClock awaiten__instance { get; set; } = null!;")]
+		[Arguments("[Inject(Deferred = true)] public IClock awaiten__instance { get; set; } = null!;\n[Inject(Optional = true)] public IClock Backup { get; set; } = null!;")]
+		public async Task NamedLikeTheInstanceOfTheFactory_IsFilledEverywhere(string members)
+		{
+			Containers containers = RunEverywhere(Library(members), clock: true);
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("the generated factory and setter pick names for their own locals and parameters that no property takes");
+		}
+
+		[Test]
+		public async Task NamedWithThePrefixOfAPresenceFlag_IsResolvedLikeAnyOtherProperty()
+		{
+			string module = Library("[Inject(Optional = true)] public bool awaiten__has_Ready { get; set; }");
+
+			Containers containers = RunEverywhere(module, clock: false);
+
+			await That(containers.AllDiagnostics).IsEmpty();
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains("Registration_Greeter_*(default!, default!)").AsWildcard()
+				.Because("only the parameter right after the value it flags is a presence flag, so a missing optional bool is passed as absent, not as a present flag");
+		}
+
+		[Test]
 		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; set; }")]
 		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; }")]
 		public async Task OfARequiredCollection_IsFilledEverywhere(string property)

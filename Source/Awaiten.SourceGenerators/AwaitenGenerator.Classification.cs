@@ -176,10 +176,15 @@ partial class AwaitenGenerator
 		return parameters;
 	}
 
-	/// <summary>Whether <paramref name="parameter" /> is the presence flag (see <see cref="PresenceFlagName" />) of a generated factory.</summary>
+	/// <summary>
+	///     Whether <paramref name="parameter" /> is the presence flag (see <see cref="PresenceFlagName" />) of a generated
+	///     factory: it follows the optional value it flags and is named after it, so an optional property of its own
+	///     whose name merely starts like a flag is not mistaken for one.
+	/// </summary>
 	private static bool IsPresenceFlag(IParameterSymbol parameter, IMethodSymbol producer)
-		=> parameter is { HasExplicitDefaultValue: true, Type.SpecialType: SpecialType.System_Boolean, }
-		   && (parameter.Name.StartsWith(PresenceFlagPrefix, StringComparison.Ordinal) || parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal))
+		=> parameter is { HasExplicitDefaultValue: true, Type.SpecialType: SpecialType.System_Boolean, Ordinal: > 0, }
+		   && producer.Parameters[parameter.Ordinal - 1] is { HasExplicitDefaultValue: true, } value
+		   && (parameter.Name == PresenceFlagName(value.Name, initOnly: false) || parameter.Name == PresenceFlagName(value.Name, initOnly: true))
 		   && IsGeneratedOwnerFactory(producer);
 
 	/// <summary>

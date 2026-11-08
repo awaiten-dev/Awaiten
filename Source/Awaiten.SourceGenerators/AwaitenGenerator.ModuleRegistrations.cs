@@ -939,7 +939,7 @@ partial class AwaitenGenerator
 	///     when the property is optional too. Reports AWT200 and returns <see langword="false" /> for what the factory
 	///     cannot express: what no container supports (an optional property that is required, a deferred one that is
 	///     init-only or required), one without a setter the module can reach, more than
-	///     <see cref="MaxInitOnlyOptionalMembers" /> init-only optional ones, one named like a constructor parameter,
+	///     <see cref="MaxInitOnlyOptionalMembers" /> init-only optional ones, one named like a constructor parameter or like a parameter or presence flag of another property,
 	///     and one whose type another assembly cannot name.
 	/// </summary>
 	private static bool TryMirrorInjectedProperties(
@@ -958,6 +958,7 @@ partial class AwaitenGenerator
 		List<string> initOnly = new();
 		List<FactoryParameter> deferred = new();
 		List<string> optionalDeferred = new();
+		Dictionary<string, string> taken = mirrored.ToDictionary(parameter => parameter.Name, _ => "a constructor parameter", StringComparer.Ordinal);
 		foreach (IPropertySymbol property in InjectedProperties(type))
 		{
 			ImmutableArray<AttributeData> attributes = property.GetAttributes();
@@ -985,9 +986,13 @@ partial class AwaitenGenerator
 			{
 				reason = $"is one of more than {MaxInitOnlyOptionalMembers} init-only optional [Inject] properties (each doubles the object initializers of the factory, so give the others a plain set accessor)";
 			}
-			else if (mirrored.Concat(optionalParameters).Any(parameter => parameter.Name == property.Name || parameter.Name == PresenceFlagName(property.Name, property.SetMethod?.IsInitOnly == true)))
+			else if (taken.TryGetValue(property.Name, out string? owner))
 			{
-				reason = "has the name of a constructor parameter";
+				reason = $"has the name of {owner}";
+			}
+			else if (isOptional && !isDeferred && taken.TryGetValue(PresenceFlagName(property.Name, setter.IsInitOnly), out string? flagOwner))
+			{
+				reason = $"needs the presence flag '{PresenceFlagName(property.Name, setter.IsInitOnly)}', which is the name of {flagOwner}";
 			}
 			else if (HasAwaitenAttribute(attributes, "FromKeyAttribute") && FromKey(attributes) is null)
 			{
@@ -1049,11 +1054,15 @@ partial class AwaitenGenerator
 					{
 						initOnly.Add(property.Name);
 					}
+
+					taken[property.Name] = $"the property '{property.Name}'";
+					taken[PresenceFlagName(property.Name, property.SetMethod.IsInitOnly)] = $"the presence flag of the property '{property.Name}'";
 				}
 				else
 				{
 					mirrored.Add(parameter);
 					names.Add(property.Name);
+					taken[property.Name] = $"the property '{property.Name}'";
 				}
 			}
 		}
