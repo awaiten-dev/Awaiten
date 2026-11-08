@@ -75,7 +75,7 @@ partial class AwaitenGenerator
 			{
 				if (scanned.ConstructorArguments.Length == 1
 				    && scanned.ConstructorArguments[0].Value is string factory
-				    &&ScanInstanceHandleOf(module, factory, NamedArgument(scanned, "Implementation"), compilation) is var (implementation, handle, _))
+				    && ScanInstanceHandleOf(module, factory, NamedArgument(scanned, "Implementation"), compilation) is var (implementation, handle, _))
 				{
 					handles[Display(handle.ReturnType.ToDisplayString(FullyQualified))] = (Display(implementation.ToDisplayString(FullyQualified)), moduleName);
 				}
