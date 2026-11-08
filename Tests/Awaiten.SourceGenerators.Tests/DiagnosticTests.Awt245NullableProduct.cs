@@ -13,6 +13,7 @@ public partial class DiagnosticTests
 		private const string Kettle = """
 			public interface IKettle { }
 			public sealed class Kettle : IKettle { }
+			public struct Grind : IKettle { }
 			public sealed class Brewer
 			{
 			    public Brewer(IKettle kettle) { }
@@ -22,6 +23,7 @@ public partial class DiagnosticTests
 		private static string Container(string registration, string members) => $$"""
 			#nullable enable
 			using Awaiten;
+			using System.Diagnostics.CodeAnalysis;
 			using System.Threading.Tasks;
 
 			namespace MyCode;
@@ -97,13 +99,46 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Singleton<IKettle>(Factory = nameof(Make))]", "[return: MaybeNull] private static IKettle Make() => new Kettle();", "Factory 'Make'*'[MaybeNull] MyCode.IKettle'")]
+		[Arguments("[Transient<Kettle, IKettle>(Factory = nameof(Make))]", "[return: MaybeNull] private static Kettle Make() => new Kettle();", "Factory 'Make'*'[MaybeNull] MyCode.Kettle'")]
+		[Arguments("[Singleton<IKettle>(Instance = nameof(Shared))]", "[MaybeNull] private static Kettle Shared { get; } = new Kettle();", "Instance 'Shared'*'[MaybeNull] MyCode.Kettle'")]
+		[Arguments("[Singleton<IKettle>(Instance = nameof(Shared))]", "[MaybeNull] private static readonly IKettle Shared = new Kettle();", "Instance 'Shared'*'[MaybeNull] MyCode.IKettle'")]
+		public async Task AMemberMarkedMaybeNull_ReportsAwt245AndCompilesWithoutWarnings(string registration, string member, string expected)
+		{
+			string source = Container(registration, member);
+
+			GeneratorResult result = Generator.Run(source);
+			string[] reports = await Awt245Reports(source);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("[MaybeNull] makes the result nullable to the compiler like a ?, so the generated code forgives it too");
+			await That(reports).HasCount(1).And.Contains($"*warning AWT245*The {expected}*").AsWildcard();
+		}
+
+		[Test]
+		[Arguments("[Singleton<IKettle>(Factory = nameof(Make))]", "private static Grind? Make() => new Grind();", "Factory 'Make'")]
+		[Arguments("[Transient<IKettle>(Factory = nameof(Make))]", "private static Task<Grind?> Make() => Task.FromResult<Grind?>(new Grind());", "Factory 'Make'")]
+		[Arguments("[Singleton<IKettle>(Instance = nameof(Shared))]", "private static Grind? Shared { get; } = new Grind();", "Instance 'Shared'")]
+		public async Task ANullableValueTypeBoxedToTheService_ReportsAwt245AndCompilesWithoutWarnings(string registration, string member, string subject)
+		{
+			string source = Container(registration, member);
+
+			GeneratorResult result = Generator.Run(source);
+			string[] reports = await Awt245Reports(source);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a Nullable<Grind> without a value boxes to a null IKettle, so the generated code forgives it like a nullable reference");
+			await That(reports).HasCount(1).And.Contains($"*warning AWT245*The {subject} may produce null, since it is declared to produce 'MyCode.Grind?'*a 'MyCode.Grind' that is never null*").AsWildcard();
+		}
+
+		[Test]
 		public async Task TheMessage_SaysWhatANullResultDoesAndHowToAvoidIt()
 		{
 			string source = Container("[Singleton<IKettle>(Factory = nameof(Make))]", "private static IKettle? Make() => new Kettle();");
 
 			string[] reports = await Awt245Reports(source);
 
-			await That(reports).HasCount(1).And.Contains("*never checks for null*receive null*runs again on the next synchronous resolve*declare it to produce 'MyCode.IKettle'*null object*").AsWildcard()
+			await That(reports).HasCount(1).And.Contains("*never checks for null*receive null*runs again on the next synchronous resolve*declare it to produce a 'MyCode.IKettle' that is never null*null object*").AsWildcard()
 				.Because("the container hands a null result on unchecked and treats a null cached instance as not built yet, so the message names the consequence and both remedies");
 		}
 
@@ -208,6 +243,7 @@ public partial class DiagnosticTests
 			[Arguments("internal", "IKettle", "public static IKettle?", false)]
 			[Arguments("internal", "Kettle, IKettle", "internal static Kettle?", true)]
 			[Arguments("internal", "IKettle", "internal static IKettle?", true)]
+			[Arguments("internal", "IKettle", "[return: System.Diagnostics.CodeAnalysis.MaybeNull] internal static IKettle", true)]
 			public async Task AFactoryOfAModuleInAnotherAssembly_ReportsAwt245AndCompilesWithoutWarnings(string implementation, string registration, string factory, bool grant)
 			{
 				string source = Library(implementation, registration, factory, grant);
@@ -225,6 +261,20 @@ public partial class DiagnosticTests
 					.Because("the container that hands the result to its consumers reports the possible null once");
 			}
 
+			[Test]
+			public async Task AMaybeNullFactoryOfAModuleInAnotherAssemblyCalledThroughItsWrapper_ReportsAwt245AndCompilesWithoutWarnings()
+			{
+				string source = Library("public", "IKettle", "[return: System.Diagnostics.CodeAnalysis.MaybeNull] internal static IKettle", false);
+				GeneratorResult library = Generator.Run(source);
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(source, Consumer);
+				string[] reports = await Awt245Reports(source, Consumer);
+
+				await That(library.Diagnostics).IsEmpty()
+					.Because("the public wrapper over the internal factory spells [MaybeNull] as a nullable return");
+				await That(result.Diagnostics).IsEmpty();
+				await That(reports).HasCount(1)
+					.Because("the container sees the possible null through the wrapper");
+			}
 			private static string HandleLibrary(string registration, string member) => $$"""
 				#nullable enable
 				using Awaiten;
@@ -261,6 +311,8 @@ public partial class DiagnosticTests
 			[Arguments("[Singleton<IKettle>(Factory = nameof(Make))]", "private static IKettle? Make() => new Kettle();", "Factory 'Make'")]
 			[Arguments("[Singleton<IKettle>(Factory = nameof(Make))]", "private static Task<IKettle?> Make() => Task.FromResult<IKettle?>(new Kettle());", "Factory 'Make'")]
 			[Arguments("[Singleton<IKettle>(Instance = nameof(Shared))]", "private static IKettle? Shared { get; } = new Kettle();", "Instance 'Shared'")]
+			[Arguments("[Singleton<IKettle>(Factory = nameof(Make))]", "[return: System.Diagnostics.CodeAnalysis.MaybeNull] private static IKettle Make() => new Kettle();", "Factory 'Make'")]
+			[Arguments("[Singleton<IKettle>(Instance = nameof(Shared))]", "[System.Diagnostics.CodeAnalysis.MaybeNull] private static IKettle Shared { get; } = new Kettle();", "Instance 'Shared'")]
 			public async Task AMemberOfAnInternalServiceTheModuleBuildsThroughAHandle_IsReportedByTheModulesBuild(string registration, string member, string subject)
 			{
 				string library = HandleLibrary(registration, member);
@@ -406,11 +458,36 @@ public partial class DiagnosticTests
 				await That(reports).IsEmpty()
 					.Because("the base reported the nullable factories in its own build");
 			}
+
+			[Test]
+			public async Task AnExtendingContainerInAnotherAssemblyOverAPrivateMaybeNullFactory_CompilesWithoutWarnings()
+			{
+				string baseSource = Base
+					.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;")
+					.Replace("public static IKettle? Make()", "[return: System.Diagnostics.CodeAnalysis.MaybeNull] private static IKettle Make()");
+				const string consumer = """
+				                        #nullable enable
+				                        using Awaiten;
+				                        using Lib;
+
+				                        namespace MyCode;
+
+				                        """ + Extending;
+
+				GeneratorResult baseResult = Generator.Run(baseSource);
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(baseSource, consumer);
+
+				await That(baseResult.Diagnostics).IsEmpty()
+					.Because("the wrapper the base generates over its private factory spells [MaybeNull] as a nullable return");
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the extending container calls the wrapper and forgives its nullable result");
+			}
 		}
 
 		[Test]
 		[Arguments("IKettle", "new Kettle()")]
 		[Arguments("Task<IKettle>", "Task.FromResult<IKettle>(new Kettle())")]
+		[Arguments("Grind", "new Grind()")]
 		public async Task AFactoryThatCannotReturnNull_DoesNotReportAwt245(string returnType, string body)
 		{
 			string source = Container(

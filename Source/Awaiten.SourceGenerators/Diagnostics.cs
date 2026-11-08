@@ -2193,8 +2193,8 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
-	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level, so it may produce
-	///     <see langword="null" />, while the container hands the value to every consumer as a non-nullable service.
+	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level (a nullable reference
+	///     or value type) or that is marked <c>[MaybeNull]</c>, so it may produce <see langword="null" />, while the container hands the value to every consumer as a non-nullable service.
 	///     Reported once at the registration in place of the nullable warnings the generated code would otherwise raise.
 	///     A warning like the compiler's own nullable warnings, which it replaces, and reported by
 	///     <see cref="AwaitenAnalyzer" /> so that it can be suppressed in source. The generated code never checks the
@@ -2204,7 +2204,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor NullableProduct = new(
 		"AWT245",
 		"Factory or Instance member may produce null",
-		"The {0} '{1}' may produce null, since it is declared to produce '{2}?', but the container serves it to consumers of '{3}' as non-nullable and never checks for null: consumers, decorators, initializers and collections receive null, and a singleton or scoped factory that returned null runs again on the next synchronous resolve; declare it to produce '{2}' and never produce null, or register a null object instead",
+		"The {0} '{1}' may produce null, since it is declared to produce '{2}', but the container serves it to consumers of '{4}' as non-nullable and never checks for null: consumers, decorators, initializers and collections receive null, and a singleton or scoped factory that returned null runs again on the next synchronous resolve; declare it to produce a '{3}' that is never null, or register a null object instead",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,

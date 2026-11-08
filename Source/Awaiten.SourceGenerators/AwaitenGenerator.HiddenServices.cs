@@ -725,9 +725,7 @@ partial class AwaitenGenerator
 	internal static bool MayReportNullableProduct(INamedTypeSymbol module, Compilation compilation)
 		=> module.GetMembers().Any(member => member.IsStatic && member switch
 		   {
-			   IMethodSymbol { MethodKind: MethodKind.Ordinary, } method => MayProduceNull(ProducedType(method.ReturnType, compilation)),
-			   IFieldSymbol field => MayProduceNull(field.Type),
-			   IPropertySymbol property => MayProduceNull(property.Type),
+			   IMethodSymbol { MethodKind: MethodKind.Ordinary, } or IFieldSymbol or IPropertySymbol => MayProduceNull(ProductOf(member, compilation)!, member),
 			   _ => false,
 		   })
 		   && IsExternallyAccessible(module)
@@ -1013,12 +1011,12 @@ partial class AwaitenGenerator
 		EquatableArray<FactoryParameter> parameters;
 		MirroredMembers members = default;
 		string? awaited = null;
-		ITypeSymbol? produced = null;
+		ISymbol? producer = null;
 		bool instance = candidate.Production == ProductionKind.Instance;
 		bool built = candidate.Production == ProductionKind.Constructor
 			? TryMirrorFactoryParameters(implementation, context, location, subject, out parameters, mirrorProperties: true)
 			  && TryMirrorInjectedProperties(implementation, context, location, subject, ref parameters, out members)
-			: TryMirrorProducingMember(candidate, context, location, subject, out parameters, out awaited, out produced);
+			: TryMirrorProducingMember(candidate, context, location, subject, out parameters, out awaited, out producer);
 		if (!built)
 		{
 			return null;
@@ -1066,7 +1064,7 @@ partial class AwaitenGenerator
 				awaited,
 				instance,
 				NullableProduct: IsNullableProduct(
-					produced!, candidate.Production, candidate.Member!, candidate.Registrations[0].Service.ToDisplayString(FullyQualified), LocationInfo.From(location), warnings));
+					ProductOf(producer!, context.Compilation)!, producer!, candidate.Production, candidate.Member!, candidate.Registrations[0].Service.ToDisplayString(FullyQualified), LocationInfo.From(location), warnings));
 		}
 
 		return new RegistrationFactory(
@@ -1335,9 +1333,9 @@ partial class AwaitenGenerator
 	///     Mirrors the <c>Factory</c> or <c>Instance</c> member that produces <paramref name="candidate" /> onto the
 	///     wrapper that puts its result into the handle: a static field or property converting to the implementation, or
 	///     one static, non-generic method, whose parameters the wrapper mirrors like a constructor's, and which may return
-	///     <c>Task&lt;T&gt;</c> or <c>ValueTask&lt;T&gt;</c> (<paramref name="awaited" />). <paramref name="produced" /> is
-	///     the type of the member's result, awaited for a task. Returns <see langword="false" /> for a member the wrapper
-	///     cannot call, after reporting why a parameter cannot be mirrored.
+	///     <c>Task&lt;T&gt;</c> or <c>ValueTask&lt;T&gt;</c> (<paramref name="awaited" />), as
+	///     <paramref name="producer" />. Returns <see langword="false" /> for a member the wrapper cannot call, after
+	///     reporting why a parameter cannot be mirrored.
 	/// </summary>
 	private static bool TryMirrorProducingMember(
 		HiddenImplementation candidate,
@@ -1346,25 +1344,20 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject,
 		out EquatableArray<FactoryParameter> parameters,
 		out string? awaited,
-		out ITypeSymbol? produced)
+		out ISymbol? producer)
 	{
 		parameters = default;
 		awaited = null;
-		produced = null;
+		producer = null;
 		INamedTypeSymbol module = context.Module;
 		Compilation compilation = context.Compilation;
 		string member = candidate.Member!;
 		if (candidate.Production == ProductionKind.Instance)
 		{
-			produced = AccessibleMembers(module, member, compilation)
-				.Select(symbol => symbol switch
-				{
-					IFieldSymbol { IsStatic: true, } field => field.Type,
-					IPropertySymbol { IsStatic: true, GetMethod: not null, } property => property.Type,
-					_ => null,
-				})
-				.FirstOrDefault(type => type is not null && compilation.HasImplicitConversion(type, candidate.Implementation));
-			return produced is not null;
+			producer = AccessibleMembers(module, member, compilation)
+				.FirstOrDefault(symbol => symbol is IFieldSymbol { IsStatic: true, } or IPropertySymbol { IsStatic: true, GetMethod: not null, }
+				                          && compilation.HasImplicitConversion(ProductOf(symbol, compilation), candidate.Implementation));
+			return producer is not null;
 		}
 
 		if (ProducingMethod(module, member, candidate.Implementation, compilation) is not { } factory || factory.Parameters.Any(parameter => parameter.RefKind != RefKind.None))
@@ -1377,7 +1370,7 @@ partial class AwaitenGenerator
 			awaited = ((INamedTypeSymbol)factory.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified) + "." + factory.ReturnType.Name;
 		}
 
-		produced = ProducedType(factory.ReturnType, compilation);
+		producer = factory;
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in factory.Parameters)
 		{

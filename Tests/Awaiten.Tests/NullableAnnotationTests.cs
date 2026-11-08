@@ -145,6 +145,40 @@ public sealed partial class NullableAnnotationTests
 	}
 
 	[Test]
+	public async Task MaybeNullFactoryAndNullableValueInstance_ProduceTheirValues()
+	{
+		using MaybeNullShop.Root shop = new();
+
+		await That(shop.Resolve<IStore>()).IsSameAs(shop.Resolve<IStore>())
+			.Because("the singleton a [MaybeNull] factory produces is shared like any other");
+		await That(shop.Resolve<ITicket>().Number).IsEqualTo(7)
+			.Because("the Ticket? instance boxes to its ITicket service");
+	}
+
+	public interface ITicket
+	{
+		int Number { get; }
+	}
+
+	public readonly struct Ticket(int number) : ITicket
+	{
+		public int Number { get; } = number;
+	}
+
+	[Container]
+#pragma warning disable AWT245
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+	[Singleton<ITicket>(Instance = nameof(Ticket))]
+#pragma warning restore AWT245
+	public static partial class MaybeNullShop
+	{
+		internal static Ticket? Ticket { get; } = new Ticket(7);
+
+		[return: System.Diagnostics.CodeAnalysis.MaybeNull]
+		private static IStore CreateStore() => new MainStore();
+	}
+
+	[Test]
 	public async Task NullableFactoryThatReturnsNull_RunsAgainOnEachSynchronousResolve()
 	{
 		using NullResultShop.Root shop = new();

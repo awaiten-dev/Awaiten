@@ -358,7 +358,7 @@ partial class AwaitenGenerator
 			ITypeSymbol type = instance is IFieldSymbol field ? field.Type : ((IPropertySymbol)instance).Type;
 			if (TypeHiddenInModule(type, container, compilation) is null)
 			{
-				Add(new MemberWrapper(MemberWrapperName("Instance", instance.Name, info.Symbol), type.ToDisplayString(FullyQualifiedWithNullability), instance.Name, default, IsProperty: true));
+				Add(new MemberWrapper(MemberWrapperName("Instance", instance.Name, info.Symbol), WrapperReturnType(type, instance), instance.Name, default, IsProperty: true));
 			}
 		}
 
@@ -385,7 +385,7 @@ partial class AwaitenGenerator
 			=> method.Parameters.Any(parameter => TypeHiddenInModule(parameter.Type, container, compilation) is not null || UnmirroredAttribute(parameter.GetAttributes()) is not null)
 			   || TypeHiddenInModule(method.ReturnType, container, compilation) is not null
 				? null
-				: new MemberWrapper(wrapperName, method.ReturnsVoid ? "void" : method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), target, MirroredParameters(method.Parameters));
+				: new MemberWrapper(wrapperName, method.ReturnsVoid ? "void" : WrapperReturnType(method.ReturnType, method), target, MirroredParameters(method.Parameters));
 	}
 
 	/// <summary>
