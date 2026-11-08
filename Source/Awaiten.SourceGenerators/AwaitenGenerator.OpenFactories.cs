@@ -210,6 +210,14 @@ partial class AwaitenGenerator
 			return new OpenFactory(null, $"it names the lifecycle hook '{hook}', which a generated factory of an open generic registration does not run");
 		}
 
+		for (INamedTypeSymbol? containing = definition.ContainingType; containing is not null; containing = containing.ContainingType)
+		{
+			if (containing.IsGenericType)
+			{
+				return new OpenFactory(null, $"it is nested in the generic type '{Display(containing.ToDisplayString(FullyQualified))}', whose type parameters a closing of the service does not supply");
+			}
+		}
+
 		// One instance serves every open service of the definition, so the factory returns a type each of them converts from.
 		INamedTypeSymbol? returnType = Fits(definition, context)
 			? definition

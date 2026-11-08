@@ -742,6 +742,33 @@ public class OpenGenericFactoryTests
 			await That(result.Diagnostics).Contains("*AWT230*DataModule*the open generic registration of 'Lib.Repository<T>'*").AsWildcard()
 				.Because("a module that is not partial carries neither a factory nor a record of why");
 		}
+
+		[Test]
+		public async Task ATypeNestedInAGenericType_IsReportedWithTheReasonAndDoesNotFailTheLibrary()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       public interface IRepository<T> { }
+			                       public class Outer<T>
+			                       {
+			                           internal sealed class Inner<U> : IRepository<U> { }
+			                       }
+
+			                       [Module]
+			                       [Scoped(typeof(Outer<>.Inner<>), typeof(IRepository<>))]
+			                       public static partial class DataModule { }
+			                       """;
+
+			GeneratorResult own = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+			await That(own.Diagnostics).IsEmpty();
+			await That(result.Diagnostics).Contains("*AWT231*DataModule*it is nested in the generic type 'Lib.Outer<T>'*").AsWildcard()
+				.Because("the factory could not take the containing type's type parameters from a closing of the service");
+		}
 	}
 
 	public class InjectedProperties
