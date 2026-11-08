@@ -97,7 +97,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			}
 		});
 
-		// A third root: the [Inject] properties another assembly cannot see, which a container there reads to report AWT244.
+		// A third root: the [Inject] properties another assembly cannot see, which a container there reads to report them (AWT244, AWT136).
 		IncrementalValueProvider<ImmutableArray<(string Type, string Property, bool Assignable)>> hiddenInjectedProperties = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				InjectAttributeName,
