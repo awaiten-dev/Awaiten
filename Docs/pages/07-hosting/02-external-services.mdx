@@ -63,7 +63,7 @@ public static partial class CoffeeShop
 Because external-ness is declared on the container, a service that consumes a host type just asks for it as an ordinary parameter, with no Awaiten reference in the domain class. `[ImportService]` is the clean-domain form. The only per-parameter attribute involved is `[FromKey]`, and only when you need a keyed external service.
 :::
 
-Only the *direct* dependency of type `T` is routed. A relationship or collection over it (`Func<T>`, `Lazy<T>`, `Task<T>`, `IEnumerable<T>`, and the like) is not, because the resolver hands back an instance, not a deferred or fanned-out shape. Such a dependency still resolves from the Awaiten graph, so with no registration it surfaces as AWT101 (or an empty collection). A declared type needs no consumer in the graph: [resolving it directly](#resolving-an-imported-service-directly) asks the host too.
+Only the *direct* dependency of type `T` is routed, not a [relationship or collection](#relationships-and-collections) over it. A declared type needs no consumer in the graph: [resolving it directly](#resolving-an-imported-service-directly) asks the host too.
 
 ## Pull every closing of a generic type
 
@@ -108,7 +108,7 @@ public static partial class CoffeeShop;
 
 </Tabs>
 
-Each closing is routed exactly as if it were imported on its own: a `[FromKey]` key is forwarded, a relationship or collection over a closing is not routed, and the closing is listed as an [external dependency](#verifying-the-wiring) of the container, so startup verification checks every closing the graph consumes. A closing that is routed to the host but also registered on the container is reported as AWT175. The argument must be a closed type or an unbound generic definition; anything in between, such as `typeof(Outer<>.Inner)`, is reported as AWT215.
+Each closing is routed exactly as if it were imported on its own: a `[FromKey]` key is forwarded, a [relationship or collection](#relationships-and-collections) over a closing is not routed, and the closing is listed as an [external dependency](#verifying-the-wiring) of the container, so startup verification checks every closing the graph consumes. A closing that is routed to the host but also registered on the container is reported as AWT175. The argument must be a closed type or an unbound generic definition; anything in between, such as `typeof(Outer<>.Inner)`, is reported as AWT215.
 
 ## Fall through everything with `[ImportServices]`
 
@@ -122,6 +122,25 @@ public static partial class CoffeeShop;
 
 // Register's IPaymentGateway is resolved from the host, unannotated
 ```
+
+## Relationships and collections
+
+The external resolver hands back one instance of the type it is asked for, so only a direct dependency of an imported service is routed to it. Take the imported service directly: the host owns it and decides its lifetime, whatever shape the consumer would like to hold it in.
+
+A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). Under `[ImportServices]` this holds for an unkeyed relationship over any unregistered type.
+
+```csharp expect=AWT242
+public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // AWT242: take IPaymentGateway directly
+
+[Container]
+[ImportService<IPaymentGateway>]
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+A collection (`IEnumerable<T>`, `IReadOnlyList<T>`, `T[]` and the like) is built from the container's own registrations of `T`, never from the host. A closed imported type cannot be registered ([AWT175](../09-diagnostics.md#awt175)), so a collection of it is always empty.
+
+For an open import, a relationship or collection over a closing resolves the closings the container registers, because the closing is routed to the host only where a direct dependency asks for it.
 
 ## Providing the external resolver
 

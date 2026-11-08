@@ -209,7 +209,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			ReportWhenUnregistered(dependency, info, context);
+			ReportWhenUnregistered(dependency, setter.Parameters[1].Type, info, context, context.External with { ImportServices = false, });
 			members.Add(new MemberModel(setter.Name.Substring(prefix.Length), dependency, Deferred: true, $"{producer.ContainingType.ToDisplayString(FullyQualified)}.{setter.Name}{closing}"));
 		}
 
@@ -989,7 +989,7 @@ partial class AwaitenGenerator
 			}
 
 			parameters.Add(parameterModel);
-			ReportWhenUnregistered(parameterModel, info, context);
+			ReportWhenUnregistered(parameterModel, parameter.Type, info, context, context.External);
 		}
 
 		return new EquatableArray<ParameterModel>(parameters.ToArray());

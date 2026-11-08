@@ -2705,6 +2705,23 @@ public static partial class CoffeeShop;
 
 **Fix:** Pass a closed type such as `typeof(Recipe<Espresso>.Step)`, or an unbound generic definition with every type argument omitted.
 
+### AWT242
+
+:::danger[Error]
+A relationship such as `Func<T>`, `Lazy<T>`, `Owned<T>` or `Task<T>` targets a service that the container imports from its external resolver, with `[ImportService]` or, for an unkeyed dependency, `[ImportServices]`. The external resolver hands back an instance, so only a direct dependency of the imported service is routed to it. The relationship would resolve from the graph, which has no registration of the service. It is reported for an optional `[Inject]` property too, because nothing could ever fill it.
+:::
+
+```csharp expect=AWT242
+public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // only a direct IPaymentGateway comes from the host
+
+[Container]
+[ImportService<IPaymentGateway>]
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Depend on the imported service directly (`Checkout(IPaymentGateway gateway)`); the host owns it and decides its lifetime. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
+
 ## Project setup
 
 This checks that the project can compile the code Awaiten generates.

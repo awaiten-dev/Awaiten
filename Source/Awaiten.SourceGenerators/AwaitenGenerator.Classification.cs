@@ -152,7 +152,7 @@ partial class AwaitenGenerator
 			}
 
 			parameters.Add(parameterModel);
-			ReportWhenUnregistered(parameterModel, info, context);
+			ReportWhenUnregistered(parameterModel, parameter.Type, info, context, context.External);
 		}
 
 		// AWT163: a requesting-type factory is built fresh per consumer with the consumer's typeof(…) supplied at
@@ -199,11 +199,13 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reports <see cref="Diagnostics.MissingDependency">AWT101</see> (or
 	///     <see cref="Diagnostics.OwnedThroughLazy">AWT121</see> for an <c>Owned&lt;T&gt;</c> reached through
-	///     <c>Lazy</c>) for a classified parameter whose service type has no registration. A CancellationToken, a
-	///     collection, a constraint-rejected open generic (AWT126) and an External dependency are never missing, so
-	///     none is reported.
+	///     <c>Lazy</c>, or <see cref="Diagnostics.RelationshipOverImportedService">AWT242</see> for a relationship over
+	///     an imported service) for a classified parameter of <paramref name="declaredType" /> whose service type has no
+	///     registration. A CancellationToken, a collection, a constraint-rejected open generic (AWT126) and an External
+	///     dependency are never missing, so none is reported. <paramref name="external" /> is the surface the
+	///     dependency's direct form would have been routed through.
 	/// </summary>
-	private static void ReportWhenUnregistered(ParameterModel parameterModel, ImplInfo info, BuildContext context)
+	private static void ReportWhenUnregistered(ParameterModel parameterModel, ITypeSymbol declaredType, ImplInfo info, BuildContext context, ExternalSurface external)
 	{
 		if (parameterModel.Kind is DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External or DependencyKind.Absent or DependencyKind.Present
 		    || IsSynthesizedCollection(parameterModel.Kind)
@@ -213,21 +215,49 @@ partial class AwaitenGenerator
 			return;
 		}
 
+		context.Diagnostics.Add(UnregisteredDependency(parameterModel, declaredType, info, info.Location, external));
+	}
+
+	/// <summary>
+	///     The diagnostic for a dependency of <paramref name="declaredType" /> whose service type has no registration:
+	///     <see cref="Diagnostics.MissingDependency">AWT101</see>, or the more specific
+	///     <see cref="Diagnostics.OwnedThroughLazy">AWT121</see> or
+	///     <see cref="Diagnostics.RelationshipOverImportedService">AWT242</see>.
+	/// </summary>
+	private static DiagnosticInfo UnregisteredDependency(ParameterModel dependency, ITypeSymbol declaredType, ImplInfo info, LocationInfo? location, ExternalSurface external)
+	{
+		string owner = Display(info.OwningServiceOrImpl);
+		string implementation = DisplayInstance(info.ImplementationType);
+		string service = DisplayKeyed(dependency.ServiceType, dependency.Key);
+
 		// Lazy does not unwrap Owned<T> (memoizing a disposal handle is a footgun), so a Lazy<Owned<T>> /
 		// Lazy<Task<Owned<T>>> leaves the unregistered Owned<T> type as the service. Report AWT121 with the
 		// supported owned forms rather than a bare "missing Owned<T>" (AWT101).
-		bool ownedThroughLazy = parameterModel.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
-		                        && parameterModel.ServiceType.StartsWith("global::Awaiten.Owned<", StringComparison.Ordinal);
+		if (IsOwnedThroughLazy(dependency))
+		{
+			return new DiagnosticInfo(Diagnostics.OwnedThroughLazy, location, new EquatableArray<string>([owner, implementation, service,]));
+		}
 
-		context.Diagnostics.Add(new DiagnosticInfo(
-			ownedThroughLazy ? Diagnostics.OwnedThroughLazy : Diagnostics.MissingDependency,
-			info.Location,
-			new EquatableArray<string>([
-				Display(info.OwningServiceOrImpl),
-				DisplayInstance(info.ImplementationType),
-				DisplayKeyed(parameterModel.ServiceType, parameterModel.Key),
-			])));
+		return IsRelationshipOverImportedService(dependency, external)
+			? new DiagnosticInfo(
+				Diagnostics.RelationshipOverImportedService,
+				location,
+				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), service,]))
+			: new DiagnosticInfo(Diagnostics.MissingDependency, location, new EquatableArray<string>([owner, implementation, service,]));
 	}
+
+	private static bool IsOwnedThroughLazy(ParameterModel dependency)
+		=> dependency.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
+		   && dependency.ServiceType.StartsWith("global::Awaiten.Owned<", StringComparison.Ordinal);
+
+	/// <summary>
+	///     Whether <paramref name="dependency" /> is a relationship over a service whose direct dependency would be routed
+	///     to the external resolver: a declared <c>[ImportService]</c> type or closing, with or without a key, or under
+	///     <c>[ImportServices]</c> any unkeyed one.
+	/// </summary>
+	private static bool IsRelationshipOverImportedService(ParameterModel dependency, ExternalSurface external)
+		=> dependency.Kind is DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask
+		   && ((external.ImportServices && dependency.Key is null) || external.ServiceTypes.Routes(dependency.ServiceType));
 
 	/// <summary>
 	///     The container-wide inputs an injected-member classification reads, bundled so the classification methods
@@ -449,27 +479,20 @@ partial class AwaitenGenerator
 		    && !context.ServiceToImpl.ContainsKey(KeyOf(dependency))
 		    && !context.ConstraintRejected.Contains(dependency.ServiceType))
 		{
-			bool ownedThroughLazy = dependency.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
-			                        && dependency.ServiceType.StartsWith("global::Awaiten.Owned<", StringComparison.Ordinal);
+			ExternalSurface external = new(ImportServices: false, externalServiceTypes);
 
 			// An optional member with a merely missing registration is dropped so the property is left at its
 			// default. Dropping it (rather than yielding a member) also keeps the absent edge out of cycle, captive
 			// and async-taint analysis: there is nothing to assign, so nothing to analyze. A structurally
 			// impossible request is not a missing registration, though: Owned<T> can never be produced through
-			// Lazy, so AWT121 is reported (and the edge kept) regardless of Optional, as for a required one.
-			if (spec.Optional && !ownedThroughLazy)
+			// Lazy, and a relationship over an imported service never reaches the external resolver, so AWT121 and
+			// AWT242 are reported (and the edge kept) regardless of Optional, as for a required one.
+			if (spec.Optional && !IsOwnedThroughLazy(dependency) && !IsRelationshipOverImportedService(dependency, external))
 			{
 				return null;
 			}
 
-			context.Diagnostics.Add(new DiagnosticInfo(
-				ownedThroughLazy ? Diagnostics.OwnedThroughLazy : Diagnostics.MissingDependency,
-				location,
-				new EquatableArray<string>([
-					Display(info.OwningServiceOrImpl),
-					DisplayInstance(info.ImplementationType),
-					DisplayKeyed(dependency.ServiceType, dependency.Key),
-				])));
+			context.Diagnostics.Add(UnregisteredDependency(dependency, property.Type, info, location, external));
 		}
 
 		return new MemberModel(property.Name, dependency, spec.Deferred, PresenceFlag: spec.Optional ? PresenceFlagName(property.Name, setter.IsInitOnly) : null);

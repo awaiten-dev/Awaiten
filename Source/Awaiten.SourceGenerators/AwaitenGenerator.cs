@@ -578,6 +578,14 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			=> Closed.Contains(serviceType) || (Open.Count > 0 && OpenDefinitionOf(type) is { } definition && Open.Contains(definition));
 
 		/// <summary>
+		///     Whether a direct dependency of <paramref name="serviceType" /> would be routed externally, for a service
+		///     type already met during classification (so a closing of an <see cref="Open" /> definition is in
+		///     <see cref="Closings" />).
+		/// </summary>
+		public bool Routes(string serviceType)
+			=> Closed.Contains(serviceType) || Closings.ContainsKey(serviceType);
+
+		/// <summary>
 		///     Records every closing of an <see cref="Open" /> definition within <paramref name="type" /> (the type itself
 		///     and its type arguments, recursively).
 		/// </summary>
