@@ -223,7 +223,7 @@ internal static partial class Sources
 			// resolve-time token; everything else resolves from the graph.
 			if (parameters[p].Kind == DependencyKind.Arg)
 			{
-				arguments.Append("a" + argIndex++);
+				arguments.Append("a" + argIndex++).Append(parameters[p] is { DeclaredType: null, NestedNullable: true, } ? "!" : "");
 			}
 			else if (parameters[p].Kind == DependencyKind.CancellationToken)
 			{
@@ -268,12 +268,12 @@ internal static partial class Sources
 			// The container is a static class enclosing both Scope and Root, so its static factory method is in
 			// scope by simple name. An async factory returns Task<T> / ValueTask<T>, awaited here (uniformly, no
 			// TFM gating); it is only ever reached on the async path.
-			if (instance.IsAsyncFactory)
-			{
-				return $"await {instance.ProductionMember}({arguments}).ConfigureAwait(false)";
-			}
-
-			return $"{instance.ProductionMember}({arguments})";
+			string produced = instance.IsAsyncFactory
+				? $"await {instance.ProductionMember}({arguments}).ConfigureAwait(false)"
+				: $"{instance.ProductionMember}({arguments})";
+			return instance.NestedNullableProduct ? $"({produced})!"
+				: instance.NullableProductType is { } type ? $"({type})(object?)({produced})"
+				: produced;
 		}
 
 		return $"new {instance.ConstructedType}({arguments}){MemberInitializer(instance, instances, names, serviceToIndex, asynchronous)}";
@@ -286,6 +286,17 @@ internal static partial class Sources
 	///     <see cref="ResolveExpression" />. Shared so a property resolves exactly like a constructor parameter.
 	/// </summary>
 	private static string DependencyValue(ParameterModel dependency, InstanceModel[] instances, Names names, Dictionary<ServiceKey, int> serviceToIndex, bool asynchronous, string requestingType = "null")
+		=> ForgiveNestedNullability(dependency, GraphValue(dependency, instances, names, serviceToIndex, asynchronous, requestingType));
+
+	/// <summary>
+	///     Forgives the nullability of a value whose declared type carries a nullable annotation below its top level
+	///     (see <see cref="ParameterModel.NestedNullable" />): annotations do not exist at run time, so the value
+	///     converts as is.
+	/// </summary>
+	private static string ForgiveNestedNullability(ParameterModel dependency, string value)
+		=> dependency.NestedNullable ? $"({value})!" : value;
+
+	private static string GraphValue(ParameterModel dependency, InstanceModel[] instances, Names names, Dictionary<ServiceKey, int> serviceToIndex, bool asynchronous, string requestingType)
 	{
 		if (dependency.Kind == DependencyKind.Enumerable)
 		{
@@ -455,7 +466,7 @@ internal static partial class Sources
 		string resolver = names.Resolver(targetIndex);
 		InstanceModel target = instances[targetIndex];
 
-		string[] funcArgTypes = parameter.FuncArgTypes.AsArray();
+		string[] funcArgTypes = parameter.DeclaredFuncArgTypes.AsArray();
 		bool rootOwned = IsRootOwned(target);
 
 		// A requesting-type factory's resolver takes the requesting type, so the consumer passes its own typeof(…)
@@ -477,19 +488,19 @@ internal static partial class Sources
 		// of the root-routing below: a Func<…, Owned<T>> factory, or a bare Owned<T> resolved once.
 		if (parameter.ProducesOwned)
 		{
-			return OwnedFuncFactory(funcArgTypes, parameter.ServiceType, resolver, rootOwned, DeclaredService(parameter));
+			return OwnedFuncFactory(funcArgTypes, ForwardedArgs(target), parameter.ServiceType, resolver, rootOwned);
 		}
 
 		if (parameter.Kind == DependencyKind.Owned)
 		{
-			return OwnedBare(parameter.ServiceType, resolver, rootOwned, DeclaredService(parameter));
+			return OwnedBare(parameter.ServiceType, resolver, rootOwned);
 		}
 
 		if (parameter.Kind == DependencyKind.Func && funcArgTypes.Length > 0)
 		{
 			// A Func<TArg…, T> over a parameterized service binds the owner's parameterized resolver, which
 			// takes the runtime arguments and is never cached.
-			return FuncFactory(funcArgTypes, parameter.ServiceType, resolver);
+			return FuncFactory(funcArgTypes, ForwardedArgs(target), parameter.ServiceType, resolver);
 		}
 
 		// A singleton/Instance resolves through its Root-hosted resolver over the root; a scoped/transient through
@@ -500,17 +511,10 @@ internal static partial class Sources
 		return parameter.Kind switch
 		{
 			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {value})",
-			DependencyKind.Lazy => $"new global::System.Lazy<{DeclaredService(parameter)}>(() => {value})",
+			DependencyKind.Lazy => $"new global::System.Lazy<{parameter.ServiceType}>(() => {value})",
 			_ => value,
 		};
 	}
-
-	/// <summary>
-	///     The parameter's service type as a relationship spells it in the generated code: with the <c>?</c> of a
-	///     nullable-annotated service (see <see cref="ParameterModel.NullableService" />).
-	/// </summary>
-	private static string DeclaredService(ParameterModel parameter)
-		=> parameter.NullableService ? parameter.ServiceType + "?" : parameter.ServiceType;
 
 	/// <summary>
 	///     The construction expression for a dependency produced by a requesting-type factory, extracted from
@@ -524,12 +528,12 @@ internal static partial class Sources
 	{
 		if (parameter.Kind is DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask)
 		{
-			string task = $"global::System.Threading.Tasks.Task<{DeclaredService(parameter)}>";
+			string task = $"global::System.Threading.Tasks.Task<{parameter.ServiceType}>";
 			// An async-tainted factory produces its Task through the awaiting async resolver; a synchronous one
 			// wraps its resolver's result in a completed task. By-type deferral carries no ambient token (default).
 			string taskValue = target.IsAsyncTainted
 				? AsServiceTask(parameter, target, $"{asyncResolver}(__s, {requestingType}, default)")
-				: $"global::System.Threading.Tasks.Task.FromResult<{DeclaredService(parameter)}>({resolver}(__s, {requestingType}))";
+				: $"global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({resolver}(__s, {requestingType}))";
 			return parameter.Kind switch
 			{
 				DependencyKind.FuncTask => $"new global::System.Func<{task}>(() => {taskValue})",
@@ -542,7 +546,7 @@ internal static partial class Sources
 		return parameter.Kind switch
 		{
 			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {requestingCall})",
-			DependencyKind.Lazy => $"new global::System.Lazy<{DeclaredService(parameter)}>(() => {requestingCall})",
+			DependencyKind.Lazy => $"new global::System.Lazy<{parameter.ServiceType}>(() => {requestingCall})",
 			_ => requestingCall,
 		};
 	}
@@ -557,17 +561,17 @@ internal static partial class Sources
 	{
 		if (parameter.ProducesOwned)
 		{
-			string ownedValue = $"__s.__OwnedAsync<{DeclaredService(parameter)}>({AsyncOwnedInner(parameter, target, targetIndex, names, rootOwned, funcArgTypes)}, default)";
+			string ownedValue = $"__s.__OwnedAsync<{parameter.ServiceType}>({AsyncOwnedInner(parameter, target, targetIndex, names, rootOwned)}, default)";
 			return parameter.Kind == DependencyKind.FuncTask
-				? AsyncOwnedFuncFactory(funcArgTypes, DeclaredService(parameter), ownedValue)
+				? AsyncOwnedFuncFactory(funcArgTypes, parameter.ServiceType, ownedValue)
 				: ownedValue;
 		}
 
-		string asyncValue = AsyncRelationshipValue(parameter, target, targetIndex, names, rootOwned, funcArgTypes);
+		string asyncValue = AsyncRelationshipValue(parameter, target, targetIndex, names, rootOwned);
 		return parameter.Kind switch
 		{
-			DependencyKind.FuncTask => AsyncFuncFactory(funcArgTypes, DeclaredService(parameter), asyncValue),
-			DependencyKind.LazyTask => $"new global::System.Lazy<global::System.Threading.Tasks.Task<{DeclaredService(parameter)}>>(() => {asyncValue})",
+			DependencyKind.FuncTask => AsyncFuncFactory(funcArgTypes, parameter.ServiceType, asyncValue),
+			DependencyKind.LazyTask => $"new global::System.Lazy<global::System.Threading.Tasks.Task<{parameter.ServiceType}>>(() => {asyncValue})",
 			_ => asyncValue,
 		};
 	}
@@ -577,15 +581,26 @@ internal static partial class Sources
 	///     runtime arguments to a parameterized service's resolver. With no argument types this is the plain
 	///     deferred <c>Func&lt;T&gt;</c>.
 	/// </summary>
-	private static string FuncFactory(string[] argTypes, string service, string resolver)
+	private static string FuncFactory(string[] argTypes, string[] forwarded, string service, string resolver)
 	{
 		string generics = argTypes.Length == 0 ? service : string.Join(", ", argTypes) + ", " + service;
 		string lambdaArgs = string.Join(", ", argTypes.Select((_, i) => "a" + i));
 		// A Func over a parameterized service binds its Scope-hosted static resolver over the current owner __s,
 		// forwarding the runtime arguments after it.
-		string call = ResolveCall(resolver, rootOwned: false, argTypes.Length == 0 ? "" : ", " + lambdaArgs);
+		string call = ResolveCall(resolver, rootOwned: false, string.Join("", forwarded.Select(arg => ", " + arg)));
 		return $"new global::System.Func<{generics}>(({lambdaArgs}) => {call})";
 	}
+
+	/// <summary>
+	///     The runtime arguments <c>a0, a1, …</c> a factory forwards to <paramref name="target" />'s parameterized
+	///     resolver. One for an <c>[Arg]</c> type built from a type parameter is forgiven, since the resolver spells it
+	///     without the annotations the consumer closes the service with (see <see cref="ParameterModel.DeclaredType" />).
+	/// </summary>
+	private static string[] ForwardedArgs(InstanceModel target)
+		=> target.ConstructorParameters.AsArray()
+			.Where(parameter => parameter.Kind == DependencyKind.Arg)
+			.Select((parameter, i) => parameter.DeclaredType is null ? $"a{i}!" : $"a{i}")
+			.ToArray();
 
 	/// <summary>
 	///     A <c>Task&lt;T&gt;</c>-valued expression for an async relationship. An async-tainted target is produced
@@ -593,28 +608,28 @@ internal static partial class Sources
 	///     wrapped with <c>Task.FromResult</c>. Created at construction time with no ambient token. A root-owned
 	///     target is read straight off <c>__root</c> so the call devirtualizes.
 	/// </summary>
-	private static string AsyncRelationshipValue(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned, string[] argTypes)
+	private static string AsyncRelationshipValue(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned)
 	{
-		string callArgs = string.Join("", argTypes.Select((_, i) => "a" + i + ", "));
+		string[] forwarded = ForwardedArgs(target);
+		string callArgs = string.Join("", forwarded.Select(arg => arg + ", "));
 		if (target.IsAsyncTainted)
 		{
 			return AsServiceTask(parameter, target, AsyncResolveCall(names.AsyncResolver(targetIndex), rootOwned, callArgs + "default"));
 		}
 
-		string syncArgs = argTypes.Length == 0 ? "" : ", " + string.Join(", ", argTypes.Select((_, i) => "a" + i));
-		return $"global::System.Threading.Tasks.Task.FromResult<{DeclaredService(parameter)}>({ResolveCall(names.Resolver(targetIndex), rootOwned, syncArgs)})";
+		string syncArgs = string.Join("", forwarded.Select(arg => ", " + arg));
+		return $"global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({ResolveCall(names.Resolver(targetIndex), rootOwned, syncArgs)})";
 	}
 
 	/// <summary>
 	///     Adapts the <c>Task</c> of <paramref name="target" />'s async resolver to the task of the parameter's service
-	///     through <c>__AsTask</c> when the two differ, since <c>Task&lt;T&gt;</c> is not covariant. A nullable-annotated
-	///     service differs from the implementation's own type too.
+	///     through <c>__AsTask</c> when the two differ, since <c>Task&lt;T&gt;</c> is not covariant.
 	/// </summary>
 	private static string AsServiceTask(ParameterModel parameter, InstanceModel target, string task)
-		=> ConvertsTask(parameter, target) ? $"__AsTask<{target.SurfaceType}, {DeclaredService(parameter)}>({task})" : task;
+		=> ConvertsTask(parameter, target) ? $"__AsTask<{target.SurfaceType}, {parameter.ServiceType}>({task})" : task;
 
 	private static bool ConvertsTask(ParameterModel parameter, InstanceModel target)
-		=> target.IsAsyncTainted && target.SurfaceType != DeclaredService(parameter);
+		=> target.IsAsyncTainted && target.SurfaceType != parameter.ServiceType;
 
 	/// <summary>
 	///     Whether some async relationship dependency adapts its target's task through <c>__AsTask</c>
@@ -648,21 +663,22 @@ internal static partial class Sources
 	///     <c>ResolveAsync(Type)</c> surface; any other calls its async resolver directly (or wraps a synchronous
 	///     one in a completed task).
 	/// </summary>
-	private static string AsyncOwnedInner(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned, string[] argTypes)
+	private static string AsyncOwnedInner(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned)
 	{
 		if (rootOwned)
 		{
-			return $"async (__o, __ct) => ({DeclaredService(parameter)})await __o.ResolveAsync(typeof({parameter.ServiceType}), __ct).ConfigureAwait(false)";
+			return $"async (__o, __ct) => ({parameter.ServiceType})await __o.ResolveAsync(typeof({parameter.ServiceType}), __ct).ConfigureAwait(false)";
 		}
 
+		string[] forwarded = ForwardedArgs(target);
 		if (target.IsAsyncTainted)
 		{
-			string callArgs = string.Join("", argTypes.Select((_, i) => "a" + i + ", "));
+			string callArgs = string.Join("", forwarded.Select(arg => arg + ", "));
 			return $"(__o, __ct) => {AsServiceTask(parameter, target, $"{names.AsyncResolver(targetIndex)}(__o, {callArgs}__ct)")}";
 		}
 
-		string syncArgs = argTypes.Length == 0 ? "" : ", " + string.Join(", ", argTypes.Select((_, i) => "a" + i));
-		return $"(__o, __ct) => global::System.Threading.Tasks.Task.FromResult<{DeclaredService(parameter)}>({names.Resolver(targetIndex)}(__o{syncArgs}))";
+		string syncArgs = string.Join("", forwarded.Select(arg => ", " + arg));
+		return $"(__o, __ct) => global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({names.Resolver(targetIndex)}(__o{syncArgs}))";
 	}
 
 	/// <summary>
@@ -694,7 +710,7 @@ internal static partial class Sources
 	{
 		AppendXmlSummary(builder, depth,
 			"Resolves <typeparamref name=\"T\" /> in its own child scope, owned by the returned <c>Owned&lt;T&gt;</c>.");
-		Indent(builder, depth).AppendLine("protected global::Awaiten.Owned<T> __Owned<T>(global::System.Func<Scope, T> __resolve)");
+		Indent(builder, depth).AppendLine("private protected global::Awaiten.Owned<T> __Owned<T>(global::System.Func<Scope, T> __resolve)");
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("Scope __owned = CreateScope();");
 		EmitOwnedExternalPropagation(builder, depth + 1, hasExternal);
@@ -706,7 +722,7 @@ internal static partial class Sources
 		// Owned<T>. Like __Owned<T> it does not roll back the scope if resolution throws.
 		AppendXmlSummary(builder, depth,
 			"The asynchronous counterpart of <c>__Owned&lt;T&gt;</c>.");
-		Indent(builder, depth).AppendLine("protected async global::System.Threading.Tasks.Task<global::Awaiten.Owned<T>> __OwnedAsync<T>(global::System.Func<Scope, global::System.Threading.CancellationToken, global::System.Threading.Tasks.Task<T>> __resolve, global::System.Threading.CancellationToken cancellationToken)");
+		Indent(builder, depth).AppendLine("private protected async global::System.Threading.Tasks.Task<global::Awaiten.Owned<T>> __OwnedAsync<T>(global::System.Func<Scope, global::System.Threading.CancellationToken, global::System.Threading.Tasks.Task<T>> __resolve, global::System.Threading.CancellationToken cancellationToken)");
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("Scope __owned = CreateScope();");
 		EmitOwnedExternalPropagation(builder, depth + 1, hasExternal);
@@ -730,19 +746,19 @@ internal static partial class Sources
 	/// <summary>
 	///     A bare <c>Owned&lt;T&gt;</c>: resolve T once into a throwaway child scope and wrap it as a disposal handle.
 	/// </summary>
-	private static string OwnedBare(string service, string resolver, bool rootOwned, string? declaredService = null)
-		=> $"__s.__Owned<{declaredService ?? service}>({OwnedInner(service, resolver, [], rootOwned)})";
+	private static string OwnedBare(string service, string resolver, bool rootOwned)
+		=> $"__s.__Owned<{service}>({OwnedInner(service, resolver, [], rootOwned)})";
 
 	/// <summary>
 	///     A <c>new Func&lt;TArg…, Owned&lt;T&gt;&gt;((a0, …) =&gt; __Owned&lt;T&gt;(…))</c> expression: each call
 	///     builds <c>T</c> in a throwaway child scope and hands back the disposal handle.
 	/// </summary>
-	private static string OwnedFuncFactory(string[] argTypes, string service, string resolver, bool rootOwned, string? declaredService = null)
+	private static string OwnedFuncFactory(string[] argTypes, string[] forwarded, string service, string resolver, bool rootOwned)
 	{
-		string owned = $"global::Awaiten.Owned<{declaredService ?? service}>";
+		string owned = $"global::Awaiten.Owned<{service}>";
 		string generics = argTypes.Length == 0 ? owned : string.Join(", ", argTypes) + ", " + owned;
 		string lambdaArgs = string.Join(", ", argTypes.Select((_, i) => "a" + i));
-		return $"new global::System.Func<{generics}>(({lambdaArgs}) => __s.__Owned<{declaredService ?? service}>({OwnedInner(service, resolver, argTypes, rootOwned)}))";
+		return $"new global::System.Func<{generics}>(({lambdaArgs}) => __s.__Owned<{service}>({OwnedInner(service, resolver, forwarded, rootOwned)}))";
 	}
 
 	/// <summary>
@@ -751,7 +767,7 @@ internal static partial class Sources
 	///     (internal, so reachable even when the type is withheld from by-type resolution under strict lifetime
 	///     safety).
 	/// </summary>
-	private static string OwnedInner(string service, string resolver, string[] argTypes, bool rootOwned)
+	private static string OwnedInner(string service, string resolver, string[] forwarded, bool rootOwned)
 	{
 		// __o is the throwaway Owned scope (named distinctly from the enclosing resolver's __s). A root-owned target
 		// goes through the throwaway's public typed surface; any other calls its resolver over __o.
@@ -760,7 +776,7 @@ internal static partial class Sources
 			return $"__o => __o.Resolve<{service}>()";
 		}
 
-		string syncArgs = argTypes.Length == 0 ? "" : ", " + string.Join(", ", argTypes.Select((_, i) => "a" + i));
+		string syncArgs = string.Join("", forwarded.Select(arg => ", " + arg));
 		return $"__o => {resolver}(__o{syncArgs})";
 	}
 }

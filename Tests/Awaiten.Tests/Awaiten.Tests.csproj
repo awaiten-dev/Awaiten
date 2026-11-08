@@ -14,6 +14,8 @@
 		<NoWarn>$(NoWarn);AWT158</NoWarn>
 		<!-- Awaiten.Tests.ContainerSupport grants this assembly InternalsVisibleTo, so its copy of the Nullable attributes is visible here and a second one would conflict (CS0436). -->
 		<DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES_DISABLE</DefineConstants>
+		<!-- The generated containers must compile without nullable warnings for a consumer with warnings as errors. -->
+		<WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
