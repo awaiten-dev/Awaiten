@@ -170,6 +170,24 @@ public partial class DiagnosticTests
 		[Arguments(Reference.ImplementationAssembly)]
 		[Arguments(Reference.ReferenceAssembly)]
 		[Arguments(Reference.CompilationReference)]
+		public async Task AnExplicitInterfaceImplementation_IsAwt136AsInItsOwnAssembly(Reference reference)
+		{
+			string library = Library("[Inject] IClock IHasClock.Clock { get; set; }", "public sealed class Greeter : IGreeter, IHasClock")
+				                 .Replace("[Module]", string.Empty).Replace("[Transient<Greeter, IGreeter>]", string.Empty)
+			                 + "\npublic interface IHasClock { IClock Clock { get; set; } }\n";
+
+			GeneratorResult other = Run(reference, library, Consumer("[Transient<Greeter, IGreeter>]"));
+			GeneratorResult same = Generator.Run(SameAssembly(library, "[Transient<Greeter, IGreeter>]"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"))
+				.Because("no container can assign an explicit interface implementation, so making it public or registering it through a module would not help");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"));
+		}
+
+		[Test]
+		[Arguments(Reference.ImplementationAssembly)]
+		[Arguments(Reference.ReferenceAssembly)]
+		[Arguments(Reference.CompilationReference)]
 		public async Task AnInternalSetter_StaysAwt136(Reference reference)
 		{
 			GeneratorResult result = Run(reference, Library("[Inject] public IClock Clock { get; internal set; } = null!;"), Consumer("[Transient<Greeter, IGreeter>]"));
