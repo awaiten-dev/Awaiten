@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
@@ -498,6 +499,11 @@ partial class AwaitenGenerator
 
 			foreach (IParameterSymbol parameter in method.Parameters)
 			{
+				if (UnbuildableCause(parameter.Type) is { } unbuildable)
+				{
+					return $"{declared} and its parameter '{parameter.Name}' {unbuildable}, so the module generated neither a public wrapper nor a handle for it";
+				}
+
 				string? cause = !IsExternallyAccessible(parameter.Type)
 					? $"has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public"
 					: parameter.RefKind != RefKind.None
@@ -514,6 +520,22 @@ partial class AwaitenGenerator
 			return !IsExternallyAccessible(method.ReturnType)
 				? $"{declared} and returns '{Display(method.ReturnType.ToDisplayString(FullyQualified))}', which is not public, and the module has no single public service to expose it as that every registration and hook of the member accepts, so it generated no public wrapper for it"
 				: null;
+		}
+
+		// Its handle would carry the internal service, so the cause is what keeps the module from building it, which its own build reports only once something it emits needs the service.
+		string? UnbuildableCause(ITypeSymbol type)
+		{
+			if (hidden is null
+			    || HiddenShapeOf(type) is not ({ }, INamedTypeSymbol service)
+			    || !hidden.NonViable.Contains(service)
+			    || !hidden.Services.TryGetValue(service, out List<HiddenImplementation>? implementations)
+			    || implementations.Find(implementation => implementation.Rejections.Count > 0) is not { } rejected)
+			{
+				return null;
+			}
+
+			DiagnosticInfo rejection = rejected.Rejections[0];
+			return $"takes the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build ({rejection.Descriptor.Id}: {rejection.ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)})";
 		}
 
 		void Add(MemberWrapper? wrapper)

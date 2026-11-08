@@ -94,6 +94,20 @@ public class ModuleInternalMemberTests
 			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains(cause))
 				.Because("a container in another assembly does not see the internal factory, so the module records why it generated no wrapper for it");
 		}
+
+		[Test]
+		public async Task TakingAnInternalServiceThatCannotBeBuilt_ExternalAwt108NamesTheService()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(
+				Library("[Singleton<BeanStore>][Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "internal static IGrinder CreateGrinder(BeanStore store) => new Grinder(store);")
+					.Replace("internal sealed class BeanStore { }", "internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }"));
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'Lib.BeanStore' requires 'Lib.Settings'"));
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'Lib.BeanStore' requires 'Lib.Settings'"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("its parameter 'store' takes the internal service 'Lib.BeanStore', which the module cannot build (AWT195: ") && diagnostic.Contains("'Lib.Settings'"))
+				.Because("the factory would take the internal service through its handle, so the cause is what keeps the module from building that service, which the module's own build does not report while nothing it emits needs the service");
+		}
 	}
 
 	public class InternalServiceOfAnotherModule
