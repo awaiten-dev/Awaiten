@@ -1440,6 +1440,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
         "message": "fix: report one precise diagnostic per cause across containers (#323)"
+      },
+      {
+        "sha": "cd02492fab0a2fd9404c474485dbfc81f139cbeb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
+        "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
       }
     ],
     "labels": [
@@ -1682,7 +1688,8 @@ window.BENCHMARK_DATA = {
       "f8fe7b0e",
       "6a99a1ea",
       "449d1af3",
-      "b6ae6d30"
+      "b6ae6d30",
+      "cd02492f"
     ],
     "datasets": [
       {
@@ -1928,7 +1935,8 @@ window.BENCHMARK_DATA = {
           7.770508497953415,
           7.136554079396384,
           7.141119308769703,
-          9.006575437692495
+          9.006575437692495,
+          7.140325556580837
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1940,6 +1948,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2433,7 +2442,8 @@ window.BENCHMARK_DATA = {
           7.374247633985111,
           7.338271382663931,
           7.372345199187596,
-          7.5388804731460715
+          7.5388804731460715,
+          7.372001637305532
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2445,6 +2455,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2938,7 +2949,8 @@ window.BENCHMARK_DATA = {
           128.7923367206867,
           115.98913315931956,
           117.36254660288493,
-          120.92938704490662
+          120.92938704490662,
+          111.23661099274953
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2950,6 +2962,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3439,7 +3452,8 @@ window.BENCHMARK_DATA = {
           9.684199734528859,
           8.680305876334508,
           9.36101267039776,
-          10.330754904697338
+          10.330754904697338,
+          9.386737954158049
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3451,6 +3465,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3936,7 +3951,8 @@ window.BENCHMARK_DATA = {
           11.290196977555752,
           11.28231089413166,
           10.79080934396812,
-          11.689766970276832
+          11.689766970276832,
+          10.74500669326101
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3948,6 +3964,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5637,6 +5654,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
         "message": "fix: report one precise diagnostic per cause across containers (#323)"
+      },
+      {
+        "sha": "cd02492fab0a2fd9404c474485dbfc81f139cbeb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
+        "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
       }
     ],
     "labels": [
@@ -5879,7 +5902,8 @@ window.BENCHMARK_DATA = {
       "f8fe7b0e",
       "6a99a1ea",
       "449d1af3",
-      "b6ae6d30"
+      "b6ae6d30",
+      "cd02492f"
     ],
     "datasets": [
       {
@@ -6125,7 +6149,8 @@ window.BENCHMARK_DATA = {
           8.484177969396114,
           8.153235055009525,
           8.15751728216807,
-          10.042467822985989
+          10.042467822985989,
+          8.427576318383217
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6137,6 +6162,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6630,7 +6656,8 @@ window.BENCHMARK_DATA = {
           7.28302375972271,
           7.298010554696832,
           7.291215027754124,
-          7.523002044512675
+          7.523002044512675,
+          7.3025632013877235
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6642,6 +6669,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7135,7 +7163,8 @@ window.BENCHMARK_DATA = {
           124.46529998779297,
           114.08115221659342,
           119.87440228462219,
-          116.21976861953735
+          116.21976861953735,
+          111.8595519891152
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7147,6 +7176,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7636,7 +7666,8 @@ window.BENCHMARK_DATA = {
           9.719227088185457,
           8.705033413569133,
           9.340637908450194,
-          10.33907768703424
+          10.33907768703424,
+          9.60621874673026
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7648,6 +7679,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8133,7 +8165,8 @@ window.BENCHMARK_DATA = {
           14.6636613458395,
           14.866623592376708,
           14.140096595244747,
-          14.96371907989184
+          14.96371907989184,
+          14.063288360834122
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8145,6 +8178,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9834,6 +9868,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
         "message": "fix: report one precise diagnostic per cause across containers (#323)"
+      },
+      {
+        "sha": "cd02492fab0a2fd9404c474485dbfc81f139cbeb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
+        "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
       }
     ],
     "labels": [
@@ -10076,7 +10116,8 @@ window.BENCHMARK_DATA = {
       "f8fe7b0e",
       "6a99a1ea",
       "449d1af3",
-      "b6ae6d30"
+      "b6ae6d30",
+      "cd02492f"
     ],
     "datasets": [
       {
@@ -10322,7 +10363,8 @@ window.BENCHMARK_DATA = {
           14.801651886531285,
           15.507374908242907,
           19.26665007472038,
-          10.881386887814317
+          10.881386887814317,
+          30.165140509605408
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10484,6 +10526,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10827,7 +10870,8 @@ window.BENCHMARK_DATA = {
           1099.0976589747838,
           1182.5980622427803,
           1610.8537506103517,
-          758.2382349650065
+          758.2382349650065,
+          1787.111136509822
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10839,6 +10883,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11332,7 +11377,8 @@ window.BENCHMARK_DATA = {
           25004.452722167967,
           25718.3619253976,
           23965.72069091797,
-          17384.310945638023
+          17384.310945638023,
+          25354.35304914202
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11583,7 +11629,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32476,
-          32478
+          32478,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11833,7 +11880,8 @@ window.BENCHMARK_DATA = {
           551.3071691513062,
           655.63094552358,
           672.2693241119384,
-          388.25529925028485
+          388.25529925028485,
+          713.969929082053
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11863,6 +11911,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12330,7 +12379,8 @@ window.BENCHMARK_DATA = {
           8538.042793273926,
           8905.041313680013,
           11582.60394185384,
-          6669.035121917725
+          6669.035121917725,
+          12554.000971112933
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12577,7 +12627,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14031,6 +14082,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
         "message": "fix: report one precise diagnostic per cause across containers (#323)"
+      },
+      {
+        "sha": "cd02492fab0a2fd9404c474485dbfc81f139cbeb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
+        "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
       }
     ],
     "labels": [
@@ -14273,7 +14330,8 @@ window.BENCHMARK_DATA = {
       "f8fe7b0e",
       "6a99a1ea",
       "449d1af3",
-      "b6ae6d30"
+      "b6ae6d30",
+      "cd02492f"
     ],
     "datasets": [
       {
@@ -14519,7 +14577,8 @@ window.BENCHMARK_DATA = {
           109.56254595120748,
           112.16558281864438,
           186.18286761215754,
-          80.31675535837809
+          80.31675535837809,
+          426.55731369654336
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14681,6 +14740,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15024,7 +15084,8 @@ window.BENCHMARK_DATA = {
           10200.926851545062,
           10522.51799214681,
           11068.848346416768,
-          7469.809796015422
+          7469.809796015422,
+          15684.52485148112
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15036,6 +15097,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15529,7 +15591,8 @@ window.BENCHMARK_DATA = {
           619696.5127704327,
           624431.5793457031,
           532522.6529017857,
-          425445.2348257211
+          425445.2348257211,
+          593633.4207682292
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15780,7 +15843,8 @@ window.BENCHMARK_DATA = {
           738536,
           740790,
           721097,
-          737923
+          737923,
+          719435
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16030,7 +16094,8 @@ window.BENCHMARK_DATA = {
           34915.62215576172,
           34957.98446219308,
           35987.108162434895,
-          23204.76030069987
+          23204.76030069987,
+          41610.241725376676
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16277,7 +16342,8 @@ window.BENCHMARK_DATA = {
           80274,
           80307,
           80958,
-          80178
+          80178,
+          80317
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16527,7 +16593,8 @@ window.BENCHMARK_DATA = {
           260533.3045828683,
           262707.2282877604,
           320024.9271158854,
-          207174.48999023438
+          207174.48999023438,
+          350872.66852678574
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16774,7 +16841,8 @@ window.BENCHMARK_DATA = {
           573076,
           573058,
           571205,
-          573057
+          573057,
+          571211
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18204,6 +18272,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
         "message": "fix: report one precise diagnostic per cause across containers (#323)"
+      },
+      {
+        "sha": "cd02492fab0a2fd9404c474485dbfc81f139cbeb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
+        "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
       }
     ],
     "labels": [
@@ -18442,7 +18516,8 @@ window.BENCHMARK_DATA = {
       "f8fe7b0e",
       "6a99a1ea",
       "449d1af3",
-      "b6ae6d30"
+      "b6ae6d30",
+      "cd02492f"
     ],
     "datasets": [
       {
@@ -18684,7 +18759,8 @@ window.BENCHMARK_DATA = {
           266.3239319665091,
           252.9982936859131,
           274.06710709844316,
-          203.66585115591684
+          203.66585115591684,
+          259.3583624913142
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18719,6 +18795,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19181,7 +19258,8 @@ window.BENCHMARK_DATA = {
           611.1438227381025,
           709.2722511291504,
           625.2112270991007,
-          458.2563000406538
+          458.2563000406538,
+          583.117000579834
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19193,6 +19271,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19678,7 +19757,8 @@ window.BENCHMARK_DATA = {
           6813.818317667643,
           6589.53933207194,
           6601.168085225423,
-          4935.228814806257
+          4935.228814806257,
+          6022.617700958252
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19762,6 +19842,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20175,7 +20256,8 @@ window.BENCHMARK_DATA = {
           429.8875028746469,
           401.6447895254408,
           414.80572350819904,
-          331.5271722475688
+          331.5271722475688,
+          430.94111428942
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20187,6 +20269,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20672,7 +20755,8 @@ window.BENCHMARK_DATA = {
           763.383392906189,
           738.9754593712943,
           768.3810199737549,
-          548.5344422022501
+          548.5344422022501,
+          684.362475667681
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20684,6 +20768,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
