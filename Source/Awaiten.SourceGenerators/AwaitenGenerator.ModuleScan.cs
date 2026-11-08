@@ -665,7 +665,7 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
-			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context);
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _);
 			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
 			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
@@ -1091,7 +1091,7 @@ partial class AwaitenGenerator
 			return false;
 		}
 
-		if (MirrorHiddenService(parameter.Type, parameter.Name, parameterAttributes, context) is { } handle)
+		if (MirrorHiddenService(parameter.Type, parameter.Name, parameterAttributes, context, out INamedTypeSymbol? unbuildable) is { } handle)
 		{
 			if (handle.Error is { } error)
 			{
@@ -1124,9 +1124,9 @@ partial class AwaitenGenerator
 				Diagnostics.ModuleScanParameterInaccessible,
 				LocationInfo.From(location),
 				new EquatableArray<string>([subject.Subject, label, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,]));
-			if (context.Hidden is { } services && HiddenShapeOf(parameter.Type) is ({ }, INamedTypeSymbol service) && services.NonViable.Contains(service))
+			if (unbuildable is not null && context.Hidden is { } services)
 			{
-				services.UnbuildableNeeds[rejection] = $"{label} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
+				services.UnbuildableNeeds[rejection] = $"{label} needs the internal service '{Display(unbuildable.ToDisplayString(FullyQualified))}', which the module cannot build";
 			}
 
 			diagnostics.Add(rejection);

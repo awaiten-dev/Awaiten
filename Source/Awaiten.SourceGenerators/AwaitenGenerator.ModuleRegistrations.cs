@@ -973,7 +973,7 @@ partial class AwaitenGenerator
 			{
 				reason = "is marked [FromKey] with an unsupported key";
 			}
-			else if (MirrorHiddenService(property.Type, property.Name, attributes, context) is { } handle)
+			else if (MirrorHiddenService(property.Type, property.Name, attributes, context, out _) is { } handle)
 			{
 				if (handle.Error is { } error)
 				{

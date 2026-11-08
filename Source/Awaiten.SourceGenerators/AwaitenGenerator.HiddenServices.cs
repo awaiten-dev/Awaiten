@@ -1127,7 +1127,7 @@ partial class AwaitenGenerator
 			List<FactoryParameter> mirrored = new();
 			foreach (IParameterSymbol parameter in convention.Method.Parameters)
 			{
-				if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context) is { } mirror)
+				if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _) is { } mirror)
 				{
 					if (mirror.Error is { } error)
 					{
@@ -1340,10 +1340,12 @@ partial class AwaitenGenerator
 	///     service's handle: the parameter takes the handle in the same shape (see <see cref="HiddenShape" />) and the
 	///     generated member passes the instance on. Reports AWT237 for a shape it cannot pass on, and returns
 	///     <see langword="null" /> when the member takes no such service, or one that cannot be built, which is then
-	///     recorded so its cause is reported, while the member falls back to AWT195. Only in the module's own build.
+	///     recorded so its cause is reported and returned as <paramref name="unbuildable" />, while the member falls back
+	///     to AWT195. Only in the module's own build.
 	/// </summary>
-	private static HiddenMirror? MirrorHiddenService(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context)
+	private static HiddenMirror? MirrorHiddenService(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context, out INamedTypeSymbol? unbuildable)
 	{
+		unbuildable = null;
 		if (context.Hidden is not { } hidden || HasArgAttribute(attributes) || HasRequestingType(attributes))
 		{
 			return null;
@@ -1356,6 +1358,7 @@ partial class AwaitenGenerator
 			if (hidden.NonViable.Contains(service))
 			{
 				hidden.NeededNonViable.Add(service);
+				unbuildable = service;
 				return null;
 			}
 

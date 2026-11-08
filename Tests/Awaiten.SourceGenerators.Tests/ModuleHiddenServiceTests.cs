@@ -2482,6 +2482,57 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenAsArg_ReportsTheParameterOfTheConsumer()
+		{
+			GeneratorResult result = RunLibrary("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Grinder : IGrinder { public Grinder([Arg] BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Transient<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Grinder'*its constructor parameter 'store' has the type 'Lib.BeanStore'*").AsWildcard()
+				.Because("a caller passes an [Arg] to the generated factory, which therefore needs a type the caller can name, whether or not the module can build the service");
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenAsRequestingType_ReportsTheParameterOfTheConsumer()
+		{
+			GeneratorResult result = RunLibrary("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Hopper { }
+				internal sealed class Grinder : IGrinder { public Grinder(Hopper hopper) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Transient<Hopper>(Factory = nameof(MakeHopper))]
+				[Transient<Grinder, IGrinder>]
+				public static partial class CoffeeModule
+				{
+				    internal static Hopper MakeHopper([RequestingType] BeanStore store) => new();
+				}
+				""");
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Hopper'*the parameter 'store' of its factory 'MakeHopper' has the type 'Lib.BeanStore'*").AsWildcard()
+				.Because("a [RequestingType] parameter is filled by the consumer and never resolved from the module's handles");
+		}
+
+		[Test]
 		public async Task InternalServiceThatCannotBeBuilt_WithInternalsVisibleTo_IsLeftToTheFriendAssembly()
 		{
 			GeneratorResult result = RunLibrary("""
