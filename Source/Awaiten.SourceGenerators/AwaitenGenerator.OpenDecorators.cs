@@ -56,7 +56,8 @@ partial class AwaitenGenerator
 					keys,
 					decorator.Inherited,
 					decorator.Via?.Close(typeArguments, closedDecorator, closed),
-					decorator.Owner));
+					decorator.Owner,
+					When: decorator.When));
 			}
 		}
 	}

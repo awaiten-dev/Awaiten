@@ -105,6 +105,9 @@ internal static partial class Sources
 
 		/// <summary>Whether the generated code can apply <c>NotNullWhenAttribute</c> (see <see cref="ContainerModel.HasNotNullWhen" />).</summary>
 		public bool NotNullWhen => Model is not { HasNotNullWhen: false, };
+
+		/// <summary>The distinct decorator predicates in order of first use, each with one flag on the <c>Root</c>.</summary>
+		public List<PredicateModel> Predicates { get; } = DistinctPredicates(Instances);
 	}
 
 	/// <summary>
@@ -641,6 +644,7 @@ internal static partial class Sources
 		// Fields region: the singleton cache fields followed by the compile-time metadata arrays (__registrations,
 		// and __externalDependencies when the container has external dependencies).
 		EmitCacheFields(fields, body, instances, names, Lifetime.Singleton);
+		EmitPredicateFields(fields, body, context.Predicates);
 		EmitTypedTaskFields(fields, body, instances, strict);
 
 		// Members region (no #region wrapper): the constructor and the IAwaitenRoot surface
@@ -657,6 +661,7 @@ internal static partial class Sources
 		Indent(members, body).AppendLine("/// <param name=\"externalResolver\">The external resolver, or <see langword=\"null\" /> to leave it unset.</param>");
 		Indent(members, body).AppendLine("public Root(global::Awaiten.IExternalResolver? externalResolver) : base(externalResolver)");
 		Indent(members, body).AppendLine("{");
+		EmitPredicateEvaluation(members, body + 1, context.Predicates);
 		EmitEagerActivation(members, body + 1, instances, names);
 		Indent(members, body).AppendLine("}");
 		// The Root override of InitializeAsync warms the async singletons in dependency order (the base
@@ -715,6 +720,8 @@ internal static partial class Sources
 			Separate(helpers);
 			EmitWiringSupport(helpers, body, instances, names, root: true);
 		}
+
+		EmitLazyPredicates(helpers, body, context);
 
 		EmitSections(builder, body,
 			new MemberSection("Fields", fields),

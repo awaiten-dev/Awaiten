@@ -1088,6 +1088,69 @@ public static partial class CoffeeShop;
 
 **Fix:** Register the members under that key (`[Transient<PrinterChannel, IReceiptChannel>(Key = "kitchen")]`), or change the composite's `Key`.
 
+### AWT246
+
+:::danger[Error]
+A `[Decorate]`'s `When` names no predicate the root can evaluate: the type that declares the `[Decorate]` (the container, a module or an extended container) has no member of that name, or it is not a static non-generic method, readable property or field of type `bool`, or several methods of that name return `bool`. A predicate returning `Task<bool>` or `ValueTask<bool>` is reported too, because the root evaluates it synchronously. The decorator is left out.
+:::
+
+```csharp expect=AWT246
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class CoffeeShop
+{
+    private static Task<bool> AuditPayments() => Task.FromResult(true);   // the root evaluates a predicate synchronously
+}
+```
+
+The predicate is looked up only on the type that declares the `[Decorate]`, so a module's decorator never finds a member of the container. The module's own build reports it too when no container of its assembly imports the module.
+
+**Fix:** Name a static `bool` method, property or field of the type that declares the `[Decorate]`. Compute an asynchronous value before you create the root and let the predicate read it.
+
+### AWT247
+
+:::danger[Error]
+A `[Decorate]` on a module or an extended container names a predicate the generated container cannot call: it is private, or the module or container is in another assembly and the predicate is not public. The decorator is left out.
+:::
+
+```csharp expect=AWT247
+[Module]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static class PaymentModule
+{
+    private static bool AuditPayments => true;   // private, so the container cannot call it
+}
+
+[Container]
+[Import(typeof(PaymentModule))]
+public static partial class CoffeeShop;
+```
+
+A container in another assembly sees only the public members of a module or base container, so an internal predicate there is reported as well, even when it exists. The module's own build reports a predicate that is not public on a public module, which containers in other assemblies can import, and a private predicate of a module no container of its assembly imports, so the library that declares the module sees the error before its consumers do.
+
+**Fix:** Make the predicate `internal` or `public` when the container is in the same assembly, and `public` when it is in another one or the module is public.
+
+### AWT248
+
+:::danger[Error]
+A decorator predicate takes a parameter the root cannot supply before it evaluates the predicate once per root: a runtime `[Arg]`, a parameter passed by reference, a relationship such as `Func<T>` or `Lazy<T>`, a collection, or a service that is scoped, transient, built for each consumer or initialized asynchronously.
+:::
+
+```csharp expect=AWT248
+[Container]
+[Scoped<Order>]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class CoffeeShop
+{
+    private static bool AuditPayments(Order order) => true;   // Order is scoped, but the predicate decides for the root
+}
+```
+
+**Fix:** Take only singletons, `Instance` registrations or imported services that are not initialized asynchronously, or read the value the predicate needs from a singleton such as a settings object. A decision that varies per scope or per call belongs in the decorator itself, which can take its options and pass calls through when it is disabled.
+
 ## Open generics
 
 ### AWT125

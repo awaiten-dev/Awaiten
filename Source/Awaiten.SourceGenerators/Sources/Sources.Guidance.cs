@@ -53,6 +53,20 @@ internal static partial class Sources
 	}
 
 	/// <summary>
+	///     The guidance (a quoted string literal) a decorator predicate that takes services throws when it is evaluated
+	///     again while it is being evaluated: a service it takes resolves a service the predicate decorates through a
+	///     <c>Func</c> or <c>Lazy</c> while it is built, which runs the guard of the link the predicate is deciding.
+	/// </summary>
+	private static string ReentrantPredicateMessage(PredicateModel predicate, InstanceModel[] instances)
+	{
+		string services = string.Join("', '", instances
+			.Where(instance => instance.When?.Member == predicate.Member)
+			.Select(instance => AwaitenGenerator.Display(instance.SurfaceType))
+			.Distinct());
+		return $"\"Awaiten: the decorator predicate '{AwaitenGenerator.Display(predicate.Member)}' that decides whether to decorate '{services}' was used again while it was being evaluated, because a service it takes resolves '{services}' through a Func or Lazy while it is built; call that Func or Lazy only after the constructor returns, or let the predicate take services that do not need '{services}'.\"";
+	}
+
+	/// <summary>
 	///     The guidance message (a quoted string literal) thrown by Resolve(Type) on the Root when a service
 	///     withheld there under strict lifetime safety is requested by its bare type: it is itself a disposable
 	///     build-on-demand service, reachable from the Root only by injection or through an <c>Owned&lt;T&gt;</c>

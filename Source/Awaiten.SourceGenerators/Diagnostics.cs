@@ -2224,4 +2224,45 @@ internal static class Diagnostics
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
 		description: "The container does not check what a Factory or Instance member produces. A singleton or scoped instance that is null counts as not built yet on a synchronous resolve, so its factory runs again on every one, and for a disposable type each run adds another entry to the disposal list. Consumers, decorators, OnActivated hooks and async initializers receive null, so an async initializer throws a NullReferenceException; a collection contains null, and the untyped Resolve(Type) returns null. Declare the member non-nullable, or register a null object that does nothing in place of null.");
+
+	/// <summary>
+	///     The <c>When</c> of a <c>[Decorate]</c> names no member the root can evaluate as its predicate: the type that
+	///     declares the attribute has no such member, or it is not a static non-generic method, readable property or field
+	///     of type <see langword="bool" /> (an asynchronous <c>Task&lt;bool&gt;</c> or <c>ValueTask&lt;bool&gt;</c> included),
+	///     or several methods of that name return <see langword="bool" />.
+	/// </summary>
+	public static readonly DiagnosticDescriptor InvalidDecoratorPredicate = new(
+		"AWT246",
+		"Invalid decorator predicate",
+		"The decorator predicate '{0}' is not usable: {1}; name a static bool method, property or field of the type that declares the [Decorate]",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The <c>When</c> of a <c>[Decorate]</c> on a module or an extended base container names a predicate the generated
+	///     container cannot call: it is private to a type of the container's assembly, or not public on a type of another
+	///     assembly (whose non-public members the container does not see). The module's own build reports a predicate
+	///     that is not public on a public module and a private one of a module no container of its assembly imports.
+	/// </summary>
+	public static readonly DiagnosticDescriptor InaccessibleDecoratorPredicate = new(
+		"AWT247",
+		"Decorator predicate not accessible",
+		"The decorator predicate '{0}' is not accessible from the container: {1}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A decorator predicate takes a parameter the root cannot supply before it evaluates the predicate once: a runtime
+	///     <c>[Arg]</c>, a parameter passed by reference, a relationship or a collection, or a service that is scoped,
+	///     transient, built for each consumer or initialized asynchronously.
+	/// </summary>
+	public static readonly DiagnosticDescriptor InvalidDecoratorPredicateParameter = new(
+		"AWT248",
+		"Invalid decorator predicate parameter",
+		"The decorator predicate '{0}' cannot take '{1}': {2}; a predicate is evaluated once per root and takes only singletons, Instance registrations or imported services that are not initialized asynchronously",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

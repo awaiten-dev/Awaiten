@@ -44,6 +44,9 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     annotation the registered type cannot spell, below its top level (<c>Repo&lt;string?&gt;</c>) or at it
 ///     (<c>IKettle?</c>, reported as <see cref="Diagnostics.NullableProduct">AWT245</see> at the registration), so the
 ///     generated code forgives the produced value's nullability.
+///     <see cref="When" /> is the predicate of a conditional decorator chain link: when it is <see langword="false" />,
+///     the link returns its inner instance instead of building the decorator, so its resolvers return
+///     <see cref="ResolverType" />, the decorated service.
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -76,7 +79,8 @@ internal sealed record InstanceModel(
 	string? AsyncReleaseHookName = null,
 	bool Unlisted = false,
 	bool TracksHandleDisposal = false,
-	bool NullableProduct = false)
+	bool NullableProduct = false,
+	PredicateModel? When = null)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated
@@ -193,12 +197,15 @@ internal sealed record InstanceModel(
 
 	/// <summary>
 	///     Every graph dependency this instance resolves: its constructor/factory parameters, its injected
-	///     <c>[Inject]</c> member dependencies and its lifecycle hook parameters, in that order. For the
-	///     dependency-walking passes that treat all three groups alike; a pass that distinguishes them (deferred
-	///     members in the cycle graph, say) enumerates the groups itself.
+	///     <c>[Inject]</c> member dependencies, its lifecycle hook parameters and the services its <see cref="When" />
+	///     predicate takes, in that order. For the dependency-walking passes that treat all groups alike; a pass that
+	///     distinguishes them (deferred members in the cycle graph, say) enumerates the groups itself. The predicate's
+	///     services are shared singletons the root resolves synchronously, so of the dependency graphs only the
+	///     construction graph edges them, where they close a cycle.
 	/// </summary>
 	public IEnumerable<ParameterModel> WalkedDependencies()
 		=> ConstructorParameters.AsArray()
 			.Concat(InjectedMembers.AsArray().Select(member => member.Dependency))
-			.Concat(HookParameters());
+			.Concat(HookParameters())
+			.Concat(When?.Parameters.AsArray() ?? []);
 }

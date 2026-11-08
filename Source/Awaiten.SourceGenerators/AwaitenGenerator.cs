@@ -151,6 +151,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
 		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
 		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
+		ReportModuleDecoratorPredicates(moduleSymbol, compilation, diagnostics);
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{
@@ -621,9 +622,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
+		ValidateDecoratorPredicates(graph, diagnostics);
 
 		LocationInfo? containerLocation = LocationInfo.From(containerSymbol.Locations.FirstOrDefault());
-		DetectCycles(graph.Instances, graph.ConstructionDependencies, containerLocation, diagnostics);
+		DetectCycles(graph.Instances, graph.ConstructionDependencies, graph.ServiceToImpl, graph.ImplToIndex, containerLocation, diagnostics);
 		DetectCaptiveDependencies(graph.Instances, graph.Dependencies, graph.InstanceLocations, diagnostics);
 		DetectNonTerminatingDeferredCycles(graph.Instances, graph.ConstructionDependencies, graph.CombinedDependencies, containerLocation, diagnostics);
 
@@ -768,7 +770,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		BaseFactories? Factories,
 		AsyncInitializerScopes AsyncInitializers,
 		SameCompilationModules Modules,
-		HiddenInjectedProperties HiddenInjectedProperties);
+		HiddenInjectedProperties HiddenInjectedProperties,
+		Dictionary<string, PredicateModel> Predicates);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -954,7 +957,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)
