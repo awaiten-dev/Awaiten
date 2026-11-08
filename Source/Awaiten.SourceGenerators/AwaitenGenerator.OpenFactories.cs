@@ -671,7 +671,7 @@ partial class AwaitenGenerator
 			foreach (int index in group.Skip(1))
 			{
 				dropped.Add(index);
-				constraintRejected.Add(raw[index].ServiceType);
+				RecordRejected(constraintRejected, raw[index].ServiceType, raw[index].Key);
 			}
 		}
 

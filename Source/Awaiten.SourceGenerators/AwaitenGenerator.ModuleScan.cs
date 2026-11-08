@@ -486,7 +486,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     One hook a module self-compiles: the implementation it runs on, the user hook's name, the location to
 	///     report at, the slot, the name of the wrapper to emit and the subject that names the implementation in a
-	///     diagnostic.
+	///     diagnostic. <see cref="SkipsUnbuildableNeeds" /> lets a hook whose parameter needs an internal service the
+	///     module cannot build resolve to a skipped one, for a caller that records the skip.
 	/// </summary>
 	private readonly record struct ModuleHookRequest(
 		INamedTypeSymbol MatchType,
@@ -495,7 +496,8 @@ partial class AwaitenGenerator
 		bool Release,
 		string WrapperName,
 		SelfCompiledSubject Subject,
-		bool Skippable = false);
+		bool Skippable = false,
+		bool SkipsUnbuildableNeeds = false);
 
 	/// <summary>
 	///     <see cref="ResolveModuleHookCore" /> for the hook of a registration that a container in the module's own
@@ -532,7 +534,7 @@ partial class AwaitenGenerator
 		IReadOnlyList<INamedTypeSymbol>? closedMarkers,
 		ModuleScanContext context)
 	{
-		(INamedTypeSymbol matchType, string hookName, Location? location, bool release, _, _, _) = request;
+		(INamedTypeSymbol matchType, string hookName, Location? location, bool release, _, _, _, _) = request;
 		string typeName = matchType.ToDisplayString(FullyQualified);
 		(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) =
 			CollectModuleHookOverloads(matchType, hookName, closedMarkers, context);
@@ -584,7 +586,9 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> rejections = new();
 		if (!TryMirrorHookParameters(request.Subject, hook, release, location, context with { Diagnostics = rejections, }, out EquatableArray<FactoryParameter> parameters))
 		{
-			if (request.Skippable && HookSkipReason(rejections[0], hook, release) is { } skipReason)
+			// A parameter of an internal service the module cannot build fails for the service's cause, which the module reports.
+			string? needReason = request.SkipsUnbuildableNeeds && context.Hidden is { } services && rejections.Count == 1 && services.UnbuildableNeeds.TryGetValue(rejections[0], out string? need) ? need : null;
+			if ((needReason ?? (request.Skippable ? HookSkipReason(rejections[0], hook, release) : null)) is { } skipReason)
 			{
 				return new ResolvedModuleHook(hookName, new ModuleHook(hookName, hookName, instanceCast, default, returnType, skipReason));
 			}
@@ -689,10 +693,15 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
-			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _);
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out INamedTypeSymbol? unbuildable);
 			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
 			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
+				if (unbuildable is not null && handle is null && error.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible && context.Hidden is { } services)
+				{
+					services.UnbuildableNeeds[error] = UnbuildableNeed($"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook", unbuildable);
+				}
+
 				context.Diagnostics.Add(error);
 				return false;
 			}
@@ -1050,7 +1059,9 @@ partial class AwaitenGenerator
 	///     a service, and building it in the factory would bypass the lifetime and disposal the graph gives it. The inner
 	///     parameter of a decorator of the internal service <paramref name="decorated" /> takes the service's handle even
 	///     when its type is a base type of the service, so a consumer finds the inner parameter on the factory as a
-	///     container in the module's own assembly finds it on the constructor.
+	///     container in the module's own assembly finds it on the constructor. For a decorator or composite of
+	///     <paramref name="emptyCollectionsOf" />, a collection the factory cannot expose is passed empty (see
+	///     <see cref="EmptyCollection" />).
 	/// </summary>
 	private static bool TryMirrorFactoryParameters(
 		INamedTypeSymbol type,
@@ -1059,7 +1070,8 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject,
 		out EquatableArray<FactoryParameter> parameters,
 		bool mirrorProperties = false,
-		INamedTypeSymbol? decorated = null)
+		INamedTypeSymbol? decorated = null,
+		INamedTypeSymbol? emptyCollectionsOf = null)
 	{
 		parameters = default;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
@@ -1098,6 +1110,12 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			if (emptyCollectionsOf is not null && EmptyCollection(parameter, emptyCollectionsOf, context) is { } empty)
+			{
+				mirrored.Add(empty);
+				continue;
+			}
+
 			if (!TryMirrorParameter(parameter, context, location, subject, $"its constructor parameter '{parameter.Name}'", out FactoryParameter mirror))
 			{
 				return false;
@@ -1108,6 +1126,28 @@ partial class AwaitenGenerator
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
 		return true;
+	}
+
+	/// <summary>
+	///     A collection parameter whose element type no container in another assembly can name, and which no module of
+	///     the assembly may provide (see <see cref="AssemblyModuleIndex.MayProvide" />), as an empty collection the
+	///     factory passes itself, since such a container can register no element either and a container in the module's
+	///     own assembly passes it empty too; otherwise <see langword="null" />. A collection of a type that
+	///     <paramref name="service" /> converts to stays, since it may be the collection a composite composes.
+	/// </summary>
+	private static FactoryParameter? EmptyCollection(IParameterSymbol parameter, INamedTypeSymbol service, ModuleScanContext context)
+	{
+		if (!TryGetCompositeCollectionElement(parameter.Type, out ITypeSymbol? element)
+		    || element is not INamedTypeSymbol named
+		    || context.Compilation.HasImplicitConversion(service, named)
+		    || FitsFactorySignature(parameter.Type, context)
+		    || TypeHiddenInModule(named, context.Module, context.Compilation) is not null
+		    || AssemblyModuleIndex.Of(context.Compilation).MayProvide(named, FromKey(parameter.GetAttributes())))
+		{
+			return null;
+		}
+
+		return new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name, Argument: $"global::System.Array.Empty<{named.ToDisplayString(FullyQualifiedWithNullability)}>()", Fixed: true);
 	}
 
 	/// <summary>

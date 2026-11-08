@@ -7,7 +7,7 @@ namespace Awaiten.SourceGenerators.Tests;
 ///     is synthesized per closing of the service present in the graph and flows through the same chain/composite
 ///     builders as the closed forms. The forms reuse the open generic diagnostics AWT127 (not unbound) and AWT125
 ///     (arity); a closing whose type arguments violate the decorator's/composite's constraints warns AWT171 (a
-///     warning, since the base service still resolves); an open decorator that matches no closing reports AWT123.
+///     warning, since the base service still resolves); an unkeyed open decorator or composite that matches no closing warns AWT249 through the analyzer.
 /// </summary>
 public class OpenGenericDecoratorTests
 {
@@ -125,9 +125,9 @@ public class OpenGenericDecoratorTests
 	}
 
 	[Test]
-	public async Task OpenDecorator_WithNoClosingToDecorate_ReportsAwt123()
+	public async Task OpenDecorator_WithNoClosingToDecorate_WarnsAwt249()
 	{
-		GeneratorResult result = Generator.Run("""
+		const string source = """
 		                                       using Awaiten;
 
 		                                       namespace MyCode;
@@ -142,11 +142,37 @@ public class OpenGenericDecoratorTests
 		                                       public static partial class MyContainer
 		                                       {
 		                                       }
+		                                       """;
+
+		await That(Generator.Run(source).Diagnostics).IsEmpty();
+		await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+			.Because("the open decorator applies to no closing, since nothing requires a closed IHandler<T>, which a container that is not extended likely did not mean");
+	}
+
+	[Test]
+	public async Task OpenDecorator_InABaseWithoutAClosing_DecoratesTheClosingOfAnExtendingContainer()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public interface IHandler<T> { }
+		                                       public sealed class OrderHandler : IHandler<int> { }
+		                                       public sealed class Logging<T> : IHandler<T> { public Logging(IHandler<T> inner) { } }
+
+		                                       [Container]
+		                                       [Decorate(typeof(Logging<>), typeof(IHandler<>))]
+		                                       public static partial class BaseContainer;
+
+		                                       [Container(Extends = typeof(BaseContainer))]
+		                                       [Transient<OrderHandler, IHandler<int>>]
+		                                       public static partial class MyContainer;
 		                                       """);
 
-		// Nothing requires a closed IHandler<…>, so no closing is expanded and there is nothing to decorate.
-		await That(result.Diagnostics).Contains("*AWT123*").AsWildcard()
-			.Because("the open decorator matches no closing of the service");
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a base meant for extension may declare an open decorator for the closings its extending containers register");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("new global::MyCode.Logging<int>(");
 	}
 
 	[Test]
@@ -239,6 +265,36 @@ public class OpenGenericDecoratorTests
 			.Because("the closing under the selected key is decorated");
 		await That(source).DoesNotContain("new global::MyCode.LoggingBehavior<global::MyCode.Order>(ResolveHandler(__s))")
 			.Because("the unkeyed closing is not selected");
+	}
+
+	[Test]
+	[Arguments("main", "main", false)]
+	[Arguments("main", "typo", true)]
+	[Arguments(null, "typo", true)]
+	public async Task OpenDecorator_WithAKeyNoClosingHas_ReportsAwt210UnlessTheRejectedClosingHadIt(string? registrationKey, string decoratorKey, bool reported)
+	{
+		string key = registrationKey is null ? string.Empty : $", Key = \"{registrationKey}\"";
+		string fromKey = registrationKey is null ? string.Empty : $"[FromKey(\"{registrationKey}\")] ";
+		GeneratorResult result = Generator.Run($$"""
+		                                         using Awaiten;
+
+		                                         namespace MyCode;
+
+		                                         public interface IRepo<T> { }
+		                                         public sealed class Repo<T> : IRepo<T> where T : class { }
+		                                         public sealed class LoggingRepo<T> : IRepo<T> { public LoggingRepo(IRepo<T> inner) { } }
+		                                         public sealed class Consumer { public Consumer({{fromKey}}IRepo<int> repo) { } }
+
+		                                         [Container]
+		                                         [Singleton(typeof(Repo<>), typeof(IRepo<>){{key}})]
+		                                         [Transient<Consumer>]
+		                                         [Decorate(typeof(LoggingRepo<>), typeof(IRepo<>), Keys = new object[] { "{{decoratorKey}}" })]
+		                                         public static partial class MyContainer;
+		                                         """);
+
+		await That(result.Diagnostics).Contains("*AWT126*").AsWildcard();
+		await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("AWT210"))).IsEqualTo(reported)
+			.Because("only a closing dropped under the decorator's key explains why no closing has that key, while a typo stays visible");
 	}
 
 	[Test]

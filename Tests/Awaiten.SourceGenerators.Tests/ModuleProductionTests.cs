@@ -157,7 +157,7 @@ public class ModuleProductionTests
 	}
 
 	[Test]
-	public async Task ModuleFactory_PrivateMember_ReportsAwt153()
+	public async Task ModuleFactory_PrivateMemberOfANonPartialModule_ReportsAwt194Once()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using Awaiten;
@@ -181,12 +181,12 @@ public class ModuleProductionTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).Contains("*AWT153*CreateClock*ClockModule*").AsWildcard()
-			.Because("a private module member exists but cannot be called from the generated container");
+		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'CreateClock'"))
+			.Because("no container calls a private member except through a generated wrapper, which only a partial module can receive, so the module reports it once instead of the container AWT153");
 	}
 
 	[Test]
-	public async Task ModuleInstance_PrivateMember_ReportsAwt153()
+	public async Task ModuleInstance_PrivateMemberOfANonPartialModule_ReportsAwt194Once()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using Awaiten;
@@ -210,8 +210,8 @@ public class ModuleProductionTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).Contains("*AWT153*Clock*ClockModule*").AsWildcard()
-			.Because("a private module instance member exists but cannot be read from the generated container");
+		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'Clock'"))
+			.Because("no container reads a private member except through a generated wrapper, which only a partial module can receive");
 	}
 
 	[Test]

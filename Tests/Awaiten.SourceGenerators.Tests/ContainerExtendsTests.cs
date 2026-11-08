@@ -71,8 +71,9 @@ public class ContainerExtendsTests
 
 			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT108"))).IsEqualTo(1)
 				.Because("the base's missing factory reads the same in the extending container and is reported once");
-			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT153"))).IsEqualTo(1)
-				.Because("a private module member is inaccessible to the base as well, so it is the base's problem and no AWT226");
+			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT194"))).IsEqualTo(1)
+				.Because("a private member of a module that is not partial is the module's problem, reported once by its own build, and no AWT226");
+			await That(result.Diagnostics).DoesNotContain("*AWT153*").AsWildcard();
 			await That(result.Diagnostics).DoesNotContain("*AWT226*").AsWildcard();
 		}
 
@@ -766,6 +767,82 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		[Arguments("IRepository<int>", "IRepository<>")]
+		[Arguments("IStore<int, string>", "IStore<,>")]
+		public async Task ABaseInAnotherAssemblyWithoutInternalsVisibleTo_ReportsNoOpenDecoratorOfTheDroppedClosing(string closed, string open)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                        using Awaiten;
+
+			                                                                        namespace Production;
+
+			                                                                        public interface IRepository<T> { }
+			                                                                        public interface IStore<TKey, TValue> { }
+			                                                                        public sealed class LoggingRepository<T>(IRepository<T> inner) : IRepository<T> { public IRepository<T> Inner { get; } = inner; }
+			                                                                        public sealed class LoggingStore<TKey, TValue>(IStore<TKey, TValue> inner) : IStore<TKey, TValue> { public IStore<TKey, TValue> Inner { get; } = inner; }
+
+			                                                                        [Container]
+			                                                                        [Singleton<Repository, {{closed}}>]
+			                                                                        public static partial class Shop
+			                                                                        {
+			                                                                            private sealed class Repository : IRepository<int>, IStore<int, string> { }
+			                                                                        }
+			                                                                        """, $$"""
+			                                                                              using Awaiten;
+			                                                                              using Production;
+
+			                                                                              namespace MyCode;
+
+			                                                                              [Container(Extends = typeof(Production.Shop))]
+			                                                                              [Decorate(typeof(Logging{{open.Substring(1)}}), typeof({{open}}))]
+			                                                                              public static partial class TestShop
+			                                                                              {
+			                                                                              }
+			                                                                              """);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
+				.Because("the open decorator matches no closing only because the inherited closing was dropped, which AWT226 already reports");
+		}
+
+		[Test]
+		[Arguments("IRepository<int>", false)]
+		[Arguments("IRepository<int, string>", true)]
+		public async Task ABaseInAnotherAssemblyWithoutInternalsVisibleTo_ReportsNoKeyedOpenDecoratorOfTheDroppedClosing(string closed, bool reported)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                        using Awaiten;
+
+			                                                                        namespace Production;
+
+			                                                                        public interface IRepository<T> { }
+			                                                                        public interface IRepository<TKey, TValue> { }
+			                                                                        public sealed class LoggingRepository<T>(IRepository<T> inner) : IRepository<T> { public IRepository<T> Inner { get; } = inner; }
+
+			                                                                        [Container]
+			                                                                        [Singleton<Repository, {{closed}}>(Key = "main")]
+			                                                                        public static partial class Shop
+			                                                                        {
+			                                                                            private sealed class Repository : IRepository<int>, IRepository<int, string> { }
+			                                                                        }
+			                                                                        """, """
+			                                                                             using Awaiten;
+			                                                                             using Production;
+
+			                                                                             namespace MyCode;
+
+			                                                                             [Container(Extends = typeof(Production.Shop))]
+			                                                                             [Decorate(typeof(LoggingRepository<>), typeof(IRepository<>), Keys = new object[] { "main" })]
+			                                                                             public static partial class TestShop
+			                                                                             {
+			                                                                             }
+			                                                                             """);
+
+			await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("AWT210"))).IsEqualTo(reported)
+				.Because("only a dropped closing of the decorated service, with as many type arguments, explains a key no closing has");
+		}
+
+		[Test]
 		public async Task APrivateImplementationTheFactoryCannotMirror_ReportsAwt226WithTheReason()
 		{
 			GeneratorResult result = Generator.Run("""
@@ -1011,12 +1088,28 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
-		public async Task AnOpenDecorator_IsReportedOnTheBase()
+		public async Task AnOpenDecorator_WrapsTheClosingAnExtendingContainerRequestsEverywhere()
 		{
-			GeneratorResult own = Generator.Run(Base("[Decorate(typeof(LoggingHandler<>), typeof(IHandler<>))]"));
+			string shop = Base("[Decorate(typeof(LoggingHandler<>), typeof(IHandler<>))]");
 
-			await That(own.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT123"))
-				.Because("an open decorator that matches no closing of its own container is an error there, before any container extends it");
+			GeneratorResult own = Generator.Run(shop);
+			GeneratorResult same = Generator.Run(shop + "\n" + Extending.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(shop, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(shop), Extending);
+
+			await That(own.Diagnostics).IsEmpty()
+				.Because("an open decorator without a closing in its own container decorates nothing yet, which is no error");
+			await That(await Analyzer.Run<AwaitenAnalyzer>(shop)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+				.Because("the base warns at the attribute, where a base meant only for extension suppresses it");
+			await That(await Analyzer.Run<AwaitenAnalyzer>(shop.Replace("[Decorate(", "#pragma warning disable AWT249\n[Decorate(").Replace("typeof(IHandler<>))]", "typeof(IHandler<>))]\n#pragma warning restore AWT249"))).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(other.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { same, other, friend, })
+			{
+				await That(result.Sources.Single(source => source.Key.Contains("TestShop")).Value).Contains("new global::Lib.LoggingHandler<global::Lib.Order>(")
+					.Because("the extending container closes the inherited open decorator for the closing it requests, wherever the base lives");
+			}
 		}
 	}
 }

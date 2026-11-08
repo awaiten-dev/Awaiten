@@ -287,6 +287,48 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			[Arguments(LanguageVersion.CSharp10, false)]
+			[Arguments(LanguageVersion.CSharp11, true)]
+			public async Task TheAnalyzer_ReportsNoNullableProductOfAnAssemblyWhoseScanModuleIsSkipped(LanguageVersion languageVersion, bool reported)
+			{
+				string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>(languageVersion, """
+					#nullable enable
+					using Awaiten;
+
+					namespace Lib
+					{
+					    public interface IHandler { }
+					    internal sealed class OrderHandler : IHandler { }
+					    public interface IClock { }
+					    internal sealed class Clock : IClock { }
+					    internal interface IKettle { }
+					    internal sealed class Kettle : IKettle { }
+
+					    [Module]
+					    [Scan(typeof(IHandler), As = ScanAs.Marker)]
+					    public static partial class HandlerModule { }
+
+					    [Module]
+					    [Singleton(typeof(IKettle), Factory = nameof(MakeKettle))]
+					    public static partial class KettleModule
+					    {
+					        internal static IKettle? MakeKettle() => new Kettle();
+					    }
+
+					    [Container]
+					    [Singleton(typeof(IClock), Factory = nameof(MakeClock))]
+					    public static partial class AppContainer
+					    {
+					        private static IClock? MakeClock() => new Clock();
+					    }
+					}
+					""");
+
+				await That(diagnostics.Any(diagnostic => diagnostic.Contains("AWT245"))).IsEqualTo(reported)
+					.Because("below C# 11 AWT243 skips the scan module and nothing else is generated, so neither a container nor a module reports AWT245 next to it");
+			}
+
+			[Test]
 			[Arguments(LanguageVersion.CSharp9)]
 			[Arguments(LanguageVersion.CSharp10)]
 			public async Task AContainerImportingAScanModuleWithAPrivateRegistrationOfItsOwnAssemblyBelowCSharp11_ReportsOnlyAwt243(LanguageVersion languageVersion)

@@ -45,6 +45,16 @@ public static class Analyzer
 		where TAnalyzer : DiagnosticAnalyzer, new()
 		=> Analyze<TAnalyzer>(Generator.RunGenerator(source, [], [], languageVersion: languageVersion), "AWT243");
 
+	/// <summary>
+	///     Like <see cref="Run{TAnalyzer}(string, Type[])" />, for a <paramref name="source" /> on which the generator
+	///     reports the <paramref name="expectedErrors" />.
+	/// </summary>
+	public static Task<string[]> RunExpectingErrors<TAnalyzer>(
+		[StringSyntax("c#-test")] string source,
+		params string[] expectedErrors)
+		where TAnalyzer : DiagnosticAnalyzer, new()
+		=> Analyze<TAnalyzer>(Generator.RunGenerator(source, [], []), expectedErrors);
+
 	private static Task<string[]> Run<TAnalyzer>(
 		[StringSyntax("c#-test")] string source,
 		MetadataReference[] additionalReferences,

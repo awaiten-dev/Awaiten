@@ -707,13 +707,13 @@ partial class AwaitenGenerator
 		factories = [];
 		if (candidate.ViaFault is not null || candidate.Dropped)
 		{
-			context.ConstraintRejectedServices.Add(closedService);
+			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
 			return false;
 		}
 
 		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray()))
 		{
-			context.ConstraintRejectedServices.Add(closedService);
+			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
 			ReportConstraintViolation(candidate, closedImplName, context);
 			return false;
 		}
@@ -724,7 +724,7 @@ partial class AwaitenGenerator
 			.ToList();
 		if (candidate.FactoryMethods.Count > 0 && factories.Count == 0)
 		{
-			context.ConstraintRejectedServices.Add(closedService);
+			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
 			ReportFactoryConstraintViolation(candidate, closedService, context);
 			return false;
 		}

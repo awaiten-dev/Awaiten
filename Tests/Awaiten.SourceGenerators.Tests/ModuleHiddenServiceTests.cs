@@ -1830,16 +1830,16 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
-		[Arguments(Instance, "AWT109", "Default")]
-		[Arguments(Factory, "AWT108", "Make")]
-		public async Task UnderAPublicService_StaysUnreachableForEveryContainer(string production, string id, string member)
+		[Arguments(Instance, "Default")]
+		[Arguments(Factory, "Make")]
+		public async Task UnderAPublicService_IsCalledThroughAPublicWrapperByEveryContainer(string production, string member)
 		{
 			await That(Generator.Run(Library(production, service: "IPublicKettle")).Diagnostics).IsEmpty();
-			await That(ModuleSource(Generator.Run(Library(production, service: "IPublicKettle")))).DoesNotContain($"{(production == Instance ? "Instance" : "Factory")}_{member}_")
-				.Because("a container in another assembly cannot call a private member of a public service either, so no container gets a wrapper");
-			await That(Generator.Run(Library(production, service: "IPublicKettle") + Container).Diagnostics).HasSingle().Which.Contains($"*AWT153*'{member}'*").AsWildcard();
-			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle"), Consumer).Diagnostics).HasSingle().Which.Contains($"*{id}*'{member}'*").AsWildcard();
-			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle", grant: true), Consumer).Diagnostics).HasSingle().Which.Contains($"*{id}*'{member}'*").AsWildcard();
+			await That(ModuleSource(Generator.Run(Library(production, service: "IPublicKettle")))).Contains($"public static global::Lib.IPublicKettle {(production == Instance ? "Instance" : "Factory")}_{member}_")
+				.Because("no container could call a private member of a public service, so the module wraps it publicly for all of them");
+			await That(Generator.Run(Library(production, service: "IPublicKettle") + Container).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle"), Consumer).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle", grant: true), Consumer).Diagnostics).IsEmpty();
 		}
 	}
 

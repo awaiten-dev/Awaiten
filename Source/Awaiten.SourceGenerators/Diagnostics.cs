@@ -1538,6 +1538,20 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="ModuleScanParameterInaccessible">AWT195</see> for a type private to the module whose
+	///     constructor or factory member parameter, named with the internal service by the second argument, needs a
+	///     service the module registers but cannot build. The module reports why it cannot build the service; once that is
+	///     fixed, the factory takes it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleParameterNeedsUnbuildableService = new(
+		"AWT195",
+		ModuleScanParameterInaccessible.Title,
+		"{0}, but {1}, so the generated factory cannot take it; fix what keeps the module from building that service",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> matched a type but no exposure selected an interface accessible
 	///     outside the module's assembly, so a consumer could never name what the match registers under and the
 	///     match is skipped. A <c>ScanAs.Self</c> exposure of an <c>internal</c> implementation hits this (the
@@ -2278,5 +2292,22 @@ internal static class Diagnostics
 		"The decorator predicate '{0}' cannot take '{1}': {2}; a predicate is evaluated once per root and takes only singletons, Instance registrations or imported services that are not initialized asynchronously",
 		"Awaiten",
 		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     An unkeyed open generic <c>[Decorate]</c> or <c>[Composite]</c> that a container declares itself applies to no
+	///     closing of its service in the container's graph: <c>{0}</c> is <c>decorator</c> or
+	///     <c>composite</c>. A warning reported by <see cref="AwaitenAnalyzer" /> at the attribute, so a base container
+	///     meant only for extension, whose extending containers register the closings, can suppress it there, while a
+	///     wrong service type in any other container stays visible. A closed decorator without a registration is
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see>, and a keyed open one
+	///     <see cref="DecoratedKeyNotRegistered">AWT210</see>.
+	/// </summary>
+	public static readonly DiagnosticDescriptor OpenContributionWithoutClosing = new(
+		"AWT249",
+		"Open decorator or composite applies to no closing",
+		"The open {0} '{1}' applies to no closing of '{2}', since the container's graph has none; register or consume a closing, or correct the service type, or, on a base container meant only for extension, suppress this warning there",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 }

@@ -29,8 +29,8 @@ namespace Awaiten.SourceGenerators;
 ///     child <c>Scope</c>'s disposal. Also reports <see cref="Diagnostics.SuppressedDisposalProjected">AWT214</see>
 ///     where a container that suppresses the disposal of a possibly disposable service is projected into
 ///     Microsoft.Extensions.DependencyInjection, which would dispose it anyway. Also reports
-///     <see cref="Diagnostics.DuplicateInjectProperty">AWT179</see>, <see cref="Diagnostics.OptionalPropertyIsInitOnly">AWT158</see> and
-///     <see cref="Diagnostics.NullableProduct">AWT245</see>, which the graph or module build detects and the generator
+///     <see cref="Diagnostics.DuplicateInjectProperty">AWT179</see>, <see cref="Diagnostics.OptionalPropertyIsInitOnly">AWT158</see>,
+///     <see cref="Diagnostics.NullableProduct">AWT245</see> and <see cref="Diagnostics.OpenContributionWithoutClosing">AWT249</see>, which the graph or module build detects and the generator
 ///     leaves to the analyzer so that they can be suppressed in source. Also reports
 ///     <see cref="Diagnostics.TypedResolveOfUnprovidedService">AWT218</see> and
 ///     <see cref="Diagnostics.TypedResolveOfWithheldService">AWT219</see> at a typed <c>Resolve&lt;T&gt;()</c>,
@@ -62,7 +62,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
 		ImmutableArray.Create(Diagnostics.RootAccumulatingFactory, Diagnostics.RootAccumulatingFactoryStrict, Diagnostics.AsyncOnlyDisposal,
 			Diagnostics.SuppressedDisposalProjected, Diagnostics.DuplicateInjectProperty, Diagnostics.OptionalPropertyIsInitOnly, Diagnostics.TypedResolveOfUnprovidedService,
-			Diagnostics.TypedResolveOfWithheldService, Diagnostics.NullableProduct);
+			Diagnostics.TypedResolveOfWithheldService, Diagnostics.NullableProduct, Diagnostics.OpenContributionWithoutClosing);
 
 	/// <inheritdoc />
 	public override void Initialize(AnalysisContext context)
@@ -163,12 +163,12 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			report(ToDiagnostic(diagnostic, compilation));
 		}
 
-		// AWT179, AWT158 and AWT245 come out of the graph build, but the generator leaves them to the analyzer so that
+		// AWT179, AWT158, AWT245 and AWT249 come out of the graph build, but the generator leaves them to the analyzer so that
 		// they can be suppressed in source. An AWT158 or AWT245 the base reports itself is not repeated on a container
 		// that extends it, and an AWT245 at the registration of a module several containers import is reported once.
 		List<DiagnosticInfo> fromGraph = built.Diagnostics
 			.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
-			                     || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct))
+			                     || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OpenContributionWithoutClosing))
 			.Distinct()
 			.ToList();
 		if (AwaitenGenerator.ReadExtends(type) is { } extended)

@@ -36,7 +36,9 @@ public partial class ContainerExtendsTests
 
 	[Container]
 	[Transient(typeof(OpenBaseHandler<>), typeof(IOpenBaseHandler<>))]
+#pragma warning disable AWT249 // the extending container requests the closing
 	[Composite(typeof(AllOpenBaseHandlers<>), typeof(IOpenBaseHandler<>))]
+#pragma warning restore AWT249
 	public static partial class LocalOpenCompositeShop;
 
 	[Container(Extends = typeof(LocalOpenCompositeShop))]

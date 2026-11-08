@@ -289,6 +289,18 @@ public partial class ContainerExtendsTests
 			await That(((TracingFormatter)formatter).Inner).Is<LoggingFormatter>();
 			await That(((LoggingFormatter)((TracingFormatter)formatter).Inner).Inner).Is<PlainFormatter>();
 		}
+
+		[Test]
+		public async Task InheritedOpenDecoratorWithoutAClosingInTheBase_WrapsTheClosingOfTheExtendingContainer()
+		{
+			using OpenDecoratedTestShop.Root container = new();
+
+			IRepository<Order> repository = container.Resolve<IRepository<Order>>();
+
+			await That(repository).Is<AuditedRepository<Order>>()
+				.Because("the base declares the open decorator for whatever closing an extending container registers");
+			await That(((AuditedRepository<Order>)repository).Inner).Is<FakeOrderRepository>();
+		}
 	}
 
 	public class ImportedServices
@@ -397,6 +409,11 @@ public partial class ContainerExtendsTests
 	public sealed class Repository<T> : IRepository<T>;
 	public sealed class InMemoryRepository<T> : IRepository<T>;
 	public sealed class FakeOrderRepository : IRepository<Order>;
+
+	public sealed class AuditedRepository<T>(IRepository<T> inner) : IRepository<T>
+	{
+		public IRepository<T> Inner { get; } = inner;
+	}
 
 	public sealed class RepositoryUser(IRepository<Order> orders, IRepository<Customer> customers)
 	{
@@ -609,6 +626,16 @@ public partial class ContainerExtendsTests
 	[Container(Extends = typeof(DecoratedShop))]
 	[Decorate<TracingFormatter, IFormatter>]
 	public static partial class DecoratedTestShop;
+
+	[Container]
+#pragma warning disable AWT249 // the extending container registers the closing
+	[Decorate(typeof(AuditedRepository<>), typeof(IRepository<>))]
+#pragma warning restore AWT249
+	public static partial class OpenDecoratedShop;
+
+	[Container(Extends = typeof(OpenDecoratedShop))]
+	[Singleton<FakeOrderRepository, IRepository<Order>>]
+	public static partial class OpenDecoratedTestShop;
 
 	[Container(Extends = typeof(SupportBaseContainer))]
 	[Singleton<FakeSupportClock, ISupportBaseClock>]

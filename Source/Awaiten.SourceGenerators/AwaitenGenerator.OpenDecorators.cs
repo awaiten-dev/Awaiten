@@ -13,14 +13,18 @@ partial class AwaitenGenerator
 	///     constructing the matching closing of the decorator. The synthesized registrations carry the open form's
 	///     <c>Order</c>, declaration order and the keys present for that closing, so the existing
 	///     <see cref="DecoratorChainBuilder" /> interleaves them with explicit closed decorators of the same closing.
-	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT123 for
-	///     an open decorator that matches no closing at all and AWT210 for a selected key that no closing has.
+	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT210 for a
+	///     selected key that no closing has, unless a closing of its service was dropped under that key for a reported
+	///     reason (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
+	///     decorates nothing; one the container declares itself warns AWT249 (see
+	///     <see cref="ReportOpenContributionWithoutClosing" />).
 	/// </summary>
 	private static void ExpandOpenDecorators(
 		List<DecorateRegistration> decorators,
 		List<OpenDecorateRegistration> open,
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenDecorateRegistration decorator in open)
@@ -29,7 +33,13 @@ partial class AwaitenGenerator
 				display => decorator.Keys is not { } keys
 					? PresentUnderAnyKey(graph, display)
 					: keys.Any(key => PresentUnderKey(graph, display, key)));
-			ReportUnmatchedOpenDecorator(decorator, closings, graph, diagnostics);
+			ReportUnmatchedOpenDecorator(decorator, closings, graph, rejected, diagnostics);
+			if (decorator is { Owner: null, Inherited: false, DecoratesHandles: false, }
+			    && (decorator.Keys is null || (decorator.Keys.Count == 1 && decorator.Keys[0] is null))
+			    && closings.Count == 0)
+			{
+				ReportOpenContributionWithoutClosing("decorator", decorator.Decorator, decorator.Service, decorator.Location, rejected, diagnostics);
+			}
 
 			foreach (INamedTypeSymbol closed in closings)
 			{
@@ -63,19 +73,105 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports AWT249 for an unkeyed open <paramref name="kind" /> the container declares itself that applies to no
+	///     closing of <paramref name="service" />, unless a closing of it was dropped for a reported reason
+	///     (<paramref name="rejected" />), which explains it. The analyzer reports it, so it can be suppressed at the
+	///     attribute; one a module or an extended base declares is left alone, since its consumers register the closings.
+	/// </summary>
+	private static void ReportOpenContributionWithoutClosing(string kind, INamedTypeSymbol type, INamedTypeSymbol service, Location? location, HashSet<string> rejected, List<DiagnosticInfo> diagnostics)
+	{
+		if (!rejected.Any(entry => NamesClosingOf(entry, service)))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.OpenContributionWithoutClosing,
+				LocationInfo.From(location),
+				new EquatableArray<string>([kind, Display(type.ToDisplayString(FullyQualified)), Display(service.ToDisplayString(FullyQualified)),])));
+		}
+	}
+
+	/// <summary>
+	///     Records that the registration of <paramref name="service" /> under <paramref name="key" /> was dropped for a
+	///     reported reason: the service, which the checks of missing dependencies look up, and the service with its key,
+	///     which an open decorator selecting that key looks up (see <see cref="RejectedClosingUnderKey" />). No fully
+	///     qualified type name contains the separator, so the two never collide.
+	/// </summary>
+	private static void RecordRejected(HashSet<string> rejected, string service, string? key)
+	{
+		rejected.Add(service);
+		rejected.Add($"{service}{RejectedKeySeparator}{key ?? RejectedUnkeyed}");
+	}
+
+	private const char RejectedKeySeparator = '\0';
+
+	private const string RejectedUnkeyed = "\u0001";
+
+	/// <summary>
+	///     Whether the <paramref name="entry" /> of <see cref="RecordRejected" /> names a closing of
+	///     <paramref name="open" /> dropped under <paramref name="key" />.
+	/// </summary>
+	private static bool RejectedClosingUnderKey(string entry, INamedTypeSymbol open, string? key)
+	{
+		int separator = entry.IndexOf(RejectedKeySeparator);
+		return separator >= 0
+		       && string.Equals(entry.Substring(separator + 1), key ?? RejectedUnkeyed, StringComparison.Ordinal)
+		       && NamesClosingOf(entry.Substring(0, separator), open);
+	}
+
+	/// <summary>
+	///     Whether the fully qualified <paramref name="closed" /> names a closing of the generic definition of
+	///     <paramref name="open" />, with as many type arguments. A definition nested in a generic type is never matched.
+	/// </summary>
+	private static bool NamesClosingOf(string closed, INamedTypeSymbol open)
+	{
+		string definition = open.OriginalDefinition.ToDisplayString(FullyQualified);
+		int bracket = definition.IndexOf('<');
+		if (bracket < 0 || open.ContainingType is { IsGenericType: true, } || !closed.StartsWith(definition.Substring(0, bracket + 1), StringComparison.Ordinal) || closed[closed.Length - 1] != '>')
+		{
+			return false;
+		}
+
+		int depth = 0;
+		int arguments = 1;
+		for (int index = bracket + 1; index < closed.Length - 1; index++)
+		{
+			switch (closed[index])
+			{
+				case '<' or '(' or '[':
+					depth++;
+					break;
+				case '>' or ')' or ']':
+					if (--depth < 0)
+					{
+						return false;
+					}
+
+					break;
+				case ',' when depth == 0:
+					arguments++;
+					break;
+			}
+		}
+
+		return depth == 0 && arguments == open.Arity;
+	}
+
+	/// <summary>
 	///     Reports AWT210 for each key an open decorator selects that none of its <paramref name="closings" /> is
-	///     registered under, or AWT123 when it selects no key and has no closing at all.
+	///     registered under, unless a closing of its service was dropped under that key for a reported reason (see
+	///     <see cref="RecordRejected" />).
 	/// </summary>
 	private static void ReportUnmatchedOpenDecorator(
 		OpenDecorateRegistration decorator,
 		List<INamedTypeSymbol> closings,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		// AWT210: a selected key that no closing of the service is registered under.
 		if (decorator.Keys is { Count: > 0, } selected && !(selected.Count == 1 && selected[0] is null))
 		{
-			foreach (string? key in selected.Where(key => !closings.Any(closed => PresentUnderKey(graph, closed.ToDisplayString(FullyQualified), key))))
+			foreach (string? key in selected.Where(key => !closings.Any(closed => PresentUnderKey(graph, closed.ToDisplayString(FullyQualified), key))
+			                                             && !rejected.Any(entry => RejectedClosingUnderKey(entry, decorator.Service, key))))
 			{
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.DecoratedKeyNotRegistered,
@@ -87,17 +183,6 @@ partial class AwaitenGenerator
 					])));
 			}
 		}
-		else if (closings.Count == 0 && !decorator.DecoratesHandles)
-		{
-			// AWT123: the open decorator names a service that has no closing in the graph to decorate.
-			diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.DecoratedServiceNotRegistered,
-				LocationInfo.From(decorator.Location),
-				new EquatableArray<string>([
-					Display(decorator.Service.ToDisplayString(FullyQualified)),
-					Display(decorator.Decorator.ToDisplayString(FullyQualified)),
-				])));
-		}
 	}
 
 	/// <summary>
@@ -105,13 +190,16 @@ partial class AwaitenGenerator
 	///     <see cref="CompositeRegistration" /> for every closing of its service present in the coalesced graph under the
 	///     composite's key, constructing the matching closing of the composite. Each synthesized composite then follows
 	///     the closed <c>[Composite]</c> rules in <see cref="BuildComposites" />. Warns AWT171 and skips a closing whose
-	///     type arguments violate the composite's constraints; reports AWT212 for a key that no closing has.
+	///     type arguments violate the composite's constraints; reports AWT212 for a key that no closing has, and warns
+	///     AWT249 for an unkeyed one the container declares itself that has no closing (see
+	///     <see cref="ReportOpenContributionWithoutClosing" />).
 	/// </summary>
 	private static void ExpandOpenComposites(
 		List<CompositeRegistration> composites,
 		List<OpenCompositeRegistration> open,
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenCompositeRegistration composite in open)
@@ -126,6 +214,11 @@ partial class AwaitenGenerator
 					composite.Composite.ToDisplayString(FullyQualified), composite.Service.ToDisplayString(FullyQualified),
 					composite.Key, composite.Location, diagnostics);
 				continue;
+			}
+
+			if (composite is { Key: null, Owner: null, Inherited: false, ComposesHandles: false, } && closings.Count == 0)
+			{
+				ReportOpenContributionWithoutClosing("composite", composite.Composite, composite.Service, composite.Location, rejected, diagnostics);
 			}
 
 			foreach (INamedTypeSymbol closed in closings)

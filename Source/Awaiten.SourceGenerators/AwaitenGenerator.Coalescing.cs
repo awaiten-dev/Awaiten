@@ -1008,7 +1008,9 @@ partial class AwaitenGenerator
 	///     Two registrations of the same implementation conflict when they produce it differently: a different kind
 	///     (constructor vs factory vs instance), a different member, or the same member name on different owners. The
 	///     instance handles of several modules of another assembly (see <see cref="ThroughHandle" />) conflict when the
-	///     modules produce the implementation differently, whichever module's generated factory builds it.
+	///     modules produce the implementation differently, whichever module's generated factory builds it. Likewise the
+	///     factories several modules of one assembly generate for an implementation they construct mirror the same
+	///     constructor and properties, so they are one production, as the constructor is in the modules' own assembly.
 	/// </summary>
 	private static bool ConflictsWith(ImplInfo info, RawRegistration registration)
 		=> info.HiddenProduction is not null || registration.HiddenProduction is not null
@@ -1016,17 +1018,21 @@ partial class AwaitenGenerator
 			: (info.Production != registration.Production
 			   || !string.Equals(info.ProductionMember, registration.ProductionMember, StringComparison.Ordinal)
 			   || (registration.Production != ProductionKind.Constructor
-			       && !SymbolEqualityComparer.Default.Equals(info.Origin, registration.Origin)));
+			       && !SymbolEqualityComparer.Default.Equals(info.Origin, registration.Origin)
+			       && !(IsGeneratedRegistrationFactory(registration.ProductionMember)
+			            && SymbolEqualityComparer.Default.Equals(info.Origin?.ContainingAssembly, registration.Origin?.ContainingAssembly))));
 
 	/// <summary>
 	///     Names a production strategy in the AWT111 message, qualifying a member with its owner so two members of the
-	///     same name on different owners read as the different members they are.
+	///     same name on different owners read as the different members they are. A member a module generated names what
+	///     the user wrote: the member a wrapper calls, or the constructor a registration factory calls.
 	/// </summary>
 	private static string DescribeProduction(ProductionKind production, string? member, INamedTypeSymbol owner)
 		=> production switch
 		{
-			ProductionKind.Factory => $"factory '{Display(QualifiedMember(owner, member))}'",
-			ProductionKind.Instance => $"instance '{Display(QualifiedMember(owner, member))}'",
+			_ when IsGeneratedRegistrationFactory(member) => "a constructor",
+			ProductionKind.Factory => $"factory '{Display(QualifiedMember(owner, UserMemberName(member)))}'",
+			ProductionKind.Instance => $"instance '{Display(QualifiedMember(owner, UserMemberName(member)))}'",
 			_ => "a constructor",
 		};
 }

@@ -32,5 +32,7 @@ public sealed class AllOpenBaseHandlers<T> : IOpenBaseHandler<T>
 /// <summary>A base container whose open composite fronts no closing until a container extending it requests one.</summary>
 [Container]
 [Transient(typeof(OpenBaseHandler<>), typeof(IOpenBaseHandler<>))]
+#pragma warning disable AWT249 // a container extending it requests the closing
 [Composite(typeof(AllOpenBaseHandlers<>), typeof(IOpenBaseHandler<>))]
+#pragma warning restore AWT249
 public static partial class CrossAssemblyOpenCompositeBaseContainer;

@@ -61,10 +61,13 @@ public sealed class CompositeHandler<T>(IEnumerable<IHandler<T>> inner) : IHandl
     public Task HandleAsync(T request) => Task.WhenAll(inner.Select(h => h.HandleAsync(request)));
 }
 
+public sealed class ReceiptDesk(IHandler<Receipt> handler);
+
 [Container]
 [Transient(typeof(EmailHandler<>), typeof(IHandler<>))]
 [Transient(typeof(SmsHandler<>), typeof(IHandler<>))]
 [Composite(typeof(CompositeHandler<>), typeof(IHandler<>))]
+[Transient<ReceiptDesk>]   // needs IHandler<Receipt>, so that closing is in the graph
 public static partial class CoffeeShop;
 
 // Resolve<IHandler<Receipt>>() returns CompositeHandler<Receipt> fanning out to the Receipt handlers
@@ -83,7 +86,7 @@ A composite is transient by default. Set `Lifetime` to change it.
 With no members registered, the composite still resolves and fans out to an empty collection.
 
 :::note
-Only one composite may front a given service and key ([AWT132](../09-diagnostics.md#awt132)), a `Key` must match a registration ([AWT212](../09-diagnostics.md#awt212)), and the composite's collection parameter must be of the composed service itself ([AWT130](../09-diagnostics.md#awt130), [AWT133](../09-diagnostics.md#awt133)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the composite's constraints ([AWT126](../09-diagnostics.md#awt126)).
+Only one composite may front a given service and key ([AWT132](../09-diagnostics.md#awt132)), a `Key` must match a registration ([AWT212](../09-diagnostics.md#awt212)), and the composite's collection parameter must be of the composed service itself ([AWT130](../09-diagnostics.md#awt130), [AWT133](../09-diagnostics.md#awt133)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the composite's constraints ([AWT126](../09-diagnostics.md#awt126)). An unkeyed open composite that a container declares itself warns when the container's graph has no closing of the service ([AWT249](../09-diagnostics.md#awt249)).
 :::
 
 ## Where to go next

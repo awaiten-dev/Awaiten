@@ -199,9 +199,10 @@ internal sealed record ScanSkip(string MarkerName, string ImplementationMetadata
 ///     A mirrored constructor parameter on a generated factory: its fully-qualified type, its name and the
 ///     <c>[FromKey]</c> or <c>[Arg]</c> attribute it carries (<c>[global::Awaiten.FromKey("utc")] </c>), so a consumer
 ///     resolves the parameter as the constructor would. <see cref="Argument" /> is the expression passed on in its
-///     place, which unwraps a generated handle, or <see langword="null" /> to pass the parameter itself.
+///     place, which unwraps a generated handle, or <see langword="null" /> to pass the parameter itself. A
+///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />.
 /// </summary>
-internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null)
+internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false)
 {
 	/// <summary>The expression the generated member passes on for this parameter.</summary>
 	public string ArgumentExpression => Argument ?? $"@{Name}";

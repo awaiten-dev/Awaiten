@@ -509,7 +509,10 @@ partial class AwaitenGenerator
 		{
 			ReportNotSelfCompiled(
 				context, module, registration.Implementation, "handle",
-				ModuleShapeReason(module) ?? "it leaves the singleton to the assemblies it grants InternalsVisibleTo",
+				ModuleShapeReason(module)
+				?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
+					? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
+					: "its build reported an error for the module or ran without the Awaiten generator"),
 				$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
 		}
 	}
@@ -566,7 +569,8 @@ partial class AwaitenGenerator
 	///     wrapper. Only <paramref name="applies" /> to an owner in another assembly, whose generated members this
 	///     compilation can see. A wrapper of a member that produces an implementation this compilation cannot name returns
 	///     the public service instead, which then stands in for the implementation, while the conventions and disposal
-	///     are read off the implementation, as a container in the owner's assembly reads them. The hooks of an
+	///     are read off the implementation, as a container in the owner's assembly reads them; a compilation that can name
+	///     it calls the wrapper that returns it (see <see cref="ImplementationWrapperName" />). The hooks of an
 	///     implementation hidden in its owner are left to its generated factory.
 	/// </summary>
 	private static RawRegistration ThroughMemberWrapper(RawRegistration registration, INamedTypeSymbol? owner, Compilation compilation, bool applies)
@@ -581,7 +585,8 @@ partial class AwaitenGenerator
 		ImplementationTraits? traits = registration.Traits;
 		if (registration.Production is ProductionKind.Factory or ProductionKind.Instance && member is not null)
 		{
-			string wrapper = InInternals(MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation));
+			string wrapper = MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation);
+			wrapper = Reachable(InInternals(ImplementationWrapperName(wrapper))) ? InInternals(ImplementationWrapperName(wrapper)) : InInternals(wrapper);
 			if (!ReachesProductionMember(owner, registration.Production, member, registration.Implementation, compilation.Assembly, compilation) && Reachable(wrapper))
 			{
 				member = wrapper;
@@ -1540,7 +1545,7 @@ partial class AwaitenGenerator
 					composesHandles = true;
 				}
 
-				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module, openVia.Via, composesHandles));
+				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module, openVia.Via, composesHandles, inherited));
 			}
 		}
 
@@ -1748,7 +1753,9 @@ partial class AwaitenGenerator
 	///     XML doc.) It also carries each impl's generic definition, the key of an open-generic entry, so such an
 	///     entry is unmatched only when no closing of its definition is constructed. An entry inherited from an
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
-	///     container replaced is meant to fall away.
+	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
+	///     instance handle is AWT178 instead, since the handle builds it where no container-side entry reaches, with the
+	///     reason the module handles it (see <see cref="InstanceHandleReason" />).
 	/// </summary>
 	private static void ReportUnmatchedInjectProperties(
 		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
@@ -1762,11 +1769,16 @@ partial class AwaitenGenerator
 		}
 
 		HashSet<string> registered = new(StringComparer.Ordinal);
+		Dictionary<string, (INamedTypeSymbol Module, INamedTypeSymbol? Implementation)> handled = new(StringComparer.Ordinal);
 		foreach (ImplInfo info in implOrder)
 		{
 			registered.Add(info.ImplementationType);
 			registered.Add(TypeIdentity(info.Symbol, compilation));
 			registered.Add(TypeIdentity(info.Symbol.OriginalDefinition, compilation));
+			if (info.Origin is { } module && info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal) is var marker and > 0)
+			{
+				handled[info.ImplementationType.Substring(0, marker)] = (module, info.Hidden);
+			}
 		}
 
 		foreach (KeyValuePair<string, List<InjectPropertyEntry>> implementation in injectProperties)
@@ -1778,12 +1790,46 @@ partial class AwaitenGenerator
 
 			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited))
 			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InjectPropertyImplementationNotRegistered,
-					entry.Location,
-					new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),])));
+				diagnostics.Add(handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation) owner)
+					? new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnOwnerFactory,
+						entry.Location,
+						new EquatableArray<string>([
+							entry.PropertyName, DisplayInstance(implementation.Key), Display(owner.Module.ToDisplayString(FullyQualified)),
+							InstanceHandleReason(owner.Module, owner.Implementation, compilation),
+						]))
+					: new DiagnosticInfo(
+						Diagnostics.InjectPropertyImplementationNotRegistered,
+						entry.Location,
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),])));
 			}
 		}
+	}
+
+	/// <summary>
+	///     Why <paramref name="module" /> of another assembly builds <paramref name="implementation" /> into an instance
+	///     handle (see <see cref="HandledShape" />), for AWT178: it registers it under a service this compilation cannot
+	///     name, under several services, or through a member, or else another module of its assembly builds it through a
+	///     handle too, so they share one instance.
+	/// </summary>
+	private static string InstanceHandleReason(INamedTypeSymbol module, INamedTypeSymbol? implementation, Compilation compilation)
+	{
+		List<ModuleRegistration> registrations = ConstructedModuleRegistrations(module, compilation, members: true)
+			.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation))
+			.ToList();
+		if (registrations.Find(registration => !compilation.IsSymbolAccessibleWithin(registration.Service, compilation.Assembly)) is { } hidden)
+		{
+			return $"it is registered under the internal service '{Display(hidden.Service.ToDisplayString(FullyQualified))}', which a container in another assembly reaches only through a generated handle";
+		}
+
+		if (registrations.Select(registration => registration.Service).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).Count() >= 2)
+		{
+			return "it is registered under several services that share one instance of it through a generated handle";
+		}
+
+		return registrations.Count > 0 && registrations[0].Member is { } member
+			? $"the module produces it through its member '{member}', which a container in another assembly reaches only through a generated handle"
+			: "the modules of its assembly share one instance of it through a generated handle";
 	}
 
 	/// <summary>

@@ -189,6 +189,7 @@ internal sealed record OpenDecorateRegistration(
 ///     <see cref="CompositeRegistration" /> per existing closing of the service. <see cref="Via" /> is the generic factory
 ///     of the module or base that builds each closing the container cannot construct. <see cref="ComposesHandles" /> marks
 ///     one that also fronts handles of internal closings of its module, so it matching no accessible closing is no AWT212.
+///     <see cref="Inherited" /> marks one inherited from an extended base.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record OpenCompositeRegistration(
@@ -199,7 +200,8 @@ internal sealed record OpenCompositeRegistration(
 	string? Key,
 	INamedTypeSymbol? Owner = null,
 	OpenOwnerFactory? Via = null,
-	bool ComposesHandles = false);
+	bool ComposesHandles = false,
+	bool Inherited = false);
 
 partial class AwaitenGenerator
 {

@@ -194,6 +194,8 @@ partial class AwaitenGenerator
 
 		private readonly Compilation _compilation;
 		private readonly Lazy<HashSet<INamedTypeSymbol>> _imported;
+		private readonly Lazy<List<INamedTypeSymbol>> _classes;
+		private readonly Lazy<bool> _scansOrOpenRegistrations;
 		private Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>>? _buildable;
 		private HandleDemand? _demand;
 
@@ -205,6 +207,9 @@ partial class AwaitenGenerator
 					.SelectMany(container => CollectImportedModules(container, new List<DiagnosticInfo>()))
 					.Select(import => import.Symbol),
 				SymbolEqualityComparer.Default));
+			_classes = new Lazy<List<INamedTypeSymbol>>(() => ConcreteClasses(compilation.Assembly.GlobalNamespace).ToList());
+			_scansOrOpenRegistrations = new Lazy<bool>(() => Registrations.Keys.Any(module => module.GetAttributes().Any(attribute =>
+				attribute.AttributeClass is { Name: "ScanAttribute", } or { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, })));
 			foreach (INamedTypeSymbol module in TypesWith(compilation.Assembly.GlobalNamespace, "ModuleAttribute"))
 			{
 				Registrations[module] = ConstructedModuleRegistrations(module, compilation, members: true).ToList();
@@ -287,6 +292,51 @@ partial class AwaitenGenerator
 
 		public static AssemblyModuleIndex Of(Compilation compilation)
 			=> Cache.GetValue(compilation, static created => new AssemblyModuleIndex(created));
+
+		/// <summary>
+		///     Whether a module of the assembly may provide <paramref name="service" /> under <paramref name="key" />: a
+		///     closed registration of it, an import from the host, or, through a <c>[Scan]</c> or an open generic
+		///     registration, a class of the assembly that converts to it.
+		/// </summary>
+		public bool MayProvide(ITypeSymbol service, string? key)
+		{
+			string serviceType = service.ToDisplayString(FullyQualified);
+			return Registrations.Any(entry =>
+			{
+				ImmutableArray<AttributeData> attributes = entry.Key.GetAttributes();
+				return HasAwaitenAttribute(attributes, "ImportServicesAttribute")
+				       || CollectExternalServiceTypes(entry.Key, new List<ImportedModule>(), _compilation, new List<DiagnosticInfo>()).Routes(serviceType)
+				       || entry.Value.Any(registration => registration.Service.ToDisplayString(FullyQualified) == serviceType && NamedKeyArgument(registration.Attribute) == key);
+			}) || (_scansOrOpenRegistrations.Value && _classes.Value.Any(type => Provides(type, service)));
+		}
+
+		/// <summary>Whether the class <paramref name="type" />, or a closing of it, converts to <paramref name="service" />.</summary>
+		private bool Provides(INamedTypeSymbol type, ITypeSymbol service)
+			=> _compilation.HasImplicitConversion(type, service)
+			   || (type.IsGenericType
+			       && service is INamedTypeSymbol { IsGenericType: true, } generic
+			       && (SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, generic.OriginalDefinition)
+			           || type.AllInterfaces.Any(contract => SymbolEqualityComparer.Default.Equals(contract.OriginalDefinition, generic.OriginalDefinition))));
+
+		/// <summary>The concrete classes declared in <paramref name="container" /> and the namespaces and types it contains.</summary>
+		private static IEnumerable<INamedTypeSymbol> ConcreteClasses(INamespaceOrTypeSymbol container)
+		{
+			foreach (ISymbol member in container.GetMembers())
+			{
+				if (member is INamespaceOrTypeSymbol nested)
+				{
+					if (nested is INamedTypeSymbol { TypeKind: TypeKind.Class, IsAbstract: false, IsStatic: false, } type)
+					{
+						yield return type;
+					}
+
+					foreach (INamedTypeSymbol found in ConcreteClasses(nested))
+					{
+						yield return found;
+					}
+				}
+			}
+		}
 
 		/// <summary>Whether a <c>[Container]</c> of the assembly imports <paramref name="module" />, so it reports what its coalescing sees itself.</summary>
 		public bool ImportedByContainer(INamedTypeSymbol module)
@@ -598,8 +648,10 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether the module builds <paramref name="implementation" /> through a handle on its own account: it registers
-	///     it under an internal service (see <see cref="IsHiddenService" />), or constructs it and registers it under
-	///     several accessible services that no accessible type covers, which one instance handle shares.
+	///     it under an internal service (see <see cref="IsHiddenService" />), constructs it and registers it under
+	///     several accessible services that no accessible type covers, which one instance handle shares, or produces it
+	///     through a member that is not public and that no public wrapper can serve: one returning an implementation
+	///     another assembly cannot name under several services, or a factory taking a parameter of an internal type.
 	/// </summary>
 	private static bool HandledShape(INamedTypeSymbol module, INamedTypeSymbol implementation, List<ModuleRegistration> registrations, Compilation compilation)
 	{
@@ -614,6 +666,16 @@ partial class AwaitenGenerator
 		}
 
 		List<INamedTypeSymbol> services = registrations.Select(registration => registration.Service).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToList();
+		if (registrations[0].Member is { } member)
+		{
+			List<ISymbol> producers = ProductionMemberCandidates(module, registrations[0].Production, member, implementation, compilation).ToList();
+			return !IsHiddenInModule(implementation, module, compilation)
+			       && producers.Count == 1
+			       && producers[0].DeclaredAccessibility != Accessibility.Public
+			       && ((services.Count >= 2 && !IsExternallyAccessible(implementation))
+			           || (producers[0] is IMethodSymbol method && method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type) && TypeHiddenInModule(parameter.Type, module, compilation) is null)));
+		}
+
 		return registrations[0].Production == ProductionKind.Constructor
 		       && services.Count >= 2
 		       && !IsHiddenInModule(implementation, module, compilation)
@@ -1225,7 +1287,7 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject = new(typeName, $"'{Display(typeName)}' {(composite ? "composes" : "decorates")} the internal service '{Display(service.ToDisplayString(FullyQualified))}', which a consuming container reaches through a generated handle", "register it in the module");
 		string handle = hidden.HandleType(service);
 		List<HiddenInitializer> initializers = new();
-		if (!TryMirrorFactoryParameters(decorator, context, null, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true, decorated: composite ? null : service)
+		if (!TryMirrorFactoryParameters(decorator, context, null, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true, decorated: composite ? null : service, emptyCollectionsOf: IsHiddenInModule(decorator, context.Module, context.Compilation) ? null : service)
 		    || !TryMirrorInjectedProperties(decorator, context, null, subject, ref parameters, out MirroredMembers members)
 		    || !TryAddHiddenInitializers(decorator, handle, context, null, subject, initializers))
 		{
@@ -1243,9 +1305,9 @@ partial class AwaitenGenerator
 	///     What a container in the module's own assembly reports for a decorator or composite of an internal service whose
 	///     factory <paramref name="name" /> the module cannot build, recorded so a container in another assembly reports
 	///     the same instead of AWT230: the collection element of a composite that is a base type of the composed service
-	///     (AWT133, see <see cref="CompositeCollectionMarkerName" />), or an internal constructor parameter type that no
-	///     module of the assembly registers (AWT101, see <see cref="UnregisteredDependencyMarkerName" />). Any other cause
-	///     records nothing.
+	///     (AWT133, see <see cref="CompositeCollectionMarkerName" />), or an internal constructor parameter type, directly
+	///     or behind a relationship such as <c>Lazy&lt;T&gt;</c>, that no module of the assembly may provide under the
+	///     parameter's key (AWT101, see <see cref="UnregisteredDependencyMarkerName" />). Any other cause records nothing.
 	/// </summary>
 	private static SkippedRegistration? ContributionFault(INamedTypeSymbol type, INamedTypeSymbol service, string name, bool composite, ModuleScanContext context)
 	{
@@ -1284,22 +1346,36 @@ partial class AwaitenGenerator
 			}
 		}
 
+		AssemblyModuleIndex assembly = AssemblyModuleIndex.Of(compilation);
 		foreach (IParameterSymbol parameter in constructor.Parameters)
 		{
-			if (!SymbolEqualityComparer.Default.Equals(parameter, skippedParameter)
-			    && !parameter.HasExplicitDefaultValue
-			    && parameter.Type is INamedTypeSymbol dependency
-			    && !TryGetCompositeCollectionElement(dependency, out _)
-			    && !FitsFactorySignature(dependency, context)
-			    && TypeHiddenInModule(dependency, context.Module, compilation) is null
-			    && !context.Hidden!.Assembly.Registrations.Values.Any(registrations => registrations.Any(registration => SymbolEqualityComparer.Default.Equals(registration.Service, dependency))))
+			if (SymbolEqualityComparer.Default.Equals(parameter, skippedParameter)
+			    || parameter.HasExplicitDefaultValue
+			    || parameter.Type is not INamedTypeSymbol dependency
+			    || TryGetCompositeCollectionElement(dependency, out _)
+			    || FitsFactorySignature(dependency, context)
+			    || TypeHiddenInModule(dependency, context.Module, compilation) is not null)
 			{
-				return new SkippedRegistration(UnregisteredDependencyMarkerName(name), Display(dependency.ToDisplayString(FullyQualified)), Contribution: true);
+				continue;
+			}
+
+			ParameterModel model = ClassifyParameter(parameter, false, new ExternalServiceTypes());
+			if (model.Kind is DependencyKind.Direct or DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask
+			    && TypeNamed(dependency, model.ServiceType) is { } provided
+			    && !assembly.MayProvide(provided, model.Key))
+			{
+				return new SkippedRegistration(UnregisteredDependencyMarkerName(name), DisplayKeyed(model.ServiceType, model.Key), Contribution: true);
 			}
 		}
 
 		return null;
 	}
+
+	/// <summary><paramref name="type" /> or the type among its type arguments, at any depth, whose fully qualified name is <paramref name="display" />, or <see langword="null" />.</summary>
+	private static ITypeSymbol? TypeNamed(ITypeSymbol type, string display)
+		=> type.ToDisplayString(FullyQualified) == display
+			? type
+			: (type as INamedTypeSymbol)?.TypeArguments.Select(argument => TypeNamed(argument, display)).FirstOrDefault(found => found is not null);
 
 	/// <summary>The name of the constant that records the collection element of a composite a consumer reports as AWT133 (see <see cref="ContributionFault" />).</summary>
 	private static string CompositeCollectionMarkerName(string factoryName) => "Collection" + factoryName;

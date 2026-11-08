@@ -165,8 +165,24 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Member wrappers and the factories of decorators are generated only into a module that can receive them, so a
 		// module that cannot keeps building without them, as it did before they existed.
 		bool receives = ReceivesGeneratedMembers(moduleSymbol);
+		if (!receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && PrivateProductionMember(moduleSymbol, compilation) is ({ } privateService, { } privateMember))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.NonPartialModuleScan,
+				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),
+				new EquatableArray<string>([
+					Display(moduleSymbol.ToDisplayString(FullyQualified)),
+					$"produces '{Display(privateService.ToDisplayString(FullyQualified))}' through its private member '{privateMember}', which a container calls only through a generated wrapper,",
+				])));
+		}
+
 		List<SkippedRegistration> skipped = new();
 		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
+		if (receives)
+		{
+			ReportUnwrappedPrivateMembers(moduleSymbol, compilation, wrappers, diagnostics);
+		}
+
 		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
 		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
@@ -174,7 +190,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		skipped.AddRange(openSkipped);
 		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
 		    && !(hidden is { SeveralModules: true, } && hidden.Demanded.Emitting.Contains(moduleSymbol))
-		    && hidden?.Implementations.Any(candidate => candidate.Viable && IsExternallyAccessible(candidate.Implementation)) != true)
+		    && hidden?.Implementations.Any(candidate => candidate.Viable && (candidate.Shared || IsExternallyAccessible(candidate.Implementation))) != true)
 		{
 			return diagnostics.Count == 0
 				? null
@@ -236,6 +252,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 		else if (!isPartial)
 		{
+			diagnostics.RemoveAll(diagnostic => diagnostic.Descriptor == Diagnostics.NonPartialModuleScan);
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.NonPartialModuleScan,
 				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),
@@ -615,11 +632,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179, AWT158 and AWT245 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
+		// AWT179, AWT158, AWT245 and AWT249 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
 		// tied to a syntax tree, so it could not be suppressed in source.
 		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty)
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
-		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct));
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OpenContributionWithoutClosing));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
 		ValidateDecoratorPredicates(graph, diagnostics);
@@ -911,7 +929,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic decorators: synthesize a closed [Decorate] per matching closing before building the chains,
 		// so they flow through the same DecoratorChainBuilder as the closed form and interleave with it. A no-op
 		// when there are none (closedServices is then empty and the expansion has nothing to iterate).
-		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, diagnostics);
+		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, diagnostics);
 
 		// Decorator chains: for each [Decorate]d service, move the base impl(s) onto a synthetic key and register
 		// each decorator as a chain link whose inner parameter redirects to the next-lower key. decoratorInner
@@ -926,7 +944,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic composites: synthesize a closed [Composite] per matching closing before building the
 		// composites, so they flow through the same BuildComposites as the closed form (fronting the decorated
 		// members). A no-op when there are none, as with the open decorators above.
-		ExpandOpenComposites(composites, openComposites, closedServices, graph, diagnostics);
+		ExpandOpenComposites(composites, openComposites, closedServices, graph, constraintRejected, diagnostics);
 
 		// Composites: each [Composite<TComposite, TService>] registers the composite and makes it the public
 		// winner for TService, excluded from its own collection so its collection parameter fans out to the
