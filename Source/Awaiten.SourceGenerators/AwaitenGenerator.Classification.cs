@@ -487,8 +487,6 @@ partial class AwaitenGenerator
 		    && !context.ServiceToImpl.ContainsKey(KeyOf(dependency))
 		    && !context.ConstraintRejected.Contains(dependency.ServiceType))
 		{
-			ExternalSurface external = new(ImportServices: false, externalServiceTypes);
-
 			// An optional member with a merely missing registration is dropped so the property is left at its
 			// default. Dropping it (rather than yielding a member) also keeps the absent edge out of cycle, captive
 			// and async-taint analysis: there is nothing to assign, so nothing to analyze. A structurally
