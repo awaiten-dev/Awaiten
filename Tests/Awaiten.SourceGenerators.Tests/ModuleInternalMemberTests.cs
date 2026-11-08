@@ -191,6 +191,23 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(string text) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "public static void Ready(string text) { }")]
+		[Arguments("[Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Ready))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore()); internal static void Ready(string text) { }")]
+		[Arguments("[Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Ready))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore()); public static void Ready(string text) { }")]
+		public async Task NotTakingTheImplementation_IsReportedInTheLibraryWhateverItsAccessibility(string registration, string member)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library(registration, member));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"))
+				.Because("no container can run a method that does not take the implementation as its hook, whether it is internal or public");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"))
+				.Because("the module leaves the report to the container of its assembly, which reports it once");
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"));
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"));
+		}
+
+		[Test]
 		public async Task Generic_OfAClosedRegistration_IsReportedEverywhere()
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready<T>(T plugin) { }"));

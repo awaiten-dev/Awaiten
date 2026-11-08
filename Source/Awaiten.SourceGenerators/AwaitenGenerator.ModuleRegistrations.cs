@@ -551,13 +551,11 @@ partial class AwaitenGenerator
 			string name = RegistrationHookWrapperName(produced, release, hookName);
 			string skippedName = RegistrationHookSkippedName(produced, release, hookName);
 
-			// A public overload for another type does not serve the registration, but without any hook for it a container reports the public one.
-			List<IMethodSymbol> candidates = HookCandidates(module, hookName, produced, compilation).ToList();
+			// A public overload for another type does not serve the registration, so without any hook for it the module reports it as every container would.
 			if (!IsExternallyAccessible(produced)
 			    || wrappers.Any(existing => existing.Name == name)
 			    || skipped.Any(existing => existing.MarkerName == skippedName)
-			    || candidates.Exists(candidate => candidate.DeclaredAccessibility == Accessibility.Public)
-			    || (candidates.Count == 0 && AccessibleMembers(module, hookName, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public)))
+			    || HookCandidates(module, hookName, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
 			{
 				return null;
 			}
