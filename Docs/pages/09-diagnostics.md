@@ -1267,7 +1267,7 @@ public static partial class CoffeeShop
 ### AWT136
 
 :::danger[Error]
-An `[Inject]` property has no set or init accessor the container can assign through.
+An `[Inject]` property has no set or init accessor the container can assign through. A container in another assembly also reports a `private` or `private protected` `[Inject]` property it can't see this way, since no container could assign it.
 :::
 
 ```csharp expect=AWT136
@@ -1515,8 +1515,10 @@ public static partial class CoffeeShop;
 ### AWT244
 
 :::danger[Error]
-The container constructs a type whose `[Inject]` property is declared `internal` or `private` in another assembly that grants the container's assembly no `InternalsVisibleTo`. The compiler does not show such a member to another assembly, so the container would build the type and leave the property unset. Also raised for a decorator, a composite, a scan match or an open generic closing of such a type, and for a type of the container's assembly that inherits the property.
+The container constructs a type whose `[Inject]` property is declared `internal` in another assembly that grants the container's assembly no `InternalsVisibleTo`. The compiler does not show such a member to another assembly, and a reference assembly leaves it out, so the container would build the type and leave the property unset. Also raised for a decorator, a composite, a scan match or an open generic closing of such a type, and for a type of the container's assembly that inherits the property.
 :::
+
+The container finds such a property through a `[GeneratedHiddenInjectedProperty]` attribute that the Awaiten generator adds to the assembly that declares it. A library built with an Awaiten version that predates this attribute isn't checked. A `private` `[Inject]` property, which no container can assign, is [AWT136](#awt136) instead.
 
 ```csharp no-compile
 // In the assembly CoffeeShop.Domain:

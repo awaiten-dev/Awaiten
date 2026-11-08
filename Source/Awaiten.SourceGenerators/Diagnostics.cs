@@ -2193,9 +2193,10 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
-	///     A container constructs a type whose <c>[Inject]</c> property is declared in another assembly and not accessible
-	///     from the container's assembly. The compiler imports a referenced assembly without its internal and private
-	///     members, so the container does not see the property and would build the type without it.
+	///     A container constructs a type whose internal <c>[Inject]</c> property is declared in another assembly and not
+	///     accessible from the container's assembly. The compiler imports a referenced assembly without its internal
+	///     members, so the container finds the property only through the <c>[GeneratedHiddenInjectedProperty]</c> marker
+	///     of that assembly and would otherwise build the type without it.
 	/// </summary>
 	public static readonly DiagnosticDescriptor HiddenInjectedProperty = new(
 		"AWT244",

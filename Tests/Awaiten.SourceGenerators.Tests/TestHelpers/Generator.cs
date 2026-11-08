@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 
 namespace Awaiten.SourceGenerators.Tests.TestHelpers;
 
@@ -89,6 +90,19 @@ public static class Generator
 	{
 		(Compilation referencedOutput, _) = RunGenerator(referencedSource, [], [], "ReferencedAssembly", referencedLanguageVersion);
 		return Collect(RunGenerator(source, [EmitToReference(referencedOutput),], [], languageVersion: languageVersion));
+	}
+
+	/// <summary>
+	///     Like <see cref="RunWithGeneratedReferencedAssembly(string, string)" />, but references the reference assembly of
+	///     the generated assembly, as a project reference does in a build, which leaves out private members and, without
+	///     <c>InternalsVisibleTo</c>, internal ones.
+	/// </summary>
+	public static GeneratorResult RunWithGeneratedReferenceAssembly(
+		[StringSyntax("c#-test")] string referencedSource,
+		[StringSyntax("c#-test")] string source)
+	{
+		(Compilation referencedOutput, _) = RunGenerator(referencedSource, [], [], "ReferencedAssembly");
+		return Run(source, [EmitToReference(referencedOutput, new EmitOptions(metadataOnly: true, includePrivateMembers: false)),]);
 	}
 
 	/// <summary>
@@ -230,10 +244,10 @@ public static class Generator
 	///     Emits a compilation to an in-memory assembly and returns a metadata reference to it, failing
 	///     loudly (with the offending diagnostics) when it does not compile.
 	/// </summary>
-	internal static MetadataReference EmitToReference(Compilation compilation)
+	internal static MetadataReference EmitToReference(Compilation compilation, EmitOptions? options = null)
 	{
 		using System.IO.MemoryStream stream = new();
-		Microsoft.CodeAnalysis.Emit.EmitResult emitted = compilation.Emit(stream);
+		EmitResult emitted = compilation.Emit(stream, options: options);
 		if (!emitted.Success)
 		{
 			throw new InvalidOperationException(

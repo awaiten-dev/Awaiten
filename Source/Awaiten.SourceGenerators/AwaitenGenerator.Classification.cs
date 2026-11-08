@@ -443,15 +443,15 @@ partial class AwaitenGenerator
 		// property read from another assembly.
 		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault()) ?? info.Location;
 
-		// AWT244: the symbols of a project reference keep the internal and private members a built reference hides (see
-		// HiddenInjectedProperties), so the IDE reports such a property as the build does.
+		// AWT244: a project reference in the IDE, or a reference assembly that grants another assembly InternalsVisibleTo,
+		// shows a property the build reports through HiddenInjectedProperties when the container's view lacks it.
 		if (spec.EntryLocation is null
 		    && info.ConstructVia is null
-		    && property.DeclaredAccessibility is Accessibility.Internal or Accessibility.Private
+		    && property is { DeclaredAccessibility: Accessibility.Internal, SetMethod.DeclaredAccessibility: Accessibility.Internal, }
 		    && !SymbolEqualityComparer.Default.Equals(property.ContainingAssembly, context.Compilation.Assembly)
 		    && !context.Compilation.IsSymbolAccessibleWithin(property, context.ContainerSymbol))
 		{
-			context.Diagnostics.Add(HiddenInjectedPropertyDiagnostic(context.ContainerSymbol, info, property));
+			context.Diagnostics.Add(HiddenInjectedPropertyDiagnostic(context.ContainerSymbol, info, property.MetadataName, property.ContainingAssembly));
 			return null;
 		}
 

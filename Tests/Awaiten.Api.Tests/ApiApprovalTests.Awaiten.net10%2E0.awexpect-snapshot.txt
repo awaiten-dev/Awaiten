@@ -148,6 +148,15 @@ namespace Awaiten
         public FromKeyAttribute(string key) { }
         public object Key { get; }
     }
+    [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public sealed class GeneratedHiddenInjectedPropertyAttribute : System.Attribute
+    {
+        public GeneratedHiddenInjectedPropertyAttribute(string type, string property, bool assignable) { }
+        public bool Assignable { get; }
+        public string Property { get; }
+        public string Type { get; }
+    }
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public sealed class GeneratedScanExpansionAttribute : System.Attribute
