@@ -1464,6 +1464,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 16:16:02 2026 \u002B0100",
         "message": "fix: close the language version and polyfill-free gaps left after AWT243 (#331)"
+      },
+      {
+        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
+        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
       }
     ],
     "labels": [
@@ -1710,7 +1716,8 @@ window.BENCHMARK_DATA = {
       "cd02492f",
       "ba5d1c24",
       "21c7092f",
-      "cfc32f7a"
+      "cfc32f7a",
+      "85160537"
     ],
     "datasets": [
       {
@@ -1960,7 +1967,8 @@ window.BENCHMARK_DATA = {
           7.140325556580837,
           7.150049827992916,
           7.393594115972519,
-          4.322630952298641
+          4.322630952298641,
+          7.885323155384797
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1972,6 +1980,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2473,7 +2482,8 @@ window.BENCHMARK_DATA = {
           7.372001637305532,
           8.465377003947895,
           7.506318164865176,
-          4.127716398132699
+          4.127716398132699,
+          7.576357462085211
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2485,6 +2495,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2986,7 +2997,8 @@ window.BENCHMARK_DATA = {
           111.23661099274953,
           117.81814689636231,
           139.73701895078023,
-          58.86137957572937
+          58.86137957572937,
+          142.36944518089294
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2998,6 +3010,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3495,7 +3508,8 @@ window.BENCHMARK_DATA = {
           9.386737954158049,
           8.77501584908792,
           8.488484537849823,
-          5.418348639210065
+          5.418348639210065,
+          9.130574363682951
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3507,6 +3521,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4000,7 +4015,8 @@ window.BENCHMARK_DATA = {
           10.74500669326101,
           10.788778707385063,
           10.901315492391586,
-          6.60164632598559
+          6.60164632598559,
+          11.22900964663579
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4012,6 +4028,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5729,6 +5746,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 16:16:02 2026 \u002B0100",
         "message": "fix: close the language version and polyfill-free gaps left after AWT243 (#331)"
+      },
+      {
+        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
+        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
       }
     ],
     "labels": [
@@ -5975,7 +5998,8 @@ window.BENCHMARK_DATA = {
       "cd02492f",
       "ba5d1c24",
       "21c7092f",
-      "cfc32f7a"
+      "cfc32f7a",
+      "85160537"
     ],
     "datasets": [
       {
@@ -6225,7 +6249,8 @@ window.BENCHMARK_DATA = {
           8.427576318383217,
           8.172702137094278,
           8.376551508903503,
-          4.4735923131306965
+          4.4735923131306965,
+          8.718613616549051
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6237,6 +6262,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6738,7 +6764,8 @@ window.BENCHMARK_DATA = {
           7.3025632013877235,
           8.052584845821062,
           7.539955668151379,
-          4.147472128845179
+          4.147472128845179,
+          7.542134915788968
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6750,6 +6777,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7251,7 +7279,8 @@ window.BENCHMARK_DATA = {
           111.8595519891152,
           115.82798832257589,
           140.84860447247823,
-          59.22825966676076
+          59.22825966676076,
+          144.4542724609375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7263,6 +7292,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7760,7 +7790,8 @@ window.BENCHMARK_DATA = {
           9.60621874673026,
           8.785516109849725,
           8.368602952131859,
-          5.371891585680155
+          5.371891585680155,
+          9.157581228476305
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7772,6 +7803,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8265,7 +8297,8 @@ window.BENCHMARK_DATA = {
           14.063288360834122,
           14.212251852665629,
           13.622795798457586,
-          6.439890615145365
+          6.439890615145365,
+          14.719674525352625
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8277,6 +8310,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9994,6 +10028,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 16:16:02 2026 \u002B0100",
         "message": "fix: close the language version and polyfill-free gaps left after AWT243 (#331)"
+      },
+      {
+        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
+        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
       }
     ],
     "labels": [
@@ -10240,7 +10280,8 @@ window.BENCHMARK_DATA = {
       "cd02492f",
       "ba5d1c24",
       "21c7092f",
-      "cfc32f7a"
+      "cfc32f7a",
+      "85160537"
     ],
     "datasets": [
       {
@@ -10490,7 +10531,8 @@ window.BENCHMARK_DATA = {
           30.165140509605408,
           30.274660940681184,
           10.485703048110008,
-          15.013974042875427
+          15.013974042875427,
+          19.405794709920883
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10652,6 +10694,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11003,7 +11046,8 @@ window.BENCHMARK_DATA = {
           1787.111136509822,
           1762.37274945577,
           724.5580317815145,
-          1152.480614389692
+          1152.480614389692,
+          1502.5202003479003
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11015,6 +11059,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11516,7 +11561,8 @@ window.BENCHMARK_DATA = {
           25354.35304914202,
           25239.178298950195,
           16830.10763113839,
-          25577.201049804688
+          25577.201049804688,
+          29986.344799804687
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11771,7 +11817,8 @@ window.BENCHMARK_DATA = {
           32474,
           32474,
           32478,
-          32478
+          32478,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12025,7 +12072,8 @@ window.BENCHMARK_DATA = {
           713.969929082053,
           712.4371791252723,
           392.6721154621669,
-          576.4374984105428
+          576.4374984105428,
+          758.6436236699423
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12055,6 +12103,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12530,7 +12579,8 @@ window.BENCHMARK_DATA = {
           12554.000971112933,
           12598.632990519205,
           6288.4319320678715,
-          8850.005076599122
+          8850.005076599122,
+          12150.998370361329
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12781,7 +12831,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14259,6 +14310,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 16:16:02 2026 \u002B0100",
         "message": "fix: close the language version and polyfill-free gaps left after AWT243 (#331)"
+      },
+      {
+        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
+        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
       }
     ],
     "labels": [
@@ -14505,7 +14562,8 @@ window.BENCHMARK_DATA = {
       "cd02492f",
       "ba5d1c24",
       "21c7092f",
-      "cfc32f7a"
+      "cfc32f7a",
+      "85160537"
     ],
     "datasets": [
       {
@@ -14755,7 +14813,8 @@ window.BENCHMARK_DATA = {
           426.55731369654336,
           401.951921081543,
           73.08739903143474,
-          111.11333548029263
+          111.11333548029263,
+          180.51691462312425
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14917,6 +14976,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15268,7 +15328,8 @@ window.BENCHMARK_DATA = {
           15684.52485148112,
           15591.836011614118,
           7395.086473592122,
-          10423.760006495884
+          10423.760006495884,
+          14785.285142008464
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15280,6 +15341,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15781,7 +15843,8 @@ window.BENCHMARK_DATA = {
           593633.4207682292,
           591879.2068359375,
           412789.9201660156,
-          625458.5008263221
+          625458.5008263221,
+          750553.693359375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16036,7 +16099,8 @@ window.BENCHMARK_DATA = {
           719435,
           719436,
           741067,
-          740787
+          740787,
+          738521
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16290,7 +16354,8 @@ window.BENCHMARK_DATA = {
           41610.241725376676,
           41170.502982584636,
           22851.914770507814,
-          35935.26766357422
+          35935.26766357422,
+          46934.35944010417
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16541,7 +16606,8 @@ window.BENCHMARK_DATA = {
           80317,
           80317,
           80303,
-          80300
+          80300,
+          80083
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16795,7 +16861,8 @@ window.BENCHMARK_DATA = {
           350872.66852678574,
           355265.30831473216,
           196288.63717447917,
-          270193.9605994591
+          270193.9605994591,
+          376631.10891927086
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17046,7 +17113,8 @@ window.BENCHMARK_DATA = {
           571211,
           571212,
           573150,
-          572980
+          572980,
+          573106
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18500,6 +18568,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 16:16:02 2026 \u002B0100",
         "message": "fix: close the language version and polyfill-free gaps left after AWT243 (#331)"
+      },
+      {
+        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
+        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
       }
     ],
     "labels": [
@@ -18742,7 +18816,8 @@ window.BENCHMARK_DATA = {
       "cd02492f",
       "ba5d1c24",
       "21c7092f",
-      "cfc32f7a"
+      "cfc32f7a",
+      "85160537"
     ],
     "datasets": [
       {
@@ -18988,7 +19063,8 @@ window.BENCHMARK_DATA = {
           259.3583624913142,
           252.44882256189982,
           285.12276588167464,
-          265.3962554534276
+          265.3962554534276,
+          245.07016881306967
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19023,6 +19099,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19493,7 +19570,8 @@ window.BENCHMARK_DATA = {
           583.117000579834,
           448.6177563985189,
           700.9406585693359,
-          547.8698927561442
+          547.8698927561442,
+          729.9382561047872
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19505,6 +19583,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19998,7 +20077,8 @@ window.BENCHMARK_DATA = {
           6022.617700958252,
           4893.912663269043,
           6566.054433005197,
-          4409.925806862967
+          4409.925806862967,
+          6690.71885735648
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20082,6 +20162,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20503,7 +20584,8 @@ window.BENCHMARK_DATA = {
           430.94111428942,
           347.9075322786967,
           441.17383387883507,
-          403.38918580327714
+          403.38918580327714,
+          399.97638374964396
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20515,6 +20597,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21008,7 +21091,8 @@ window.BENCHMARK_DATA = {
           684.362475667681,
           544.7581010182698,
           776.6312921387809,
-          580.789894358317
+          580.789894358317,
+          723.8585012299674
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21020,6 +21104,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
