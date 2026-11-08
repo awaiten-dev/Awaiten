@@ -221,6 +221,47 @@ public partial class ModuleScanInstanceHandleTests
 				.Because("the explicit registration suppresses the disposal of the instance it shares with the scan");
 		}
 
+		[Test]
+		public async Task AMatchBuiltFromARuntimeArgument_IsBuiltFromTheArgumentOfEitherFactory()
+		{
+			await using ArgumentMultiExposureContainer.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			Func<string, IArgumentRoaster> roasters = await scope.ResolveAsync<Func<string, IArgumentRoaster>>();
+			Func<string, IArgumentPlugin> plugins = await scope.ResolveAsync<Func<string, IArgumentPlugin>>();
+			IArgumentRoaster roaster = roasters("latte");
+
+			await That(roaster.Order).IsEqualTo("latte")
+				.Because("each exposure forwards the runtime argument to a factory of the instance handle");
+			await That(plugins("mocha").Order).IsEqualTo("mocha");
+			await That(roasters("latte")).IsNotSameAs(roaster)
+				.Because("every call builds a new instance");
+		}
+
+		[Test]
+		public async Task AnAsyncInitializedMatchBuiltFromARuntimeArgument_AwaitsTheInitialization()
+		{
+			await using ArgumentMultiExposureContainer.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			RoasterDesk desk = await scope.ResolveAsync<RoasterDesk>();
+			IAsyncArgumentRoaster roaster = await desk.Roast("cappuccino");
+
+			await That(roaster.Order).IsEqualTo("cappuccino");
+			await That(roaster.Warmed).IsTrue()
+				.Because("the async alias awaits the async factory of the handle, which runs the module's convention");
+		}
+
+		[Container]
+		[Import(typeof(ArgumentMultiExposureScanModule))]
+		[Transient<RoasterDesk>]
+		public static partial class ArgumentMultiExposureContainer;
+
+		public sealed class RoasterDesk(Func<string, Task<IAsyncArgumentRoaster>> roasters)
+		{
+			public Task<IAsyncArgumentRoaster> Roast(string order) => roasters(order);
+		}
+
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(PublicMultiExposureScanModule))]
 		[Scoped<PublicMultiRoaster, IPublicMultiRoaster>]

@@ -923,15 +923,15 @@ partial class AwaitenGenerator
 	///     The implementation, its handle factory and the alias that <paramref name="factory" /> names, when a
 	///     <c>[GeneratedScanRegistration]</c> of <paramref name="module" /> serves a match the module builds through an
 	///     instance handle (see <see cref="ScanInstanceHandle" />): the named member takes the instance handle that the
-	///     module's scan factory of <paramref name="implementationName" /> returns. Otherwise <see langword="null" />.
+	///     module's scan factory of <paramref name="implementationName" /> returns, or a factory of it (see
+	///     <see cref="TakesHandle" />). Otherwise <see langword="null" />.
 	/// </summary>
 	private static (INamedTypeSymbol Implementation, IMethodSymbol Handle, IMethodSymbol Alias)? ScanInstanceHandleOf(INamedTypeSymbol module, string factory, string? implementationName, Compilation compilation)
 		=> implementationName is not null
 		   && module.ContainingAssembly.GetTypeByMetadataName(implementationName) is { } implementation
 		   && GeneratedFactoryNamed(module, ModuleFactoryName(implementation), compilation) is { } handle
 		   && handle.ReturnType.Name == HiddenInstanceName(implementation)
-		   && MembersNamed(module, factory).OfType<IMethodSymbol>().FirstOrDefault(member => member.Parameters.Length == 1
-		                                                                                     && SymbolEqualityComparer.Default.Equals(member.Parameters[0].Type, handle.ReturnType)) is { } alias
+		   && MembersNamed(module, factory).OfType<IMethodSymbol>().FirstOrDefault(member => TakesHandle(member, handle.ReturnType.ToDisplayString(FullyQualified))) is { } alias
 			? (implementation, handle, alias)
 			: null;
 

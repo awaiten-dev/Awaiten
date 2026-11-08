@@ -183,6 +183,57 @@ public static partial class MultiExposureScanModule
 	internal static void ReleaseTransient(MultiTransientRoaster roaster) => roaster.Releases++;
 }
 
+/// <summary>The marker of the matches of <see cref="ArgumentMultiExposureScanModule" />.</summary>
+public interface IArgumentPlugin
+{
+	/// <summary>The runtime argument the instance was built from.</summary>
+	string Order { get; }
+}
+
+/// <summary>The matching interface of the match of <see cref="ArgumentMultiExposureScanModule" /> built from a runtime argument.</summary>
+public interface IArgumentRoaster : IArgumentPlugin;
+
+/// <summary>The matching interface of the async-initialized match of <see cref="ArgumentMultiExposureScanModule" />.</summary>
+public interface IAsyncArgumentRoaster : IArgumentPlugin
+{
+	/// <summary>Whether the module's async initializer ran on the instance.</summary>
+	bool Warmed { get; }
+}
+
+/// <summary>The convention <see cref="ArgumentMultiExposureScanModule" /> runs on its async-initialized match.</summary>
+public interface IArgumentWarmable
+{
+	/// <summary>Warms the instance.</summary>
+	Task WarmAsync();
+}
+
+internal sealed class ArgumentRoaster([Arg] string order) : IArgumentRoaster
+{
+	public string Order => order;
+}
+
+internal sealed class AsyncArgumentRoaster([Arg] string order) : IAsyncArgumentRoaster, IArgumentWarmable
+{
+	public string Order => order;
+
+	public bool Warmed { get; private set; }
+
+	public Task WarmAsync()
+	{
+		Warmed = true;
+		return Task.CompletedTask;
+	}
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose scan exposes each internal match built from a runtime argument under its marker and its
+///     matching interface, which the module serves through a factory of its generated instance handle.
+/// </summary>
+[Module]
+[AsyncInitializer<IArgumentWarmable>(nameof(IArgumentWarmable.WarmAsync))]
+[Scan<IArgumentPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]
+public static partial class ArgumentMultiExposureScanModule;
+
 /// <summary>
 ///     A <c>[Module]</c> whose scan exposes one match under its marker and its matching interface and the others under
 ///     their marker only, so the marker's collection mixes a match served from a handle with matches built directly.

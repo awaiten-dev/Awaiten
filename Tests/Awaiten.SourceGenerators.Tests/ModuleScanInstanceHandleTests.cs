@@ -423,6 +423,96 @@ public class ModuleScanInstanceHandleTests
 			.Because("each module builds the match through a handle of its own, so a consumer importing both would split the one instance a container in their assembly shares");
 	}
 
+	public class AMatchBuiltFromRuntimeArguments
+	{
+		private const string ArgLibrary = """
+			using System;
+			using System.Threading.Tasks;
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IPlugin { }
+			public interface IRoaster { }
+			public interface IOrder { }
+
+			internal sealed class Roaster : IPlugin, IRoaster
+			{
+			    public Roaster([Arg] IOrder order) { }
+			}
+
+			[Module]
+			[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]
+			public static partial class PluginModule;
+			""";
+
+		private const string ArgConsumer = """
+			using System;
+			using Awaiten;
+			using Lib;
+
+			namespace MyCode;
+
+			public sealed class Bar
+			{
+			    public Bar(Func<IOrder, IPlugin> plugin, Func<IOrder, IRoaster> roaster) { }
+			}
+
+			[Container]
+			[Import(typeof(PluginModule))]
+			[Transient<Bar>]
+			public static partial class MyContainer;
+			""";
+
+		[Test]
+		public async Task TheAliasesPassTheArgumentsToAFactoryOfTheHandle()
+		{
+			GeneratorResult result = Generator.Run(ArgLibrary);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ModuleSource(result)).Contains("@awaiten__handle, [global::Awaiten.Arg] global::Lib.IOrder @awaiten__arg1) => @awaiten__handle(@awaiten__arg1).Value;")
+				.And.Contains("Async(global::System.Func<global::Lib.IOrder, global::System.Threading.Tasks.Task<")
+				.Because("a match built from runtime arguments is reached only through a factory, so each alias forwards them to a factory of the handle, with an async counterpart for an async-tainted handle");
+		}
+
+		[Test]
+		public async Task AnExternalConsumer_ServesEveryExposureFromAFactoryOfTheHandle()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(ArgLibrary, ArgConsumer);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Alias_Roaster_");
+		}
+
+		[Test]
+		public async Task ASameAssemblyOrFriendConsumer_ReportsNothing()
+		{
+			GeneratorResult same = Generator.Run(ArgLibrary + ArgConsumer.Replace("using Lib;", "").Replace("namespace MyCode;", "").Replace("using System;", "").Replace("using Awaiten;", ""));
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(ArgLibrary.Replace("using Awaiten;", "using Awaiten;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]"), ArgConsumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task OfAnAsyncInitializedMatch_AnExternalConsumerAwaitsTheAsyncAlias()
+		{
+			string library = ArgLibrary
+				.Replace("internal sealed class Roaster : IPlugin, IRoaster", "public interface IWarmable { Task WarmAsync(); }\n\ninternal sealed class Roaster : IPlugin, IRoaster, IWarmable")
+				.Replace("public Roaster([Arg] IOrder order) { }", "public Roaster([Arg] IOrder order) { }\n\n    public Task WarmAsync() => Task.CompletedTask;")
+				.Replace("[Module]", "[Module]\n[AsyncInitializer<IWarmable>(nameof(IWarmable.WarmAsync))]");
+			string consumer = ArgConsumer
+				.Replace("using System;", "using System;\nusing System.Threading.Tasks;")
+				.Replace("Func<IOrder, IPlugin> plugin, Func<IOrder, IRoaster> roaster", "Func<IOrder, Task<IPlugin>> plugin, Func<IOrder, Task<IRoaster>> roaster");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"].Split('\n').Any(line => line.Contains("Alias_Roaster_") && line.Contains("Async("))).IsTrue()
+				.Because("the handle is async-initialized, so each exposure awaits an async factory of the handle through the async alias");
+		}
+	}
+
 	[Test]
 	public async Task ASingleExposureMatchOfAnotherModule_SharesTheHandle()
 	{

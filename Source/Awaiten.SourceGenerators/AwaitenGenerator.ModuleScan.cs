@@ -415,7 +415,9 @@ partial class AwaitenGenerator
 	///     as the module builds an internal implementation it registers under several services: the factory wraps the
 	///     instance in the handle, an alias serves each service from it, and the module's conventions run on it through
 	///     initializer wrappers. A public implementation gets an alias under its own type too, through which a consumer
-	///     serves its own registration of the implementation from the same instance. A factory already built into the handle
+	///     serves its own registration of the implementation from the same instance. For a match built from the runtime
+	///     arguments of its <c>[Arg]</c> parameters, each alias takes them and a factory of the handle (see
+	///     <see cref="AliasOf" />), since a container reaches such a match only through a factory. A factory already built into the handle
 	///     keeps its initializers. Returns <see langword="null" /> after reporting a convention parameter the wrapper
 	///     cannot mirror.
 	/// </summary>
@@ -438,6 +440,7 @@ partial class AwaitenGenerator
 			? services.Concat([type,])
 			: services;
 		ImplementationTraits traits = TraitsOf(type, []);
+		string[] arguments = factory.Parameters.AsArray().Where(parameter => parameter.Attributes == ArgAttribute).Select(parameter => parameter.Type).ToArray();
 		return factory with
 		{
 			Shared = new ScanInstanceHandle(
@@ -452,7 +455,7 @@ partial class AwaitenGenerator
 				new EquatableArray<string>(services.Select(service => service.ToDisplayString(FullyQualified)).ToArray()),
 				new EquatableArray<HiddenAlias>(aliased
 					.Select(service => service.ToDisplayString(FullyQualified))
-					.Select(service => new HiddenAlias(HiddenAliasName(type, service), service, handle, InstanceValue(type, service, compilation)))
+					.Select(service => AliasOf(HiddenAliasName(type, service), service, handle, arguments, value => InstanceValue(type, service, compilation, value)))
 					.ToArray()),
 				new EquatableArray<HiddenInitializer>(initializers.ToArray())),
 		};
