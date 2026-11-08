@@ -1619,10 +1619,12 @@ partial class AwaitenGenerator
 		}
 
 		string name = MemberWrapperName(info.Production == ProductionKind.Factory ? "Factory" : "Instance", member, info.Symbol);
-		return modules.MemberWrappers(module)
-			.Any(wrapper => wrapper.Name == name)
-			? InInternals(name)
-			: null;
+		List<MemberWrapper> wrappers = modules.MemberWrappers(module);
+		return wrappers.Exists(wrapper => wrapper.Name == ImplementationWrapperName(name))
+			? InInternals(ImplementationWrapperName(name))
+			: wrappers.Exists(wrapper => wrapper.Name == name)
+				? InInternals(name)
+				: null;
 	}
 
 	/// <summary>

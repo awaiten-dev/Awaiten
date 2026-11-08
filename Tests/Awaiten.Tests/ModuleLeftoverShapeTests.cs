@@ -36,6 +36,32 @@ public partial class ModuleLeftoverShapeTests
 		await That(container.Resolve<ILocalKettle>()).Is<LocalPrivateFactoryModule.Kettle>();
 	}
 
+	public class PrivateMemberOfAnInternalImplementation
+	{
+		[Test]
+		public async Task ContainerInAnotherAssembly_CallsTheWrapperThatReturnsTheService()
+			=> await ProducesAndDisposes(new TuckedShapeContainer.Root(), TuckedShapeModule.ExpectedShelf);
+
+		[Test]
+		public async Task ContainerInAFriendAssembly_CallsTheWrapperThatReturnsTheImplementation()
+			=> await ProducesAndDisposes(new FriendTuckedShapeContainer.Root(), ContainerSupport.FriendTuckedShapeModule.ExpectedShelf);
+
+		[Test]
+		public async Task ContainerInTheModulesAssembly_CallsTheWrapperThatReturnsTheImplementation()
+			=> await ProducesAndDisposes(new ContainerSupport.FriendTuckedShapeLocalContainer.Root(), ContainerSupport.FriendTuckedShapeModule.ExpectedShelf);
+
+		private static async Task ProducesAndDisposes(IAwaitenRoot container, ITuckedShelf expectedShelf)
+		{
+			ITuckedKettle kettle = container.Resolve<ITuckedKettle>();
+			ITuckedShelf shelf = container.Resolve<ITuckedShelf>();
+			await container.DisposeAsync();
+
+			await That(shelf).IsSameAs(expectedShelf);
+			await That(kettle.Disposed).IsTrue()
+				.Because("the container disposes the internal implementation the private factory returns, whatever type it holds it as");
+		}
+	}
+
 	public interface ILocalKettle;
 
 	[Module]
@@ -54,4 +80,12 @@ public partial class ModuleLeftoverShapeTests
 	[Container]
 	[Import(typeof(LocalPrivateFactoryModule))]
 	public static partial class LocalPrivateFactoryContainer;
+
+	[Container]
+	[Import(typeof(TuckedShapeModule))]
+	public static partial class TuckedShapeContainer;
+
+	[Container]
+	[Import(typeof(ContainerSupport.FriendTuckedShapeModule))]
+	public static partial class FriendTuckedShapeContainer;
 }

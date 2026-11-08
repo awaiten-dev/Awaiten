@@ -53,6 +53,8 @@ public class ModulePrivateMemberTests
 	[Arguments("[Singleton<IGreeter>(Factory = \"Factory\")]", "private static IGreeter Factory() => new Greeter();")]
 	[Arguments("[Singleton<IGreeter>(Factory = nameof(Make))]", "private static IGreeter Make(IClock clock) => new Greeter();")]
 	[Arguments("[Singleton<IGreeter>(Instance = nameof(Shared))]", "private static IGreeter Shared { get; } = new Greeter();")]
+	[Arguments("[Singleton<Greeter, IGreeter>(Factory = nameof(Make))]", "private static Greeter Make() => new Greeter();")]
+	[Arguments("[Singleton<Greeter, IGreeter>(Instance = nameof(Shared))]", "private static Greeter Shared { get; } = new Greeter();")]
 	public async Task OfAPublicService_IsCalledThroughTheWrapperByEveryContainer(string registration, string member)
 	{
 		(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("public static partial", registration, member));
@@ -62,7 +64,8 @@ public class ModulePrivateMemberTests
 			.Because("a container in the module's assembly calls the wrapper of a member it cannot reach");
 		await That(external.Diagnostics).IsEmpty()
 			.Because("the module wraps a private member of a public service, which no container could call otherwise");
-		await That(friend.Diagnostics).IsEmpty();
+		await That(friend.Diagnostics).IsEmpty()
+			.Because("a friend names an internal implementation, so it calls a wrapper that returns it rather than the public service");
 		await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Internals.");
 		await That(same.Sources["Awaiten.Lib.SameContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Internals.");
 	}

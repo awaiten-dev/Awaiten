@@ -569,7 +569,8 @@ partial class AwaitenGenerator
 	///     wrapper. Only <paramref name="applies" /> to an owner in another assembly, whose generated members this
 	///     compilation can see. A wrapper of a member that produces an implementation this compilation cannot name returns
 	///     the public service instead, which then stands in for the implementation, while the conventions and disposal
-	///     are read off the implementation, as a container in the owner's assembly reads them. The hooks of an
+	///     are read off the implementation, as a container in the owner's assembly reads them; a compilation that can name
+	///     it calls the wrapper that returns it (see <see cref="ImplementationWrapperName" />). The hooks of an
 	///     implementation hidden in its owner are left to its generated factory.
 	/// </summary>
 	private static RawRegistration ThroughMemberWrapper(RawRegistration registration, INamedTypeSymbol? owner, Compilation compilation, bool applies)
@@ -584,7 +585,8 @@ partial class AwaitenGenerator
 		ImplementationTraits? traits = registration.Traits;
 		if (registration.Production is ProductionKind.Factory or ProductionKind.Instance && member is not null)
 		{
-			string wrapper = InInternals(MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation));
+			string wrapper = MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation);
+			wrapper = Reachable(InInternals(ImplementationWrapperName(wrapper))) ? InInternals(ImplementationWrapperName(wrapper)) : InInternals(wrapper);
 			if (!ReachesProductionMember(owner, registration.Production, member, registration.Implementation, compilation.Assembly, compilation) && Reachable(wrapper))
 			{
 				member = wrapper;

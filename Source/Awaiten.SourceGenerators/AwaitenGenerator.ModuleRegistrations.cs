@@ -282,11 +282,11 @@ partial class AwaitenGenerator
 	///     self-compiled registration (AWT203, AWT204), unless the registered type is not public. When the module's
 	///     assembly grants <c>InternalsVisibleTo</c> to any assembly, a hook whose wrapper fails only with AWT203 or
 	///     AWT204 lands in <paramref name="skipped" /> instead, since such an assembly calls it directly. A private member
-	///     of a registration under an internal service, which a container in another assembly reaches through the
-	///     service's handle, gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its parameters are
-	///     internal or public, so a container in the module's assembly or in a friend calls it too. An internal module,
-	///     which only its own assembly and its friends import, gets only such internal wrappers, for every private member
-	///     whatever the service. A return type private
+	///     gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its parameters are internal or
+	///     public, so a container in the module's assembly or in a friend calls it too; one whose public wrapper returns
+	///     the public service in place of the implementation those containers name gets it under
+	///     <see cref="ImplementationWrapperName" />. An internal module, which only its own assembly and its friends
+	///     import, gets only such internal wrappers. A return type private
 	///     to the module is exposed as the registered type (see <see cref="OwnedMemberType" />). Whether a public member
 	///     already serves a registration is judged by the members that produce its type and the hooks that take it, so a
 	///     public overload of another type does not stand in for an internal one.
@@ -335,9 +335,11 @@ partial class AwaitenGenerator
 
 		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
 		{
-			if (registration.Member is { } member && (!external || !IsExternallyAccessible(registration.Service)))
+			if (registration.Member is { } member && InternalWrapper(registration.Production, member, registration.Implementation) is { } wrapper)
 			{
-				Add(InternalWrapper(registration.Production, member, registration.Implementation));
+				Add(wrappers.Find(existing => existing.Name == wrapper.Name) is { } exposing && exposing.ReturnType != wrapper.ReturnType
+					? wrapper with { Name = ImplementationWrapperName(wrapper.Name), }
+					: wrapper);
 			}
 		}
 

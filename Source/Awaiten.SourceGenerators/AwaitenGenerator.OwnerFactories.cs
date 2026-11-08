@@ -396,6 +396,13 @@ partial class AwaitenGenerator
 		=> $"{kind}_{member}_{Fnv1a($"{member}\0{produced.ToDisplayString(FullyQualified)}"):x8}";
 
 	/// <summary>
+	///     The name of the internal wrapper that returns the implementation where the public wrapper
+	///     <paramref name="wrapperName" /> (see <see cref="MemberWrapperName" />) returns the public service instead,
+	///     for the containers that can name the implementation.
+	/// </summary>
+	private static string ImplementationWrapperName(string wrapperName) => "Implementation" + wrapperName;
+
+	/// <summary>
 	///     The nested class of a module or container that holds every member the generator adds to it for another
 	///     container to call: factories, wrappers and the constants that record why one was skipped.
 	/// </summary>
