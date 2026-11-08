@@ -254,10 +254,18 @@ partial class AwaitenGenerator
 		{
 			foreach (InjectPropertyEntry entry in injectProperties.Where(entry => !(entry.Inherited && OwnerFactoryTakes(info, entry.PropertyName))))
 			{
-				context.Diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InjectPropertyOnNonConstructed,
-					entry.Location ?? info.Location,
-					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				context.Diagnostics.Add(IsOwnerFactoryProduced(info)
+					? new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnOwnerFactory,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([
+							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(info.Origin!.ToDisplayString(FullyQualified)),
+							CanConstruct(info.Symbol, context.Compilation) ? "this container does not see one of its [Inject] properties" : "this container cannot construct it",
+						]))
+					: new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnNonConstructed,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
 			}
 
 			return members;
@@ -277,9 +285,13 @@ partial class AwaitenGenerator
 	///     <c>[InjectProperty]</c> entries included.
 	/// </summary>
 	private static bool OwnerFactoryTakes(ImplInfo info, string property)
-		=> info is { Production: ProductionKind.Factory, Origin: { } owner, ProductionMember: { } member, }
-		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal)
-		   && MembersNamed(owner, member).OfType<IMethodSymbol>().Any(method => method.Parameters.Any(parameter => parameter.Name == property));
+		=> IsOwnerFactoryProduced(info)
+		   && MembersNamed(info.Origin!, info.ProductionMember!).OfType<IMethodSymbol>().Any(method => method.Parameters.Any(parameter => parameter.Name == property));
+
+	/// <summary>Whether <paramref name="info" /> is produced by a factory its module or base generated into its <c>Internals</c> class.</summary>
+	private static bool IsOwnerFactoryProduced(ImplInfo info)
+		=> info is { Production: ProductionKind.Factory, Origin: not null, ProductionMember: { } member, }
+		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal);
 
 	/// <summary>
 	///     The key of the <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entries that apply to

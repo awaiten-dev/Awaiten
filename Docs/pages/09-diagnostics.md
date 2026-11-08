@@ -1411,9 +1411,9 @@ public static partial class CoffeeShop
 }
 ```
 
-The same holds for a type that a module of another assembly builds through its [generated factory](./04-registration/07-modules.md#internal-implementations), because the container can't construct it or can't set one of its `[Inject]` properties.
+The same holds for a type that a module of another assembly builds through its [generated factory](./04-registration/07-modules.md#internal-implementations), an open generic one included, because the container can't construct it or can't set one of its `[Inject]` properties. The message then names the module and which of the two applies, since the container declares no `Factory` itself.
 
-**Fix:** Remove the `[InjectProperty]` entry and set the property in the factory, which can take the dependency as a parameter (`MakeBarista(ITimeSystem time) => new() { Time = time }`), or let the container construct the type.
+**Fix:** Remove the `[InjectProperty]` entry and set the property in the factory, which can take the dependency as a parameter (`MakeBarista(ITimeSystem time) => new() { Time = time }`), or let the container construct the type. For a type a module builds, grant the container's assembly `InternalsVisibleTo` in the module's assembly, so the container constructs the type and fills the property itself.
 
 ### AWT179
 
