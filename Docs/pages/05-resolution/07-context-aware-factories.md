@@ -26,7 +26,7 @@ Now a `Barista` that needs an `ILogger` gets one tagged with `Barista`, and a `R
 
 ## Resolved directly? The type is null
 
-When you resolve the service straight from the container, there is no consumer. The parameter is `null`, so declare it as `Type?` and handle that case.
+When you resolve the service straight from the container, there is no consumer. The parameter is `null`, so declare it as `Type?` and handle that case. It is `null` as well behind a [conditional decorator](../04-registration/02-decorators.md#apply-a-decorator-conditionally) that is off, because the decorator would have been the consumer.
 
 ```csharp
 ILogger logger = shop.Resolve<ILogger>();   // requestingType is null here

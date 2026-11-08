@@ -136,7 +136,7 @@ using CoffeeShop.Root shop = new();
 
 A predicate without parameters is evaluated once per root, when the root is created and before any [eager](../03-core-concepts/01-lifetimes.md) singleton is built. Changing the switch afterwards does not affect that root, and a new root reads it again. Decorators that name the same predicate share one evaluation. The `typeof` form takes `When` too, and the predicate then decides for every closing.
 
-When the predicate is `false`, the decorator is never built: it is not initialized, not tracked for disposal, and its own dependencies are never resolved. The other decorators of the chain keep their order, and a collection, a keyed dictionary or a composite gets the same chain as a plain resolve.
+When the predicate is `false`, the decorator is never built: it is not initialized, not tracked for disposal, and its own dependencies are never resolved. The other decorators of the chain keep their order, and a collection, a keyed dictionary or a composite gets the same chain as a plain resolve. A [context-aware factory](../05-resolution/07-context-aware-factories.md) behind a decorator that is off receives a `null` requesting type, as if it were resolved directly.
 
 The graph is still validated with the decorator in place, whatever the predicate returns. Its dependencies must be registered, a captive dependency or a cycle through it is a build error, and [lifetime safety](../06-lifetime/02-lifetime-safety.md) treats a disposable decorator as built. An async-initialized decorator keeps the service async even in a run where it is off, so resolve the service with `ResolveAsync` either way.
 
