@@ -61,6 +61,33 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task Awt195_NamesTheParameterOfAFactoryMemberAsSuch_WhenItsTypeIsPrivateToTheModule()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IGrinder { }
+			                                       internal sealed class BeanStore { }
+			                                       internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+			                                       [Module]
+			                                       [Singleton<BeanStore>(Factory = nameof(Make))]
+			                                       [Singleton<Grinder, IGrinder>]
+			                                       public static partial class CoffeeModule
+			                                       {
+			                                           private sealed class Secret { }
+
+			                                           private static BeanStore Make(Secret secret) => new();
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.BeanStore'*but the parameter 'secret' of its factory 'Make' needs 'Lib.CoffeeModule.Secret', which is private to the module*").AsWildcard()
+				.Because("the parameter belongs to the module's factory member, not to a constructor");
+		}
+
+		[Test]
 		public async Task Awt196_ReportsWhenNoExposureIsAccessible()
 		{
 			GeneratorResult result = Generator.Run("""

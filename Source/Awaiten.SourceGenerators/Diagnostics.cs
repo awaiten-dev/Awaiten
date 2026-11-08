@@ -1467,15 +1467,16 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
-	///     The module-private form of <see cref="ModuleScanParameterInaccessible">AWT195</see>: the constructor
-	///     parameter's type is private to the module or a class containing it. No container can register a service of
+	///     The module-private form of <see cref="ModuleScanParameterInaccessible">AWT195</see>: the type of the
+	///     constructor or factory member parameter the second argument names is private to the module or a class
+	///     containing it. No container can register a service of
 	///     that type or resolve the parameter, and the factory can neither take it nor build it itself without
 	///     bypassing the graph's lifetimes and disposal. Depend on an accessible service the type implements instead.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleParameterHiddenInModule = new(
 		"AWT195",
 		ModuleScanParameterInaccessible.Title,
-		"{0}, but its constructor parameter '{1}' needs '{2}', which is private to the module or a class containing it, so no container can register or resolve it; depend on an accessible service that '{2}' implements instead, and register '{2}' under that service",
+		"{0}, but {1} needs '{2}', which is private to the module or a class containing it, so no container can register or resolve it; depend on an accessible service that '{2}' implements instead, and register '{2}' under that service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

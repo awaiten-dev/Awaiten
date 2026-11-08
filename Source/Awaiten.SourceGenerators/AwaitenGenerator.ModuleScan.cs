@@ -1115,7 +1115,7 @@ partial class AwaitenGenerator
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.ModuleParameterHiddenInModule,
 				LocationInfo.From(location),
-				new EquatableArray<string>([subject.Subject, parameter.Name, Display(hidden.ToDisplayString(FullyQualified)),])));
+				new EquatableArray<string>([subject.Subject, label, Display(hidden.ToDisplayString(FullyQualified)),])));
 			return false;
 		}
 
