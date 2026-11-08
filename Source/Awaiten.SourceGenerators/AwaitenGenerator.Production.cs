@@ -183,9 +183,13 @@ partial class AwaitenGenerator
 	{
 		if (info.ConstructVia is { } via && producer.MethodKind != MethodKind.Ordinary)
 		{
-			string owner = via.Substring(0, via.LastIndexOf('.'));
-			string factory = via.Substring(via.LastIndexOf('.') + 1);
-			return members.Select(member => member.Deferred ? member with { Setter = $"{owner}.{DeferredSetterName(factory, member.MemberName)}", } : member).ToList();
+			// A closing of a generic factory carries its type arguments, which may contain dots, and passes them on to the setters.
+			int generic = via.IndexOf('<');
+			string call = generic < 0 ? via : via.Substring(0, generic);
+			string typeArguments = generic < 0 ? string.Empty : via.Substring(generic);
+			string owner = call.Substring(0, call.LastIndexOf('.'));
+			string factory = call.Substring(call.LastIndexOf('.') + 1);
+			return members.Select(member => member.Deferred ? member with { Setter = $"{owner}.{DeferredSetterName(factory, member.MemberName)}{typeArguments}", } : member).ToList();
 		}
 
 		if (!IsGeneratedOwnerFactory(producer))
@@ -194,9 +198,11 @@ partial class AwaitenGenerator
 		}
 
 		string prefix = DeferredSetterName(producer.Name, string.Empty);
-		foreach (IMethodSymbol setter in producer.ContainingType.GetMembers().OfType<IMethodSymbol>()
-			         .Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Name.StartsWith(prefix, StringComparison.Ordinal)))
+		string closing = producer.IsGenericMethod ? $"<{string.Join(", ", producer.TypeArguments.Select(argument => argument.ToDisplayString(FullyQualified)))}>" : string.Empty;
+		foreach (IMethodSymbol candidate in producer.ContainingType.GetMembers().OfType<IMethodSymbol>()
+			         .Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == producer.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal)))
 		{
+			IMethodSymbol setter = producer.IsGenericMethod ? candidate.Construct(producer.TypeArguments.ToArray()) : candidate;
 			ParameterModel dependency = ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes);
 			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl))
 			{
@@ -204,7 +210,7 @@ partial class AwaitenGenerator
 			}
 
 			ReportWhenUnregistered(dependency, info, context);
-			members.Add(new MemberModel(setter.Name.Substring(prefix.Length), dependency, Deferred: true, $"{producer.ContainingType.ToDisplayString(FullyQualified)}.{setter.Name}"));
+			members.Add(new MemberModel(setter.Name.Substring(prefix.Length), dependency, Deferred: true, $"{producer.ContainingType.ToDisplayString(FullyQualified)}.{setter.Name}{closing}"));
 		}
 
 		return members;
@@ -246,12 +252,20 @@ partial class AwaitenGenerator
 
 		if (info.Production != ProductionKind.Constructor)
 		{
-			foreach (InjectPropertyEntry entry in injectProperties)
+			foreach (InjectPropertyEntry entry in injectProperties.Where(entry => !(entry.Inherited && OwnerFactoryTakes(info, entry.PropertyName))))
 			{
-				context.Diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InjectPropertyOnNonConstructed,
-					entry.Location ?? info.Location,
-					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				context.Diagnostics.Add(IsOwnerFactoryProduced(info)
+					? new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnOwnerFactory,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([
+							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(info.Origin!.ToDisplayString(FullyQualified)),
+							CanConstruct(info.Symbol, context.Compilation) ? "this container does not see one of its [Inject] properties" : "this container cannot construct it",
+						]))
+					: new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnNonConstructed,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
 			}
 
 			return members;
@@ -264,6 +278,20 @@ partial class AwaitenGenerator
 			members);
 		return members;
 	}
+
+	/// <summary>
+	///     Whether the generated factory of the base or module that produces <paramref name="info" /> takes
+	///     <paramref name="property" /> as a parameter, as it does for each injected property it mirrors, the base's
+	///     <c>[InjectProperty]</c> entries included.
+	/// </summary>
+	private static bool OwnerFactoryTakes(ImplInfo info, string property)
+		=> IsOwnerFactoryProduced(info)
+		   && MembersNamed(info.Origin!, info.ProductionMember!).OfType<IMethodSymbol>().Any(method => method.Parameters.Any(parameter => parameter.Name == property));
+
+	/// <summary>Whether <paramref name="info" /> is produced by a factory its module or base generated into its <c>Internals</c> class.</summary>
+	private static bool IsOwnerFactoryProduced(ImplInfo info)
+		=> info is { Production: ProductionKind.Factory, Origin: not null, ProductionMember: { } member, }
+		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal);
 
 	/// <summary>
 	///     The key of the <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entries that apply to

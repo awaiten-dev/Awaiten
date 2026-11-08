@@ -94,6 +94,7 @@ partial class AwaitenGenerator
 		private readonly Dictionary<INamedTypeSymbol, List<RegistrationFactory>> _internalRegistrations = new(SymbolEqualityComparer.Default);
 		private readonly Dictionary<INamedTypeSymbol, List<RegistrationFactory>> _contributions = new(SymbolEqualityComparer.Default);
 		private readonly Dictionary<INamedTypeSymbol, List<MemberWrapper>> _memberWrappers = new(SymbolEqualityComparer.Default);
+		private readonly Dictionary<INamedTypeSymbol, List<RegistrationFactory>> _openFactories = new(SymbolEqualityComparer.Default);
 
 		public SameCompilationModules(Compilation compilation) => _compilation = compilation;
 
@@ -165,6 +166,22 @@ partial class AwaitenGenerator
 			}
 
 			return factories.FirstOrDefault(factory => factory.FactoryName == "Internal" + name) ?? factories.FirstOrDefault(factory => factory.FactoryName == name);
+		}
+
+		/// <summary>
+		///     The generic factory named <paramref name="name" /> the module generates for an open contribution (see
+		///     <see cref="CollectModuleOpenFactories" />), or <see langword="null" />.
+		/// </summary>
+		public RegistrationFactory? OpenFactory(INamedTypeSymbol module, string name)
+		{
+			if (!_openFactories.TryGetValue(module, out List<RegistrationFactory>? factories))
+			{
+				_openFactories[module] = factories = ReceivesGeneratedMembers(module)
+					? CollectModuleOpenFactories(module, _compilation).Factories
+					: new List<RegistrationFactory>();
+			}
+
+			return factories.FirstOrDefault(factory => factory.FactoryName == name);
 		}
 	}
 
@@ -483,8 +500,46 @@ partial class AwaitenGenerator
 			}
 		}
 
+		if (hidden is not null)
+		{
+			AddHiddenOpenContributionFactories(hidden, factories, context);
+		}
+
 		return factories;
 	}
+
+	/// <summary>
+	///     Adds the factory of each closing of an open <c>[Decorate]</c> or <c>[Composite]</c> of the module onto an internal
+	///     service it registers, built into the service's handle like a closed one (see <see cref="HiddenContributionFactory" />),
+	///     because a consuming container in another assembly cannot name the closing to close the open form onto it.
+	/// </summary>
+	private static void AddHiddenOpenContributionFactories(HiddenServices hidden, List<RegistrationFactory> factories, ModuleScanContext context)
+	{
+		foreach (OpenContribution contribution in OpenContributions(context.Module).Where(contribution => contribution.AttributeName is "DecorateAttribute" or "CompositeAttribute"))
+		{
+			foreach (INamedTypeSymbol service in hidden.Services.Keys.Where(service => ClosesOpenService(service, contribution.Service)).ToList())
+			{
+				ITypeSymbol[] typeArguments = service.TypeArguments.ToArray();
+				if (!ConstraintsSatisfied(contribution.Definition, typeArguments))
+				{
+					continue;
+				}
+
+				INamedTypeSymbol closed = contribution.Definition.Construct(typeArguments);
+				string name = ContributionFactoryName(contribution.AttributeName, closed, service);
+				if (factories.All(factory => factory.FactoryName != name)
+				    && HiddenContributionFactory(closed, service, name, contribution.AttributeName == "CompositeAttribute", context) is { } built)
+				{
+					factories.Add(built);
+				}
+			}
+		}
+	}
+
+	/// <summary>Whether <paramref name="service" /> is a closing of the generic definition of <paramref name="openService" />.</summary>
+	private static bool ClosesOpenService(INamedTypeSymbol service, INamedTypeSymbol openService)
+		=> service is { IsGenericType: true, IsUnboundGenericType: false, }
+		   && SymbolEqualityComparer.Default.Equals(service.OriginalDefinition, openService.OriginalDefinition);
 
 	/// <summary>
 	///     The factory of a decorator or composite that mirrors its constructor and injected properties, or

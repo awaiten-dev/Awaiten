@@ -140,6 +140,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
 		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics) : new();
+		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
+		contributions.AddRange(openFactories);
+		skipped.AddRange(openSkipped);
 		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
 		    && hidden is not { Implementations.Count: > 0, SeveralModules: true, })
 		{
@@ -675,6 +678,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Only a container that extends none can be extended, so only such a container builds factories for its private
 		// implementations (see RecordBaseFactory).
 		BaseFactories? factories = ExtendsTarget(containerSymbol, out _) is null ? new BaseFactories() : null;
+		if (factories is not null)
+		{
+			RecordBaseOpenFactories(containerSymbol, compilation, factories);
+		}
 
 		// [ImportServices]: any otherwise-unresolved direct dependency falls through to the external provider
 		// instead of AWT101. Computed up front because it widens constructor selection everywhere. A module can

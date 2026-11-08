@@ -650,6 +650,45 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		public async Task AnInjectPropertyEntryOfABaseInAnotherAssembly_IsFilledThroughItsFactory()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+			                                                                      [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			                                                                      namespace Production;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class Clock : IClock { }
+			                                                                      public interface IGrinder { }
+
+			                                                                      [Container]
+			                                                                      [Singleton<Clock, IClock>]
+			                                                                      [Singleton<Grinder, IGrinder>]
+			                                                                      [InjectProperty<Grinder>(nameof(Grinder.Clock))]
+			                                                                      public static partial class Shop
+			                                                                      {
+			                                                                          private sealed class Grinder : IGrinder
+			                                                                          {
+			                                                                              public IClock Clock { get; set; } = null!;
+			                                                                          }
+			                                                                      }
+			                                                                      """, """
+			                                                                           using Awaiten;
+
+			                                                                           namespace MyCode;
+
+			                                                                           [Container(Extends = typeof(Production.Shop))]
+			                                                                           public static partial class TestShop
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the base's factory takes the property of its entry as a parameter, so the entry is no AWT178 for the extending container");
+		}
+
+		[Test]
 		public async Task ABaseInAnotherAssemblyWithoutInternalsVisibleTo_ReportsAwt226()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
@@ -721,7 +760,7 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
-		public async Task APrivateOpenGenericOfTheBase_ReportsAwt226()
+		public async Task PrivateDecoratorsCompositesAndOpenGenericsOfTheBase_AreBuiltThroughItsFactories()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -762,9 +801,8 @@ public class ContainerExtendsTests
 				.Because("the base generates a factory for its private decorator");
 			await That(result.Diagnostics).DoesNotContain("*AllPlugins*").AsWildcard()
 				.Because("the base generates a factory for its private composite");
-			await That(result.Diagnostics).Contains("*error AWT226*'MyCode.Shop.Repository<string>'*make 'MyCode.Shop.Repository<T>' internal*").AsWildcard()
-				.Because("open generics private to the base are not built through a generated factory yet");
-			await That(result.Diagnostics).DoesNotContain("*error CS*").AsWildcard();
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the base generates a generic factory for its private open generic registration, which the extending container closes");
 		}
 	}
 }

@@ -94,6 +94,54 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Singleton(typeof(Widget<>), typeof(IWidget<>))]", "typeof(Widget<>)")]
+		[Arguments("[Singleton<Widget<Bus>, IWidget<Bus>>]", "typeof(Widget<Bus>)")]
+		public async Task ReportsAwt178NamingTheHiddenInjectPropertyForATypeAModuleFactoryBuilds(string registration, string target)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                       using Awaiten;
+
+			                                                                       namespace Lib;
+
+			                                                                       public sealed class Bus { }
+			                                                                       public interface IWidget<T> { }
+			                                                                       public sealed class Widget<T> : IWidget<T>
+			                                                                       {
+			                                                                           [Inject] internal Bus Hidden { get; set; } = null!;
+			                                                                           public Bus? Other { get; set; }
+			                                                                       }
+
+			                                                                       [Module]
+			                                                                       [Singleton<Bus>]
+			                                                                       {{registration}}
+			                                                                       public static partial class WidgetModule { }
+			                                                                       """, $$"""
+			                                                                              using Awaiten;
+			                                                                              using Lib;
+
+			                                                                              namespace MyCode;
+
+			                                                                              public sealed class Consumer
+			                                                                              {
+			                                                                                  public Consumer(IWidget<Bus> widget) { }
+			                                                                              }
+
+			                                                                              [Container]
+			                                                                              [Import(typeof(WidgetModule))]
+			                                                                              [InjectProperty({{target}}, "Other")]
+			                                                                              [Transient<Consumer>]
+			                                                                              public static partial class MyContainer
+			                                                                              {
+			                                                                              }
+			                                                                              """);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178")
+			                                                                  && diagnostic.Contains("is built by the generated factory of 'Lib.WidgetModule' because this container does not see one of its [Inject] properties")
+			                                                                  && diagnostic.Contains("InternalsVisibleTo"))
+				.Because("the user declared no Factory, so the message names why the module builds the type");
+		}
+
+		[Test]
 		public async Task ReportsAwt178WhenInjectPropertyTargetsAnInstanceRegistration()
 		{
 			GeneratorResult result = Generator.Run("""

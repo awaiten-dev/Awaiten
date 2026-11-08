@@ -55,7 +55,7 @@ partial class AwaitenGenerator
 		{
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, module.Inherited ? new List<DiagnosticInfo>() : diagnostics, sameCompilationModules, module.Inherited),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, module.Inherited ? new List<DiagnosticInfo>() : diagnostics, sameCompilationModules, module.Inherited, inheritance),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
 		}
@@ -90,6 +90,7 @@ partial class AwaitenGenerator
 		{
 			ReplaceInherited(inheritance, own, ownOpen, result, open);
 			BuildThroughBaseFactories(inheritance, result, constraintRejected, diagnostics);
+			ReportUnbuildableInheritedOpen(inheritance, open, diagnostics);
 		}
 
 		// Expand open generic registrations: for every closed generic service required from the graph
@@ -98,6 +99,7 @@ partial class AwaitenGenerator
 		if (open.Count > 0)
 		{
 			ExpandOpenGenerics(result, open, new ExpansionInputs(containerSymbol, compilation, external, injectProperties, wrappers), diagnostics, constraintRejected);
+			ShareOwnerFactoryInstances(result, compilation, constraintRejected, diagnostics);
 		}
 
 		if (inheritance is not null)
@@ -241,7 +243,8 @@ partial class AwaitenGenerator
 		List<OpenRegistration> Open,
 		List<DiagnosticInfo> Diagnostics,
 		SameCompilationModules Modules,
-		bool Inherited = false);
+		bool Inherited = false,
+		Inheritance? Inheritance = null);
 
 	/// <summary>
 	///     Reads the <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registrations declared on the context's
@@ -636,15 +639,7 @@ partial class AwaitenGenerator
 
 		if (typeofImplementation.IsUnboundGenericType || typeofService.IsUnboundGenericType)
 		{
-			if (ReadProduction(attribute).Production != ProductionKind.Constructor
-			    || context.Inherited
-			    || !IsUnconstructibleModuleContribution(
-				    context.Origin, typeofImplementation, "the open generic registration of",
-				    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? context.FallbackLocation, context.Compilation, context.Diagnostics))
-			{
-				CollectOpenRegistration(attribute, lifetime, typeofImplementation, typeofService, context);
-			}
-
+			CollectOpenRegistration(attribute, lifetime, typeofImplementation, typeofService, context);
 			return false;
 		}
 
@@ -1208,7 +1203,9 @@ partial class AwaitenGenerator
 
 			Location? location = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? fallbackLocation;
 			ContributionContext contribution = new(module, inherited ? inheritance : null, location, compilation, sameCompilationModules, diagnostics);
-			if (UnavailableContribution(contribution, attribute, attributeClass, out OwnerFactoryCall? via))
+			OpenViaOutcome openVia = ResolveOpenContributionVia(attribute, attributeClass, module, contribution, fallbackLocation, inherited);
+			OwnerFactoryCall? via = null;
+			if (openVia.Dropped || (openVia.Via is null && UnavailableContribution(contribution, attribute, attributeClass, out via)))
 			{
 				declarationOrder++;
 				continue;
@@ -1245,7 +1242,14 @@ partial class AwaitenGenerator
 			         && attribute.ConstructorArguments[1].Value is INamedTypeSymbol openService
 			         && TryReadOpenGenericPair(openDecorator, openService, LocationInfo.From(location), diagnostics) is { } pair)
 			{
-				open.Add(new OpenDecorateRegistration(pair.Service, pair.Mapped, order, declarationOrder, location, keys, inherited, module));
+				bool decoratesHandles = false;
+				foreach ((INamedTypeSymbol decorator, OwnerFactoryCall handleVia, INamedTypeSymbol handle) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
+				{
+					closed.Add(new DecorateRegistration(handle.ToDisplayString(FullyQualified), handle, decorator, order, declarationOrder, location, keys, inherited, handleVia, module, ThroughHandle: true));
+					decoratesHandles = true;
+				}
+
+				open.Add(new OpenDecorateRegistration(pair.Service, pair.Mapped, order, declarationOrder, location, keys, inherited, module, openVia.Via, decoratesHandles));
 			}
 
 			// One slot per [Decorate] attribute (well-formed or not), so open and closed decorators keep their
@@ -1267,6 +1271,44 @@ partial class AwaitenGenerator
 		   && !compilation.IsSymbolAccessibleWithin(service, compilation.Assembly)
 			? handle
 			: null;
+
+	/// <summary>
+	///     The closings of an open <c>[Decorate]</c> or <c>[Composite]</c> of a module of another assembly onto the internal
+	///     services the module registers, which this container reaches only through their handles: each closed decorator or
+	///     composite, the factory the module generates for it (see <see cref="AddHiddenOpenContributionFactories" />) and the
+	///     handle it decorates or fronts. This container cannot name such a closing, so the open form alone would miss it.
+	/// </summary>
+	private static IEnumerable<(INamedTypeSymbol Type, OwnerFactoryCall Via, INamedTypeSymbol Handle)> HandleClosings(
+		INamedTypeSymbol? module, bool inherited, INamedTypeSymbol definition, INamedTypeSymbol openService, string attributeName, Compilation compilation)
+	{
+		if (module is null || inherited || SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
+		{
+			yield break;
+		}
+
+		HashSet<INamedTypeSymbol> seen = new(SymbolEqualityComparer.Default);
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			INamedTypeSymbol service = registration.Service;
+			if (!ClosesOpenService(service, openService)
+			    || compilation.IsSymbolAccessibleWithin(service, compilation.Assembly)
+			    || !seen.Add(service)
+			    || !ConstraintsSatisfied(definition, service.TypeArguments.ToArray()))
+			{
+				continue;
+			}
+
+			INamedTypeSymbol closed = definition.Construct(service.TypeArguments.ToArray());
+			if (GeneratedFactoryNamed(module, ContributionFactoryName(attributeName, closed, service), compilation) is { } factory)
+			{
+				OwnerFactoryCall via = new(module, factory.Name, factory.ReturnType.ToDisplayString(FullyQualified), factory);
+				if (HandleProducedBy(via, service, compilation) is { } handle)
+				{
+					yield return (closed, via, handle);
+				}
+			}
+		}
+	}
 
 	/// <summary>
 	///     Reads the <c>Keys</c> and <c>AllKeys</c> named arguments of a <c>[Decorate]</c> as the selected canonical
@@ -1388,7 +1430,9 @@ partial class AwaitenGenerator
 			string? key = NamedKeyArgument(attribute);
 
 			ContributionContext contribution = new(module, inherited ? inheritance : null, location, compilation, sameCompilationModules, diagnostics);
-			if (UnavailableContribution(contribution, attribute, attributeClass, out OwnerFactoryCall? via))
+			OpenViaOutcome openVia = ResolveOpenContributionVia(attribute, attributeClass, module, contribution, fallbackLocation, inherited);
+			OwnerFactoryCall? via = null;
+			if (openVia.Dropped || (openVia.Via is null && UnavailableContribution(contribution, attribute, attributeClass, out via)))
 			{
 				continue;
 			}
@@ -1409,7 +1453,14 @@ partial class AwaitenGenerator
 			         && attribute.ConstructorArguments[1].Value is INamedTypeSymbol openService
 			         && TryReadOpenGenericPair(openComposite, openService, LocationInfo.From(location), diagnostics) is { } pair)
 			{
-				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module));
+				bool composesHandles = false;
+				foreach ((INamedTypeSymbol composite, OwnerFactoryCall handleVia, INamedTypeSymbol handle) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
+				{
+					closed.Add(new CompositeRegistration(handle.ToDisplayString(FullyQualified), handle, composite, lifetime, location, key, handleVia, module, ThroughHandle: true));
+					composesHandles = true;
+				}
+
+				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module, openVia.Via, composesHandles));
 			}
 		}
 
