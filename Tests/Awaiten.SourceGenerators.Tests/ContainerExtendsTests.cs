@@ -650,6 +650,45 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		public async Task AnInjectPropertyEntryOfABaseInAnotherAssembly_IsFilledThroughItsFactory()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+			                                                                      [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			                                                                      namespace Production;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class Clock : IClock { }
+			                                                                      public interface IGrinder { }
+
+			                                                                      [Container]
+			                                                                      [Singleton<Clock, IClock>]
+			                                                                      [Singleton<Grinder, IGrinder>]
+			                                                                      [InjectProperty<Grinder>(nameof(Grinder.Clock))]
+			                                                                      public static partial class Shop
+			                                                                      {
+			                                                                          private sealed class Grinder : IGrinder
+			                                                                          {
+			                                                                              public IClock Clock { get; set; } = null!;
+			                                                                          }
+			                                                                      }
+			                                                                      """, """
+			                                                                           using Awaiten;
+
+			                                                                           namespace MyCode;
+
+			                                                                           [Container(Extends = typeof(Production.Shop))]
+			                                                                           public static partial class TestShop
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the base's factory takes the property of its entry as a parameter, so the entry is no AWT178 for the extending container");
+		}
+
+		[Test]
 		public async Task ABaseInAnotherAssemblyWithoutInternalsVisibleTo_ReportsAwt226()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""

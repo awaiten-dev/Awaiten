@@ -252,7 +252,7 @@ partial class AwaitenGenerator
 
 		if (info.Production != ProductionKind.Constructor)
 		{
-			foreach (InjectPropertyEntry entry in injectProperties)
+			foreach (InjectPropertyEntry entry in injectProperties.Where(entry => !(entry.Inherited && OwnerFactoryTakes(info, entry.PropertyName))))
 			{
 				context.Diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.InjectPropertyOnNonConstructed,
@@ -270,6 +270,16 @@ partial class AwaitenGenerator
 			members);
 		return members;
 	}
+
+	/// <summary>
+	///     Whether the generated factory of the base or module that produces <paramref name="info" /> takes
+	///     <paramref name="property" /> as a parameter, as it does for each injected property it mirrors, the base's
+	///     <c>[InjectProperty]</c> entries included.
+	/// </summary>
+	private static bool OwnerFactoryTakes(ImplInfo info, string property)
+		=> info is { Production: ProductionKind.Factory, Origin: { } owner, ProductionMember: { } member, }
+		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal)
+		   && MembersNamed(owner, member).OfType<IMethodSymbol>().Any(method => method.Parameters.Any(parameter => parameter.Name == property));
 
 	/// <summary>
 	///     The key of the <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entries that apply to

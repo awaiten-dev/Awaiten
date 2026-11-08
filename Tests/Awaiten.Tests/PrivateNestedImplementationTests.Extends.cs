@@ -141,6 +141,8 @@ public sealed partial class PrivateNestedImplementationTests
 				await That(tool.Activated).IsTrue()
 					.Because("the base's private hook runs through its internal wrapper, reached through [InternalsVisibleTo]");
 				await That(shop.Resolve<IEnumerable<ISupportPrivatePlugin>>()).HasCount(1);
+				await That(tool.Label).IsSameAs(shop.Resolve<ISupportPrivateLabel>())
+					.Because("the base's factory takes the property of its [InjectProperty] entry as a parameter");
 			}
 
 			await That(tool.Disposed).IsTrue()
