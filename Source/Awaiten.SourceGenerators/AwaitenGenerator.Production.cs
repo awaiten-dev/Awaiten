@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -166,8 +167,7 @@ partial class AwaitenGenerator
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
-			NestedNullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNestedNullableProduct(disposalType),
-			NullableProductType: !viaModuleFactory && info.Production == ProductionKind.Factory ? NullableProductType(disposalType) : null);
+			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -395,7 +395,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> diagnostics,
 		SameCompilationModules modules)
 	{
-		ITypeSymbol? memberType = ValidateInstanceMember(containerSymbol, info, compilation, diagnostics, modules);
+		ISymbol? member = ValidateInstanceMember(containerSymbol, info, compilation, diagnostics, modules);
 		// AWT165: a lifecycle hook on a pre-built Instance is a silent no-op (the caller, not the container,
 		// owns and tears down the instance), so reject it rather than construct with hooks that never run.
 		if (info.OnActivated is not null || info.OnRelease is not null)
@@ -429,27 +429,84 @@ partial class AwaitenGenerator
 			EmitType: EmitTypeOf(info),
 			Eager: info.Eager && info.Lifetime == Lifetime.Singleton,
 			PrivateServices: PrivateServices(info, containerSymbol),
-			NestedNullableProduct: memberType is not null && IsNestedNullableProduct(memberType),
-			NullableProductType: memberType is null ? null : NullableProductType(memberType));
+			NullableProduct: member is not null && IsNullableProduct(ProductOf(member, compilation)!, member, info, diagnostics));
 	}
 
 	/// <summary>
-	///     Whether a Factory or Instance member's declared type carries a nullable annotation below its top level (see
-	///     <see cref="InstanceModel.NestedNullableProduct" />). A top-level <c>?</c> is left alone: the member may then
-	///     really produce <see langword="null" />, which the consumer's compiler rightly warns about.
+	///     Whether a Factory or Instance member's declared type carries a nullable annotation the registered type cannot
+	///     spell (see <see cref="InstanceModel.NullableProduct" />). One at the top level, a nullable value type or a
+	///     <c>[MaybeNull]</c> means the member may produce <see langword="null" />, which is reported once at the
+	///     registration as <see cref="Diagnostics.NullableProduct">AWT245</see> instead of as warnings throughout the
+	///     generated code.
 	/// </summary>
-	private static bool IsNestedNullableProduct(ITypeSymbol produced)
-		=> produced.NullableAnnotation != NullableAnnotation.Annotated && HasNestedNullableAnnotation(produced);
+	private static bool IsNullableProduct(ITypeSymbol produced, ISymbol member, ImplInfo info, List<DiagnosticInfo>? diagnostics)
+		=> IsNullableProduct(produced, member, info.Production, info.ProductionMember!, info.OwningServiceOrImpl, info.Location, diagnostics);
 
 	/// <summary>
-	///     A Factory or Instance member's declared reference type that carries a nullable annotation both at and below
-	///     its top level, spelled without the nested annotations (see <see cref="InstanceModel.NullableProductType" />),
-	///     or <see langword="null" /> for any other type.
+	///     The form of the <see cref="ImplInfo" /> overload for the wrapper a module generates over its <c>Factory</c> or
+	///     <c>Instance</c> member, which puts the result into a handle. Without <paramref name="diagnostics" /> it reports
+	///     nothing, for a trial build of the wrapper.
 	/// </summary>
-	private static string? NullableProductType(ITypeSymbol produced)
-		=> produced is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated, } && HasNestedNullableAnnotation(produced)
-			? produced.ToDisplayString(FullyQualified) + "?"
-			: null;
+	private static bool IsNullableProduct(ITypeSymbol produced, ISymbol member, ProductionKind production, string memberName, string service, LocationInfo? location, List<DiagnosticInfo>? diagnostics)
+	{
+		if (!MayProduceNull(produced, member))
+		{
+			return HasNestedNullableAnnotation(produced);
+		}
+
+		string type = Display((IsNullableValueType(produced, out ITypeSymbol? underlying) ? underlying : produced).ToDisplayString(FullyQualified));
+		diagnostics?.Add(new DiagnosticInfo(
+			Diagnostics.NullableProduct,
+			location,
+			new EquatableArray<string>([
+				production == ProductionKind.Factory ? "Factory" : "Instance",
+				memberName,
+				IsNullableType(produced) ? type + "?" : "[MaybeNull] " + type,
+				type,
+				Display(service),
+			])));
+		return true;
+	}
+
+	/// <summary>
+	///     Whether <paramref name="member" />, a <c>Factory</c> or <c>Instance</c> member producing <paramref name="produced" />,
+	///     may produce <see langword="null" />: its type is a nullable reference or value type, or the member is marked
+	///     <c>[MaybeNull]</c> (on its return for a method, which says nothing about an awaited result).
+	/// </summary>
+	private static bool MayProduceNull(ITypeSymbol produced, ISymbol member)
+		=> IsNullableType(produced)
+		   || (member is IMethodSymbol method
+				   ? SymbolEqualityComparer.Default.Equals(method.ReturnType, produced) ? method.GetReturnTypeAttributes() : ImmutableArray<AttributeData>.Empty
+				   : member.GetAttributes())
+			   .Any(attribute => attribute.AttributeClass is { Name: "MaybeNullAttribute", } maybeNull
+			                     && maybeNull.ContainingNamespace.ToDisplayString() == "System.Diagnostics.CodeAnalysis");
+
+	private static bool IsNullableType(ITypeSymbol type)
+		=> type is { IsValueType: false, NullableAnnotation: NullableAnnotation.Annotated, } || IsNullableValueType(type, out _);
+
+	private static bool IsNullableValueType(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? underlying)
+	{
+		underlying = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, } nullable ? nullable.TypeArguments[0] : null;
+		return underlying is not null;
+	}
+
+	/// <summary>
+	///     The return type of a generated wrapper over the <c>Factory</c> or <c>Instance</c> <paramref name="member" /> of
+	///     type <paramref name="type" />, which spells a <c>[MaybeNull]</c> on a reference type as <c>?</c>, so the wrapper
+	///     compiles without a nullable warning and a container that calls it still sees the possible <see langword="null" />.
+	/// </summary>
+	private static string WrapperReturnType(ITypeSymbol type, ISymbol member)
+		=> type.ToDisplayString(FullyQualifiedWithNullability)
+		   + (type is { IsReferenceType: true, NullableAnnotation: not NullableAnnotation.Annotated, } && MayProduceNull(type, member) ? "?" : string.Empty);
+
+	/// <summary>The type a <c>Factory</c> or <c>Instance</c> member produces: its field or property type, or its return type, awaited for a task.</summary>
+	private static ITypeSymbol? ProductOf(ISymbol member, Compilation compilation) => member switch
+	{
+		IMethodSymbol method => ProducedType(method.ReturnType, compilation),
+		IFieldSymbol field => field.Type,
+		IPropertySymbol property => property.Type,
+		_ => null,
+	};
 
 	/// <summary>
 	///     The service types of <paramref name="info" /> that are private or protected nested types the generated
@@ -1432,10 +1489,10 @@ partial class AwaitenGenerator
 	///     <see cref="Diagnostics.InvalidInstance">AWT109</see> when no field or property of that name (on the
 	///     owner or an accessible base type) holds the registered type, and
 	///     <see cref="Diagnostics.InaccessibleModuleMember">AWT153</see> when a module member matches but is
-	///     inaccessible from the generated container. Returns the declared type of the matching member, or
-	///     <see langword="null" /> when it reported.
+	///     inaccessible from the generated container. Returns the matching member, or <see langword="null" /> when it
+	///     reported.
 	/// </summary>
-	private static ITypeSymbol? ValidateInstanceMember(
+	private static ISymbol? ValidateInstanceMember(
 		INamedTypeSymbol containerSymbol,
 		ImplInfo info,
 		Compilation compilation,
@@ -1455,7 +1512,7 @@ partial class AwaitenGenerator
 			{
 				if (info.Origin is null || compilation.IsSymbolAccessibleWithin(member, containerSymbol) || SameCompilationMemberWrapper(info, compilation, modules) is not null)
 				{
-					return memberType;
+					return member;
 				}
 
 				inaccessibleMatch = true;

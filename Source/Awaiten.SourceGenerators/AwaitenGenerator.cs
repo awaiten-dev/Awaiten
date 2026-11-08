@@ -75,7 +75,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		context.RegisterSourceOutput(moduleModels, static (spc, model) =>
 		{
-			foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray())
+			// AWT245 is reported by AwaitenAnalyzer from its own module build, so that it can be suppressed in source.
+			foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray().Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)))
 			{
 				spc.ReportDiagnostic(diagnostic.ToDiagnostic());
 			}
@@ -109,15 +110,18 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     registration gets no wrapper (AWT203, AWT204), which carries only those diagnostics.
 	/// </summary>
 	private static ModuleScanModel? BuildModuleModel(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
-	{
-		if (context.TargetSymbol is not INamedTypeSymbol moduleSymbol)
-		{
-			return null;
-		}
+		=> context.TargetSymbol is INamedTypeSymbol moduleSymbol
+			? BuildModuleModel(moduleSymbol, context.TargetNode, context.SemanticModel.Compilation, cancellationToken)
+			: null;
 
+	/// <summary>
+	///     The <see cref="ModuleScanModel" /> of <paramref name="moduleSymbol" />, declared by <paramref name="declaration" />.
+	///     Shared by the generator and <see cref="AwaitenAnalyzer" /> (AWT245).
+	/// </summary>
+	internal static ModuleScanModel? BuildModuleModel(INamedTypeSymbol moduleSymbol, SyntaxNode declaration, Compilation compilation, CancellationToken cancellationToken)
+	{
 		// A module that declares nothing a container in another assembly cannot build carries no generated code, and one
 		// that declares nothing internal never reads the other modules of its assembly (see MayBuildThroughHandles).
-		Compilation compilation = context.SemanticModel.Compilation;
 
 		// The module's [AsyncInitializer<T>] conventions are reported here (AWT233), once, rather than by every
 		// container that imports the module.
@@ -170,8 +174,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// of a partial type carries the partial modifier, so the declaration bearing the [Module] attribute suffices.
 		// A nested module's containing types are re-opened by the generated partial too, so they must all be
 		// partial as well, else the emission would surface as a raw CS0260 on the outer type.
-		bool isPartial = context.TargetNode is ClassDeclarationSyntax declaration
-		                 && declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
+		bool isPartial = declaration is ClassDeclarationSyntax classDeclaration
+		                 && classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword)
 		                 && ContainingTypesArePartial(moduleSymbol);
 
 		List<ModuleFactory> factories = new();
@@ -588,9 +592,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179 and AWT158 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not tied
-		// to a syntax tree, so it could not be suppressed in source.
-		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly));
+		// AWT179, AWT158 and AWT245 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
+		// tied to a syntax tree, so it could not be suppressed in source.
+		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty)
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
 

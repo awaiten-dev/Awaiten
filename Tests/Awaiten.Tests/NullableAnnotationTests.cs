@@ -121,6 +121,92 @@ public sealed partial class NullableAnnotationTests
 		await That(label.Tags).IsSameAs(tags);
 	}
 
+	[Test]
+	public async Task NullableFactoryAndInstance_ProduceTheirValues()
+	{
+		await using NullableProductShop.Root shop = new();
+		await using NullableProductShop.Scope scope = shop.CreateScope();
+
+		await That(scope.Resolve<IStore>()).IsSameAs(shop.Resolve<IStore>())
+			.Because("the singleton a factory declared as IStore? produces is shared like any other");
+		await That(await scope.ResolveAsync<Clock<string>>()).IsSameAs(NullableProductShop.Clock);
+	}
+
+	[Container]
+#pragma warning disable AWT245
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+	[Singleton<Clock<string>>(Instance = nameof(Clock))]
+#pragma warning restore AWT245
+	public static partial class NullableProductShop
+	{
+		internal static Clock<string>? Clock { get; } = new();
+
+		private static MainStore? CreateStore() => new();
+	}
+
+	[Test]
+	public async Task MaybeNullFactoryAndNullableValueInstance_ProduceTheirValues()
+	{
+		using MaybeNullShop.Root shop = new();
+
+		await That(shop.Resolve<IStore>()).IsSameAs(shop.Resolve<IStore>())
+			.Because("the singleton a [MaybeNull] factory produces is shared like any other");
+		await That(shop.Resolve<ITicket>().Number).IsEqualTo(7)
+			.Because("the Ticket? instance boxes to its ITicket service");
+	}
+
+	public interface ITicket
+	{
+		int Number { get; }
+	}
+
+	public readonly struct Ticket(int number) : ITicket
+	{
+		public int Number { get; } = number;
+	}
+
+	[Container]
+#pragma warning disable AWT245
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+	[Singleton<ITicket>(Instance = nameof(Ticket))]
+#pragma warning restore AWT245
+	public static partial class MaybeNullShop
+	{
+		internal static Ticket? Ticket { get; } = new Ticket(7);
+
+		[return: System.Diagnostics.CodeAnalysis.MaybeNull]
+		private static MainStore CreateStore() => new();
+	}
+
+	[Test]
+	public async Task NullableFactoryThatReturnsNull_RunsAgainOnEachSynchronousResolve()
+	{
+		using NullResultShop.Root shop = new();
+
+		IStore? first = shop.Resolve<IStore>();
+		IStore? second = shop.Resolve<IStore>();
+
+		await That(first).IsNull();
+		await That(second).IsNull();
+		await That(NullResultShop.Calls).IsEqualTo(2)
+			.Because("a null singleton counts as not built yet, as the AWT245 documentation says");
+	}
+
+	[Container]
+#pragma warning disable AWT245
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+#pragma warning restore AWT245
+	public static partial class NullResultShop
+	{
+		public static int Calls { get; private set; }
+
+		private static IStore? CreateStore()
+		{
+			Calls++;
+			return null;
+		}
+	}
+
 	[Container]
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 	[Scoped(typeof(Repo<>), typeof(IRepo<>))]

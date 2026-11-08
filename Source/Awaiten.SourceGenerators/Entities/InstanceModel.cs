@@ -40,13 +40,10 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="TracksHandleDisposal" /> marks an alias that serves an instance from a transient instance handle the
 ///     container tracks for teardown, so building the alias accumulates on its owner like the implementation would,
 ///     though the alias owns nothing itself.
-///     <see cref="NestedNullableProduct" /> marks a Factory or Instance member whose declared type carries a nullable
-///     annotation below its top level (<c>Repo&lt;string?&gt;</c>), which the registered type cannot spell, so the
-///     generated code forgives the produced value's nullability. <see cref="NullableProductType" /> is the declared type
-///     without its nested annotations for such a member that is also annotated at its top level
-///     (<c>Repo&lt;string&gt;?</c> for <c>Repo&lt;string?&gt;?</c>): the generated code casts the value through
-///     <see langword="object" /> to it, which drops only the nested annotations and keeps the warning about a possible
-///     <see langword="null" />.
+///     <see cref="NullableProduct" /> marks a Factory or Instance member whose declared type carries a nullable
+///     annotation the registered type cannot spell, below its top level (<c>Repo&lt;string?&gt;</c>) or at it
+///     (<c>IKettle?</c>, reported as <see cref="Diagnostics.NullableProduct">AWT245</see> at the registration), so the
+///     generated code forgives the produced value's nullability.
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -79,8 +76,7 @@ internal sealed record InstanceModel(
 	string? AsyncReleaseHookName = null,
 	bool Unlisted = false,
 	bool TracksHandleDisposal = false,
-	bool NestedNullableProduct = false,
-	string? NullableProductType = null)
+	bool NullableProduct = false)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated

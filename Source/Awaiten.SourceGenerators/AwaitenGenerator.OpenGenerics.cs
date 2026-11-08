@@ -119,6 +119,14 @@ partial class AwaitenGenerator
 					new EquatableArray<string>([display, factory, DescribeOwner(context.Origin), pair.Service.Arity.ToString(),])));
 				return;
 			}
+
+			// AWT245 is reported once for the open registration; its closings only forgive the result.
+			if (factoryMethods.FirstOrDefault(method => MayProduceNull(ProducedType(method.ReturnType, context.Compilation), method)) is { } nullable)
+			{
+				IsNullableProduct(
+					ProducedType(nullable.ReturnType, context.Compilation), nullable, ProductionKind.Factory, factory,
+					pair.Service.OriginalDefinition.ToDisplayString(FullyQualified), location, diagnostics);
+			}
 		}
 
 		OpenViaOutcome via = default;

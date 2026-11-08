@@ -387,8 +387,8 @@ partial class AwaitenGenerator
 	///     So does a container the module's assembly grants no <c>InternalsVisibleTo</c> for an implementation it could
 	///     construct, but for which the module generated a factory or recorded a skip: the implementation has an
 	///     <c>[Inject]</c> property this container does not see. A registration whose service this container cannot
-	///     name either is dropped: nothing here can resolve or depend on it (a self-compiled constructor parameter
-	///     is accessible, AWT195). Returns <see langword="null" /> for a dropped registration, after reporting
+	///     name is dropped, also of an implementation it could construct: nothing here can resolve or depend on it (a
+	///     self-compiled constructor parameter is accessible, AWT195). Returns <see langword="null" /> for a dropped registration, after reporting
 	///     AWT231 once per implementation when the module recorded why it generated no factory for it or cannot carry
 	///     one (see <see cref="ModuleShapeReason" />), else AWT154
 	///     once per module when the module carries no generated factory for it. A module inherited through
@@ -417,8 +417,7 @@ partial class AwaitenGenerator
 			    && !context.Inherited
 			    && registration.ServiceSymbol is { } inaccessible
 			    && !compilation.IsSymbolAccessibleWithin(inaccessible, compilation.Assembly)
-			    && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, }
-			    && !CanConstruct(implementation, compilation))
+			    && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, })
 			{
 				ReportStartedSingletonWithoutHandle(registration, context);
 				return null;

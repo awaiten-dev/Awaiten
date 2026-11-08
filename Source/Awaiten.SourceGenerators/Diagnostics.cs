@@ -2191,4 +2191,23 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level (a nullable reference
+	///     or value type) or that is marked <c>[MaybeNull]</c>, so it may produce <see langword="null" />, while the
+	///     container hands the value to every consumer as a non-nullable service.
+	///     Reported once at the registration in place of the nullable warnings the generated code would otherwise raise.
+	///     A warning like the compiler's own nullable warnings, which it replaces, and reported by
+	///     <see cref="AwaitenAnalyzer" /> so that it can be suppressed in source. The generated code never checks the
+	///     result: a cached instance that is <see langword="null" /> counts as not built yet on a synchronous resolve, so
+	///     it is built again on every one, and everything downstream receives <see langword="null" />.
+	/// </summary>
+	public static readonly DiagnosticDescriptor NullableProduct = new(
+		"AWT245",
+		"Factory or Instance member may produce null",
+		"The {0} '{1}' may produce null, since it is declared to produce '{2}', but the container serves it to consumers of '{4}' as non-nullable and never checks for null: consumers, decorators, initializers and collections receive null, and a singleton or scoped factory that returned null runs again on the next synchronous resolve; declare it to produce a '{3}' that is never null, or register a null object instead",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "The container does not check what a Factory or Instance member produces. A singleton or scoped instance that is null counts as not built yet on a synchronous resolve, so its factory runs again on every one, and for a disposable type each run adds another entry to the disposal list. Consumers, decorators, OnActivated hooks and async initializers receive null, so an async initializer throws a NullReferenceException; a collection contains null, and the untyped Resolve(Type) returns null. Declare the member non-nullable, or register a null object that does nothing in place of null.");
 }

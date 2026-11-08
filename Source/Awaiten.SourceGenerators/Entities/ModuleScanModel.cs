@@ -105,8 +105,9 @@ internal sealed record SkippedRegistration(string MarkerName, string Reason, boo
 ///     <see cref="InitOnlyMembers" />. Each of the <see cref="DeferredMembers" /> gets a setter wrapper a consumer calls
 ///     after construction, whose value parameter is optional for the <see cref="OptionalDeferredMembers" />. An
 ///     <see cref="IsInternal" /> factory and its setters are internal, for the containers that can name the internal
-///     services the public factory takes through their handles. The factory of an open generic registration, decorator or
-///     composite is generic: <see cref="TypeParameters" /> is its type parameter list (<c>&lt;T&gt;</c>), named like the
+///     services the public factory takes through their handles. <see cref="NullableProduct" /> marks a <see cref="Call" />
+///     whose declared type carries a nullable annotation the handle does not, whose result the factory forgives. The
+///     factory of an open generic registration, decorator or composite is generic: <see cref="TypeParameters" /> is its type parameter list (<c>&lt;T&gt;</c>), named like the
 ///     implementation's own, and <see cref="Constraints" /> their constraint clauses, which a consumer closes per use.
 /// </summary>
 internal sealed record RegistrationFactory(
@@ -126,7 +127,8 @@ internal sealed record RegistrationFactory(
 	EquatableArray<string> InitOnlyMembers = default,
 	EquatableArray<string> OptionalDeferredMembers = default,
 	string? TypeParameters = null,
-	string? Constraints = null);
+	string? Constraints = null,
+	bool NullableProduct = false);
 
 /// <summary>One lifecycle-hook wrapper of a self-compiled module registration and whether it is the release hook.</summary>
 internal sealed record RegistrationHook(ModuleHook Hook, bool Release);

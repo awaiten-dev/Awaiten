@@ -621,6 +621,31 @@ public static partial class CoffeeShop
 
 **Fix:** Take the service directly (`Barista(ILogger logger)`), or through `Func<ILogger>` or `Lazy<ILogger>`.
 
+### AWT245
+
+:::warning[Warning]
+A `Factory` or `Instance` member is declared nullable, such as `Grinder?`, `Task<Grinder?>`, a nullable value type boxed to the service or a member marked `[MaybeNull]`, so it may produce `null`, while the container hands the value to every consumer of the service as non-nullable. The warning is reported once at the registration, and the generated code compiles without nullable warnings of its own.
+:::
+
+A container reports it for its own members and for those of the modules it imports, and for the generic `Factory` of an open generic registration once at that registration, whatever closings it injects. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle. This is an analyzer diagnostic, so it can be suppressed at a single registration with `#pragma warning disable AWT245` or `[SuppressMessage]`.
+
+```csharp expect=AWT245
+[Container]
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]
+public static partial class CoffeeShop
+{
+    private static Grinder? MakeGrinder() => new();   // may return null
+}
+```
+
+The container never checks the result. When the member produces `null` at run time:
+
+- a singleton or scoped instance is built again on every synchronous resolve, because a cached `null` counts as not built yet, and for a disposable type each build adds another entry to the disposal list;
+- every consumer, decorator, `OnActivated` hook and async initializer receives `null`, so an async initializer throws a `NullReferenceException`;
+- a collection contains `null`, and the untyped `Resolve(Type)` returns `null`.
+
+**Fix:** Declare the member non-nullable, here `private static Grinder MakeGrinder() => new();`, and make sure it never produces `null`. Where there may be nothing to provide, register a null object, a `Grinder` that does nothing, instead of `null`. Awaiten has no nullable services: to tolerate a service that may be missing, inject it into an [optional property](./05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead.
+
 ## Lifecycle hooks
 
 ### AWT164

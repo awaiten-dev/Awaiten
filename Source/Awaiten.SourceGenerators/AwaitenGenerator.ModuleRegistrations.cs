@@ -337,7 +337,7 @@ partial class AwaitenGenerator
 				string name = MemberWrapperName("Factory", member, produced);
 				if (FitsAssembly(method.ReturnType))
 				{
-					return new MemberWrapper(name, method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters), IsInternal: true);
+					return new MemberWrapper(name, WrapperReturnType(method.ReturnType, method), member, MirroredParameters(method.Parameters), IsInternal: true);
 				}
 
 				if (!FitsAssembly(produced))
@@ -345,26 +345,26 @@ partial class AwaitenGenerator
 					return null;
 				}
 
-				string returnType = IsAsyncFactoryReturn(method.ReturnType, compilation, out _)
-					? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{produced.ToDisplayString(FullyQualified)}>"
-					: produced.ToDisplayString(FullyQualified);
-				return new MemberWrapper(name, returnType, member, MirroredParameters(method.Parameters), IsInternal: true, Awaited: IsAsyncFactoryReturn(method.ReturnType, compilation, out _));
+				bool awaited = IsAsyncFactoryReturn(method.ReturnType, compilation, out ITypeSymbol result);
+				string exposedType = produced.ToDisplayString(FullyQualified) + (MayProduceNull(result, method) ? "?" : string.Empty);
+				string returnType = awaited
+					? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{exposedType}>"
+					: exposedType;
+				return new MemberWrapper(name, returnType, member, MirroredParameters(method.Parameters), IsInternal: true, Awaited: awaited);
 			}
 
-			List<ITypeSymbol> instanceTypes = AccessibleMembers(module, member, compilation)
-				.Select(candidate => candidate switch
-				{
-					IFieldSymbol { IsStatic: true, } field => field.Type,
-					IPropertySymbol { IsStatic: true, GetMethod: not null, } property => property.Type,
-					_ => null,
-				})
-				.OfType<ITypeSymbol>()
-				.Where(type => compilation.HasImplicitConversion(type, produced))
+			List<ISymbol> instances = AccessibleMembers(module, member, compilation)
+				.Where(candidate => candidate is IFieldSymbol { IsStatic: true, } or IPropertySymbol { IsStatic: true, GetMethod: not null, }
+				                    && compilation.HasImplicitConversion(ProductOf(candidate, compilation), produced))
 				.ToList();
-			ITypeSymbol? exposed = instanceTypes.FirstOrDefault(FitsAssembly) ?? (instanceTypes.Count > 0 && FitsAssembly(produced) ? produced : null);
+			ISymbol? fitting = instances.FirstOrDefault(candidate => FitsAssembly(ProductOf(candidate, compilation)!));
+			string? exposed = fitting is not null
+				? WrapperReturnType(ProductOf(fitting, compilation)!, fitting)
+				: instances.Count > 0 && FitsAssembly(produced)
+					? produced.ToDisplayString(FullyQualified) + (MayProduceNull(ProductOf(instances[0], compilation)!, instances[0]) ? "?" : string.Empty)
+					: null;
 			return exposed is not null
-				? new MemberWrapper(MemberWrapperName("Instance", member, produced), exposed.ToDisplayString(FullyQualifiedWithNullability), member, default, IsProperty: true, IsInternal: true)
-				: null;
+				? new MemberWrapper(MemberWrapperName("Instance", member, produced), exposed, member, default, IsProperty: true, IsInternal: true)				: null;
 		}
 
 		bool FitsAssembly(ITypeSymbol type)
@@ -437,11 +437,11 @@ partial class AwaitenGenerator
 
 			if (IsExternallyAccessible(method.ReturnType))
 			{
-				return new MemberWrapper(MemberWrapperName("Factory", member, produced), method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters));
+				return new MemberWrapper(MemberWrapperName("Factory", member, produced), WrapperReturnType(method.ReturnType, method), member, MirroredParameters(method.Parameters));
 			}
 
 			bool awaited = IsAsyncFactoryReturn(method.ReturnType, compilation, out ITypeSymbol result);
-			return Exposed(member, produced, result) is { } exposed
+			return Exposed(member, produced, result, method) is { } exposed
 				? new MemberWrapper(
 					MemberWrapperName("Factory", member, produced),
 					awaited ? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{exposed}>" : exposed,
@@ -455,7 +455,7 @@ partial class AwaitenGenerator
 		// as nullable as the member's result. Several services leave that type ambiguous, and a hook that is not public
 		// gets no wrapper for such a type, so the consumer would silently skip it. A public hook must take the exposed
 		// type, which the consumer passes in place of the implementation.
-		string? Exposed(string member, INamedTypeSymbol produced, ITypeSymbol result)
+		string? Exposed(string member, INamedTypeSymbol produced, ITypeSymbol result, ISymbol producer)
 		{
 			List<ModuleRegistration> registrations = ConstructedModuleRegistrations(module, compilation, members: true)
 				.Where(registration => registration.Member == member && SymbolEqualityComparer.Default.Equals(registration.Implementation, produced))
@@ -470,7 +470,7 @@ partial class AwaitenGenerator
 				                                                                                                                                                                && (method.Parameters[0].Type is ITypeParameterSymbol || compilation.HasImplicitConversion(services[0], method.Parameters[0].Type)))))
 					? services[0]
 					: null;
-			return exposed?.WithNullableAnnotation(result.NullableAnnotation).ToDisplayString(FullyQualifiedWithNullability);
+			return exposed?.WithNullableAnnotation(MayProduceNull(result, producer) ? NullableAnnotation.Annotated : result.NullableAnnotation).ToDisplayString(FullyQualifiedWithNullability);
 		}
 
 		MemberWrapper? InstanceWrapper(string member, INamedTypeSymbol produced)
@@ -486,7 +486,7 @@ partial class AwaitenGenerator
 				if (type is not null
 				    && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)
 				    && compilation.HasImplicitConversion(type, produced)
-				    && (IsExternallyAccessible(type) ? type.ToDisplayString(FullyQualifiedWithNullability) : Exposed(member, produced, type)) is { } exposed)
+				    && (IsExternallyAccessible(type) ? WrapperReturnType(type, candidate) : Exposed(member, produced, type, candidate)) is { } exposed)
 				{
 					return new MemberWrapper(MemberWrapperName("Instance", member, produced), exposed, member, default, IsProperty: true);
 				}

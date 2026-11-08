@@ -698,7 +698,7 @@ partial class AwaitenGenerator
 				List<DiagnosticInfo> rejections = new();
 				candidate.Needs.Clear();
 				hidden.Referenced = candidate.Needs;
-				if (BuildHiddenFactory(candidate, context with { Diagnostics = rejections, FailedHooks = new HashSet<string>(StringComparer.Ordinal), }, new List<HiddenInitializer>()) is null
+				if (BuildHiddenFactory(candidate, context with { Diagnostics = rejections, FailedHooks = new HashSet<string>(StringComparer.Ordinal), }, new List<HiddenInitializer>(), null) is null
 				    || rejections.Count > 0)
 				{
 					candidate.Viable = false;
@@ -716,6 +716,20 @@ partial class AwaitenGenerator
 		hidden.Tracking = true;
 		return hidden;
 	}
+
+	/// <summary>
+	///     Whether the build of <paramref name="module" /> may report <see cref="Diagnostics.NullableProduct">AWT245</see>
+	///     for a member it wraps for a handle: a static member of it may produce <see langword="null" />, other assemblies can
+	///     name it, and no container of its assembly imports it, which would report the member itself.
+	/// </summary>
+	internal static bool MayReportNullableProduct(INamedTypeSymbol module, Compilation compilation)
+		=> module.GetMembers().Any(member => member.IsStatic && member switch
+		   {
+			   IMethodSymbol { MethodKind: MethodKind.Ordinary, } or IFieldSymbol or IPropertySymbol => MayProduceNull(ProductOf(member, compilation)!, member),
+			   _ => false,
+		   })
+		   && IsExternallyAccessible(module)
+		   && !AssemblyModuleIndex.Of(compilation).ImportedByContainer(module);
 
 	/// <summary>
 	///     Completes the handles of a module once its scans and registrations were mirrored, which recorded the internal
@@ -758,13 +772,14 @@ partial class AwaitenGenerator
 		List<HiddenAlias> aliases = new();
 		List<HiddenInitializer> initializers = new(hidden.DecoratorInitializers);
 		List<HiddenImplementation> built = hidden.Built;
+		List<DiagnosticInfo>? warnings = AssemblyModuleIndex.Of(compilation).ImportedByContainer(module) ? null : diagnostics;
 		int used = 0;
 		while (true)
 		{
 			foreach (HiddenImplementation candidate in pending.Where(candidate => !built.Contains(candidate)).Distinct().ToList())
 			{
 				built.Add(candidate);
-				if (BuildHiddenFactory(candidate, context, initializers) is { } factory)
+				if (BuildHiddenFactory(candidate, context, initializers, warnings) is { } factory)
 				{
 					factories.Add(factory);
 				}
@@ -982,9 +997,11 @@ partial class AwaitenGenerator
 	///     in its instance handle, in the variant that implements exactly the disposal interfaces of the implementation.
 	///     Each hook its registrations name gets a wrapper that takes the handle, and each convention of the module that
 	///     initializes it gets an initializer wrapper (added to <paramref name="initializers" />). Returns
-	///     <see langword="null" /> after reporting into the context why it cannot be built.
+	///     <see langword="null" /> after reporting into the context why it cannot be built. A warning that does not keep it
+	///     from being built goes to <paramref name="warnings" />, which a trial build leaves out, and so does a module a
+	///     container of its assembly imports, since that container reports the same warning at the same place.
 	/// </summary>
-	private static RegistrationFactory? BuildHiddenFactory(HiddenImplementation candidate, ModuleScanContext context, List<HiddenInitializer> initializers)
+	private static RegistrationFactory? BuildHiddenFactory(HiddenImplementation candidate, ModuleScanContext context, List<HiddenInitializer> initializers, List<DiagnosticInfo>? warnings)
 	{
 		INamedTypeSymbol implementation = candidate.Implementation;
 		HiddenServices hidden = context.Hidden!;
@@ -994,11 +1011,12 @@ partial class AwaitenGenerator
 		EquatableArray<FactoryParameter> parameters;
 		MirroredMembers members = default;
 		string? awaited = null;
+		ISymbol? producer = null;
 		bool instance = candidate.Production == ProductionKind.Instance;
 		bool built = candidate.Production == ProductionKind.Constructor
 			? TryMirrorFactoryParameters(implementation, context, location, subject, out parameters, mirrorProperties: true)
 			  && TryMirrorInjectedProperties(implementation, context, location, subject, ref parameters, out members)
-			: TryMirrorProducingMember(candidate, context, location, subject, out parameters, out awaited);
+			: TryMirrorProducingMember(candidate, context, location, subject, out parameters, out awaited, out producer);
 		if (!built)
 		{
 			return null;
@@ -1044,7 +1062,9 @@ partial class AwaitenGenerator
 				instance ? $"new {handle}" : $"{handle}.Wrap",
 				candidate.Member,
 				awaited,
-				instance);
+				instance,
+				NullableProduct: IsNullableProduct(
+					ProductOf(producer!, context.Compilation)!, producer!, candidate.Production, candidate.Member!, candidate.Registrations[0].Service.ToDisplayString(FullyQualified), LocationInfo.From(location), warnings));
 		}
 
 		return new RegistrationFactory(
@@ -1313,8 +1333,9 @@ partial class AwaitenGenerator
 	///     Mirrors the <c>Factory</c> or <c>Instance</c> member that produces <paramref name="candidate" /> onto the
 	///     wrapper that puts its result into the handle: a static field or property converting to the implementation, or
 	///     one static, non-generic method, whose parameters the wrapper mirrors like a constructor's, and which may return
-	///     <c>Task&lt;T&gt;</c> or <c>ValueTask&lt;T&gt;</c> (<paramref name="awaited" />). Returns <see langword="false" />
-	///     for a member the wrapper cannot call, after reporting why a parameter cannot be mirrored.
+	///     <c>Task&lt;T&gt;</c> or <c>ValueTask&lt;T&gt;</c> (<paramref name="awaited" />), as
+	///     <paramref name="producer" />. Returns <see langword="false" /> for a member the wrapper cannot call, after
+	///     reporting why a parameter cannot be mirrored.
 	/// </summary>
 	private static bool TryMirrorProducingMember(
 		HiddenImplementation candidate,
@@ -1322,21 +1343,21 @@ partial class AwaitenGenerator
 		Location? location,
 		SelfCompiledSubject subject,
 		out EquatableArray<FactoryParameter> parameters,
-		out string? awaited)
+		out string? awaited,
+		out ISymbol? producer)
 	{
 		parameters = default;
 		awaited = null;
+		producer = null;
 		INamedTypeSymbol module = context.Module;
 		Compilation compilation = context.Compilation;
 		string member = candidate.Member!;
 		if (candidate.Production == ProductionKind.Instance)
 		{
-			return AccessibleMembers(module, member, compilation).Any(symbol => symbol switch
-			{
-				IFieldSymbol { IsStatic: true, } field => compilation.HasImplicitConversion(field.Type, candidate.Implementation),
-				IPropertySymbol { IsStatic: true, GetMethod: not null, } property => compilation.HasImplicitConversion(property.Type, candidate.Implementation),
-				_ => false,
-			});
+			producer = AccessibleMembers(module, member, compilation)
+				.FirstOrDefault(symbol => symbol is IFieldSymbol { IsStatic: true, } or IPropertySymbol { IsStatic: true, GetMethod: not null, }
+				                          && compilation.HasImplicitConversion(ProductOf(symbol, compilation), candidate.Implementation));
+			return producer is not null;
 		}
 
 		if (ProducingMethod(module, member, candidate.Implementation, compilation) is not { } factory || factory.Parameters.Any(parameter => parameter.RefKind != RefKind.None))
@@ -1349,6 +1370,7 @@ partial class AwaitenGenerator
 			awaited = ((INamedTypeSymbol)factory.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified) + "." + factory.ReturnType.Name;
 		}
 
+		producer = factory;
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in factory.Parameters)
 		{
