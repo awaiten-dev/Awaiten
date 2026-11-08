@@ -4,14 +4,14 @@
     <g fill="none" stroke="#000" stroke-width="1.5">
       <circle cx="96" cy="30" r="7.26"/>
       <circle cx="96" cy="98" r="7.26"/>
-      <circle cx="34.15" cy="83.5" r="7.26"/>
+      <circle cx="28.52" cy="69.9" r="7.26"/>
     </g>
   </mask>
   <g mask="url(#rings)">
-    <path d="M28.52 58.1A34 34 0 1 1 56.1 97.48" fill="none" stroke="#3FB8B0" stroke-width="14" stroke-linecap="round"/>
+    <path d="M28.52 69.9A34 34 0 1 1 45 93.44" fill="none" stroke="#3FB8B0" stroke-width="14" stroke-linecap="round"/>
     <path d="M96 30V98" stroke="#3FB8B0" stroke-width="14" stroke-linecap="round"/>
     <circle cx="96" cy="30" r="11" fill="#3FB8B0"/>
     <circle cx="96" cy="98" r="11" fill="#3FB8B0"/>
-    <circle cx="34.15" cy="83.5" r="11" fill="#F5B85A"/>
+    <circle cx="28.52" cy="69.9" r="11" fill="#F5B85A"/>
   </g>
 </svg>
