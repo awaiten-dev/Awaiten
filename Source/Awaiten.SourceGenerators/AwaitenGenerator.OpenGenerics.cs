@@ -436,7 +436,7 @@ partial class AwaitenGenerator
 				Enqueue(new ExpansionWork(registration.Implementation, factory, 0, ExpansionScan.Factory), context);
 			}
 
-			EnqueueHooks(registration, 0, context);
+			EnqueueHooks(registration, registration.Implementation, 0, context);
 			EnqueueOpenWrappers(registration, 0, context);
 		}
 
@@ -535,16 +535,19 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Enqueues the lifecycle hooks <paramref name="registration" /> names, so their parameters after the instance
 	///     seed expansion like a constructor's. Only the overload <see cref="ResolveHook" /> dispatches is scanned: an
-	///     unusable or ambiguous hook is an error (AWT164, AWT190, AWT198) that needs no closing.
+	///     unusable or ambiguous hook is an error (AWT164, AWT190, AWT198) that needs no closing. The work belongs to
+	///     <paramref name="implementation" />, the closed implementation even when a generic factory of another assembly
+	///     produces another type, so a report about it finds the open registration.
 	/// </summary>
-	private static void EnqueueHooks(RawRegistration registration, int depth, ExpansionContext context)
+	private static void EnqueueHooks(RawRegistration registration, INamedTypeSymbol implementation, int depth, ExpansionContext context)
 	{
-		EnqueueHook(registration, registration.OnActivated, registration.OnActivatedMarkers, depth, context);
-		EnqueueHook(registration, registration.OnRelease, registration.OnReleaseMarkers, depth, context);
+		EnqueueHook(registration, implementation, registration.OnActivated, registration.OnActivatedMarkers, depth, context);
+		EnqueueHook(registration, implementation, registration.OnRelease, registration.OnReleaseMarkers, depth, context);
 	}
 
 	private static void EnqueueHook(
 		RawRegistration registration,
+		INamedTypeSymbol implementation,
 		string? hookName,
 		IReadOnlyList<INamedTypeSymbol>? closedMarkers,
 		int depth,
@@ -561,7 +564,7 @@ partial class AwaitenGenerator
 		{
 			if (registration.ServiceSymbol is { } closed && OwnerBoundHook(registration.Implementation, hookName, closed, origin, context.Inputs.Compilation) is { } hook)
 			{
-				Enqueue(new ExpansionWork(registration.Implementation, hook, depth, ExpansionScan.Hook), context);
+				Enqueue(new ExpansionWork(implementation, hook, depth, ExpansionScan.Hook), context);
 			}
 
 			return;
@@ -576,7 +579,7 @@ partial class AwaitenGenerator
 			context.Inputs.Compilation);
 		if (matches.Count == 1 && ambiguousMethods.Count == 0)
 		{
-			Enqueue(new ExpansionWork(registration.Implementation, matches[0], depth, ExpansionScan.Hook), context);
+			Enqueue(new ExpansionWork(implementation, matches[0], depth, ExpansionScan.Hook), context);
 		}
 	}
 
@@ -667,7 +670,7 @@ partial class AwaitenGenerator
 				Enqueue(new ExpansionWork(closedImpl, factory.Construct(closed.TypeArguments.ToArray()), depth + 1, ExpansionScan.Factory), context);
 			}
 
-			EnqueueHooks(registration, depth + 1, context);
+			EnqueueHooks(registration, closedImpl, depth + 1, context);
 			EnqueueOpenWrappers(registration, depth + 1, context);
 		}
 	}

@@ -1022,6 +1022,31 @@ public class OpenGenericFactoryTests
 				.Because("the wrapper serves every closing, so the hook's constraints must hold for the definition's own type parameters");
 		}
 
+		[Test]
+		public async Task AHookThatNeedsAnEverLargerClosing_IsReportedOnceAtTheImport()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IRepository<T> { }
+				internal sealed class Repository<T> : IRepository<T> { }
+
+				[Module]
+				[Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+				    internal static void Activate<T>(Repository<T> repository, IRepository<List<T>> next) { }
+				}
+				""", Consumer);
+
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.Contains("AWT129"))).HasCount(1).And
+				.All().Satisfy(diagnostic => diagnostic.StartsWith("(14,2): error AWT129", StringComparison.Ordinal))
+				.Because("the hook's work belongs to the closed implementation, so it finds the open registration and shares its report");
+		}
+
 		public class AnOverloadOnlyAClosingAccepts
 		{
 			private const string GenericFirst = """
