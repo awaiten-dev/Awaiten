@@ -1460,7 +1460,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleScanParameterInaccessible = new(
 		"AWT195",
-		"Self-compiled implementation has an inaccessible constructor parameter",
+		"Self-compiled implementation has an inaccessible constructor or factory parameter",
 		"{0}, but {1} has the type '{2}', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
