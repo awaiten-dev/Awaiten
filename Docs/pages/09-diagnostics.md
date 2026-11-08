@@ -638,7 +638,13 @@ public static partial class CoffeeShop
 }
 ```
 
-**Fix:** Declare the member non-nullable, here `private static Grinder MakeGrinder() => new();`, and make sure it never produces `null`. Awaiten has no nullable services: to tolerate a service that may be missing, inject it into an [optional property](./05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead.
+The container never checks the result. When the member produces `null` at run time:
+
+- a singleton or scoped instance is built again on every synchronous resolve, because a cached `null` counts as not built yet, and for a disposable type each build adds another entry to the disposal list;
+- every consumer, decorator, `OnActivated` hook and async initializer receives `null`, so an async initializer throws a `NullReferenceException`;
+- a collection contains `null`, and the untyped `Resolve(Type)` returns `null`.
+
+**Fix:** Declare the member non-nullable, here `private static Grinder MakeGrinder() => new();`, and make sure it never produces `null`. Where there may be nothing to provide, register a null object, a `Grinder` that does nothing, instead of `null`. Awaiten has no nullable services: to tolerate a service that may be missing, inject it into an [optional property](./05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead.
 
 ## Lifecycle hooks
 

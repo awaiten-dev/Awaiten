@@ -144,6 +144,35 @@ public sealed partial class NullableAnnotationTests
 		private static IStore? CreateStore() => new MainStore();
 	}
 
+	[Test]
+	public async Task NullableFactoryThatReturnsNull_RunsAgainOnEachSynchronousResolve()
+	{
+		using NullResultShop.Root shop = new();
+
+		object? first = shop.Resolve(typeof(IStore));
+		object? second = shop.Resolve(typeof(IStore));
+
+		await That(first).IsNull();
+		await That(second).IsNull();
+		await That(NullResultShop.Calls).IsEqualTo(2)
+			.Because("a null singleton counts as not built yet, as the AWT245 documentation says");
+	}
+
+	[Container]
+#pragma warning disable AWT245
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+#pragma warning restore AWT245
+	public static partial class NullResultShop
+	{
+		public static int Calls { get; private set; }
+
+		private static IStore? CreateStore()
+		{
+			Calls++;
+			return null;
+		}
+	}
+
 	[Container]
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 	[Scoped(typeof(Repo<>), typeof(IRepo<>))]

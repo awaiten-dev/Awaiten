@@ -97,6 +97,17 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task TheMessage_SaysWhatANullResultDoesAndHowToAvoidIt()
+		{
+			string source = Container("[Singleton<IKettle>(Factory = nameof(Make))]", "private static IKettle? Make() => new Kettle();");
+
+			string[] reports = await Awt245Reports(source);
+
+			await That(reports).HasCount(1).And.Contains("*never checks for null*receive null*runs again on the next synchronous resolve*declare it to produce 'MyCode.IKettle'*null object*").AsWildcard()
+				.Because("the container hands a null result on unchecked and treats a null cached instance as not built yet, so the message names the consequence and both remedies");
+		}
+
+		[Test]
 		public async Task PragmaAroundTheRegistration_SuppressesIt()
 		{
 			string source = Container(
