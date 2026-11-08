@@ -99,6 +99,8 @@ By default a property whose service is unregistered is a missing dependency ([AW
 
 A service an [open generic](../04-registration/05-open-generics.md) registration can provide counts as registered: a property of type `IRepository<Order>` closes `[Singleton(typeof(Repository<>), typeof(IRepository<>))]` exactly like a constructor parameter would, so it is filled even when it is `Optional`.
 
+`Optional` tolerates a missing registration, not a request that no registration could serve. A `Lazy<Owned<T>>` ([AWT121](../09-diagnostics.md#awt121)) or a relationship over an [imported service](../07-hosting/02-external-services.mdx#relationships-and-collections) ([AWT242](../09-diagnostics.md#awt242)) is reported for an optional property too, also when an imported module of another assembly builds the implementation.
+
 :::note
 A bad name, a read-only member, or a field is [AWT177](../09-diagnostics.md#awt177) (for an open-generic target, checked once on the generic definition); an unreachable setter is [AWT136](../09-diagnostics.md#awt136); a duplicate entry for one property is [AWT179](../09-diagnostics.md#awt179); and a `Factory`/`Instance`-produced type, built whole by its source with nothing for the container to fill, is [AWT178](../09-diagnostics.md#awt178).
 :::

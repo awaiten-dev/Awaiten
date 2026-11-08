@@ -129,7 +129,7 @@ partial class AwaitenGenerator
 			// variant registration nor the [ImportServices] fall-through below fills.
 			if (parameter.HasExplicitDefaultValue
 			    && IsGeneratedOwnerFactory(producer)
-			    && IsMissingOptional(parameterModel, context.ServiceToImpl))
+			    && IsMissingOptional(parameterModel, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				parameterModel = parameterModel with { Kind = DependencyKind.Absent, };
 			}
@@ -180,12 +180,14 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Whether the optional value of a generated factory or setter wrapper resolves a service the container does not
 	///     register, so it leaves the property as it is, as it omits an optional <c>[Inject]</c> property it constructs
-	///     itself. A runtime argument, a forwarded token, an external service and a collection are never missing.
+	///     itself. A runtime argument, a forwarded token, an external service and a collection are never missing, and an
+	///     <see cref="IsUnsatisfiable" /> request is reported rather than left out.
 	/// </summary>
-	private static bool IsMissingOptional(ParameterModel dependency, Dictionary<ServiceKey, string> serviceToImpl)
+	private static bool IsMissingOptional(ParameterModel dependency, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
 		=> dependency.Kind is not (DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External)
 		   && !IsSynthesizedCollection(dependency.Kind)
-		   && !serviceToImpl.ContainsKey(KeyOf(dependency));
+		   && !serviceToImpl.ContainsKey(KeyOf(dependency))
+		   && !IsUnsatisfiable(dependency, externalServiceTypes);
 
 	/// <summary>
 	///     The single predicate every gate uses to treat all collection kinds alike (AWT101/AWT141 exemption,
@@ -244,6 +246,13 @@ partial class AwaitenGenerator
 				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), service,]))
 			: new DiagnosticInfo(Diagnostics.MissingDependency, location, new EquatableArray<string>([owner, implementation, service,]));
 	}
+
+	/// <summary>
+	///     Whether no registration could ever satisfy <paramref name="dependency" />: an <c>Owned&lt;T&gt;</c> through
+	///     <c>Lazy</c> (AWT121) or a relationship over an imported service (AWT242). <c>Optional</c> does not drop it.
+	/// </summary>
+	private static bool IsUnsatisfiable(ParameterModel dependency, ExternalServiceTypes externalServiceTypes)
+		=> IsOwnedThroughLazy(dependency) || IsRelationshipOverImportedService(dependency, externalServiceTypes);
 
 	private static bool IsOwnedThroughLazy(ParameterModel dependency)
 		=> dependency.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
@@ -486,7 +495,7 @@ partial class AwaitenGenerator
 			// impossible request is not a missing registration, though: Owned<T> can never be produced through
 			// Lazy, and a relationship over an imported service never reaches the external resolver, so AWT121 and
 			// AWT242 are reported (and the edge kept) regardless of Optional, as for a required one.
-			if (spec.Optional && !IsOwnedThroughLazy(dependency) && !IsRelationshipOverImportedService(dependency, externalServiceTypes))
+			if (spec.Optional && !IsUnsatisfiable(dependency, externalServiceTypes))
 			{
 				return null;
 			}

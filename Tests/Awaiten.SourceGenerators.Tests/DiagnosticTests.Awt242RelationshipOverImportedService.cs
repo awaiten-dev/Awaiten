@@ -185,6 +185,7 @@ public partial class DiagnosticTests
 		[Test]
 		[Arguments("[Inject]")]
 		[Arguments("[Inject(Optional = true)]")]
+		[Arguments("[Inject(Deferred = true, Optional = true)]")]
 		public async Task ReportsAnInjectedPropertyOverAnImport(string inject)
 		{
 			GeneratorResult result = Generator.Run($$"""
@@ -228,6 +229,43 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).Contains("*AWT242*'Lib.IClock'*").AsWildcard()
 				.Because("the deferred property is filled through the module's generated setter, whose parameter is classified like the property");
 			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard();
+		}
+
+		[Test]
+		[Arguments("[Inject(Optional = true)]", "Func<IClock>")]
+		[Arguments("[Inject(Deferred = true, Optional = true)]", "Lazy<IClock>")]
+		public async Task ReportsAnOptionalPropertyOfAnotherAssemblysModuleOverAnImport(string inject, string relationship)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                        using System;
+			                                                                        using Awaiten;
+
+			                                                                        namespace Lib;
+
+			                                                                        public interface IGreeter { }
+			                                                                        public interface IClock { }
+
+			                                                                        internal sealed class Greeter : IGreeter
+			                                                                        {
+			                                                                            {{inject}} public {{relationship}} Clock { get; set; } = null!;
+			                                                                        }
+
+			                                                                        [Module]
+			                                                                        [Transient<Greeter, IGreeter>]
+			                                                                        public static partial class GreetingModule { }
+			                                                                        """, """
+			                                                                             using Awaiten;
+
+			                                                                             namespace App;
+
+			                                                                             [Container]
+			                                                                             [Import(typeof(Lib.GreetingModule))]
+			                                                                             [ImportService<Lib.IClock>]
+			                                                                             public static partial class MyContainer;
+			                                                                             """);
+
+			await That(result.Diagnostics).Contains("*AWT242*'Lib.IClock'*").AsWildcard()
+				.Because("the module's generated factory or setter fills the property, so it is reported exactly as when the container builds the implementation itself");
 		}
 
 		[Test]

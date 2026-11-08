@@ -204,7 +204,7 @@ partial class AwaitenGenerator
 		{
 			IMethodSymbol setter = producer.IsGenericMethod ? candidate.Construct(producer.TypeArguments.ToArray()) : candidate;
 			ParameterModel dependency = ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes);
-			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl))
+			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				continue;
 			}
