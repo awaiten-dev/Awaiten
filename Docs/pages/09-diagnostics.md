@@ -2708,7 +2708,7 @@ public static partial class CoffeeShop;
 ### AWT242
 
 :::danger[Error]
-A relationship such as `Func<T>`, `Lazy<T>`, `Owned<T>` or `Task<T>` targets a service that the container imports from its external resolver with `[ImportService]`. The external resolver hands back an instance, so only a direct dependency of the imported service is routed to it. The relationship would resolve from the graph, which has no registration of the service. It is reported for an `Optional` injected property too, because nothing could ever fill it.
+A relationship such as `Func<T>`, `Lazy<T>`, `Owned<T>` or `Task<T>` targets a service that the container imports from its external resolver with `[ImportService]`. The external resolver hands back an instance, so only a direct dependency of the imported service is routed to it. The relationship would resolve from the graph, which has no registration of the service. It is reported for an `Optional` injected property too, because nothing could ever fill it. Under `[ImportServices]` alone, which declares no type imported, an unregistered relationship is [AWT101](#awt101), as is an unregistered injected property even in its direct form.
 :::
 
 ```csharp expect=AWT242

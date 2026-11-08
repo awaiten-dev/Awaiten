@@ -13,7 +13,8 @@ namespace Awaiten;
 ///     <para>
 ///         Only unkeyed direct dependencies fall through to the external provider. Unregistered keyed
 ///         (<c>[FromKey]</c>) and relationship-typed dependencies (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
-///         <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c>) are still reported as missing.
+///         <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c>) are still reported as missing, and so is an unregistered injected
+///         property, even in its direct form.
 ///     </para>
 ///     <para>
 ///         This trades compile-time safety for flexibility: a forgotten or mistyped dependency is not
