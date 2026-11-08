@@ -104,7 +104,7 @@ public class ContainerExtendsTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT105") && diagnostic.Contains("Barista"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT105") && diagnostic.Contains("Barista"))
 				.Because("the replacement turns the inherited singleton into a captive of a scoped clock, which the whole graph is validated again for");
 		}
 
@@ -205,7 +205,7 @@ public class ContainerExtendsTests
 			                                                           }
 			                                                           """);
 
-			await That(diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118"))
+			await That(diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT118"))
 				.Because("the replacement makes the transient the singleton's Func builds disposable, which the base's clean graph does not report");
 		}
 	}
@@ -761,7 +761,7 @@ public class ContainerExtendsTests
 			                                                                           }
 			                                                                           """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226"));
 			await That(result.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
 				.Because("the decorator has nothing to wrap only because the inherited registration was dropped, which AWT226 already reports");
 		}
@@ -800,7 +800,7 @@ public class ContainerExtendsTests
 			                                                                              }
 			                                                                              """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226"));
 			await That(result.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
 				.Because("the open decorator matches no closing only because the inherited closing was dropped, which AWT226 already reports");
 		}
@@ -846,6 +846,7 @@ public class ContainerExtendsTests
 		public async Task APrivateImplementationTheFactoryCannotMirror_ReportsAwt226WithTheReason()
 		{
 			GeneratorResult result = Generator.Run("""
+			                                       #nullable enable
 			                                       using Awaiten;
 
 			                                       namespace MyCode;
@@ -870,7 +871,7 @@ public class ContainerExtendsTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226"));
 			await That(result.Diagnostics).Contains("*error AWT226*The type 'MyCode.Shop.Grinder'*its property 'Clock' is injected only when its service is registered*make 'MyCode.Shop.Grinder' internal*").AsWildcard()
 				.Because("a factory parameter cannot be left out, so it names the reason and the remedy");
 		}
@@ -911,7 +912,7 @@ public class ContainerExtendsTests
 			                                                                            }
 			                                                                            """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226"));
 			await That(result.Diagnostics).Contains($"*error AWT226*The type 'Production.Shop.Grinder'*{reason}*make 'Production.Shop.Grinder' internal*").AsWildcard()
 				.Because("the base records why it generates no factory, so an extending container in another assembly names it like one in the base's assembly");
 		}
@@ -1099,7 +1100,7 @@ public class ContainerExtendsTests
 
 			await That(own.Diagnostics).IsEmpty()
 				.Because("an open decorator without a closing in its own container decorates nothing yet, which is no error");
-			await That(await Analyzer.Run<AwaitenAnalyzer>(shop)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+			await That(await Analyzer.Run<AwaitenAnalyzer>(shop)).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT249"))
 				.Because("the base warns at the attribute, where a base meant only for extension suppresses it");
 			await That(await Analyzer.Run<AwaitenAnalyzer>(shop.Replace("[Decorate(", "#pragma warning disable AWT249\n[Decorate(").Replace("typeof(IHandler<>))]", "typeof(IHandler<>))]\n#pragma warning restore AWT249"))).IsEmpty();
 			await That(same.Diagnostics).IsEmpty();

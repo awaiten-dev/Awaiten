@@ -62,7 +62,7 @@ public class OpenGenericClosingLocationTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(11,2): error AWT105", StringComparison.Ordinal))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.StartsWith("(11,2): error AWT105", StringComparison.Ordinal))
 			.Because("a module of the container's own compilation has the syntax of its open registration");
 	}
 
@@ -97,7 +97,7 @@ public class OpenGenericClosingLocationTests
 		                                                                           }
 		                                                                           """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(9,2): error AWT101", StringComparison.Ordinal))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.StartsWith("(9,2): error AWT101", StringComparison.Ordinal))
 			.Because("the module's attribute has no syntax in the consumer, so the diagnostic points at the [Import]");
 	}
 
@@ -134,7 +134,7 @@ public class OpenGenericClosingLocationTests
 		                                                                           }
 		                                                                           """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(9,2): error AWT101", StringComparison.Ordinal));
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.StartsWith("(9,2): error AWT101", StringComparison.Ordinal));
 	}
 
 	[Test]
@@ -163,7 +163,7 @@ public class OpenGenericClosingLocationTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.StartsWith("(", StringComparison.Ordinal))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.StartsWith("(", StringComparison.Ordinal))
 			.Because("the closing the extending container's consumer needs still names a position");
 	}
 }

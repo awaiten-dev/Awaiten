@@ -47,7 +47,7 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("the generator leaves the warning to the analyzer, so it can be suppressed in source");
-			await That(reports).HasSingle().Matching(report => report.Contains("warning AWT249") && report.Contains(subject) && report.Contains("'MyCode.IHandler<T>'"));
+			await That(reports).HasSingle().Which.Satisfies(report => report.Contains("warning AWT249") && report.Contains(subject) && report.Contains("'MyCode.IHandler<T>'"));
 		}
 
 		[Test]
@@ -154,8 +154,8 @@ public partial class DiagnosticTests
 				public static partial class MyContainer;
 				"""));
 
-			await That(closed.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT123"));
-			await That(keyed.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT210"));
+			await That(closed.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT123"));
+			await That(keyed.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT210"));
 		}
 	}
 }

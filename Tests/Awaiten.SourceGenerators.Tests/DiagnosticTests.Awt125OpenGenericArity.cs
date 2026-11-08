@@ -246,7 +246,7 @@ public partial class DiagnosticTests
 				                                       }
 				                                       """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT125") && diagnostic.Contains("nested in the generic type"))
+				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT125") && diagnostic.Contains("nested in the generic type"))
 					.Because("the base reports its malformed registration, and the extending container does not repeat it or emit broken code");
 			}
 		}

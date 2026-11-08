@@ -1139,7 +1139,7 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT193")
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT193")
 			                                                                  && diagnostic.Contains("'MyCode.ShopModule.FakeClock' is private or protected and the module registers it explicitly"))
 				.Because("a scan never turns its former silent skip of a private type into the AWT197 error, so the match yields to the registration's factory");
 			await That(result.Sources["Awaiten.MyCode.Shop.g.cs"]).Contains("Registration_FakeClock_");

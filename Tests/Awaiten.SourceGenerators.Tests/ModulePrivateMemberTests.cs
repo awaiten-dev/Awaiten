@@ -83,9 +83,9 @@ public class ModulePrivateMemberTests
 		GeneratorResult alone = Generator.Run(library);
 		GeneratorResult same = Generator.Run(library + SameAssemblyContainer);
 
-		await That(alone.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("'Lib.CoffeeModule' produces 'Lib.IGreeter' through its private member 'Make'"))
+		await That(alone.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("'Lib.CoffeeModule' produces 'Lib.IGreeter' through its private member 'Make'"))
 			.Because("no container can call the private member, and the module cannot receive the wrapper that would, so the library reports it before any consumer");
-		await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194"))
+		await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194"))
 			.Because("the container in the module's assembly leaves the one cause to the module instead of adding AWT153");
 	}
 
@@ -117,9 +117,9 @@ public class ModulePrivateMemberTests
 		GeneratorResult alone = Generator.Run(library);
 		GeneratorResult same = Generator.Run(library + SameAssemblyContainer);
 
-		await That(alone.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT112") && diagnostic.Contains("more than one accessible method 'Make'"))
+		await That(alone.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT112") && diagnostic.Contains("more than one accessible method 'Make'"))
 			.Because("no wrapper can choose between the private overloads, so the library reports the ambiguity before any consumer does");
-		await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT112"))
+		await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT112"))
 			.Because("the container in the module's assembly leaves the one cause to the module instead of adding AWT153");
 	}
 }

@@ -48,7 +48,9 @@ partial class AwaitenGenerator
 		if (info.Production == ProductionKind.Instance)
 		{
 			RecordBaseWrappers(info, null, null, null, context);
-			return BuildPrebuiltInstance(info, containerSymbol, compilation, diagnostics, context.Modules) with { ResolverType = resolverType, Unlisted = info.Unlisted, };
+			return BuildPrebuiltInstance(info, containerSymbol, compilation, diagnostics, context.Modules) is { } prebuilt
+				? prebuilt with { ResolverType = resolverType, Unlisted = info.Unlisted, }
+				: null;
 		}
 
 		// The producer is a container method (Factory) or the implementation's constructor (default). Null
@@ -401,9 +403,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Builds the model for a pre-built <c>Instance</c> registration - handed back from a container member,
 	///     never constructed here. It validates the named member (AWT109/AWT153) and rejects a lifecycle hook
-	///     (AWT165), since the container does not own the instance and so never runs a hook around it.
+	///     (AWT165), since the container does not own the instance and so never runs a hook around it. Returns
+	///     <see langword="null" /> when the member is unusable, like an unresolved <c>Factory</c>, so the container does
+	///     not emit a read of it.
 	/// </summary>
-	private static InstanceModel BuildPrebuiltInstance(
+	private static InstanceModel? BuildPrebuiltInstance(
 		ImplInfo info,
 		INamedTypeSymbol containerSymbol,
 		Compilation compilation,
@@ -431,6 +435,11 @@ partial class AwaitenGenerator
 				new EquatableArray<string>([Display(info.OwningServiceOrImpl),])));
 		}
 
+		if (member is null)
+		{
+			return null;
+		}
+
 		return new InstanceModel(
 			info.ImplementationType,
 			info.Symbol.Name,
@@ -444,7 +453,7 @@ partial class AwaitenGenerator
 			EmitType: EmitTypeOf(info),
 			Eager: info.Eager && info.Lifetime == Lifetime.Singleton,
 			PrivateServices: PrivateServices(info, containerSymbol),
-			NullableProduct: member is not null && IsNullableProduct(ProductOf(member, compilation)!, member, info, diagnostics));
+			NullableProduct: IsNullableProduct(ProductOf(member, compilation)!, member, info, diagnostics));
 	}
 
 	/// <summary>

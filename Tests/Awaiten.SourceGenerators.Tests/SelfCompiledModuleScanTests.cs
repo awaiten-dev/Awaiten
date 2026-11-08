@@ -880,7 +880,7 @@ public class SelfCompiledModuleScanTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT196") && diagnostic.Contains("FakePlugin"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT196") && diagnostic.Contains("FakePlugin"))
 				.Because("a consumer could not name the private type a Self exposure registers, so the match is skipped with a warning, not an error");
 		}
 
@@ -1020,7 +1020,7 @@ public class SelfCompiledModuleScanTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT193")
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT193")
 			                                                                  && diagnostic.Contains("'Lib.Fakes.FakeClock' is private or protected and the module registers it explicitly"))
 				.Because("a type private to a class containing the module has the module's single factory too, so the scan match yields to the registration");
 			await That(result.Sources["Awaiten.Lib.Shop.g.cs"]).Contains("Registration_FakeClock_");

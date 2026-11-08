@@ -100,7 +100,7 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = RunWithWidgetModule(registration, target, "init");
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178")
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178")
 			                                                                  && diagnostic.Contains("is built by the generated factory of 'Lib.WidgetModule', so its init-only property 'Other'"))
 				.Because("the user declared no Factory, so the message names the module whose factory builds the type");
 		}

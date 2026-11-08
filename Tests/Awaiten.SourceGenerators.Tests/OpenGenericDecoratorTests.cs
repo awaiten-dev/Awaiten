@@ -145,7 +145,7 @@ public class OpenGenericDecoratorTests
 		                                       """;
 
 		await That(Generator.Run(source).Diagnostics).IsEmpty();
-		await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+		await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT249"))
 			.Because("the open decorator applies to no closing, since nothing requires a closed IHandler<T>, which a container that is not extended likely did not mean");
 	}
 
