@@ -261,11 +261,10 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The reason an inherited open generic registration private to the base cannot be built
-	///     by the extending container.
+	///     The reason an inherited type private to the base that the base builds through no generated factory cannot be
+	///     built by the extending container.
 	/// </summary>
-	private const string UnsupportedPrivateShape =
-		"the base generates factories only for constructed registrations, decorators and composites of its private implementations, not for an open generic registration";
+	private const string UnsupportedPrivateShape = "the base generates no factory for it";
 
 	/// <summary>
 	///     Rewrites every inherited registration of an implementation private to the base, or to a class containing the
@@ -302,6 +301,23 @@ partial class AwaitenGenerator
 			inheritance.ReportUnbuildable(registration, fault, diagnostics);
 			constraintRejected.Add(registration.ServiceType);
 			registrations.RemoveAt(index--);
+		}
+	}
+
+	/// <summary>
+	///     Reports AWT226 with the reason for every inherited open generic registration private to the base that the
+	///     container cannot build through a generic factory of the base (see <see cref="ResolveOpenVia" />). Expansion
+	///     then synthesizes none of its closings and keeps their consumers from also reporting them missing (AWT101). Runs
+	///     after the replacements, so one the container replaces is not reported.
+	/// </summary>
+	private static void ReportUnbuildableInheritedOpen(Inheritance inheritance, List<OpenRegistration> open, List<DiagnosticInfo> diagnostics)
+	{
+		foreach (OpenRegistration registration in open)
+		{
+			if (registration.ViaFault is { } fault)
+			{
+				inheritance.ReportPrivate($"The type '{Display(registration.Implementation.ToDisplayString(FullyQualified))}'", fault, diagnostics);
+			}
 		}
 	}
 
@@ -573,6 +589,42 @@ partial class AwaitenGenerator
 			if (GeneratedFactoryNamed(Base, name, _compilation) is { } method)
 			{
 				return new OwnerFactoryCall(Base, name, method.ReturnType.ToDisplayString(FullyQualified), method);
+			}
+
+			if (!Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly))
+			{
+				fault = new FactoryFault(
+					$"'{baseName}' builds it through an internal generated factory",
+					$"grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		///     The generic factory named <paramref name="name" /> the base generates for its private open contribution of
+		///     <paramref name="definition" /> (see <see cref="RecordBaseOpenFactories" />), or <see langword="null" /> with the
+		///     <paramref name="fault" /> that explains why the container cannot call one.
+		/// </summary>
+		public OpenOwnerFactory? ThroughBaseOpenFactory(string name, INamedTypeSymbol definition, out FactoryFault fault)
+		{
+			string baseName = Display(Base.ToDisplayString(FullyQualified));
+			fault = new FactoryFault($"'{baseName}' generates no factory for it", $"make '{Display(definition.ToDisplayString(FullyQualified))}' internal");
+			if (SymbolEqualityComparer.Default.Equals(Base.ContainingAssembly, Container.ContainingAssembly))
+			{
+				_baseFactories ??= BuildGraph(Base, _compilation, new List<DiagnosticInfo>(), _cancellationToken).Factories;
+				if (_baseFactories.Factories.FirstOrDefault(candidate => candidate.FactoryName == name) is { } factory)
+				{
+					return new OpenOwnerFactory(Base, name, null, factory);
+				}
+
+				fault = _baseFactories.Faults.TryGetValue(name, out FactoryFault reason) ? reason : fault;
+				return null;
+			}
+
+			if (GeneratedOpenFactory(Base, name, definition.Arity, _compilation) is { } method)
+			{
+				return new OpenOwnerFactory(Base, name, method, null);
 			}
 
 			if (!Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly))

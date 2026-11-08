@@ -78,9 +78,10 @@ internal sealed record MemberWrapper(
 ///     An implementation the module generates no factory for, because an assembly granted <c>InternalsVisibleTo</c>
 ///     constructs it itself: the name of the emitted constant and the reason it holds, which a consumer that cannot
 ///     construct the implementation reports. <see cref="Hook" /> marks a hook whose wrapper the module leaves out
-///     instead, beside a factory it still emits.
+///     instead, beside a factory it still emits. <see cref="Open" /> marks an open generic registration, decorator or
+///     composite the module generates no generic factory for, whatever its assembly grants.
 /// </summary>
-internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false);
+internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false);
 
 /// <summary>
 ///     The generated factory of an implementation that only its owner can construct: a self-compiled module
@@ -99,7 +100,9 @@ internal sealed record SkippedRegistration(string MarkerName, string Reason, boo
 ///     <see cref="InitOnlyMembers" />. Each of the <see cref="DeferredMembers" /> gets a setter wrapper a consumer calls
 ///     after construction, whose value parameter is optional for the <see cref="OptionalDeferredMembers" />. An
 ///     <see cref="IsInternal" /> factory and its setters are internal, for the containers that can name the internal
-///     services the public factory takes through their handles.
+///     services the public factory takes through their handles. The factory of an open generic registration, decorator or
+///     composite is generic: <see cref="TypeParameters" /> is its type parameter list (<c>&lt;T&gt;</c>), named like the
+///     implementation's own, and <see cref="Constraints" /> their constraint clauses, which a consumer closes per use.
 /// </summary>
 internal sealed record RegistrationFactory(
 	string FactoryName,
@@ -116,7 +119,9 @@ internal sealed record RegistrationFactory(
 	EquatableArray<FactoryParameter> DeferredMembers = default,
 	bool IsInternal = false,
 	EquatableArray<string> InitOnlyMembers = default,
-	EquatableArray<string> OptionalDeferredMembers = default);
+	EquatableArray<string> OptionalDeferredMembers = default,
+	string? TypeParameters = null,
+	string? Constraints = null);
 
 /// <summary>One lifecycle-hook wrapper of a self-compiled module registration and whether it is the release hook.</summary>
 internal sealed record RegistrationHook(ModuleHook Hook, bool Release);

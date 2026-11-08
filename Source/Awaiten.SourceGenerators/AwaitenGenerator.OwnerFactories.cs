@@ -42,8 +42,8 @@ partial class AwaitenGenerator
 	///     generated code, so this container emits an <c>internal</c> factory for it, named like a module's
 	///     (<see cref="RegistrationFactoryName" />), that mirrors the constructor the container picked and returns the
 	///     accessible resolver type, plus an <c>internal</c> wrapper per lifecycle hook. Only a container without
-	///     <c>Extends</c> records any, since extending is one level deep. Decorators, composites and closings of an
-	///     open generic registration are not built this way yet. The factory carries the <c>[Arg]</c> or <c>[FromKey]</c>
+	///     <c>Extends</c> records any, since extending is one level deep. Open generic registrations, decorators and
+	///     composites get generic factories instead (see <see cref="RecordBaseOpenFactories" />). The factory carries the <c>[Arg]</c> or <c>[FromKey]</c>
 	///     of a constructor parameter and takes each injected property as a parameter named like it. What it cannot
 	///     express (a generic type, an optional or deferred property, one named like a constructor parameter, a hook
 	///     parameter carrying <c>[Arg]</c>, <c>[FromKey]</c> or <c>[Inject]</c>, or a parameter type private to the
@@ -419,12 +419,12 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The constructor of <paramref name="type" /> that a factory generated in the same run mirrors, found by its
 	///     parameter types, or <see langword="null" />. The factory's parameters for injected properties follow the
-	///     constructor's.
+	///     constructor's. A closing of a generic factory's type is matched by the parameters of its definition.
 	/// </summary>
-	private static IMethodSymbol? MirroredConstructor(INamedTypeSymbol type, RegistrationFactory factory)
+	internal static IMethodSymbol? MirroredConstructor(INamedTypeSymbol type, RegistrationFactory factory)
 	{
 		string[] parameters = factory.Parameters.AsArray().Take(factory.Parameters.Count - factory.Members.Count - factory.OptionalMembers.Count).Select(parameter => parameter.Type).ToArray();
 		return type.InstanceConstructors.FirstOrDefault(candidate =>
-			candidate.Parameters.Select(parameter => parameter.Type.ToDisplayString(FullyQualifiedWithNullability)).SequenceEqual(parameters));
+			candidate.OriginalDefinition.Parameters.Select(parameter => parameter.Type.ToDisplayString(FullyQualifiedWithNullability)).SequenceEqual(parameters));
 	}
 }

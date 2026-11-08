@@ -186,7 +186,13 @@ internal static partial class Sources
 			}
 
 			first = false;
-			if (skipped.Hook)
+			if (skipped.Open)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module registration: why no generic factory builds this open generic type. A consuming",
+					"container that cannot construct it reports this reason.");
+			}
+			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
 					"Generated from a module registration: why no wrapper runs this lifecycle hook. An assembly granted",
@@ -418,8 +424,8 @@ internal static partial class Sources
 		}
 
 		Indent(builder, depth)
-			.Append(accessibility).Append(" static ").Append(factory.ReturnType).Append(' ').Append(factory.FactoryName)
-			.Append('(').Append(signature).Append(") => ");
+			.Append(accessibility).Append(" static ").Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append(factory.TypeParameters)
+			.Append('(').Append(signature).Append(')').Append(factory.Constraints).Append(" => ");
 		if (factory.Handle is not null)
 		{
 			builder.Append("new ").Append(factory.Handle).Append('(');
@@ -453,7 +459,8 @@ internal static partial class Sources
 			.Select((member, index) => (Member: member, Argument: parameters[first + members.Length + index].ArgumentExpression))
 			.Where(entry => factory.InitOnlyMembers.AsArray().Contains(entry.Member))
 			.ToList();
-		Indent(builder, depth).Append(accessibility).Append(" static ").Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append('(').Append(signature).AppendLine(")");
+		Indent(builder, depth).Append(accessibility).Append(" static ").Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append(factory.TypeParameters)
+			.Append('(').Append(signature).Append(')').AppendLine(factory.Constraints);
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).Append("var awaiten__instance = ").Append(Construction(0, required)).AppendLine(";");
 		for (int index = 0; index < optional.Length; index++)
@@ -502,9 +509,9 @@ internal static partial class Sources
 			AppendXmlSummary(builder, depth,
 				"Generated from a module registration: assigns a property marked [Inject(Deferred = true)] after a consuming",
 				"container built and cached the instance, so it can break a cycle.");
-			Indent(builder, depth).Append(factory.IsInternal ? "internal" : "public").Append(" static void ").Append(AwaitenGenerator.DeferredSetterName(factory.FactoryName, parameter.Name)).Append('(')
+			Indent(builder, depth).Append(factory.IsInternal ? "internal" : "public").Append(" static void ").Append(AwaitenGenerator.DeferredSetterName(factory.FactoryName, parameter.Name)).Append(factory.TypeParameters).Append('(')
 				.Append(factory.ReturnType).Append(" @awaiten__instance, ").Append(MirroredParameter(parameter))
-				.Append(factory.OptionalDeferredMembers.AsArray().Contains(parameter.Name) ? " = default!" : string.Empty).Append(") => ((")
+				.Append(factory.OptionalDeferredMembers.AsArray().Contains(parameter.Name) ? " = default!" : string.Empty).Append(')').Append(factory.Constraints).Append(" => ((")
 				.Append(factory.ImplementationType).Append(")@awaiten__instance").Append(factory.Handle is null ? string.Empty : ".Value").Append(").")
 				.Append(parameter.Name).Append(" = ").Append(parameter.ArgumentExpression).AppendLine(";");
 		}

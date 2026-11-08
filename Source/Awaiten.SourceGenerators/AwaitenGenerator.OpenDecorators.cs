@@ -45,16 +45,18 @@ partial class AwaitenGenerator
 				// Only the keys this closing is registered under, so a key another closing lacks is no AWT210 here.
 				string display = closed.ToDisplayString(FullyQualified);
 				IReadOnlyList<string?>? keys = decorator.Keys?.Where(key => PresentUnderKey(graph, display, key)).ToList();
+				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
 				decorators.Add(new DecorateRegistration(
 					display,
 					closed,
-					decorator.Decorator.Construct(typeArguments),
+					closedDecorator,
 					decorator.Order,
 					decorator.DeclarationOrder,
 					decorator.Location,
 					keys,
 					decorator.Inherited,
-					Owner: decorator.Owner));
+					decorator.Via?.Close(typeArguments, closedDecorator, closed),
+					decorator.Owner));
 			}
 		}
 	}
@@ -84,7 +86,7 @@ partial class AwaitenGenerator
 					])));
 			}
 		}
-		else if (closings.Count == 0)
+		else if (closings.Count == 0 && !decorator.DecoratesHandles)
 		{
 			// AWT123: the open decorator names a service that has no closing in the graph to decorate.
 			diagnostics.Add(new DiagnosticInfo(
@@ -117,7 +119,7 @@ partial class AwaitenGenerator
 				display => PresentUnderKey(graph, display, composite.Key));
 
 			// AWT212: a keyed open composite whose key no closing of the service is registered under.
-			if (composite.Key is not null && closings.Count == 0)
+			if (composite.Key is not null && closings.Count == 0 && !composite.ComposesHandles)
 			{
 				ReportCompositeKeyNotRegistered(
 					composite.Composite.ToDisplayString(FullyQualified), composite.Service.ToDisplayString(FullyQualified),
@@ -136,14 +138,16 @@ partial class AwaitenGenerator
 					continue;
 				}
 
+				INamedTypeSymbol closedComposite = composite.Composite.Construct(typeArguments);
 				composites.Add(new CompositeRegistration(
 					closed.ToDisplayString(FullyQualified),
 					closed,
-					composite.Composite.Construct(typeArguments),
+					closedComposite,
 					composite.Lifetime,
 					composite.Location,
 					composite.Key,
-					Owner: composite.Owner));
+					composite.Via?.Close(typeArguments, closedComposite, closed),
+					composite.Owner));
 			}
 		}
 	}

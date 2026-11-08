@@ -121,6 +121,19 @@ partial class AwaitenGenerator
 			}
 		}
 
+		OpenViaOutcome via = default;
+		if (factory is null && NamedArgument(attribute, "Instance") is null && context.Origin is { } owner)
+		{
+			INamedTypeSymbol definition = pair.Mapped.OriginalDefinition;
+			via = ResolveOpenVia(new OpenViaRequest(
+				owner, definition, pair.Service.OriginalDefinition.Construct(definition.TypeParameters.Cast<ITypeSymbol>().ToArray()), RegistrationFactoryName(definition), "the open generic registration of", liveLocation, context.FallbackLocation,
+				context.Compilation, context.Modules, context.Inheritance, context.Inherited, diagnostics));
+			if (via.Dropped)
+			{
+				return;
+			}
+		}
+
 		string? key = NamedKeyArgument(attribute);
 		string? whenInjectedInto = NamedTypeArgument(attribute, "WhenInjectedInto", context.Compilation);
 		ReportContextualBindingWithKey(key, whenInjectedInto, pair.Mapped, liveLocation, diagnostics);
@@ -129,8 +142,10 @@ partial class AwaitenGenerator
 		int fallback = NamedFallback(attribute);
 		context.Open.Add(new OpenRegistration(pair.Service, pair.Mapped, lifetime, key, location, context.Origin)
 		{
-			Factory = factory,
-			FactoryMethods = factoryMethods,
+			Factory = via.Via?.Method is not null ? InInternals(via.Via.Name) : factory,
+			FactoryMethods = via.Via?.Method is { } method ? [method,] : factoryMethods,
+			Via = via.Via,
+			ViaFault = via.BaseFault,
 			Weak = fallback != 0,
 			IsDefault = fallback == 1,
 			WhenInjectedInto = whenInjectedInto,
@@ -232,7 +247,7 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>The base types of <paramref name="type" />, from its direct base up to (but excluding) <c>object</c>.</summary>
-	private static IEnumerable<INamedTypeSymbol> BaseTypes(ITypeSymbol type)
+	internal static IEnumerable<INamedTypeSymbol> BaseTypes(ITypeSymbol type)
 	{
 		for (INamedTypeSymbol? current = type.BaseType; current is not null; current = current.BaseType)
 		{
@@ -387,12 +402,12 @@ partial class AwaitenGenerator
 
 		foreach (DecorateRegistration decorator in context.Inputs.Wrappers.Decorators)
 		{
-			EnqueueDecorator(decorator.Decorator, decorator.ServiceSymbol, 0, context);
+			EnqueueDecorator(decorator.Decorator, decorator.ServiceSymbol, 0, context, decorator.Via?.Producer);
 		}
 
 		foreach (CompositeRegistration composite in context.Inputs.Wrappers.Composites)
 		{
-			Enqueue(new ExpansionWork(composite.Composite, null, 0, ExpansionScan.ConstructedInstance), context);
+			Enqueue(new ExpansionWork(composite.Composite, composite.Via?.Producer, 0, ExpansionScan.ConstructedInstance), context);
 		}
 	}
 
@@ -418,7 +433,8 @@ partial class AwaitenGenerator
 			    && (decorator.Keys is null || decorator.Keys.Contains(registration.Key))
 			    && ConstraintsSatisfied(decorator.Decorator, typeArguments))
 			{
-				EnqueueDecorator(decorator.Decorator.Construct(typeArguments), closed, depth, context);
+				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
+				EnqueueDecorator(closedDecorator, closed, depth, context, decorator.Via?.Close(typeArguments, closedDecorator, closed)?.Producer);
 			}
 		}
 
@@ -428,18 +444,20 @@ partial class AwaitenGenerator
 			    && composite.Key == registration.Key
 			    && ConstraintsSatisfied(composite.Composite, typeArguments))
 			{
-				Enqueue(new ExpansionWork(composite.Composite.Construct(typeArguments), null, depth, ExpansionScan.ConstructedInstance), context);
+				INamedTypeSymbol closedComposite = composite.Composite.Construct(typeArguments);
+				Enqueue(new ExpansionWork(closedComposite, composite.Via?.Close(typeArguments, closedComposite, closed)?.Producer, depth, ExpansionScan.ConstructedInstance), context);
 			}
 		}
 	}
 
 	/// <summary>
-	///     Enqueues a decorator of <paramref name="service" /> through the constructor the container builds it with,
-	///     unless it has no single inner parameter (AWT124), which leaves the whole chain unbuilt.
+	///     Enqueues a decorator of <paramref name="service" /> through the constructor the container builds it with, or the
+	///     <paramref name="producer" /> of the owner's factory that builds it for the container, unless it has no single
+	///     inner parameter (AWT124), which leaves the whole chain unbuilt.
 	/// </summary>
-	private static void EnqueueDecorator(INamedTypeSymbol decorator, INamedTypeSymbol service, int depth, ExpansionContext context)
+	private static void EnqueueDecorator(INamedTypeSymbol decorator, INamedTypeSymbol service, int depth, ExpansionContext context, IMethodSymbol? producer = null)
 	{
-		if (SelectExpansionConstructor(decorator, context) is { } constructor
+		if ((producer ?? SelectExpansionConstructor(decorator, context)) is { } constructor
 		    && InnerParameter(constructor, service, context.Inputs.Compilation) is { } inner)
 		{
 			Enqueue(new ExpansionWork(decorator, constructor, depth, ExpansionScan.Decorator, inner), context);
@@ -544,6 +562,16 @@ partial class AwaitenGenerator
 			bool dropped = candidate.Weak && IsClaimedByStrongerRegistration(candidate, closedService, context.Raw);
 
 			RawRegistration registration = SynthesizeClosedRegistration(candidate, closed, closedService, closedImpl, TypeIdentity(closedImpl, context.Inputs.Compilation));
+			if (candidate.Via is { Method: null, } generated)
+			{
+				OwnerFactoryCall? call = generated.Close(typeArguments, closedImpl, closed);
+				registration = registration with { ConstructVia = call?.Call, ConstructViaType = call?.ReturnType, Constructor = call?.Producer, };
+			}
+			else if (candidate.Via is not null)
+			{
+				registration = ThroughOpenFactory(registration, candidate.Via.Owner, factories[0].Construct(typeArguments), context.Inputs.Compilation);
+			}
+
 			context.Raw.Add(registration);
 			context.Synthesized++;
 
@@ -554,7 +582,7 @@ partial class AwaitenGenerator
 
 			if (candidate.Factory is null)
 			{
-				Enqueue(new ExpansionWork(closedImpl, null, depth + 1, ExpansionScan.ConstructedInstance), context);
+				Enqueue(new ExpansionWork(closedImpl, registration.Constructor, depth + 1, ExpansionScan.ConstructedInstance), context);
 			}
 
 			foreach (IMethodSymbol factory in factories)
@@ -582,6 +610,12 @@ partial class AwaitenGenerator
 		out List<IMethodSymbol> factories)
 	{
 		factories = [];
+		if (candidate.ViaFault is not null)
+		{
+			context.ConstraintRejectedServices.Add(closedService);
+			return false;
+		}
+
 		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray()))
 		{
 			context.ConstraintRejectedServices.Add(closedService);
@@ -641,6 +675,21 @@ partial class AwaitenGenerator
 			GenericFactory: candidate.Factory is not null);
 	}
 
+	/// <summary>
+	///     A closing a container in another assembly builds through the generic factory of the module or base
+	///     <paramref name="owner" />, closed as <paramref name="factory" />: it produces the accessible type the factory
+	///     returns, while the closed implementation keeps the registration's identity and gives its initialization and
+	///     disposal, read off its metadata with the owner's conventions, as <see cref="ThroughGeneratedFactory" /> does for a
+	///     closed registration.
+	/// </summary>
+	private static RawRegistration ThroughOpenFactory(RawRegistration registration, INamedTypeSymbol owner, IMethodSymbol factory, Compilation compilation)
+		=> registration with
+		{
+			Implementation = (INamedTypeSymbol)factory.ReturnType,
+			Traits = TraitsOf(registration.Implementation, DeclaredAsyncInitializers(owner, compilation, null)),
+			TraitsExact = true,
+		};
+
 	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
 		string factory = QualifiedMember(candidate.Origin ?? context.Inputs.ContainerSymbol, candidate.Factory);
@@ -681,7 +730,7 @@ partial class AwaitenGenerator
 
 		context.Diagnostics.Add(new DiagnosticInfo(
 			Diagnostics.OpenGenericExpansionTooDeep,
-			null,
+			context.Open.FirstOrDefault(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation, impl.OriginalDefinition))?.Location,
 			new EquatableArray<string>([
 				AwaitenGenerator.Display(implName),
 				depth.ToString(),
@@ -701,7 +750,7 @@ partial class AwaitenGenerator
 			ExpansionScan.Hook => ParameterServiceTypes(work.Method!.Parameters.Skip(1)),
 			ExpansionScan.Decorator => ParameterServiceTypes(work.Method!.Parameters.Where(parameter => !SymbolEqualityComparer.Default.Equals(parameter, work.Inner)))
 				.Concat(InjectedProperties(work.Implementation).Select(property => RequiredServiceType(property.Type))),
-			_ => (SelectExpansionConstructor(work.Implementation, context) is { } constructor ? ParameterServiceTypes(constructor.Parameters) : [])
+			_ => ((work.Method ?? SelectExpansionConstructor(work.Implementation, context)) is { } constructor ? ParameterServiceTypes(constructor.Parameters) : [])
 				.Concat(InjectedMemberServiceTypes(work.Implementation, context.Inputs)),
 		};
 
@@ -1024,6 +1073,19 @@ partial class AwaitenGenerator
 		public string? OnRelease { get; init; }
 
 		public bool SuppressDisposal { get; init; }
+
+		/// <summary>
+		///     The generic factory of the module or base that builds every closing, because the container cannot construct
+		///     the implementation (see <see cref="ResolveOpenVia" />), or <see langword="null" />.
+		/// </summary>
+		public OpenOwnerFactory? Via { get; init; }
+
+		/// <summary>
+		///     Why an extending container cannot build this registration private to its base, reported as AWT226 once
+		///     the container's own registrations replaced the inherited ones (see <see cref="ReportUnbuildableInheritedOpen" />).
+		///     None of its closings is synthesized.
+		/// </summary>
+		public FactoryFault? ViaFault { get; init; }
 	}
 
 	/// <summary>What one unit of expansion work scans for the closed generic services it requires.</summary>

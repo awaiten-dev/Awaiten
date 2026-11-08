@@ -152,7 +152,9 @@ internal sealed record CompositeRegistration(
 ///     service and decorator definitions, the chain <see cref="Order" /> and the declaration index (shared with the
 ///     closed <c>[Decorate&lt;,&gt;]</c> forms so open and closed decorators interleave) and the selected <see cref="Keys" />
 ///     (as on <see cref="DecorateRegistration" />). Expanded into a closed <see cref="DecorateRegistration" /> per
-///     existing closing of the service.
+///     existing closing of the service. <see cref="Via" /> is the generic factory of the module or base that builds each
+///     closing the container cannot construct. <see cref="DecoratesHandles" /> marks one that also decorates handles of
+///     internal closings of its module, closed in the module's build, so it matching no accessible closing is no AWT123.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record OpenDecorateRegistration(
@@ -163,12 +165,16 @@ internal sealed record OpenDecorateRegistration(
 	Location? Location,
 	IReadOnlyList<string?>? Keys,
 	bool Inherited = false,
-	INamedTypeSymbol? Owner = null);
+	INamedTypeSymbol? Owner = null,
+	OpenOwnerFactory? Via = null,
+	bool DecoratesHandles = false);
 
 /// <summary>
 ///     A single open generic <c>[Composite(typeof(C&lt;&gt;), typeof(IService&lt;&gt;))]</c> registration: the unbound
 ///     service and composite definitions, the lifetime and the fronted <see cref="Key" />. Expanded into a closed
-///     <see cref="CompositeRegistration" /> per existing closing of the service.
+///     <see cref="CompositeRegistration" /> per existing closing of the service. <see cref="Via" /> is the generic factory
+///     of the module or base that builds each closing the container cannot construct. <see cref="ComposesHandles" /> marks
+///     one that also fronts handles of internal closings of its module, so it matching no accessible closing is no AWT212.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record OpenCompositeRegistration(
@@ -177,7 +183,9 @@ internal sealed record OpenCompositeRegistration(
 	Lifetime Lifetime,
 	Location? Location,
 	string? Key,
-	INamedTypeSymbol? Owner = null);
+	INamedTypeSymbol? Owner = null,
+	OpenOwnerFactory? Via = null,
+	bool ComposesHandles = false);
 
 partial class AwaitenGenerator
 {

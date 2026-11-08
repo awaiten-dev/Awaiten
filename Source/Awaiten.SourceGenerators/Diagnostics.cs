@@ -427,7 +427,8 @@ internal static class Diagnostics
 	///     registrations form an unbounded generic recursion: a closed implementation whose constructor
 	///     depends on an ever-larger closed generic of the same open registration
 	///     (<c>Node&lt;T&gt;</c> depending on <c>Node&lt;List&lt;T&gt;&gt;</c>). Expansion is stopped at the
-	///     limit so the generator terminates rather than looping until it exhausts memory.
+	///     limit so the generator terminates rather than looping until it exhausts memory. Reported at the open
+	///     registration that synthesized the runaway closing.
 	/// </summary>
 	public static readonly DiagnosticDescriptor OpenGenericExpansionTooDeep = new(
 		"AWT129",
@@ -1914,9 +1915,10 @@ internal static class Diagnostics
 	/// <summary>
 	///     AWT226 for a type private to the base container, or to a class that contains it, that an extending container
 	///     cannot build. The base builds such a type for an extending container through an <c>internal</c> generated
-	///     factory, but not here: <c>{3}</c> names the reason (the factory is internal and the base's assembly grants the
-	///     extending one no <c>InternalsVisibleTo</c>, the factory cannot express the type, or it is a decorator,
-	///     composite or open generic registration) and <c>{4}</c> the remedy. The inherited declaration is ignored.
+	///     factory, a generic one for an open generic registration, decorator or composite, but not here: <c>{3}</c> names
+	///     the reason (the factory is internal and the base's assembly grants the extending one no
+	///     <c>InternalsVisibleTo</c>, or the factory cannot express the type) and <c>{4}</c> the remedy. The inherited
+	///     declaration is ignored.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InheritedPrivateImplementation = new(
 		"AWT226",
@@ -1929,8 +1931,9 @@ internal static class Diagnostics
 	/// <summary>
 	///     An imported module of another assembly declares a decorator, a composite or an open generic registration
 	///     whose type this container cannot construct (it, or every constructor, is not accessible here). A module
-	///     generated no factory for it (it generates them for its scans, closed registrations, decorators and composites,
-	///     where the factory can express the type), so nothing constructs this type for the container.
+	///     generated no factory for it (it generates them for its scans, registrations, decorators and composites, open
+	///     generic ones included, where the factory can express the type) and recorded no reason for an open generic one
+	///     (which is AWT231), so nothing constructs this type for the container.
 	///     Reported at the consumer's <c>[Import]</c> instead of a misleading constructor diagnostic, and the
 	///     contribution is skipped.
 	/// </summary>
