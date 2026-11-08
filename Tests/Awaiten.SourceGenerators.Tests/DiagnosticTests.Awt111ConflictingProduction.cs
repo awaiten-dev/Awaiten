@@ -323,6 +323,7 @@ public partial class DiagnosticTests
 				                                       public interface IClock { }
 				                                       public sealed class SystemClock : IClock { }
 				                                       public sealed class FixedClock : IClock { }
+				                                       public sealed class Consumer(IClock clock) { }
 
 				                                       [Module]
 				                                       [Singleton<IClock>(Factory = nameof(Create))]
@@ -341,6 +342,7 @@ public partial class DiagnosticTests
 				                                       [Container]
 				                                       [Import(typeof(ModuleA))]
 				                                       [Import(typeof(ModuleB))]
+				                                       [Singleton<Consumer>]
 				                                       public static partial class MyContainer
 				                                       {
 				                                       }

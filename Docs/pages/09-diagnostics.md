@@ -2113,10 +2113,12 @@ A `[Scan]` on a `[Module]` is [self-compiled in the module's own build](./04-reg
 ### AWT155
 
 :::warning[Warning]
-Two imported modules strongly register the same service with different implementations.
+Two imported modules strongly register the same service with different implementations, and something resolves the service singly.
 :::
 
 ```csharp expect=AWT155
+public sealed class ShiftTimer(ITimeSystem time);
+
 [Module]
 [Singleton<RealTimeSystem, ITimeSystem>]
 public static class ModuleA;
@@ -2128,8 +2130,11 @@ public static class ModuleB;
 [Container]
 [Import(typeof(ModuleA))]
 [Import(typeof(ModuleB))]   // both strongly register ITimeSystem
+[Singleton<ShiftTimer>]     // takes a single ITimeSystem
 public static partial class CoffeeShop;
 ```
+
+Both registrations stay members of the service's collections, but a single `ITimeSystem` comes from the earlier import, which neither module shows. The container reports this only when a dependency in the graph resolves the service singly, directly or through a relationship such as `Func<T>`, `Lazy<T>` or `Owned<T>`. A service consumed only as a collection, a keyed dictionary or through a composite receives every contribution, so [plugin-style composition](./04-registration/07-modules.md#contribute-to-a-collection) stays silent. A `Resolve<T>()` or `Resolve(typeof(T))` of such a service on the generated `Root` or `Scope` reports it at the call instead. A resolve through `IAwaitenRoot`, through the MS.DI bridge or with a `Type` known only at run time returns the earlier import's registration without a warning.
 
 **Fix:** Override the service on the container with a registration of its own, or make one module's registration an overridable default with `Fallback = Fallback.Warn` or `Fallback = Fallback.Silent`.
 

@@ -35,7 +35,7 @@ ICollection<ISyrup>
 
 Members come back in registration order. Each keeps its own lifetime. A service type with no registrations resolves to an empty collection, not an error.
 
-Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an [overridable default](../04-registration/07-modules.md#overridable-defaults) that a registration of the same service without `Fallback` replaces. Two defaults don't replace each other, so both are members.
+Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an [overridable default](../04-registration/07-modules.md#overridable-defaults) that a registration of the same service without `Fallback` replaces. Two defaults don't replace each other, so both are members. A single `ISyrup` resolves to one member, the first registration. When several modules [contribute to one collection](../04-registration/07-modules.md#contribute-to-a-collection), a dependency on a single `ISyrup` is reported, because only the order of the imports decides which member it gets.
 
 ## Async collections
 

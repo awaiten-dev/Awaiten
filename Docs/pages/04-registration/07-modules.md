@@ -60,6 +60,32 @@ public static class CachingModule;
 public static partial class CoffeeShop;
 ```
 
+## Contribute to a collection
+
+Several modules can each register their own implementation of a shared service, like plug-ins. A consumer that takes a collection of the service gets every contribution, in the order of the imports.
+
+```csharp
+[Module]
+[Singleton<VanillaSyrup, ISyrup>]
+public static class VanillaModule;
+
+[Module]
+[Singleton<CaramelSyrup, ISyrup>]
+public static class CaramelModule;
+
+[Container]
+[Import(typeof(VanillaModule))]
+[Import(typeof(CaramelModule))]
+[Transient<SyrupBar>]
+public static partial class CoffeeShop;
+
+public sealed class SyrupBar(IEnumerable<ISyrup> syrups);   // VanillaSyrup and CaramelSyrup
+```
+
+There is no need for `Fallback` here. A default is meant to be replaced: it stays in the collection only as long as no registration of the service without `Fallback` exists, so one such registration in another module would drop every default from it.
+
+A single `ISyrup` still resolves to one contribution, the one from the earlier import, as in Microsoft.Extensions.DependencyInjection a single service resolves to one registration. Because neither module shows which one that is, a dependency in the graph on a single `ISyrup` is reported ([AWT155](../09-diagnostics.md#awt155)), and so is a `Resolve<ISyrup>()` on the generated `Root` or `Scope`. A collection, a [keyed dictionary](../05-resolution/04-keyed-dictionaries.md) or a [composite](./03-composites.md) receives every contribution and is never reported.
+
 ## Factories and instances in modules
 
 A module can use `Factory` and `Instance` too. Awaiten calls the members qualified by the module type, so this works across assemblies. A member doesn't have to be public: for an `internal` member of a public, `partial` module, the module generates a public wrapper, and a container in another assembly calls the wrapper. A `private` member of a public service gets the public wrapper too, and when that wrapper returns the public service in place of an internal implementation, also an internal wrapper that returns the implementation, which a container in the library's own assembly or in one the library grants `InternalsVisibleTo` calls instead. This works when the member's parameter types are public and the member isn't generic. A member that isn't public and either returns an internal implementation registered under several public services or takes a parameter of an internal service the module registers gets no public wrapper: a container in another assembly reaches it through a [generated handle](#services-only-the-module-uses) instead. Overloads of a private member are reported in the library's build ([AWT112](../09-diagnostics.md#awt112)), as is a private member the module can't wrap at all ([AWT153](../09-diagnostics.md#awt153)), and a module that is not `partial` reports any private member there ([AWT194](../09-diagnostics.md#awt194)). A public overload that produces another type doesn't count as the member. A member that returns an internal implementation, also as `Task<T>` or `ValueTask<T>`, gets a wrapper that returns the public service it is registered as, as long as the registrations of that member name one public service and every hook they name is public and takes that service. A container in another assembly still matches the module's [async initializer conventions](../03-core-concepts/03-async-initialization.md#which-conventions-apply) and reads the disposal against the implementation, so it initializes and disposes the instance as a container in the library's own assembly does. A matching convention whose type or method it can't call is an error there ([AWT234](../09-diagnostics.md#awt234)). The `OnActivated` or `OnRelease` hook of a `Factory` registration can be `internal` too, beside a public overload that takes another type. The module generates a public wrapper for it, so its parameter types must be public ([AWT203](../09-diagnostics.md#awt203)) and carry no `[FromKey]` or `[Inject]` ([AWT204](../09-diagnostics.md#awt204)). When the library grants `InternalsVisibleTo` to any assembly, such a hook gets no wrapper and no error instead: a container in an assembly the library grants `InternalsVisibleTo` calls the hook directly, and any other container reports [AWT231](../09-diagnostics.md#awt231). An `internal`, `partial` module may use a private member too: only its own assembly and the assemblies the library grants `InternalsVisibleTo` can import it, so it generates an internal wrapper for the member, which their containers call. A container registration of the same service, its own `Factory` or `Instance` included, wins over the module's, which stays a member of the collection (see [several producers of one service](./01-factories-and-instances.md#several-producers-of-one-service)).

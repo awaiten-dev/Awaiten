@@ -320,6 +320,7 @@ partial class AwaitenGenerator
 	private static (List<ImplInfo> Order, Dictionary<ServiceKey, string> ServiceToImpl, Dictionary<ServiceKey, List<string>> Members, List<ServiceKey> MemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> VarianceCandidates, Dictionary<string, List<KeyedMember>> KeyedMembers, List<string> KeyedMemberOrder) CoalesceByImplementation(
 		List<RawRegistration> raw,
 		INamedTypeSymbol containerSymbol,
+		List<CrossModuleDuplicate> duplicates,
 		List<DiagnosticInfo> diagnostics)
 	{
 		List<ImplInfo> implOrder = new();
@@ -458,7 +459,7 @@ partial class AwaitenGenerator
 			{
 				ReportDuplicateKey(registration, winner!.ImplementationType, diagnostics);
 				ReportDuplicateContextualBinding(registration, winner, diagnostics);
-				ReportCrossModuleDuplicate(registration, winner, diagnostics);
+				RecordCrossModuleDuplicate(registration, winner, duplicates);
 				continue;
 			}
 
@@ -625,6 +626,16 @@ partial class AwaitenGenerator
 	///     consumed never applied and is reported.
 	/// </summary>
 	private sealed record ConditionalRegistration(ServiceKey Key, string Service, string Consumer, LocationInfo? Location);
+
+	/// <summary>
+	///     An AWT155 candidate: the unkeyed <see cref="Service" /> the imported module <see cref="Loser" /> registers at
+	///     <see cref="Location" />, although the earlier import <see cref="Winner" /> already wins its single resolution.
+	/// </summary>
+	internal sealed record CrossModuleDuplicate(string Service, LocationInfo? Location, string Winner, string Loser)
+	{
+		/// <summary>The arguments of the AWT155 message.</summary>
+		public EquatableArray<string> MessageArgs() => new([Display(Service), Winner, Loser,]);
+	}
 
 	/// <summary>
 	///     Every contextual (WhenInjectedInto) registration paired with its context key, so <see cref="BuildGraph" />
@@ -934,14 +945,16 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     AWT155: two different imported modules register the same unkeyed service with different implementations at
-	///     the same precedence tier, so which wins is decided only by [Import] order, invisible at either module. A
-	///     cross-tier loss, scans, overridable defaults, container-over-module and keyed collisions (AWT117) stay silent.
+	///     Records an AWT155 candidate: two different imported modules register the same unkeyed service with different
+	///     implementations at the same precedence tier, so which wins single resolution is decided only by [Import]
+	///     order, invisible at either module. A cross-tier loss, scans, overridable defaults, container-over-module and
+	///     keyed collisions (AWT117) stay silent. <see cref="ReportCrossModuleDuplicates" /> reports it once the graph
+	///     shows whether anything resolves the service singly.
 	/// </summary>
-	private static void ReportCrossModuleDuplicate(
+	private static void RecordCrossModuleDuplicate(
 		RawRegistration registration,
 		RawRegistration winner,
-		List<DiagnosticInfo> diagnostics)
+		List<CrossModuleDuplicate> duplicates)
 	{
 		if (registration.Key is not null
 		    || registration.IsScan
@@ -956,14 +969,51 @@ partial class AwaitenGenerator
 			return;
 		}
 
-		diagnostics.Add(new DiagnosticInfo(
-			Diagnostics.CrossModuleDuplicate,
+		duplicates.Add(new CrossModuleDuplicate(
+			registration.ServiceType,
 			LocationInfo.From(registration.Location),
-			new EquatableArray<string>([
-				Display(registration.ServiceType),
-				Display(winner.Origin.ToDisplayString(FullyQualified)),
-				Display(registration.Origin.ToDisplayString(FullyQualified)),
-			])));
+			Display(winner.Origin.ToDisplayString(FullyQualified)),
+			Display(registration.Origin.ToDisplayString(FullyQualified))));
+	}
+
+	/// <summary>
+	///     AWT155 for each recorded <paramref name="duplicates" /> entry whose service a dependency in the graph resolves
+	///     singly, directly or through a relationship such as <c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
+	///     <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> or a dispatch dictionary entry. A collection or keyed dictionary
+	///     receives every contribution, and a composite fronting the service takes single resolution itself, so neither
+	///     depends on the [Import] order. Returns the first unreported duplicate of each service no composite fronts,
+	///     which a typed resolve in user code still depends on (see <c>AwaitenAnalyzer</c>).
+	/// </summary>
+	private static Dictionary<string, CrossModuleDuplicate> ReportCrossModuleDuplicates(
+		List<CrossModuleDuplicate> duplicates,
+		List<InstanceModel> instances,
+		List<CompositeRegistration> composites,
+		List<DiagnosticInfo> diagnostics)
+	{
+		Dictionary<string, CrossModuleDuplicate> unresolved = new(StringComparer.Ordinal);
+		if (duplicates.Count == 0)
+		{
+			return unresolved;
+		}
+
+		HashSet<string> resolvedSingly = new(
+			AnalyzedDependencies(instances.SelectMany(instance => instance.WalkedDependencies()))
+				.Where(dependency => dependency is { Key: null, Kind: DependencyKind.Direct or DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask, })
+				.Select(dependency => dependency.ServiceType),
+			StringComparer.Ordinal);
+		foreach (CrossModuleDuplicate duplicate in duplicates.Where(duplicate => !composites.Any(composite => composite.Key is null && composite.Service == duplicate.Service)))
+		{
+			if (resolvedSingly.Contains(duplicate.Service))
+			{
+				diagnostics.Add(new DiagnosticInfo(Diagnostics.CrossModuleDuplicate, duplicate.Location, duplicate.MessageArgs()));
+			}
+			else if (!unresolved.ContainsKey(duplicate.Service))
+			{
+				unresolved.Add(duplicate.Service, duplicate);
+			}
+		}
+
+		return unresolved;
 	}
 
 	/// <summary>

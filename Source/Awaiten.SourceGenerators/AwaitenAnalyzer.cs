@@ -35,7 +35,9 @@ namespace Awaiten.SourceGenerators;
 ///     <see cref="Diagnostics.TypedResolveOfUnprovidedService">AWT218</see> and
 ///     <see cref="Diagnostics.TypedResolveOfWithheldService">AWT219</see> at a typed <c>Resolve&lt;T&gt;()</c>,
 ///     <c>ResolveAsync&lt;T&gt;()</c> or <c>Resolve(typeof(T))</c>, keyed or not, on a generated <c>Root</c> or
-///     <c>Scope</c> that throws at run time.
+///     <c>Scope</c> that throws at run time, and <see cref="Diagnostics.CrossModuleDuplicate">AWT155</see> at an unkeyed one
+///     whose single winner only the order of two imported modules decides, when nothing in the graph resolves the
+///     service singly.
 /// </summary>
 /// <remarks>
 ///     AWT118 is an analyzer (rather than a generator) diagnostic so that, under loose lifetime safety where
@@ -62,7 +64,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
 		ImmutableArray.Create(Diagnostics.RootAccumulatingFactory, Diagnostics.RootAccumulatingFactoryStrict, Diagnostics.AsyncOnlyDisposal,
 			Diagnostics.SuppressedDisposalProjected, Diagnostics.DuplicateInjectProperty, Diagnostics.OptionalPropertyIsInitOnly, Diagnostics.TypedResolveOfUnprovidedService,
-			Diagnostics.TypedResolveOfWithheldService, Diagnostics.NullableProduct, Diagnostics.OpenContributionWithoutClosing);
+			Diagnostics.TypedResolveOfWithheldService, Diagnostics.NullableProduct, Diagnostics.OpenContributionWithoutClosing,
+			Diagnostics.CrossModuleDuplicate);
 
 	/// <inheritdoc />
 	public override void Initialize(AnalysisContext context)
@@ -535,7 +538,9 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	// closed service, as a type argument or a typeof argument, and optionally a constant key, which the container does
 	// not hand out through that call. A Root/Scope receiver binds Resolve<T>() and the Type overloads to the generated
 	// Scope's own methods, and ResolveAsync<T>() and the keyed Resolve<T>(key) to the AwaitenResolverExtensions members.
-	// TryResolve reports absence by design, and a Type or key only known at run time stays a run-time check.
+	// TryResolve reports absence by design, and a Type or key only known at run time stays a run-time check. AWT155 at an
+	// unkeyed call that succeeds: the graph left a collision of two imported modules unreported because nothing in it
+	// resolves the service singly, but this call does.
 	private static void AnalyzeTypedResolve(
 		OperationAnalysisContext context,
 		INamedTypeSymbol containerAttribute,
@@ -566,11 +571,22 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		string display = service.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 		bool onRoot = receiver.Name == "Root";
 		string? guidance = null;
-		if (surface is null
-		    || !(key is null
+		if (surface is null)
+		{
+			return;
+		}
+
+		if (!(key is null
 			    ? surface.Fails(display, onRoot, asynchronous, MayBeVariant(service), out guidance)
 			    : surface.FailsKeyed(display, AwaitenGenerator.KeyLiteral(key), onRoot, asynchronous, out guidance)))
 		{
+			if (key is null
+			    && CachedGraph(graphByContainer, container, compilation, context.CancellationToken).Graph.UnresolvedDuplicates.TryGetValue(display, out AwaitenGenerator.CrossModuleDuplicate? duplicate))
+			{
+				context.ReportDiagnostic(Diagnostic.Create(
+					Diagnostics.CrossModuleDuplicate, invocation.Syntax.GetLocation(), duplicate.MessageArgs().AsArray().Cast<object?>().ToArray()));
+			}
+
 			return;
 		}
 
