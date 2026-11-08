@@ -173,7 +173,7 @@ An internal service registered with `Factory` or `Instance` gets a handle too. T
 
 :::warning[Rebuild against each library version]
 
-The handles and factories are public members of the library, and their signatures follow the internal types. Renaming an internal service or changing a constructor changes them. A container must be rebuilt against each new version of the library, even when the library's own public API didn't change.
+The members a module generates into `Internals` are public members of the library, but not a stable binary contract. Their signatures follow the internal types, and which of them exist follows the library's internal graph, so renaming an internal service, changing a constructor or taking an internal service in one more place can add, change or remove them. A container compiled against an older version of the library can then fail at run time, for example with a `TypeLoadException` or `MissingMethodException`. A container must be rebuilt against each new version of the library, even when the library's own public API didn't change. A package that ships a container importing a module of another package should depend on exactly the version of that package it was built against.
 
 :::
 
