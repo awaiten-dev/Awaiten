@@ -1116,6 +1116,19 @@ public class OpenGenericFactoryTests
 			await That(ContainerSource(friend, "AppContainer")).Contains("new global::Lib.CachedRepository<global::Lib.Secret>(");
 			await That(same.Diagnostics).IsEmpty();
 		}
+
+		[Test]
+		public async Task AKeyNoClosingHas_IsReportedOnceInAnotherAssembly()
+		{
+			string library = Library("internal").Replace(
+				"[Decorate(typeof(CachedRepository<>), typeof(IRepository<>))]",
+				"""[Decorate(typeof(CachedRepository<>), typeof(IRepository<>), Keys = new object[] { "audit" })]""");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, ReaderConsumer);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT210") && diagnostic.Contains("'Lib.IRepository<T>'"))
+				.Because("the open decorator reports the key once, as in the module's own assembly, and not again for its closing onto the handle");
+		}
 	}
 
 	public class Composites

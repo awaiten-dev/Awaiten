@@ -176,11 +176,17 @@ partial class AwaitenGenerator
 		/// <summary>
 		///     Whether the decorator wraps at least one base implementation under the keys it selects. Reports AWT210
 		///     for each key named in <c>Keys</c> without a registration, and AWT123 when an unset <c>Keys</c> or
-		///     <c>AllKeys</c> finds nothing to decorate.
+		///     <c>AllKeys</c> finds nothing to decorate, except for the closing of an open decorator onto a handle, whose
+		///     open decorator reports them.
 		/// </summary>
 		private bool HasSomethingToWrap(string service, DecorateRegistration decorator, List<string?> populated)
 		{
 			bool any = populated.Any(key => Selects(decorator, key));
+			if (decorator.ThroughHandle)
+			{
+				return any;
+			}
+
 			if (decorator.Keys is { Count: > 0, } keys && !(keys.Count == 1 && keys[0] is null))
 			{
 				foreach (string? key in keys.Where(key => !populated.Any(resolutionKey => SelectedBy(key, resolutionKey))))
