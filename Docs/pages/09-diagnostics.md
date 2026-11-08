@@ -2210,14 +2210,15 @@ An imported module of another assembly registers an implementation the container
 
 ```csharp no-compile
 // In a referenced library that grants InternalsVisibleTo to its test project:
+internal sealed class Calibration { }
+
 internal sealed class Grinder : IGrinder
 {
-    [Inject(Optional = true)]
-    public IBurr? Burr { get; set; }
+    public Grinder(Calibration calibration) { }
 }
 
 [Module]
-[Singleton<Grinder, IGrinder>]   // the factory can't take an optional property, so the module skips it
+[Singleton<Grinder, IGrinder>]   // the factory can't take the internal Calibration, so the module skips it
 public static partial class EquipmentModule;
 
 // In the application, which the library does not grant InternalsVisibleTo:
@@ -2226,7 +2227,7 @@ public static partial class EquipmentModule;
 public static partial class CoffeeShop;
 ```
 
-A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor parameter type that isn't public ([AWT195](#awt195)), an `Optional` or `Deferred` injected property ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because the open registration names a lifecycle hook or a constraint type isn't public, and a container that can't construct the open type reports this error with that reason.
+A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor parameter type that isn't public ([AWT195](#awt195)), an injected property the factory can't set, such as one named like a constructor parameter ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because the open registration names a lifecycle hook or a constraint type isn't public, and a container that can't construct the open type reports this error with that reason.
 
 **Fix:** Grant the container's assembly `InternalsVisibleTo` in the library. Or make the implementation, its constructor and the constructor's parameter types public, or, for a hook or a scan match, fix the reason the message names.
 
