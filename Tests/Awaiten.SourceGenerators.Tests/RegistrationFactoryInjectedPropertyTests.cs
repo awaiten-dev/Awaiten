@@ -855,6 +855,35 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task InAnotherAssembly_ReportsAScanMatchOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Scan<IGreeter>(As = ScanAs.Marker)]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT193") && diagnostic.Contains("Lib.Greeter"))
+				.Because("a scan never fails the build, so the extending container skips the match with a warning instead of building it without the property");
+		}
+
+		[Test]
 		public async Task InAnotherAssembly_ReportsADecoratorOfTheBaseWhosePropertyItCannotSet()
 		{
 			string library = """
