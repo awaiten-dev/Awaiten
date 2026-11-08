@@ -14,12 +14,12 @@ This page opens a coffee shop from scratch. By the end you have a working contai
 
 :::info[.NET SDK 10.0.300 and C# 11]
 - Build with the .NET SDK 10.0.300 or later. The source generator needs the C# compiler that ships with it.
-- Write C# 11 or later. The registration attributes, such as `[Singleton<T>]`, are generic attributes.
+- Write C# 11 or later. The registration attributes, such as `[Singleton<T>]`, are generic attributes. The generated code needs C# 9, or C# 11 for a module that declares a `[Scan]`; on an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
 - Target `net10.0`, `net8.0` or any framework that supports `netstandard2.0`, including .NET Framework 4.8.
 :::
 
 :::tip[.NET Framework and netstandard2.0 projects]
-Projects that target .NET Framework or netstandard2.0 default to C# 7.3. Raise the language version in the project file:
+Projects that target .NET Framework or netstandard2.0 default to C# 7.3, which is too old for Awaiten. Raise the language version in the project file:
 
 ```xml
 <LangVersion>latest</LangVersion>

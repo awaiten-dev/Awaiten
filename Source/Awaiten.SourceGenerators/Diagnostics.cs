@@ -2089,4 +2089,16 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The project compiles with a C# version older than the code the generator would emit for a container or module
+	///     needs, so nothing is generated for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnsupportedLanguageVersion = new(
+		"AWT243",
+		"Language version too old for the generated code",
+		"The code Awaiten generates for '{0}' needs C# {1} or later, but the project compiles with C# {2}; set <LangVersion> to {1} or later, for example latest",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

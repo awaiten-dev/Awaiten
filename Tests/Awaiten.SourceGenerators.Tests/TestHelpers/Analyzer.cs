@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Awaiten.SourceGenerators.Tests.TestHelpers;
@@ -34,19 +35,34 @@ public static class Analyzer
 		return Run<TAnalyzer>(source, [Generator.EmitToReference(referenced),], []);
 	}
 
-	private static async Task<string[]> Run<TAnalyzer>(
+	/// <summary>
+	///     Like <see cref="Run{TAnalyzer}(string, Type[])" />, but compiles <paramref name="source" /> at
+	///     <paramref name="languageVersion" />, where the generator may report AWT243 instead of generating a container.
+	/// </summary>
+	public static Task<string[]> Run<TAnalyzer>(
+		LanguageVersion languageVersion,
+		[StringSyntax("c#-test")] string source)
+		where TAnalyzer : DiagnosticAnalyzer, new()
+		=> Analyze<TAnalyzer>(Generator.RunGenerator(source, [], [], languageVersion: languageVersion), "AWT243");
+
+	private static Task<string[]> Run<TAnalyzer>(
 		[StringSyntax("c#-test")] string source,
 		MetadataReference[] additionalReferences,
 		Type[] assemblyTypes)
 		where TAnalyzer : DiagnosticAnalyzer, new()
+		=> Analyze<TAnalyzer>(Generator.RunGenerator(source, additionalReferences, assemblyTypes));
+
+	private static async Task<string[]> Analyze<TAnalyzer>(
+		(Compilation Output, GeneratorDriverRunResult Result) run,
+		params string[] expectedErrors)
+		where TAnalyzer : DiagnosticAnalyzer, new()
 	{
-		(Compilation outputCompilation, GeneratorDriverRunResult generatorResult) =
-			Generator.RunGenerator(source, additionalReferences, assemblyTypes);
+		(Compilation outputCompilation, GeneratorDriverRunResult generatorResult) = run;
 
 		// A snippet that fails to compile would pass negative assertions vacuously, so fail loudly instead.
 		string[] errors = generatorResult.Diagnostics
 			.Concat(outputCompilation.GetDiagnostics())
-			.Where(d => d.Severity == DiagnosticSeverity.Error)
+			.Where(d => d.Severity == DiagnosticSeverity.Error && !expectedErrors.Contains(d.Id))
 			.Select(d => d.ToString())
 			.ToArray();
 		if (errors.Length > 0)

@@ -27,6 +27,17 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	private const string ModuleAttributeName = "Awaiten.ModuleAttribute";
 	private const string AttributeNamespace = "Awaiten";
 
+	/// <summary>
+	///     The oldest C# version the generated code compiles under: it uses <c>not</c> patterns and static lambdas.
+	/// </summary>
+	internal const LanguageVersion MinimumLanguageVersion = LanguageVersion.CSharp9;
+
+	/// <summary>
+	///     The oldest C# version the generated partial of a module that declares a <c>[Scan]</c> compiles under: it
+	///     carries a generic <c>[GeneratedScanRegistration&lt;TService&gt;]</c> per match.
+	/// </summary>
+	private const LanguageVersion ModuleScanLanguageVersion = LanguageVersion.CSharp11;
+
 	/// <inheritdoc />
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
@@ -45,7 +56,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				spc.ReportDiagnostic(diagnostic.ToDiagnostic());
 			}
 
-			spc.AddSource(model.HintName, SourceText.From(Sources.Emit(model), Encoding.UTF8));
+			if (!model.SkipsGeneration)
+			{
+				spc.AddSource(model.HintName, SourceText.From(Sources.Emit(model), Encoding.UTF8));
+			}
 		});
 
 		// A second root: a [Module] that declares a [Scan] self-compiles it, emitting a factory + registration per
@@ -55,7 +69,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			.ForAttributeWithMetadataName(
 				ModuleAttributeName,
 				static (node, _) => node is ClassDeclarationSyntax,
-				static (ctx, ct) => BuildModuleModel(ctx, ct))
+				static (ctx, ct) => RequireLanguageVersion(BuildModuleModel(ctx, ct), ctx))
 			.Where(static model => model is not null)
 			.Select(static (model, _) => model!);
 
@@ -269,6 +283,39 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
+	///     Replaces the model of a module that generates code with one that carries only AWT243 when the project's
+	///     language version is older than that code needs.
+	/// </summary>
+	private static ModuleScanModel? RequireLanguageVersion(ModuleScanModel? model, GeneratorAttributeSyntaxContext context)
+	{
+		if (model is not ({ Expanded: true, } or { NotPartialMarker: not null, }))
+		{
+			return model;
+		}
+
+		LanguageVersion required = model.DeclaresScan ? ModuleScanLanguageVersion : MinimumLanguageVersion;
+		return UnsupportedLanguageVersion(context, required) is { } diagnostic
+			? new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, new EquatableArray<DiagnosticInfo>([diagnostic,]), false, default, default, null)
+			: model;
+	}
+
+	/// <summary>
+	///     AWT243 when the project compiles with a C# version older than <paramref name="required" />, otherwise
+	///     <see langword="null" />. Every syntax tree of a compilation has the same language version, so the tree of the
+	///     attributed type tells, and a changed version re-parses every tree, which re-runs the transform.
+	/// </summary>
+	private static DiagnosticInfo? UnsupportedLanguageVersion(GeneratorAttributeSyntaxContext context, LanguageVersion required)
+	{
+		LanguageVersion version = ((CSharpParseOptions)context.TargetNode.SyntaxTree.Options).LanguageVersion;
+		return version >= required
+			? null
+			: new DiagnosticInfo(
+				Diagnostics.UnsupportedLanguageVersion,
+				LocationInfo.From(context.TargetSymbol.Locations.FirstOrDefault()),
+				new EquatableArray<string>([Display(context.TargetSymbol.ToDisplayString(FullyQualified)), required.ToDisplayString(), version.ToDisplayString(),]));
+	}
+
+	/// <summary>
 	///     Reports AWT235 when <paramref name="type" />, a module or container, declares a member named like the
 	///     generated <see cref="InternalsClass" />, and returns whether it did.
 	/// </summary>
@@ -313,6 +360,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		if (context.TargetSymbol is not INamedTypeSymbol containerSymbol)
 		{
 			return null;
+		}
+
+		if (UnsupportedLanguageVersion(context, MinimumLanguageVersion) is { } unsupported)
+		{
+			return new ContainerModel(null, default, containerSymbol.Name, string.Empty, default, new EquatableArray<DiagnosticInfo>([unsupported,]), false, false, false, SkipsGeneration: true);
 		}
 
 		Compilation compilation = context.SemanticModel.Compilation;

@@ -11,7 +11,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     the host: <c>[ImportServices]</c>, the closed <c>[ImportService]</c> types and the unbound generic
 ///     definitions of the open ones. <see cref="Factories" /> are the factories the container generates for its private
 ///     implementations, so a container that extends it can build them, and <see cref="Wrappers" /> forward to its private
-///     members its registrations name.
+///     members its registrations name. <see cref="SkipsGeneration" /> marks a container the project's language version is too
+///     old for, which only reports its <see cref="Diagnostics" />.
 /// </summary>
 internal sealed record ContainerModel(
 	string? Namespace,
@@ -31,7 +32,8 @@ internal sealed record ContainerModel(
 	EquatableArray<string> ImportedServices = default,
 	EquatableArray<string> ImportedDefinitions = default,
 	EquatableArray<RegistrationFactory> Factories = default,
-	EquatableArray<MemberWrapper> Wrappers = default)
+	EquatableArray<MemberWrapper> Wrappers = default,
+	bool SkipsGeneration = false)
 {
 	public bool Imports => ImportServices || ImportedServices.Count > 0 || ImportedDefinitions.Count > 0;
 
