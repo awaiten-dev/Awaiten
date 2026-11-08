@@ -833,6 +833,21 @@ partial class AwaitenGenerator
 		    || !TryMirrorInjectedProperties(implementation, context with { Diagnostics = rejections, }, first.Location, subject, ref parameters, out members)
 		    || rejections.Count > 0)
 		{
+			// A parameter of an internal service the module cannot build fails only because of that service, whose cause
+			// the module reports, so a consumer names the service instead of a second, misleading cause.
+			if (context.Hidden is { } hidden
+			    && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null
+			    && rejections.Find(hidden.UnbuildableNeeds.ContainsKey) is { } need)
+			{
+				string unbuildable = hidden.UnbuildableNeeds[need];
+				rejections.RemoveAll(hidden.UnbuildableNeeds.ContainsKey);
+				if (rejections.Count == 0)
+				{
+					skipped.Add(new SkippedRegistration(RegistrationSkippedName(implementation), unbuildable));
+					return null;
+				}
+			}
+
 			string?[] reasons = rejections.Select(rejection => SkipReason(rejection, services)).ToArray();
 			if (!scannedToo
 			    && friendsCanConstruct

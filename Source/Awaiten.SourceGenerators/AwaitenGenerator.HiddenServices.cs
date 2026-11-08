@@ -118,6 +118,12 @@ partial class AwaitenGenerator
 		/// <summary>The non-viable services something the module emits needed, whose cause the module reports.</summary>
 		public HashSet<INamedTypeSymbol> NeededNonViable { get; } = new(SymbolEqualityComparer.Default);
 
+		/// <summary>
+		///     The rejections of a parameter that takes a <see cref="NonViable" /> service, whose own cause the module reports
+		///     instead, each with the reason a consumer reports for what takes the parameter.
+		/// </summary>
+		public Dictionary<DiagnosticInfo, string> UnbuildableNeeds { get; } = new();
+
 		/// <summary>The internal services a factory being built for viability takes, or <see langword="null" /> when none is.</summary>
 		public HashSet<INamedTypeSymbol>? Referenced { get; set; }
 

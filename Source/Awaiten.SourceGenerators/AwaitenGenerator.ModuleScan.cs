@@ -1120,10 +1120,16 @@ partial class AwaitenGenerator
 
 		if (!FitsFactorySignature(parameter.Type, context))
 		{
-			diagnostics.Add(new DiagnosticInfo(
+			DiagnosticInfo rejection = new(
 				Diagnostics.ModuleScanParameterInaccessible,
 				LocationInfo.From(location),
-				new EquatableArray<string>([subject.Subject, label, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,])));
+				new EquatableArray<string>([subject.Subject, label, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,]));
+			if (context.Hidden is { } services && HiddenShapeOf(parameter.Type) is ({ }, INamedTypeSymbol service) && services.NonViable.Contains(service))
+			{
+				services.UnbuildableNeeds[rejection] = $"{label} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
+			}
+
+			diagnostics.Add(rejection);
 			return false;
 		}
 
