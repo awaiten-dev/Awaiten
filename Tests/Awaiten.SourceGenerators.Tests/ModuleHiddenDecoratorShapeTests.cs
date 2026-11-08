@@ -238,6 +238,7 @@ public partial class ModuleHiddenDecoratorShapeTests
 
 		[Test]
 		[Arguments("[Singleton<OtherStore, IStore>]")]
+		[Arguments("")]
 		public async Task OfAnInternalBaseTypeOfTheService_ReportsAwt133InEveryContainer(string registration)
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll($$"""
@@ -268,6 +269,72 @@ public partial class ModuleHiddenDecoratorShapeTests
 				.Because("the container judges the collection against the internal service, whether the factory takes it as the handles of the internal base type or the module could build no factory");
 			await That(Ids(external)).IsEqualTo(["AWT133",]);
 			await That(Ids(friend)).IsEqualTo(["AWT133",]);
+		}
+	}
+
+	public class UnregisteredInternalDependency
+	{
+		[Test]
+		[Arguments("IBeanStore")]
+		[Arguments("IStore")]
+		public async Task OfADecorator_ReportsAwt101InEveryContainer(string inner)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll($$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IStore { }
+				public interface IGrinder { }
+				internal interface IClock { }
+				internal interface IBeanStore : IStore { }
+				internal sealed class BeanStore : IBeanStore { }
+				internal sealed class LoggingStore : IBeanStore { public LoggingStore({{inner}} inner, IClock clock) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(IBeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore, IBeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				[Decorate<LoggingStore, IBeanStore>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(Ids(same)).IsEqualTo(["AWT101",]);
+			await That(external.Diagnostics).Contains("*AWT101*'Lib.IBeanStore' cannot be resolved: 'Lib.LoggingStore' requires 'Lib.IClock'*").AsWildcard()
+				.Because("the module records the internal dependency nothing registers, so the container reports it as a container in the module's assembly does");
+			await That(Ids(external)).IsEqualTo(["AWT101",]);
+			await That(Ids(friend)).IsEqualTo(["AWT101",]);
+		}
+
+		[Test]
+		public async Task OfAComposite_ReportsAwt101InEveryContainer()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll("""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal interface IClock { }
+				internal interface IBeanStore { }
+				internal sealed class BeanStore : IBeanStore { }
+				internal sealed class AllStores : IBeanStore { public AllStores(IEnumerable<IBeanStore> stores, IClock clock) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(IBeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore, IBeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				[Composite<AllStores, IBeanStore>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(Ids(same)).IsEqualTo(["AWT101",]);
+			await That(external.Diagnostics).Contains("*AWT101*'Lib.AllStores' requires 'Lib.IClock'*").AsWildcard();
+			await That(Ids(external)).IsEqualTo(["AWT101",]);
+			await That(Ids(friend)).IsEqualTo(["AWT101",]);
 		}
 	}
 

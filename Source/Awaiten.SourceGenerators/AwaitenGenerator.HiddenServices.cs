@@ -1200,6 +1200,96 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     What a container in the module's own assembly reports for a decorator or composite of an internal service whose
+	///     factory <paramref name="name" /> the module cannot build, recorded so a container in another assembly reports
+	///     the same instead of AWT230: the collection element of a composite that is a base type of the composed service
+	///     (AWT133, see <see cref="CompositeCollectionMarkerName" />), or an internal constructor parameter type that no
+	///     module of the assembly registers (AWT101, see <see cref="UnregisteredDependencyMarkerName" />). Any other cause
+	///     records nothing.
+	/// </summary>
+	private static SkippedRegistration? ContributionFault(INamedTypeSymbol type, INamedTypeSymbol service, string name, bool composite, ModuleScanContext context)
+	{
+		Compilation compilation = context.Compilation;
+		IMethodSymbol? constructor = SelectConstructor(
+			type, context.Module, compilation, Array.Empty<string>(), new ExternalSurface(false, new ExternalServiceTypes()), _ => true);
+		if (constructor is null)
+		{
+			return null;
+		}
+
+		IParameterSymbol? skippedParameter = composite ? null : InnerParameter(constructor, service, compilation);
+		if (composite)
+		{
+			ITypeSymbol? related = null;
+			foreach (IParameterSymbol parameter in constructor.Parameters)
+			{
+				if (!TryGetCompositeCollectionElement(parameter.Type, out ITypeSymbol? element))
+				{
+					continue;
+				}
+
+				if (SymbolEqualityComparer.Default.Equals(element, service))
+				{
+					skippedParameter = parameter;
+					related = null;
+					break;
+				}
+
+				related ??= compilation.HasImplicitConversion(service, element!) ? element : null;
+			}
+
+			if (related is not null)
+			{
+				return new SkippedRegistration(CompositeCollectionMarkerName(name), Display(related.ToDisplayString(FullyQualified)), Contribution: true);
+			}
+		}
+
+		foreach (IParameterSymbol parameter in constructor.Parameters)
+		{
+			if (!SymbolEqualityComparer.Default.Equals(parameter, skippedParameter)
+			    && !parameter.HasExplicitDefaultValue
+			    && parameter.Type is INamedTypeSymbol dependency
+			    && !TryGetCompositeCollectionElement(dependency, out _)
+			    && !FitsFactorySignature(dependency, context)
+			    && TypeHiddenInModule(dependency, context.Module, compilation) is null
+			    && !context.Hidden!.Assembly.Registrations.Values.Any(registrations => registrations.Any(registration => SymbolEqualityComparer.Default.Equals(registration.Service, dependency))))
+			{
+				return new SkippedRegistration(UnregisteredDependencyMarkerName(name), Display(dependency.ToDisplayString(FullyQualified)), Contribution: true);
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>The name of the constant that records the collection element of a composite a consumer reports as AWT133 (see <see cref="ContributionFault" />).</summary>
+	private static string CompositeCollectionMarkerName(string factoryName) => "Collection" + factoryName;
+
+	/// <summary>The name of the constant that records the dependency of a decorator or composite a consumer reports as AWT101 (see <see cref="ContributionFault" />).</summary>
+	private static string UnregisteredDependencyMarkerName(string factoryName) => "Unregistered" + factoryName;
+
+	/// <summary>
+	///     The diagnostic the imported module of another assembly recorded for its decorator or composite
+	///     <paramref name="type" /> of <paramref name="service" /> whose factory <paramref name="name" /> it could not build
+	///     (see <see cref="ContributionFault" />), or <see langword="null" /> when it recorded none.
+	/// </summary>
+	private static DiagnosticInfo? RecordedContributionFault(INamedTypeSymbol module, string name, INamedTypeSymbol type, INamedTypeSymbol service, Location? location)
+	{
+		string typeName = Display(type.ToDisplayString(FullyQualified));
+		string serviceName = Display(service.ToDisplayString(FullyQualified));
+		if (RecordedConstant(module, CompositeCollectionMarkerName(name)) is { } element)
+		{
+			return new DiagnosticInfo(Diagnostics.CompositeCollectionNotOfComposedService, LocationInfo.From(location), new EquatableArray<string>([typeName, element, serviceName,]));
+		}
+
+		return RecordedConstant(module, UnregisteredDependencyMarkerName(name)) is { } dependency
+			? new DiagnosticInfo(Diagnostics.MissingDependency, LocationInfo.From(location), new EquatableArray<string>([serviceName, typeName, dependency,]))
+			: null;
+
+		static string? RecordedConstant(INamedTypeSymbol module, string constant)
+			=> InternalsMembers(module, constant).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(value => value is not null);
+	}
+
+	/// <summary>
 	///     Mirrors the <c>Factory</c> or <c>Instance</c> member that produces <paramref name="candidate" /> onto the
 	///     wrapper that puts its result into the handle: a static field or property converting to the implementation, or
 	///     one static, non-generic method, whose parameters the wrapper mirrors like a constructor's, and which may return

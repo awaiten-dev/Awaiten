@@ -1094,7 +1094,9 @@ partial class AwaitenGenerator
 	///     module generates for it (see <see cref="CollectModuleContributionFactories" />): from metadata in another
 	///     assembly, or by its deterministic name in the module's own assembly when the type is private to the module,
 	///     preferring the internal factory that takes the internal services instead of their handles where the container
-	///     can see it. Without a factory, one inherited through <c>Extends</c> is AWT226 and any other is AWT230.
+	///     can see it. Without a factory, one inherited through <c>Extends</c> is AWT226, one whose module recorded what a
+	///     container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and any
+	///     other is AWT230.
 	/// </summary>
 	private static bool UnavailableContribution(ContributionContext context, AttributeData attribute, INamedTypeSymbol attributeClass, out OwnerFactoryCall? via)
 	{
@@ -1148,6 +1150,12 @@ partial class AwaitenGenerator
 		if (inheritance is not null)
 		{
 			return InaccessibleInheritedType(attribute, attributeClass, inheritance, diagnostics, out _);
+		}
+
+		if (name is not null && RecordedContributionFault(module, name, closedType!, service!, context.Location) is { } fault)
+		{
+			diagnostics.Add(fault);
+			return true;
 		}
 
 		return IsUnconstructibleModuleContribution(module, type, attributeClass.Name == "CompositeAttribute" ? "the composite" : "the decorator", context.Location, compilation, diagnostics);

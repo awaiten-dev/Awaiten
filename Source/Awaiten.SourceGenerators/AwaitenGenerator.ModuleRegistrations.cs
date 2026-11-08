@@ -481,9 +481,11 @@ partial class AwaitenGenerator
 	///     construct it reports it at its <c>[Import]</c> (AWT230), as before. A public type another assembly constructs
 	///     itself, but whose <c>[Inject]</c> property it cannot set, is reported to <paramref name="diagnostics" /> instead,
 	///     since such a container would silently leave the property out. In the module's own build, one over an
-	///     internal service is built into the service's handle instead (see <see cref="HiddenContributionFactory" />).
+	///     internal service is built into the service's handle instead (see <see cref="HiddenContributionFactory" />), and
+	///     when it cannot be, what a consumer reports instead is added to <paramref name="skipped" /> (see
+	///     <see cref="ContributionFault" />).
 	/// </summary>
-	private static List<RegistrationFactory> CollectModuleContributionFactories(INamedTypeSymbol module, Compilation compilation, HiddenServices? hidden = null, List<DiagnosticInfo>? diagnostics = null)
+	private static List<RegistrationFactory> CollectModuleContributionFactories(INamedTypeSymbol module, Compilation compilation, HiddenServices? hidden = null, List<DiagnosticInfo>? diagnostics = null, List<SkippedRegistration>? skipped = null)
 	{
 		List<RegistrationFactory> factories = new();
 		ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal), hidden);
@@ -505,7 +507,12 @@ partial class AwaitenGenerator
 			RegistrationFactory? built;
 			if (hidden is not null && (hidden.Services.ContainsKey(service) || hidden.ProvidedElsewhere(service)))
 			{
-				built = HiddenContributionFactory(type, service, name, attributeClass.Name == "CompositeAttribute", context);
+				bool composite = attributeClass.Name == "CompositeAttribute";
+				built = HiddenContributionFactory(type, service, name, composite, context);
+				if (built is null && skipped is not null && ContributionFault(type, service, name, composite, context) is { } fault)
+				{
+					skipped.Add(fault);
+				}
 			}
 			else if (SelfCompilesRegistration(module, type, service, compilation))
 			{
