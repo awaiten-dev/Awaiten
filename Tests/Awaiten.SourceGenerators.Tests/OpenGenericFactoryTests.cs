@@ -195,6 +195,98 @@ public class OpenGenericFactoryTests
 		}
 	}
 
+	public class ClosedAndOpenRegistrations
+	{
+		private const string ReaderConsumer = """
+		                                      using Awaiten;
+		                                      using Lib;
+
+		                                      namespace App;
+
+		                                      public sealed class Checkout
+		                                      {
+		                                          public Checkout(IRepository<Item> repository, IReader<Item> reader) { }
+		                                      }
+
+		                                      [Container]
+		                                      [Import(typeof(DataModule))]
+		                                      [Transient<Checkout>]
+		                                      public static partial class AppContainer
+		                                      {
+		                                      }
+		                                      """;
+
+		private static string Library(string repository, string covering = " : IReader<T>")
+			=> $$"""
+			     using Awaiten;
+
+			     namespace Lib;
+
+			     public interface IReader<T> { }
+			     public interface IRepository<T>{{covering}} { }
+			     public sealed class Item { }
+
+			     [Module]
+			     [Singleton<{{repository}}<Item>, IReader<Item>>]
+			     [Singleton(typeof({{repository}}<>), typeof(IRepository<>))]
+			     public static partial class DataModule
+			     {
+			         private sealed class Hidden<T> : IRepository<T>, IReader<T> { }
+			     }
+
+			     internal sealed class Repository<T> : IRepository<T>, IReader<T> { }
+			     """;
+
+		private static string InTheSameAssembly(string library)
+			=> library + ReaderConsumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty);
+
+		[Test]
+		[Arguments("Repository")]
+		[Arguments("DataModule.Hidden")]
+		public async Task AContainerInAnotherAssembly_SharesOneInstanceThroughTheCoveringFactory(string repository)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(repository), ReaderConsumer);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the open factory returns IRepository<Item>, which covers the closed registration's service, so it builds the one instance");
+			await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Registration_").And.Contains("<global::Lib.Item>()");
+		}
+
+		[Test]
+		public async Task AContainerInTheSameAssembly_SharesOneInstanceOfAPrivateType()
+		{
+			GeneratorResult result = Generator.Run(InTheSameAssembly(Library("DataModule.Hidden")));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container calls the one factory whose return type covers both services");
+		}
+
+		[Test]
+		public async Task ServicesNoFactoryCovers_AreReportedInAnotherAssembly()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library("Repository", covering: string.Empty), ReaderConsumer);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("Lib.IReader<Lib.Item>, Lib.IRepository<Lib.Item>"))
+				.Because("neither generated factory returns a type that serves both services of the one instance");
+		}
+
+		[Test]
+		public async Task ServicesNoFactoryCovers_AreReportedForAPrivateTypeInTheSameAssembly()
+		{
+			GeneratorResult result = Generator.Run(InTheSameAssembly(Library("DataModule.Hidden", covering: string.Empty)));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT216") && diagnostic.Contains("no accessible type it converts to covers all of its services"));
+		}
+
+		[Test]
+		public async Task AFriend_ConstructsTheInternalTypeOnce()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Library("Repository", covering: string.Empty)), ReaderConsumer);
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+	}
+
 	public class Constraints
 	{
 		[Test]

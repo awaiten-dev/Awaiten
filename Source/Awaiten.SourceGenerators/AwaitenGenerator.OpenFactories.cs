@@ -514,6 +514,100 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Lets a closed registration and the closing of an open registration of the same type, which the container builds
+	///     through two different generated factories of one module, share the one instance coalescing makes of them, as
+	///     a container that constructs the type does: every registration of the type takes the factory whose return type
+	///     converts to all of their services. When none does, the one instance cannot be held as a type that serves them
+	///     all, so the container reports why (AWT231, or AWT216 for a type private to a module of its own assembly), keeps
+	///     the first registration and leaves the others out.
+	/// </summary>
+	private static void ShareOwnerFactoryInstances(List<RawRegistration> raw, Compilation compilation, HashSet<string> constraintRejected, List<DiagnosticInfo> diagnostics)
+	{
+		HashSet<int> dropped = new();
+		foreach (List<int> group in Enumerable.Range(0, raw.Count)
+			         .Where(index => raw[index] is { Origin: not null, ServiceSymbol: not null, OnActivated: null, OnRelease: null, } && OwnerFactoryOf(raw[index]) is not null)
+			         .GroupBy(index => raw[index].ImplementationType)
+			         .Select(indices => indices.ToList()))
+		{
+			List<RawRegistration> registrations = group.Select(index => raw[index]).ToList();
+			if (!registrations.Any(registration => registration.IsSynthesized)
+			    || registrations.Select(OwnerFactoryOf).Distinct(StringComparer.Ordinal).Count() < 2
+			    || registrations.Select(registration => registration.Origin).Distinct<INamedTypeSymbol?>(SymbolEqualityComparer.Default).Count() > 1)
+			{
+				continue;
+			}
+
+			if (registrations.FirstOrDefault(candidate => OwnerFactoryProduct(candidate) is { } product
+			                                              && registrations.All(registration => compilation.HasImplicitConversion(product, registration.ServiceSymbol))) is { } winner)
+			{
+				foreach (int index in group)
+				{
+					raw[index] = raw[index] with
+					{
+						Implementation = winner.Implementation,
+						Production = winner.Production,
+						ProductionMember = winner.ProductionMember,
+						GenericFactory = winner.GenericFactory,
+						Traits = winner.Traits,
+						TraitsExact = winner.TraitsExact,
+						ConstructVia = winner.ConstructVia,
+						ConstructViaType = winner.ConstructViaType,
+						Constructor = winner.Constructor,
+					};
+				}
+
+				continue;
+			}
+
+			RawRegistration first = registrations[0];
+			string type = DisplayInstance(first.ImplementationType);
+			string services = string.Join(", ", registrations.Select(registration => Display(registration.ServiceType)).Distinct(StringComparer.Ordinal));
+			diagnostics.Add(first.ConstructVia is null
+				? new DiagnosticInfo(
+					Diagnostics.ModuleRegistrationNotSelfCompiled,
+					LocationInfo.From(first.Location),
+					new EquatableArray<string>([
+						Display(first.Origin!.ToDisplayString(FullyQualified)), type, "factory",
+						$"it is registered closed and as an open generic under services ({services}) that no single one of its generated factories covers",
+						"register it under services one of which covers the others",
+					]))
+				: new DiagnosticInfo(
+					Diagnostics.RegisteredTypeLessAccessible,
+					LocationInfo.From(first.Location),
+					new EquatableArray<string>([
+						type, type,
+						$"no accessible type it converts to covers all of its services ({services})",
+						"register it under services one of which covers the others, or make it internal",
+					])));
+			foreach (int index in group.Skip(1))
+			{
+				dropped.Add(index);
+				constraintRejected.Add(raw[index].ServiceType);
+			}
+		}
+
+		for (int index = raw.Count - 1; index >= 0; index--)
+		{
+			if (dropped.Contains(index))
+			{
+				raw.RemoveAt(index);
+			}
+		}
+
+		static string? OwnerFactoryOf(RawRegistration registration)
+			=> registration.ConstructVia
+			   ?? (registration.Production == ProductionKind.Factory && registration.ProductionMember?.StartsWith(InternalsClass + ".", StringComparison.Ordinal) == true
+				   ? registration.ProductionMember
+				   : null);
+
+		static INamedTypeSymbol? OwnerFactoryProduct(RawRegistration registration)
+			=> registration.ConstructVia is null
+				? registration.Implementation
+				: new[] { registration.Implementation, }.Concat(registration.Implementation.AllInterfaces).Concat(BaseTypes(registration.Implementation))
+					.FirstOrDefault(candidate => candidate.ToDisplayString(FullyQualified) == registration.ConstructViaType);
+	}
+
+	/// <summary>
 	///     Why the owner of another assembly generated no factory for an open contribution, or <see langword="null" />: the
 	///     reason it recorded, or why it can carry no generated member at all (see <see cref="ModuleShapeReason" />).
 	/// </summary>

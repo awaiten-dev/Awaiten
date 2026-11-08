@@ -99,6 +99,7 @@ partial class AwaitenGenerator
 		if (open.Count > 0)
 		{
 			ExpandOpenGenerics(result, open, new ExpansionInputs(containerSymbol, compilation, external, injectProperties, wrappers), diagnostics, constraintRejected);
+			ShareOwnerFactoryInstances(result, compilation, constraintRejected, diagnostics);
 		}
 
 		if (inheritance is not null)

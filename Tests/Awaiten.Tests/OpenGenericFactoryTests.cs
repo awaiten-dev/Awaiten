@@ -130,6 +130,17 @@ public sealed partial class OpenGenericFactoryTests
 				.Because("the module closes its open decorator onto its internal closing and builds it into the closing's handle");
 		}
 
+		[Test]
+		public async Task AClosedAndAnOpenRegistrationOfOneType_ShareOneInstance()
+		{
+			await using SharedOpenContainer.Root container = new();
+
+			SharedOpenContainer.Consumer consumer = container.Resolve<SharedOpenContainer.Consumer>();
+
+			await That(consumer.Reader).IsSameAs((object)consumer.Repository)
+				.Because("both registrations build the one singleton through the factory whose return type serves both services");
+		}
+
 		private static IOpenStore<T> Innermost<T>(IOpenStore<T> store)
 			where T : class
 			=> store.Inner is { } inner ? Innermost(inner) : store;
@@ -172,6 +183,16 @@ public sealed partial class OpenGenericFactoryTests
 			await That(record.Disposed).IsTrue();
 			await That(container.Resolve<IRecordSink<Order>>().Count).IsEqualTo(2)
 				.Because("the private composite fronts both sinks");
+		}
+
+		[Test]
+		public async Task AClosedAndAnOpenRegistrationOfOnePrivateType_ShareOneInstance()
+		{
+			await using SharedRecordContainer.Root container = new();
+
+			SharedRecordContainer.Consumer consumer = container.Resolve<SharedRecordContainer.Consumer>();
+
+			await That(consumer.Sink).IsSameAs((object)consumer.Record);
 		}
 
 		[Test]
@@ -301,6 +322,19 @@ public sealed partial class OpenGenericFactoryTests
 	public static partial class OpenModuleContainer;
 
 	[Container]
+	[Import(typeof(SharedOpenGenericModule))]
+	[Transient<Consumer>]
+	public static partial class SharedOpenContainer
+	{
+		public sealed class Consumer(ISharedOpenReader<SharedOpenEntity> reader, ISharedOpenRepository<SharedOpenEntity> repository)
+		{
+			public ISharedOpenReader<SharedOpenEntity> Reader => reader;
+
+			public ISharedOpenRepository<SharedOpenEntity> Repository => repository;
+		}
+	}
+
+	[Container]
 	[Import(typeof(FriendOpenGenericModule))]
 	[Singleton<OpenClock, IOpenClock>]
 	[Scoped<FriendOpenCheckout>]
@@ -374,6 +408,32 @@ public sealed partial class OpenGenericFactoryTests
 	[Container]
 	[Import(typeof(ClosedDecoratorModule))]
 	public static partial class ClosedDecoratorContainer;
+
+	public interface ISharedRecord<T> : IRecordSink<T>;
+
+	[Module]
+	[Singleton<SharedRecordModule.Shared<Order>, IRecordSink<Order>>]
+	[Singleton(typeof(SharedRecordModule.Shared<>), typeof(ISharedRecord<>))]
+	public static partial class SharedRecordModule
+	{
+		private sealed class Shared<T> : ISharedRecord<T>
+		{
+			public int Count => 1;
+		}
+	}
+
+	[Container]
+	[Import(typeof(SharedRecordModule))]
+	[Transient<Consumer>]
+	public static partial class SharedRecordContainer
+	{
+		public sealed class Consumer(IRecordSink<Order> sink, ISharedRecord<Order> record)
+		{
+			public IRecordSink<Order> Sink => sink;
+
+			public ISharedRecord<Order> Record => record;
+		}
+	}
 
 	[Container]
 	[Scoped(typeof(RecordShop.Record<>), typeof(IRecord<>))]

@@ -132,3 +132,23 @@ internal sealed class OpenLedgerReport(IOpenLedger<LedgerEntry> ledger) : IOpenL
 [Decorate(typeof(AuditedOpenLedger<>), typeof(IOpenLedger<>))]
 [Singleton<OpenLedgerReport, IOpenLedgerReport>]
 public static partial class OpenGenericModule;
+
+/// <summary>Reads entities of one type, a service <see cref="ISharedOpenRepository{T}" /> covers.</summary>
+public interface ISharedOpenReader<T>;
+
+/// <summary>A repository per entity type, built from an internal type the module registers both closed and open.</summary>
+public interface ISharedOpenRepository<T> : ISharedOpenReader<T>;
+
+/// <summary>The entity type <see cref="SharedOpenGenericModule" /> registers its repository closed for.</summary>
+public sealed class SharedOpenEntity;
+
+internal sealed class SharedOpenRepository<T> : ISharedOpenRepository<T>;
+
+/// <summary>
+///     A <c>[Module]</c> that registers its internal repository closed under one service and open under another, so a
+///     container in another assembly builds the one instance of a closing through one of the two generated factories.
+/// </summary>
+[Module]
+[Singleton<SharedOpenRepository<SharedOpenEntity>, ISharedOpenReader<SharedOpenEntity>>]
+[Singleton(typeof(SharedOpenRepository<>), typeof(ISharedOpenRepository<>))]
+public static partial class SharedOpenGenericModule;
