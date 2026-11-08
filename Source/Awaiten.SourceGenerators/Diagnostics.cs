@@ -2194,7 +2194,8 @@ internal static class Diagnostics
 
 	/// <summary>
 	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level (a nullable reference
-	///     or value type) or that is marked <c>[MaybeNull]</c>, so it may produce <see langword="null" />, while the container hands the value to every consumer as a non-nullable service.
+	///     or value type) or that is marked <c>[MaybeNull]</c>, so it may produce <see langword="null" />, while the
+	///     container hands the value to every consumer as a non-nullable service.
 	///     Reported once at the registration in place of the nullable warnings the generated code would otherwise raise.
 	///     A warning like the compiler's own nullable warnings, which it replaces, and reported by
 	///     <see cref="AwaitenAnalyzer" /> so that it can be suppressed in source. The generated code never checks the
