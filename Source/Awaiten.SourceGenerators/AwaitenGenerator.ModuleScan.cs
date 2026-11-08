@@ -624,7 +624,9 @@ partial class AwaitenGenerator
 		{
 			for (int index = context.Diagnostics.Count - 1; index >= reported; index--)
 			{
-				if (context.Diagnostics[index].Descriptor == Diagnostics.InvalidLifecycleHook || context.Diagnostics[index].Descriptor == Diagnostics.AmbiguousLifecycleHook)
+				if (context.Diagnostics[index].Descriptor == Diagnostics.InvalidLifecycleHook
+				    || context.Diagnostics[index].Descriptor == Diagnostics.UninferableLifecycleHook
+				    || context.Diagnostics[index].Descriptor == Diagnostics.AmbiguousLifecycleHook)
 				{
 					context.Diagnostics.RemoveAt(index);
 				}
@@ -668,12 +670,24 @@ partial class AwaitenGenerator
 
 		// AWT164 (no usable method) or AWT190 (an overload the module cannot pick between). Mirrors ResolveHook,
 		// naming the module as the owner the hook was looked up on.
+		string owner = $"the module '{Display(context.Module.ToDisplayString(FullyQualified))}'";
+		if (matches.Count + ambiguous.Count == 0
+		    && closedMarkers is null or { Count: 0, }
+		    && UninferableTypeParameters(context.Module, hookName, context.Compilation) is { } typeParameters)
+		{
+			context.Diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.UninferableLifecycleHook,
+				LocationInfo.From(location),
+				new EquatableArray<string>([Display(typeName), hookName, owner, typeParameters,])));
+			return null;
+		}
+
 		if (matches.Count != 1 || ambiguous.Count > 0)
 		{
 			context.Diagnostics.Add(new DiagnosticInfo(
 				matches.Count + ambiguous.Count == 0 ? Diagnostics.InvalidLifecycleHook : Diagnostics.AmbiguousLifecycleHook,
 				LocationInfo.From(location),
-				new EquatableArray<string>([Display(typeName), hookName, $"the module '{Display(context.Module.ToDisplayString(FullyQualified))}'",])));
+				new EquatableArray<string>([Display(typeName), hookName, owner,])));
 			return null;
 		}
 

@@ -137,6 +137,8 @@ A request for `IRepository<Order>` calls `CreateRepository<Order>(connection)`. 
 - **Parameters.** They follow the rules of a non-generic factory: graph dependencies (including other open generics closed the same way), `CancellationToken`, `[FromKey]`, `[RequestingType]`, and `[Arg]` on a transient reached through `Func<…, T>`.
 - **Overloads.** An overloaded factory is ambiguous ([AWT112](../09-diagnostics.md#awt112)), as for a non-generic one.
 
+Only an open generic registration closes a generic factory. A closed registration such as `[Scoped<IRepository<Order>>(Factory = nameof(CreateRepository))]` has no closing to bind `T` from, and C# infers no type argument from a return type, so a generic method is not its factory ([AWT108](../09-diagnostics.md#awt108)). A non-generic overload beside it is.
+
 ### Lifecycle hooks
 
 `OnActivated` and `OnRelease` run for every closing. The hook can be generic over the service's type arguments, which it receives like a hook on an [open-generic scan](./06-scanning.md#generic-hooks-on-an-open-marker): Awaiten binds it from the closed service, so `IConnection<Order>` calls `Opened<Order>(…)`. A non-generic hook, with its first parameter typed as `object` or a shared base, works for every closing too. A hook of a module's open registration that another assembly can't call runs through a [generic wrapper](./07-modules.md#open-generics) the module generates.

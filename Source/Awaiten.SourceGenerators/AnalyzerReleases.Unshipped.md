@@ -9,7 +9,7 @@
  AWT105  | Awaiten   | Error    | A singleton captures a shorter-lived scoped dependency
  AWT106  | Awaiten   | Warning  | A synchronous factory's body provably produces a concrete type an async initializer convention matches, which its declared return type hides
  AWT107  | Awaiten   | Error    | An implementation is registered with conflicting lifetimes
- AWT108  | Awaiten   | Error    | A Factory registration names a member that is not a usable factory method
+ AWT108  | Awaiten   | Error    | A Factory registration names a member that is not a usable factory method, such as a generic method whose type parameters a closed registration cannot infer
  AWT109  | Awaiten   | Error    | An Instance registration names a member that is not a usable instance member
  AWT110  | Awaiten   | Error    | A registration sets both Factory and Instance
  AWT111  | Awaiten   | Error    | An implementation is registered with conflicting production strategies
@@ -64,7 +64,7 @@
  AWT161  | Awaiten   | Error    | An Eager singleton is async-initialized and cannot be constructed synchronously at container build time; a warning in the build of the module that registers it
  AWT162  | Awaiten   | Error    | A [RequestingType] factory parameter is not of type System.Type
  AWT163  | Awaiten   | Error    | A factory has both a [RequestingType] parameter and an [Arg] runtime-argument parameter
- AWT164  | Awaiten   | Error    | An OnActivated/OnRelease registration names a member that is not a usable lifecycle hook
+ AWT164  | Awaiten   | Error    | An OnActivated/OnRelease registration names a member that is not a usable lifecycle hook, such as a generic method whose type parameters nothing binds
  AWT165  | Awaiten   | Error    | An OnActivated/OnRelease lifecycle hook is set on a pre-built Instance registration, which the container does not own
  AWT166  | Awaiten   | Error    | An implementation is registered with conflicting OnActivated/OnRelease/Eager directives that coalescing would silently drop
  AWT167  | Awaiten   | Warning  | A WhenInjectedInto contextual binding never applies because the named consumer has no unkeyed direct constructor parameter to redirect

@@ -517,9 +517,20 @@ public static partial class CoffeeShop
 }
 ```
 
-An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md)). It does so for a public, `partial` module, when the method's parameter and return types are public and the method isn't generic.
+A generic method is not a usable factory of a closed registration either: C# infers no type argument from a return type, and only the closings of an [open generic](./04-registration/05-open-generics.md#generic-factories) registration supply them. The message names the type parameters that can't be inferred. For a module's registration, the module's own build reports it.
 
-**Fix:** Point `Factory` at a method on the container (or on the declaring module for an imported registration) that returns the registered service type, here `private static Grinder MakeGrinder() => new();`.
+```csharp expect=AWT108
+[Container]
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]
+public static partial class CoffeeShop
+{
+    private static Grinder MakeGrinder<TBeans>() => new();   // nothing supplies TBeans
+}
+```
+
+An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md)). It does so for a public, `partial` module, when the method's parameter and return types are public.
+
+**Fix:** Point `Factory` at a non-generic method on the container (or on the declaring module for an imported registration) that returns the registered service type, here `private static Grinder MakeGrinder() => new();`.
 
 ### AWT109
 
@@ -670,6 +681,8 @@ public static partial class CoffeeShop
     private static bool Ready = false;
 }
 ```
+
+A generic method is a usable hook only where a closing binds its type parameters: on an [open generic](./04-registration/05-open-generics.md#lifecycle-hooks) registration or an [open generic scan marker](./04-registration/06-scanning.md#generic-hooks-on-an-open-marker). On any other registration the message names the type parameters nothing binds.
 
 **Fix:** Point the hook at an accessible static method that returns `void`, `Task` or `ValueTask` and whose first parameter accepts the implementation: `private static void Ready(EspressoMachine machine) { }`.
 
@@ -2080,8 +2093,8 @@ A module `Factory`/`Instance` member is not accessible from the generated contai
 [Singleton<Grinder>(Factory = nameof(MakeGrinder))]
 public static partial class EquipmentModule
 {
-    // private, and generic, so the module can't wrap it
-    private static Grinder MakeGrinder<T>() => new();
+    // private, and a ref parameter can't be mirrored onto a wrapper
+    private static Grinder MakeGrinder(ref int burrs) => new();
 }
 
 [Container]

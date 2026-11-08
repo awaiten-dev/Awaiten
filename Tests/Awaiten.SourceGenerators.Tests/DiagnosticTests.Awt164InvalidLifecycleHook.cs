@@ -429,5 +429,91 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).Contains("*AWT164*Wire*").AsWildcard()
 				.Because("a by-ref parameter cannot be mirrored onto the wrapper or supplied by the container's hook invocation, so the method is not a usable hook");
 		}
+
+		public class GenericHookOfAClosedRegistration
+		{
+			private const string Module = """
+			                              using Awaiten;
+
+			                              [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			                              namespace Lib;
+
+			                              public interface IGrinder { }
+			                              public sealed class Grinder : IGrinder { }
+
+			                              [Module]
+			                              [Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Wire))]
+			                              public static partial class GrinderModule
+			                              {
+			                              	public static IGrinder CreateGrinder() => new Grinder();
+			                              	internal static void Wire<T>(IGrinder grinder) { }
+			                              }
+			                              """;
+
+			[Test]
+			public async Task ReportsTheContainersOwnGenericHooks()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public sealed class Grinder { }
+
+				                                       [Container]
+				                                       [Singleton<Grinder>(OnActivated = nameof(Wire), OnRelease = nameof(Release))]
+				                                       public static partial class MyContainer
+				                                       {
+				                                       	private static void Wire<T>(Grinder grinder) { }
+				                                       	private static void Release<TFirst, TSecond>(Grinder grinder) { }
+				                                       }
+				                                       """);
+
+				await That(result.Diagnostics).HasCount(2)
+					.Because("a closed registration has no marker closing to bind the hook's type parameters from").And
+					.Contains("*AWT164*'Wire'*generic*'T'*").AsWildcard().And
+					.Contains("*AWT164*'Release'*generic*'TFirst', 'TSecond'*").AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsTheModulesGenericHookInTheLibraryBuild()
+			{
+				GeneratorResult result = Generator.Run(Module);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT164*'Wire'*module 'Lib.GrinderModule'*generic*'T'*").AsWildcard()
+					.Because("the module resolves the hook for its wrapper and names why it cannot bind it");
+			}
+
+			[Test]
+			public async Task ReportsTheModulesGenericHookOnceBesideAContainerOfTheSameAssembly()
+			{
+				GeneratorResult result = Generator.Run(Module + """
+
+				                                                [Container]
+				                                                [Import(typeof(GrinderModule))]
+				                                                public static partial class LibraryContainer { }
+				                                                """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT164*'Wire'*generic*'T'*").AsWildcard()
+					.Because("the container of the module's assembly resolves the hook itself, so the module leaves the report to it");
+			}
+
+			[Test]
+			public async Task ReportsTheModulesGenericHookInAFriendContainer()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Module, """
+				                                                                              using Awaiten;
+
+				                                                                              namespace App;
+
+				                                                                              [Container]
+				                                                                              [Import(typeof(Lib.GrinderModule))]
+				                                                                              public static partial class AppContainer { }
+				                                                                              """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT164*'Wire'*generic*'T'*").AsWildcard();
+			}
+		}
 	}
 }

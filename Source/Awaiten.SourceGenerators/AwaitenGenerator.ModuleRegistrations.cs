@@ -571,7 +571,8 @@ partial class AwaitenGenerator
 	///     Reports, in the module's own build, what is wrong with the <c>Factory</c> and <c>Instance</c> members of its
 	///     closed registrations whatever container imports the module, since a container in another assembly sees neither
 	///     a member's body nor a private member: a registered type private to the module (AWT216), which no container can
-	///     name, a factory parameter of a type private to the module (AWT195), which no container can resolve and which
+	///     name, a <c>Factory</c> that names only generic methods (AWT108), whose type parameters no closed registration
+	///     binds, a factory parameter of a type private to the module (AWT195), which no container can resolve and which
 	///     the module reports once (see <see cref="DistinctModuleDiagnostics" />), a factory body that hides async initialization
 	///     behind the declared return type (AWT106), and a convention
 	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
@@ -607,9 +608,22 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (registration.Production != ProductionKind.Factory
-			    || FindFactoryCandidates(module, member, implementation, compilation) is not { Count: 1, } candidates
-			    || !checkedFactories.Add(candidates[0]))
+			if (registration.Production != ProductionKind.Factory)
+			{
+				continue;
+			}
+
+			List<IMethodSymbol> candidates = FindFactoryCandidates(module, member, implementation, compilation);
+			if (candidates.Count == 0 && UninferableTypeParameters(module, member, compilation) is { } typeParameters)
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.UninferableFactory,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([Display(registration.Service.ToDisplayString(FullyQualified)), member, DescribeOwner(module), typeParameters,])));
+				continue;
+			}
+
+			if (candidates.Count != 1 || !checkedFactories.Add(candidates[0]))
 			{
 				continue;
 			}

@@ -202,6 +202,15 @@ public partial class FactoryAndInstanceTests
 		}
 	}
 
+	[Test]
+	public async Task Factory_WithAGenericOverload_CallsTheNonGenericOne()
+	{
+		using GenericOverloadFactoryContainer.Root container = new();
+
+		await That(((Widget)container.Resolve<IWidget>()).Origin).IsEqualTo("non-generic")
+			.Because("a generic overload cannot produce a closed registration, so it neither competes with the non-generic factory nor is called");
+	}
+
 	public interface IWidget;
 
 	public sealed class Widget : IWidget
@@ -242,6 +251,15 @@ public partial class FactoryAndInstanceTests
 		private static Session MakeSession() => new(_origin);
 
 		private static Report MakeReport(Settings settings) => new(settings);
+	}
+
+	[Container]
+	[Singleton<IWidget>(Factory = nameof(MakeWidget))]
+	public static partial class GenericOverloadFactoryContainer
+	{
+		private static Widget MakeWidget() => new("non-generic");
+
+		private static Widget MakeWidget<T>() => new(typeof(T).Name);
 	}
 
 	public sealed class Probe : IDisposable
