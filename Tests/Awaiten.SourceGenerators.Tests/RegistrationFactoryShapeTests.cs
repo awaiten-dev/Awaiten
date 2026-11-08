@@ -60,6 +60,9 @@ public class RegistrationFactoryShapeTests
 	private static string ModuleSource(GeneratorResult result)
 		=> result.Sources.Single(source => source.Key.StartsWith("Awaiten.ModuleScan.", StringComparison.Ordinal)).Value;
 
+	private static string ContainerSource(GeneratorResult result)
+		=> string.Concat(result.Sources.Where(source => !source.Key.StartsWith("Awaiten.ModuleScan.", StringComparison.Ordinal)).Select(source => source.Value));
+
 	public class SeveralServices
 	{
 		private const string CoveringInterface = """
@@ -616,6 +619,31 @@ public class RegistrationFactoryShapeTests
 				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
 					.Because("the hook of an implementation the consumer cannot name gets no wrapper, so a factory wrapper alone would lose it");
 				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*").AsWildcard();
+			}
+
+			[Test]
+			[Arguments("public")]
+			[Arguments("internal")]
+			public async Task WithAModuleConvention_EveryContainerRunsItOnTheImplementation(string accessibility)
+			{
+				string library = Library("[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]\n[Singleton<Grinder, IGrinder>(Factory = nameof(Create))]")
+					.Replace("public interface IMill { }", $"{accessibility} interface IWarmUp {{ System.Threading.Tasks.Task WarmUpAsync(); }}")
+					.Replace("internal sealed class Grinder : IGrinder, IMill { }", "internal sealed class Grinder : IGrinder, IWarmUp { public System.Threading.Tasks.Task WarmUpAsync() => System.Threading.Tasks.Task.CompletedTask; }");
+
+				await That(ContainerSource(Generator.Run(library + GrinderConsumer.Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace App;", "")))).Contains("WarmUpAsync(");
+				await That(ContainerSource(Generator.RunWithGeneratedReferencedAssembly(Granted(library), GrinderConsumer))).Contains("WarmUpAsync(");
+				if (accessibility == "public")
+				{
+					GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer);
+					await That(result.Diagnostics).IsEmpty();
+					await That(ContainerSource(result)).Contains("WarmUpAsync(")
+						.Because("the module's convention matches the internal implementation the wrapper produces, not the public service it returns it as");
+				}
+				else
+				{
+					await That(Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer).Diagnostics).HasCount(1).And.Contains("*AWT234*WarmUpAsync*").AsWildcard()
+						.Because("a container that cannot call the convention reports it instead of silently leaving the implementation uninitialized");
+				}
 			}
 
 			[Test]

@@ -48,3 +48,40 @@ public static partial class InternalProducerModule
 		return new ProducedKettle();
 	}
 }
+
+/// <summary>A grinder an internal factory member of <see cref="WarmedProducerModule" /> produces, which its convention warms up.</summary>
+public interface IWarmedGrinder
+{
+	/// <summary>Whether the convention warmed the internal implementation up.</summary>
+	bool WarmedUp { get; }
+}
+
+/// <summary>Something <see cref="WarmedProducerModule" /> warms up by its async initializer convention.</summary>
+public interface IProducedWarmUp
+{
+	/// <summary>Warms the instance up.</summary>
+	Task WarmUpAsync();
+}
+
+internal sealed class WarmedGrinder : IWarmedGrinder, IProducedWarmUp
+{
+	public bool WarmedUp { get; private set; }
+
+	public async Task WarmUpAsync()
+	{
+		await Task.Yield();
+		WarmedUp = true;
+	}
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose internal <c>Factory</c> member returns an internal implementation that a convention of
+///     the module initializes, though the public service the wrapper returns does not implement the convention type.
+/// </summary>
+[Module]
+[AsyncInitializer<IProducedWarmUp>(nameof(IProducedWarmUp.WarmUpAsync))]
+[Singleton<WarmedGrinder, IWarmedGrinder>(Factory = nameof(CreateGrinder))]
+public static partial class WarmedProducerModule
+{
+	internal static WarmedGrinder CreateGrinder() => new();
+}

@@ -32,7 +32,7 @@ public partial class ModuleInternalProducerTests
 		}
 
 		await That(grinder.Disposed).IsTrue()
-			.Because("the container checks at run time whether what the factory returned is disposable, as it cannot name the implementation");
+			.Because("the container reads the disposal off the implementation's metadata, though it cannot name the implementation");
 	}
 
 	[Test]
@@ -56,7 +56,22 @@ public partial class ModuleInternalProducerTests
 			.Because("the wrapper returns the instance the module holds as the public service");
 	}
 
+	[Test]
+	public async Task InternalFactoryMember_RunsTheModuleConventionOnTheImplementation()
+	{
+		await using WarmedProducerContainer.Root container = new();
+
+		IWarmedGrinder grinder = await container.ResolveAsync<IWarmedGrinder>();
+
+		await That(grinder.WarmedUp).IsTrue()
+			.Because("the module's convention matches the internal implementation, as in the module's own assembly, not the public service the wrapper returns");
+	}
+
 	[Container]
 	[Import(typeof(InternalProducerModule))]
 	public static partial class ProducerContainer;
+
+	[Container]
+	[Import(typeof(WarmedProducerModule))]
+	public static partial class WarmedProducerContainer;
 }
