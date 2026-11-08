@@ -275,8 +275,7 @@ partial class AwaitenGenerator
 		bool fromModule = origin is not null && HasAwaitenAttribute(context.Owner.GetAttributes(), "ModuleAttribute");
 		foreach (AttributeData attribute in context.Owner.GetAttributes())
 		{
-			if (attribute.AttributeClass is not { } attributeClass
-			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
+			if (attribute.AttributeClass is not { } attributeClass)
 			{
 				continue;
 			}
@@ -284,6 +283,11 @@ partial class AwaitenGenerator
 			// A [GeneratedScanRegistration<TService>(factory, Lifetime = …)] is what a [Module] self-compiled from
 			// its own [Scan] (one per match), read back and consumed there.
 			if (CollectGeneratedScanRegistration(attribute, attributeClass, result, context, skipGeneratedScanRegistrations))
+			{
+				continue;
+			}
+
+			if (attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
 			{
 				continue;
 			}
@@ -719,6 +723,10 @@ partial class AwaitenGenerator
 		return true;
 	}
 
+	private static bool IsGeneratedScanRegistration(INamedTypeSymbol attributeClass)
+		=> attributeClass is { Name: "GeneratedScanRegistrationAttribute", IsGenericType: true, }
+		   && attributeClass.ContainingNamespace?.ToDisplayString() == InternalsNamespace;
+
 	/// <summary>
 	///     Reads one <c>[GeneratedScanRegistration&lt;TService&gt;(factory, Lifetime = …)]</c> - what a
 	///     <c>[Module]</c> self-compiled from its own <c>[Scan]</c>, one per match - into an <c>IsScan</c> factory
@@ -747,7 +755,7 @@ partial class AwaitenGenerator
 	{
 		INamedTypeSymbol? origin = context.Origin;
 		Location? fallbackLocation = context.FallbackLocation;
-		if (attributeClass is not { Name: "GeneratedScanRegistrationAttribute", IsGenericType: true, })
+		if (!IsGeneratedScanRegistration(attributeClass))
 		{
 			return false;
 		}
@@ -1008,7 +1016,9 @@ partial class AwaitenGenerator
 		// the Awaiten generator (or a version predating self-compiled scans) and the scan would silently
 		// contribute nothing. The marker is emitted even for a scan that matched nothing, so its absence is
 		// conclusive, not a maybe.
-		if (!sameCompilation && declaresScan && !HasAwaitenAttribute(moduleAttributes, "GeneratedScanExpansionAttribute"))
+		if (!sameCompilation && declaresScan && !moduleAttributes.Any(attribute =>
+			    attribute.AttributeClass is { Name: "GeneratedScanExpansionAttribute", } attributeClass
+			    && attributeClass.ContainingNamespace?.ToDisplayString() == InternalsNamespace))
 		{
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.ModuleScanNotExpanded, location, new EquatableArray<string>([moduleName, "declares a [Scan]",])));
@@ -1041,10 +1051,11 @@ partial class AwaitenGenerator
 		foreach (AttributeData attribute in attributes)
 		{
 			if (attribute.AttributeClass is { } attributeClass
-			    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
-			    && attributeClass.Name is "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute"
-				    or "DecorateAttribute" or "CompositeAttribute" or "ImportServicesAttribute"
-				    or "ImportServiceAttribute" or "GeneratedScanRegistrationAttribute")
+			    && (IsGeneratedScanRegistration(attributeClass)
+			        || (attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+			            && attributeClass.Name is "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute"
+				            or "DecorateAttribute" or "CompositeAttribute" or "ImportServicesAttribute"
+				            or "ImportServiceAttribute")))
 			{
 				return true;
 			}

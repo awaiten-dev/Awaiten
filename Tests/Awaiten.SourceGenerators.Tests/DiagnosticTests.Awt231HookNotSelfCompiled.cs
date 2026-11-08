@@ -86,7 +86,7 @@ public partial class DiagnosticTests
 					.And.Contains("Registration_Greeter_")
 					.And.DoesNotContain("Hook_OnActivated_Greeter_")
 					.Because("the registration keeps its factory and loses only the wrapper of the hook it cannot mirror");
-				await That(source).Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Transient, OnRelease = \"Release\")]")
+				await That(source).Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Transient, OnRelease = \"Release\")]")
 					.And.Contains("its OnRelease hook's parameter 'log' is marked [FromKey]")
 					.And.DoesNotContain("ScanHook_")
 					.Because("a scan match is skipped as a whole, since a consumer calls the hook on the implementation it constructs itself");

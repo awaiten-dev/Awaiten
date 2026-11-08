@@ -347,7 +347,7 @@ public partial class DiagnosticTests
 					.And.Contains("\"it is also matched by the module's [Scan]\"")
 					.And.Contains("public const string ScanSkipped_Greeter_")
 					.And.Contains("\"it is also registered explicitly by the module\"")
-					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Greeter\"")
+					.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Greeter\"")
 					.Because("the module records both, so a consumer without access names why it cannot construct the implementation");
 				await That(source).DoesNotContain("Registration_Greeter_").And.DoesNotContain("Scan_Greeter_")
 					.Because("two factories would build two instances of what a container treats as one implementation");

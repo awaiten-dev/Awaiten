@@ -1,15 +1,15 @@
 using System;
 using System.ComponentModel;
 
-namespace Awaiten;
+namespace Awaiten.Internals;
 
 // S2326: the type parameter is the source generator's input. It reads the service type from the attribute's
 // type argument via Roslyn, so the body never references it.
 #pragma warning disable S2326
 
 /// <summary>
-///     Emitted by the source generator onto a <c>[Module]</c> that self-compiles a <c>[Scan]</c> - one per
-///     match - and read back by a consuming container. It carries the accessible exposure interface
+///     Infrastructure for generated code. Emitted by the source generator onto a <c>[Module]</c> that self-compiles
+///     a <c>[Scan]</c> - one per match - and read back by a consuming container. It carries the accessible exposure interface
 ///     (<typeparamref name="TService" />), the name of the generated <c>public static</c> factory that
 ///     constructs the (possibly <c>internal</c>) match and returns that interface, and the lifetime the scan
 ///     declared. A container reads these like a container <c>[Scan]</c>'s matches - collection-eligible and
@@ -17,7 +17,6 @@ namespace Awaiten;
 ///     as the assembly boundary allows.
 /// </summary>
 /// <typeparam name="TService">The accessible interface the match is exposed and resolved under.</typeparam>
-/// <remarks>Generated code, not intended to be written by hand.</remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class GeneratedScanRegistrationAttribute<TService> : Attribute
