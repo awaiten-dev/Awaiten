@@ -1398,7 +1398,7 @@ partial class AwaitenGenerator
 						: Diagnostics.FactoryHidesAsyncInitialization,
 					LocationInfo.From(returnExpression.GetLocation()),
 					new EquatableArray<string>([
-						producer.Name,
+						producer.ContainingType?.Name == InternalsClass ? UserMemberName(InInternals(producer.Name))! : producer.Name,
 						Display(concrete.ToDisplayString(FullyQualified)),
 						Display(declaredReturnType.ToDisplayString(FullyQualified)),
 						hidden.Display,
@@ -1502,7 +1502,7 @@ partial class AwaitenGenerator
 		diagnostics.Add(new DiagnosticInfo(
 			candidates.Count == 0 ? Diagnostics.InvalidFactory : Diagnostics.AmbiguousFactory,
 			info.Location,
-			new EquatableArray<string>([Display(info.OwningServiceOrImpl), info.ProductionMember!, DescribeOwner(info),])));
+			new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info),])));
 		return null;
 	}
 
@@ -1571,7 +1571,7 @@ partial class AwaitenGenerator
 			new EquatableArray<string>([
 				Display(info.OwningServiceOrImpl),
 				Display(info.Origin!.ToDisplayString(FullyQualified)),
-				info.ProductionMember!,
+				UserMemberName(info.ProductionMember)!,
 			])));
 
 	/// <summary>

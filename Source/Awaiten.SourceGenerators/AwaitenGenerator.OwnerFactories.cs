@@ -404,6 +404,38 @@ partial class AwaitenGenerator
 	/// <summary>The reference to the generated member <paramref name="member" /> relative to its owner.</summary>
 	private static string InInternals(string member) => $"{InternalsClass}.{member}";
 
+	/// <summary>
+	///     The member a user declared that the generated <c>Factory</c> or <c>Instance</c> wrapper
+	///     <paramref name="member" /> (see <see cref="MemberWrapperName" />, qualified by <see cref="InInternals" />)
+	///     calls, so a diagnostic names what the user wrote; any other member as it is.
+	/// </summary>
+	private static string? UserMemberName(string? member)
+	{
+		string prefix = InternalsClass + ".";
+		if (member is null || !member.StartsWith(prefix, StringComparison.Ordinal))
+		{
+			return member;
+		}
+
+		string name = member.Substring(prefix.Length);
+		int hash = name.LastIndexOf('_');
+		foreach (string kind in new[] { "Factory_", "Instance_", })
+		{
+			if (name.StartsWith(kind, StringComparison.Ordinal) && hash > kind.Length && hash == name.Length - 9)
+			{
+				return name.Substring(kind.Length, hash - kind.Length);
+			}
+		}
+
+		return member;
+	}
+
+	/// <summary>Whether <paramref name="member" /> is a factory a module generated for a registration it constructs (see <see cref="RegistrationFactoryName" />).</summary>
+	private static bool IsGeneratedRegistrationFactory(string? member)
+		=> member is not null
+		   && (member.StartsWith(InInternals("Registration_"), StringComparison.Ordinal)
+		       || member.StartsWith(InInternals("InternalRegistration_"), StringComparison.Ordinal));
+
 	/// <summary>The members named <paramref name="name" /> of the <see cref="InternalsClass" /> of <paramref name="owner" />.</summary>
 	private static ImmutableArray<ISymbol> InternalsMembers(INamedTypeSymbol owner, string name)
 		=> owner.GetTypeMembers(InternalsClass).FirstOrDefault() is { } internals ? internals.GetMembers(name) : ImmutableArray<ISymbol>.Empty;
