@@ -276,6 +276,24 @@ public class CrossContainerAgreementTests
 		}
 
 		[Test]
+		public async Task HandledForAnInternalServiceOfOneModule_NamesThatServiceAsTheReason()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface ISecret { }")
+				.Replace("public sealed class Greeter : IGreeter, IOther", "public sealed class Greeter : IGreeter, IOther, ISecret")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "public IClock Backup { get; set; } = null!;")
+				.Replace("[Singleton<SystemClock, IClock>]", "[Singleton<SystemClock, IClock>]\n[Singleton<Greeter, ISecret>]");
+			string consumer = Consumer
+				.Replace("[Import(typeof(OtherModule))]", string.Empty)
+				.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("registered under the internal service 'Lib.ISecret'"))
+				.Because("one module builds the implementation through a handle for its internal service, so no other module shares it and the reason names that service");
+		}
+
+		[Test]
 		public async Task ProducedDifferently_NamesTheConstructorInEveryContainer()
 		{
 			string library = Library()
