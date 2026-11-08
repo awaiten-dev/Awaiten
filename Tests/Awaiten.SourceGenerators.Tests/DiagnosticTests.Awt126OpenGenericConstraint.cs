@@ -392,5 +392,117 @@ public partial class DiagnosticTests
 					.Because("the generated generic factories carry the implementations' constraints, which select the closings like in the module's assembly");
 			}
 		}
+
+		public class ConstraintConversions
+		{
+			private const string Sequences = """
+			                                 using System.Collections.Generic;
+			                                 using Awaiten;
+
+			                                 namespace MyCode;
+
+			                                 public sealed class Plain { }
+			                                 public interface IFoo<T> { }
+			                                 public sealed class SeqFoo<T> : IFoo<T> where T : IEnumerable<object> { }
+			                                 public sealed class ArrayFoo<T> : IFoo<T> where T : IEnumerable<int[]> { }
+			                                 public sealed class AnyFoo<T> : IFoo<T> { }
+
+			                                 """;
+
+			private static string ContainerSource(GeneratorResult result)
+				=> result.Sources.Single(source => source.Key.Contains("Shop", StringComparison.Ordinal)).Value;
+
+			[Test]
+			public async Task AVariantConstraint_SelectsTheImplementationCSharpAccepts()
+			{
+				GeneratorResult result = Generator.Run(Sequences + """
+				                                                   public sealed class Root { public Root(IFoo<List<string>> strings) { } }
+
+				                                                   [Container]
+				                                                   [Transient(typeof(SeqFoo<>), typeof(IFoo<>))]
+				                                                   [Transient(typeof(AnyFoo<>), typeof(IFoo<>))]
+				                                                   [Transient<Root>]
+				                                                   public static partial class Shop { }
+				                                                   """);
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result)).Contains("new global::MyCode.SeqFoo<global::System.Collections.Generic.List<string>>()")
+					.Because("List<string> converts to IEnumerable<object> through covariance, so SeqFoo<List<string>> is legal and wins as the first registration");
+			}
+
+			[Test]
+			public async Task AVariantConstraint_IsNoViolationForASingleRegistration()
+			{
+				GeneratorResult result = Generator.Run(Sequences + """
+				                                                   public sealed class Root { public Root(IFoo<List<string>> strings) { } }
+
+				                                                   [Container]
+				                                                   [Transient(typeof(SeqFoo<>), typeof(IFoo<>))]
+				                                                   [Transient<Root>]
+				                                                   public static partial class Shop { }
+				                                                   """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("List<string> satisfies where T : IEnumerable<object> through covariance, so there is no AWT126");
+			}
+
+			[Test]
+			public async Task AVariantConstraintOfAnOpenDecorator_DecoratesTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Sequences + """
+				                                                   public interface IGen<T> { }
+				                                                   public sealed class Gen<T> : IGen<T> { }
+				                                                   public sealed class SeqDecorator<T> : IFoo<T> where T : IEnumerable<object> { public SeqDecorator(IFoo<T> inner, IGen<T> gen) { } }
+				                                                   public sealed class Root { public Root(IFoo<List<string>> strings) { } }
+
+				                                                   [Container]
+				                                                   [Transient(typeof(Gen<>), typeof(IGen<>))]
+				                                                   [Transient(typeof(AnyFoo<>), typeof(IFoo<>))]
+				                                                   [Decorate(typeof(SeqDecorator<>), typeof(IFoo<>))]
+				                                                   [Transient<Root>]
+				                                                   public static partial class Shop { }
+				                                                   """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the decorator's constraint holds through covariance, so there is no AWT171 and its IGen<List<string>> is closed");
+				await That(ContainerSource(result)).Contains("new global::MyCode.SeqDecorator<global::System.Collections.Generic.List<string>>(");
+			}
+
+			[Test]
+			public async Task AConstraintWithAnArrayTypeArgument_IsChecked()
+			{
+				GeneratorResult result = Generator.Run(Sequences + """
+				                                                   public sealed class Root { public Root(IFoo<Plain> plain) { } }
+
+				                                                   [Container]
+				                                                   [Transient(typeof(ArrayFoo<>), typeof(IFoo<>))]
+				                                                   [Transient<Root>]
+				                                                   public static partial class Shop { }
+				                                                   """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.ArrayFoo<MyCode.Plain>'"))
+					.Because("Plain does not implement IEnumerable<int[]>, which is reported instead of a compiler error in the generated code");
+			}
+
+			[Test]
+			public async Task AConstraintWithAnArrayTypeArgument_LeavesTheClosingToAnotherRegistration()
+			{
+				GeneratorResult result = Generator.Run(Sequences + """
+				                                                   public sealed class Root { public Root(IFoo<Plain> plain, IFoo<List<int[]>> arrays) { } }
+
+				                                                   [Container]
+				                                                   [Transient(typeof(ArrayFoo<>), typeof(IFoo<>))]
+				                                                   [Transient(typeof(AnyFoo<>), typeof(IFoo<>))]
+				                                                   [Transient<Root>]
+				                                                   public static partial class Shop { }
+				                                                   """);
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result)).Contains("new global::MyCode.AnyFoo<global::MyCode.Plain>()").And
+					.Contains("new global::MyCode.ArrayFoo<global::System.Collections.Generic.List<int[]>>()").And
+					.DoesNotContain("ArrayFoo<global::MyCode.Plain>")
+					.Because("only List<int[]> satisfies where T : IEnumerable<int[]>");
+			}
+		}
 	}
 }

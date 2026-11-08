@@ -1378,7 +1378,7 @@ partial class AwaitenGenerator
 			if (!ClosesOpenService(service, openService)
 			    || compilation.IsSymbolAccessibleWithin(service, compilation.Assembly)
 			    || !seen.Add(service)
-			    || !ConstraintsSatisfied(definition, service.TypeArguments.ToArray()))
+			    || !ConstraintsSatisfied(definition, service.TypeArguments.ToArray(), compilation))
 			{
 				continue;
 			}

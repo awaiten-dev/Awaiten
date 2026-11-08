@@ -824,7 +824,7 @@ partial class AwaitenGenerator
 			foreach (INamedTypeSymbol service in hidden.Services.Keys.Where(service => ClosesOpenService(service, contribution.Service)).ToList())
 			{
 				ITypeSymbol[] typeArguments = service.TypeArguments.ToArray();
-				if (!ConstraintsSatisfied(contribution.Definition, typeArguments))
+				if (!ConstraintsSatisfied(contribution.Definition, typeArguments, context.Compilation))
 				{
 					continue;
 				}

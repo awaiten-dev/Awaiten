@@ -147,6 +147,21 @@ public sealed partial class OpenGenericConstraintSelectionTests
 		}
 	}
 
+	public sealed class Conversions
+	{
+		[Test]
+		public async Task AConstraintSatisfiedThroughVariance_SelectsItsImplementation()
+		{
+			using VariantConstraintShop.Root container = new();
+
+			VariantConstraintShop.Consumer consumer = container.Resolve<VariantConstraintShop.Consumer>();
+
+			await That(consumer.Strings).Is<VariantConstraintShop.SeqFoo<List<string>>>()
+				.Because("List<string> converts to IEnumerable<object> through covariance, so the first registration builds the closing");
+			await That(consumer.Numbers).Is<VariantConstraintShop.AnyFoo<int>>();
+		}
+	}
+
 	public sealed class Modules
 	{
 		[Test]
@@ -219,6 +234,27 @@ public sealed partial class OpenGenericConstraintSelectionTests
 	[Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>))]
 	[Transient<Printer>]
 	public static partial class ContextualShop;
+
+	[Container]
+	[Transient(typeof(SeqFoo<>), typeof(IFoo<>))]
+	[Transient(typeof(AnyFoo<>), typeof(IFoo<>))]
+	[Transient<VariantConstraintShop.Consumer>]
+	public static partial class VariantConstraintShop
+	{
+		public interface IFoo<T>;
+
+		public sealed class SeqFoo<T> : IFoo<T>
+			where T : IEnumerable<object>;
+
+		public sealed class AnyFoo<T> : IFoo<T>;
+
+		public sealed class Consumer(IFoo<List<string>> strings, IFoo<int> numbers)
+		{
+			public IFoo<List<string>> Strings => strings;
+
+			public IFoo<int> Numbers => numbers;
+		}
+	}
 
 	[Module]
 	[Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]

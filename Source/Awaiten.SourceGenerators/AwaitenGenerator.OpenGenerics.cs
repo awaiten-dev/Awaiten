@@ -473,7 +473,7 @@ partial class AwaitenGenerator
 		{
 			if (SymbolEqualityComparer.Default.Equals(decorator.Service, closed.ConstructedFrom)
 			    && (decorator.Keys is null || decorator.Keys.Contains(registration.Key))
-			    && ConstraintsSatisfied(decorator.Decorator, typeArguments))
+			    && ConstraintsSatisfied(decorator.Decorator, typeArguments, context.Inputs.Compilation))
 			{
 				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
 				EnqueueDecorator(closedDecorator, closed, depth, context, decorator.Via?.Close(typeArguments, closedDecorator, closed)?.Producer);
@@ -485,7 +485,7 @@ partial class AwaitenGenerator
 		{
 			if (SymbolEqualityComparer.Default.Equals(composite.Service, closed.ConstructedFrom)
 			    && composite.Key == registration.Key
-			    && ConstraintsSatisfied(composite.Composite, typeArguments))
+			    && ConstraintsSatisfied(composite.Composite, typeArguments, context.Inputs.Compilation))
 			{
 				INamedTypeSymbol closedComposite = composite.Composite.Construct(typeArguments);
 				Enqueue(new ExpansionWork(closedComposite, composite.Via?.Close(typeArguments, closedComposite, closed)?.Producer, depth, ExpansionScan.ConstructedInstance), context);
@@ -730,7 +730,7 @@ partial class AwaitenGenerator
 			return ClosingRejection.Unbuildable;
 		}
 
-		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray()))
+		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray(), context.Inputs.Compilation))
 		{
 			return ClosingRejection.Implementation;
 		}
@@ -1097,10 +1097,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Verifies that <paramref name="typeArguments" /> satisfy the type-parameter constraints of open generic
 	///     <paramref name="definition" /> (reference/value-type/unmanaged kinds, <c>new()</c>, and each base/interface
-	///     constraint), so the closed construction is legal C#. A constraint mentioning a type parameter is checked
-	///     after substitution; one that cannot be represented after substitution is skipped rather than failed.
+	///     constraint, by the conversions of <see cref="SatisfiesConstraintType" />), so the closed construction is legal
+	///     C#. A constraint mentioning a type parameter is checked after substitution; one that cannot be represented
+	///     after substitution is skipped rather than failed.
 	/// </summary>
-	private static bool ConstraintsSatisfied(INamedTypeSymbol definition, ITypeSymbol[] typeArguments)
+	private static bool ConstraintsSatisfied(INamedTypeSymbol definition, ITypeSymbol[] typeArguments, Compilation compilation)
 	{
 		ImmutableArray<ITypeParameterSymbol> parameters = definition.TypeParameters;
 		int count = Math.Min(parameters.Length, typeArguments.Length);
@@ -1113,7 +1114,7 @@ partial class AwaitenGenerator
 
 		for (int i = 0; i < count; i++)
 		{
-			if (!ParameterConstraintSatisfied(parameters[i], typeArguments[i], substitution))
+			if (!ParameterConstraintSatisfied(parameters[i], typeArguments[i], substitution, compilation))
 			{
 				return false;
 			}
@@ -1125,7 +1126,8 @@ partial class AwaitenGenerator
 	private static bool ParameterConstraintSatisfied(
 		ITypeParameterSymbol parameter,
 		ITypeSymbol argument,
-		Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution)
+		Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution,
+		Compilation compilation)
 	{
 		if (parameter.HasReferenceTypeConstraint && !argument.IsReferenceType)
 		{
@@ -1148,23 +1150,28 @@ partial class AwaitenGenerator
 		}
 
 		return parameter.ConstraintTypes
-			.Select(constraintType => SubstituteConstraint(constraintType, substitution))
-			.All(substituted => substituted is null || IsAssignableTo(argument, substituted));
+			.Select(constraintType => SubstituteConstraint(constraintType, substitution, compilation))
+			.All(substituted => substituted is null || SatisfiesConstraintType(argument, substituted, compilation));
 	}
 
 	/// <summary>
 	///     Rewrites a constraint type by replacing each type parameter with the closed type argument mapped in
 	///     <paramref name="substitution" />, so <c>IComparable&lt;T&gt;</c> becomes <c>IComparable&lt;Order&gt;</c>
 	///     and a bare <c>U</c> becomes its argument. Returns <see langword="null" /> when the constraint cannot be
-	///     reconstructed from symbols alone (an unmapped type parameter, or an array/pointer type argument), so the
-	///     caller skips that constraint rather than checking a wrong type.
+	///     reconstructed from symbols alone (an unmapped type parameter, or a pointer type argument), so the caller
+	///     skips that constraint rather than checking a wrong type.
 	/// </summary>
-	private static ITypeSymbol? SubstituteConstraint(ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution)
+	private static ITypeSymbol? SubstituteConstraint(ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution, Compilation compilation)
 	{
 		switch (type)
 		{
 			case ITypeParameterSymbol parameter:
 				return substitution.TryGetValue(parameter, out ITypeSymbol? argument) ? argument : null;
+
+			case IArrayTypeSymbol array:
+				return SubstituteConstraint(array.ElementType, substitution, compilation) is { } element
+					? compilation.CreateArrayTypeSymbol(element, array.Rank)
+					: null;
 
 			case INamedTypeSymbol { IsGenericType: true, } generic:
 			{
@@ -1177,7 +1184,7 @@ partial class AwaitenGenerator
 				ITypeSymbol[] arguments = new ITypeSymbol[generic.TypeArguments.Length];
 				for (int i = 0; i < arguments.Length; i++)
 				{
-					ITypeSymbol? substituted = SubstituteConstraint(generic.TypeArguments[i], substitution);
+					ITypeSymbol? substituted = SubstituteConstraint(generic.TypeArguments[i], substitution, compilation);
 					if (substituted is null)
 					{
 						return null;
@@ -1220,15 +1227,6 @@ partial class AwaitenGenerator
 		return named.InstanceConstructors.Any(constructor =>
 			constructor.Parameters.Length == 0 && constructor.DeclaredAccessibility == Accessibility.Public);
 	}
-
-	/// <summary>
-	///     True when <paramref name="argument" /> is the constraint type itself, derives from it, or implements
-	///     it, as a base/interface type-parameter constraint requires.
-	/// </summary>
-	private static bool IsAssignableTo(ITypeSymbol argument, ITypeSymbol constraintType)
-		=> SymbolEqualityComparer.Default.Equals(argument, constraintType)
-		   || BaseTypes(argument).Any(baseType => SymbolEqualityComparer.Default.Equals(baseType, constraintType))
-		   || argument.AllInterfaces.Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, constraintType));
 
 	/// <summary>
 	///     An open generic registration template

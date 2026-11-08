@@ -25,6 +25,7 @@ partial class AwaitenGenerator
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
 		HashSet<string> rejected,
+		Compilation compilation,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenDecorateRegistration decorator in open)
@@ -46,7 +47,7 @@ partial class AwaitenGenerator
 				ITypeSymbol[] typeArguments = closed.TypeArguments.ToArray();
 
 				// AWT171: the closing's type arguments must satisfy the decorator's type-parameter constraints.
-				if (!ConstraintsSatisfied(decorator.Decorator, typeArguments))
+				if (!ConstraintsSatisfied(decorator.Decorator, typeArguments, compilation))
 				{
 					ReportClosingConstraintViolation(decorator.Decorator, typeArguments, decorator.Location, diagnostics);
 					continue;
@@ -200,6 +201,7 @@ partial class AwaitenGenerator
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
 		HashSet<string> rejected,
+		Compilation compilation,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenCompositeRegistration composite in open)
@@ -226,7 +228,7 @@ partial class AwaitenGenerator
 				ITypeSymbol[] typeArguments = closed.TypeArguments.ToArray();
 
 				// AWT171: the closing's type arguments must satisfy the composite's type-parameter constraints.
-				if (!ConstraintsSatisfied(composite.Composite, typeArguments))
+				if (!ConstraintsSatisfied(composite.Composite, typeArguments, compilation))
 				{
 					ReportClosingConstraintViolation(composite.Composite, typeArguments, composite.Location, diagnostics);
 					continue;
