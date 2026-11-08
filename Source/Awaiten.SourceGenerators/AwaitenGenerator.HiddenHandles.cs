@@ -70,6 +70,16 @@ partial class AwaitenGenerator
 					handles[Display(instance.ToDisplayString(FullyQualified))] = (Display(registration.Implementation.ToDisplayString(FullyQualified)), moduleName);
 				}
 			}
+
+			foreach (AttributeData scanned in module.GetAttributes().Where(attribute => attribute.AttributeClass is { Name: "GeneratedScanRegistrationAttribute", }))
+			{
+				if (scanned.ConstructorArguments.Length == 1
+				    && scanned.ConstructorArguments[0].Value is string factory
+				    &&ScanInstanceHandleOf(module, factory, NamedArgument(scanned, "Implementation"), compilation) is var (implementation, handle, _))
+				{
+					handles[Display(handle.ReturnType.ToDisplayString(FullyQualified))] = (Display(implementation.ToDisplayString(FullyQualified)), moduleName);
+				}
+			}
 		}
 
 		if (handles.Count == 0 && hooks.Count == 0)

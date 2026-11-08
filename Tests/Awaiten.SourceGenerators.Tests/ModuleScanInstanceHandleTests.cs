@@ -93,6 +93,35 @@ public class ModuleScanInstanceHandleTests
 	}
 
 	[Test]
+	public async Task AMissingDependencyOfTheHandle_NamesTheImplementation()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer.Replace("[Singleton<SystemClock, IClock>]", ""));
+
+		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT101"));
+		await That(result.Diagnostics).All().Satisfy(diagnostic => !diagnostic.Contains("HiddenInstance_") && !diagnostic.Contains("@scan:") && !diagnostic.Contains("Scan_Roaster_"))
+			.Because("a message never names a type or member the user did not write");
+		await That(result.Diagnostics).Contains("*'Lib.Roaster'*").AsWildcard();
+	}
+
+	[Test]
+	public async Task AMissingDependencyOfACollectedSingleExposureMatch_NamesNoGeneratedMember()
+	{
+		string library = Library(scans: "[Scan<IPlugin>(As = ScanAs.Marker)]") + """
+
+		                                                                      internal sealed class Grinder : IPlugin
+		                                                                      {
+		                                                                          public Grinder(IClock clock) { }
+		                                                                      }
+		                                                                      """;
+
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer.Replace("[Singleton<SystemClock, IClock>]", ""));
+
+		await That(result.Diagnostics).HasCount(2).And.All().Satisfy(diagnostic => diagnostic.Contains("error AWT101"));
+		await That(result.Diagnostics).All().Satisfy(diagnostic => !diagnostic.Contains("@scan:") && !diagnostic.Contains("Scan_"))
+			.Because("the match that loses single resolution is named by its service, not by its generated factory");
+	}
+
+	[Test]
 	public async Task SkipUnconstructable_DropsTheMatchUnderEveryExposureWithOneWarning()
 	{
 		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(

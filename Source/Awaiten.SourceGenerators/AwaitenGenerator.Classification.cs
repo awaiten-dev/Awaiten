@@ -259,7 +259,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static DiagnosticInfo UnregisteredDependency(ParameterModel dependency, ITypeSymbol declaredType, ImplInfo info, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
 	{
-		string owner = Display(info.OwningServiceOrImpl);
+		string owner = DisplayInstance(info.OwningServiceOrImpl);
 		string implementation = DisplayInstance(info.ImplementationType);
 		string service = DisplayKeyed(dependency.ServiceType, dependency.Key);
 
