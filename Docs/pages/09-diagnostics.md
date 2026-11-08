@@ -2499,8 +2499,8 @@ A base in another assembly that grants `InternalsVisibleTo` generates an interna
 An implementation nested privately in the base, or in a class that contains the base, is built through an `internal` factory the base generates for it (see [extending containers](./04-registration/08-extending-containers.md#accessibility)). The extending container reports this error, with the reason, only where it cannot build such a type:
 
 - **No access to the factory.** The base is in another assembly that does not grant the extending container's assembly `InternalsVisibleTo`. Grant it.
-- **A shape the factory cannot express.** The type has an `Optional` or `Deferred` injected property, a hook parameter marked `[Arg]`, `[FromKey]` or `[Inject]`, or a parameter type private to the base. Make the type `internal`.
-- **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing, but not when the open registration names a lifecycle hook or a type parameter is constrained to a type private to the base. Make the type `internal`.
+- **A shape the factory cannot express.** The closed type has an `Optional` or `Deferred` injected property, a hook parameter marked `[Arg]`, `[FromKey]` or `[Inject]`, or a parameter type private to the base. Make the type `internal`.
+- **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing. The generic factory fills `Optional` and `Deferred` `[Inject]` properties, but not when the open registration names a lifecycle hook, a type parameter is constrained to a type private to the base, the type is nested in a generic class, or an `[InjectProperty]` entry of the base for it is `Optional` or `Deferred` or names one of its closings. Make the type `internal`.
 
 ```csharp expect=AWT226
 [Container]

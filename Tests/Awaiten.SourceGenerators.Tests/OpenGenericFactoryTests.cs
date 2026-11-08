@@ -1401,6 +1401,19 @@ public class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task AnOptionalInjectProperty_IsBuiltForExtendingContainers()
+		{
+			string library = "#nullable enable" + Environment.NewLine + InjectPropertyBase(string.Empty).Replace("public IClock Clock { get; set; } = null!;", "[Inject(Optional = true)] public IClock? Clock { get; set; }");
+
+			GeneratorResult same = Generator.Run(library + ExtendingInTheSameAssembly);
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(same.Diagnostics).IsEmpty()
+				.Because("the generic factory mirrors an optional [Inject] property, unlike the factory of a closed private type");
+			await That(other.Diagnostics).IsEmpty();
+		}
+
+		[Test]
 		public async Task ADeferredInjectProperty_IsSetThroughTheBasesSetter()
 		{
 			string library = InjectPropertyBase(string.Empty).Replace("public IClock Clock { get; set; } = null!;", "[Inject(Deferred = true)] public IClock Clock { get; set; } = null!;");
