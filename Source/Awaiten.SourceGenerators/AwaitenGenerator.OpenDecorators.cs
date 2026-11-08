@@ -14,8 +14,8 @@ partial class AwaitenGenerator
 	///     <c>Order</c>, declaration order and the keys present for that closing, so the existing
 	///     <see cref="DecoratorChainBuilder" /> interleaves them with explicit closed decorators of the same closing.
 	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT210 for a
-	///     selected key that no closing has, unless a closing of its service was dropped for a reported reason
-	///     (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
+	///     selected key that no closing has, unless a closing of its service was dropped under that key for a reported
+	///     reason (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
 	///     decorates nothing; one the container declares itself warns AWT249 (see
 	///     <see cref="ReportOpenContributionWithoutClosing" />).
 	/// </summary>
