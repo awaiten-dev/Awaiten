@@ -203,6 +203,23 @@ partial class AwaitenGenerator
 		mapped = mapped.ConstructedFrom;
 		service = service.ConstructedFrom;
 
+		foreach (INamedTypeSymbol nested in new[] { mapped, service, })
+		{
+			if (GenericContainingType(nested) is { } containing)
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.OpenGenericNestedInGenericType,
+					location,
+					new EquatableArray<string>([
+						AwaitenGenerator.Display(mapped.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(service.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(nested.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(containing.OriginalDefinition.ToDisplayString(FullyQualified)),
+					])));
+				return null;
+			}
+		}
+
 		// AWT125: the mapped type's type parameters must line up with the service's, so a closed service
 		// can be re-mapped onto it. v1 matches the open form exactly, so the arities must be equal.
 		if (mapped.Arity != service.Arity)
@@ -252,6 +269,20 @@ partial class AwaitenGenerator
 		ImmutableArray<ITypeParameterSymbol> parameters = implementation.TypeParameters;
 		return implementation.AllInterfaces.Any(@interface => MapsInOrder(@interface, service, parameters))
 		       || BaseTypes(implementation).Any(baseType => MapsInOrder(baseType, service, parameters));
+	}
+
+	/// <summary>The innermost generic type that contains <paramref name="type" />, or <see langword="null" />.</summary>
+	private static INamedTypeSymbol? GenericContainingType(INamedTypeSymbol type)
+	{
+		for (INamedTypeSymbol? containing = type.ContainingType; containing is not null; containing = containing.ContainingType)
+		{
+			if (containing.IsGenericType)
+			{
+				return containing;
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>The base types of <paramref name="type" />, from its direct base up to (but excluding) <c>object</c>.</summary>

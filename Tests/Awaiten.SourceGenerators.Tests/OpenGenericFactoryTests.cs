@@ -858,8 +858,8 @@ public class OpenGenericFactoryTests
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
 			await That(own.Diagnostics).IsEmpty();
-			await That(result.Diagnostics).Contains("*AWT231*DataModule*it is nested in the generic type 'Lib.Outer<T>'*").AsWildcard()
-				.Because("the factory could not take the containing type's type parameters from a closing of the service");
+			await That(result.Diagnostics).Contains("*AWT125*'Lib.Outer<T>.Inner<U>' is nested in the generic type 'Lib.Outer<T>'*").AsWildcard()
+				.Because("no container can take the containing type's type parameters from a closing of the service");
 		}
 	}
 
