@@ -263,6 +263,149 @@ public class ModuleHiddenRuntimeArgumentTests
 		}
 	}
 
+	public class AsyncInitialized
+	{
+		private static string Library(string services) => $$"""
+			using System;
+			using System.Threading.Tasks;
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IOrder { }
+			{{services}}
+			internal sealed class Brew : IBrew, IReceipt { public Brew([Arg] IOrder order) { } public Task StartAsync() => Task.CompletedTask; }
+
+			[Module]
+			[AsyncInitializer<Brew>(nameof(Brew.StartAsync))]
+			[Transient<Brew, IBrew>]
+			[Transient<Brew, IReceipt>]
+			public static partial class CoffeeModule { }
+			""";
+
+		private static (GeneratorResult Same, GeneratorResult External, GeneratorResult Friend) RunContainers(string library, string container)
+			=> (Generator.Run(library + string.Join("\n", container.Split('\n').Where(line => !line.StartsWith("using ", StringComparison.Ordinal) && !line.StartsWith("namespace ", StringComparison.Ordinal)))),
+				Generator.RunWithGeneratedReferencedAssembly(library, container),
+				Generator.RunWithGeneratedReferencedAssembly(library.Replace("using Awaiten;", "using Awaiten;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]"), container));
+
+		[Test]
+		public async Task UnderSeveralPublicServices_CompilesInEveryContainer()
+		{
+			string library = Library("public interface IBrew { }\npublic interface IReceipt { }");
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library, ExternalContainer);
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the alias of an async-initialized implementation built from runtime arguments awaits its instance handle");
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task AnAsyncFactoryOfTheContainer_IsAcceptedByEveryContainer()
+		{
+			string library = Library("public interface IBrew { }\ninternal interface IReceipt { }");
+			const string container = """
+				using System;
+				using System.Threading.Tasks;
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				public sealed class Shop { public Shop(Func<IOrder, Task<IBrew>> brew) { } }
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Transient<Shop>]
+				public static partial class MyContainer;
+				""";
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library, container);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("an async factory awaits the initialization behind the handle, as in the library's own assembly");
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task ThroughAnAsyncInitializedDependency_IsAcceptedByAnAsyncFactoryAndReportsAwt120ForASynchronousOne()
+		{
+			const string library = """
+				using System;
+				using System.Threading.Tasks;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IOrder { }
+				public interface IBrew { }
+				internal interface IClock { }
+				internal sealed class Clock : IClock { public Task StartAsync() => Task.CompletedTask; }
+				internal sealed class Brew : IBrew { public Brew(IClock clock, [Arg] IOrder order) { } }
+
+				[Module]
+				[AsyncInitializer<Clock>(nameof(Clock.StartAsync))]
+				[Singleton<Clock, IClock>]
+				[Transient<Brew, IBrew>]
+				public static partial class CoffeeModule { }
+				""";
+			const string container = """
+				using System;
+				using System.Threading.Tasks;
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				public sealed class Shop { public Shop(Func<IOrder, Task<IBrew>> brew) { } }
+				public sealed class Till { public Till(Func<IOrder, IBrew> brew) { } }
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Transient<Shop>]
+				[Transient<Till>]
+				public static partial class MyContainer;
+				""";
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library, container);
+
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT120"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT120") && diagnostic.Contains("Lib.Brew"))
+				.Because("the alias awaits a handle that is async-tainted through its dependency, so only the synchronous factory is rejected");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT120"));
+		}
+
+		[Test]
+		public async Task ASynchronousFactoryOfTheContainer_ReportsAwt119InEveryContainer()
+		{
+			string library = Library("public interface IBrew { }\ninternal interface IReceipt { }");
+			const string container = """
+				using System;
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				public sealed class Shop { public Shop(Func<IOrder, IBrew> brew) { } }
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Transient<Shop>]
+				public static partial class MyContainer;
+				""";
+
+			(GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunContainers(library, container);
+
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT119"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT119"))
+				.Because("a synchronous factory cannot await the initialization behind the handle");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT119"));
+		}
+	}
+
 	public class Rejections
 	{
 		[Test]

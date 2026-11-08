@@ -145,6 +145,17 @@ internal static partial class Sources
 				.Append(" @awaiten__handle")
 				.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
 				.Append(") => ").Append(alias.Body).AppendLine(";");
+			if (alias.AsyncBody is { } asyncBody)
+			{
+				builder.AppendLine();
+				AppendXmlSummary(builder, depth + 2,
+					"Generated from a module registration: serves a service of an async-initialized implementation the module builds",
+					"through a handle from its runtime arguments, awaiting an async factory of the instance handle.");
+				Indent(builder, depth + 2).Append("public static async global::System.Threading.Tasks.Task<").Append(alias.ReturnType).Append("> ").Append(alias.Name).Append("Async(")
+					.Append("global::System.Func<").Append(string.Concat(arguments.Select(argument => argument + ", "))).Append("global::System.Threading.Tasks.Task<").Append(alias.HandleType).Append(">> @awaiten__handle")
+					.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
+					.Append(") => ").Append(asyncBody).AppendLine(";");
+			}
 		}
 
 		foreach (HiddenInitializer initializer in model.Initializers.AsArray())

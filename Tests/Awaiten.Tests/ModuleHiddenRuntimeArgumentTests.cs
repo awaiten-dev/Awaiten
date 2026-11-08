@@ -177,6 +177,25 @@ public class ModuleHiddenRuntimeArgumentTests
 	[Arguments(Kind.SameAssembly)]
 	[Arguments(Kind.Friend)]
 	[Arguments(Kind.External)]
+	public async Task AsyncFactoryOfAnAsyncInitializedImplementation_AwaitsTheInitialization(Kind kind)
+	{
+		await using IAwaitenRoot container = Container(kind);
+		await using IAwaitenScope scope = await container.CreateScopeAsync();
+		ArgumentOrder order = new("cappuccino");
+
+		ArgumentReceiptDesk desk = await scope.ResolveAsync<ArgumentReceiptDesk>();
+		IArgumentStartedReceipt receipt = await desk.Issue(order);
+
+		await That(receipt.Order).IsSameAs(order);
+		await That(receipt.Started).IsTrue()
+			.Because("the async factory awaits the initialization of the instance behind the handle, as in the module's own assembly");
+		await That(await desk.Issue(order)).IsNotSameAs(receipt);
+	}
+
+	[Test]
+	[Arguments(Kind.SameAssembly)]
+	[Arguments(Kind.Friend)]
+	[Arguments(Kind.External)]
 	public async Task Barista_IsSharedWithinAScope(Kind kind)
 	{
 		await using IAwaitenRoot container = Container(kind);
@@ -195,8 +214,10 @@ public class ModuleHiddenRuntimeArgumentTests
 
 [Container]
 [Import(typeof(Support.HiddenArgumentModule))]
+[Transient<ArgumentReceiptDesk>]
 public static partial class ExternalArgumentShapeContainer;
 
 [Container]
 [Import(typeof(ContainerSupport.FriendHiddenArgumentModule))]
+[Transient<ArgumentReceiptDesk>]
 public static partial class FriendArgumentShapeContainer;

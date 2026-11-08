@@ -1501,13 +1501,13 @@ partial class AwaitenGenerator
 	///     internal service. A public implementation gets one under its own type too, through which a container in another
 	///     assembly serves its own registration of the implementation from the same instance. For an implementation built
 	///     from the runtime <paramref name="arguments" /> of its <c>[Arg]</c> parameters, each alias takes them and a factory
-	///     of the instance handle, since the container reaches such a service only through a factory.
+	///     of the instance handle, since the container reaches such a service only through a factory, and an async
+	///     counterpart awaits an async factory of the handle, which a container takes when the instance is async-initialized.
 	/// </summary>
 	private static IEnumerable<HiddenAlias> HiddenAliases(HiddenImplementation candidate, HiddenServices hidden, Compilation compilation, string[] arguments)
 	{
-		string handle = arguments.Length == 0
-			? "@awaiten__handle"
-			: $"@awaiten__handle({string.Join(", ", arguments.Select((_, index) => $"@awaiten__arg{index + 1}"))})";
+		string call = $"@awaiten__handle({string.Join(", ", arguments.Select((_, index) => $"@awaiten__arg{index + 1}"))})";
+		string handle = arguments.Length == 0 ? "@awaiten__handle" : call;
 		INamedTypeSymbol implementation = candidate.Implementation;
 		IEnumerable<INamedTypeSymbol> services = candidate.Registrations.Select(registration => registration.Service);
 		if (IsExternallyAccessible(implementation))
@@ -1524,13 +1524,19 @@ partial class AwaitenGenerator
 			}
 
 			string returnType = internalService ? hidden.HandleType(service) : service.ToDisplayString(FullyQualified);
-			string value = InstanceValue(implementation, service.ToDisplayString(FullyQualified), compilation, handle);
 			yield return new HiddenAlias(
 				HiddenAliasName(implementation, service),
 				returnType,
 				hidden.InstanceHandleType(implementation),
-				internalService ? $"new {returnType}({value})" : value,
-				new EquatableArray<string>(arguments));
+				Body(handle),
+				new EquatableArray<string>(arguments),
+				arguments.Length == 0 ? null : Body($"(await {call}.ConfigureAwait(false))"));
+
+			string Body(string instanceHandle)
+			{
+				string value = InstanceValue(implementation, service.ToDisplayString(FullyQualified), compilation, instanceHandle);
+				return internalService ? $"new {returnType}({value})" : value;
+			}
 		}
 	}
 

@@ -277,13 +277,49 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Serves each alias (see <see cref="ThroughAlias" />) that builds an async-tainted instance handle through a factory
+	///     (<paramref name="tainted" />) from the alias's async counterpart, which awaits an async factory of the handle, so
+	///     the alias is async-tainted like the implementation in a container of the module's own assembly. Returns whether
+	///     any alias changed, since its taint then has to propagate.
+	/// </summary>
+	private static bool AwaitAsyncHandlesOfAliases(List<InstanceModel> instances, bool[] tainted, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<string, int> implToIndex)
+	{
+		bool changed = false;
+		for (int index = 0; index < instances.Count; index++)
+		{
+			ParameterModel[] parameters = instances[index].ConstructorParameters.AsArray();
+			int factory = Array.FindIndex(parameters, parameter => parameter.Kind == DependencyKind.Func);
+			if (!instances[index].ImplementationType.Contains(AliasKeyMarker)
+			    || factory < 0
+			    || !serviceToImpl.TryGetValue(new ServiceKey(parameters[factory].ServiceType, parameters[factory].Key), out string? handle)
+			    || !implToIndex.TryGetValue(handle, out int handleIndex)
+			    || !tainted[handleIndex])
+			{
+				continue;
+			}
+
+			ParameterModel[] awaited = parameters.ToArray();
+			awaited[factory] = awaited[factory] with { Kind = DependencyKind.FuncTask, };
+			instances[index] = instances[index] with
+			{
+				ProductionMember = instances[index].ProductionMember + "Async",
+				ConstructorParameters = new EquatableArray<ParameterModel>(awaited),
+				IsAsyncFactory = true,
+			};
+			changed = true;
+		}
+
+		return changed;
+	}
+
+	/// <summary>
 	///     The instance handle an alias (see <see cref="ThroughAlias" />) serves its instance from, directly or through a
 	///     factory, or <paramref name="index" /> itself for any other instance, so a check of what a relationship reaches
 	///     judges and names the implementation, as a container in the module's own assembly does.
 	/// </summary>
 	private static int AliasedInstance(int index, List<InstanceModel> instances, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<string, int> implToIndex)
 		=> instances[index].ImplementationType.Contains(AliasKeyMarker)
-		   && instances[index].ConstructorParameters.AsArray().FirstOrDefault(parameter => parameter.Kind is DependencyKind.Direct or DependencyKind.Func) is { } handle
+		   && instances[index].ConstructorParameters.AsArray().FirstOrDefault(parameter => parameter.Kind is DependencyKind.Direct or DependencyKind.Func or DependencyKind.FuncTask) is { } handle
 		   && serviceToImpl.TryGetValue(new ServiceKey(handle.ServiceType, handle.Key), out string? implementation)
 		   && implToIndex.TryGetValue(implementation, out int handleIndex)
 			? handleIndex

@@ -66,6 +66,23 @@ public interface IArgumentTicket
 	/// <summary>The order the ticket was built from.</summary>
 	ArgumentOrder Order { get; }
 }
+
+/// <summary>A receipt of an order whose internal implementation is async-initialized and built from runtime arguments.</summary>
+public interface IArgumentStartedReceipt
+{
+	/// <summary>The order the receipt was built from.</summary>
+	ArgumentOrder Order { get; }
+
+	/// <summary>Whether the container awaited the initialization of the receipt.</summary>
+	bool Started { get; }
+}
+
+/// <summary>A desk a container registers, which takes an async factory of <see cref="IArgumentStartedReceipt" />.</summary>
+public sealed class ArgumentReceiptDesk(Func<ArgumentOrder, System.Threading.Tasks.Task<IArgumentStartedReceipt>> receipts)
+{
+	/// <summary>A receipt of <paramref name="order" />, once initialized.</summary>
+	public System.Threading.Tasks.Task<IArgumentStartedReceipt> Issue(ArgumentOrder order) => receipts(order);
+}
 #endif
 
 internal interface IHiddenArgumentBrew : IArgumentBrew;
@@ -103,6 +120,21 @@ internal sealed class ArgumentReceipt([Arg] ArgumentOrder order) : IArgumentRece
 	public ArgumentOrder Order { get; } = order;
 }
 
+internal interface IHiddenStartedReceipt;
+
+internal sealed class StartedArgumentReceipt([Arg] ArgumentOrder order) : IArgumentStartedReceipt, IHiddenStartedReceipt
+{
+	public ArgumentOrder Order { get; } = order;
+
+	public bool Started { get; private set; }
+
+	public async System.Threading.Tasks.Task StartAsync()
+	{
+		await System.Threading.Tasks.Task.Yield();
+		Started = true;
+	}
+}
+
 internal sealed class ArgumentTill(Func<ArgumentOrder, int, IHiddenArgumentBrew> brew) : IArgumentTill
 {
 	public IArgumentBrew Ring(ArgumentOrder order, int shots) => brew(order, shots);
@@ -130,9 +162,13 @@ internal sealed class ArgumentBarista(
 /// <summary>
 ///     A <c>[Module]</c> whose public barista takes factories with runtime arguments of an internal brew: constructed,
 ///     under a key, and produced by a private factory member, and one that hands out an owned brew, and a transient till. An internal receipt
-///     built from a runtime argument is registered under two public services.
+///     built from a runtime argument is registered under two public services, and an async-initialized one under a public
+///     and an internal service.
 /// </summary>
 [Module]
+[AsyncInitializer<StartedArgumentReceipt>(nameof(StartedArgumentReceipt.StartAsync))]
+[Transient<StartedArgumentReceipt, IArgumentStartedReceipt>]
+[Transient<StartedArgumentReceipt, IHiddenStartedReceipt>]
 [Transient<ArgumentBrew, IHiddenArgumentBrew>]
 [Transient<DecafArgumentBrew, IHiddenArgumentBrew>(Key = "decaf")]
 [Transient<IHiddenArgumentBrew>(Key = "member", Factory = nameof(MakeBrew))]
@@ -153,5 +189,6 @@ public static partial class HiddenArgumentModule
 /// <summary>A container in the module's own assembly that imports <see cref="FriendHiddenArgumentModule" />.</summary>
 [Container]
 [Import(typeof(FriendHiddenArgumentModule))]
+[Transient<ArgumentReceiptDesk>]
 public static partial class LocalArgumentShapeContainer;
 #endif
