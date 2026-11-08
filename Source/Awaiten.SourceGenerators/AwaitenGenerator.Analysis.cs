@@ -69,9 +69,10 @@ partial class AwaitenGenerator
 	///     instance on the owner until teardown exactly like disposal tracking, so a <c>SuppressDisposal</c>
 	///     pooled service accumulates the same way), or its construction transitively rebuilds such a service.
 	///     An alias that builds a tracked instance handle through a factory counts too (see
-	///     <see cref="InstanceModel.TracksHandleDisposal" />), since the walk does not follow a factory. The walk follows only transient edges (a scoped/singleton dependency is cached, so bounded) and
-	///     collection (Enumerable / keyed) edges, which materialize members eagerly. Used to decide whether a
-	///     plain <c>Func&lt;…&gt;</c> over the service accumulates on the container root (AWT118 / strict withholding).
+	///     <see cref="InstanceModel.TracksHandleDisposal" />), since the walk does not follow a factory. The walk
+	///     follows only transient edges (a scoped/singleton dependency is cached, so bounded) and collection
+	///     (Enumerable / keyed) edges, which materialize members eagerly. Used to decide whether a plain
+	///     <c>Func&lt;…&gt;</c> over the service accumulates on the container root (AWT118 / strict withholding).
 	/// </summary>
 	internal static bool BuildsFreshDisposable(
 		IReadOnlyList<InstanceModel> instances,
