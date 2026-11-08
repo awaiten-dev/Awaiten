@@ -126,6 +126,7 @@ namespace Awaiten
         public object?[]? Keys { get; set; }
         public int Order { get; set; }
         public System.Type Service { get; }
+        public string? When { get; set; }
     }
     [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     public sealed class DecorateAttribute<TDecorator, TService> : System.Attribute where TDecorator : class, TService
@@ -134,6 +135,7 @@ namespace Awaiten
         public bool AllKeys { get; set; }
         public object?[]? Keys { get; set; }
         public int Order { get; set; }
+        public string? When { get; set; }
     }
     public enum Fallback
     {

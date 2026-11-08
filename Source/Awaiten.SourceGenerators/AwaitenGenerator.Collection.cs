@@ -1298,7 +1298,8 @@ partial class AwaitenGenerator
 				}
 			}
 
-			if (!TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), diagnostics, out IReadOnlyList<string?>? keys))
+			if (!TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), diagnostics, out IReadOnlyList<string?>? keys)
+			    || !TryReadDecoratorPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when))
 			{
 				declarationOrder++;
 				continue;
@@ -1312,7 +1313,7 @@ partial class AwaitenGenerator
 					INamedTypeSymbol? handle = HandleProducedBy(via, service, compilation);
 					INamedTypeSymbol decorated = handle ?? service;
 					closed.Add(new DecorateRegistration(
-						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, handle is not null));
+						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, handle is not null, when));
 				}
 			}
 			else if (attribute.ConstructorArguments.Length == 2
@@ -1323,11 +1324,11 @@ partial class AwaitenGenerator
 				bool decoratesHandles = false;
 				foreach ((INamedTypeSymbol decorator, OwnerFactoryCall handleVia, INamedTypeSymbol handle, _) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
 				{
-					closed.Add(new DecorateRegistration(handle.ToDisplayString(FullyQualified), handle, decorator, order, declarationOrder, location, keys, inherited, handleVia, module, ThroughHandle: true));
+					closed.Add(new DecorateRegistration(handle.ToDisplayString(FullyQualified), handle, decorator, order, declarationOrder, location, keys, inherited, handleVia, module, ThroughHandle: true, When: when));
 					decoratesHandles = true;
 				}
 
-				open.Add(new OpenDecorateRegistration(pair.Service, pair.Mapped, order, declarationOrder, location, keys, inherited, module, openVia.Via, decoratesHandles));
+				open.Add(new OpenDecorateRegistration(pair.Service, pair.Mapped, order, declarationOrder, location, keys, inherited, module, openVia.Via, decoratesHandles, when));
 			}
 
 			// One slot per [Decorate] attribute (well-formed or not), so open and closed decorators keep their

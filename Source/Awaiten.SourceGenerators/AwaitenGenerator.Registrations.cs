@@ -99,6 +99,7 @@ internal sealed record ImportedModule(INamedTypeSymbol Symbol, Location? ImportL
 ///     <see cref="Owner" /> is the module or base that declares it, whose async initializer conventions judge it, or
 ///     <see langword="null" /> for the container's own. <see cref="ThroughHandle" /> marks a decorator a module of
 ///     another assembly builds into the handle of a service it registers under an internal type, which decorates that handle.
+///     <see cref="When" /> is the predicate that decides whether the decorator is applied, or <see langword="null" />.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record DecorateRegistration(
@@ -112,7 +113,16 @@ internal sealed record DecorateRegistration(
 	bool Inherited = false,
 	OwnerFactoryCall? Via = null,
 	INamedTypeSymbol? Owner = null,
-	bool ThroughHandle = false);
+	bool ThroughHandle = false,
+	DecoratorPredicate? When = null);
+
+/// <summary>
+///     The <c>When</c> predicate of a <c>[Decorate]</c>: the fully qualified static <see cref="Member" /> the root reads,
+///     the <see cref="Method" /> it calls when the member is a method (whose parameters the root resolves), and the
+///     attribute's location.
+/// </summary>
+/// <remarks>An intermediate type carrying live Roslyn symbols; see <see cref="RawRegistration" />.</remarks>
+internal sealed record DecoratorPredicate(string Member, IMethodSymbol? Method, Location? Location);
 
 /// <summary>
 ///     The generated factory of a module or base container (<see cref="Owner" />) that builds a decorator or composite
@@ -157,6 +167,7 @@ internal sealed record CompositeRegistration(
 ///     existing closing of the service. <see cref="Via" /> is the generic factory of the module or base that builds each
 ///     closing the container cannot construct. <see cref="DecoratesHandles" /> marks one that also decorates handles of
 ///     internal closings of its module, closed in the module's build, so it matching no accessible closing is no AWT123.
+///     <see cref="When" /> is the predicate every closing shares, as on <see cref="DecorateRegistration" />.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record OpenDecorateRegistration(
@@ -169,7 +180,8 @@ internal sealed record OpenDecorateRegistration(
 	bool Inherited = false,
 	INamedTypeSymbol? Owner = null,
 	OpenOwnerFactory? Via = null,
-	bool DecoratesHandles = false);
+	bool DecoratesHandles = false,
+	DecoratorPredicate? When = null);
 
 /// <summary>
 ///     A single open generic <c>[Composite(typeof(C&lt;&gt;), typeof(IService&lt;&gt;))]</c> registration: the unbound
@@ -227,6 +239,12 @@ partial class AwaitenGenerator
 
 		/// <summary>Whether the first (winning) registration of this implementation came from a <c>[Scan]</c>.</summary>
 		public bool IsScan { get; init; }
+
+		/// <summary>
+		///     The predicate of a conditional decorator chain link, and the decorated service the link returns its inner
+		///     instance as when the predicate is <see langword="false" />, or <see langword="null" />.
+		/// </summary>
+		public (DecoratorPredicate Predicate, string Service)? When { get; init; }
 
 		/// <summary>Whether this is the instance of a <c>[Composite]</c>.</summary>
 		public bool IsComposite { get; init; }

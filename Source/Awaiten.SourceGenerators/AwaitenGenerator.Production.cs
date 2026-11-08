@@ -162,12 +162,13 @@ partial class AwaitenGenerator
 			ReleaseParameters: releaseParameters,
 			SuppressDisposal: info.SuppressDisposal,
 			PrivateServices: PrivateServices(info, containerSymbol),
-			ResolverType: resolverType,
+			ResolverType: info.When?.Service ?? resolverType,
 			IsAsyncActivation: activationHook is not null && IsAsyncHookReturn(activationHook.ReturnType, compilation),
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
-			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics));
+			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics),
+			When: BuildPredicate(info, context));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{

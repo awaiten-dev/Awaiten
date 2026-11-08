@@ -621,6 +621,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
+		ValidateDecoratorPredicates(graph, diagnostics);
 
 		LocationInfo? containerLocation = LocationInfo.From(containerSymbol.Locations.FirstOrDefault());
 		DetectCycles(graph.Instances, graph.ConstructionDependencies, containerLocation, diagnostics);
@@ -768,7 +769,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		BaseFactories? Factories,
 		AsyncInitializerScopes AsyncInitializers,
 		SameCompilationModules Modules,
-		HiddenInjectedProperties HiddenInjectedProperties);
+		HiddenInjectedProperties HiddenInjectedProperties,
+		Dictionary<string, EquatableArray<ParameterModel>> Predicates);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -954,7 +956,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, EquatableArray<ParameterModel>>(StringComparer.Ordinal));
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

@@ -296,6 +296,16 @@ partial class AwaitenGenerator
 				AddParameterEdges(parameter, serviceToImpl, implToIndex, serviceMembers, keyedMembers, includeEagerBare, nodeEdges);
 			}
 
+			// A decorator predicate resolves its services when a link first needs it, so they close a cycle. They are
+			// left out of the captive and taint graph: a valid one is a synchronous singleton, and AWT248 reports any other.
+			if (includeEagerBare && instances[i].When is { } predicate)
+			{
+				foreach (ParameterModel parameter in predicate.Parameters.AsArray())
+				{
+					AddParameterEdges(parameter, serviceToImpl, implToIndex, serviceMembers, keyedMembers, includeEagerBare, nodeEdges);
+				}
+			}
+
 			edges[i] = nodeEdges;
 		}
 

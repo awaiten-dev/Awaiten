@@ -138,6 +138,7 @@ internal static partial class Sources
 		builder.AppendLine(")");
 		Indent(builder, depth).AppendLine("{");
 		EmitDisposedGuard(builder, depth + 1, "__s.");
+		EmitPredicateGuard(builder, depth + 1, instance, context, asynchronous: false);
 
 		// The `created` variable is needed for any post-construction work: disposal tracking, wiring deferred
 		// members, queuing OnRelease, or running OnActivated. A transient is not cached, so its deferred members
@@ -591,6 +592,7 @@ internal static partial class Sources
 		// failure (see EmitGuardedWiringAndInit) rather than leaking, since it is registered only on success.
 		Indent(builder, depth + 1).Append("async ").Append(task).Append('<').Append(type).Append("> ").Append(creator).AppendLine("()");
 		Indent(builder, depth + 1).AppendLine("{");
+		EmitPredicateGuard(builder, depth + 2, instance, context, asynchronous: true);
 		Indent(builder, depth + 2).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
 		EmitGuardedWiringAndInit(builder, depth + 2, instance, context, emitDeferred);
 		Indent(builder, depth + 2).AppendLine("return created;");
@@ -664,6 +666,7 @@ internal static partial class Sources
 			.Append(names.AsyncResolver(index)).Append("(Scope __s, ").Append(argSignature).Append(ct).AppendLine(")");
 		Indent(builder, depth).AppendLine("{");
 		EmitDisposedGuard(builder, depth + 1, "__s.");
+		EmitPredicateGuard(builder, depth + 1, instance, context, asynchronous: true);
 		Indent(builder, depth + 1).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
 		EmitGuardedWiringAndInit(builder, depth + 1, instance, context, emitDeferred);
 		Indent(builder, depth + 1).AppendLine("return created;");
@@ -873,6 +876,7 @@ internal static partial class Sources
 			.Append('(').Append(resolver.Owner).AppendLine(" __s)");
 		Indent(builder, depth).AppendLine("{");
 		EmitDisposedGuard(builder, depth + 1, "__s.");
+		EmitPredicateGuard(builder, depth + 1, instance, context, asynchronous: false);
 
 		// The lock-free fast path returns the cached field without taking the lock. When the instance has deferred
 		// ([Inject(Deferred = true)]) members it also tests the volatile wiring flag: those members are wired only

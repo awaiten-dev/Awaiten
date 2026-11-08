@@ -55,6 +55,19 @@ public sealed class DecorateAttribute<TDecorator, TService> : Attribute
 	///     <see cref="Keys" />.
 	/// </summary>
 	public bool AllKeys { get; set; }
+
+	/// <summary>
+	///     The name of a static <see langword="bool" /> method, property or field, on the type that declares this
+	///     attribute, that decides whether the decorator is applied. It is evaluated once per root: a parameterless
+	///     predicate when the root is created, one that takes services when the decorator is first needed. When it is
+	///     <see langword="false" />, the decorator is never built and the chain skips it. Leave unset to always apply it.
+	/// </summary>
+	/// <remarks>
+	///     The predicate may take services the root shares: singletons, <c>Instance</c> registrations and imported
+	///     services that are not initialized asynchronously. The graph is validated with the decorator in place.
+	/// </remarks>
+	/// <example><c>[Decorate&lt;MonitoringClient, IClient&gt;(When = nameof(MonitoringEnabled))]</c></example>
+	public string? When { get; set; }
 }
 
 /// <summary>
@@ -110,4 +123,18 @@ public sealed class DecorateAttribute : Attribute
 	///     <see cref="Keys" />.
 	/// </summary>
 	public bool AllKeys { get; set; }
+
+	/// <summary>
+	///     The name of a static <see langword="bool" /> method, property or field, on the type that declares this
+	///     attribute, that decides whether the decorator is applied to every closing. It is evaluated once per root: a
+	///     parameterless predicate when the root is created, one that takes services when a decorator is first needed.
+	///     When it is <see langword="false" />, no closing of the decorator is built and each chain skips it. Leave unset
+	///     to always apply it.
+	/// </summary>
+	/// <remarks>
+	///     The predicate may take services the root shares: singletons, <c>Instance</c> registrations and imported
+	///     services that are not initialized asynchronously. The graph is validated with the decorator in place.
+	/// </remarks>
+	/// <example><c>[Decorate(typeof(LoggingBehavior&lt;&gt;), typeof(IHandler&lt;&gt;), When = nameof(TracingEnabled))]</c></example>
+	public string? When { get; set; }
 }

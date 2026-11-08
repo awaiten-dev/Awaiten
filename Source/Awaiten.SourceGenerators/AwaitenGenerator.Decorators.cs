@@ -11,7 +11,7 @@ partial class AwaitenGenerator
 	///     trim the synthetic suffix from diagnostics. Kept on the enclosing type so both <c>DecoratorChainBuilder</c>
 	///     and <c>DisplayInstance</c> reach it (a nested type's private member is not visible here).
 	/// </summary>
-	private const string DecoratorKeyPrefix = "__dec:";
+	internal const string DecoratorKeyPrefix = "__dec:";
 
 	/// <summary>The prefix of a keyed composite's synthetic identity, trimmed by <c>DisplayInstance</c> like <see cref="DecoratorKeyPrefix" />.</summary>
 	private const string CompositeKeyPrefix = "__cmp:";
@@ -379,6 +379,7 @@ partial class AwaitenGenerator
 				Constructor = via?.Producer,
 				Hidden = chain.Ordered[linkIndex].ThroughHandle ? decorator : null,
 				Unlisted = chain.Ordered[linkIndex].ThroughHandle,
+				When = chain.Ordered[linkIndex].When is { } when ? (when, service) : null,
 			};
 			_byImpl[identity] = info;
 			_implOrder.Add(info);

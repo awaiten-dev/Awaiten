@@ -152,7 +152,7 @@ Only the composition-root assembly (the one that declares your `[Container]`) sh
 
 ## When power becomes a smell
 
-Some of Awaiten's features resolve ambiguity gracefully: [keyed services](./04-registration/04-keyed-services.md), contextual binding, [scanning](./04-registration/06-scanning.md), and [context-aware factories](./05-resolution/07-context-aware-factories.md) all let you say "it depends" and have the container sort it out. That power is real, and sometimes exactly right. But resolving an ambiguity is not the same as removing it, and a container that smooths one over can hide a design that wants to be split into two clear abstractions instead of one clever registration.
+Some of Awaiten's features resolve ambiguity gracefully: [keyed services](./04-registration/04-keyed-services.md), contextual binding, [scanning](./04-registration/06-scanning.md), [context-aware factories](./05-resolution/07-context-aware-factories.md), and [conditional decorators](./04-registration/02-decorators.md#apply-a-decorator-conditionally) all let you say "it depends" and have the container sort it out. That power is real, and sometimes exactly right. But resolving an ambiguity is not the same as removing it, and a container that smooths one over can hide a design that wants to be split into two clear abstractions instead of one clever registration.
 
 Each of those feature pages carries a **"When not to reach for this"** note that names the simpler thing to prefer and the genuine case that justifies the feature. Read them as a set. When you find yourself reaching for the powerful form to paper over a design you are not happy with, that is the smell, and the fix usually lives in the design, not the registration.
 
