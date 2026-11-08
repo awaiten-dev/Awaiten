@@ -208,17 +208,10 @@ partial class AwaitenGenerator
 			return members.Select(member => member.Deferred ? member with { Setter = $"{owner}.{DeferredSetterName(factory, member.MemberName)}{typeArguments}", } : member).ToList();
 		}
 
-		if (!IsGeneratedOwnerFactory(producer))
-		{
-			return members;
-		}
-
 		string prefix = DeferredSetterName(producer.Name, string.Empty);
 		string closing = producer.IsGenericMethod ? $"<{string.Join(", ", producer.TypeArguments.Select(argument => argument.ToDisplayString(FullyQualified)))}>" : string.Empty;
-		foreach (IMethodSymbol candidate in producer.ContainingType.GetMembers().OfType<IMethodSymbol>()
-			         .Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == producer.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal)))
+		foreach (IMethodSymbol setter in DeferredSetters(producer))
 		{
-			IMethodSymbol setter = producer.IsGenericMethod ? candidate.Construct(producer.TypeArguments.ToArray()) : candidate;
 			ParameterModel dependency = RedirectVariance(
 				ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
 			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
@@ -236,7 +229,8 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The setter wrappers next to the generated factory <paramref name="factory" /> (see <see cref="DeferredSetterName" />),
-	///     or none for any other method.
+	///     or none for any other method. A wrapper next to a generic factory is generic too, so it is constructed with the
+	///     factory's type arguments.
 	/// </summary>
 	private static IEnumerable<IMethodSymbol> DeferredSetters(IMethodSymbol factory)
 	{
@@ -247,7 +241,8 @@ partial class AwaitenGenerator
 
 		string prefix = DeferredSetterName(factory.Name, string.Empty);
 		return factory.ContainingType.GetMembers().OfType<IMethodSymbol>()
-			.Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Name.StartsWith(prefix, StringComparison.Ordinal));
+			.Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == factory.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal))
+			.Select(method => factory.IsGenericMethod ? method.Construct(factory.TypeArguments.ToArray()) : method);
 	}
 
 	/// <summary>Whether <paramref name="method" /> is a factory a module or base container generated into its <c>Internals</c> class.</summary>

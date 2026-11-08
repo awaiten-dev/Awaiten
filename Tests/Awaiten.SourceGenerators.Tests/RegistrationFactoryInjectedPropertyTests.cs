@@ -606,6 +606,48 @@ public class RegistrationFactoryInjectedPropertyTests
 				.Because("an optional property is filled when its service resolves, so a closing the constraints reject is the same error wherever the module lives");
 			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"));
 		}
+
+		private static string GenericGreeterModule()
+			=> """
+			   using Awaiten;
+
+			   namespace Lib;
+
+			   public interface IGreeter<T> { }
+			   public interface IRepository<T> { }
+			   public sealed class Repository<T> : IRepository<T> where T : class { }
+
+			   internal sealed class Greeter<T> : IGreeter<T>
+			   {
+			       [Inject(Deferred = true)] public IRepository<T> Items { get; set; } = null!;
+			   }
+
+			   [Module]
+			   [Transient(typeof(Greeter<>), typeof(IGreeter<>))]
+			   public static partial class GreetingModule { }
+			   """;
+
+		private static string GenericGreeterConsumer(string closing)
+			=> RepositoryConsumer.Replace("public static partial class AppContainer", "[Transient<Reader>]\npublic static partial class AppContainer")
+			   + $"\npublic sealed class Reader {{ public Reader(IGreeter<{closing}> greeter) {{ }} }}\n";
+
+		[Test]
+		public async Task ForADeferredPropertyOfAGenericFactory_ClosesTheRequestedClosing()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(GenericGreeterModule(), GenericGreeterConsumer("string"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the setter next to a generic factory is generic too, so it demands the closing of the requested type arguments, not its own type parameter");
+			await That(ContainerSource(result, "AppContainer")).Contains("new global::Lib.Repository<string>()");
+		}
+
+		[Test]
+		public async Task ForADeferredPropertyOfAGenericFactory_ReportsAClosingTheConstraintsReject()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(GenericGreeterModule(), GenericGreeterConsumer("int"));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("Repository<int>"));
+		}
 	}
 
 	public class RejectedShapes
