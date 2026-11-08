@@ -953,6 +953,7 @@ partial class AwaitenGenerator
 			bool isDeferred = IsInjectDeferred(attributes);
 			bool isOptional = IsInjectOptional(attributes);
 			string? reason = null;
+			INamedTypeSymbol? unbuildable = null;
 			if (property.SetMethod is not { } setter || !context.Compilation.IsSymbolAccessibleWithin(setter, context.Module))
 			{
 				reason = NoReachableSetter;
@@ -973,7 +974,7 @@ partial class AwaitenGenerator
 			{
 				reason = "is marked [FromKey] with an unsupported key";
 			}
-			else if (MirrorHiddenService(property.Type, property.Name, attributes, context, out _) is { } handle)
+			else if (MirrorHiddenService(property.Type, property.Name, attributes, context, out unbuildable) is { } handle)
 			{
 				if (handle.Error is { } error)
 				{
@@ -996,10 +997,16 @@ partial class AwaitenGenerator
 
 			if (reason is not null)
 			{
-				context.Diagnostics.Add(new DiagnosticInfo(
+				DiagnosticInfo rejection = new(
 					Diagnostics.ModuleScanInjectionMetadata,
 					LocationInfo.From(location),
-					new EquatableArray<string>([subject.Subject, $"its property '{property.Name}' {reason}", subject.Remedy,])));
+					new EquatableArray<string>([subject.Subject, $"its property '{property.Name}' {reason}", subject.Remedy,]));
+				if (unbuildable is not null && context.Hidden is { } hidden)
+				{
+					hidden.UnbuildableNeeds[rejection] = UnbuildableNeed($"its property '{property.Name}'", unbuildable);
+				}
+
+				context.Diagnostics.Add(rejection);
 				return false;
 			}
 

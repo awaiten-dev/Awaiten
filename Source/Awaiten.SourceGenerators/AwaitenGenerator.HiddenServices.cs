@@ -119,8 +119,8 @@ partial class AwaitenGenerator
 		public HashSet<INamedTypeSymbol> NeededNonViable { get; } = new(SymbolEqualityComparer.Default);
 
 		/// <summary>
-		///     The rejections of a parameter that takes a <see cref="NonViable" /> service, whose own cause the module reports
-		///     instead, each with the reason a consumer reports for what takes the parameter.
+		///     The rejections of a parameter or injected property that takes a <see cref="NonViable" /> service, whose own
+		///     cause the module reports instead, each with the reason a consumer reports for what takes it.
 		/// </summary>
 		public Dictionary<DiagnosticInfo, string> UnbuildableNeeds { get; } = new();
 
@@ -1383,6 +1383,13 @@ partial class AwaitenGenerator
 			? new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display(referenced.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]))
 			: null;
 	}
+
+	/// <summary>
+	///     The reason a consumer reports for an implementation whose <paramref name="member" /> takes the internal
+	///     <paramref name="service" /> the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />).
+	/// </summary>
+	private static string UnbuildableNeed(string member, INamedTypeSymbol service)
+		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
 
 	/// <summary>
 	///     The shape in which <paramref name="type" /> takes a service and that service, or a <see langword="null" />

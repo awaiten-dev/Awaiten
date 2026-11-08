@@ -1126,7 +1126,7 @@ partial class AwaitenGenerator
 				new EquatableArray<string>([subject.Subject, label, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,]));
 			if (unbuildable is not null && context.Hidden is { } services)
 			{
-				services.UnbuildableNeeds[rejection] = $"{label} needs the internal service '{Display(unbuildable.ToDisplayString(FullyQualified))}', which the module cannot build";
+				services.UnbuildableNeeds[rejection] = UnbuildableNeed(label, unbuildable);
 			}
 
 			diagnostics.Add(rejection);
