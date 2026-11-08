@@ -36,4 +36,5 @@ public partial class CrossLibraryCoalescingTests
 	[Container]
 	[Import(typeof(CrossLibraryHandledClockModule))]
 	[Import(typeof(CrossLibraryHandledTimerModule))]
-	public static partial class HandledClockContainer;}
+	public static partial class HandledClockContainer;
+}
