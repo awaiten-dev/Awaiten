@@ -1401,6 +1401,21 @@ public class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task ADeferredInjectProperty_IsSetThroughTheBasesSetter()
+		{
+			string library = InjectPropertyBase(string.Empty).Replace("public IClock Clock { get; set; } = null!;", "[Inject(Deferred = true)] public IClock Clock { get; set; } = null!;");
+
+			GeneratorResult same = Generator.Run(library + ExtendingInTheSameAssembly);
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(same.Diagnostics).IsEmpty()
+				.Because("the base emits the setter wrapper of its generic factory's deferred property, which the extending container calls");
+			await That(other.Diagnostics).IsEmpty();
+			await That(ContainerSource(other, "TestShop")).Contains("global::Lib.Shop.Internals.Deferred_Registration_Repository_")
+				.Because("an extending container in another assembly finds the setter next to the factory instead of leaving the property unset");
+		}
+
+		[Test]
 		public async Task AClosedInjectPropertyEntryForAClosing_IsReportedWithTheReason()
 		{
 			GeneratorResult result = Generator.Run(InjectPropertyBase("""[InjectProperty(typeof(Shop.Repository<Order>), "Clock")]""") + ExtendingInTheSameAssembly);

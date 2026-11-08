@@ -145,6 +145,7 @@ internal static partial class Sources
 			EmitRegistrationFactory(builder, depth, factory, "internal",
 				"Generated for a container that extends this one: constructs an implementation private to this container and",
 				"returns it as an accessible type, so the extending container resolves it without naming the implementation.");
+			EmitDeferredSetters(builder, depth, factory);
 			foreach (RegistrationHook hook in factory.Hooks.AsArray())
 			{
 				builder.AppendLine();

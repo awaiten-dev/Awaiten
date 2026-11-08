@@ -253,6 +253,8 @@ public sealed partial class OpenGenericFactoryTests
 			IClocked<Order> clocked = container.Resolve<ClockedConsumer>().Clocked;
 
 			await That(clocked.Clock).IsSameAs(container.Resolve<IOpenClock>());
+			await That(clocked.Later).IsSameAs(container.Resolve<IOpenClock>())
+				.Because("the extending container calls the setter the base generates next to its generic factory");
 		}
 	}
 
@@ -264,6 +266,8 @@ public sealed partial class OpenGenericFactoryTests
 	public interface IClocked<T>
 	{
 		IOpenClock? Clock { get; }
+
+		IOpenClock? Later { get; }
 	}
 
 	[Container]
@@ -276,6 +280,9 @@ public sealed partial class OpenGenericFactoryTests
 		private sealed class Clocked<T> : IClocked<T>
 		{
 			public IOpenClock? Clock { get; set; }
+
+			[Inject(Deferred = true)]
+			public IOpenClock? Later { get; set; }
 		}
 	}
 

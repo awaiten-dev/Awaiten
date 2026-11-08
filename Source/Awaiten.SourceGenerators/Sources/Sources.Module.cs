@@ -507,7 +507,7 @@ internal static partial class Sources
 		{
 			builder.AppendLine();
 			AppendXmlSummary(builder, depth,
-				"Generated from a module registration: assigns a property marked [Inject(Deferred = true)] after a consuming",
+				"Generated from a registration: assigns a property marked [Inject(Deferred = true)] after a consuming",
 				"container built and cached the instance, so it can break a cycle.");
 			Indent(builder, depth).Append(factory.IsInternal ? "internal" : "public").Append(" static void ").Append(AwaitenGenerator.DeferredSetterName(factory.FactoryName, parameter.Name)).Append(factory.TypeParameters).Append('(')
 				.Append(factory.ReturnType).Append(" @awaiten__instance, ").Append(MirroredParameter(parameter))
