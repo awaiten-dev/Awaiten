@@ -610,32 +610,37 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
-		public async Task OfAPublicDecoratorTheFactoryCannotMirror_IsReportedByTheModule()
+		public async Task OfAPublicDecoratorTheFactoryCannotMirror_IsReportedByTheModuleWithoutInternalsVisibleTo()
 		{
-			GeneratorResult result = Generator.Run(Granted("""
-			                                               using Awaiten;
+			const string module = """
+			                      using Awaiten;
 
-			                                               namespace Lib;
+			                      namespace Lib;
 
-			                                               public interface IGreeter { }
-			                                               public interface IClock { }
-			                                               public sealed class Greeter : IGreeter { }
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class Greeter : IGreeter { }
 
-			                                               public sealed class LoudGreeter : IGreeter
-			                                               {
-			                                                   public LoudGreeter(IGreeter inner, IClock Clock) { }
+			                      public sealed class LoudGreeter : IGreeter
+			                      {
+			                          public LoudGreeter(IGreeter inner, IClock Clock) { }
 
-			                                                   [Inject] internal IClock Clock { get; set; } = null!;
-			                                               }
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                      }
 
-			                                               [Module]
-			                                               [Transient<Greeter, IGreeter>]
-			                                               [Decorate<LoudGreeter, IGreeter>]
-			                                               public static partial class GreetingModule { }
-			                                               """));
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Decorate<LoudGreeter, IGreeter>]
+			                      public static partial class GreetingModule { }
+			                      """;
+
+			GeneratorResult result = Generator.Run(module);
+			GeneratorResult granted = Generator.Run(Granted(module));
 
 			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("has the name of a constructor parameter"))
 				.Because("a container in another assembly constructs the public decorator itself and would silently leave out the property it does not see");
+			await That(granted.Diagnostics).IsEmpty()
+				.Because("a friend constructs the decorator itself, so the module records the reason for a container without the grant");
 		}
 
 		[Test]
@@ -645,6 +650,81 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
 				.Because("a container without InternalsVisibleTo constructs the public implementation itself, so only the module's factory can set the property");
+		}
+	}
+
+	public class PublicDecoratorOfALibraryWithInternalsVisibleTo
+	{
+		private const string Module = """
+		                              using Awaiten;
+
+		                              namespace Lib;
+
+		                              public interface IGreeter { }
+		                              internal sealed class Helper { }
+		                              public sealed class Greeter : IGreeter { }
+
+		                              public sealed class LoudGreeter : IGreeter
+		                              {
+		                                  public LoudGreeter(IGreeter inner) { }
+
+		                                  [Inject] internal Helper Helper { get; set; } = null!;
+		                              }
+
+		                              [Module]
+		                              [Transient<Greeter, IGreeter>]
+		                              [Decorate<LoudGreeter, IGreeter>]
+		                              public static partial class GreetingModule { }
+
+		                              [Container]
+		                              [Import(typeof(GreetingModule))]
+		                              [Transient<Helper>]
+		                              internal static partial class LibContainer { }
+		                              """;
+
+		[Test]
+		public async Task IsBuiltByTheLibraryAndAFriend()
+		{
+			GeneratorResult library = Generator.Run(Granted(Module));
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(Module), """
+			                                                                                     using Awaiten;
+			                                                                                     using Lib;
+
+			                                                                                     namespace App;
+
+			                                                                                     [Container]
+			                                                                                     [Import(typeof(GreetingModule))]
+			                                                                                     [Transient<Helper>]
+			                                                                                     internal static partial class AppContainer { }
+			                                                                                     """);
+
+			await That(library.Diagnostics).IsEmpty()
+				.Because("a friend constructs the decorator itself, so the module records why it generates no factory, like for a registration");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Helper = ");
+		}
+
+		[Test]
+		public async Task IsReportedByAContainerWithoutTheGrant()
+		{
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(Module), Consumer);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"))
+				.Because("the container could construct the decorator, but not set the property it does not see");
+		}
+
+		[Test]
+		public async Task AsAComposite_IsTreatedAlike()
+		{
+			string module = Module
+				.Replace("public LoudGreeter(IGreeter inner) { }", "public LoudGreeter(System.Collections.Generic.IEnumerable<IGreeter> all) { }")
+				.Replace("[Decorate<LoudGreeter, IGreeter>]", "[Composite<LoudGreeter, IGreeter>]");
+
+			GeneratorResult library = Generator.Run(Granted(module));
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(module), Consumer);
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"));
 		}
 	}
 

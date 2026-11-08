@@ -1127,9 +1127,10 @@ partial class AwaitenGenerator
 	///     module generates for it (see <see cref="CollectModuleContributionFactories" />): from metadata in another
 	///     assembly, or by its deterministic name in the module's own assembly when the type is private to the module,
 	///     preferring the internal factory that takes the internal services instead of their handles where the container
-	///     can see it. Without a factory, one inherited through <c>Extends</c> is AWT226, one whose module recorded what a
-	///     container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and any
-	///     other is AWT230.
+	///     can see it. Without a factory, one whose skip the module recorded and whose <c>[Inject]</c> property this
+	///     container does not see is AWT231, one inherited through <c>Extends</c> is AWT226, one whose module recorded what
+	///     a container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and
+	///     any other is AWT230.
 	/// </summary>
 	private static bool UnavailableContribution(ContributionContext context, AttributeData attribute, INamedTypeSymbol attributeClass, out OwnerFactoryCall? via)
 	{
@@ -1163,10 +1164,12 @@ partial class AwaitenGenerator
 			return inheritance is not null && InaccessibleInheritedType(attribute, attributeClass, inheritance, diagnostics, out _);
 		}
 
-		// The factory of a type this container can construct sets an internal [Inject] property it does not see.
+		// The factory of a type this container can construct sets an internal [Inject] property it does not see, and a
+		// recorded skip says the module could not generate one.
+		string? skipReason = name is not null ? SkippedContributionReason(module, name) : null;
 		bool hiddenMembers = name is not null
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
-		                     && GeneratedFactoryNamed(module, name, compilation) is not null;
+		                     && (GeneratedFactoryNamed(module, name, compilation) is not null || skipReason is not null);
 		if (type is not { TypeKind: TypeKind.Class, IsAbstract: false, } || (CanConstruct(type.OriginalDefinition, compilation) && !hiddenMembers))
 		{
 			return inheritance is not null && InaccessibleInheritedType(attribute, attributeClass, inheritance, diagnostics, out _);
@@ -1178,6 +1181,20 @@ partial class AwaitenGenerator
 		{
 			via = new OwnerFactoryCall(module, factory.Name, factory.ReturnType.ToDisplayString(FullyQualified), factory);
 			return false;
+		}
+
+		if (hiddenMembers && skipReason is not null)
+		{
+			DiagnosticInfo diagnostic = new(
+				Diagnostics.ModuleRegistrationPropertyNotSet,
+				LocationInfo.From(context.Location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,]));
+			if (!diagnostics.Contains(diagnostic))
+			{
+				diagnostics.Add(diagnostic);
+			}
+
+			return true;
 		}
 
 		if (inheritance is not null)

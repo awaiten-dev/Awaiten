@@ -478,7 +478,10 @@ partial class AwaitenGenerator
 	///     A type the factory cannot express gets none and no error in the module's build: a container that cannot
 	///     construct it reports it at its <c>[Import]</c> (AWT230), as before. A public type another assembly constructs
 	///     itself, but whose <c>[Inject]</c> property it cannot set, is reported to <paramref name="diagnostics" /> instead,
-	///     since such a container would silently leave the property out. In the module's own build, one over an
+	///     since such a container would silently leave the property out, unless the module's assembly grants
+	///     <c>InternalsVisibleTo</c> to any assembly and the reason is one such an assembly avoids by constructing the
+	///     type itself (see <see cref="SkipReason" />): the type then lands in <paramref name="skipped" />, like a
+	///     registration, and a container without the grant reports it (AWT231). In the module's own build, one over an
 	///     internal service is built into the service's handle instead (see <see cref="HiddenContributionFactory" />), and
 	///     when it cannot be, what a consumer reports instead is added to <paramref name="skipped" /> (see
 	///     <see cref="ContributionFault" />).
@@ -517,7 +520,17 @@ partial class AwaitenGenerator
 				built = ContributionFactory(type, service, name, context);
 				if (built is null && diagnostics is not null && ConstructibleEverywhere(type))
 				{
-					ContributionFactory(type, service, name, context with { Diagnostics = diagnostics, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+					List<DiagnosticInfo> rejections = new();
+					ContributionFactory(type, service, name, context with { Diagnostics = rejections, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+					string?[] reasons = rejections.Select(rejection => SkipReason(rejection, [service.ToDisplayString(FullyQualified),])).ToArray();
+					if (skipped is not null && GrantsInternalsVisibleTo(compilation.Assembly) && reasons.Length > 0 && reasons.All(reason => reason is not null))
+					{
+						skipped.Add(new SkippedRegistration(ContributionSkippedName(name), reasons[0]!));
+					}
+					else
+					{
+						diagnostics.AddRange(rejections);
+					}
 				}
 			}
 			else
@@ -1285,6 +1298,23 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string RegistrationSkippedName(INamedTypeSymbol implementation)
 		=> $"RegistrationSkipped_{implementation.Name}_{Fnv1a(implementation.ToDisplayString(FullyQualified)):x8}";
+
+	/// <summary>
+	///     A deterministic name for the constant that records why the module generates no factory for the decorator or
+	///     composite whose factory would be named <paramref name="factoryName" /> (see <see cref="ContributionFactoryName(string, INamedTypeSymbol, INamedTypeSymbol)" />).
+	/// </summary>
+	private static string ContributionSkippedName(string factoryName)
+		=> factoryName + "_Skipped";
+
+	/// <summary>
+	///     Why the imported module of another assembly generated no factory named <paramref name="factoryName" /> for a
+	///     decorator or composite, or <see langword="null" /> when it records no such skip.
+	/// </summary>
+	private static string? SkippedContributionReason(INamedTypeSymbol module, string factoryName)
+		=> InternalsMembers(module, ContributionSkippedName(factoryName))
+			.OfType<IFieldSymbol>()
+			.Select(field => field.ConstantValue as string)
+			.FirstOrDefault(reason => reason is not null);
 
 	/// <summary>
 	///     Why the imported module of another assembly generated no factory for <paramref name="implementation" />,
