@@ -141,7 +141,7 @@ public sealed partial class NullableAnnotationTests
 	{
 		internal static Clock<string>? Clock { get; } = new();
 
-		private static IStore? CreateStore() => new MainStore();
+		private static MainStore? CreateStore() => new();
 	}
 
 	[Test]
@@ -175,7 +175,7 @@ public sealed partial class NullableAnnotationTests
 		internal static Ticket? Ticket { get; } = new Ticket(7);
 
 		[return: System.Diagnostics.CodeAnalysis.MaybeNull]
-		private static IStore CreateStore() => new MainStore();
+		private static MainStore CreateStore() => new();
 	}
 
 	[Test]
@@ -183,8 +183,8 @@ public sealed partial class NullableAnnotationTests
 	{
 		using NullResultShop.Root shop = new();
 
-		object? first = shop.Resolve(typeof(IStore));
-		object? second = shop.Resolve(typeof(IStore));
+		IStore? first = shop.Resolve<IStore>();
+		IStore? second = shop.Resolve<IStore>();
 
 		await That(first).IsNull();
 		await That(second).IsNull();
