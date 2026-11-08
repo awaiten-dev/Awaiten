@@ -264,7 +264,7 @@ public class ModuleTests
 	}
 
 	[Test]
-	public async Task Module_DefaultOverriddenByAnEarlierDefault_DoesNotSeedOpenGenericExpansion()
+	public async Task Module_DefaultLosingToAnEarlierDefault_SeedsOpenGenericExpansion()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using Awaiten;
@@ -301,8 +301,8 @@ public class ModuleTests
 		await That(result.Diagnostics).IsEmpty();
 		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
 
-		await That(source).DoesNotContain("Repo<global::MyCode.Foo>")
-			.Because("a default dropped by an earlier default is not built, so its constructor must not seed open generic expansion either");
+		await That(source).Contains("Repo<global::MyCode.Foo>")
+			.Because("a default losing only to an earlier default stays a collection member and is built, so its constructor seeds open generic expansion");
 	}
 
 	[Test]

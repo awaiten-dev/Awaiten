@@ -280,5 +280,39 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).DoesNotContain("*AWT105*").AsWildcard()
 				.Because("the awaited keyed dictionary launders its members' taint like the awaited collection, so it is not a captive dependency");
 		}
+
+		[Test]
+		public async Task ReportsWhenADefaultLosingToAnotherDefaultCapturesAScopedService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Session { }
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB(Session session) : IClock { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Scoped<Session>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT105*ClockB*").AsWildcard()
+				.Because("a default losing single resolution to another default is still a collection member, so its captive dependency is checked like any registration's");
+		}
 	}
 }

@@ -66,10 +66,10 @@ public sealed class ScopedAttribute : Attribute
 	public Type? WhenInjectedInto { get; set; }
 
 	/// <summary>
-	///     Marks this as an overridable default, usually declared in a module: it applies only when nothing else
-	///     registers the same service, so a container or another module can replace it. For an open generic this
-	///     holds per closing. <c>Fallback.Warn</c> reports AWT148 if another overridable default competes with
-	///     nothing stronger to resolve it; <c>Fallback.Silent</c> defers without a warning. Defaults to
+	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or, for a
+	///     closed default, the closing of an open generic registration. For an open generic this holds per closing.
+	///     <c>Fallback.Warn</c> reports AWT148 if another overridable default competes with nothing stronger to resolve it; <c>Fallback.Silent</c> defers without a warning. Defaults to
 	///     <c>Fallback.None</c>, a normal registration.
 	/// </summary>
 	public Fallback Fallback { get; set; }
@@ -137,8 +137,9 @@ public sealed class ScopedAttribute<TImplementation> : Attribute
 	public Type? WhenInjectedInto { get; set; }
 
 	/// <summary>
-	///     Marks this as an overridable default, usually declared in a module: it applies only when nothing else
-	///     registers the same service, so a container or another module can replace it. <c>Fallback.Warn</c>
+	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or the
+	///     closing of an open generic registration. <c>Fallback.Warn</c>
 	///     reports AWT148 if another overridable default competes with nothing stronger to resolve it;
 	///     <c>Fallback.Silent</c> defers without a warning. Defaults to <c>Fallback.None</c>, a normal registration.
 	/// </summary>
@@ -205,8 +206,9 @@ public sealed class ScopedAttribute<TImplementation, TService> : Attribute
 	public Type? WhenInjectedInto { get; set; }
 
 	/// <summary>
-	///     Marks this as an overridable default, usually declared in a module: it applies only when nothing else
-	///     registers the same service, so a container or another module can replace it. <c>Fallback.Warn</c>
+	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or the
+	///     closing of an open generic registration. <c>Fallback.Warn</c>
 	///     reports AWT148 if another overridable default competes with nothing stronger to resolve it;
 	///     <c>Fallback.Silent</c> defers without a warning. Defaults to <c>Fallback.None</c>, a normal registration.
 	/// </summary>

@@ -17,6 +17,7 @@ public partial class DiagnosticTests
 			                                       public interface IClock { }
 			                                       public sealed class ClockA : IClock { }
 			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
 
 			                                       [Module]
 			                                       [Singleton<ClockA, IClock>]
@@ -29,6 +30,7 @@ public partial class DiagnosticTests
 			                                       [Container]
 			                                       [Import(typeof(ModuleA))]
 			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
@@ -125,6 +127,7 @@ public partial class DiagnosticTests
 			                                       public interface IClock { }
 			                                       public sealed class ModuleClock : IClock { }
 			                                       public sealed class AppClock : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
 
 			                                       [Module]
 			                                       [Singleton<ModuleClock, IClock>]
@@ -133,6 +136,7 @@ public partial class DiagnosticTests
 			                                       [Container]
 			                                       [Import(typeof(ClockModule))]
 			                                       [Singleton<AppClock, IClock>]
+			                                       [Singleton<Consumer>]
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
@@ -152,6 +156,7 @@ public partial class DiagnosticTests
 
 			                                       public interface IClock { }
 			                                       public sealed class SharedClock : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
 
 			                                       [Module]
 			                                       [Singleton<SharedClock, IClock>]
@@ -164,6 +169,7 @@ public partial class DiagnosticTests
 			                                       [Container]
 			                                       [Import(typeof(ModuleA))]
 			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
@@ -184,6 +190,7 @@ public partial class DiagnosticTests
 			                                       public interface IClock { }
 			                                       public sealed class ClockA : IClock { }
 			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
 
 			                                       [Module]
 			                                       [Singleton<ClockA, IClock>]
@@ -196,6 +203,7 @@ public partial class DiagnosticTests
 			                                       [Container]
 			                                       [Import(typeof(ModuleA))]
 			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
 			                                       public static partial class MyContainer
 			                                       {
 			                                       }
@@ -237,6 +245,966 @@ public partial class DiagnosticTests
 				.Because("a keyed duplicate is already its own error");
 			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
 				.Because("AWT155 is limited to unkeyed collisions to avoid double-reporting");
+		}
+
+		[Test]
+		public async Task DoesNotReportWhenNothingInTheGraphResolvesTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("no dependency in the graph depends on which registration wins single resolution");
+		}
+
+		[Test]
+		[Arguments("IEnumerable<IClock>")]
+		[Arguments("IReadOnlyList<IClock>")]
+		[Arguments("IClock[]")]
+		[Arguments("IAsyncEnumerable<IClock>")]
+		[Arguments("Task<IReadOnlyList<IClock>>")]
+		public async Task DoesNotReportWhenTheServiceIsOnlyConsumedAsACollection(string shape)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using System.Collections.Generic;
+			                                         using System.Threading.Tasks;
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public interface IClock { }
+			                                         public sealed class ClockA : IClock { }
+			                                         public sealed class ClockB : IClock { }
+			                                         public sealed class Consumer({{shape}} clocks) { }
+
+			                                         [Module]
+			                                         [Singleton<ClockA, IClock>]
+			                                         public static class ModuleA { }
+
+			                                         [Module]
+			                                         [Singleton<ClockB, IClock>]
+			                                         public static class ModuleB { }
+
+			                                         [Container]
+			                                         [Import(typeof(ModuleA))]
+			                                         [Import(typeof(ModuleB))]
+			                                         [Singleton<Consumer>]
+			                                         public static partial class MyContainer
+			                                         {
+			                                         }
+			                                         """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("a collection receives every contribution, so the order of the imports decides nothing it sees");
+		}
+
+		[Test]
+		public async Task DoesNotReportWhenTheServiceIsOnlyConsumedAsAKeyedDictionary()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class ClockC : IClock { }
+			                                       public sealed class Consumer(IReadOnlyDictionary<string, IClock> clocks) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       [Singleton<ClockC, IClock>(Key = "c")]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("a keyed dictionary holds only keyed registrations, so it never resolves the unkeyed winner");
+		}
+
+		[Test]
+		public async Task DoesNotReportWhenACompositeFrontsTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class AllClocks(IEnumerable<IClock> clocks) : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Composite<AllClocks, IClock>]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("the composite takes single resolution and fans out to every contribution");
+		}
+
+		[Test]
+		public async Task DoesNotReportWhenAnOpenCompositeFrontsTheClosing()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IRepo<T> { }
+			                                       public sealed class RepoA<T> : IRepo<T> { }
+			                                       public sealed class RepoB<T> : IRepo<T> { }
+			                                       public sealed class AllRepos<T>(IEnumerable<IRepo<T>> repos) : IRepo<T> { }
+			                                       public sealed class Order { }
+			                                       public sealed class Consumer(IRepo<Order> repo) { }
+
+			                                       [Module]
+			                                       [Singleton(typeof(RepoA<>), typeof(IRepo<>))]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton(typeof(RepoB<>), typeof(IRepo<>))]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Composite(typeof(AllRepos<>), typeof(IRepo<>))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("the closed composite takes single resolution of the closing and fans out to every contribution");
+		}
+
+		[Test]
+		public async Task ReportsWhenADecoratedServiceIsResolvedSingly()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class LoggingClock(IClock inner) : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Decorate<LoggingClock, IClock>]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("the decorator wraps the single winner, which only the order of the imports decides");
+		}
+
+		[Test]
+		[Arguments("Func<IClock>")]
+		[Arguments("Lazy<IClock>")]
+		[Arguments("Owned<IClock>")]
+		public async Task ReportsWhenARelationshipResolvesTheServiceSingly(string shape)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using System;
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public interface IClock { }
+			                                         public sealed class ClockA : IClock { }
+			                                         public sealed class ClockB : IClock { }
+			                                         public sealed class Consumer({{shape}} clock) { }
+
+			                                         [Module]
+			                                         [Singleton<ClockA, IClock>]
+			                                         public static class ModuleA { }
+
+			                                         [Module]
+			                                         [Singleton<ClockB, IClock>]
+			                                         public static class ModuleB { }
+
+			                                         [Container]
+			                                         [Import(typeof(ModuleA))]
+			                                         [Import(typeof(ModuleB))]
+			                                         [Transient<Consumer>]
+			                                         public static partial class MyContainer
+			                                         {
+			                                         }
+			                                         """);
+
+			await That(result.Diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("a relationship hands out the single winner, which only the order of the imports decides");
+		}
+
+		[Test]
+		public async Task SuggestsAnOverridableDefaultWhenTheServiceIsOnlyResolvedSingly()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT155*override it on the container, or make one registration an overridable default*").AsWildcard()
+				.Because("with no collection in the graph, an overridden default drops nothing anyone sees");
+		}
+
+		[Test]
+		public async Task DoesNotSuggestAnOverridableDefaultWhenTheServiceIsAlsoConsumedAsACollection()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+			                                       public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       [Singleton<Board>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("a default that a strong registration overrides leaves the collection, so the advice would drop a member");
+			await That(awt155).Contains("register the implementation single resolution should use on the container too")
+				.Because("re-registering one implementation on the container decides single resolution and keeps every member");
+			await That(awt155).DoesNotContain("only for a constructed implementation")
+				.Because("both contributions are constructed implementations the container can register again");
+		}
+
+		[Test]
+		public async Task WarnsThatAContainerRegistrationAddsAMemberWhenAModuleProducesTheServiceThroughAFactory()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+			                                       public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                       [Module]
+			                                       [Singleton<IClock>(Factory = nameof(Make))]
+			                                       public static class ModuleA
+			                                       {
+			                                           public static IClock Make() => new ClockA();
+			                                       }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       [Singleton<Board>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).Contains("only for a constructed implementation the container can access")
+				.Because("a Factory registration has no implementation type the container could register again to coalesce with it");
+			await That(awt155).Contains("a Factory or Instance registration of the container joins the collection as a further member")
+				.Because("the container's own Factory registration is an identity of its own, so it adds a member");
+		}
+
+		[Test]
+		public async Task WarnsThatTheRemedyNeedsAnAccessibleImplementationWhenAModuleOfAnotherAssemblyRegistersAnInternalOne()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+
+			                                                                      namespace Lib;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class ClockA : IClock { }
+			                                                                      internal sealed class ClockB : IClock { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockA, IClock>]
+			                                                                      public static partial class ModuleA { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockB, IClock>]
+			                                                                      public static partial class ModuleB { }
+			                                                                      """, """
+			                                                                           using System.Collections.Generic;
+			                                                                           using Awaiten;
+			                                                                           using Lib;
+
+			                                                                           namespace MyCode;
+
+			                                                                           public sealed class Consumer(IClock clock) { }
+			                                                                           public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                                                           [Container]
+			                                                                           [Import(typeof(ModuleA))]
+			                                                                           [Import(typeof(ModuleB))]
+			                                                                           [Singleton<Consumer>]
+			                                                                           [Singleton<Board>]
+			                                                                           public static partial class MyContainer
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).Contains("only for a constructed implementation the container can access")
+				.Because("the container cannot register the internal implementation of the other assembly again");
+		}
+
+		[Test]
+		public async Task DoesNotSuggestAnOverridableDefaultWhenAVarianceCollectionHoldsTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public class Base { }
+			                                       public sealed class Derived : Base { }
+			                                       public interface IHandler<in T> { }
+			                                       public sealed class HandlerA : IHandler<Base> { }
+			                                       public sealed class HandlerB : IHandler<Base> { }
+			                                       public sealed class Consumer(IHandler<Base> handler) { }
+			                                       public sealed class Board(IEnumerable<IHandler<Derived>> handlers) { }
+
+			                                       [Module]
+			                                       [Singleton<HandlerA, IHandler<Base>>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<HandlerB, IHandler<Base>>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       [Singleton<Board>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("the collection of IHandler<Derived> holds every IHandler<Base> through variance, so an overridden default would leave it");
+		}
+
+		[Test]
+		public async Task DoesNotReportWhenEveryRegistrationIsAnOverridableDefault()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("defaults colliding are AWT148's to report, and Fallback.Silent opts out of it");
+		}
+
+		[Test]
+		public async Task ReportsForModulesOfAnotherAssemblyWhenTheServiceIsResolvedSingly()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+
+			                                                                      namespace Lib;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class ClockA : IClock { }
+			                                                                      internal sealed class ClockB : IClock { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockA, IClock>]
+			                                                                      public static partial class ModuleA { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockB, IClock>]
+			                                                                      public static partial class ModuleB { }
+			                                                                      """, """
+			                                                                           using Awaiten;
+			                                                                           using Lib;
+
+			                                                                           namespace MyCode;
+
+			                                                                           public sealed class Consumer(IClock clock) { }
+
+			                                                                           [Container]
+			                                                                           [Import(typeof(ModuleA))]
+			                                                                           [Import(typeof(ModuleB))]
+			                                                                           [Singleton<Consumer>]
+			                                                                           public static partial class MyContainer
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			await That(result.Diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("modules of another assembly collide like modules of the container's own assembly");
+		}
+
+		[Test]
+		public async Task DoesNotReportForModulesOfAnotherAssemblyWhenTheServiceIsOnlyConsumedAsACollection()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+
+			                                                                      namespace Lib;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class ClockA : IClock { }
+			                                                                      internal sealed class ClockB : IClock { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockA, IClock>]
+			                                                                      public static partial class ModuleA { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockB, IClock>]
+			                                                                      public static partial class ModuleB { }
+			                                                                      """, """
+			                                                                           using System.Collections.Generic;
+			                                                                           using Awaiten;
+			                                                                           using Lib;
+
+			                                                                           namespace MyCode;
+
+			                                                                           public sealed class Consumer(IEnumerable<IClock> clocks) { }
+
+			                                                                           [Container]
+			                                                                           [Import(typeof(ModuleA))]
+			                                                                           [Import(typeof(ModuleB))]
+			                                                                           [Singleton<Consumer>]
+			                                                                           public static partial class MyContainer
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("a collection receives every contribution of either assembly");
+		}
+
+		[Test]
+		public async Task ReportsWhenAnExtendingContainerResolvesAServiceItsModuleAndTheBasesModuleRegister()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Board(IEnumerable<IClock> clocks) { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Singleton<Board>]
+			                                       public static partial class BaseContainer;
+
+			                                       [Container(Extends = typeof(BaseContainer))]
+			                                       [Import(typeof(ModuleB))]
+			                                       public static partial class CollectionContainer;
+
+			                                       [Container(Extends = typeof(BaseContainer))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class SingleContainer;
+			                                       """);
+
+			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT155"))).IsEqualTo(1)
+				.Because("only the extending container that resolves IClock singly depends on which module wins");
+			await That(result.Diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("the base's module is imported first, so it wins single resolution");
+		}
+
+		[Test]
+		public async Task Analyzer_ReportsAtATypedResolveOfAServiceNothingInTheGraphResolvesSingly()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using System;
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IClock typed = root.Resolve<IClock>();
+			                                                                   object untyped = root.Resolve(typeof(IClock));
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics.Count(diagnostic => diagnostic.Contains("AWT155"))).IsEqualTo(2)
+				.Because("both the typed and the typeof resolve hand out the single winner, which only the order of the imports decides");
+			await That(diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("the call site names the same collision the registration would");
+		}
+
+		[Test]
+		[Arguments("Func<IClock>")]
+		[Arguments("Lazy<IClock>")]
+		[Arguments("Owned<IClock>")]
+		[Arguments("Func<Owned<IClock>>")]
+		public async Task Analyzer_ReportsAtATypedResolveOfARelationship(string shape)
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>($$"""
+			                                                             using System;
+			                                                             using Awaiten;
+
+			                                                             namespace MyCode;
+
+			                                                             public interface IClock { }
+			                                                             public sealed class ClockA : IClock { }
+			                                                             public sealed class ClockB : IClock { }
+
+			                                                             [Module]
+			                                                             [Singleton<ClockA, IClock>]
+			                                                             public static class ModuleA { }
+
+			                                                             [Module]
+			                                                             [Singleton<ClockB, IClock>]
+			                                                             public static class ModuleB { }
+
+			                                                             [Container]
+			                                                             [Import(typeof(ModuleA))]
+			                                                             [Import(typeof(ModuleB))]
+			                                                             public static partial class MyContainer;
+
+			                                                             public static class Program
+			                                                             {
+			                                                                 public static void Run()
+			                                                                 {
+			                                                                     using MyContainer.Root root = new();
+			                                                                     object relationship = root.Resolve<{{shape}}>();
+			                                                                 }
+			                                                             }
+			                                                             """);
+
+			await That(diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("the relationship hands out the single winner, which only the order of the imports decides");
+		}
+
+		[Test]
+		public async Task Analyzer_ReportsAtATypedResolveThatVarianceRedirectsToTheService()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public class Base { }
+			                                                           public sealed class Derived : Base { }
+			                                                           public interface IHandler<in T> { }
+			                                                           public sealed class HandlerA : IHandler<Base> { }
+			                                                           public sealed class HandlerB : IHandler<Base> { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerA, IHandler<Base>>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerB, IHandler<Base>>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IHandler<Derived> handler = root.Resolve<IHandler<Derived>>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).Contains("*AWT155*IHandler<MyCode.Base>*ModuleA*ModuleB*").AsWildcard()
+				.Because("the run-time variance fallback routes IHandler<Derived> to the single winner of IHandler<Base>");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotReportWhenVarianceRedirectsToAnUncontestedService()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public class Base { }
+			                                                           public sealed class Derived : Base { }
+			                                                           public interface IHandler<in T> { }
+			                                                           public sealed class HandlerA : IHandler<object> { }
+			                                                           public sealed class HandlerB : IHandler<object> { }
+			                                                           public sealed class BaseHandler : IHandler<Base> { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerA, IHandler<object>>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerB, IHandler<object>>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           [Singleton<BaseHandler, IHandler<Base>>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IHandler<Derived> handler = root.Resolve<IHandler<Derived>>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("the nearest variance-compatible service, IHandler<Base>, has a single registration");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotReportAtAResolveOfTheCollection()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using System.Collections.Generic;
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IEnumerable<IClock> clocks = root.Resolve<IEnumerable<IClock>>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("a resolved collection receives every contribution");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotRepeatACollisionTheGraphAlreadyReports()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+			                                                           public sealed class Consumer(IClock clock) { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           [Singleton<Consumer>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IClock clock = root.Resolve<IClock>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("the generator already reports the collision at the registration, once for the whole graph");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotSuggestAnOverridableDefaultWhenTheGraphConsumesTheServiceAsACollection()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using System.Collections.Generic;
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+			                                                           public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           [Singleton<Board>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IClock clock = root.Resolve<IClock>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			string awt155 = diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("the collection the graph consumes would lose the member a strong registration overrides");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotSuggestAnOverridableDefaultWhenCodeOutsideTheGraphMayResolveTheCollection()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using System.Collections.Generic;
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IEnumerable<IClock> clocks = root.Resolve<IEnumerable<IClock>>();
+			                                                                   IClock clock = root.Resolve<IClock>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			string awt155 = diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("code outside the graph, here a resolve of the collection, may depend on every member, which an overridden default would leave");
+			await That(awt155).Contains("on the container too")
+				.Because("registering the winning implementation on the container decides single resolution and keeps every member");
 		}
 	}
 }

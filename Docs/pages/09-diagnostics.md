@@ -29,7 +29,9 @@ public sealed class Cup(Grinder grinder);
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Register the missing dependency on the container (here `[Singleton<Grinder>]`) or in an imported module, or declare it `[ImportService<Grinder>]` when the host provides it.
+Every registration the container keeps is checked, also one that only a collection reaches, such as an [overridable default](./04-registration/07-modules.md#overridable-defaults) that loses single resolution to another default. A default is left out, and not checked, only when a registration of its service without `Fallback` replaces it.
+
+**Fix:** Register the missing dependency on the container (here `[Singleton<Grinder>]`) or in an imported module, or declare it `[ImportService<Grinder>]` when the host provides it. A default you don't want is replaced by a registration of its service without `Fallback`.
 
 ### AWT102
 
@@ -119,6 +121,8 @@ public sealed class EspressoMachine(Order order);   // singleton needs a scoped 
 [Scoped<Order>]
 public static partial class CoffeeShop;
 ```
+
+As with [AWT101](#awt101), this applies to every registration the container keeps, also an overridable default that only a collection reaches.
 
 **Fix:** Register the consumer with the shorter lifetime too (`[Scoped<EspressoMachine>]`), or let it take `Func<Order>`, which resolves the order on demand instead of capturing it.
 
@@ -210,7 +214,9 @@ public static class TimeModuleB;
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Decide the winner with a strong registration of the service on the container (one without `Fallback`), or set `Fallback = Fallback.Silent` on a default to accept that the first declared one wins.
+The first declared default wins single resolution, and both defaults stay members of the service's collections.
+
+**Fix:** Decide the winner with a strong registration of the service on the container (one without `Fallback`), which also replaces both defaults in collections, or set `Fallback = Fallback.Silent` on a default to accept that the first declared one wins.
 
 ### AWT216
 
@@ -2111,10 +2117,12 @@ A `[Scan]` on a `[Module]` is [self-compiled in the module's own build](./04-reg
 ### AWT155
 
 :::warning[Warning]
-Two imported modules strongly register the same service with different implementations.
+Two imported modules strongly register the same service with different implementations, and something resolves the service singly.
 :::
 
 ```csharp expect=AWT155
+public sealed class ShiftTimer(ITimeSystem time);
+
 [Module]
 [Singleton<RealTimeSystem, ITimeSystem>]
 public static class ModuleA;
@@ -2126,10 +2134,13 @@ public static class ModuleB;
 [Container]
 [Import(typeof(ModuleA))]
 [Import(typeof(ModuleB))]   // both strongly register ITimeSystem
+[Singleton<ShiftTimer>]     // takes a single ITimeSystem
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Override the service on the container with a registration of its own, or make one module's registration an overridable default with `Fallback = Fallback.Warn` or `Fallback = Fallback.Silent`.
+Both registrations stay members of the service's collections, but a single `ITimeSystem` comes from the earlier import, which neither module shows. The container reports this only when a dependency in the graph resolves the service singly, directly or through a relationship such as `Func<T>`, `Lazy<T>` or `Owned<T>`. A service consumed only as a collection, a keyed dictionary or through a composite receives every contribution, so [plugin-style composition](./04-registration/07-modules.md#contribute-to-a-collection) stays silent. A `Resolve<T>()`, `ResolveAsync<T>()` or `Resolve(typeof(T))` on the generated `Root` or `Scope` that hands out the single winner reports it at the call instead: a resolve of the service itself, of `Func<T>`, `Lazy<T>`, `Owned<T>` or `Func<Owned<T>>` over it, or of a closed variant interface that [variance](./05-resolution/08-generic-variance.md) routes to it. A resolve through `IAwaitenRoot`, through the MS.DI bridge or with a `Type` known only at run time returns the earlier import's registration without a warning.
+
+**Fix:** Override the service on the container with a registration of its own, or make one module's registration an overridable default with `Fallback = Fallback.Warn` or `Fallback = Fallback.Silent`. When the service is also consumed as a collection or a keyed dictionary, don't use `Fallback`: the registration without it would drop the default from the collection. Register the implementation single resolution should use on the container as well, which decides single resolution and keeps every member, or depend on the collection where every contribution is meant. That keeps every member only for a constructed implementation the container can access, whose registration on the container coalesces with the module's: a `Factory` or `Instance` registration on the container is a member of its own, and an implementation internal to the module's assembly can't be registered on the container at all. The message says so when a contribution is of that kind. The message leaves out the `Fallback` advice in that case, and always at a `Resolve` call, since code outside the graph may resolve the collection too.
 
 ### AWT194
 

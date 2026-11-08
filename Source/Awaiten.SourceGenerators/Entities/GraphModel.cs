@@ -25,7 +25,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     surface, the services it leaves to the host, and <see cref="OpenServices" /> its unkeyed open generic
 ///     services with the lifetime and implementation definition they close over. <see cref="Factories" /> holds the
 ///     factories the container generates for its private implementations, which an extending container calls.
-///     Produced by <c>AwaitenGenerator.BuildGraph</c> and shared by the generator (which emits the container
+///     <see cref="UnresolvedDuplicates" /> holds, by service, the AWT155 collisions of imported modules that nothing
+///     in the graph resolves singly, which a typed resolve still reports. Produced by <c>AwaitenGenerator.BuildGraph</c> and shared by the generator (which emits the container
 ///     from it) and <c>AwaitenAnalyzer</c> (which walks it for AWT118).
 /// </summary>
 internal sealed record GraphModel(
@@ -41,4 +42,5 @@ internal sealed record GraphModel(
 	List<KeyedServiceMembers> KeyedCollections,
 	AwaitenGenerator.ExternalSurface External,
 	Dictionary<string, (Lifetime Lifetime, string? Implementation)> OpenServices,
-	AwaitenGenerator.BaseFactories Factories);
+	AwaitenGenerator.BaseFactories Factories,
+	Dictionary<string, AwaitenGenerator.CrossModuleDuplicate> UnresolvedDuplicates);

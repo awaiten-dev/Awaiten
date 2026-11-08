@@ -320,6 +320,8 @@ partial class AwaitenGenerator
 	private static (List<ImplInfo> Order, Dictionary<ServiceKey, string> ServiceToImpl, Dictionary<ServiceKey, List<string>> Members, List<ServiceKey> MemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> VarianceCandidates, Dictionary<string, List<KeyedMember>> KeyedMembers, List<string> KeyedMemberOrder) CoalesceByImplementation(
 		List<RawRegistration> raw,
 		INamedTypeSymbol containerSymbol,
+		Compilation compilation,
+		List<CrossModuleDuplicate> duplicates,
 		List<DiagnosticInfo> diagnostics)
 	{
 		List<ImplInfo> implOrder = new();
@@ -351,9 +353,11 @@ partial class AwaitenGenerator
 		// winner: two Defaults colliding is AWT148, two same-tier module registrations is AWT155, a contradicting
 		// lifetime/production is AWT107/AWT111. The intended overrides stay silent.
 		Dictionary<ServiceKey, RawRegistration> winners = new();
+		HashSet<ServiceKey> overridden = new();
 
-		// Registrations are processed in precedence order (see PrecedenceRank): a losing default is dropped
-		// entirely, so it is replaced transparently; a losing strong/synthesized/scan registration stays a member.
+		// Registrations are processed in precedence order (see PrecedenceRank): a default that a preceding
+		// registration without Fallback overrides is dropped entirely, so it is replaced transparently; a default
+		// losing only to another default, and a losing strong/synthesized/scan registration, stays a member.
 		foreach ((RawRegistration registration, _) in InPrecedenceOrder(raw))
 		{
 			// Record an unkeyed closed-generic-interface registration as a variance candidate, so a
@@ -413,8 +417,9 @@ partial class AwaitenGenerator
 					])));
 			}
 
-			// An overridable default whose service is already claimed is dropped in full, so the stronger (or
-			// earlier) registration replaces it transparently. Two colliding Fallback.Warn defaults warn (AWT148); Fallback.Silent is silent.
+			// An overridable default whose service a registration without Fallback already claims is dropped in full,
+			// so that registration replaces it transparently. Two colliding Fallback.Warn defaults warn (AWT148);
+			// Fallback.Silent is silent.
 			if (registration.Weak && alreadyChosen)
 			{
 				if (registration.IsDefault && winner!.IsDefault
@@ -426,7 +431,15 @@ partial class AwaitenGenerator
 						new EquatableArray<string>([Display(registration.ServiceType),])));
 				}
 
-				continue;
+				if (overridden.Contains(serviceKey))
+				{
+					continue;
+				}
+			}
+
+			if (!registration.Weak)
+			{
+				overridden.Add(serviceKey);
 			}
 
 			// Every registration is a member of the collection for its (service type, key), built even when it
@@ -437,11 +450,17 @@ partial class AwaitenGenerator
 			// A keyed registration is also a member of its service's keyed collection, indexed by its Key.
 			AddKeyedMember(keyedMembers, keyedMemberOrder, registration, alreadyChosen);
 
+			// A default losing to an earlier default is AWT148's to report, if anything.
+			if (alreadyChosen && registration.Weak)
+			{
+				continue;
+			}
+
 			if (alreadyChosen)
 			{
 				ReportDuplicateKey(registration, winner!.ImplementationType, diagnostics);
 				ReportDuplicateContextualBinding(registration, winner, diagnostics);
-				ReportCrossModuleDuplicate(registration, winner, diagnostics);
+				RecordCrossModuleDuplicate(registration, winner, containerSymbol, compilation, duplicates);
 				continue;
 			}
 
@@ -610,6 +629,34 @@ partial class AwaitenGenerator
 	private sealed record ConditionalRegistration(ServiceKey Key, string Service, string Consumer, LocationInfo? Location);
 
 	/// <summary>
+	///     An AWT155 candidate: the unkeyed <see cref="Service" /> the imported module <see cref="Loser" /> registers at
+	///     <see cref="Location" />, although the earlier import <see cref="Winner" /> already wins its single resolution.
+	///     <see cref="Reregistrable" /> tells whether both are constructed implementations the container can access, which
+	///     a registration of the same implementation on the container coalesces with instead of adding a member.
+	/// </summary>
+	internal sealed record CrossModuleDuplicate(string Service, LocationInfo? Location, string Winner, string Loser, bool Reregistrable)
+	{
+		/// <summary>
+		///     Whether the graph also consumes <see cref="Service" /> as a collection or keyed dictionary, where an
+		///     overridden default would be missing.
+		/// </summary>
+		public bool Collected { get; init; }
+
+		/// <summary>The arguments of the AWT155 message.</summary>
+		public EquatableArray<string> MessageArgs() => new([
+			Display(Service),
+			Winner,
+			Loser,
+			(Collected, Reregistrable) switch
+			{
+				(false, _) => "override it on the container, or make one registration an overridable default",
+				(true, true) => "register the implementation single resolution should use on the container too, which keeps every member in the collection",
+				(true, false) => "register the implementation single resolution should use on the container too, which keeps every member in the collection only for a constructed implementation the container can access, while a Factory or Instance registration of the container joins the collection as a further member",
+			},
+		]);
+	}
+
+	/// <summary>
 	///     Every contextual (WhenInjectedInto) registration paired with its context key, so <see cref="BuildGraph" />
 	///     can report AWT167 for any whose named consumer never consumes it.
 	/// </summary>
@@ -759,17 +806,23 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The registrations (by index into <paramref name="raw" />) coalescing will drop in full: an overridable
-	///     default whose service key a higher-tier or earlier registration claims. Losing strong/synthesized/scan
-	///     registrations stay collection members. Sound to compute before open generic expansion (synthesized ranks
-	///     below defaults). A contextual registration claims its context key, as in coalescing.
+	///     default whose service key a preceding registration without Fallback claims. A default losing only to
+	///     other defaults, and losing strong/synthesized/scan registrations, stay collection members. Sound to compute
+	///     before open generic expansion (synthesized ranks below defaults). A contextual registration claims its
+	///     context key, as in coalescing.
 	/// </summary>
 	private static HashSet<int> DroppedOverridableDefaults(List<RawRegistration> raw)
 	{
-		HashSet<ServiceKey> claimed = new();
+		HashSet<ServiceKey> overridden = new();
 		HashSet<int> dropped = new();
 		foreach ((RawRegistration registration, int index) in InPrecedenceOrder(raw))
 		{
-			if (!claimed.Add(new ServiceKey(registration.ServiceType, registration.WhenInjectedInto is { } consumer ? ContextKey(consumer) : registration.Key)) && registration.Weak)
+			ServiceKey key = new(registration.ServiceType, registration.WhenInjectedInto is { } consumer ? ContextKey(consumer) : registration.Key);
+			if (!registration.Weak)
+			{
+				overridden.Add(key);
+			}
+			else if (overridden.Contains(key))
 			{
 				dropped.Add(index);
 			}
@@ -911,14 +964,18 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     AWT155: two different imported modules register the same unkeyed service with different implementations at
-	///     the same precedence tier, so which wins is decided only by [Import] order, invisible at either module. A
-	///     cross-tier loss, scans, overridable defaults, container-over-module and keyed collisions (AWT117) stay silent.
+	///     Records an AWT155 candidate: two different imported modules register the same unkeyed service with different
+	///     implementations at the same precedence tier, so which wins single resolution is decided only by [Import]
+	///     order, invisible at either module. A cross-tier loss, scans, overridable defaults, container-over-module and
+	///     keyed collisions (AWT117) stay silent. <see cref="ReportCrossModuleDuplicates" /> reports it once the graph
+	///     shows whether anything resolves the service singly.
 	/// </summary>
-	private static void ReportCrossModuleDuplicate(
+	private static void RecordCrossModuleDuplicate(
 		RawRegistration registration,
 		RawRegistration winner,
-		List<DiagnosticInfo> diagnostics)
+		INamedTypeSymbol containerSymbol,
+		Compilation compilation,
+		List<CrossModuleDuplicate> duplicates)
 	{
 		if (registration.Key is not null
 		    || registration.IsScan
@@ -933,14 +990,71 @@ partial class AwaitenGenerator
 			return;
 		}
 
-		diagnostics.Add(new DiagnosticInfo(
-			Diagnostics.CrossModuleDuplicate,
+		duplicates.Add(new CrossModuleDuplicate(
+			registration.ServiceType,
 			LocationInfo.From(registration.Location),
-			new EquatableArray<string>([
-				Display(registration.ServiceType),
-				Display(winner.Origin.ToDisplayString(FullyQualified)),
-				Display(registration.Origin.ToDisplayString(FullyQualified)),
-			])));
+			Display(winner.Origin.ToDisplayString(FullyQualified)),
+			Display(registration.Origin.ToDisplayString(FullyQualified)),
+			Reregistrable(winner) && Reregistrable(registration)));
+
+		bool Reregistrable(RawRegistration contribution)
+			=> contribution is { Production: ProductionKind.Constructor, Hidden: null, ConstructVia: null, }
+			   && compilation.IsSymbolAccessibleWithin(contribution.Implementation, containerSymbol);
+	}
+
+	/// <summary>
+	///     AWT155 for each recorded <paramref name="duplicates" /> entry whose service a dependency in the graph resolves
+	///     singly, directly or through a relationship such as <c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
+	///     <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> or a dispatch dictionary entry. A collection or keyed dictionary
+	///     receives every contribution, and a composite fronting the service takes single resolution itself, so neither
+	///     depends on the [Import] order. The remedy suggests no Fallback when the graph also collects the service,
+	///     directly or as a variance-compatible member of another closing's collection (see
+	///     <see cref="CrossModuleDuplicate.Collected" />). Returns the first unreported duplicate of each service no composite fronts,
+	///     which a typed resolve in user code still depends on (see <c>AwaitenAnalyzer</c>).
+	/// </summary>
+	private static Dictionary<string, CrossModuleDuplicate> ReportCrossModuleDuplicates(
+		List<CrossModuleDuplicate> duplicates,
+		List<InstanceModel> instances,
+		List<CompositeRegistration> composites,
+		VarianceState variance,
+		List<DiagnosticInfo> diagnostics)
+	{
+		Dictionary<string, CrossModuleDuplicate> unresolved = new(StringComparer.Ordinal);
+		if (duplicates.Count == 0)
+		{
+			return unresolved;
+		}
+
+		List<ParameterModel> dependencies = AnalyzedDependencies(instances.SelectMany(instance => instance.WalkedDependencies())).ToList();
+		HashSet<string> resolvedSingly = new(
+			dependencies
+				.Where(dependency => dependency is { Key: null, Kind: DependencyKind.Direct or DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask, })
+				.Select(dependency => dependency.ServiceType),
+			StringComparer.Ordinal);
+		HashSet<string> collected = new(
+			dependencies
+				.Where(dependency => dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection
+				                     || dependency is { Key: null, Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, })
+				.Select(dependency => dependency.ServiceType),
+			StringComparer.Ordinal);
+		collected.UnionWith(variance.CollectionElements
+			.SelectMany(element => VarianceMatches(element.Symbol, element.ServiceType, variance))
+			.Select(match => match.ServiceType));
+		foreach (CrossModuleDuplicate duplicate in duplicates
+			         .Where(duplicate => !composites.Any(composite => composite.Key is null && composite.Service == duplicate.Service))
+			         .Select(duplicate => duplicate with { Collected = collected.Contains(duplicate.Service), }))
+		{
+			if (resolvedSingly.Contains(duplicate.Service))
+			{
+				diagnostics.Add(new DiagnosticInfo(Diagnostics.CrossModuleDuplicate, duplicate.Location, duplicate.MessageArgs()));
+			}
+			else if (!unresolved.ContainsKey(duplicate.Service))
+			{
+				unresolved.Add(duplicate.Service, duplicate);
+			}
+		}
+
+		return unresolved;
 	}
 
 	/// <summary>

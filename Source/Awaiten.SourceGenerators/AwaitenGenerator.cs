@@ -916,8 +916,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// implementation share one instance. Conflicting lifetimes are AWT107; a duplicate key is AWT117.
 		SettleHandleDirectives(raw, containerSymbol, compilation, diagnostics);
 		AssignMemberIdentities(raw, containerSymbol, compilation);
+		List<CrossModuleDuplicate> duplicates = new();
 		(List<ImplInfo> implOrder, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<ServiceKey, List<string>> serviceMembers, List<ServiceKey> serviceMemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> varianceCandidates, Dictionary<string, List<KeyedMember>> keyedMembers, List<string> keyedMemberOrder) =
-			CoalesceByImplementation(raw, containerSymbol, diagnostics);
+			CoalesceByImplementation(raw, containerSymbol, compilation, duplicates, diagnostics);
 		CoalescedGraph graph = new(serviceToImpl, implOrder, serviceMembers);
 
 		// The closed generic service symbols the coalesced graph holds (recovered from the raw registrations,
@@ -997,6 +998,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// direct dependency on the service) is never reached, so report it now that every instance is built.
 		ReportUnappliedContextualBindings(conditionals, consumedConditionals, diagnostics);
 
+		// AWT155 once every instance is built, so it is known whether anything resolves the service singly.
+		Dictionary<string, CrossModuleDuplicate> unresolvedDuplicates = ReportCrossModuleDuplicates(duplicates, instances, composites, variance, diagnostics);
+
 		// AWT175 for an open import: each routed closing the container also registers is contradictory. Reported once
 		// every instance is built, so every dependency has had the chance to route.
 		ReportOpenExternalServices(externalServiceTypes, serviceToImpl, RoutedExternal(instances), containerSymbol, diagnostics);
@@ -1060,7 +1064,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			varianceCandidateTypes.Add(serviceType);
 		}
 
-		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, OpenServices(open), factories ?? new BaseFactories());
+		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, OpenServices(open), factories ?? new BaseFactories(), unresolvedDuplicates);
 	}
 
 	/// <summary>

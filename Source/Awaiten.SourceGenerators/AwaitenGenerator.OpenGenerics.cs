@@ -356,7 +356,7 @@ partial class AwaitenGenerator
 			openServices.Add(registration.Service);
 		}
 
-		// An overridable default (Fallback.Warn/Silent) whose service key a stronger (or earlier) registration claims
+		// An overridable default (Fallback.Warn/Silent) whose service key a registration without Fallback claims
 		// is dropped in full by coalescing (not built, not a collection member), so it must not seed the
 		// expansion either; otherwise an overridden default's constructor would synthesize (and the container
 		// would emit) closed registrations nothing in the surviving graph needs. The drop set is computed by the
@@ -647,7 +647,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			// A Fallback closing that a stronger (or earlier) registration already claims is dropped by coalescing,
+			// A Fallback closing that a registration without Fallback already claims is dropped by coalescing,
 			// so it must not seed expansion either (see DroppedOverridableDefaults for the explicit ones).
 			bool dropped = candidate.Weak && IsClaimedByStrongerRegistration(candidate, closedService, context.Raw);
 
@@ -734,7 +734,7 @@ partial class AwaitenGenerator
 
 	private static bool IsClaimedByStrongerRegistration(OpenRegistration candidate, string closedService, List<RawRegistration> raw)
 		=> raw.Any(registration =>
-			!registration.IsScan
+			registration is { IsScan: false, Weak: false, }
 			&& registration.ServiceType == closedService
 			&& registration.Key == candidate.Key
 			&& registration.WhenInjectedInto == candidate.WhenInjectedInto);

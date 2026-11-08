@@ -33,7 +33,9 @@ IList<ISyrup>
 ICollection<ISyrup>
 ```
 
-Members come back in registration order. Each keeps its own lifetime. A service type with no registrations resolves to an empty collection, not an error.
+Members come back in precedence order: registrations without `Fallback` first, then [overridable defaults](../04-registration/07-modules.md#overridable-defaults), then the closings of [open generic](../04-registration/05-open-generics.md) registrations (those without `Fallback` first), then [scan](../04-registration/06-scanning.md) matches, each group in declaration order, with the container's own registrations before those of the imported modules. Each keeps its own lifetime. A service type with no registrations resolves to an empty collection, not an error.
+
+Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an overridable default that a registration of the same service without `Fallback` replaces. Two defaults don't replace each other, so both are members. A single `ISyrup` resolves to one member, the first one. When several modules [contribute to one collection](../04-registration/07-modules.md#contribute-to-a-collection), a dependency on a single `ISyrup` is reported, because only the order of the imports decides which member it gets.
 
 ## Async collections
 
