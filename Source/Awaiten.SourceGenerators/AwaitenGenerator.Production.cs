@@ -167,7 +167,7 @@ partial class AwaitenGenerator
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
-			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, diagnostics));
+			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -439,7 +439,7 @@ partial class AwaitenGenerator
 	///     registration as <see cref="Diagnostics.NullableProduct">AWT245</see> instead of as warnings throughout the
 	///     generated code.
 	/// </summary>
-	private static bool IsNullableProduct(ITypeSymbol produced, ISymbol member, ImplInfo info, List<DiagnosticInfo> diagnostics)
+	private static bool IsNullableProduct(ITypeSymbol produced, ISymbol member, ImplInfo info, List<DiagnosticInfo>? diagnostics)
 		=> IsNullableProduct(produced, member, info.Production, info.ProductionMember!, info.OwningServiceOrImpl, info.Location, diagnostics);
 
 	/// <summary>

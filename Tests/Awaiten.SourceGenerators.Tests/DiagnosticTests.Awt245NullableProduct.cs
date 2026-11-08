@@ -132,6 +132,42 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task AnOpenGenericFactory_ReportsOnceAtTheOpenRegistration()
+		{
+			string source = """
+			                #nullable enable
+			                using Awaiten;
+
+			                namespace MyCode;
+
+			                public interface IRepo<T> { }
+			                public sealed class Repo<T> : IRepo<T> { }
+			                public sealed class Brewer
+			                {
+			                    public Brewer(IRepo<int> numbers, IRepo<string> names) { }
+			                }
+
+			                [Container]
+			                [Singleton(typeof(Repo<>), typeof(IRepo<>), Factory = nameof(Make))]
+			                [Transient<Brewer>]
+			                public static partial class MyContainer
+			                {
+			                    private static Repo<T>? Make<T>() => new Repo<T>();
+			                }
+			                """;
+
+			GeneratorResult result = Generator.Run(source);
+			string[] reports = await Awt245Reports(source);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("every closing forgives the nullable result of the generic factory");
+			await That(reports).HasCount(1).And.Contains("*warning AWT245*The Factory 'Make' may produce null, since it is declared to produce 'MyCode.Repo<T>?'*'MyCode.IRepo<T>'*").AsWildcard()
+				.Because("the open registration declares the factory once, whatever closings the graph injects");
+			await That(reports[0]).StartsWith($"({LineOf(source, "typeof(Repo<>)")},")
+				.Because("the warning points at the open registration");
+		}
+
+		[Test]
 		public async Task TheMessage_SaysWhatANullResultDoesAndHowToAvoidIt()
 		{
 			string source = Container("[Singleton<IKettle>(Factory = nameof(Make))]", "private static IKettle? Make() => new Kettle();");
@@ -275,6 +311,54 @@ public partial class DiagnosticTests
 				await That(reports).HasCount(1)
 					.Because("the container sees the possible null through the wrapper");
 			}
+			[Test]
+			public async Task AnOpenGenericFactoryOfAModuleInAnotherAssembly_ReportsOnceAndCompilesWithoutWarnings()
+			{
+				const string library = """
+				                       #nullable enable
+				                       using Awaiten;
+
+				                       namespace Lib;
+
+				                       public interface IRepo<T> { }
+				                       public sealed class Repo<T> : IRepo<T> { }
+
+				                       [Module]
+				                       [Singleton(typeof(Repo<>), typeof(IRepo<>), Factory = nameof(Make))]
+				                       public static partial class RepoModule
+				                       {
+				                           public static Repo<T>? Make<T>() => new Repo<T>();
+				                       }
+				                       """;
+				const string consumer = """
+				                        #nullable enable
+				                        using Awaiten;
+				                        using Lib;
+
+				                        namespace MyCode;
+
+				                        public sealed class Brewer
+				                        {
+				                            public Brewer(IRepo<int> numbers, IRepo<string> names) { }
+				                        }
+
+				                        [Container]
+				                        [Import(typeof(RepoModule))]
+				                        [Transient<Brewer>]
+				                        public static partial class MyContainer { }
+				                        """;
+
+				GeneratorResult libraryResult = Generator.Run(library);
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+				string[] reports = await Awt245Reports(library, consumer);
+
+				await That(libraryResult.Diagnostics).IsEmpty();
+				await That(result.Diagnostics).IsEmpty()
+					.Because("every closing forgives the nullable result of the module's generic factory");
+				await That(reports).HasCount(1).And.Contains("*warning AWT245*'Lib.Repo<T>?'*'Lib.IRepo<T>'*").AsWildcard()
+					.Because("the container reports the open registration once, whatever closings it injects");
+			}
+
 			private static string HandleLibrary(string registration, string member) => $$"""
 				#nullable enable
 				using Awaiten;
