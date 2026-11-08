@@ -76,7 +76,7 @@ public static partial class CoffeeShop;
 - **Several accept a closing.** The rules for several registrations apply as usual: the first one wins single resolution, `IEnumerable<IRecipe<T>>` holds every registration that accepts `T`, and two modules that both build a closing are reported for it ([AWT155](../09-diagnostics.md#awt155)).
 - **None accepts a closing.** A closing the graph asks for that neither an open nor a closed registration builds is an error that lists the candidates ([AWT126](../09-diagnostics.md#awt126)).
 - **Options.** `Fallback` and `WhenInjectedInto` apply among the registrations that accept the closing, so an overridable default or an unconditional registration serves the closings a stronger or contextual one can't build.
-- **Keys.** A skipped registration is not reported when a registration under another key, or a contextual one, builds the closing. A request that only the skipped registration would have served is then a missing registration ([AWT101](../09-diagnostics.md#awt101)).
+- **Keys.** A skipped registration is not reported when a registration under another key, or a contextual one, builds the closing. A request under the key or context of the skipped registration that nothing else serves reports its constraints ([AWT126](../09-diagnostics.md#awt126)).
 - **Decorators and composites** wrap every registration of a closing. One whose constraints reject a closing leaves it as it is, with a warning ([AWT171](../09-diagnostics.md#awt171)).
 - **Extending containers.** An open registration of the extending container replaces the inherited one for every closing, also for those it can't build.
 

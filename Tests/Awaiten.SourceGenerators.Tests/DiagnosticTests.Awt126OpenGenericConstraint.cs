@@ -305,7 +305,7 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			public async Task AClosingOnlyAnotherKeyBuilds_IsAMissingRegistration()
+			public async Task AClosingOnlyAnotherKeyBuilds_ReportsTheConstraintOfTheUnkeyedRegistration()
 			{
 				GeneratorResult result = Generator.Run(Formatters + """
 				                                                    public sealed class Printer
@@ -320,8 +320,111 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'MyCode.IFormatter<MyCode.Label>'"))
-					.Because("a registration builds IFormatter<Label>, but only under a key, so the unkeyed request is missing as for a keyed closed registration");
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+					.Because("a registration builds IFormatter<Label> only under a key, so the unkeyed request is unserved because the unkeyed registration rejects Label");
+			}
+
+			[Test]
+			public async Task AnUnkeyedRequest_ReportsTheConstraint_WhenOnlyAKeyedClosedRegistrationBuildsTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>(Key = "x")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
+						diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+					.Because("the unkeyed request is unserved because the unkeyed open registration rejects Label, which is the precise cause instead of AWT101");
+			}
+
+			[Test]
+			public async Task AnUnconditionalRequest_ReportsTheConstraint_WhenOnlyAContextualClosedRegistrationBuildsTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Scanner
+				                                                    {
+				                                                        public Scanner(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>(WhenInjectedInto = typeof(Scanner))]
+				                                                    [Transient<Scanner>]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
+						diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+					.Because("Printer is served by no registration because the unconditional open registration rejects Label");
+			}
+
+			[Test]
+			public async Task AKeyedRequest_ReportsTheConstraint_WhenOnlyTheSkippedRegistrationHasItsKey()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Receipt> receipts, [FromKey("binary")] IFormatter<Receipt> binary) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(BinaryFormatter<>), typeof(IFormatter<>), Key = "binary")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
+						diagnostic.Contains("AWT126")
+						&& diagnostic.Contains("'MyCode.BinaryFormatter<MyCode.Receipt>'")
+						&& diagnostic.Contains("no other registration of 'MyCode.IFormatter<MyCode.Receipt> (key: binary)' accepts them"))
+					.Because("only the registration under the key 'binary' could serve the keyed request, and its constraint rejects Receipt");
+			}
+
+			[Test]
+			public async Task SeveralUnservedRequests_ReportTheConstraintOnce()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    public sealed class Scanner
+				                                                    {
+				                                                        public Scanner(IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>(Key = "x")]
+				                                                    [Transient<Printer>]
+				                                                    [Transient<Scanner>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"))
+					.Because("the constraint violation is the one root cause of both unserved requests");
 			}
 
 			[Test]

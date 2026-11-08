@@ -16,7 +16,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const string ScanKeyMarker = "@scan:";
 
-	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, List<OpenRegistration> Open) Collect(
+	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections, List<OpenRegistration> Open) Collect(
 		INamedTypeSymbol containerSymbol,
 		List<ImportedModule> modules,
 		Compilation compilation,
@@ -31,6 +31,7 @@ partial class AwaitenGenerator
 		// Closed services an open registration could not produce because the closed type arguments violate the
 		// implementation's constraints (AWT126). The emitter suppresses the AWT101 these would also raise.
 		HashSet<string> constraintRejected = new(StringComparer.Ordinal);
+		Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections = new();
 
 		// Open generic registrations are kept apart: not instances themselves, but templates expanded into
 		// concrete closed registrations on demand (see ExpandOpenGenerics).
@@ -105,7 +106,7 @@ partial class AwaitenGenerator
 		// implementation (iterating to a fixpoint over its own generic dependencies).
 		if (open.Count > 0)
 		{
-			ExpandOpenGenerics(result, open, new ExpansionInputs(containerSymbol, compilation, external, injectProperties, wrappers), diagnostics, constraintRejected);
+			ExpandOpenGenerics(result, open, new ExpansionInputs(containerSymbol, compilation, external, injectProperties, wrappers), diagnostics, constraintRejected, deferredRejections);
 			ShareOwnerFactoryInstances(result, compilation, constraintRejected, diagnostics);
 		}
 
@@ -124,7 +125,7 @@ partial class AwaitenGenerator
 			result.AddRange(scanMatches);
 		}
 
-		return (result, constraintRejected, open);
+		return (result, constraintRejected, deferredRejections, open);
 	}
 
 	/// <summary>

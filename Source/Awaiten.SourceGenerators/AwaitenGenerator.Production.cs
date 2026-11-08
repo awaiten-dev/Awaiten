@@ -274,7 +274,7 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
 
 		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
 		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited

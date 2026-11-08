@@ -339,7 +339,8 @@ partial class AwaitenGenerator
 		List<OpenRegistration> open,
 		ExpansionInputs inputs,
 		List<DiagnosticInfo> diagnostics,
-		HashSet<string> constraintRejected)
+		HashSet<string> constraintRejected,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections)
 	{
 		// Closed services already expanded from the open registrations, expanded once since a single visit
 		// synthesizes every matching open registration. An explicitly-registered concrete closed service is
@@ -369,7 +370,7 @@ partial class AwaitenGenerator
 		// at depth 0; grows as closed impls are synthesized, each one depth deeper than the closed service that
 		// produced it.
 		Queue<ExpansionWork> worklist = new();
-		ExpansionContext context = new(raw, open, openServices, worklist, new HashSet<ISymbol>(SymbolEqualityComparer.Default), inputs, diagnostics, constraintRejected);
+		ExpansionContext context = new(raw, open, openServices, worklist, new HashSet<ISymbol>(SymbolEqualityComparer.Default), inputs, diagnostics, constraintRejected, deferredRejections);
 		SeedExpansionWorklist(droppedWeak, context);
 
 		while (worklist.Count > 0)
@@ -622,8 +623,9 @@ partial class AwaitenGenerator
 	///     Synthesizes a closed <see cref="RawRegistration" /> for every open registration whose open form matches
 	///     <paramref name="closed" />'s open form (exact arity, v1) and that can build the closing, in declaration order.
 	///     A single match yields the single-dispatch registration; several yield the members of a closed-generic
-	///     collection. A registration whose constraints reject the closing is skipped, and reported (AWT126, AWT209) only
-	///     when no registration of the closed service accepts it. Two closings of one implementation are left to
+	///     collection. A registration whose constraints reject the closing is skipped, and reported (AWT126, AWT209) when
+	///     no registration of the closed service accepts it; otherwise the report waits for a request under the skipped
+	///     registration's key or context that nothing serves (<see cref="ExpansionContext.DeferredRejections" />). Two closings of one implementation are left to
 	///     coalescing, which shares or rejects them as it does closed registrations. Each synthesized implementation is
 	///     enqueued one depth deeper so its own closed generic dependencies expand in turn.
 	/// </summary>
@@ -655,12 +657,32 @@ partial class AwaitenGenerator
 			}
 		}
 
-		if (accepted.Count == 0 && !registeredClosed && rejected.Count > 0)
+		bool served = accepted.Count > 0 || registeredClosed;
+		List<OpenRegistration> rejectedCandidates = rejected.Select(entry => entry.Candidate).ToList();
+		foreach ((OpenRegistration candidate, ClosingRejection rejection) in rejected)
 		{
-			foreach ((OpenRegistration candidate, ClosingRejection rejection) in rejected)
+			DiagnosticInfo? diagnostic = RejectedClosingDiagnostic(candidate, rejection, closed, closedService, rejectedCandidates, context);
+			if (!served)
 			{
 				RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
-				ReportRejectedClosing(candidate, rejection, closed, closedService, candidates, context);
+				if (diagnostic is not null)
+				{
+					context.Diagnostics.Add(diagnostic);
+				}
+
+				continue;
+			}
+
+			ServiceKey key = new(closedService, candidate.WhenInjectedInto is { } consumer ? ContextKey(consumer) : candidate.Key);
+			if (!context.DeferredRejections.TryGetValue(key, out List<DiagnosticInfo>? deferred))
+			{
+				deferred = new List<DiagnosticInfo>();
+				context.DeferredRejections[key] = deferred;
+			}
+
+			if (diagnostic is not null)
+			{
+				deferred.Add(diagnostic);
 			}
 		}
 
@@ -743,27 +765,24 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Reports a candidate that cannot build a closing no registration accepts: AWT126 for the implementation's
-	///     constraints, naming the other <paramref name="candidates" />, and AWT209 for its factory's. A
-	///     <see cref="ClosingRejection.Unbuildable" /> registration was reported once for itself (AWT226, AWT230, AWT231).
+	///     The diagnostic for a candidate that cannot build a closing: AWT126 for the implementation's constraints, naming
+	///     the other rejected <paramref name="candidates" />, and AWT209 for its factory's, or <see langword="null" /> when
+	///     it was reported already. A <see cref="ClosingRejection.Unbuildable" /> registration was reported once for itself
+	///     (AWT226, AWT230, AWT231).
 	/// </summary>
-	private static void ReportRejectedClosing(
+	private static DiagnosticInfo? RejectedClosingDiagnostic(
 		OpenRegistration candidate,
 		ClosingRejection rejection,
 		INamedTypeSymbol closed,
 		string closedService,
 		List<OpenRegistration> candidates,
 		ExpansionContext context)
-	{
-		if (rejection == ClosingRejection.Implementation)
+		=> rejection switch
 		{
-			ReportConstraintViolation(candidate, closed, closedService, candidates, context);
-		}
-		else if (rejection == ClosingRejection.Factory)
-		{
-			ReportFactoryConstraintViolation(candidate, closedService, context);
-		}
-	}
+			ClosingRejection.Implementation => ConstraintViolation(candidate, closed, closedService, candidates, context),
+			ClosingRejection.Factory => FactoryConstraintViolation(candidate, closedService, context),
+			_ => null,
+		};
 
 	private static bool IsClaimedByStrongerRegistration(OpenRegistration candidate, string closedService, List<RawRegistration> raw)
 		=> raw.Any(registration =>
@@ -864,21 +883,21 @@ partial class AwaitenGenerator
 		}
 	}
 
-	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
+	private static DiagnosticInfo? FactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
 		string factory = QualifiedMember(candidate.Origin ?? context.Inputs.ContainerSymbol, candidate.Factory);
 		if (!context.ReportedConstraints.Add("factory:" + closedService + "\0" + factory))
 		{
-			return;
+			return null;
 		}
 
-		context.Diagnostics.Add(new DiagnosticInfo(
+		return new DiagnosticInfo(
 			Diagnostics.GenericFactoryConstraintViolation,
 			candidate.Location,
-			new EquatableArray<string>([AwaitenGenerator.Display(closedService), AwaitenGenerator.Display(factory),])));
+			new EquatableArray<string>([AwaitenGenerator.Display(closedService), AwaitenGenerator.Display(factory),]));
 	}
 
-	private static void ReportConstraintViolation(
+	private static DiagnosticInfo? ConstraintViolation(
 		OpenRegistration candidate,
 		INamedTypeSymbol closed,
 		string closedService,
@@ -888,7 +907,7 @@ partial class AwaitenGenerator
 		string closedImplName = candidate.Implementation.Construct(closed.TypeArguments.ToArray()).ToDisplayString(FullyQualified);
 		if (!context.ReportedConstraints.Add(closedImplName))
 		{
-			return;
+			return null;
 		}
 
 		string implementation = AwaitenGenerator.Display(candidate.Implementation.ToDisplayString(FullyQualified));
@@ -898,15 +917,15 @@ partial class AwaitenGenerator
 			.Distinct(StringComparer.Ordinal)
 			.Select(other => "'" + other + "'")
 			.ToList();
-		context.Diagnostics.Add(new DiagnosticInfo(
+		return new DiagnosticInfo(
 			Diagnostics.OpenGenericConstraintViolation,
 			candidate.Location,
 			new EquatableArray<string>([
 				AwaitenGenerator.Display(closedImplName),
 				implementation,
-				AwaitenGenerator.Display(closedService),
+				AwaitenGenerator.DisplayKeyed(closedService, candidate.Key),
 				others.Count == 0 ? "" : " (also rejected: " + string.Join(", ", others) + ")",
-			])));
+			]));
 	}
 
 	private static void ReportExpansionTooDeep(INamedTypeSymbol impl, int depth, ExpansionContext context)
@@ -1351,7 +1370,9 @@ partial class AwaitenGenerator
 	///     The mutable state threaded through open generic expansion: the growing registration list and worklist,
 	///     the open service definitions, the constructors, factories and hooks already enqueued, and the diagnostics
 	///     sink. <see cref="ReportedConstraints" /> also dedups the depth-limit report (AWT129) under a <c>depth:</c>
-	///     prefix so each cause is reported once.
+	///     prefix so each cause is reported once. <see cref="DeferredRejections" /> holds, per closed service and the key
+	///     or context of a registration skipped for it, the constraint diagnostics a request there reports in place of
+	///     AWT101 when another key or context serves the closing.
 	/// </summary>
 	private sealed record ExpansionContext(
 		List<RawRegistration> Raw,
@@ -1361,7 +1382,8 @@ partial class AwaitenGenerator
 		HashSet<ISymbol> Seen,
 		ExpansionInputs Inputs,
 		List<DiagnosticInfo> Diagnostics,
-		HashSet<string> ConstraintRejectedServices)
+		HashSet<string> ConstraintRejectedServices,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections)
 	{
 		public HashSet<string> ReportedConstraints { get; } = new(StringComparer.Ordinal);
 

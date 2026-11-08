@@ -778,6 +778,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, ServiceKey> CompositeCollections,
 		WellKnownTypes WellKnown,
 		HashSet<string> ConstraintRejected,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections,
 		ExternalSurface External,
 		VarianceState Variance,
 		HashSet<ServiceKey> ConsumedConditionals,
@@ -883,7 +884,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Collect also expands [Scan]s into overridable registrations (IsScan), ordered after the explicit ones
 		// so an explicit registration wins single resolution while every match still joins its collection.
-		(List<RawRegistration> raw, HashSet<string> constraintRejected, List<OpenRegistration> open) = Collect(
+		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections, List<OpenRegistration> open) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
 
 		if (factories is not null)
@@ -976,7 +977,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)
