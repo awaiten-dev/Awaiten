@@ -1476,6 +1476,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
         "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
+      },
+      {
+        "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
+        "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
       }
     ],
     "labels": [
@@ -1724,7 +1730,8 @@ window.BENCHMARK_DATA = {
       "21c7092f",
       "cfc32f7a",
       "85160537",
-      "707aa9d3"
+      "707aa9d3",
+      "ac9638ce"
     ],
     "datasets": [
       {
@@ -1976,7 +1983,8 @@ window.BENCHMARK_DATA = {
           7.393594115972519,
           4.322630952298641,
           7.885323155384797,
-          4.541306248732975
+          4.541306248732975,
+          5.082547610768905
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1988,6 +1996,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2493,7 +2502,8 @@ window.BENCHMARK_DATA = {
           7.506318164865176,
           4.127716398132699,
           7.576357462085211,
-          4.444243139525255
+          4.444243139525255,
+          5.10968748430411
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2505,6 +2515,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3010,7 +3021,8 @@ window.BENCHMARK_DATA = {
           139.73701895078023,
           58.86137957572937,
           142.36944518089294,
-          64.61763139565785
+          64.61763139565785,
+          103.47543415852955
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3022,6 +3034,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3523,7 +3536,8 @@ window.BENCHMARK_DATA = {
           8.488484537849823,
           5.418348639210065,
           9.130574363682951,
-          4.859109921256701
+          4.859109921256701,
+          7.0694118221600855
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3535,6 +3549,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4032,7 +4047,8 @@ window.BENCHMARK_DATA = {
           10.901315492391586,
           6.60164632598559,
           11.22900964663579,
-          6.3969748745361965
+          6.3969748745361965,
+          9.403942479441563
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4044,6 +4060,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5775,6 +5792,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
         "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
+      },
+      {
+        "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
+        "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
       }
     ],
     "labels": [
@@ -6023,7 +6046,8 @@ window.BENCHMARK_DATA = {
       "21c7092f",
       "cfc32f7a",
       "85160537",
-      "707aa9d3"
+      "707aa9d3",
+      "ac9638ce"
     ],
     "datasets": [
       {
@@ -6275,7 +6299,8 @@ window.BENCHMARK_DATA = {
           8.376551508903503,
           4.4735923131306965,
           8.718613616549051,
-          4.575609500209491
+          4.575609500209491,
+          6.199101925960609
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6287,6 +6312,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6792,7 +6818,8 @@ window.BENCHMARK_DATA = {
           7.539955668151379,
           4.147472128845179,
           7.542134915788968,
-          4.336470920840899
+          4.336470920840899,
+          5.120544544779337
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6804,6 +6831,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7309,7 +7337,8 @@ window.BENCHMARK_DATA = {
           140.84860447247823,
           59.22825966676076,
           144.4542724609375,
-          77.94411536852519
+          77.94411536852519,
+          105.44659826755523
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7321,6 +7350,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7822,7 +7852,8 @@ window.BENCHMARK_DATA = {
           8.368602952131859,
           5.371891585680155,
           9.157581228476305,
-          4.767391532162825
+          4.767391532162825,
+          6.876946711769471
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7834,6 +7865,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8331,7 +8363,8 @@ window.BENCHMARK_DATA = {
           13.622795798457586,
           6.439890615145365,
           14.719674525352625,
-          8.25977043578258
+          8.25977043578258,
+          9.681645086407661
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8343,6 +8376,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10074,6 +10108,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
         "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
+      },
+      {
+        "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
+        "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
       }
     ],
     "labels": [
@@ -10322,7 +10362,8 @@ window.BENCHMARK_DATA = {
       "21c7092f",
       "cfc32f7a",
       "85160537",
-      "707aa9d3"
+      "707aa9d3",
+      "ac9638ce"
     ],
     "datasets": [
       {
@@ -10574,7 +10615,8 @@ window.BENCHMARK_DATA = {
           10.485703048110008,
           15.013974042875427,
           19.405794709920883,
-          23.268973253667355
+          23.268973253667355,
+          19.81194956700007
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10736,6 +10778,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11091,7 +11134,8 @@ window.BENCHMARK_DATA = {
           724.5580317815145,
           1152.480614389692,
           1502.5202003479003,
-          1623.9141528265816
+          1623.9141528265816,
+          1463.9618835449219
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11103,6 +11147,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11608,7 +11653,8 @@ window.BENCHMARK_DATA = {
           16830.10763113839,
           25577.201049804688,
           29986.344799804687,
-          31356.95405796596
+          31356.95405796596,
+          29543.194970703124
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11864,6 +11910,7 @@ window.BENCHMARK_DATA = {
           32474,
           32478,
           32478,
+          32482,
           32482,
           32482
         ],
@@ -12121,7 +12168,8 @@ window.BENCHMARK_DATA = {
           392.6721154621669,
           576.4374984105428,
           758.6436236699423,
-          787.4553489049275
+          787.4553489049275,
+          704.0583344187055
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12151,6 +12199,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12630,7 +12679,8 @@ window.BENCHMARK_DATA = {
           6288.4319320678715,
           8850.005076599122,
           12150.998370361329,
-          13283.391186305455
+          13283.391186305455,
+          11494.40445251465
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12882,6 +12932,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
+          24761,
           24761,
           24761
         ],
@@ -14373,6 +14424,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
         "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
+      },
+      {
+        "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
+        "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
       }
     ],
     "labels": [
@@ -14621,7 +14678,8 @@ window.BENCHMARK_DATA = {
       "21c7092f",
       "cfc32f7a",
       "85160537",
-      "707aa9d3"
+      "707aa9d3",
+      "ac9638ce"
     ],
     "datasets": [
       {
@@ -14873,7 +14931,8 @@ window.BENCHMARK_DATA = {
           73.08739903143474,
           111.11333548029263,
           180.51691462312425,
-          194.80716727330133
+          194.80716727330133,
+          180.41212045351665
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15035,6 +15094,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15390,7 +15450,8 @@ window.BENCHMARK_DATA = {
           7395.086473592122,
           10423.760006495884,
           14785.285142008464,
-          16379.489182692309
+          16379.489182692309,
+          14319.290048217774
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15402,6 +15463,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15907,7 +15969,8 @@ window.BENCHMARK_DATA = {
           412789.9201660156,
           625458.5008263221,
           750553.693359375,
-          794303.281640625
+          794303.281640625,
+          725291.8731119792
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16164,7 +16227,8 @@ window.BENCHMARK_DATA = {
           741067,
           740787,
           738521,
-          736500
+          736500,
+          740459
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16420,7 +16484,8 @@ window.BENCHMARK_DATA = {
           22851.914770507814,
           35935.26766357422,
           46934.35944010417,
-          49341.25580240886
+          49341.25580240886,
+          43555.69718279158
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16673,7 +16738,8 @@ window.BENCHMARK_DATA = {
           80303,
           80300,
           80083,
-          81172
+          81172,
+          80011
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16929,7 +16995,8 @@ window.BENCHMARK_DATA = {
           196288.63717447917,
           270193.9605994591,
           376631.10891927086,
-          412483.72054036456
+          412483.72054036456,
+          351065.3192313058
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17182,7 +17249,8 @@ window.BENCHMARK_DATA = {
           573150,
           572980,
           573106,
-          573139
+          573139,
+          573072
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18648,6 +18716,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
         "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
+      },
+      {
+        "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
+        "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
       }
     ],
     "labels": [
@@ -18892,7 +18966,8 @@ window.BENCHMARK_DATA = {
       "21c7092f",
       "cfc32f7a",
       "85160537",
-      "707aa9d3"
+      "707aa9d3",
+      "ac9638ce"
     ],
     "datasets": [
       {
@@ -19140,7 +19215,8 @@ window.BENCHMARK_DATA = {
           285.12276588167464,
           265.3962554534276,
           245.07016881306967,
-          171.93412189483644
+          171.93412189483644,
+          215.0781934091023
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19175,6 +19251,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19649,7 +19726,8 @@ window.BENCHMARK_DATA = {
           700.9406585693359,
           547.8698927561442,
           729.9382561047872,
-          429.698066677366
+          429.698066677366,
+          496.8834877649943
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19661,6 +19739,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -20158,7 +20237,8 @@ window.BENCHMARK_DATA = {
           6566.054433005197,
           4409.925806862967,
           6690.71885735648,
-          4248.451327187674
+          4248.451327187674,
+          3837.7540189302886
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20242,6 +20322,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20667,7 +20748,8 @@ window.BENCHMARK_DATA = {
           441.17383387883507,
           403.38918580327714,
           399.97638374964396,
-          279.62450671195984
+          279.62450671195984,
+          339.2960881846292
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20679,6 +20761,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21176,7 +21259,8 @@ window.BENCHMARK_DATA = {
           776.6312921387809,
           580.789894358317,
           723.8585012299674,
-          429.7898153236934
+          429.7898153236934,
+          539.8268969609187
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21188,6 +21272,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
