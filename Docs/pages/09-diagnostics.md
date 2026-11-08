@@ -1534,7 +1534,7 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Register the type through a [module](../04-registration/07-modules.md#internal-implementations) of its assembly, whose generated factory sets an internal property for every container. Otherwise make the property and its setter `public`, or grant the container's assembly `InternalsVisibleTo`.
+**Fix:** Register the type through a [module](./04-registration/07-modules.md#internal-implementations) of its assembly, whose generated factory sets an internal property for every container. Otherwise make the property and its setter `public`, or grant the container's assembly `InternalsVisibleTo`.
 
 ## Scanning
 
