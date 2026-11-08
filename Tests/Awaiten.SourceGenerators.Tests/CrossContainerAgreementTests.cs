@@ -255,6 +255,27 @@ public class CrossContainerAgreementTests
 		}
 
 		[Test]
+		public async Task SharedThroughAnInstanceHandle_ReportsAContainerSideEntryInsteadOfDroppingIt()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface IKettle { }\ninternal sealed class Kettle : IKettle { }\ninternal interface IPot { }\ninternal sealed class Pot : IPot { }")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "[Inject] internal IClock Clock { get; set; } = null!;\n    public IClock Backup { get; set; } = null!;")
+				.Replace("public static partial class CoffeeModule", "[Singleton<Kettle, IKettle>]\npublic static partial class CoffeeModule")
+				.Replace("public static partial class OtherModule", "[Singleton<Pot, IPot>]\npublic static partial class OtherModule");
+			string consumer = Consumer.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(library), consumer);
+
+			await That(Generator.Run(library).Sources.Values).Contains("*HiddenRegistration_Greeter_*").AsWildcard()
+				.Because("the modules build the implementation into a shared instance handle");
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'") && diagnostic.Contains("share one instance of it through a generated handle"))
+				.Because("the handle builds the implementation inside the module, so the container reports the entry instead of warning that nothing registers the type and leaving it out");
+			await That(friend.Diagnostics).IsEmpty()
+				.Because("a friend constructs the implementation itself and fills the entry");
+		}
+
+		[Test]
 		public async Task ProducedDifferently_NamesTheConstructorInEveryContainer()
 		{
 			string library = Library()

@@ -1751,7 +1751,8 @@ partial class AwaitenGenerator
 	///     XML doc.) It also carries each impl's generic definition, the key of an open-generic entry, so such an
 	///     entry is unmatched only when no closing of its definition is constructed. An entry inherited from an
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
-	///     container replaced is meant to fall away.
+	///     container replaced is meant to fall away. An implementation the modules of another assembly build into a
+	///     shared instance handle is AWT178 instead, since the handle builds it where no container-side entry reaches.
 	/// </summary>
 	private static void ReportUnmatchedInjectProperties(
 		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
@@ -1765,11 +1766,16 @@ partial class AwaitenGenerator
 		}
 
 		HashSet<string> registered = new(StringComparer.Ordinal);
+		Dictionary<string, INamedTypeSymbol> handled = new(StringComparer.Ordinal);
 		foreach (ImplInfo info in implOrder)
 		{
 			registered.Add(info.ImplementationType);
 			registered.Add(TypeIdentity(info.Symbol, compilation));
 			registered.Add(TypeIdentity(info.Symbol.OriginalDefinition, compilation));
+			if (info.Origin is { } module && info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal) is var marker and > 0)
+			{
+				handled[info.ImplementationType.Substring(0, marker)] = module;
+			}
 		}
 
 		foreach (KeyValuePair<string, List<InjectPropertyEntry>> implementation in injectProperties)
@@ -1781,10 +1787,18 @@ partial class AwaitenGenerator
 
 			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited))
 			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InjectPropertyImplementationNotRegistered,
-					entry.Location,
-					new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),])));
+				diagnostics.Add(handled.TryGetValue(implementation.Key, out INamedTypeSymbol? owner)
+					? new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnOwnerFactory,
+						entry.Location,
+						new EquatableArray<string>([
+							entry.PropertyName, DisplayInstance(implementation.Key), Display(owner.ToDisplayString(FullyQualified)),
+							"the modules of its assembly share one instance of it through a generated handle",
+						]))
+					: new DiagnosticInfo(
+						Diagnostics.InjectPropertyImplementationNotRegistered,
+						entry.Location,
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),])));
 			}
 		}
 	}
