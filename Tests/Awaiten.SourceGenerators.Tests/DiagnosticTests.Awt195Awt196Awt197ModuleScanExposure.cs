@@ -30,6 +30,34 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).Contains("*AWT195*Roaster*Secret*").AsWildcard()
 				.Because("the generated factory's parameter type must be nameable by a consumer, and Secret is internal");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Roaster' matched the module scan, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly*").AsWildcard();
+		}
+
+		[Test]
+		public async Task Awt195_NamesTheParameterOfAFactoryMemberAsSuch()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IGrinder { }
+			                                       internal sealed class Silo { }
+			                                       internal sealed class BeanStore { }
+			                                       internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+			                                       [Module]
+			                                       [Singleton<BeanStore>(Factory = nameof(Make))]
+			                                       [Singleton<Grinder, IGrinder>]
+			                                       public static partial class CoffeeModule
+			                                       {
+			                                           internal static BeanStore Make(Silo silo) => new();
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.BeanStore'*but the parameter 'silo' of its factory 'Make' has the type 'Lib.Silo', which is not accessible outside the module's assembly*").AsWildcard()
+				.Because("the parameter belongs to the module's factory member, not to a constructor");
+			await That(result.Diagnostics).DoesNotContain("*constructor parameter*Lib.Silo*").AsWildcard();
 		}
 
 		[Test]

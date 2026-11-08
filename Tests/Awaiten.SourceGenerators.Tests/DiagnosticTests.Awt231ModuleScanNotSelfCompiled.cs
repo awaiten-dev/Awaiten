@@ -98,7 +98,7 @@ public partial class DiagnosticTests
 					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.ITimer>(\"Lib.Timer\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
 					.Because("each skipped match is recorded under every service the scans expose it as, named by its metadata name");
 				await That(source).Contains("public const string ScanSkipped_Roaster_")
-					.And.Contains("its constructor parameter of type 'Lib.Secret' is not accessible outside the module's assembly")
+					.And.Contains("its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly")
 					.And.Contains("it is exposed under several services (Lib.IGrinder, Lib.IPlugin)")
 					.And.Contains("its property 'Clock' is marked [Inject]");
 				await That(source).DoesNotContain("Scan_")
@@ -142,7 +142,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library("Lib.Tests"), Consumer);
 
-				await That(result.Diagnostics).Contains("*AWT231*PluginModule*'Lib.Roaster'*generated no factory for it because its constructor parameter of type 'Lib.Secret' is not accessible outside the module's assembly*InternalsVisibleTo*[Scan]*").AsWildcard()
+				await That(result.Diagnostics).Contains("*AWT231*PluginModule*'Lib.Roaster'*generated no factory for it because its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly*InternalsVisibleTo*[Scan]*").AsWildcard()
 					.Because("the module skipped the match on purpose, and the consumer names why and how to fix it");
 				await That(result.Diagnostics).Contains("*AWT231*PluginModule*'Lib.Grinder'*because it is exposed under several services (Lib.IGrinder, Lib.IPlugin)*").AsWildcard();
 				await That(result.Diagnostics).Contains("*AWT231*PluginModule*'Lib.Timer'*because its property 'Clock' is marked [Inject]*").AsWildcard();

@@ -205,7 +205,7 @@ public partial class DiagnosticTests
 				await That(result.Diagnostics).IsEmpty()
 					.Because("an assembly granted InternalsVisibleTo constructs the implementation itself, so the module only records why it generated no factory");
 				await That(result.Sources.Values.Single()).Contains("public const string RegistrationSkipped_Greeter_")
-					.And.Contains("its constructor parameter of type 'Lib.IClock' is not accessible outside the module's assembly");
+					.And.Contains("its constructor parameter 'clock' has the type 'Lib.IClock', which is not accessible outside the module's assembly");
 			}
 
 			[Test]

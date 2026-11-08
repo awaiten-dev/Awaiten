@@ -1451,8 +1451,9 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
-	///     A self-compiled module <c>[Scan]</c> match or module registration has a constructor that takes a
-	///     parameter of a type that is not accessible outside the module's assembly. The generated factory is a
+	///     A self-compiled module <c>[Scan]</c> match or module registration has a constructor or factory member, named
+	///     with its parameter by the second argument, that takes a parameter of a type that is not accessible outside the
+	///     module's assembly. The generated factory is a
 	///     <c>public</c> method that resolves that parameter from the consuming container's graph, so the parameter
 	///     type has to be nameable by the consumer. Widen the parameter type's accessibility, or keep the type out of
 	///     self-compilation. In v1 a self-compiled factory cannot construct through an inaccessible parameter.
@@ -1460,7 +1461,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleScanParameterInaccessible = new(
 		"AWT195",
 		"Self-compiled implementation has an inaccessible constructor parameter",
-		"{0}, but its constructor parameter of type '{1}' is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or {2}",
+		"{0}, but {1} has the type '{2}', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

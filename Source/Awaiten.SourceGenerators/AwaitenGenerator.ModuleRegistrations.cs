@@ -1103,7 +1103,8 @@ partial class AwaitenGenerator
 	{
 		if (rejection.Descriptor == Diagnostics.ModuleScanParameterInaccessible)
 		{
-			return $"its constructor parameter of type '{rejection.MessageArgs.AsArray()[1]}' is not accessible outside the module's assembly";
+			string[] arguments = rejection.MessageArgs.AsArray();
+			return $"{arguments[1]} has the type '{arguments[2]}', which is not accessible outside the module's assembly";
 		}
 
 		if (rejection.Descriptor == Diagnostics.ModuleScanInjectionMetadata)

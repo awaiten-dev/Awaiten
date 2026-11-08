@@ -761,7 +761,7 @@ public class OpenGenericFactoryTests
 				public static partial class DataModule { }
 				""", Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT231*DataModule*its constructor parameter of type 'Lib.IClock' is not accessible outside the module's assembly*").AsWildcard();
+			await That(result.Diagnostics).Contains("*AWT231*DataModule*its constructor parameter 'clock' has the type 'Lib.IClock', which is not accessible outside the module's assembly*").AsWildcard();
 		}
 
 		[Test]
