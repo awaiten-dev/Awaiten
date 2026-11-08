@@ -33,9 +33,29 @@ public sealed partial class ModuleInternalMemberTests
 		internal static void Release(InternalPlugin plugin) => plugin.Steps.Add("released");
 	}
 
+	internal sealed class LocalSettings;
+
+	internal sealed class SettingsStore(LocalSettings settings)
+	{
+		public LocalSettings Settings { get; } = settings;
+	}
+
+	[Module]
+	[Singleton<SettingsStore>]
+	[Transient<InternalPlugin>(OnActivated = nameof(Activate))]
+	public static partial class SettingsModule
+	{
+		internal static void Activate(InternalPlugin plugin, SettingsStore store) => plugin.Store = store.Settings;
+	}
+
 	[Container]
 	[Import(typeof(LocalModule))]
 	public static partial class LocalContainer;
+
+	[Container]
+	[Import(typeof(SettingsModule))]
+	[Singleton<LocalSettings>]
+	public static partial class SettingsContainer;
 
 	[Container]
 	[Import(typeof(InternalMemberModule))]
@@ -109,6 +129,17 @@ public sealed partial class ModuleInternalMemberTests
 			}
 
 			await That(plugin.Steps).IsEqualTo(["activated", "released",]);
+		}
+
+		[Test]
+		public async Task AnInternalHook_TakingAServiceOnlyTheContainerCanComplete_RunsWithIt()
+		{
+			using SettingsContainer.Root container = new();
+
+			object? settings = container.Resolve<InternalPlugin>().Store;
+
+			await That(settings).IsSameAs(container.Resolve<SettingsStore>().Settings)
+				.Because("the container registers the internal service the hook's service needs and calls the hook directly, while the module generates no wrapper or handle for it");
 		}
 	}
 }

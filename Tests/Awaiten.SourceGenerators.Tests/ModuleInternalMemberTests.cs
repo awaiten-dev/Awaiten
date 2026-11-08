@@ -224,5 +224,29 @@ public class ModuleInternalMemberTests
 			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("OnActivated hook 'Ready'"))
 				.Because("a container in another assembly cannot call the hook, so it reports the reason the module recorded instead of dropping the hook");
 		}
+
+		[Test]
+		[Arguments("")]
+		[Arguments("\n[Module][Singleton<Beans, IBeans>] public static partial class OtherModule;")]
+		public async Task Skipped_TakingAnInternalServiceThatCannotBeBuilt_DoesNotDemandItsHandle(string otherModule)
+		{
+			string library = Library("[Singleton<BeanStore>][Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store) { }")
+				.Replace("internal sealed class BeanStore { }", "internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }") + otherModule;
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(Generator.Run(library + "\n[Container][Import(typeof(CoffeeModule))][Singleton<Settings>] public static partial class SameContainer;").Diagnostics).IsEmpty()
+				.Because("the container of the module's assembly registers the internal service the hook's service needs and calls the hook directly, so the skipped hook demands no handle the module cannot build");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.BeanStore', which the module cannot build"));
+		}
+
+		[Test]
+		public async Task Skipped_TakingAnInternalService_EmitsNoHandleForIt()
+		{
+			GeneratorResult library = Generator.Run(Library("[Singleton<BeanStore>][Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store, [FromKey(\"x\")] IPlugin other) { }"));
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(string.Concat(library.Sources.Values)).DoesNotContain("Hidden_BeanStore_")
+				.Because("the module generates no wrapper for the hook, so nothing takes the internal service through a handle");
+		}
 	}
 }

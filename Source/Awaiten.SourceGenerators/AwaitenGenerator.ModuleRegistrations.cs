@@ -546,6 +546,7 @@ partial class AwaitenGenerator
 				produced, hookName, location, release, name, new SelfCompiledSubject(produced.ToDisplayString(FullyQualified), subject, "make the hook public"),
 				constructed || GrantsInternalsVisibleTo(compilation.Assembly), constructed);
 			int reported = diagnostics.Count;
+			(int, INamedTypeSymbol[])? demanded = hidden?.Snapshot();
 			ResolvedModuleHook? resolved = ResolveRegistrationHook(request, context);
 			if (constructed && AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
 			{
@@ -557,8 +558,14 @@ partial class AwaitenGenerator
 				return null;
 			}
 
+			// A skipped hook gets no wrapper, so it takes no handle and leaves the internal services it needs to the container that calls it.
 			if (hook.SkipReason is { } reason)
 			{
+				if (demanded is { } snapshot)
+				{
+					hidden!.Restore(snapshot);
+				}
+
 				skipped.Add(new SkippedRegistration(skippedName, reason, Hook: true));
 				return null;
 			}

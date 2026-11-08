@@ -161,6 +161,22 @@ partial class AwaitenGenerator
 			}
 		}
 
+		/// <summary>What <see cref="Use" /> and <see cref="NeededNonViable" /> recorded so far, which <see cref="Restore" /> returns to.</summary>
+		public (int Used, INamedTypeSymbol[] NeededNonViable) Snapshot()
+			=> (Used.Count, NeededNonViable.ToArray());
+
+		/// <summary>Forgets what a mirrored member recorded since <paramref name="snapshot" />, for a member the module does not emit.</summary>
+		public void Restore((int Used, INamedTypeSymbol[] NeededNonViable) snapshot)
+		{
+			foreach (INamedTypeSymbol service in Used.Skip(snapshot.Used))
+			{
+				_used.Remove(service);
+			}
+
+			Used.RemoveRange(snapshot.Used, Used.Count - snapshot.Used);
+			NeededNonViable.IntersectWith(snapshot.NeededNonViable);
+		}
+
 		/// <summary>The fully qualified name of the handle of <paramref name="service" />.</summary>
 		public string HandleType(INamedTypeSymbol service)
 			=> $"{(Provider(service) ?? Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenHandleName(service)}";
