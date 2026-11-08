@@ -581,6 +581,46 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task DoesNotSuggestAnOverridableDefaultWhenAVarianceCollectionHoldsTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public class Base { }
+			                                       public sealed class Derived : Base { }
+			                                       public interface IHandler<in T> { }
+			                                       public sealed class HandlerA : IHandler<Base> { }
+			                                       public sealed class HandlerB : IHandler<Base> { }
+			                                       public sealed class Consumer(IHandler<Base> handler) { }
+			                                       public sealed class Board(IEnumerable<IHandler<Derived>> handlers) { }
+
+			                                       [Module]
+			                                       [Singleton<HandlerA, IHandler<Base>>]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<HandlerB, IHandler<Base>>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       [Singleton<Board>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("the collection of IHandler<Derived> holds every IHandler<Base> through variance, so an overridden default would leave it");
+		}
+
+		[Test]
 		public async Task DoesNotReportWhenEveryRegistrationIsAnOverridableDefault()
 		{
 			GeneratorResult result = Generator.Run("""

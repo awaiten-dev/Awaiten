@@ -999,7 +999,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		ReportUnappliedContextualBindings(conditionals, consumedConditionals, diagnostics);
 
 		// AWT155 once every instance is built, so it is known whether anything resolves the service singly.
-		Dictionary<string, CrossModuleDuplicate> unresolvedDuplicates = ReportCrossModuleDuplicates(duplicates, instances, composites, diagnostics);
+		Dictionary<string, CrossModuleDuplicate> unresolvedDuplicates = ReportCrossModuleDuplicates(duplicates, instances, composites, variance, diagnostics);
 
 		// AWT175 for an open import: each routed closing the container also registers is contradictory. Reported once
 		// every instance is built, so every dependency has had the chance to route.

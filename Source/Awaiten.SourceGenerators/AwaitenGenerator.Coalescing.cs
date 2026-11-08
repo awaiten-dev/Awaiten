@@ -994,7 +994,8 @@ partial class AwaitenGenerator
 	///     singly, directly or through a relationship such as <c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
 	///     <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> or a dispatch dictionary entry. A collection or keyed dictionary
 	///     receives every contribution, and a composite fronting the service takes single resolution itself, so neither
-	///     depends on the [Import] order. The remedy suggests no Fallback when the graph also collects the service (see
+	///     depends on the [Import] order. The remedy suggests no Fallback when the graph also collects the service,
+	///     directly or as a variance-compatible member of another closing's collection (see
 	///     <see cref="CrossModuleDuplicate.Collected" />). Returns the first unreported duplicate of each service no composite fronts,
 	///     which a typed resolve in user code still depends on (see <c>AwaitenAnalyzer</c>).
 	/// </summary>
@@ -1002,6 +1003,7 @@ partial class AwaitenGenerator
 		List<CrossModuleDuplicate> duplicates,
 		List<InstanceModel> instances,
 		List<CompositeRegistration> composites,
+		VarianceState variance,
 		List<DiagnosticInfo> diagnostics)
 	{
 		Dictionary<string, CrossModuleDuplicate> unresolved = new(StringComparer.Ordinal);
@@ -1022,6 +1024,9 @@ partial class AwaitenGenerator
 				                     || dependency is { Key: null, Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, })
 				.Select(dependency => dependency.ServiceType),
 			StringComparer.Ordinal);
+		collected.UnionWith(variance.CollectionElements
+			.SelectMany(element => VarianceMatches(element.Symbol, element.ServiceType, variance))
+			.Select(match => match.ServiceType));
 		foreach (CrossModuleDuplicate duplicate in duplicates
 			         .Where(duplicate => !composites.Any(composite => composite.Key is null && composite.Service == duplicate.Service))
 			         .Select(duplicate => duplicate with { Collected = collected.Contains(duplicate.Service), }))
