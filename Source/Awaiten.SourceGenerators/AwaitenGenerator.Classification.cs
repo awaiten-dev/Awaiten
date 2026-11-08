@@ -219,12 +219,36 @@ partial class AwaitenGenerator
 		if (parameterModel.Kind is DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External or DependencyKind.Absent or DependencyKind.Present
 		    || IsSynthesizedCollection(parameterModel.Kind)
 		    || context.ServiceToImpl.ContainsKey(KeyOf(parameterModel))
-		    || context.ConstraintRejected.Contains(parameterModel.ServiceType))
+		    || context.ConstraintRejected.Contains(parameterModel.ServiceType)
+		    || ReportDeferredRejection(parameterModel, info, context.DeferredRejections, context.Diagnostics))
 		{
 			return;
 		}
 
 		context.Diagnostics.Add(UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes));
+	}
+
+	/// <summary>
+	///     Whether an open registration under the key of the unregistered <paramref name="dependency" />, or under the
+	///     context of its consumer, was skipped for the closing because of its constraints while another key or context
+	///     serves it. The first such request reports the constraint diagnostics (AWT126, AWT209) as the precise cause in
+	///     place of AWT101; later ones report nothing more.
+	/// </summary>
+	private static bool ReportDeferredRejection(
+		ParameterModel dependency,
+		ImplInfo info,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections,
+		List<DiagnosticInfo> diagnostics)
+	{
+		if (!(dependency.Key is null && deferredRejections.TryGetValue(new ServiceKey(dependency.ServiceType, ContextKey(RegisteredType(info.ImplementationType))), out List<DiagnosticInfo>? deferred))
+		    && !deferredRejections.TryGetValue(KeyOf(dependency), out deferred))
+		{
+			return false;
+		}
+
+		diagnostics.AddRange(deferred);
+		deferred.Clear();
+		return true;
 	}
 
 	/// <summary>
@@ -288,6 +312,7 @@ partial class AwaitenGenerator
 		Compilation Compilation,
 		Dictionary<ServiceKey, string> ServiceToImpl,
 		HashSet<string> ConstraintRejected,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections,
 		HashSet<ServiceKey> ConsumedConditionals,
 		ExternalServiceTypes ExternalServiceTypes,
 		List<(string ServiceType, INamedTypeSymbol Symbol)> DispatchCandidates,
@@ -531,7 +556,8 @@ partial class AwaitenGenerator
 		if (!isCollection
 		    && dependency.Kind != DependencyKind.External
 		    && !context.ServiceToImpl.ContainsKey(KeyOf(dependency))
-		    && !context.ConstraintRejected.Contains(dependency.ServiceType))
+		    && !context.ConstraintRejected.Contains(dependency.ServiceType)
+		    && !ReportDeferredRejection(dependency, info, context.DeferredRejections, context.Diagnostics))
 		{
 			// An optional member with a merely missing registration is dropped so the property is left at its
 			// default. Dropping it (rather than yielding a member) also keeps the absent edge out of cycle, captive

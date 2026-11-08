@@ -50,6 +50,36 @@ Open registrations join collections. A request for `IEnumerable<IHandler<OrderPl
 [Transient(typeof(FastRepository<>), typeof(IRepository<>), Key = "fast")]
 ```
 
+## Split the closings by constraints
+
+Several open registrations of one service can share its closings by the constraints of their implementations. Awaiten builds each closing only from the registrations that accept its type arguments and skips the others for that closing:
+
+```csharp
+public interface IPastry;
+public sealed class Croissant : IPastry;
+
+public interface IRecipe<T>;
+public sealed class BrewRecipe<T> : IRecipe<T> where T : IDrink;
+public sealed class BakeRecipe<T> : IRecipe<T> where T : IPastry;
+
+public sealed class Kitchen(IRecipe<Espresso> espresso, IRecipe<Croissant> croissant);
+
+[Container]
+[Transient(typeof(BrewRecipe<>), typeof(IRecipe<>))]
+[Transient(typeof(BakeRecipe<>), typeof(IRecipe<>))]
+[Transient<Kitchen>]
+public static partial class CoffeeShop;
+```
+
+`IRecipe<Espresso>` is a `BrewRecipe<Espresso>` and `IRecipe<Croissant>` a `BakeRecipe<Croissant>`. The constraints of a generic `Factory` select its closings the same way.
+
+- **Several accept a closing.** The rules for several registrations apply as usual: the first one wins single resolution, `IEnumerable<IRecipe<T>>` holds every registration that accepts `T`, and two modules that both build a closing are reported for it ([AWT155](../09-diagnostics.md#awt155)).
+- **None accepts a closing.** A closing the graph asks for that neither an open nor a closed registration builds, also through [variance](../05-resolution/08-generic-variance.md), is an error that lists the candidates ([AWT126](../09-diagnostics.md#awt126)).
+- **Options.** `Fallback` and `WhenInjectedInto` apply among the registrations that accept the closing, so an overridable default or an unconditional registration serves the closings a stronger or contextual one can't build.
+- **Keys.** A skipped registration is not reported when a registration under another key, or a contextual one, builds the closing. A request under the key or context of the skipped registration that nothing else serves reports its constraints ([AWT126](../09-diagnostics.md#awt126)).
+- **Decorators and composites** wrap every registration of a closing. One whose constraints reject a closing leaves it as it is, with a warning ([AWT171](../09-diagnostics.md#awt171)).
+- **Extending containers.** An open registration of the extending container replaces the inherited one for every closing, also for those it can't build.
+
 ## Decorate or compose the closings
 
 Decorators and composites take the same `typeof` form, so one behavior wraps every closing of an open generic service. This is the pipeline-behavior pattern:
@@ -63,7 +93,7 @@ Decorators and composites take the same `typeof` form, so one behavior wraps eve
 See [Decorators](./02-decorators.md#decorate-every-closing-of-an-open-generic) and [Composites](./03-composites.md#compose-every-closing-of-an-open-generic).
 
 :::note
-The implementation and service must have the same arity ([AWT125](../09-diagnostics.md#awt125)), and a closed type argument must satisfy the implementation's constraints ([AWT126](../09-diagnostics.md#awt126)).
+The implementation and service must have the same arity ([AWT125](../09-diagnostics.md#awt125)), and a closing the graph asks for must satisfy the constraints of at least one registration ([AWT126](../09-diagnostics.md#awt126)).
 :::
 
 ## Registration options
@@ -102,7 +132,7 @@ public static partial class CoffeeShop
 A request for `IRepository<Order>` calls `CreateRepository<Order>(connection)`. The rules:
 
 - **Type parameters.** The method has exactly the service's type parameters, mapped in declaration order, like open decorators and composites. A method with a different number is an error ([AWT208](../09-diagnostics.md#awt208)).
-- **Constraints.** A closing that violates the method's constraints is skipped with an error ([AWT209](../09-diagnostics.md#awt209)), like a closing that violates the implementation's own ([AWT126](../09-diagnostics.md#awt126)).
+- **Constraints.** A closing that violates the method's constraints is skipped, like a closing that violates the implementation's own. When no other registration builds it, that's an error ([AWT209](../09-diagnostics.md#awt209)).
 - **Return type.** The method returns the closed service, or `Task<T>`/`ValueTask<T>` of it. An async factory is awaited and makes the closing async, like a non-generic async factory.
 - **Parameters.** They follow the rules of a non-generic factory: graph dependencies (including other open generics closed the same way), `CancellationToken`, `[FromKey]`, `[RequestingType]`, and `[Arg]` on a transient reached through `Func<…, T>`.
 - **Overloads.** An overloaded factory is ambiguous ([AWT112](../09-diagnostics.md#awt112)), as for a non-generic one.
@@ -123,7 +153,7 @@ public static partial class CoffeeShop
 
 ### Overridable defaults
 
-`Fallback` makes an open generic an overridable default, typically in a [module](./07-modules.md#overridable-defaults). It applies per closing: a closed registration without `Fallback` replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing. A closed default replaces nothing, so the open default's closing stays a member of that closing's collections, behind the closed one.
+`Fallback` makes an open generic an overridable default, typically in a [module](./07-modules.md#overridable-defaults). It applies per closing: a closed registration without `Fallback` replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing it can build. A closed default replaces nothing, so the open default's closing stays a member of that closing's collections, behind the closed one.
 
 ```csharp
 [Container]

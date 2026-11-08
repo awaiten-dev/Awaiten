@@ -778,6 +778,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, ServiceKey> CompositeCollections,
 		WellKnownTypes WellKnown,
 		HashSet<string> ConstraintRejected,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections,
 		ExternalSurface External,
 		VarianceState Variance,
 		HashSet<ServiceKey> ConsumedConditionals,
@@ -883,7 +884,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Collect also expands [Scan]s into overridable registrations (IsScan), ordered after the explicit ones
 		// so an explicit registration wins single resolution while every match still joins its collection.
-		(List<RawRegistration> raw, HashSet<string> constraintRejected, List<OpenRegistration> open) = Collect(
+		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections, List<OpenRegistration> open) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
 
 		if (factories is not null)
@@ -930,7 +931,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic decorators: synthesize a closed [Decorate] per matching closing before building the chains,
 		// so they flow through the same DecoratorChainBuilder as the closed form and interleave with it. A no-op
 		// when there are none (closedServices is then empty and the expansion has nothing to iterate).
-		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, diagnostics);
+		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, compilation, diagnostics);
 
 		// Decorator chains: for each [Decorate]d service, move the base impl(s) onto a synthetic key and register
 		// each decorator as a chain link whose inner parameter redirects to the next-lower key. decoratorInner
@@ -945,7 +946,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic composites: synthesize a closed [Composite] per matching closing before building the
 		// composites, so they flow through the same BuildComposites as the closed form (fronting the decorated
 		// members). A no-op when there are none, as with the open decorators above.
-		ExpandOpenComposites(composites, openComposites, closedServices, graph, constraintRejected, diagnostics);
+		ExpandOpenComposites(composites, openComposites, closedServices, graph, constraintRejected, compilation, diagnostics);
 
 		// Composites: each [Composite<TComposite, TService>] registers the composite and makes it the public
 		// winner for TService, excluded from its own collection so its collection parameter fans out to the
@@ -976,7 +977,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

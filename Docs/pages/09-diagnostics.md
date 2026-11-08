@@ -1218,8 +1218,10 @@ public static partial class CoffeeShop;
 ### AWT126
 
 :::danger[Error]
-A required closed type violates the open generic implementation's type-parameter constraints, so the dependency cannot be satisfied. (For the open `[Decorate]`/`[Composite]` case, where the base service still resolves, see the warning [AWT171](#awt171).)
+A closed type the graph requires violates the type-parameter constraints of the open generic implementation, and no other registration of the closed service accepts it, so the dependency cannot be satisfied. Each open registration that cannot build the closing is reported, and the message lists the other candidates. (For the open `[Decorate]`/`[Composite]` case, where the base service still resolves, see the warning [AWT171](#awt171).)
 :::
+
+When several open registrations share a service, a registration whose constraints reject a closing is skipped for it without a diagnostic as long as another registration builds it. Under keys or contexts, a request under the key or context of the skipped registration that nothing else serves reports it, with the key in the message (see [split the closings by constraints](./04-registration/05-open-generics.md#split-the-closings-by-constraints)).
 
 ```csharp expect=AWT126
 public sealed class Repository<T> : IRepository<T> where T : class;
@@ -1356,7 +1358,7 @@ public static partial class CoffeeShop
 ### AWT209
 
 :::danger[Error]
-A closing of an open generic `typeof` registration violates the type-parameter constraints of its generic `Factory`, so the factory cannot be called for it. Like [AWT126](#awt126), the closing is skipped and the dependency that asked for it is unsatisfied.
+A closing of an open generic `typeof` registration violates the type-parameter constraints of its generic `Factory`, so the factory cannot be called for it, and no other registration builds the closing. Like [AWT126](#awt126), the dependency that asked for it is unsatisfied. When another registration accepts the closing, the factory is skipped for it without a diagnostic.
 :::
 
 ```csharp expect=AWT209

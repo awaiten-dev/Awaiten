@@ -339,7 +339,8 @@ partial class AwaitenGenerator
 		List<OpenRegistration> open,
 		ExpansionInputs inputs,
 		List<DiagnosticInfo> diagnostics,
-		HashSet<string> constraintRejected)
+		HashSet<string> constraintRejected,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections)
 	{
 		// Closed services already expanded from the open registrations, expanded once since a single visit
 		// synthesizes every matching open registration. An explicitly-registered concrete closed service is
@@ -369,7 +370,7 @@ partial class AwaitenGenerator
 		// at depth 0; grows as closed impls are synthesized, each one depth deeper than the closed service that
 		// produced it.
 		Queue<ExpansionWork> worklist = new();
-		ExpansionContext context = new(raw, open, openServices, worklist, new HashSet<ISymbol>(SymbolEqualityComparer.Default), inputs, diagnostics, constraintRejected);
+		ExpansionContext context = new(raw, open, openServices, worklist, new HashSet<ISymbol>(SymbolEqualityComparer.Default), inputs, diagnostics, constraintRejected, deferredRejections);
 		SeedExpansionWorklist(droppedWeak, context);
 
 		while (worklist.Count > 0)
@@ -473,7 +474,7 @@ partial class AwaitenGenerator
 		{
 			if (SymbolEqualityComparer.Default.Equals(decorator.Service, closed.ConstructedFrom)
 			    && (decorator.Keys is null || decorator.Keys.Contains(registration.Key))
-			    && ConstraintsSatisfied(decorator.Decorator, typeArguments))
+			    && ConstraintsSatisfied(decorator.Decorator, typeArguments, context.Inputs.Compilation))
 			{
 				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
 				EnqueueDecorator(closedDecorator, closed, depth, context, decorator.Via?.Close(typeArguments, closedDecorator, closed)?.Producer);
@@ -485,7 +486,7 @@ partial class AwaitenGenerator
 		{
 			if (SymbolEqualityComparer.Default.Equals(composite.Service, closed.ConstructedFrom)
 			    && composite.Key == registration.Key
-			    && ConstraintsSatisfied(composite.Composite, typeArguments))
+			    && ConstraintsSatisfied(composite.Composite, typeArguments, context.Inputs.Compilation))
 			{
 				INamedTypeSymbol closedComposite = composite.Composite.Construct(typeArguments);
 				Enqueue(new ExpansionWork(closedComposite, composite.Via?.Close(typeArguments, closedComposite, closed)?.Producer, depth, ExpansionScan.ConstructedInstance), context);
@@ -620,32 +621,80 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Synthesizes a closed <see cref="RawRegistration" /> for every open registration whose open form matches
-	///     <paramref name="closed" />'s open form (exact arity, v1), in declaration order. A single match yields the
-	///     single-dispatch registration; several yield the members of a closed-generic collection. Two closings of one
-	///     implementation are left to coalescing, which shares or rejects them as it does closed registrations. Each
-	///     synthesized implementation is enqueued one depth deeper so its own closed generic dependencies expand in turn.
+	///     <paramref name="closed" />'s open form (exact arity, v1) and that can build the closing, in declaration order.
+	///     A single match yields the single-dispatch registration; several yield the members of a closed-generic
+	///     collection. A registration whose constraints reject the closing is skipped, and reported (AWT126, AWT209) when
+	///     no registration of the closed service accepts it; otherwise the report waits for a request under the skipped
+	///     registration's key or context that nothing serves (<see cref="ExpansionContext.DeferredRejections" />). Two closings of one implementation are left to
+	///     coalescing, which shares or rejects them as it does closed registrations. Each synthesized implementation is
+	///     enqueued one depth deeper so its own closed generic dependencies expand in turn.
 	/// </summary>
 	private static void ExpandClosedService(INamedTypeSymbol closed, int depth, ExpansionContext context)
 	{
 		INamedTypeSymbol openForm = closed.ConstructedFrom;
 		string closedService = closed.ToDisplayString(FullyQualified);
 		ITypeSymbol[] typeArguments = closed.TypeArguments.ToArray();
+		// An unkeyed closed registration that variance converts to the closing serves it like an exact one.
+		bool registeredClosed = context.Raw.Any(registration =>
+			registration.ServiceType == closedService
+			|| (registration is { Key: null, WhenInjectedInto: null, ServiceSymbol: { TypeKind: TypeKind.Interface, } service, }
+			    && VarianceCompatible(service, closed, context.Inputs.Compilation)));
 
 		// Strong templates first (OrderBy is stable, so declaration order holds within each group), so a Fallback
 		// template can tell below whether a stronger registration already claims this closing.
-		foreach (OpenRegistration candidate in context.Open
-			         .Where(c => SymbolEqualityComparer.Default.Equals(c.Service, openForm))
-			         .OrderBy(c => c.Weak))
+		List<OpenRegistration> candidates = context.Open
+			.Where(c => SymbolEqualityComparer.Default.Equals(c.Service, openForm))
+			.OrderBy(c => c.Weak)
+			.ToList();
+		List<(OpenRegistration Candidate, List<IMethodSymbol> Factories)> accepted = new();
+		List<(OpenRegistration Candidate, ClosingRejection Rejection)> rejected = new();
+		foreach (OpenRegistration candidate in candidates)
+		{
+			ClosingRejection rejection = AcceptClosing(candidate, closed, context, out List<IMethodSymbol> factories);
+			if (rejection == ClosingRejection.None)
+			{
+				accepted.Add((candidate, factories));
+			}
+			else
+			{
+				rejected.Add((candidate, rejection));
+			}
+		}
+
+		bool served = accepted.Count > 0 || registeredClosed;
+		List<OpenRegistration> rejectedCandidates = rejected.Select(entry => entry.Candidate).ToList();
+		foreach ((OpenRegistration candidate, ClosingRejection rejection) in rejected)
+		{
+			DiagnosticInfo? diagnostic = RejectedClosingDiagnostic(candidate, rejection, closed, closedService, rejectedCandidates, context);
+			if (!served)
+			{
+				RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
+				if (diagnostic is not null)
+				{
+					context.Diagnostics.Add(diagnostic);
+				}
+
+				continue;
+			}
+
+			ServiceKey key = new(closedService, EffectiveKey(candidate));
+			if (!context.DeferredRejections.TryGetValue(key, out List<DiagnosticInfo>? deferred))
+			{
+				deferred = new List<DiagnosticInfo>();
+				context.DeferredRejections[key] = deferred;
+			}
+
+			if (diagnostic is not null)
+			{
+				deferred.Add(diagnostic);
+			}
+		}
+
+		foreach ((OpenRegistration candidate, List<IMethodSymbol> factories) in accepted)
 		{
 			// Map the closed service's type arguments onto the implementation's type parameters and
 			// construct the closed implementation (e.g. Repository<> + [Order] -> Repository<Order>).
 			INamedTypeSymbol closedImpl = candidate.Implementation.Construct(typeArguments);
-			string closedImplName = closedImpl.ToDisplayString(FullyQualified);
-
-			if (!TryAcceptClosing(candidate, closed, closedService, closedImplName, context, out List<IMethodSymbol> factories))
-			{
-				continue;
-			}
 
 			// A Fallback closing that a registration without Fallback already claims is dropped by coalescing,
 			// so it must not seed expansion either (see DroppedOverridableDefaults for the explicit ones).
@@ -654,7 +703,7 @@ partial class AwaitenGenerator
 			RawRegistration registration = SynthesizeClosedRegistration(candidate, closed, closedService, closedImpl, TypeIdentity(closedImpl, context.Inputs.Compilation));
 			if (candidate.Via is not null && !dropped)
 			{
-				registration = WithoutAmbiguousOpenHooks(registration, candidate, closedImplName, context);
+				registration = WithoutAmbiguousOpenHooks(registration, candidate, closedImpl.ToDisplayString(FullyQualified), context);
 			}
 
 			if (candidate.Via is { Method: null, } generated)
@@ -692,45 +741,56 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Checks that <paramref name="closed" />'s type arguments satisfy the constraints of the candidate's
-	///     implementation (AWT126) and of at least one of its generic factories (AWT209), returning the factories that
-	///     accept them. A rejected closing records its service so the emitter can suppress the AWT101 the consumer's
-	///     now-unregistered parameter would otherwise also raise.
+	///     implementation and of at least one of its generic factories, returning the factories that accept them, or why
+	///     the candidate cannot build the closing.
 	/// </summary>
-	private static bool TryAcceptClosing(
+	private static ClosingRejection AcceptClosing(
 		OpenRegistration candidate,
 		INamedTypeSymbol closed,
-		string closedService,
-		string closedImplName,
 		ExpansionContext context,
 		out List<IMethodSymbol> factories)
 	{
 		factories = [];
 		if (candidate.ViaFault is not null || candidate.Dropped)
 		{
-			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
-			return false;
+			return ClosingRejection.Unbuildable;
 		}
 
-		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray()))
+		if (!ConstraintsSatisfied(candidate.Implementation, closed.TypeArguments.ToArray(), context.Inputs.Compilation))
 		{
-			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
-			ReportConstraintViolation(candidate, closedImplName, context);
-			return false;
+			return ClosingRejection.Implementation;
 		}
 
 		// A generic factory is called with the closing's type arguments, so they must satisfy its constraints too.
 		factories = candidate.FactoryMethods
 			.Where(method => SatisfiesConstraints(method, closed.TypeArguments, context.Inputs.Compilation))
 			.ToList();
-		if (candidate.FactoryMethods.Count > 0 && factories.Count == 0)
-		{
-			RecordRejected(context.ConstraintRejectedServices, closedService, candidate.Key);
-			ReportFactoryConstraintViolation(candidate, closedService, context);
-			return false;
-		}
-
-		return true;
+		return candidate.FactoryMethods.Count > 0 && factories.Count == 0 ? ClosingRejection.Factory : ClosingRejection.None;
 	}
+
+	/// <summary>
+	///     The diagnostic for a candidate that cannot build a closing: AWT126 for the implementation's constraints, naming
+	///     the other rejected <paramref name="candidates" />, and AWT209 for its factory's, or <see langword="null" /> when
+	///     it was reported already. A <see cref="ClosingRejection.Unbuildable" /> registration was reported once for itself
+	///     (AWT226, AWT230, AWT231).
+	/// </summary>
+	private static DiagnosticInfo? RejectedClosingDiagnostic(
+		OpenRegistration candidate,
+		ClosingRejection rejection,
+		INamedTypeSymbol closed,
+		string closedService,
+		List<OpenRegistration> candidates,
+		ExpansionContext context)
+		=> rejection switch
+		{
+			ClosingRejection.Implementation => ConstraintViolation(candidate, closed, closedService, candidates, context),
+			ClosingRejection.Factory => FactoryConstraintViolation(candidate, closedService, context),
+			_ => null,
+		};
+
+	/// <summary>The key coalescing files a closing of <paramref name="candidate" /> under: its consumer's context key, or its own key.</summary>
+	private static string? EffectiveKey(OpenRegistration candidate)
+		=> candidate.WhenInjectedInto is { } consumer ? ContextKey(consumer) : candidate.Key;
 
 	private static bool IsClaimedByStrongerRegistration(OpenRegistration candidate, string closedService, List<RawRegistration> raw)
 		=> raw.Any(registration =>
@@ -831,34 +891,49 @@ partial class AwaitenGenerator
 		}
 	}
 
-	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
+	private static DiagnosticInfo? FactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
 		string factory = QualifiedMember(candidate.Origin ?? context.Inputs.ContainerSymbol, candidate.Factory);
-		if (!context.ReportedConstraints.Add("factory:" + closedService + "\0" + factory))
+		if (!context.ReportedConstraints.Add("factory:" + closedService + "\0" + EffectiveKey(candidate) + "\0" + factory))
 		{
-			return;
+			return null;
 		}
 
-		context.Diagnostics.Add(new DiagnosticInfo(
+		return new DiagnosticInfo(
 			Diagnostics.GenericFactoryConstraintViolation,
 			candidate.Location,
-			new EquatableArray<string>([AwaitenGenerator.Display(closedService), AwaitenGenerator.Display(factory),])));
+			new EquatableArray<string>([AwaitenGenerator.Display(closedService), AwaitenGenerator.Display(factory),]));
 	}
 
-	private static void ReportConstraintViolation(OpenRegistration candidate, string closedImplName, ExpansionContext context)
+	private static DiagnosticInfo? ConstraintViolation(
+		OpenRegistration candidate,
+		INamedTypeSymbol closed,
+		string closedService,
+		List<OpenRegistration> candidates,
+		ExpansionContext context)
 	{
-		if (!context.ReportedConstraints.Add(closedImplName))
+		string closedImplName = candidate.Implementation.Construct(closed.TypeArguments.ToArray()).ToDisplayString(FullyQualified);
+		if (!context.ReportedConstraints.Add(closedImplName + "\0" + closedService + "\0" + EffectiveKey(candidate)))
 		{
-			return;
+			return null;
 		}
 
-		context.Diagnostics.Add(new DiagnosticInfo(
+		string implementation = AwaitenGenerator.Display(candidate.Implementation.ToDisplayString(FullyQualified));
+		List<string> others = candidates
+			.Select(other => AwaitenGenerator.Display(other.Implementation.ToDisplayString(FullyQualified)))
+			.Where(other => other != implementation)
+			.Distinct(StringComparer.Ordinal)
+			.Select(other => "'" + other + "'")
+			.ToList();
+		return new DiagnosticInfo(
 			Diagnostics.OpenGenericConstraintViolation,
 			candidate.Location,
 			new EquatableArray<string>([
 				AwaitenGenerator.Display(closedImplName),
-				AwaitenGenerator.Display(candidate.Implementation.ToDisplayString(FullyQualified)),
-			])));
+				implementation,
+				AwaitenGenerator.DisplayKeyed(closedService, candidate.Key),
+				others.Count == 0 ? "" : " (also rejected: " + string.Join(", ", others) + ")",
+			]));
 	}
 
 	private static void ReportExpansionTooDeep(INamedTypeSymbol impl, int depth, ExpansionContext context)
@@ -1049,10 +1124,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Verifies that <paramref name="typeArguments" /> satisfy the type-parameter constraints of open generic
 	///     <paramref name="definition" /> (reference/value-type/unmanaged kinds, <c>new()</c>, and each base/interface
-	///     constraint), so the closed construction is legal C#. A constraint mentioning a type parameter is checked
-	///     after substitution; one that cannot be represented after substitution is skipped rather than failed.
+	///     constraint, by the conversions of <see cref="SatisfiesConstraintType" />), so the closed construction is legal
+	///     C#. A constraint mentioning a type parameter is checked after substitution; one that cannot be represented
+	///     after substitution is skipped rather than failed.
 	/// </summary>
-	private static bool ConstraintsSatisfied(INamedTypeSymbol definition, ITypeSymbol[] typeArguments)
+	private static bool ConstraintsSatisfied(INamedTypeSymbol definition, ITypeSymbol[] typeArguments, Compilation compilation)
 	{
 		ImmutableArray<ITypeParameterSymbol> parameters = definition.TypeParameters;
 		int count = Math.Min(parameters.Length, typeArguments.Length);
@@ -1065,7 +1141,7 @@ partial class AwaitenGenerator
 
 		for (int i = 0; i < count; i++)
 		{
-			if (!ParameterConstraintSatisfied(parameters[i], typeArguments[i], substitution))
+			if (!ParameterConstraintSatisfied(parameters[i], typeArguments[i], substitution, compilation))
 			{
 				return false;
 			}
@@ -1077,7 +1153,8 @@ partial class AwaitenGenerator
 	private static bool ParameterConstraintSatisfied(
 		ITypeParameterSymbol parameter,
 		ITypeSymbol argument,
-		Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution)
+		Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution,
+		Compilation compilation)
 	{
 		if (parameter.HasReferenceTypeConstraint && !argument.IsReferenceType)
 		{
@@ -1100,23 +1177,28 @@ partial class AwaitenGenerator
 		}
 
 		return parameter.ConstraintTypes
-			.Select(constraintType => SubstituteConstraint(constraintType, substitution))
-			.All(substituted => substituted is null || IsAssignableTo(argument, substituted));
+			.Select(constraintType => SubstituteConstraint(constraintType, substitution, compilation))
+			.All(substituted => substituted is null || SatisfiesConstraintType(argument, substituted, compilation));
 	}
 
 	/// <summary>
 	///     Rewrites a constraint type by replacing each type parameter with the closed type argument mapped in
 	///     <paramref name="substitution" />, so <c>IComparable&lt;T&gt;</c> becomes <c>IComparable&lt;Order&gt;</c>
 	///     and a bare <c>U</c> becomes its argument. Returns <see langword="null" /> when the constraint cannot be
-	///     reconstructed from symbols alone (an unmapped type parameter, or an array/pointer type argument), so the
-	///     caller skips that constraint rather than checking a wrong type.
+	///     reconstructed from symbols alone (an unmapped type parameter, or a pointer type argument), so the caller
+	///     skips that constraint rather than checking a wrong type.
 	/// </summary>
-	private static ITypeSymbol? SubstituteConstraint(ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution)
+	private static ITypeSymbol? SubstituteConstraint(ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> substitution, Compilation compilation)
 	{
 		switch (type)
 		{
 			case ITypeParameterSymbol parameter:
 				return substitution.TryGetValue(parameter, out ITypeSymbol? argument) ? argument : null;
+
+			case IArrayTypeSymbol array:
+				return SubstituteConstraint(array.ElementType, substitution, compilation) is { } element
+					? compilation.CreateArrayTypeSymbol(element, array.Rank)
+					: null;
 
 			case INamedTypeSymbol { IsGenericType: true, } generic:
 			{
@@ -1129,7 +1211,7 @@ partial class AwaitenGenerator
 				ITypeSymbol[] arguments = new ITypeSymbol[generic.TypeArguments.Length];
 				for (int i = 0; i < arguments.Length; i++)
 				{
-					ITypeSymbol? substituted = SubstituteConstraint(generic.TypeArguments[i], substitution);
+					ITypeSymbol? substituted = SubstituteConstraint(generic.TypeArguments[i], substitution, compilation);
 					if (substituted is null)
 					{
 						return null;
@@ -1172,15 +1254,6 @@ partial class AwaitenGenerator
 		return named.InstanceConstructors.Any(constructor =>
 			constructor.Parameters.Length == 0 && constructor.DeclaredAccessibility == Accessibility.Public);
 	}
-
-	/// <summary>
-	///     True when <paramref name="argument" /> is the constraint type itself, derives from it, or implements
-	///     it, as a base/interface type-parameter constraint requires.
-	/// </summary>
-	private static bool IsAssignableTo(ITypeSymbol argument, ITypeSymbol constraintType)
-		=> SymbolEqualityComparer.Default.Equals(argument, constraintType)
-		   || BaseTypes(argument).Any(baseType => SymbolEqualityComparer.Default.Equals(baseType, constraintType))
-		   || argument.AllInterfaces.Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, constraintType));
 
 	/// <summary>
 	///     An open generic registration template
@@ -1242,6 +1315,22 @@ partial class AwaitenGenerator
 		public bool Dropped { get; init; }
 	}
 
+	/// <summary>Why an open registration cannot build a closing of its service.</summary>
+	private enum ClosingRejection
+	{
+		/// <summary>The registration builds the closing.</summary>
+		None,
+
+		/// <summary>The registration builds none of its closings, as reported for itself (AWT226, AWT230, AWT231).</summary>
+		Unbuildable,
+
+		/// <summary>The type arguments violate the implementation's constraints (AWT126).</summary>
+		Implementation,
+
+		/// <summary>The type arguments violate the constraints of every generic factory (AWT209).</summary>
+		Factory,
+	}
+
 	/// <summary>What one unit of expansion work scans for the closed generic services it requires.</summary>
 	private enum ExpansionScan
 	{
@@ -1289,7 +1378,9 @@ partial class AwaitenGenerator
 	///     The mutable state threaded through open generic expansion: the growing registration list and worklist,
 	///     the open service definitions, the constructors, factories and hooks already enqueued, and the diagnostics
 	///     sink. <see cref="ReportedConstraints" /> also dedups the depth-limit report (AWT129) under a <c>depth:</c>
-	///     prefix so each cause is reported once.
+	///     prefix so each cause is reported once. <see cref="DeferredRejections" /> holds, per closed service and the key
+	///     or context of a registration skipped for it, the constraint diagnostics a request there reports in place of
+	///     AWT101 when another key or context serves the closing.
 	/// </summary>
 	private sealed record ExpansionContext(
 		List<RawRegistration> Raw,
@@ -1299,7 +1390,8 @@ partial class AwaitenGenerator
 		HashSet<ISymbol> Seen,
 		ExpansionInputs Inputs,
 		List<DiagnosticInfo> Diagnostics,
-		HashSet<string> ConstraintRejectedServices)
+		HashSet<string> ConstraintRejectedServices,
+		Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections)
 	{
 		public HashSet<string> ReportedConstraints { get; } = new(StringComparer.Ordinal);
 

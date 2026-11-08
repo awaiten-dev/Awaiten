@@ -27,7 +27,7 @@
  AWT123  | Awaiten   | Error    | A [Decorate] names a service with no registration to decorate
  AWT124  | Awaiten   | Error    | A decorator has no single constructor parameter assignable to the decorated service type
  AWT125  | Awaiten   | Error    | An open generic registration's implementation and service have different arity, or one of them is nested in a generic type
- AWT126  | Awaiten   | Error    | A required closed type violates the open generic implementation's type-parameter constraints
+ AWT126  | Awaiten   | Error    | A required closed type violates the open generic implementation's type-parameter constraints, and no other registration accepts it
  AWT127  | Awaiten   | Error    | The typeof-argument form of a lifetime attribute must receive an unbound open generic type
  AWT128  | Awaiten   | Error    | An open generic implementation does not expose its service with type parameters in declaration order
  AWT129  | Awaiten   | Error    | Open generic expansion nested too deep, indicating an unbounded generic recursion
