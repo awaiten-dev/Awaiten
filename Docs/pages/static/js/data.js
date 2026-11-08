@@ -1482,6 +1482,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
         "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
+      },
+      {
+        "sha": "e2c70663844a78125452c62c8e01ba99fb3bd36d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
+        "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
       }
     ],
     "labels": [
@@ -1731,7 +1737,8 @@ window.BENCHMARK_DATA = {
       "cfc32f7a",
       "85160537",
       "707aa9d3",
-      "ac9638ce"
+      "ac9638ce",
+      "e2c70663"
     ],
     "datasets": [
       {
@@ -1984,7 +1991,8 @@ window.BENCHMARK_DATA = {
           4.322630952298641,
           7.885323155384797,
           4.541306248732975,
-          5.082547610768905
+          5.082547610768905,
+          5.558466794235366
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1996,6 +2004,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2503,7 +2512,8 @@ window.BENCHMARK_DATA = {
           4.127716398132699,
           7.576357462085211,
           4.444243139525255,
-          5.10968748430411
+          5.10968748430411,
+          7.530499925216039
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2515,6 +2525,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3022,7 +3033,8 @@ window.BENCHMARK_DATA = {
           58.86137957572937,
           142.36944518089294,
           64.61763139565785,
-          103.47543415852955
+          103.47543415852955,
+          138.14845272210928
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3034,6 +3046,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3537,7 +3550,8 @@ window.BENCHMARK_DATA = {
           5.418348639210065,
           9.130574363682951,
           4.859109921256701,
-          7.0694118221600855
+          7.0694118221600855,
+          8.072833123115393
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3549,6 +3563,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4048,7 +4063,8 @@ window.BENCHMARK_DATA = {
           6.60164632598559,
           11.22900964663579,
           6.3969748745361965,
-          9.403942479441563
+          9.403942479441563,
+          10.434835264315971
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4060,6 +4076,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5798,6 +5815,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
         "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
+      },
+      {
+        "sha": "e2c70663844a78125452c62c8e01ba99fb3bd36d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
+        "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
       }
     ],
     "labels": [
@@ -6047,7 +6070,8 @@ window.BENCHMARK_DATA = {
       "cfc32f7a",
       "85160537",
       "707aa9d3",
-      "ac9638ce"
+      "ac9638ce",
+      "e2c70663"
     ],
     "datasets": [
       {
@@ -6300,7 +6324,8 @@ window.BENCHMARK_DATA = {
           4.4735923131306965,
           8.718613616549051,
           4.575609500209491,
-          6.199101925960609
+          6.199101925960609,
+          7.1259224495062465
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6312,6 +6337,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6819,7 +6845,8 @@ window.BENCHMARK_DATA = {
           4.147472128845179,
           7.542134915788968,
           4.336470920840899,
-          5.120544544779337
+          5.120544544779337,
+          7.533840162058671
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6831,6 +6858,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7338,7 +7366,8 @@ window.BENCHMARK_DATA = {
           59.22825966676076,
           144.4542724609375,
           77.94411536852519,
-          105.44659826755523
+          105.44659826755523,
+          140.66918441227503
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7350,6 +7379,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7853,7 +7883,8 @@ window.BENCHMARK_DATA = {
           5.371891585680155,
           9.157581228476305,
           4.767391532162825,
-          6.876946711769471
+          6.876946711769471,
+          8.197971732666096
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7865,6 +7896,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8364,7 +8396,8 @@ window.BENCHMARK_DATA = {
           6.439890615145365,
           14.719674525352625,
           8.25977043578258,
-          9.681645086407661
+          9.681645086407661,
+          13.160191936152321
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8376,6 +8409,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10114,6 +10148,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
         "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
+      },
+      {
+        "sha": "e2c70663844a78125452c62c8e01ba99fb3bd36d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
+        "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
       }
     ],
     "labels": [
@@ -10363,7 +10403,8 @@ window.BENCHMARK_DATA = {
       "cfc32f7a",
       "85160537",
       "707aa9d3",
-      "ac9638ce"
+      "ac9638ce",
+      "e2c70663"
     ],
     "datasets": [
       {
@@ -10616,7 +10657,8 @@ window.BENCHMARK_DATA = {
           15.013974042875427,
           19.405794709920883,
           23.268973253667355,
-          19.81194956700007
+          19.81194956700007,
+          12.97881486586162
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10778,6 +10820,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11135,7 +11178,8 @@ window.BENCHMARK_DATA = {
           1152.480614389692,
           1502.5202003479003,
           1623.9141528265816,
-          1463.9618835449219
+          1463.9618835449219,
+          912.9025975545247
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11147,6 +11191,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11654,7 +11699,8 @@ window.BENCHMARK_DATA = {
           25577.201049804688,
           29986.344799804687,
           31356.95405796596,
-          29543.194970703124
+          29543.194970703124,
+          19144.718843900242
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11912,7 +11958,8 @@ window.BENCHMARK_DATA = {
           32478,
           32482,
           32482,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12169,7 +12216,8 @@ window.BENCHMARK_DATA = {
           576.4374984105428,
           758.6436236699423,
           787.4553489049275,
-          704.0583344187055
+          704.0583344187055,
+          411.9698271017808
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12199,6 +12247,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12680,7 +12729,8 @@ window.BENCHMARK_DATA = {
           8850.005076599122,
           12150.998370361329,
           13283.391186305455,
-          11494.40445251465
+          11494.40445251465,
+          7058.468463134765
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12934,7 +12984,8 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14430,6 +14481,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
         "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
+      },
+      {
+        "sha": "e2c70663844a78125452c62c8e01ba99fb3bd36d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
+        "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
       }
     ],
     "labels": [
@@ -14679,7 +14736,8 @@ window.BENCHMARK_DATA = {
       "cfc32f7a",
       "85160537",
       "707aa9d3",
-      "ac9638ce"
+      "ac9638ce",
+      "e2c70663"
     ],
     "datasets": [
       {
@@ -14932,7 +14990,8 @@ window.BENCHMARK_DATA = {
           111.11333548029263,
           180.51691462312425,
           194.80716727330133,
-          180.41212045351665
+          180.41212045351665,
+          82.3854878459658
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15094,6 +15153,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15451,7 +15511,8 @@ window.BENCHMARK_DATA = {
           10423.760006495884,
           14785.285142008464,
           16379.489182692309,
-          14319.290048217774
+          14319.290048217774,
+          7741.3115964617045
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15463,6 +15524,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15970,7 +16032,8 @@ window.BENCHMARK_DATA = {
           625458.5008263221,
           750553.693359375,
           794303.281640625,
-          725291.8731119792
+          725291.8731119792,
+          447889.6991141183
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16228,7 +16291,8 @@ window.BENCHMARK_DATA = {
           740787,
           738521,
           736500,
-          740459
+          740459,
+          739991
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16485,7 +16549,8 @@ window.BENCHMARK_DATA = {
           35935.26766357422,
           46934.35944010417,
           49341.25580240886,
-          43555.69718279158
+          43555.69718279158,
+          25043.411218261717
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16739,7 +16804,8 @@ window.BENCHMARK_DATA = {
           80300,
           80083,
           81172,
-          80011
+          80011,
+          80773
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16996,7 +17062,8 @@ window.BENCHMARK_DATA = {
           270193.9605994591,
           376631.10891927086,
           412483.72054036456,
-          351065.3192313058
+          351065.3192313058,
+          226784.47591145834
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17250,7 +17317,8 @@ window.BENCHMARK_DATA = {
           572980,
           573106,
           573139,
-          573072
+          573072,
+          573026
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18722,6 +18790,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
         "message": "feat: apply a decorator only when a predicate evaluated once per root allows it (#334)"
+      },
+      {
+        "sha": "e2c70663844a78125452c62c8e01ba99fb3bd36d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
+        "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
       }
     ],
     "labels": [
@@ -18967,7 +19041,8 @@ window.BENCHMARK_DATA = {
       "cfc32f7a",
       "85160537",
       "707aa9d3",
-      "ac9638ce"
+      "ac9638ce",
+      "e2c70663"
     ],
     "datasets": [
       {
@@ -19216,7 +19291,8 @@ window.BENCHMARK_DATA = {
           265.3962554534276,
           245.07016881306967,
           171.93412189483644,
-          215.0781934091023
+          215.0781934091023,
+          284.6343528674199
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19251,6 +19327,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19727,7 +19804,8 @@ window.BENCHMARK_DATA = {
           547.8698927561442,
           729.9382561047872,
           429.698066677366,
-          496.8834877649943
+          496.8834877649943,
+          699.241168315594
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19739,6 +19817,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -20238,7 +20317,8 @@ window.BENCHMARK_DATA = {
           4409.925806862967,
           6690.71885735648,
           4248.451327187674,
-          3837.7540189302886
+          3837.7540189302886,
+          6634.936462402344
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20322,6 +20402,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20749,7 +20830,8 @@ window.BENCHMARK_DATA = {
           403.38918580327714,
           399.97638374964396,
           279.62450671195984,
-          339.2960881846292
+          339.2960881846292,
+          436.56296154430936
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20761,6 +20843,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21260,7 +21343,8 @@ window.BENCHMARK_DATA = {
           580.789894358317,
           723.8585012299674,
           429.7898153236934,
-          539.8268969609187
+          539.8268969609187,
+          766.3444117863972
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21272,6 +21356,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
