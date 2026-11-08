@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net8.0;net48;netstandard2.0</TargetFrameworks>
+		<OutputType>library</OutputType>
+		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<!-- A plain support library referenced by Awaiten.Tests that plays a .NET Framework or netstandard2.0 consumer
+	     without the Nullable package: those frameworks have no public System.Diagnostics.CodeAnalysis attributes, so the
+	     generated container must compile without them. Every other test project references the Nullable package, which
+	     hides that case. The netstandard2.0 build is not referenced, the solution build compiles it. Not a test project. -->
+	<ItemGroup>
+		<PackageReference Remove="TUnit.Engine" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Remove="aweXpect" />
+		<PackageReference Remove="Nullable" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Awaiten.SourceGenerators\Awaiten.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\Source\Awaiten\Awaiten.csproj" />
+	</ItemGroup>
+
+</Project>

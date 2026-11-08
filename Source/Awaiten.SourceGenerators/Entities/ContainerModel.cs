@@ -12,7 +12,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     definitions of the open ones. <see cref="Factories" /> are the factories the container generates for its private
 ///     implementations, so a container that extends it can build them, and <see cref="Wrappers" /> forward to its private
 ///     members its registrations name. <see cref="SkipsGeneration" /> marks a container the project's language version is too
-///     old for, which only reports its <see cref="Diagnostics" />.
+///     old for, which only reports its <see cref="Diagnostics" />. <see cref="HasNotNullWhen" /> tells whether the project
+///     can apply <c>NotNullWhenAttribute</c>, which .NET Framework and netstandard2.0 have only through a polyfill.
 /// </summary>
 internal sealed record ContainerModel(
 	string? Namespace,
@@ -24,6 +25,7 @@ internal sealed record ContainerModel(
 	bool Strict,
 	bool SyncAfterInit,
 	bool HasAsyncDisposable,
+	bool HasNotNullWhen,
 	EquatableArray<ServiceMembers> Collections = default,
 	EquatableArray<string> VarianceCandidates = default,
 	EquatableArray<KeyedServiceMembers> KeyedCollections = default,

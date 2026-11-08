@@ -472,7 +472,7 @@ internal static partial class Sources
 
 		AppendXmlSummary(builder, depth,
 			"Attempts to resolve <paramref name=\"serviceType\" />, returning <see langword=\"false\" /> when it is not resolvable.");
-		Indent(builder, depth).AppendLine("public bool TryResolve(global::System.Type serviceType, [global::System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out object? instance)");
+		Indent(builder, depth).Append("public bool TryResolve(global::System.Type serviceType, ").Append(TryResolveOut(context.NotNullWhen)).AppendLine(")");
 		Indent(builder, depth).AppendLine("{");
 		// A disposed scope rejects every by-type resolution (including a root-owned singleton reached through
 		// Root.ResolveX(__s.__root)): the per-resolver guards only see the target's owner, so the resolving

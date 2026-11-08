@@ -364,7 +364,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		if (UnsupportedLanguageVersion(context, MinimumLanguageVersion) is { } unsupported)
 		{
-			return new ContainerModel(null, default, containerSymbol.Name, string.Empty, default, new EquatableArray<DiagnosticInfo>([unsupported,]), false, false, false, SkipsGeneration: true);
+			return new ContainerModel(null, default, containerSymbol.Name, string.Empty, default, new EquatableArray<DiagnosticInfo>([unsupported,]), false, false, false, false, SkipsGeneration: true);
 		}
 
 		Compilation compilation = context.SemanticModel.Compilation;
@@ -426,6 +426,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			strict,
 			syncAfterInit,
 			hasAsyncDisposable,
+			NotNullWhenSupport(compilation),
 			new EquatableArray<ServiceMembers>(graph.Collections.ToArray()),
 			new EquatableArray<string>(graph.VarianceCandidates.ToArray()),
 			new EquatableArray<KeyedServiceMembers>(graph.KeyedCollections.ToArray()),
