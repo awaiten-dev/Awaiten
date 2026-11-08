@@ -163,6 +163,8 @@ Registrations that name the same implementation type are one implementation. A `
 
 The library's build reports this too for an implementation a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), since a container in another assembly serves all its registrations from one instance.
 
+A module of another assembly constructs an implementation through a generated factory when the container can't, for example because the constructor or an `[Inject]` property is internal. A container that registers the implementation itself then produces it differently, and the message names the module whose factory calls the other constructor.
+
 **Fix:** Produce the implementation one way only: keep either the `Factory` registration or the constructor registration, or name the same `Factory` on both.
 
 ### AWT116
@@ -2505,7 +2507,7 @@ internal sealed class Grinder(Task<BeanStore> beans) : IGrinder;   // Task<T> of
 public static partial class CoffeeModule;
 ```
 
-The factory takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>` or a keyed dictionary. Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
+The factory takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
 
 **Fix:** Take the internal service in one of the supported shapes, or make the service public.
 

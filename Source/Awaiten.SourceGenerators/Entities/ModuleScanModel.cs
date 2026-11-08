@@ -49,9 +49,12 @@ internal sealed record HiddenHandle(string Name, string ValueType, bool Disposab
 /// <summary>
 ///     A generated factory that serves one service of an implementation the module builds through a handle: it takes
 ///     the instance handle of the implementation and returns <see cref="Body" />, the instance as <see cref="ReturnType" />,
-///     so every service shares one instance.
+///     so every service shares one instance. An implementation with <c>[Arg]</c> parameters is built per call, so its
+///     alias takes the <see cref="Arguments" /> and a factory of the instance handle it passes them to instead, and an
+///     async counterpart returns <see cref="AsyncBody" /> from an async factory of the handle, which a container takes
+///     when the handle is async-tainted.
 /// </summary>
-internal sealed record HiddenAlias(string Name, string ReturnType, string HandleType, string Body);
+internal sealed record HiddenAlias(string Name, string ReturnType, string HandleType, string Body, EquatableArray<string> Arguments = default, string? AsyncBody = null);
 
 /// <summary>
 ///     A generated wrapper that runs one <c>[AsyncInitializer&lt;T&gt;]</c> convention of the module on the instance a

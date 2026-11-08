@@ -1035,6 +1035,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Async taint: an instance is tainted if async-initialized, or if it reaches one through non-deferred
 		// (Direct) edges. Relationship types launder the taint, so they contribute no edges to the dependency graph.
 		bool[] tainted = PropagateAsyncTaint(instances, dependencies);
+		if (AwaitAsyncHandlesOfAliases(instances, tainted, serviceToImpl, implToIndex))
+		{
+			tainted = PropagateAsyncTaint(instances, dependencies);
+		}
+
 		for (int i = 0; i < instances.Count; i++)
 		{
 			if (tainted[i])

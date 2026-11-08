@@ -68,9 +68,11 @@ partial class AwaitenGenerator
 	///     there: the service itself is disposable or queues an <c>OnRelease</c> closure (which retains the
 	///     instance on the owner until teardown exactly like disposal tracking, so a <c>SuppressDisposal</c>
 	///     pooled service accumulates the same way), or its construction transitively rebuilds such a service.
-	///     The walk follows only transient edges (a scoped/singleton dependency is cached, so bounded) and
-	///     collection (Enumerable / keyed) edges, which materialize members eagerly. Used to decide whether a
-	///     plain <c>Func&lt;…&gt;</c> over the service accumulates on the container root (AWT118 / strict withholding).
+	///     An alias that builds a tracked instance handle through a factory counts too (see
+	///     <see cref="InstanceModel.TracksHandleDisposal" />), since the walk does not follow a factory. The walk
+	///     follows only transient edges (a scoped/singleton dependency is cached, so bounded) and collection
+	///     (Enumerable / keyed) edges, which materialize members eagerly. Used to decide whether a plain
+	///     <c>Func&lt;…&gt;</c> over the service accumulates on the container root (AWT118 / strict withholding).
 	/// </summary>
 	internal static bool BuildsFreshDisposable(
 		IReadOnlyList<InstanceModel> instances,
@@ -91,7 +93,7 @@ partial class AwaitenGenerator
 			}
 
 			InstanceModel instance = instances[node];
-			if (instance.NeedsDisposal || instance.HasReleaseHook)
+			if (instance.NeedsDisposal || instance.HasReleaseHook || instance.TracksHandleDisposal)
 			{
 				return true;
 			}
@@ -449,7 +451,8 @@ partial class AwaitenGenerator
 	///     target an async-tainted service. AWT119 fires when the target is itself async-initialized; AWT120 when
 	///     it only reaches one transitively, reporting the path. <c>Owned</c> is included (an async-tainted service
 	///     emits no synchronous resolver for its handle). An injected <c>[Inject]</c> member is checked like a
-	///     constructor parameter.
+	///     constructor parameter. The factory through which a hidden-service alias builds its instance handle is not
+	///     checked, since the alias's dependent reports the relationship once (see <see cref="AliasedInstance" />).
 	/// </summary>
 	private static void DetectSynchronousAsyncResolution(
 		List<InstanceModel> instances,
@@ -474,6 +477,7 @@ partial class AwaitenGenerator
 			// Guard the implToIndex lookup: serviceToImpl can name an implementation whose BuildInstance failed,
 			// and an unguarded indexer would crash the generator instead of surfacing the real registration error.
 			if (parameter.Kind is not (DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned)
+			    || instances[consumer].ImplementationType.Contains(AliasKeyMarker)
 			    || !serviceToImpl.TryGetValue(KeyOf(parameter), out string? targetImpl)
 			    || !implToIndex.TryGetValue(targetImpl, out int aliasOrTarget))
 			{
@@ -709,7 +713,8 @@ partial class AwaitenGenerator
 	///     AWT114 (a parameterized service is built per request, so it must be Transient), AWT113 (a
 	///     <c>Func&lt;TArg…, T&gt;</c> must request exactly the target's <c>[Arg]</c> types, in order), and
 	///     AWT115 (a plain or <c>Lazy&lt;T&gt;</c> dependency cannot supply them, so a parameterized target is
-	///     reachable only through a <c>Func</c>).
+	///     reachable only through a <c>Func</c>). AWT114 skips a hidden-service alias, whose lifetime is that of the
+	///     instance handle that reports it.
 	/// </summary>
 	private static void ValidateRuntimeArguments(
 		List<InstanceModel> instances,
@@ -723,7 +728,7 @@ partial class AwaitenGenerator
 			InstanceModel instance = instances[i];
 			LocationInfo? location = instanceLocations[i];
 
-			if (instance.IsParameterized && instance.Lifetime != Lifetime.Transient)
+			if (instance.IsParameterized && instance.Lifetime != Lifetime.Transient && !instance.ImplementationType.Contains(AliasKeyMarker))
 			{
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.ParameterizedLifetime,

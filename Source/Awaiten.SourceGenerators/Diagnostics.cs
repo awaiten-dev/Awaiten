@@ -2155,7 +2155,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleHiddenServiceShape = new(
 		"AWT237",
 		"Internal service in an unsupported shape",
-		"{0}, but {1} takes the internal service '{2}' as '{3}', which the generated factory cannot pass on to a container in another assembly; take '{2}' directly, or as Func<T>, Lazy<T>, Owned<T>, Func<Owned<T>> or a collection of T",
+		"{0}, but {1} takes the internal service '{2}' as '{3}', which the generated factory cannot pass on to a container in another assembly; take '{2}' directly, or as Func<T>, Lazy<T>, Owned<T>, Func<Owned<T>>, Func<TArg..., T>, Func<TArg..., Owned<T>> or a collection of T",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

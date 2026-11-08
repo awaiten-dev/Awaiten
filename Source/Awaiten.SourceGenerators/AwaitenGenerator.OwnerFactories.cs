@@ -481,6 +481,9 @@ partial class AwaitenGenerator
 	private static EquatableArray<FactoryParameter> MirroredParameters(IEnumerable<IParameterSymbol> parameters)
 		=> new(parameters.Select(MirrorParameter).ToArray());
 
+	/// <summary>The <c>[Arg]</c> a generated factory parameter carries.</summary>
+	private const string ArgAttribute = "[global::Awaiten.Arg] ";
+
 	/// <summary>
 	///     One constructor, factory or hook parameter mirrored onto a generated factory or wrapper, with its <c>[Arg]</c>,
 	///     <c>[RequestingType]</c> or <c>[FromKey]</c>, so a consumer resolves the parameter exactly as it would the original.
@@ -491,7 +494,7 @@ partial class AwaitenGenerator
 		return new FactoryParameter(
 			parameter.Type.ToDisplayString(FullyQualifiedWithNullability),
 			parameter.Name,
-			HasArgAttribute(attributes) ? "[global::Awaiten.Arg] "
+			HasArgAttribute(attributes) ? ArgAttribute
 			: HasRequestingType(attributes) ? "[global::Awaiten.RequestingType] "
 			: KeyAttribute(FromKey(attributes)));
 	}
