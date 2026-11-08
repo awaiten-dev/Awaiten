@@ -2541,6 +2541,36 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
+		public async Task ChainOfInternalServicesThatCannotBeBuilt_ReportsOnlyTheCauseAtItsEnd()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class Hopper { public Hopper(Silo silo) { } }
+				internal sealed class BeanStore { public BeanStore(Hopper hopper) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Singleton<Hopper>]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""";
+
+			GeneratorResult result = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(result.Diagnostics).HasSingle()
+				.Because("BeanStore fails only because Hopper cannot be built, so only Hopper's own cause is worth fixing");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Hopper' is registered under the internal service*'silo' has the type 'Lib.Silo'*").AsWildcard();
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
 		public async Task InternalServiceThatCannotBeBuilt_TakenAsArg_ReportsTheParameterOfTheConsumer()
 		{
 			GeneratorResult result = RunLibrary("""

@@ -726,7 +726,9 @@ partial class AwaitenGenerator
 	///     <see cref="AssemblyModuleIndex.Demand" />), then follows the services each built implementation needs. Declares
 	///     the handles and instance handles that it or another module takes, with a variant for every decorator of any
 	///     module. Returns the factories, handles, aliases and initializer wrappers to emit. Reports why a needed service
-	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead.
+	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead, and in place of a
+	///     rejection that only takes another service the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />)
+	///     why that service cannot be built.
 	/// </summary>
 	private static (List<RegistrationFactory> Factories, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers) CompleteHiddenServices(
 		HiddenServices hidden,
@@ -785,10 +787,18 @@ partial class AwaitenGenerator
 			}
 		}
 
-		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => !candidate.Viable && !hidden.Friends
-		                                                                                     && candidate.HiddenServices(module, compilation).Any(service => hidden.NeededNonViable.Contains(service) || hidden.RegisteredElsewhere(service))))
+		List<HiddenImplementation> reported = hidden.Implementations
+			.Where(candidate => !candidate.Viable && !hidden.Friends
+			                    && candidate.HiddenServices(module, compilation).Any(service => hidden.NeededNonViable.Contains(service) || hidden.RegisteredElsewhere(service)))
+			.ToList();
+		for (int index = 0; index < reported.Count; index++)
 		{
-			diagnostics.AddRange(candidate.Rejections.Where(rejection => !diagnostics.Contains(rejection)));
+			HiddenImplementation candidate = reported[index];
+			diagnostics.AddRange(candidate.Rejections.Where(rejection => !hidden.UnbuildableNeeds.ContainsKey(rejection) && !diagnostics.Contains(rejection)));
+			if (candidate.Rejections.Any(hidden.UnbuildableNeeds.ContainsKey))
+			{
+				reported.AddRange(hidden.Implementations.Where(other => !other.Viable && !reported.Contains(other) && other.HiddenServices(module, compilation).Any(candidate.Needs.Contains)));
+			}
 		}
 
 		IEnumerable<INamedTypeSymbol> declared = hidden.Used.Concat(Declared(demand.Services, hidden.Provider));
