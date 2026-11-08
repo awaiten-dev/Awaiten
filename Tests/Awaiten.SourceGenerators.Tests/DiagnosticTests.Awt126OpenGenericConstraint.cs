@@ -205,9 +205,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
-						diagnostic.Contains("AWT126")
-						&& diagnostic.EndsWith("no other registration of 'MyCode.IFormatter<MyCode.Label>' accepts them", StringComparison.Ordinal))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*no other registration of 'MyCode.IFormatter<MyCode.Label>' accepts them").AsWildcard()
 					.Because("with one candidate there is nothing else to list");
 			}
 
@@ -308,7 +306,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT155") && diagnostic.Contains("IFormatter<MyCode.Sticker>"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT155*IFormatter<MyCode.Sticker>*").AsWildcard()
 					.Because("only Sticker satisfies both modules' registrations, so only its closing is registered by both");
 			}
 
@@ -348,7 +346,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.TextFormatter<MyCode.Label>'*").AsWildcard()
 					.Because("a registration builds IFormatter<Label> only under a key, so the unkeyed request is unserved because the unkeyed registration rejects Label");
 			}
 
@@ -370,8 +368,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
-						diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.TextFormatter<MyCode.Label>'*").AsWildcard()
 					.Because("the unkeyed request is unserved because the unkeyed open registration rejects Label, which is the precise cause instead of AWT101");
 			}
 
@@ -399,8 +396,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
-						diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.TextFormatter<MyCode.Label>'"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.TextFormatter<MyCode.Label>'*").AsWildcard()
 					.Because("Printer is served by no registration because the unconditional open registration rejects Label");
 			}
 
@@ -420,10 +416,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic =>
-						diagnostic.Contains("AWT126")
-						&& diagnostic.Contains("'MyCode.BinaryFormatter<MyCode.Receipt>'")
-						&& diagnostic.Contains("no other registration of 'MyCode.IFormatter<MyCode.Receipt> (key: binary)' accepts them"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.BinaryFormatter<MyCode.Receipt>'*no other registration of 'MyCode.IFormatter<MyCode.Receipt> (key: binary)' accepts them*").AsWildcard()
 					.Because("only the registration under the key 'binary' could serve the keyed request, and its constraint rejects Receipt");
 			}
 
@@ -451,7 +444,7 @@ public partial class DiagnosticTests
 				                                                    public static partial class Shop { }
 				                                                    """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*").AsWildcard()
 					.Because("the constraint violation is the one root cause of both unserved requests");
 			}
 
@@ -611,7 +604,7 @@ public partial class DiagnosticTests
 				                                                   public static partial class Shop { }
 				                                                   """);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("'MyCode.ArrayFoo<MyCode.Plain>'"))
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.ArrayFoo<MyCode.Plain>'*").AsWildcard()
 					.Because("Plain does not implement IEnumerable<int[]>, which is reported instead of a compiler error in the generated code");
 			}
 
