@@ -1163,14 +1163,28 @@ internal static class Diagnostics
 
 	/// <summary>
 	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for a type a module or base of another
-	///     assembly builds through its generated factory although the user declared no <c>Factory</c>: <c>{2}</c> names
-	///     the owner and <c>{3}</c> why it builds the type (the container cannot construct it, or does not see one of its
-	///     <c>[Inject]</c> properties).
+	///     assembly builds through a generated factory that returns a service rather than the type, such as a composite's,
+	///     although the user declared no <c>Factory</c>: <c>{2}</c> names the owner and <c>{3}</c> why it builds the type
+	///     (the container cannot construct it, or does not see one of its <c>[Inject]</c> properties).
 	/// </summary>
 	public static readonly DiagnosticDescriptor InjectPropertyOnOwnerFactory = new(
 		"AWT178",
 		InjectPropertyOnNonConstructed.Title,
 		"'{1}' is built by the generated factory of '{2}' because {3}, so its property '{0}' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of '{2}', so the container constructs '{1}' itself",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for an init-only property of a type a module
+	///     or base of another assembly builds through its generated factory although the user declared no <c>Factory</c>:
+	///     the container sets a container-side entry on the instance the factory returns, which only a <c>set</c> accessor
+	///     allows. <c>{2}</c> names the owner.
+	/// </summary>
+	public static readonly DiagnosticDescriptor InjectPropertyInitOnlyAfterFactory = new(
+		"AWT178",
+		InjectPropertyOnNonConstructed.Title,
+		"'{1}' is built by the generated factory of '{2}', so its init-only property '{0}' cannot be filled by [InjectProperty], since the container can only set it after the factory returned the instance; give the property a set accessor",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -1987,6 +2001,19 @@ internal static class Diagnostics
 		"AWT231",
 		ModuleRegistrationNotSelfCompiled.Title,
 		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container cannot call, and the module's assembly generated no wrapper for it because {4}; grant this assembly InternalsVisibleTo in the module's assembly, or make the hook and its parameter types public",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a public type the container could
+	///     construct, but whose <c>[Inject]</c> property it does not see: only the module's factory could set it, and the
+	///     module's build generated none for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleRegistrationPropertyNotSet = new(
+		"AWT231",
+		ModuleRegistrationNotSelfCompiled.Title,
+		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make the [Inject] properties of '{1}', their setters and their types public",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

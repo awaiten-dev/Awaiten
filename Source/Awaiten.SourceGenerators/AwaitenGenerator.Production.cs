@@ -119,6 +119,7 @@ partial class AwaitenGenerator
 
 		RecordBaseFactory(new BaseFactoryRequest(info, producer, resolverType, members, activationHook, releaseHook), context);
 		RecordBaseWrappers(info, producer, activationHook, releaseHook, context);
+		RecordHiddenInjectedProperty(info, context);
 
 		// An implementation hidden in its module is built through the module's factory, which returns its service.
 		bool viaModuleFactory = info.ConstructVia is not null;
@@ -226,8 +227,9 @@ partial class AwaitenGenerator
 	///     filled; a Factory/Instance-produced implementation is produced whole by its source, so an
 	///     <c>[InjectProperty]</c> entry on it yields no member and is
 	///     <see cref="Diagnostics.InjectPropertyOnNonConstructed">AWT178</see> (mirroring the
-	///     <see cref="ProductionKind.Constructor" /> gate). Extracted from <see cref="BuildInstance" /> to keep its
-	///     branching flat.
+	///     <see cref="ProductionKind.Constructor" /> gate). An implementation an owner's generated factory builds is the
+	///     exception: the container sets its entries on the instance the factory returns. Extracted from
+	///     <see cref="BuildInstance" /> to keep its branching flat.
 	/// </summary>
 	private static List<MemberModel> BuildInjectedMembers(ImplInfo info, BuildContext context)
 	{
@@ -243,23 +245,35 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics);
 
-		// A factory read from its owner's metadata takes the injected properties as parameters of its own.
-		if (info.Constructor is { MethodKind: MethodKind.Ordinary, })
+		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
+		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
+		                                                                       && (readFactory
+			                                                                       ? info.Constructor!.Parameters.Any(parameter => parameter.Name == entry.PropertyName)
+			                                                                       : OwnerFactoryTakes(info, entry.PropertyName)))).ToList();
+
+		// A registration factory read from its owner's metadata returns the implementation and takes its [Inject]
+		// properties and the base's entries as parameters of its own, so the container sets only the other entries, on
+		// the instance it returns.
+		if (IsOwnerRegistrationFactory(info))
 		{
+			DiscoverInjectedMembers(info, injection, notTaken, members, afterFactory: true);
 			return members;
 		}
 
-		if (info.Production != ProductionKind.Constructor)
+		// Any other factory returns the instance whole, a decorator or composite factory read from metadata included,
+		// which returns the service rather than the type an entry names.
+		if (info.Production != ProductionKind.Constructor || readFactory)
 		{
-			foreach (InjectPropertyEntry entry in injectProperties.Where(entry => !(entry.Inherited && OwnerFactoryTakes(info, entry.PropertyName))))
+			foreach (InjectPropertyEntry entry in notTaken)
 			{
-				context.Diagnostics.Add(IsOwnerFactoryProduced(info)
+				context.Diagnostics.Add((IsOwnerFactoryProduced(info) || readFactory) && info.Origin is { } owner
 					? new DiagnosticInfo(
 						Diagnostics.InjectPropertyOnOwnerFactory,
 						entry.Location ?? info.Location,
 						new EquatableArray<string>([
-							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(info.Origin!.ToDisplayString(FullyQualified)),
+							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(owner.ToDisplayString(FullyQualified)),
 							CanConstruct(info.Symbol, context.Compilation) ? "this container does not see one of its [Inject] properties" : "this container cannot construct it",
 						]))
 					: new DiagnosticInfo(
@@ -271,11 +285,7 @@ partial class AwaitenGenerator
 			return members;
 		}
 
-		DiscoverInjectedMembers(
-			info,
-			new InjectionContext(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics),
-			injectProperties,
-			members);
+		DiscoverInjectedMembers(info, injection, injectProperties, members);
 		return members;
 	}
 
@@ -292,6 +302,24 @@ partial class AwaitenGenerator
 	private static bool IsOwnerFactoryProduced(ImplInfo info)
 		=> info is { Production: ProductionKind.Factory, Origin: not null, ProductionMember: { } member, }
 		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal);
+
+	/// <summary>
+	///     Whether <paramref name="info" /> is produced by the registration factory its module or base generated, closed or
+	///     the closing of a generic one, which returns the implementation itself rather than a service.
+	/// </summary>
+	private static bool IsOwnerRegistrationFactory(ImplInfo info)
+	{
+		if (!IsOwnerFactoryProduced(info))
+		{
+			return false;
+		}
+
+		string member = info.ProductionMember!;
+		int generic = member.IndexOf('<');
+		return member == InInternals(RegistrationFactoryName(info.Symbol))
+		       || member == InInternals(InternalRegistrationFactoryName(info.Symbol))
+		       || (generic < 0 ? member : member.Substring(0, generic)) == InInternals(RegistrationFactoryName(info.Symbol.OriginalDefinition));
+	}
 
 	/// <summary>
 	///     The key of the <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entries that apply to

@@ -7,7 +7,8 @@ namespace Awaiten.Tests;
 ///     The <c>[Inject]</c> property shapes of a module's registrations, for a container in the module's assembly, one
 ///     in another assembly that builds the implementations through the module's generated factories
 ///     (<see cref="CrossAssemblyInjectedShapesModule" />) and one in an assembly the module grants
-///     <c>InternalsVisibleTo</c> (<see cref="CrossAssemblyFriendInjectedShapesModule" />). All three fill them alike.
+///     <c>InternalsVisibleTo</c> (<see cref="CrossAssemblyFriendInjectedShapesModule" />). All three fill them alike, and
+///     so does a container that inherits the registrations from a container of another assembly through <c>Extends</c>.
 /// </summary>
 public class ModuleInjectedPropertyShapeTests
 {
@@ -44,6 +45,17 @@ public class ModuleInjectedPropertyShapeTests
 
 			await ExpectKettles(container.Resolve<IInjectedShapeUser>(), container.Resolve<IInjectedShapeKettle>());
 		}
+
+		[Test]
+		public async Task AContainerSideEntry_IsSetBesideTheInaccessibleProperties()
+		{
+			using LocalShapesWithEntryContainer.Root container = new();
+
+			LocalShapeUser user = (LocalShapeUser)container.Resolve<IInjectedShapeUser>();
+
+			await ExpectKettles(user, container.Resolve<IInjectedShapeKettle>());
+			await That(user.EntryKettle).IsSameAs(container.Resolve<IInjectedShapeKettle>());
+		}
 	}
 
 	public class AnotherAssembly
@@ -76,6 +88,29 @@ public class ModuleInjectedPropertyShapeTests
 		public async Task InaccessibleProperties_AreSet()
 		{
 			using SupportShapesContainer.Root container = new();
+
+			await ExpectKettles(container.Resolve<IInjectedShapeUser>(), container.Resolve<IInjectedShapeKettle>());
+		}
+
+		[Test]
+		public async Task AContainerSideEntry_IsSetBesideTheInaccessibleProperties()
+		{
+			using SupportShapesWithEntryContainer.Root container = new();
+
+			SupportEntryUser user = container.Resolve<SupportEntryUser>();
+
+			await That(user.InjectedKettle).IsSameAs(container.Resolve<IInjectedShapeKettle>());
+			await That(user.EntryKettle).IsSameAs(container.Resolve<IInjectedShapeKettle>())
+				.Because("the container sets its own entry on the instance the module's factory returns");
+		}
+	}
+
+	public class ExtendingContainerInAnotherAssembly
+	{
+		[Test]
+		public async Task InaccessibleProperties_AreSet()
+		{
+			using ExtendingSupportShapesContainer.Root container = new();
 
 			await ExpectKettles(container.Resolve<IInjectedShapeUser>(), container.Resolve<IInjectedShapeKettle>());
 		}
@@ -158,8 +193,10 @@ internal sealed class LocalShapes : IInjectedShapes
 	[Inject(Optional = true)]
 	public IInjectedShapeClock? Clock { get; set; } = FallbackInjectedShapeClock.Instance;
 
+#pragma warning disable AWT158
 	[Inject(Optional = true)]
 	public IInjectedShapeClock? InitClock { get; init; } = FallbackInjectedShapeClock.Instance;
+#pragma warning restore AWT158
 
 	[Inject(Optional = true)]
 	public Owned<IInjectedShapeClock> OwnedValue { get; set; }
@@ -190,6 +227,8 @@ public sealed class LocalShapeUser : IInjectedShapeUser
 	IInjectedShapeKettle? IInjectedShapeUser.InternalKettle => InternalKettle;
 
 	public bool HasHiddenKettle => Hidden is not null;
+
+	public IInjectedShapeKettle? EntryKettle { get; set; }
 }
 
 [Module]
@@ -210,12 +249,18 @@ public static partial class LocalShapesWithClockContainer;
 
 [Container]
 [Import(typeof(LocalInjectedShapesModule))]
+[InjectProperty<LocalShapeUser>(nameof(LocalShapeUser.EntryKettle))]
+public static partial class LocalShapesWithEntryContainer;
+
+[Container]
+[Import(typeof(LocalInjectedShapesModule))]
 [Transient<IInjectedShapeClock>(Factory = nameof(NoClock))]
 public static partial class LocalShapesWithNullClockContainer
 {
 	private static IInjectedShapeClock NoClock() => null!;
 }
 
+#pragma warning disable AWT158
 [Container]
 [Import(typeof(CrossAssemblyInjectedShapesModule))]
 public static partial class SupportShapesContainer;
@@ -224,6 +269,11 @@ public static partial class SupportShapesContainer;
 [Import(typeof(CrossAssemblyInjectedShapesModule))]
 [Transient<InjectedShapeClock, IInjectedShapeClock>]
 public static partial class SupportShapesWithClockContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyInjectedShapesModule))]
+[InjectProperty<SupportEntryUser>(nameof(SupportEntryUser.EntryKettle))]
+public static partial class SupportShapesWithEntryContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyInjectedShapesModule))]
@@ -249,3 +299,7 @@ public static partial class FriendShapesWithNullClockContainer
 {
 	private static IInjectedShapeClock NoClock() => null!;
 }
+#pragma warning restore AWT158
+
+[Container(Extends = typeof(CrossAssemblyInjectedShapesBaseContainer))]
+public static partial class ExtendingSupportShapesContainer;

@@ -489,7 +489,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			Dispatchable(graph.External.ServiceTypes, graph.External.ServiceTypes.Open),
 			new EquatableArray<RegistrationFactory>(graph.Factories.Factories.ToArray()),
 			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
-			RecordedFaults(graph.Factories, compilation));
+			RecordedFaults(graph.Factories, compilation),
+			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()));
 	}
 
 	/// <summary>
@@ -529,9 +530,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179 is reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not tied to a
-		// syntax tree, so it could not be suppressed in source.
-		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty));
+		// AWT179 and AWT158 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not tied
+		// to a syntax tree, so it could not be suppressed in source.
+		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
 
@@ -774,8 +775,13 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Collect also expands [Scan]s into overridable registrations (IsScan), ordered after the explicit ones
 		// so an explicit registration wins single resolution while every match still joins its collection.
-		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<string, (Lifetime Lifetime, string? Implementation)> openServices) = Collect(
+		(List<RawRegistration> raw, HashSet<string> constraintRejected, List<OpenRegistration> open) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
+
+		if (factories is not null)
+		{
+			RecordHiddenInjectedProperties(containerSymbol, compilation, injectProperties, open, openDecorators, openComposites, factories);
+		}
 
 		// A scan match a module's generated factory builds shares the instance of every other registration of its
 		// implementation, as it would in the module's own assembly.
@@ -823,7 +829,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, DecoratorInner> decoratorInner = new(StringComparer.Ordinal);
 		if (decorators.Count > 0)
 		{
-			new DecoratorChainBuilder(containerSymbol, compilation, graph, keyedMembers, decoratorInner, external, diagnostics)
+			new DecoratorChainBuilder(containerSymbol, compilation, graph, keyedMembers, decoratorInner, external, constraintRejected, diagnostics)
 				.Build(decorators);
 		}
 
@@ -946,7 +952,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			varianceCandidateTypes.Add(serviceType);
 		}
 
-		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, openServices, factories ?? new BaseFactories());
+		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, OpenServices(open), factories ?? new BaseFactories());
 	}
 
 	/// <summary>

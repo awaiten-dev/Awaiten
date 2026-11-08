@@ -35,6 +35,9 @@ public class RegistrationFactoryInjectedPropertyTests
 	private static string Granted(string library)
 		=> library.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]");
 
+	private static string GrantedToAnother(string library)
+		=> library.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"AnotherAssembly\")]");
+
 	private static string WithLibraryContainer(string library, bool clock)
 		=> library + (clock
 			? "\n[Container]\n[Import(typeof(GreetingModule))]\n[Transient<SystemClock, IClock>]\npublic static partial class LibContainer { }\n"
@@ -57,6 +60,20 @@ public class RegistrationFactoryInjectedPropertyTests
 		public string[] AllDiagnostics => [..Same.Diagnostics, ..Other.Diagnostics, ..Friend.Diagnostics,];
 	}
 
+	private static async Task<Analyses> AnalyzeEverywhere(string library, bool clock)
+		=> await AnalyzeEverywhere(WithLibraryContainer(library, clock), library, clock ? ClockConsumer : Consumer);
+
+	private static async Task<Analyses> AnalyzeEverywhere(string same, string library, string consumer)
+		=> new(
+			await Analyzer.Run<AwaitenAnalyzer>(same),
+			await Analyzer.RunWithReferencedAssembly<AwaitenAnalyzer>(library, consumer),
+			await Analyzer.RunWithReferencedAssembly<AwaitenAnalyzer>(Granted(library), consumer));
+
+	private sealed record Analyses(string[] Same, string[] Other, string[] Friend)
+	{
+		public string[] AllDiagnostics => [..Same, ..Other, ..Friend,];
+	}
+
 	private static string Library(string members, string type = "internal sealed class Greeter : IGreeter")
 		=> $$"""
 		     using Awaiten;
@@ -76,6 +93,43 @@ public class RegistrationFactoryInjectedPropertyTests
 		     [Transient<Greeter, IGreeter>]
 		     public static partial class GreetingModule { }
 		     """;
+
+	public class RequiredProperty
+	{
+		private static readonly string Module = Library("[Inject] public IClock Clock { get; set; } = null!;");
+
+		private static string ImportingServices(string source)
+			=> source.Replace("[Import(typeof(GreetingModule))]", "[Import(typeof(GreetingModule))]\n[ImportServices]");
+
+		[Test]
+		public async Task AMissingService_IsReportedEverywhereEvenUnderImportServices()
+		{
+			Containers containers = new(
+				Generator.Run(ImportingServices(WithLibraryContainer(Module, clock: false))),
+				Generator.RunWithGeneratedReferencedAssembly(Module, ImportingServices(Consumer)),
+				Generator.RunWithGeneratedReferencedAssembly(Granted(Module), ImportingServices(Consumer)));
+
+			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"))
+				.Because("the factory's parameter for an [Inject] property falls through to the host no more than the property itself does");
+			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+		}
+
+		[Test]
+		public async Task AMissingConstructorParameter_IsStillImportedFromTheHost()
+		{
+			string module = Library("""
+			                        public Greeter(IClock clock) { }
+
+			                            [Inject] public IClock Clock { get; set; } = null!;
+			                        """).Replace("public interface IClock { }", "public interface IClock { }\npublic interface IHostClock : IClock { }").Replace("public Greeter(IClock clock)", "public Greeter(IHostClock clock)");
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ImportingServices(ClockConsumer));
+
+			await That(other.Diagnostics).IsEmpty()
+				.Because("only the parameters of the factory that stand for properties are kept off the host, a constructor parameter still falls through");
+		}
+	}
 
 	public class OptionalProperty
 	{
@@ -123,6 +177,82 @@ public class RegistrationFactoryInjectedPropertyTests
 			await That(containers.AllDiagnostics).IsEmpty();
 			await That(ContainerSource(containers.Other, "AppContainer")).Contains("Registration_Greeter_*(default!, default!)").AsWildcard()
 				.Because("a container that constructs the type itself leaves a missing optional property as it is rather than asking the host for it");
+		}
+
+		[Test]
+		[Arguments("[Inject(Optional = true)] public IClock A { get; set; } = null!;", "[Inject(Optional = true)] public IClock awaiten__has_A { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true)] public IClock awaiten__has_A { get; set; } = null!;", "[Inject(Optional = true)] public IClock A { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true)] public IClock A { get; init; } = null!;", "[Inject] public IClock awaiten__init_A { get; set; } = null!;")]
+		public async Task NamedLikeThePresenceFlagOfAnother_IsReportedByTheModuleInAnyOrder(string first, string second)
+		{
+			GeneratorResult result = Generator.Run(Library($"{first}\n{second}"));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("presence flag"))
+				.Because("the factory would declare two parameters of the same name, so the module reports the property instead of emitting code that does not compile");
+		}
+
+		[Test]
+		[Arguments("[Inject(Optional = true)] public IClock awaiten__instance { get; set; } = null!;")]
+		[Arguments("[Inject(Deferred = true)] public IClock awaiten__instance { get; set; } = null!;\n[Inject(Optional = true)] public IClock Backup { get; set; } = null!;")]
+		public async Task NamedLikeTheInstanceOfTheFactory_IsFilledEverywhere(string members)
+		{
+			Containers containers = RunEverywhere(Library(members), clock: true);
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("the generated factory and setter pick names for their own locals and parameters that no property takes");
+		}
+
+		[Test]
+		public async Task NamedWithThePrefixOfAPresenceFlag_IsResolvedLikeAnyOtherProperty()
+		{
+			string module = Library("[Inject(Optional = true)] public bool awaiten__has_Ready { get; set; }");
+
+			Containers containers = RunEverywhere(module, clock: false);
+
+			await That(containers.AllDiagnostics).IsEmpty();
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains("Registration_Greeter_*(default!, default!)").AsWildcard()
+				.Because("only the parameter right after the value it flags is a presence flag, so a missing optional bool is passed as absent, not as a present flag");
+		}
+
+		[Test]
+		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; set; }")]
+		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; }")]
+		public async Task OfARequiredCollection_IsFilledEverywhere(string property)
+		{
+			Containers containers = RunEverywhere(Library($"[Inject(Optional = true)] {property}"), clock: false);
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("a collection is always filled, empty without a registration, so the factory sets a required one like a container in the module's assembly");
+		}
+
+		[Test]
+		public async Task OfACollectionOfAPrivateNestedType_IsPassedWithoutAFlagByAContainerInTheSameAssembly()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IGreeter { }
+			                                       public interface IClock { }
+
+			                                       [Module]
+			                                       [Transient<GreetingModule.Greeter, IGreeter>]
+			                                       public static partial class GreetingModule
+			                                       {
+			                                           private sealed class Greeter : IGreeter
+			                                           {
+			                                               [Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; set; } = null!;
+			                                           }
+			                                       }
+
+			                                       [Container]
+			                                       [Import(typeof(GreetingModule))]
+			                                       public static partial class LibContainer { }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the factory takes an optional collection as a plain parameter, which has no presence flag to pass");
 		}
 
 		[Test]
@@ -177,51 +307,98 @@ public class RegistrationFactoryInjectedPropertyTests
 		public async Task IsFilledEverywhere_WithTheSameWarning()
 		{
 			Containers containers = RunEverywhere(Module, clock: true);
+			Analyses analyses = await AnalyzeEverywhere(Module, clock: true);
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("the analyzer reports the warning, so it can be suppressed in source");
+			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
 				.Because("a container in another assembly warns about the init-only optional property like one that sees it");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+		}
+
+		[Test]
+		public async Task TheWarningOfAContainerInAnotherAssembly_IsReportedAtItsImport()
+		{
+			Analyses analyses = await AnalyzeEverywhere(WithLibraryContainer(Module, clock: true), Module, ClockConsumer);
+
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+				.Because("a warning with a location can be suppressed where it arises instead of for the whole project");
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+				.Because("a property read from another assembly has no location of its own");
+		}
+
+		[Test]
+		public async Task TheWarning_CanBeSuppressedAtTheImport()
+		{
+			string suppressed = ClockConsumer.Replace("[Import(typeof(GreetingModule))]", "#pragma warning disable AWT158\n[Import(typeof(GreetingModule))]\n#pragma warning restore AWT158");
+
+			Analyses analyses = await AnalyzeEverywhere(WithLibraryContainer(Module, clock: true), Module, suppressed);
+
+			await That(analyses.Other).IsEmpty();
+			await That(analyses.Friend).IsEmpty();
+		}
+
+		[Test]
+		public async Task OfAnExplicitlyRegisteredCollection_IsFilledEverywhereWithoutAWarning()
+		{
+			string module = Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;");
+			const string registration = "[Transient<System.Collections.Generic.IEnumerable<IClock>>(Factory = nameof(Clocks))]";
+			const string factory = "{ private static System.Collections.Generic.IEnumerable<IClock> Clocks() => []; }";
+
+			Analyses analyses = await AnalyzeEverywhere(
+				WithLibraryContainer(module, clock: false).Replace("public static partial class LibContainer { }", $"{registration}\npublic static partial class LibContainer {factory}"),
+				module,
+				Consumer.Replace("public static partial class AppContainer { }", $"{registration}\npublic static partial class AppContainer {factory}"));
+
+			await That(analyses.AllDiagnostics).IsEmpty()
+				.Because("a collection-typed property is never omitted, whether it is synthesized or registered as a whole");
 		}
 
 		[Test]
 		public async Task OfACollection_IsFilledEverywhereWithoutAWarning()
 		{
-			Containers containers = RunEverywhere(Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;"), clock: false);
+			string module = Library("[Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; } = null!;");
 
-			await That(containers.AllDiagnostics).IsEmpty()
+			Containers containers = RunEverywhere(module, clock: false);
+			Analyses analyses = await AnalyzeEverywhere(module, clock: false);
+
+			await That([..containers.AllDiagnostics, ..analyses.AllDiagnostics,]).IsEmpty()
 				.Because("a collection is always filled, empty without a registration, so its init-only accessor loses nothing");
 		}
 
 		[Test]
 		public async Task OfAPrivateNestedType_IsMarkedPresentByAContainerInTheSameAssembly()
 		{
-			GeneratorResult result = Generator.Run("""
-			                                       using Awaiten;
+			const string source = """
+			                      using Awaiten;
 
-			                                       namespace Lib;
+			                      namespace Lib;
 
-			                                       public interface IGreeter { }
-			                                       public interface IClock { }
-			                                       public sealed class SystemClock : IClock { }
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class SystemClock : IClock { }
 
-			                                       [Module]
-			                                       [Transient<GreetingModule.Greeter, IGreeter>]
-			                                       public static partial class GreetingModule
-			                                       {
-			                                           private sealed class Greeter : IGreeter
-			                                           {
-			                                               [Inject(Optional = true)] public IClock Clock { get; init; } = null!;
-			                                           }
-			                                       }
+			                      [Module]
+			                      [Transient<GreetingModule.Greeter, IGreeter>]
+			                      public static partial class GreetingModule
+			                      {
+			                          private sealed class Greeter : IGreeter
+			                          {
+			                              [Inject(Optional = true)] public IClock Clock { get; init; } = null!;
+			                          }
+			                      }
 
-			                                       [Container]
-			                                       [Import(typeof(GreetingModule))]
-			                                       [Transient<SystemClock, IClock>]
-			                                       public static partial class LibContainer { }
-			                                       """);
+			                      [Container]
+			                      [Import(typeof(GreetingModule))]
+			                      [Transient<SystemClock, IClock>]
+			                      public static partial class LibContainer { }
+			                      """;
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			GeneratorResult result = Generator.Run(source);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
 			await That(ContainerSource(result, "LibContainer")).Contains("awaiten__init_Clock: true");
 		}
 
@@ -236,6 +413,28 @@ public class RegistrationFactoryInjectedPropertyTests
 			await That(result.Diagnostics).IsEmpty()
 				.Because("each combination of present init-only properties gets its own object initializer");
 		}
+
+		[Test]
+		public async Task FourOfThem_AreFilledEverywhere()
+		{
+			Containers containers = RunEverywhere(Library(InitOnlyClocks(4)), clock: false);
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("four init-only optional properties need sixteen object initializers, which the factory still emits");
+		}
+
+		[Test]
+		public async Task MoreThanFour_AreReportedByTheModule()
+		{
+			GeneratorResult result = Generator.Run(Library(InitOnlyClocks(5)));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).Contains("*AWT200*Lib.Greeter*'Clock4' is one of more than 4 init-only optional [Inject] properties*").AsWildcard()
+				.Because("each further init-only optional property doubles the object initializers the factory needs");
+		}
+
+		private static string InitOnlyClocks(int count)
+			=> string.Join("\n", Enumerable.Range(0, count).Select(index => $"[Inject(Optional = true)] public IClock Clock{index} {{ get; init; }} = null!;"));
 	}
 
 	public class OptionalPropertyOfAnInternalService
@@ -268,11 +467,13 @@ public class RegistrationFactoryInjectedPropertyTests
 			                """;
 
 			Containers containers = RunEverywhere(module, clock: false);
+			Analyses analyses = await AnalyzeEverywhere(module, clock: false);
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
+			await That(containers.AllDiagnostics).IsEmpty()
 				.Because("the factory takes the internal service through its handle, whose value it assigns when the flag says the handle is present");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
 		}
 	}
 
@@ -432,6 +633,35 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task OfAnInternalTypeTheFactoryCannotTake_IsReportedWithTheRemedyForThePublicImplementation()
+		{
+			string module = Library("[Inject] internal Helper Helper { get; set; } = null!;", UserType)
+				.Replace("public sealed class SystemClock", "internal sealed class Helper { }\npublic sealed class SystemClock");
+
+			GeneratorResult result = Generator.Run(module);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).Contains("*'Lib.Greeter' is self-compiled from a module registration because its [Inject] property 'Helper' is not public*make the [Inject] property 'Helper', its setter and its type public*").AsWildcard()
+				.Because("the implementation and its constructor are public already, so only the hidden property keeps another assembly from constructing it");
+		}
+
+		[Test]
+		public async Task OfAPublicImplementationWithARecordedSkip_IsReportedWithTheRealCause()
+		{
+			string module = GrantedToAnother(Library("""
+			                                         public Greeter(IClock Clock) { }
+
+			                                             [Inject] internal IClock Clock { get; set; } = null!;
+			                                         """, UserType));
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"));
+			await That(result.Diagnostics).Contains("*registers 'Lib.Greeter', whose [Inject] property this container does not see*make the [Inject] properties of 'Lib.Greeter', their setters and their types public*").AsWildcard()
+				.Because("the container can construct the public implementation, but not set the property it does not see");
+		}
+
+		[Test]
 		public async Task WithAProtectedSetter_IsReportedByEveryContainer()
 		{
 			string module = Library("[Inject] public IClock Clock { get; protected set; } = null!;", "public class Greeter : IGreeter");
@@ -446,17 +676,109 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
-		public async Task BesideAContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		[Arguments("[InjectProperty<Greeter>(nameof(Greeter.Backup))]", "Backup = ")]
+		[Arguments("[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]", "created.Backup = ")]
+		public async Task BesideAContainerSideEntry_IsFilledEverywhere(string entry, string assignment)
 		{
 			string module = Library("""
 			                        [Inject] internal IClock Clock { get; set; } = null!;
 			                            public IClock Backup { get; set; } = null!;
 			                        """, UserType);
+			string withEntry = $"{entry}\n[Transient<SystemClock, IClock>]";
+
+			Containers containers = new(
+				Generator.Run(WithLibraryContainer(module, clock: true).Replace("[Transient<SystemClock, IClock>]\npublic static partial class LibContainer", withEntry + "\npublic static partial class LibContainer")),
+				Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", withEntry)),
+				Generator.RunWithGeneratedReferencedAssembly(Granted(module), ClockConsumer.Replace("[Transient<SystemClock, IClock>]", withEntry)));
+
+			await That(containers.AllDiagnostics).IsEmpty();
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_").And.Contains(assignment)
+				.Because("the container sets a property it sees on the instance the module's factory returns, as it would on one it constructs");
+			await That(ContainerSource(containers.Same, "LibContainer")).Contains(assignment);
+			await That(ContainerSource(containers.Friend, "AppContainer")).Contains(assignment);
+		}
+
+		[Test]
+		public async Task OfAnInternalServiceTypeBesideAContainerSideEntry_IsFilledByAContainerInAnotherAssembly()
+		{
+			string module = """
+			                using Awaiten;
+
+			                namespace Lib;
+
+			                public interface IGreeter { }
+			                internal interface IKettle { }
+			                internal sealed class Kettle : IKettle { }
+			                public interface IClock { }
+			                public sealed class SystemClock : IClock { }
+
+			                public sealed class Greeter : IGreeter
+			                {
+			                    [Inject] internal IKettle Kettle { get; set; } = null!;
+			                    public IClock Backup { get; set; } = null!;
+			                }
+
+			                [Module]
+			                [Singleton<Kettle, IKettle>]
+			                [Transient<Greeter, IGreeter>]
+			                public static partial class GreetingModule { }
+			                """;
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\n[Transient<SystemClock, IClock>]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178"))
-				.Because("the module's factory builds the implementation whole, so the container reports the entry it cannot fill instead of leaving it out");
+			await That(other.Diagnostics).IsEmpty();
+			await That(ContainerSource(other, "AppContainer")).Contains("__AssignGreeter(")
+				.Because("the factory takes the internal service through its handle, and the container still sets its own entry on the instance it returns");
+		}
+
+		[Test]
+		public async Task OfAPublicCompositeBesideAContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		{
+			const string module = """
+			                      using Awaiten;
+
+			                      namespace Lib;
+
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class SystemClock : IClock { }
+			                      public sealed class Greeter : IGreeter { }
+
+			                      public sealed class AllGreeters : IGreeter
+			                      {
+			                          public AllGreeters(System.Collections.Generic.IEnumerable<IGreeter> all) { }
+
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                          public IClock Backup { get; set; } = null!;
+			                      }
+
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Transient<SystemClock, IClock>]
+			                      [Composite<AllGreeters, IGreeter>]
+			                      public static partial class GreetingModule { }
+			                      """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, Consumer.Replace("[Import(typeof(GreetingModule))]", "[Import(typeof(GreetingModule))]\n[InjectProperty<AllGreeters>(nameof(AllGreeters.Backup))]"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'"));
+			await That(other.Diagnostics).DoesNotContain("*error CS*").AsWildcard()
+				.Because("the composite's factory returns the service, not the composite, so the container reports the entry instead of leaving it out");
+		}
+
+		[Test]
+		public async Task BesideAnInitOnlyContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		{
+			string module = Library("""
+			                        [Inject] internal IClock Clock { get; set; } = null!;
+			                            public IClock Backup { get; init; } = null!;
+			                        """, UserType);
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\n[Transient<SystemClock, IClock>]"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178"));
+			await That(other.Diagnostics).Contains("*AWT178*'Lib.Greeter' is built by the generated factory of 'Lib.GreetingModule'*init-only property 'Backup'*").AsWildcard()
+				.Because("only the object initializer of the module's factory could set an init-only property, so the container reports the entry instead of leaving it out");
 		}
 		[Test]
 		public async Task OfAPublicDecorator_IsSetEverywhere()
@@ -493,32 +815,70 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
-		public async Task OfAPublicDecoratorTheFactoryCannotMirror_IsReportedByTheModule()
+		public async Task OfAPublicDecoratorTheFactoryCannotMirror_IsReportedByTheModuleWithoutInternalsVisibleTo()
 		{
-			GeneratorResult result = Generator.Run(Granted("""
-			                                               using Awaiten;
+			const string module = """
+			                      using Awaiten;
 
-			                                               namespace Lib;
+			                      namespace Lib;
 
-			                                               public interface IGreeter { }
-			                                               public interface IClock { }
-			                                               public sealed class Greeter : IGreeter { }
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class Greeter : IGreeter { }
 
-			                                               public sealed class LoudGreeter : IGreeter
-			                                               {
-			                                                   public LoudGreeter(IGreeter inner, IClock Clock) { }
+			                      public sealed class LoudGreeter : IGreeter
+			                      {
+			                          public LoudGreeter(IGreeter inner, IClock Clock) { }
 
-			                                                   [Inject] internal IClock Clock { get; set; } = null!;
-			                                               }
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                      }
 
-			                                               [Module]
-			                                               [Transient<Greeter, IGreeter>]
-			                                               [Decorate<LoudGreeter, IGreeter>]
-			                                               public static partial class GreetingModule { }
-			                                               """));
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Decorate<LoudGreeter, IGreeter>]
+			                      public static partial class GreetingModule { }
+			                      """;
+
+			GeneratorResult result = Generator.Run(module);
+			GeneratorResult granted = Generator.Run(Granted(module));
 
 			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("has the name of a constructor parameter"))
 				.Because("a container in another assembly constructs the public decorator itself and would silently leave out the property it does not see");
+			await That(granted.Diagnostics).IsEmpty()
+				.Because("a friend constructs the decorator itself, so the module records the reason for a container without the grant");
+		}
+
+		[Test]
+		public async Task OfAPublicDecoratorOfAModuleThatIsNotPartial_IsReported()
+		{
+			const string module = """
+			                      using Awaiten;
+
+			                      namespace Lib;
+
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class Greeter : IGreeter { }
+
+			                      public sealed class LoudGreeter : IGreeter
+			                      {
+			                          public LoudGreeter(IGreeter inner) { }
+
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                      }
+
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Decorate<LoudGreeter, IGreeter>]
+			                      public static class GreetingModule { }
+			                      """;
+
+			GeneratorResult result = Generator.Run(module);
+			GeneratorResult granted = Generator.Run(Granted(module));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
+				.Because("a container in another assembly constructs the public decorator itself, so only the module's factory can set the property");
+			await That(granted.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194"));
 		}
 
 		[Test]
@@ -528,6 +888,326 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
 				.Because("a container without InternalsVisibleTo constructs the public implementation itself, so only the module's factory can set the property");
+		}
+	}
+
+	public class PublicDecoratorOfALibraryWithInternalsVisibleTo
+	{
+		private const string Module = """
+		                              using Awaiten;
+
+		                              namespace Lib;
+
+		                              public interface IGreeter { }
+		                              internal sealed class Helper { }
+		                              public sealed class Greeter : IGreeter { }
+
+		                              public sealed class LoudGreeter : IGreeter
+		                              {
+		                                  public LoudGreeter(IGreeter inner) { }
+
+		                                  [Inject] internal Helper Helper { get; set; } = null!;
+		                              }
+
+		                              [Module]
+		                              [Transient<Greeter, IGreeter>]
+		                              [Decorate<LoudGreeter, IGreeter>]
+		                              public static partial class GreetingModule { }
+
+		                              [Container]
+		                              [Import(typeof(GreetingModule))]
+		                              [Transient<Helper>]
+		                              internal static partial class LibContainer { }
+		                              """;
+
+		[Test]
+		public async Task IsBuiltByTheLibraryAndAFriend()
+		{
+			GeneratorResult library = Generator.Run(Granted(Module));
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(Module), """
+			                                                                                     using Awaiten;
+			                                                                                     using Lib;
+
+			                                                                                     namespace App;
+
+			                                                                                     [Container]
+			                                                                                     [Import(typeof(GreetingModule))]
+			                                                                                     [Transient<Helper>]
+			                                                                                     internal static partial class AppContainer { }
+			                                                                                     """);
+
+			await That(library.Diagnostics).IsEmpty()
+				.Because("a friend constructs the decorator itself, so the module records why it generates no factory, like for a registration");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Helper = ");
+		}
+
+		[Test]
+		public async Task IsReportedByAContainerWithoutTheGrant()
+		{
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(Module), Consumer);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"))
+				.Because("the container could construct the decorator, but not set the property it does not see");
+		}
+
+		[Test]
+		public async Task AsAComposite_IsTreatedAlike()
+		{
+			string module = Module
+				.Replace("public LoudGreeter(IGreeter inner) { }", "public LoudGreeter(System.Collections.Generic.IEnumerable<IGreeter> all) { }")
+				.Replace("[Decorate<LoudGreeter, IGreeter>]", "[Composite<LoudGreeter, IGreeter>]");
+
+			GeneratorResult library = Generator.Run(Granted(module));
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(module), Consumer);
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"));
+		}
+	}
+
+	public class ExtendedContainer
+	{
+		private const string Extending = """
+		                                 using Awaiten;
+		                                 using Lib;
+
+		                                 namespace App;
+
+		                                 [Container(Extends = typeof(LibContainer))]
+		                                 public static partial class AppContainer { }
+		                                 """;
+
+		private static readonly string Module = WithLibraryContainer(Library("[Inject] internal IClock Clock { get; set; } = null!;", "public class Greeter : IGreeter"), clock: true);
+
+		[Test]
+		public async Task InAnotherAssembly_BuildsAModuleRegistrationThroughTheModulesFactory()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Module, Extending);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_")
+				.Because("the extending container does not see the internal property, so only the module's factory sets it like the base does");
+		}
+
+		[Test]
+		public async Task InAFriendAssembly_SetsThePropertyItself()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Module), Extending);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ContainerSource(result, "AppContainer")).Contains("Clock = ");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsAModuleRegistrationWithARecordedSkip()
+		{
+			string module = WithLibraryContainer(GrantedToAnother(Library("""
+			                                                              public Greeter(IClock Clock) { }
+
+			                                                                  [Inject] internal IClock Clock { get; set; } = null!;
+			                                                              """, "public class Greeter : IGreeter")), clock: true);
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, Extending);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"))
+				.Because("the module recorded why it generated no factory, and the extending container cannot set the property it does not see");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsARegistrationOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"))
+				.Because("the extending container cannot set the internal property it does not see, so it never builds the type without it");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsAScanMatchOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Scan<IGreeter>(As = ScanAs.Marker)]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT193") && diagnostic.Contains("Lib.Greeter"))
+				.Because("a scan never fails the build, so the extending container skips the match with a warning instead of building it without the property");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsADecoratorOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+			                 public sealed class Greeter : IGreeter { }
+
+			                 public sealed class LoudGreeter : IGreeter
+			                 {
+			                     public LoudGreeter(IGreeter inner) { }
+
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Decorate<LoudGreeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("decorator 'Lib.LoudGreeter'"));
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsADecoratedRegistrationOfTheBaseWhosePropertyItCannotSetOnce()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 public sealed class LoudGreeter(IGreeter inner) : IGreeter
+			                 {
+			                     public IGreeter Inner { get; } = inner;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending.Replace("public static partial class AppContainer", "[Decorate<LoudGreeter, IGreeter>]\npublic static partial class AppContainer"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"));
+			await That(other.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
+				.Because("the decorator has nothing left to wrap only because the registration was dropped, which AWT226 already reports");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsARegistrationOfTheBaseWhoseContainerSidePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 [InjectProperty<Greeter>(nameof(Greeter.Clock))]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter") && diagnostic.Contains("'Clock'"))
+				.Because("the base fills the internal property through its own [InjectProperty] entry, which the extending container inherits but cannot apply");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
+		}
+
+		[Test]
+		public async Task InAnotherAssembly_ReportsAClosingOfAnOpenRegistrationOfTheBaseWhosePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGen<T> { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Gen<T> : IGen<T>
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient(typeof(Gen<>), typeof(IGen<>))]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+			string extending = Extending.Replace("public static partial class AppContainer { }", "[Transient<Consumer>]\npublic static partial class AppContainer { }\n\npublic sealed class Consumer(IGen<int> gen) { public IGen<int> Gen { get; } = gen; }");
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Gen<int>") && diagnostic.Contains("'Clock'"))
+				.Because("the base records the hidden property of its open registration, so no closing is built without it, even one the base never builds itself");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
 		}
 	}
 

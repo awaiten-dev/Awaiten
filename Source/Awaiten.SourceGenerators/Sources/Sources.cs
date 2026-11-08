@@ -129,8 +129,44 @@ internal static partial class Sources
 			EmitAsyncArrayHelper(builder, depth);
 		}
 
-		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray());
+		EmitAfterFactoryAssigners(builder, depth, context.Instances, names);
+		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray());
 	}
+
+	/// <summary>
+	///     Emits, for each instance built through an owner's generated factory with container-side members that factory
+	///     does not take (see <see cref="MemberModel.AfterFactoryType" />), a helper that sets them on the instance the
+	///     factory returns and hands it back, so the construction stays one expression on every resolver path.
+	/// </summary>
+	private static void EmitAfterFactoryAssigners(StringBuilder builder, int depth, InstanceModel[] instances, Names names)
+	{
+		for (int index = 0; index < instances.Length; index++)
+		{
+			MemberModel[] members = AfterFactoryMembers(instances[index]);
+			if (members.Length == 0)
+			{
+				continue;
+			}
+
+			builder.AppendLine();
+			AppendXmlSummary(builder, depth, "Sets the container-side [InjectProperty] members on the instance a generated factory returned.");
+			Indent(builder, depth).Append("private static ").Append(instances[index].ConstructedType).Append(' ').Append(names.AfterFactoryAssigner(index))
+				.Append('(').Append(instances[index].ConstructedType).Append(" __instance")
+				.Append(string.Concat(members.Select((member, position) => $", {member.AfterFactoryType} __value{position}"))).AppendLine(")");
+			Indent(builder, depth).AppendLine("{");
+			for (int position = 0; position < members.Length; position++)
+			{
+				Indent(builder, depth + 1).Append("__instance.").Append(members[position].MemberName).Append(" = __value").Append(position).AppendLine(";");
+			}
+
+			Indent(builder, depth + 1).AppendLine("return __instance;");
+			Indent(builder, depth).AppendLine("}");
+		}
+	}
+
+	/// <summary>The members of <paramref name="instance" /> set on the instance its owner's generated factory returned.</summary>
+	private static MemberModel[] AfterFactoryMembers(InstanceModel instance)
+		=> instance.InjectedMembers.AsArray().Where(member => member.AfterFactoryType is not null).ToArray();
 
 	/// <summary>
 	///     Emits the <c>internal</c> factory and hook wrappers of each implementation private to the container, which a
@@ -138,17 +174,19 @@ internal static partial class Sources
 	///     <c>internal</c> wrapper of each private member its registrations name, and the constants that record why it
 	///     generates no factory for another private implementation, all in an <c>internal</c> nested
 	///     <c>Internals</c> class: an extending container in another assembly reaches it through <c>InternalsVisibleTo</c>,
-	///     and a public class would only add an empty type to a public container's API.
+	///     and a public class would only add an empty type to a public container's API. The class is public only when it
+	///     holds a record of a type whose <c>[Inject]</c> property another assembly cannot see, which an extending
+	///     container without <c>InternalsVisibleTo</c> reads to report the type instead of building it without the property.
 	/// </summary>
-	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults)
+	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties)
 	{
-		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0)
+		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0 && hiddenProperties.Length == 0)
 		{
 			return;
 		}
 
 		builder.AppendLine();
-		OpenInternals(builder, outerDepth, "internal",
+		OpenInternals(builder, outerDepth, hiddenProperties.Length > 0 ? "public" : "internal",
 			"Generated for a container that extends this one: the factories and wrappers it calls. Not intended to be",
 			"used directly.");
 		int depth = outerDepth + 1;
@@ -201,6 +239,19 @@ internal static partial class Sources
 			builder.AppendLine();
 			EmitSkipReason(builder, depth, AwaitenGenerator.FaultRemedyName(fault.FactoryName), fault.Remedy,
 				"Generated for a container that extends this one: what lets an extending container build that implementation.");
+		}
+
+		foreach (SkippedRegistration hidden in hiddenProperties)
+		{
+			if (!first)
+			{
+				builder.AppendLine();
+			}
+
+			first = false;
+			EmitSkipReason(builder, depth, hidden.MarkerName, hidden.Reason,
+				"Generated for a container that extends this one: names the [Inject] property of a type this container builds",
+				"that an extending container in another assembly does not see, so it reports the type instead of leaving the property out.");
 		}
 
 		Indent(builder, outerDepth).AppendLine("}");

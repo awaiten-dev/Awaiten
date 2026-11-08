@@ -16,7 +16,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const string ScanKeyMarker = "@scan:";
 
-	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, Dictionary<string, (Lifetime Lifetime, string? Implementation)> OpenServices) Collect(
+	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, List<OpenRegistration> Open) Collect(
 		INamedTypeSymbol containerSymbol,
 		List<ImportedModule> modules,
 		Compilation compilation,
@@ -54,10 +54,17 @@ partial class AwaitenGenerator
 		foreach (ImportedModule module in modules)
 		{
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
+			List<DiagnosticInfo> moduleDiagnostics = module.Inherited ? new List<DiagnosticInfo>() : diagnostics;
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, module.Inherited ? new List<DiagnosticInfo>() : diagnostics, sameCompilationModules, module.Inherited, inheritance),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
+
+			// The base sees the [Inject] property of a type this container cannot build without the module's factory.
+			if (module.Inherited)
+			{
+				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet));
+			}
 		}
 
 		// The container's own scan matches must outrank a module's within the scan tier (the container wins ties
@@ -117,7 +124,7 @@ partial class AwaitenGenerator
 			result.AddRange(scanMatches);
 		}
 
-		return (result, constraintRejected, OpenServices(open));
+		return (result, constraintRejected, open);
 	}
 
 	/// <summary>
@@ -385,7 +392,9 @@ partial class AwaitenGenerator
 	///     AWT231 once per implementation when the module recorded why it generated no factory for it or cannot carry
 	///     one (see <see cref="ModuleShapeReason" />), else AWT154
 	///     once per module when the module carries no generated factory for it. A module inherited through
-	///     <c>Extends</c> keeps such a registration instead, which the inheritance reports as inaccessible (AWT226).
+	///     <c>Extends</c> keeps such a registration instead, which the inheritance reports as inaccessible (AWT226),
+	///     except one of an implementation with an <c>[Inject]</c> property this container does not see, which it builds
+	///     through the factory like an imported module's or reports with AWT231.
 	/// </summary>
 	private static RawRegistration? SelfCompiledRegistration(
 		RawRegistration registration,
@@ -400,7 +409,6 @@ partial class AwaitenGenerator
 		// A container that the module's assembly grants no InternalsVisibleTo does not see an internal [Inject] property
 		// in metadata, so it cannot tell that the module self-compiles the implementation, but finds what the module generated for it.
 		bool hiddenMembers = !sameCompilation
-		                     && !context.Inherited
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
 		                     && (GeneratedFactory(module, implementation, compilation) is not null || SkippedRegistrationReason(module, implementation) is not null);
 		if (registration.ServiceSymbol is not { } service || (!SelfCompilesRegistration(module, implementation, service, compilation) && !hiddenMembers))
@@ -440,14 +448,15 @@ partial class AwaitenGenerator
 		// calls the internal factory that takes them directly, which the module generates when the public one takes handles.
 		if ((GeneratedFactoryNamed(module, InternalRegistrationFactoryName(implementation), compilation) ?? GeneratedFactory(module, implementation, compilation)) is not { } factory)
 		{
-			if (context.Inherited)
+			if (context.Inherited && !hiddenMembers)
 			{
 				return registration;
 			}
 
 			if (SkippedRegistrationReason(module, implementation) is { } reason)
 			{
-				ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public");
+				ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public",
+					hiddenMembers && CanConstruct(implementation, compilation) ? Diagnostics.ModuleRegistrationPropertyNotSet : Diagnostics.ModuleRegistrationNotSelfCompiled);
 			}
 			else if (ModuleShapeReason(module) is { } shape)
 			{
@@ -474,7 +483,7 @@ partial class AwaitenGenerator
 			    && InternalsMembers(module, RegistrationHookWrapperName(implementation, release, hook)).IsEmpty
 			    && SkippedHookReason(module, implementation, release, hook) is { } hookReason)
 			{
-				if (context.Inherited)
+				if (context.Inherited && !hiddenMembers)
 				{
 					return registration;
 				}
@@ -510,11 +519,13 @@ partial class AwaitenGenerator
 	///     Reports AWT231 at the consumer's <c>[Import]</c>, once per implementation and missing piece: the imported
 	///     module generated no <paramref name="missing" /> for <paramref name="implementation" /> for the recorded
 	///     <paramref name="reason" />, and this container cannot construct it either.
+	///     <paramref name="descriptor" /> picks the form for a type the container could construct but whose <c>[Inject]</c>
+	///     property it does not see.
 	/// </summary>
-	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy)
+	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy, DiagnosticDescriptor? descriptor = null)
 	{
 		DiagnosticInfo diagnostic = new(
-			Diagnostics.ModuleRegistrationNotSelfCompiled,
+			descriptor ?? Diagnostics.ModuleRegistrationNotSelfCompiled,
 			LocationInfo.From(context.FallbackLocation),
 			new EquatableArray<string>([
 				Display(module.ToDisplayString(FullyQualified)),
@@ -1116,9 +1127,10 @@ partial class AwaitenGenerator
 	///     module generates for it (see <see cref="CollectModuleContributionFactories" />): from metadata in another
 	///     assembly, or by its deterministic name in the module's own assembly when the type is private to the module,
 	///     preferring the internal factory that takes the internal services instead of their handles where the container
-	///     can see it. Without a factory, one inherited through <c>Extends</c> is AWT226, one whose module recorded what a
-	///     container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and any
-	///     other is AWT230.
+	///     can see it. Without a factory, one whose skip the module recorded and whose <c>[Inject]</c> property this
+	///     container does not see is AWT231, one inherited through <c>Extends</c> is AWT226, one whose module recorded what
+	///     a container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and
+	///     any other is AWT230.
 	/// </summary>
 	private static bool UnavailableContribution(ContributionContext context, AttributeData attribute, INamedTypeSymbol attributeClass, out OwnerFactoryCall? via)
 	{
@@ -1152,10 +1164,12 @@ partial class AwaitenGenerator
 			return inheritance is not null && InaccessibleInheritedType(attribute, attributeClass, inheritance, diagnostics, out _);
 		}
 
-		// The factory of a type this container can construct sets an internal [Inject] property it does not see.
+		// The factory of a type this container can construct sets an internal [Inject] property it does not see, and a
+		// recorded skip says the module could not generate one.
+		string? skipReason = name is not null ? SkippedContributionReason(module, name) : null;
 		bool hiddenMembers = name is not null
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
-		                     && GeneratedFactoryNamed(module, name, compilation) is not null;
+		                     && (GeneratedFactoryNamed(module, name, compilation) is not null || skipReason is not null);
 		if (type is not { TypeKind: TypeKind.Class, IsAbstract: false, } || (CanConstruct(type.OriginalDefinition, compilation) && !hiddenMembers))
 		{
 			return inheritance is not null && InaccessibleInheritedType(attribute, attributeClass, inheritance, diagnostics, out _);
@@ -1167,6 +1181,20 @@ partial class AwaitenGenerator
 		{
 			via = new OwnerFactoryCall(module, factory.Name, factory.ReturnType.ToDisplayString(FullyQualified), factory);
 			return false;
+		}
+
+		if (hiddenMembers && skipReason is not null)
+		{
+			DiagnosticInfo diagnostic = new(
+				Diagnostics.ModuleRegistrationPropertyNotSet,
+				LocationInfo.From(context.Location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,]));
+			if (!diagnostics.Contains(diagnostic))
+			{
+				diagnostics.Add(diagnostic);
+			}
+
+			return true;
 		}
 
 		if (inheritance is not null)

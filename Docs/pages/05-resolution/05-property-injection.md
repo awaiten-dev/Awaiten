@@ -102,14 +102,14 @@ A service an [open generic](../04-registration/05-open-generics.md) registration
 `Optional` tolerates a missing registration, not a request that no registration could serve. A `Lazy<Owned<T>>` ([AWT121](../09-diagnostics.md#awt121)) or a relationship over an [imported service](../07-hosting/02-external-services.mdx#relationships-and-collections) ([AWT242](../09-diagnostics.md#awt242)) is reported for an optional property too, also when an imported module of another assembly builds the implementation.
 
 :::note
-A bad name, a read-only member, or a field is [AWT177](../09-diagnostics.md#awt177) (for an open-generic target, checked once on the generic definition); an unreachable setter is [AWT136](../09-diagnostics.md#awt136); a duplicate entry for one property is [AWT179](../09-diagnostics.md#awt179); and a `Factory`/`Instance`-produced type, built whole by its source with nothing for the container to fill, is [AWT178](../09-diagnostics.md#awt178).
+A bad name, a read-only member, or a field is [AWT177](../09-diagnostics.md#awt177) (for an open-generic target, checked once on the generic definition); an unreachable setter is [AWT136](../09-diagnostics.md#awt136); a duplicate entry for one property is [AWT179](../09-diagnostics.md#awt179); and a `Factory`/`Instance`-produced type, built whole by its source with nothing for the container to fill, is [AWT178](../09-diagnostics.md#awt178). A type a [module](../04-registration/07-modules.md#internal-implementations) of another assembly builds through its generated factory still gets the entry: the container sets the property on the instance the factory returns, so it needs a `set` accessor rather than `init`.
 :::
 
 A property without an entry is left alone. Injection stays opt-in, one property at a time, and if a property carries both `[Inject]` and an `[InjectProperty<T>]` entry the `[Inject]` member wins and the redundant entry is flagged ([AWT181](../09-diagnostics.md#awt181)).
 
 ## The escape hatch: `[Inject]` on the property
 
-Marking the property itself with `[Inject]` asks for the same injection from the domain side. It fills exactly like a container-side entry, and `Optional`, `Deferred`, and a `[FromKey]` alongside it all work. An `internal` `[Inject]` property, or one with an `internal` setter, is set by a container in its own assembly. A container in another assembly doesn't see it, so register such a type in a [module](../04-registration/07-modules.md#internal-implementations) of its own assembly, whose generated factory sets the property.
+Marking the property itself with `[Inject]` asks for the same injection from the domain side. It fills exactly like a container-side entry, and `Optional`, `Deferred`, and a `[FromKey]` alongside it all work. An `internal` `[Inject]` property, or one with an `internal` setter, is set by a container in its own assembly. A container in another assembly doesn't see it, so register such a type in a [module](../04-registration/07-modules.md#internal-implementations) of its own assembly, whose generated factory sets the property. That factory fills at most four init-only `Optional` properties of one type ([AWT200](../09-diagnostics.md#awt200)).
 
 ```csharp
 public sealed class Handler<T>

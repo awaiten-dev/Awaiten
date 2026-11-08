@@ -121,6 +121,13 @@ internal static partial class Sources
 		/// </summary>
 		public string WiredField(int index) => _fields[index] + "Wired";
 
+		/// <summary>
+		///     The helper that sets the container-side members of an instance built through an owner's generated factory:
+		///     <c>ResolveFoo -&gt; __AssignFoo</c>, with the double underscore of the other generated names, so it cannot
+		///     collide with a container member the construction expression references by simple name.
+		/// </summary>
+		public string AfterFactoryAssigner(int index) => "__Assign" + _resolvers[index].Substring("Resolve".Length);
+
 		public static Names Build(InstanceModel[] instances, ServiceMembers[] collections, KeyedServiceMembers[] keyedCollections, bool syncAfterInit)
 		{
 			string[] resolvers = new string[instances.Length];

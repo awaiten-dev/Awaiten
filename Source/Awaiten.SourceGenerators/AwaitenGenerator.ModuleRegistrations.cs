@@ -52,9 +52,7 @@ partial class AwaitenGenerator
 	///     call. A protected or private setter of a visible property is no reason: every container reports it (AWT136).
 	/// </summary>
 	private static bool HasInjectedPropertyHiddenFromOtherAssemblies(INamedTypeSymbol implementation)
-		=> InjectedProperties(implementation).Any(property =>
-			property.DeclaredAccessibility is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal
-			|| property.SetMethod?.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal);
+		=> HiddenInjectedProperty(implementation) is not null;
 
 	/// <summary>
 	///     Whether <paramref name="module" /> can access <paramref name="type" /> but the rest of its assembly cannot,
@@ -480,7 +478,10 @@ partial class AwaitenGenerator
 	///     A type the factory cannot express gets none and no error in the module's build: a container that cannot
 	///     construct it reports it at its <c>[Import]</c> (AWT230), as before. A public type another assembly constructs
 	///     itself, but whose <c>[Inject]</c> property it cannot set, is reported to <paramref name="diagnostics" /> instead,
-	///     since such a container would silently leave the property out. In the module's own build, one over an
+	///     since such a container would silently leave the property out, unless the module's assembly grants
+	///     <c>InternalsVisibleTo</c> to any assembly and the reason is one such an assembly avoids by constructing the
+	///     type itself (see <see cref="SkipReason" />): the type then lands in <paramref name="skipped" />, like a
+	///     registration, and a container without the grant reports it (AWT231). In the module's own build, one over an
 	///     internal service is built into the service's handle instead (see <see cref="HiddenContributionFactory" />), and
 	///     when it cannot be, what a consumer reports instead is added to <paramref name="skipped" /> (see
 	///     <see cref="ContributionFault" />).
@@ -519,7 +520,17 @@ partial class AwaitenGenerator
 				built = ContributionFactory(type, service, name, context);
 				if (built is null && diagnostics is not null && ConstructibleEverywhere(type))
 				{
-					ContributionFactory(type, service, name, context with { Diagnostics = diagnostics, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+					List<DiagnosticInfo> rejections = new();
+					ContributionFactory(type, service, name, context with { Diagnostics = rejections, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+					string?[] reasons = rejections.Select(rejection => SkipReason(rejection, [service.ToDisplayString(FullyQualified),])).ToArray();
+					if (skipped is not null && GrantsInternalsVisibleTo(compilation.Assembly) && reasons.Length > 0 && reasons.All(reason => reason is not null))
+					{
+						skipped.Add(new SkippedRegistration(ContributionSkippedName(name), reasons[0]!));
+					}
+					else
+					{
+						diagnostics.AddRange(rejections);
+					}
 				}
 			}
 			else
@@ -592,7 +603,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static RegistrationFactory? ContributionFactory(INamedTypeSymbol type, INamedTypeSymbol service, string name, ModuleScanContext context, Location? location = null)
 	{
-		SelfCompiledSubject subject = RegistrationSubject(type.ToDisplayString(FullyQualified));
+		SelfCompiledSubject subject = RegistrationSubject(type);
 		return FactoryReturnType(type, [service,], context) is { } returnType
 		       && FitsFactorySignature(returnType, context)
 		       && TryMirrorFactoryParameters(type, context, location, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true)
@@ -671,10 +682,34 @@ partial class AwaitenGenerator
 			: null;
 	}
 
-	/// <summary>The first registration of <paramref name="module" /> that is self-compiled, or <see langword="null" />.</summary>
+	/// <summary>
+	///     The first registration of <paramref name="module" /> that is self-compiled, else the first of its
+	///     <see cref="ContributionsWithHiddenProperties" />, or <see langword="null" />.
+	/// </summary>
 	private static ModuleRegistration? FirstSelfCompiledRegistration(INamedTypeSymbol module, Compilation compilation)
 		=> ConstructedModuleRegistrations(module, compilation)
-			.FirstOrDefault(registration => SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation));
+			   .FirstOrDefault(registration => SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation))
+		   ?? ContributionsWithHiddenProperties(module, compilation).FirstOrDefault();
+
+	/// <summary>
+	///     The closed decorators and composites of <paramref name="module" /> that every assembly could construct, but
+	///     whose <c>[Inject]</c> property another assembly cannot see, so only the module's generated factory sets it
+	///     there, like for a registration.
+	/// </summary>
+	private static IEnumerable<ModuleRegistration> ContributionsWithHiddenProperties(INamedTypeSymbol module, Compilation compilation)
+	{
+		foreach (AttributeData attribute in module.GetAttributes())
+		{
+			if (attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
+			    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+			    && ContributedPair(attribute, attributeClass) is ({ } type, { } service)
+			    && ConstructibleEverywhere(type)
+			    && SelfCompilesRegistration(module, type, service, compilation))
+			{
+				yield return new ModuleRegistration(attribute, type, service, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+			}
+		}
+	}
 
 	/// <summary>
 	///     Builds the factory of every self-compiled registration of a module (see
@@ -788,7 +823,7 @@ partial class AwaitenGenerator
 	{
 		INamedTypeSymbol implementation = first.Implementation;
 		string typeName = implementation.ToDisplayString(FullyQualified);
-		SelfCompiledSubject subject = RegistrationSubject(typeName);
+		SelfCompiledSubject subject = RegistrationSubject(implementation);
 		List<DiagnosticInfo> rejections = new();
 
 		string[] services = all.Select(registration => registration.Service.ToDisplayString(FullyQualified)).Distinct().ToArray();
@@ -922,11 +957,13 @@ partial class AwaitenGenerator
 	///     <c>Optional</c> property becomes an optional parameter after the others, followed by its presence flag (see
 	///     <see cref="PresenceFlagName" />), which a consumer sets only when it registers the service, so the factory
 	///     assigns a service that resolved to <see langword="null" /> and leaves the property as it is for a missing one,
-	///     inside the object initializer for an init-only property. A <c>Deferred</c> property is no parameter: it gets a
+	///     inside the object initializer for an init-only property. An <c>Optional</c> collection is a plain parameter,
+	///     since a consumer always fills it. A <c>Deferred</c> property is no parameter: it gets a
 	///     setter wrapper the consumer calls after it built and cached the instance, whose value parameter has a default
 	///     when the property is optional too. Reports AWT200 and returns <see langword="false" /> for what the factory
 	///     cannot express: what no container supports (an optional property that is required, a deferred one that is
-	///     init-only or required), one without a setter the module can reach, one named like a constructor parameter,
+	///     init-only or required), one without a setter the module can reach, more than
+	///     <see cref="MaxInitOnlyOptionalMembers" /> init-only optional ones, one named like a constructor parameter or like a parameter or presence flag of another property,
 	///     and one whose type another assembly cannot name.
 	/// </summary>
 	private static bool TryMirrorInjectedProperties(
@@ -945,11 +982,16 @@ partial class AwaitenGenerator
 		List<string> initOnly = new();
 		List<FactoryParameter> deferred = new();
 		List<string> optionalDeferred = new();
+		Dictionary<string, string> taken = mirrored.ToDictionary(parameter => parameter.Name, _ => "a constructor parameter", StringComparer.Ordinal);
 		foreach (IPropertySymbol property in InjectedProperties(type))
 		{
 			ImmutableArray<AttributeData> attributes = property.GetAttributes();
 			bool isDeferred = IsInjectDeferred(attributes);
-			bool isOptional = IsInjectOptional(attributes);
+
+			// A collection is always filled, empty without a registration, so Optional changes nothing about it, as for a
+			// container in the module's assembly: it is assigned in the initializer, a required or init-only one too.
+			bool isOptional = IsInjectOptional(attributes)
+			                  && (isDeferred || !IsCollectionProperty(property));
 			string? reason = null;
 			INamedTypeSymbol? unbuildable = null;
 			if (property.SetMethod is not { } setter || !context.Compilation.IsSymbolAccessibleWithin(setter, context.Module))
@@ -964,9 +1006,17 @@ partial class AwaitenGenerator
 			{
 				reason = "is marked [Inject(Optional = true)] and is required (which no container supports)";
 			}
-			else if (mirrored.Concat(optionalParameters).Any(parameter => parameter.Name == property.Name || parameter.Name == PresenceFlagName(property.Name, property.SetMethod?.IsInitOnly == true)))
+			else if (isOptional && !isDeferred && setter.IsInitOnly && initOnly.Count == MaxInitOnlyOptionalMembers)
 			{
-				reason = "has the name of a constructor parameter";
+				reason = $"is one of more than {MaxInitOnlyOptionalMembers} init-only optional [Inject] properties (each doubles the object initializers of the factory, so give the others a plain set accessor)";
+			}
+			else if (taken.TryGetValue(property.Name, out string? owner))
+			{
+				reason = $"has the name of {owner}";
+			}
+			else if (isOptional && !isDeferred && taken.TryGetValue(PresenceFlagName(property.Name, setter.IsInitOnly), out string? flagOwner))
+			{
+				reason = $"needs the presence flag '{PresenceFlagName(property.Name, setter.IsInitOnly)}', which is the name of {flagOwner}";
 			}
 			else if (HasAwaitenAttribute(attributes, "FromKeyAttribute") && FromKey(attributes) is null)
 			{
@@ -1028,11 +1078,15 @@ partial class AwaitenGenerator
 					{
 						initOnly.Add(property.Name);
 					}
+
+					taken[property.Name] = $"the property '{property.Name}'";
+					taken[PresenceFlagName(property.Name, property.SetMethod.IsInitOnly)] = $"the presence flag of the property '{property.Name}'";
 				}
 				else
 				{
 					mirrored.Add(parameter);
 					names.Add(property.Name);
+					taken[property.Name] = $"the property '{property.Name}'";
 				}
 			}
 		}
@@ -1054,12 +1108,30 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const string NoReachableSetter = "has no setter the module can reach";
 
+	/// <summary>Whether <paramref name="property" /> is a collection, which a container always fills, empty without a registration.</summary>
+	private static bool IsCollectionProperty(IPropertySymbol property)
+		=> IsSynthesizedCollection(ClassifyDependency(property.Type, property.GetAttributes(), asyncFactory: false, location: null, new ExternalServiceTypes()).Kind);
+
 	/// <summary>
 	///     A deterministic name for the setter wrapper of the deferred <paramref name="property" /> that the generated
 	///     factory <paramref name="factory" /> builds, which a consumer finds next to the factory.
 	/// </summary>
 	internal static string DeferredSetterName(string factory, string property)
 		=> $"Deferred_{factory}_{property}";
+
+	/// <summary>
+	///     A deterministic name for the constant next to the generated factory <paramref name="factory" /> that holds the
+	///     position of its first parameter for an <c>[Inject]</c> property (see <see cref="FirstPropertyOrdinal" />).
+	/// </summary>
+	internal static string FirstPropertyName(string factory)
+		=> factory + "_FirstProperty";
+
+	/// <summary>
+	///     The position of the first parameter of a generated factory that stands for an <c>[Inject]</c> property, which
+	///     a consumer cannot tell from a constructor parameter in metadata, or <see cref="int.MaxValue" /> when it has none.
+	/// </summary>
+	private static int FirstPropertyOrdinal(IMethodSymbol factory)
+		=> factory.ContainingType.GetMembers(FirstPropertyName(factory.Name)).OfType<IFieldSymbol>().FirstOrDefault()?.ConstantValue as int? ?? int.MaxValue;
 
 	/// <summary>
 	///     The name of the parameter that follows the parameter of the optional <paramref name="property" /> on a
@@ -1074,6 +1146,12 @@ partial class AwaitenGenerator
 	private const string PresenceFlagPrefix = "awaiten__has_";
 
 	private const string InitOnlyPresenceFlagPrefix = "awaiten__init_";
+
+	/// <summary>
+	///     The most init-only optional <c>[Inject]</c> properties a generated factory fills. It needs one object
+	///     initializer per combination of present ones, so the code doubles with each.
+	/// </summary>
+	private const int MaxInitOnlyOptionalMembers = 4;
 
 	/// <summary>
 	///     The <c>[Inject]</c> properties a generated factory fills (see <see cref="TryMirrorInjectedProperties" />): the
@@ -1180,10 +1258,12 @@ partial class AwaitenGenerator
 	///     Whether an assembly granted <c>InternalsVisibleTo</c> can construct every self-compiled registration of
 	///     <paramref name="module" /> itself: the module's assembly grants it to any assembly, and no such registration
 	///     is hidden in the module (see <see cref="TypeHiddenInModule" />) or public, which any assembly constructs, so
-	///     one without the grant would leave out the <c>[Inject]</c> property it cannot see.
+	///     one without the grant would leave out the <c>[Inject]</c> property it cannot see. The same holds for any of
+	///     the <see cref="ContributionsWithHiddenProperties" />.
 	/// </summary>
 	private static bool FriendsConstructEveryRegistration(INamedTypeSymbol module, Compilation compilation)
 		=> GrantsInternalsVisibleTo(compilation.Assembly)
+		   && !ContributionsWithHiddenProperties(module, compilation).Any()
 		   && !ConstructedModuleRegistrations(module, compilation).Any(registration =>
 			   SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation)
 			   && (TypeHiddenInModule(registration.Implementation, module, compilation) is not null || ConstructibleEverywhere(registration.Implementation)));
@@ -1224,9 +1304,22 @@ partial class AwaitenGenerator
 	private static bool GrantsInternalsVisibleTo(IAssemblySymbol assembly)
 		=> assembly.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() == "System.Runtime.CompilerServices.InternalsVisibleToAttribute");
 
-	/// <summary>The subject of a self-compilation diagnostic about a module registration.</summary>
-	private static SelfCompiledSubject RegistrationSubject(string typeName)
-		=> new(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public", "self-compiled from a module registration");
+	/// <summary>
+	///     The subject of a self-compilation diagnostic about a module registration, decorator or composite. A type every
+	///     assembly could construct is self-compiled only for its <c>[Inject]</c> property another assembly cannot see, so
+	///     the subject names that property and the remedy makes it public.
+	/// </summary>
+	private static SelfCompiledSubject RegistrationSubject(INamedTypeSymbol type)
+	{
+		string typeName = type.ToDisplayString(FullyQualified);
+		return ConstructibleEverywhere(type) && HiddenInjectedProperty(type) is { } property
+			? new SelfCompiledSubject(
+				typeName,
+				$"'{Display(typeName)}' is self-compiled from a module registration because its [Inject] property '{property}' is not public",
+				$"make the [Inject] property '{property}', its setter and its type public",
+				"self-compiled from a module registration")
+			: new SelfCompiledSubject(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public", "self-compiled from a module registration");
+	}
 
 	/// <summary>
 	///     A deterministic name for the factory of a self-compiled registration, derived from the implementation's
@@ -1263,6 +1356,23 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string RegistrationSkippedName(INamedTypeSymbol implementation)
 		=> $"RegistrationSkipped_{implementation.Name}_{Fnv1a(implementation.ToDisplayString(FullyQualified)):x8}";
+
+	/// <summary>
+	///     A deterministic name for the constant that records why the module generates no factory for the decorator or
+	///     composite whose factory would be named <paramref name="factoryName" /> (see <see cref="ContributionFactoryName(string, INamedTypeSymbol, INamedTypeSymbol)" />).
+	/// </summary>
+	private static string ContributionSkippedName(string factoryName)
+		=> factoryName + "_Skipped";
+
+	/// <summary>
+	///     Why the imported module of another assembly generated no factory named <paramref name="factoryName" /> for a
+	///     decorator or composite, or <see langword="null" /> when it records no such skip.
+	/// </summary>
+	private static string? SkippedContributionReason(INamedTypeSymbol module, string factoryName)
+		=> InternalsMembers(module, ContributionSkippedName(factoryName))
+			.OfType<IFieldSymbol>()
+			.Select(field => field.ConstantValue as string)
+			.FirstOrDefault(reason => reason is not null);
 
 	/// <summary>
 	///     Why the imported module of another assembly generated no factory for <paramref name="implementation" />,

@@ -67,6 +67,7 @@ partial class AwaitenGenerator
 		BuildContext context)
 	{
 		List<ParameterModel> parameters = new();
+		int firstProperty = IsGeneratedOwnerFactory(producer) ? FirstPropertyOrdinal(producer) : int.MaxValue;
 		foreach (IParameterSymbol parameter in producer.Parameters)
 		{
 			// A [RequestingType] parameter of a Factory method is filled at each construction site with the
@@ -94,11 +95,11 @@ partial class AwaitenGenerator
 			{
 				ParameterModel? value = parameters.Count > 0 ? parameters[parameters.Count - 1] : null;
 				parameters.Add(new ParameterModel("bool", value?.Kind == DependencyKind.Absent ? DependencyKind.Absent : DependencyKind.Present));
-				if (parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal) && value is not null && !IsSynthesizedCollection(value.Kind))
+				if (parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal) && value is not null)
 				{
 					context.Diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.OptionalPropertyIsInitOnly,
-						null,
+						info.Location,
 						new EquatableArray<string>([parameter.Name.Substring(InitOnlyPresenceFlagPrefix.Length), DisplayInstance(info.ImplementationType),])));
 				}
 
@@ -143,8 +144,10 @@ partial class AwaitenGenerator
 
 			// [ImportServices]: an otherwise-unresolved direct dependency (unkeyed) is satisfied from the
 			// external provider rather than reported as missing. Only direct dependencies fall through; an
-			// unregistered relationship type still surfaces as AWT101 below.
+			// unregistered relationship type still surfaces as AWT101 below. The parameter of a generated factory for an
+			// [Inject] property does not fall through, like the property itself.
 			if (context.External.ImportServices
+			    && parameter.Ordinal < firstProperty
 			    && parameterModel is { Kind: DependencyKind.Direct, Key: null, }
 			    && !context.ServiceToImpl.ContainsKey(KeyOf(parameterModel)))
 			{
@@ -171,10 +174,15 @@ partial class AwaitenGenerator
 		return parameters;
 	}
 
-	/// <summary>Whether <paramref name="parameter" /> is the presence flag (see <see cref="PresenceFlagName" />) of a generated factory.</summary>
+	/// <summary>
+	///     Whether <paramref name="parameter" /> is the presence flag (see <see cref="PresenceFlagName" />) of a generated
+	///     factory: it follows the optional value it flags and is named after it, so an optional property of its own
+	///     whose name merely starts like a flag is not mistaken for one.
+	/// </summary>
 	private static bool IsPresenceFlag(IParameterSymbol parameter, IMethodSymbol producer)
-		=> parameter is { HasExplicitDefaultValue: true, Type.SpecialType: SpecialType.System_Boolean, }
-		   && (parameter.Name.StartsWith(PresenceFlagPrefix, StringComparison.Ordinal) || parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal))
+		=> parameter is { HasExplicitDefaultValue: true, Type.SpecialType: SpecialType.System_Boolean, Ordinal: > 0, }
+		   && producer.Parameters[parameter.Ordinal - 1] is { HasExplicitDefaultValue: true, } value
+		   && (parameter.Name == PresenceFlagName(value.Name, initOnly: false) || parameter.Name == PresenceFlagName(value.Name, initOnly: true))
 		   && IsGeneratedOwnerFactory(producer);
 
 	/// <summary>
@@ -292,19 +300,22 @@ partial class AwaitenGenerator
 	///     attribute for a container-side entry, <see langword="null" /> to fall back to the property declaration for
 	///     an <c>[Inject]</c> one).
 	/// </summary>
-	private readonly record struct InjectionSpec(bool Deferred, bool Optional, string? KeyOverride, LocationInfo? EntryLocation);
+	private readonly record struct InjectionSpec(bool Deferred, bool Optional, string? KeyOverride, LocationInfo? EntryLocation, bool AfterFactory = false);
 
 	/// <summary>
 	///     Discovers the members to fill after construction: the opt-in <c>[Inject]</c> properties of the constructed
 	///     implementation, plus the container-side <c>[InjectProperty&lt;TImpl&gt;]</c> entries matched to it. Each is
 	///     classified like a Direct constructor parameter and produces a graph edge, filled through an object
-	///     initializer after construction. See <see cref="ClassifyInjectedMember" /> for the diagnostics reported.
+	///     initializer after construction. See <see cref="ClassifyInjectedMember" /> for the diagnostics reported. For an
+	///     implementation built through an owner's generated factory read from metadata (<paramref name="afterFactory" />),
+	///     the factory fills the <c>[Inject]</c> properties, so only the entries yield members, set on the instance it returns.
 	/// </summary>
 	private static void DiscoverInjectedMembers(
 		ImplInfo info,
 		InjectionContext context,
 		List<InjectPropertyEntry> injectProperties,
-		List<MemberModel> members)
+		List<MemberModel> members,
+		bool afterFactory = false)
 	{
 		// The property names already filled, so a container-side [InjectProperty<TImpl>] entry for a property that
 		// also carries [Inject] is deduped (injected once, AWT181).
@@ -313,6 +324,11 @@ partial class AwaitenGenerator
 		foreach (IPropertySymbol property in InjectedProperties(info.Symbol))
 		{
 			injected.Add(property.Name);
+			if (afterFactory)
+			{
+				continue;
+			}
+
 			ImmutableArray<AttributeData> attributes = property.GetAttributes();
 			InjectionSpec spec = new(IsInjectDeferred(attributes), IsInjectOptional(attributes), KeyOverride: null, EntryLocation: null);
 			if (ClassifyInjectedMember(property, info, context, spec) is { } member)
@@ -349,7 +365,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			InjectionSpec spec = new(entry.Deferred, entry.Optional, entry.Key, entry.Location);
+			InjectionSpec spec = new(entry.Deferred, entry.Optional, entry.Key, entry.Location, afterFactory);
 			if (ClassifyInjectedMember(property, info, context, spec) is { } member)
 			{
 				members.Add(member);
@@ -421,16 +437,19 @@ partial class AwaitenGenerator
 		ExternalServiceTypes externalServiceTypes = context.ExternalServiceTypes;
 
 		// A container-side entry points its diagnostics at the [InjectProperty] attribute the author edits; an
-		// [Inject] property (EntryLocation null) points at the property declaration.
-		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault());
+		// [Inject] property (EntryLocation null) points at the property declaration, or at the registration for a
+		// property read from another assembly.
+		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault()) ?? info.Location;
 
 		// AWT136: an injected property must have a set/init accessor the container can assign through the object
 		// initializer. The container is not a derived type, so a protected/private-protected setter (and an
 		// internal one in an assembly that grants the container no [InternalsVisibleTo]) is out of reach even
 		// though not private. Apply the same accessibility test the constructor path uses rather than a bare
 		// not-private check, so an unreachable setter surfaces as AWT136 instead of an inaccessible-setter error
-		// in generated code. An implementation built through its owner's generated factory is assigned there.
-		if (property.SetMethod is not { } setter || !IsAccessibleSetter(setter, info.ConstructVia is null ? context.ContainerSymbol : info.Origin!, context.Compilation))
+		// in generated code. An implementation built through its owner's generated factory is assigned there, except a
+		// member the container sets on the instance that factory returns.
+		if (property.SetMethod is not { } setter
+		    || !IsAccessibleSetter(setter, info.ConstructVia is null || spec.AfterFactory ? context.ContainerSymbol : info.Origin!, context.Compilation))
 		{
 			context.Diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.InjectedPropertyNotSettable,
@@ -463,6 +482,16 @@ partial class AwaitenGenerator
 		// AWT144/AWT157/AWT158: the accessor and modifiers must be compatible with how the member is assigned.
 		if (RejectsInjectedPropertyShape(property, setter, info, spec, isCollection, location, context.Diagnostics))
 		{
+			return null;
+		}
+
+		bool afterFactory = spec.AfterFactory && !spec.Deferred;
+		if (afterFactory && setter.IsInitOnly)
+		{
+			context.Diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.InjectPropertyInitOnlyAfterFactory,
+				location,
+				new EquatableArray<string>([property.Name, DisplayInstance(info.ImplementationType), Display(info.Origin?.ToDisplayString(FullyQualified) ?? "its owner"),])));
 			return null;
 		}
 
@@ -501,7 +530,12 @@ partial class AwaitenGenerator
 			context.Diagnostics.Add(UnregisteredDependency(dependency, property.Type, info, location, externalServiceTypes));
 		}
 
-		return new MemberModel(property.Name, dependency, spec.Deferred, PresenceFlag: spec.Optional ? PresenceFlagName(property.Name, setter.IsInitOnly) : null);
+		return new MemberModel(
+			property.Name,
+			dependency,
+			spec.Deferred,
+			PresenceFlag: spec.Optional && !isCollection && !spec.AfterFactory ? PresenceFlagName(property.Name, setter.IsInitOnly) : null,
+			AfterFactoryType: afterFactory ? property.Type.ToDisplayString(FullyQualifiedWithNullability) : null);
 	}
 
 	/// <summary>
