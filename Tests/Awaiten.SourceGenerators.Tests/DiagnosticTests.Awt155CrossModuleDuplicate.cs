@@ -578,6 +578,95 @@ public partial class DiagnosticTests
 				.Because("a default that a strong registration overrides leaves the collection, so the advice would drop a member");
 			await That(awt155).Contains("register the implementation single resolution should use on the container too")
 				.Because("re-registering one implementation on the container decides single resolution and keeps every member");
+			await That(awt155).DoesNotContain("only for a constructed implementation")
+				.Because("both contributions are constructed implementations the container can register again");
+		}
+
+		[Test]
+		public async Task WarnsThatAContainerRegistrationAddsAMemberWhenAModuleProducesTheServiceThroughAFactory()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+			                                       public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                       [Module]
+			                                       [Singleton<IClock>(Factory = nameof(Make))]
+			                                       public static class ModuleA
+			                                       {
+			                                           public static IClock Make() => new ClockA();
+			                                       }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       [Singleton<Board>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).Contains("only for a constructed implementation the container can access")
+				.Because("a Factory registration has no implementation type the container could register again to coalesce with it");
+			await That(awt155).Contains("a Factory or Instance registration of the container joins the collection as a further member")
+				.Because("the container's own Factory registration is an identity of its own, so it adds a member");
+		}
+
+		[Test]
+		public async Task WarnsThatTheRemedyNeedsAnAccessibleImplementationWhenAModuleOfAnotherAssemblyRegistersAnInternalOne()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+
+			                                                                      namespace Lib;
+
+			                                                                      public interface IClock { }
+			                                                                      public sealed class ClockA : IClock { }
+			                                                                      internal sealed class ClockB : IClock { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockA, IClock>]
+			                                                                      public static partial class ModuleA { }
+
+			                                                                      [Module]
+			                                                                      [Singleton<ClockB, IClock>]
+			                                                                      public static partial class ModuleB { }
+			                                                                      """, """
+			                                                                           using System.Collections.Generic;
+			                                                                           using Awaiten;
+			                                                                           using Lib;
+
+			                                                                           namespace MyCode;
+
+			                                                                           public sealed class Consumer(IClock clock) { }
+			                                                                           public sealed class Board(IEnumerable<IClock> clocks) { }
+
+			                                                                           [Container]
+			                                                                           [Import(typeof(ModuleA))]
+			                                                                           [Import(typeof(ModuleB))]
+			                                                                           [Singleton<Consumer>]
+			                                                                           [Singleton<Board>]
+			                                                                           public static partial class MyContainer
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			string awt155 = result.Diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).Contains("only for a constructed implementation the container can access")
+				.Because("the container cannot register the internal implementation of the other assembly again");
 		}
 
 		[Test]

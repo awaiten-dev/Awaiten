@@ -918,7 +918,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		AssignMemberIdentities(raw, containerSymbol, compilation);
 		List<CrossModuleDuplicate> duplicates = new();
 		(List<ImplInfo> implOrder, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<ServiceKey, List<string>> serviceMembers, List<ServiceKey> serviceMemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> varianceCandidates, Dictionary<string, List<KeyedMember>> keyedMembers, List<string> keyedMemberOrder) =
-			CoalesceByImplementation(raw, containerSymbol, duplicates, diagnostics);
+			CoalesceByImplementation(raw, containerSymbol, compilation, duplicates, diagnostics);
 		CoalescedGraph graph = new(serviceToImpl, implOrder, serviceMembers);
 
 		// The closed generic service symbols the coalesced graph holds (recovered from the raw registrations,

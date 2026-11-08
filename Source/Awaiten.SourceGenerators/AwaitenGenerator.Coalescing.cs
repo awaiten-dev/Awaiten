@@ -320,6 +320,7 @@ partial class AwaitenGenerator
 	private static (List<ImplInfo> Order, Dictionary<ServiceKey, string> ServiceToImpl, Dictionary<ServiceKey, List<string>> Members, List<ServiceKey> MemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> VarianceCandidates, Dictionary<string, List<KeyedMember>> KeyedMembers, List<string> KeyedMemberOrder) CoalesceByImplementation(
 		List<RawRegistration> raw,
 		INamedTypeSymbol containerSymbol,
+		Compilation compilation,
 		List<CrossModuleDuplicate> duplicates,
 		List<DiagnosticInfo> diagnostics)
 	{
@@ -459,7 +460,7 @@ partial class AwaitenGenerator
 			{
 				ReportDuplicateKey(registration, winner!.ImplementationType, diagnostics);
 				ReportDuplicateContextualBinding(registration, winner, diagnostics);
-				RecordCrossModuleDuplicate(registration, winner, duplicates);
+				RecordCrossModuleDuplicate(registration, winner, containerSymbol, compilation, duplicates);
 				continue;
 			}
 
@@ -630,8 +631,10 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     An AWT155 candidate: the unkeyed <see cref="Service" /> the imported module <see cref="Loser" /> registers at
 	///     <see cref="Location" />, although the earlier import <see cref="Winner" /> already wins its single resolution.
+	///     <see cref="Reregistrable" /> tells whether both are constructed implementations the container can access, which
+	///     a registration of the same implementation on the container coalesces with instead of adding a member.
 	/// </summary>
-	internal sealed record CrossModuleDuplicate(string Service, LocationInfo? Location, string Winner, string Loser)
+	internal sealed record CrossModuleDuplicate(string Service, LocationInfo? Location, string Winner, string Loser, bool Reregistrable)
 	{
 		/// <summary>
 		///     Whether the graph also consumes <see cref="Service" /> as a collection or keyed dictionary, where an
@@ -644,9 +647,12 @@ partial class AwaitenGenerator
 			Display(Service),
 			Winner,
 			Loser,
-			Collected
-				? "register the implementation single resolution should use on the container too, which keeps every member in the collection"
-				: "override it on the container, or make one registration an overridable default",
+			(Collected, Reregistrable) switch
+			{
+				(false, _) => "override it on the container, or make one registration an overridable default",
+				(true, true) => "register the implementation single resolution should use on the container too, which keeps every member in the collection",
+				(true, false) => "register the implementation single resolution should use on the container too, which keeps every member in the collection only for a constructed implementation the container can access, while a Factory or Instance registration of the container joins the collection as a further member",
+			},
 		]);
 	}
 
@@ -967,6 +973,8 @@ partial class AwaitenGenerator
 	private static void RecordCrossModuleDuplicate(
 		RawRegistration registration,
 		RawRegistration winner,
+		INamedTypeSymbol containerSymbol,
+		Compilation compilation,
 		List<CrossModuleDuplicate> duplicates)
 	{
 		if (registration.Key is not null
@@ -986,7 +994,12 @@ partial class AwaitenGenerator
 			registration.ServiceType,
 			LocationInfo.From(registration.Location),
 			Display(winner.Origin.ToDisplayString(FullyQualified)),
-			Display(registration.Origin.ToDisplayString(FullyQualified))));
+			Display(registration.Origin.ToDisplayString(FullyQualified)),
+			Reregistrable(winner) && Reregistrable(registration)));
+
+		bool Reregistrable(RawRegistration contribution)
+			=> contribution is { Production: ProductionKind.Constructor, Hidden: null, ConstructVia: null, }
+			   && compilation.IsSymbolAccessibleWithin(contribution.Implementation, containerSymbol);
 	}
 
 	/// <summary>
