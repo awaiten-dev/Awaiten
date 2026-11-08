@@ -136,10 +136,20 @@ internal static partial class Sources
 		foreach (HiddenAlias alias in model.Aliases.AsArray())
 		{
 			builder.AppendLine();
-			AppendXmlSummary(builder, depth + 2,
-				"Generated from a module registration: serves a service of an implementation the module builds through a handle,",
-				"from the instance handle of the implementation, so every service shares the one instance.");
 			string[] arguments = alias.Arguments.AsArray();
+			if (arguments.Length == 0)
+			{
+				AppendXmlSummary(builder, depth + 2,
+					"Generated from a module registration: serves a service of an implementation the module builds through a handle,",
+					"from the instance handle of the implementation, so every service shares the one instance.");
+			}
+			else
+			{
+				AppendXmlSummary(builder, depth + 2,
+					"Generated from a module registration: serves a service of an implementation the module builds through a handle",
+					"from runtime arguments, passing them to a factory of the instance handle of the implementation.");
+			}
+
 			Indent(builder, depth + 2).Append("public static ").Append(alias.ReturnType).Append(' ').Append(alias.Name).Append('(')
 				.Append(arguments.Length == 0 ? alias.HandleType : $"global::System.Func<{string.Concat(arguments.Select(argument => argument + ", "))}{alias.HandleType}>")
 				.Append(" @awaiten__handle")
@@ -149,8 +159,8 @@ internal static partial class Sources
 			{
 				builder.AppendLine();
 				AppendXmlSummary(builder, depth + 2,
-					"Generated from a module registration: serves a service of an async-initialized implementation the module builds",
-					"through a handle from its runtime arguments, awaiting an async factory of the instance handle.");
+					"Generated from a module registration: serves a service of an implementation the module builds through a handle",
+					"from runtime arguments, passing them to an async factory of the instance handle, for a handle resolved asynchronously.");
 				Indent(builder, depth + 2).Append("public static async global::System.Threading.Tasks.Task<").Append(alias.ReturnType).Append("> ").Append(alias.Name).Append("Async(")
 					.Append("global::System.Func<").Append(string.Concat(arguments.Select(argument => argument + ", "))).Append("global::System.Threading.Tasks.Task<").Append(alias.HandleType).Append(">> @awaiten__handle")
 					.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
