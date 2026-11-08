@@ -949,4 +949,74 @@ public class ContainerExtendsTests
 				.Because("the base generates a generic factory for its private open generic registration, which the extending container closes");
 		}
 	}
+
+	public class OpenWrapperWithoutABaseClosing
+	{
+		private const string Extending = """
+		                                 using Awaiten;
+		                                 using Lib;
+
+		                                 namespace App;
+
+		                                 public sealed class Counter { public Counter(IHandler<Order> handler) { } }
+
+		                                 [Container(Extends = typeof(Shop))]
+		                                 [Transient<Counter>]
+		                                 public static partial class TestShop { }
+		                                 """;
+
+		private static string Base(string wrapper)
+			=> $$"""
+			     using System.Collections.Generic;
+			     using Awaiten;
+
+			     namespace Lib;
+
+			     public sealed class Order { }
+			     public interface IHandler<T> { }
+			     public sealed class Handler<T> : IHandler<T> { }
+			     public sealed class LoggingHandler<T> : IHandler<T> { public LoggingHandler(IHandler<T> inner) { } }
+			     public sealed class AllHandlers<T> : IHandler<T> { public AllHandlers(IEnumerable<IHandler<T>> handlers) { } }
+
+			     [Container]
+			     [Transient(typeof(Handler<>), typeof(IHandler<>))]
+			     {{wrapper}}
+			     public static partial class Shop { }
+			     """;
+
+		private static string Granted(string source)
+			=> source.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]");
+
+		[Test]
+		public async Task AnOpenComposite_FrontsTheClosingAnExtendingContainerRequestsEverywhere()
+		{
+			string shop = Base("[Composite(typeof(AllHandlers<>), typeof(IHandler<>))]");
+
+			GeneratorResult own = Generator.Run(shop);
+			GeneratorResult same = Generator.Run(shop + "\n" + Extending.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(shop, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(shop), Extending);
+
+			await That(own.Diagnostics).IsEmpty()
+				.Because("an open composite without a closing in its own container fronts nothing yet");
+			await That(same.Diagnostics).IsEmpty();
+			await That(other.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { same, other, friend, })
+			{
+				await That(result.Sources.Single(source => source.Key.Contains("TestShop")).Value)
+					.Contains("new global::Lib.AllHandlers<global::Lib.Order>(new global::Lib.IHandler<global::Lib.Order>[] { ResolveHandler(__s) })")
+					.Because("the extending container closes the inherited open composite for the closing it requests, wherever the base lives");
+			}
+		}
+
+		[Test]
+		public async Task AnOpenDecorator_IsReportedOnTheBase()
+		{
+			GeneratorResult own = Generator.Run(Base("[Decorate(typeof(LoggingHandler<>), typeof(IHandler<>))]"));
+
+			await That(own.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT123"))
+				.Because("an open decorator that matches no closing of its own container is an error there, before any container extends it");
+		}
+	}
 }
