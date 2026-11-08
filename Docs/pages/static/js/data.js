@@ -1404,6 +1404,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
         "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
+      },
+      {
+        "sha": "9d28761a1672fc6553b8558f85dc7fecb5a8b67a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
+        "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
       }
     ],
     "labels": [
@@ -1640,7 +1646,8 @@ window.BENCHMARK_DATA = {
       "34215114",
       "cfdeece9",
       "35be27e5",
-      "b29e2600"
+      "b29e2600",
+      "9d28761a"
     ],
     "datasets": [
       {
@@ -1880,7 +1887,8 @@ window.BENCHMARK_DATA = {
           4.063436950246493,
           5.636468079686165,
           7.766312518945107,
-          7.426880071560542
+          7.426880071560542,
+          7.141798602541288
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1892,6 +1900,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2373,7 +2382,8 @@ window.BENCHMARK_DATA = {
           3.8457346845131655,
           6.859275883684556,
           7.671674111059734,
-          8.228737277785937
+          8.228737277785937,
+          7.288507178425789
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2385,6 +2395,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2866,7 +2877,8 @@ window.BENCHMARK_DATA = {
           54.38110556772777,
           84.31481356620789,
           114.52782589594523,
-          135.50187403361002
+          135.50187403361002,
+          141.97931515375774
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2878,6 +2890,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3355,7 +3368,8 @@ window.BENCHMARK_DATA = {
           4.828817519545555,
           6.6927634358406065,
           8.77390452226003,
-          7.9666032701730725
+          7.9666032701730725,
+          8.796249111111347
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3367,6 +3381,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3840,7 +3855,8 @@ window.BENCHMARK_DATA = {
           6.348493470595433,
           9.025130096290793,
           11.293270897120237,
-          10.298366772277015
+          10.298366772277015,
+          11.067694428775992
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3852,6 +3868,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5499,6 +5516,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
         "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
+      },
+      {
+        "sha": "9d28761a1672fc6553b8558f85dc7fecb5a8b67a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
+        "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
       }
     ],
     "labels": [
@@ -5735,7 +5758,8 @@ window.BENCHMARK_DATA = {
       "34215114",
       "cfdeece9",
       "35be27e5",
-      "b29e2600"
+      "b29e2600",
+      "9d28761a"
     ],
     "datasets": [
       {
@@ -5975,7 +5999,8 @@ window.BENCHMARK_DATA = {
           4.367702933458181,
           6.0340286667148275,
           8.431318338100727,
-          8.164587103327115
+          8.164587103327115,
+          8.431419599056245
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -5987,6 +6012,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6468,7 +6494,8 @@ window.BENCHMARK_DATA = {
           3.8177726030349732,
           6.7789499427263555,
           7.766304229696591,
-          7.993981010715166
+          7.993981010715166,
+          7.302177597696964
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6480,6 +6507,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6961,7 +6989,8 @@ window.BENCHMARK_DATA = {
           53.38170856634776,
           82.9769646014486,
           108.8012745777766,
-          102.35339501698812
+          102.35339501698812,
+          144.5688849767049
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -6973,6 +7002,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7450,7 +7480,8 @@ window.BENCHMARK_DATA = {
           4.765533070266247,
           6.490077846248945,
           8.779598436676538,
-          8.031099703695093
+          8.031099703695093,
+          8.840591277678808
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7462,6 +7493,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7935,7 +7967,8 @@ window.BENCHMARK_DATA = {
           6.35252739914826,
           11.748003922402859,
           14.929735428094864,
-          14.209499931761197
+          14.209499931761197,
+          14.489318547504288
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -7947,6 +7980,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9594,6 +9628,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
         "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
+      },
+      {
+        "sha": "9d28761a1672fc6553b8558f85dc7fecb5a8b67a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
+        "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
       }
     ],
     "labels": [
@@ -9830,7 +9870,8 @@ window.BENCHMARK_DATA = {
       "34215114",
       "cfdeece9",
       "35be27e5",
-      "b29e2600"
+      "b29e2600",
+      "9d28761a"
     ],
     "datasets": [
       {
@@ -10070,7 +10111,8 @@ window.BENCHMARK_DATA = {
           19.988345096508663,
           20.873037294546762,
           10.520108892520268,
-          15.899794787168503
+          15.899794787168503,
+          11.561920223633448
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10232,6 +10274,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10563,7 +10606,8 @@ window.BENCHMARK_DATA = {
           1456.2136914389473,
           1427.1902675628662,
           727.0197109222412,
-          1189.7602062225342
+          1189.7602062225342,
+          827.4684765497843
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10575,6 +10619,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11056,7 +11101,8 @@ window.BENCHMARK_DATA = {
           29981.123055594308,
           29536.96414388021,
           16823.212268066407,
-          20196.733738490515
+          20196.733738490515,
+          18649.861855643136
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11301,7 +11347,8 @@ window.BENCHMARK_DATA = {
           32478,
           32482,
           32478,
-          32474
+          32474,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11545,7 +11592,8 @@ window.BENCHMARK_DATA = {
           666.0134767804827,
           705.1173110961914,
           375.0913798258855,
-          554.6489065806071
+          554.6489065806071,
+          403.88460502624514
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11575,6 +11623,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12030,7 +12079,8 @@ window.BENCHMARK_DATA = {
           11681.520372663226,
           11618.413262939453,
           6125.534965515137,
-          9240.80404663086
+          9240.80404663086,
+          6891.526905314127
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12271,6 +12321,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -13689,6 +13740,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
         "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
+      },
+      {
+        "sha": "9d28761a1672fc6553b8558f85dc7fecb5a8b67a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
+        "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
       }
     ],
     "labels": [
@@ -13925,7 +13982,8 @@ window.BENCHMARK_DATA = {
       "34215114",
       "cfdeece9",
       "35be27e5",
-      "b29e2600"
+      "b29e2600",
+      "9d28761a"
     ],
     "datasets": [
       {
@@ -14165,7 +14223,8 @@ window.BENCHMARK_DATA = {
           164.86049674238478,
           191.2462765534719,
           71.41494071483612,
-          166.30799167950948
+          166.30799167950948,
+          80.21981965700785
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14327,6 +14386,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -14658,7 +14718,8 @@ window.BENCHMARK_DATA = {
           14520.246896362305,
           14634.870766194661,
           6892.263680521647,
-          9915.479292805989
+          9915.479292805989,
+          7912.996672410231
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14670,6 +14731,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15151,7 +15213,8 @@ window.BENCHMARK_DATA = {
           744367.1699916294,
           732596.7495814732,
           412690.0558919271,
-          475972.05517578125
+          475972.05517578125,
+          468640.24724469864
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15396,7 +15459,8 @@ window.BENCHMARK_DATA = {
           741799,
           741801,
           741067,
-          718319
+          718319,
+          741115
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15640,7 +15704,8 @@ window.BENCHMARK_DATA = {
           41363.218876139326,
           43334.419767252606,
           21906.00863647461,
-          31946.107600285457
+          31946.107600285457,
+          24398.42371544471
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15881,7 +15946,8 @@ window.BENCHMARK_DATA = {
           80300,
           80301,
           80307,
-          80344
+          80344,
+          80304
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16125,7 +16191,8 @@ window.BENCHMARK_DATA = {
           351451.90206473216,
           344146.06113978795,
           182363.89270833333,
-          270194.14889090403
+          270194.14889090403,
+          212507.17651367188
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16366,7 +16433,8 @@ window.BENCHMARK_DATA = {
           573091,
           573074,
           573133,
-          571205
+          571205,
+          572994
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17760,6 +17828,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
         "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
+      },
+      {
+        "sha": "9d28761a1672fc6553b8558f85dc7fecb5a8b67a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
+        "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
       }
     ],
     "labels": [
@@ -17992,7 +18066,8 @@ window.BENCHMARK_DATA = {
       "34215114",
       "cfdeece9",
       "35be27e5",
-      "b29e2600"
+      "b29e2600",
+      "9d28761a"
     ],
     "datasets": [
       {
@@ -18228,7 +18303,8 @@ window.BENCHMARK_DATA = {
           269.4152193705241,
           202.82010078430176,
           252.96296163967676,
-          200.6946506023407
+          200.6946506023407,
+          256.2456090450287
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18263,6 +18339,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -18713,7 +18790,8 @@ window.BENCHMARK_DATA = {
           477.16223052342735,
           461.23183177312217,
           622.5833545049031,
-          457.5192208925883
+          457.5192208925883,
+          612.2372065952846
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -18725,6 +18803,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19198,7 +19277,8 @@ window.BENCHMARK_DATA = {
           5084.931804148356,
           4897.020835289588,
           6475.335697428385,
-          4694.64758845738
+          4694.64758845738,
+          6735.1605730692545
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19282,6 +19362,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -19683,7 +19764,8 @@ window.BENCHMARK_DATA = {
           361.15204601287843,
           343.0717325846354,
           390.737326780955,
-          332.8297374089559
+          332.8297374089559,
+          423.8524970372518
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19695,6 +19777,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20168,7 +20251,8 @@ window.BENCHMARK_DATA = {
           576.1485364278158,
           540.3498201370239,
           722.6019562993731,
-          536.9384574890137
+          536.9384574890137,
+          740.799795627594
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20180,6 +20264,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
