@@ -6,7 +6,7 @@ namespace Awaiten.SourceGenerators;
 
 partial class AwaitenGenerator
 {
-	private const string HiddenInjectedPropertyAttributeName = "GeneratedHiddenInjectedPropertyAttribute";
+	private const string HiddenInjectedPropertyAttributeName = "Awaiten.Internals.GeneratedHiddenInjectedPropertyAttribute";
 
 	/// <summary>
 	///     The <c>[GeneratedHiddenInjectedProperty]</c> entry of an <c>[Inject]</c> property other assemblies cannot see,
@@ -66,7 +66,7 @@ partial class AwaitenGenerator
 			if (!_markers.TryGetValue(assembly, out ILookup<string, (string Property, bool Assignable)>? markers))
 			{
 				markers = assembly.GetAttributes()
-					.Where(attribute => attribute.AttributeClass is { Name: HiddenInjectedPropertyAttributeName, ContainingNamespace.Name: AttributeNamespace, }
+					.Where(attribute => attribute.AttributeClass?.ToDisplayString() == HiddenInjectedPropertyAttributeName
 					                    && attribute.ConstructorArguments.Length == 3
 					                    && attribute.ConstructorArguments[0].Value is string
 					                    && attribute.ConstructorArguments[1].Value is string

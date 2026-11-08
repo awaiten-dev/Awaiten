@@ -1,16 +1,15 @@
 using System;
 using System.ComponentModel;
 
-namespace Awaiten;
+namespace Awaiten.Internals;
 
 /// <summary>
-///     Emitted by the source generator into every assembly that declares an <c>[Inject]</c> property other assemblies
-///     cannot see, one per property, and read back by a consuming container. The compiler shows another assembly
-///     neither the private nor, without <c>InternalsVisibleTo</c>, the internal members of a type, and a reference
-///     assembly leaves them out entirely, so a container that constructs the type itself would build it without the
-///     property; this marker lets it report the property instead.
+///     Infrastructure for generated code. Emitted by the source generator into every assembly that declares an
+///     <c>[Inject]</c> property other assemblies cannot see, one per property, and read back by a consuming container.
+///     The compiler shows another assembly neither the private nor, without <c>InternalsVisibleTo</c>, the internal
+///     members of a type, and a reference assembly leaves them out entirely, so a container that constructs the type
+///     itself would build it without the property; this marker lets it report the property instead.
 /// </summary>
-/// <remarks>Generated code, not intended to be written by hand.</remarks>
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class GeneratedHiddenInjectedPropertyAttribute : Attribute

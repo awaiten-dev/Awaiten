@@ -280,7 +280,7 @@ internal static partial class Sources
 		builder.AppendLine();
 		foreach ((string type, string property, bool assignable) in properties)
 		{
-			builder.Append("[assembly: global::Awaiten.GeneratedHiddenInjectedProperty(")
+			builder.Append("[assembly: global::Awaiten.Internals.GeneratedHiddenInjectedProperty(")
 				.Append(SymbolDisplay.FormatLiteral(type, quote: true)).Append(", ")
 				.Append(SymbolDisplay.FormatLiteral(property, quote: true)).Append(", ")
 				.Append(assignable ? "true" : "false").AppendLine(")]");

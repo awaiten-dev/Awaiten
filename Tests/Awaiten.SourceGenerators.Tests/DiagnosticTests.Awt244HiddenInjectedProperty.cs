@@ -290,8 +290,8 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).IsEmpty();
 			await That(result.Sources.Single(source => source.Key.Contains("HiddenInjectedProperties")).Value)
-				.Contains("[assembly: global::Awaiten.GeneratedHiddenInjectedProperty(\"Lib.Greeter\", \"Clock\", true)]")
-				.And.Contains("[assembly: global::Awaiten.GeneratedHiddenInjectedProperty(\"Lib.Greeter\", \"Hidden\", false)]")
+				.Contains("[assembly: global::Awaiten.Internals.GeneratedHiddenInjectedProperty(\"Lib.Greeter\", \"Clock\", true)]")
+				.And.Contains("[assembly: global::Awaiten.Internals.GeneratedHiddenInjectedProperty(\"Lib.Greeter\", \"Hidden\", false)]")
 				.And.DoesNotContain("\"Other\"").And.DoesNotContain("\"Plain\"");
 		}
 
