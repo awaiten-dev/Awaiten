@@ -336,6 +336,132 @@ public partial class ModuleHiddenDecoratorShapeTests
 			await That(Ids(external)).IsEqualTo(["AWT101",]);
 			await That(Ids(friend)).IsEqualTo(["AWT101",]);
 		}
+
+		private static string OfAPublicService(string decorator, string attribute) => $$"""
+			using System;
+			using System.Collections.Generic;
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IGrinder { }
+			internal interface ISecret { }
+			internal sealed class Grinder : IGrinder { }
+			{{decorator}}
+
+			[Module]
+			[Singleton<Grinder, IGrinder>]
+			{{attribute}}
+			public static partial class CoffeeModule { }
+			""";
+
+		[Test]
+		[Arguments("internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, ISecret secret) { } }", "[Decorate<LoggingGrinder, IGrinder>]", "'Lib.LoggingGrinder' requires 'Lib.ISecret'")]
+		[Arguments("internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, Lazy<ISecret> secret) { } }", "[Decorate<LoggingGrinder, IGrinder>]", "'Lib.LoggingGrinder' requires 'Lib.ISecret'")]
+		[Arguments("internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, Func<ISecret> secret) { } }", "[Decorate<LoggingGrinder, IGrinder>]", "'Lib.LoggingGrinder' requires 'Lib.ISecret'")]
+		[Arguments("internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, [FromKey(\"vault\")] ISecret secret) { } }", "[Decorate<LoggingGrinder, IGrinder>]", "'Lib.LoggingGrinder' requires 'Lib.ISecret (key: vault)'")]
+		[Arguments("internal sealed class AllGrinders : IGrinder { public AllGrinders(IEnumerable<IGrinder> all, ISecret secret) { } }", "[Composite<AllGrinders, IGrinder>]", "'Lib.AllGrinders' requires 'Lib.ISecret'")]
+		public async Task OfAPublicService_ReportsAwt101InEveryContainer(string decorator, string attribute, string expected)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(OfAPublicService(decorator, attribute));
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
+				.Because("the module records the internal dependency nothing registers, so the container reports it as a container in the module's assembly does");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+		}
+
+		[Test]
+		[Arguments("Lazy<IClock>", "'Lib.LoggingStore' requires 'Lib.IClock'")]
+		[Arguments("Func<IClock>", "'Lib.LoggingStore' requires 'Lib.IClock'")]
+		[Arguments("[FromKey(\"utc\")] IClock", "'Lib.LoggingStore' requires 'Lib.IClock (key: utc)'")]
+		public async Task OfAnInternalServiceThroughARelationshipOrKey_ReportsAwt101InEveryContainer(string parameter, string expected)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll($$"""
+				using System;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal interface IClock { }
+				internal interface IBeanStore { }
+				internal sealed class BeanStore : IBeanStore { }
+				internal sealed class LoggingStore : IBeanStore { public LoggingStore(IBeanStore inner, {{parameter}} clock) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(IBeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore, IBeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				[Decorate<LoggingStore, IBeanStore>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
+				.Because("the recorded dependency names the service behind the relationship and its key, as a container in the module's assembly does");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+		}
+
+		[Test]
+		[Arguments("IEnumerable<ISecret>")]
+		[Arguments("IReadOnlyList<ISecret>")]
+		[Arguments("ISecret[]")]
+		public async Task AsACollectionOfAPublicService_IsAnEmptyCollectionInEveryContainer(string parameter)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(OfAPublicService(
+				$"internal sealed class LoggingGrinder : IGrinder {{ public LoggingGrinder(IGrinder inner, {parameter} secrets) {{ }} }}", "[Decorate<LoggingGrinder, IGrinder>]"));
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("no container in another assembly can register the internal element type, so the module's factory passes the empty collection a container in its own assembly passes");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(library.Sources.Single(source => source.Key.Contains("ModuleScan")).Value).Contains("global::System.Array.Empty<global::Lib.ISecret>()");
+		}
+
+		[Test]
+		public async Task AsACollectionOfAnInternalService_IsAnEmptyCollectionInEveryContainer()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll("""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal interface IClock { }
+				internal interface IBeanStore { }
+				internal sealed class BeanStore : IBeanStore { }
+				internal sealed class LoggingStore : IBeanStore { public LoggingStore(IBeanStore inner, IEnumerable<IClock> clocks) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(IBeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore, IBeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				[Decorate<LoggingStore, IBeanStore>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task AsACollectionOfAnElementTheAssemblyRegisters_IsNotReplacedByAnEmptyOne()
+		{
+			(GeneratorResult library, _, GeneratorResult external, _) = RunAll(OfAPublicService(
+				"internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, IEnumerable<ISecret> secrets) { } }\ninternal sealed class Secret : ISecret { }",
+				"[Decorate<LoggingGrinder, IGrinder>]\n[Singleton<Secret, ISecret>]"));
+
+			await That(library.Sources.Single(source => source.Key.Contains("ModuleScan")).Value).DoesNotContain("global::System.Array.Empty<global::Lib.ISecret>()")
+				.Because("a registered element must reach the decorator, so the factory cannot stand in an empty collection for it");
+			await That(external.Diagnostics).IsEmpty();
+		}
 	}
 
 	public class SharedImplementation

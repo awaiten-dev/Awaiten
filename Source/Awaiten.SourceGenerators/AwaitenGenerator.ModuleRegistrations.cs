@@ -690,7 +690,12 @@ partial class AwaitenGenerator
 			else if (SelfCompilesRegistration(module, type, service, compilation))
 			{
 				built = ContributionFactory(type, service, name, context);
-				if (built is null && diagnostics is not null && ConstructibleEverywhere(type))
+				if (built is null && skipped is not null && !ConstructibleEverywhere(type)
+				    && ContributionFault(type, service, name, attributeClass.Name == "CompositeAttribute", context) is { } fault)
+				{
+					skipped.Add(fault);
+				}
+				else if (built is null && diagnostics is not null && ConstructibleEverywhere(type))
 				{
 					List<DiagnosticInfo> rejections = new();
 					ContributionFactory(type, service, name, context with { Diagnostics = rejections, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
@@ -778,7 +783,7 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject = RegistrationSubject(type);
 		return FactoryReturnType(type, [service,], context) is { } returnType
 		       && FitsFactorySignature(returnType, context)
-		       && TryMirrorFactoryParameters(type, context, location, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true)
+		       && TryMirrorFactoryParameters(type, context, location, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true, emptyCollectionsOf: IsHiddenInModule(type, context.Module, context.Compilation) ? null : service)
 		       && TryMirrorInjectedProperties(type, context, location, subject, ref parameters, out MirroredMembers members)
 			? new RegistrationFactory(name, returnType.ToDisplayString(FullyQualified), type.ToDisplayString(FullyQualified), parameters, default, members.Required, OptionalMembers: members.Optional, DeferredMembers: members.Deferred, InitOnlyMembers: members.InitOnly, OptionalDeferredMembers: members.OptionalDeferred)
 			: null;

@@ -425,9 +425,9 @@ internal static partial class Sources
 		FactoryParameter[] parameters = factory.Parameters.AsArray();
 		string[] members = factory.Members.AsArray();
 		string[] optional = factory.OptionalMembers.AsArray();
-		string signature = string.Join(", ", parameters.Select((parameter, index) => index < parameters.Length - optional.Length
-			? MirroredParameter(parameter)
-			: $"{MirroredParameter(parameter)} = default!, bool {AwaitenGenerator.PresenceFlagName(parameter.Name, factory.InitOnlyMembers.AsArray().Contains(parameter.Name))} = false"));
+		string signature = string.Join(", ", parameters.Select((parameter, index) => (Parameter: parameter, Index: index)).Where(entry => !entry.Parameter.Fixed).Select(entry => entry.Index < parameters.Length - optional.Length
+			? MirroredParameter(entry.Parameter)
+			: $"{MirroredParameter(entry.Parameter)} = default!, bool {AwaitenGenerator.PresenceFlagName(entry.Parameter.Name, factory.InitOnlyMembers.AsArray().Contains(entry.Parameter.Name))} = false"));
 		string arguments = string.Join(", ", parameters.Take(parameters.Length - members.Length - optional.Length).Select(parameter => parameter.ArgumentExpression));
 		if (members.Length > 0)
 		{
@@ -435,7 +435,7 @@ internal static partial class Sources
 				"Generated for a consuming container: the position of the first parameter of the factory below that stands for an",
 				"[Inject] property, which a consumer resolves like the property, never from the host through [ImportServices].");
 			Indent(builder, depth).Append(accessibility).Append(" const int ").Append(AwaitenGenerator.FirstPropertyName(factory.FactoryName)).Append(" = ")
-				.Append(parameters.Length - members.Length - optional.Length).AppendLine(";");
+				.Append(parameters.Length - members.Length - optional.Length - parameters.Count(parameter => parameter.Fixed)).AppendLine(";");
 			builder.AppendLine();
 		}
 

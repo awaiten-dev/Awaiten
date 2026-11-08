@@ -1050,7 +1050,9 @@ partial class AwaitenGenerator
 	///     a service, and building it in the factory would bypass the lifetime and disposal the graph gives it. The inner
 	///     parameter of a decorator of the internal service <paramref name="decorated" /> takes the service's handle even
 	///     when its type is a base type of the service, so a consumer finds the inner parameter on the factory as a
-	///     container in the module's own assembly finds it on the constructor.
+	///     container in the module's own assembly finds it on the constructor. For a decorator or composite of
+	///     <paramref name="emptyCollectionsOf" />, a collection the factory cannot expose is passed empty (see
+	///     <see cref="EmptyCollection" />).
 	/// </summary>
 	private static bool TryMirrorFactoryParameters(
 		INamedTypeSymbol type,
@@ -1059,7 +1061,8 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject,
 		out EquatableArray<FactoryParameter> parameters,
 		bool mirrorProperties = false,
-		INamedTypeSymbol? decorated = null)
+		INamedTypeSymbol? decorated = null,
+		INamedTypeSymbol? emptyCollectionsOf = null)
 	{
 		parameters = default;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
@@ -1098,6 +1101,12 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			if (emptyCollectionsOf is not null && EmptyCollection(parameter, emptyCollectionsOf, context) is { } empty)
+			{
+				mirrored.Add(empty);
+				continue;
+			}
+
 			if (!TryMirrorParameter(parameter, context, location, subject, $"its constructor parameter '{parameter.Name}'", out FactoryParameter mirror))
 			{
 				return false;
@@ -1108,6 +1117,28 @@ partial class AwaitenGenerator
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
 		return true;
+	}
+
+	/// <summary>
+	///     A collection parameter whose element type no container in another assembly can name, and which no module of
+	///     the assembly may provide (see <see cref="AssemblyModuleIndex.MayProvide" />), as an empty collection the
+	///     factory passes itself, since such a container can register no element either and a container in the module's
+	///     own assembly passes it empty too; otherwise <see langword="null" />. A collection of a type that
+	///     <paramref name="service" /> converts to stays, since it may be the collection a composite composes.
+	/// </summary>
+	private static FactoryParameter? EmptyCollection(IParameterSymbol parameter, INamedTypeSymbol service, ModuleScanContext context)
+	{
+		if (!TryGetCompositeCollectionElement(parameter.Type, out ITypeSymbol? element)
+		    || element is not INamedTypeSymbol named
+		    || context.Compilation.HasImplicitConversion(service, named)
+		    || FitsFactorySignature(parameter.Type, context)
+		    || TypeHiddenInModule(named, context.Module, context.Compilation) is not null
+		    || AssemblyModuleIndex.Of(context.Compilation).MayProvide(named, FromKey(parameter.GetAttributes())))
+		{
+			return null;
+		}
+
+		return new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name, Argument: $"global::System.Array.Empty<{named.ToDisplayString(FullyQualifiedWithNullability)}>()", Fixed: true);
 	}
 
 	/// <summary>

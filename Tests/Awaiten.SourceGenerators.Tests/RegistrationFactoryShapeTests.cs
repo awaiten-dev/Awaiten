@@ -894,7 +894,7 @@ public class RegistrationFactoryShapeTests
 		}
 
 		[Test]
-		public async Task ADecoratorWithAnInternalParameterType_StillReportsAwt230()
+		public async Task ADecoratorWithAnUnregisteredInternalParameterType_ReportsAwt101()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 			                                                                      using Awaiten;
@@ -915,8 +915,8 @@ public class RegistrationFactoryShapeTests
 			                                                                      public static partial class GreetingModule { }
 			                                                                      """, Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT230*GreetingModule*the decorator 'Lib.LoudGreeter'*").AsWildcard()
-				.Because("the module cannot expose the internal parameter type on a factory, so it generates none");
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'Lib.LoudGreeter' requires 'Lib.ILog'"))
+				.Because("the module records the internal parameter type nothing registers, which a container in its own assembly reports as AWT101 too");
 		}
 
 		private const string PrivateDecoratorBase = """
