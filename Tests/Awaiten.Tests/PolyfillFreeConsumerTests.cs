@@ -21,6 +21,17 @@ public sealed class PolyfillFreeConsumerTests
 	}
 
 	[Test]
+	public async Task TryResolve_LetsTheConsumerUseTheInstanceWithoutANullCheck()
+	{
+		using PolyfillFreeContainer.Root root = new();
+
+		string name = PolyfillFreeLookup.ClockName(root);
+
+		await That(name).IsEqualTo(nameof(PolyfillFreeClock))
+			.Because("the generated file declares a file-local NotNullWhenAttribute, so the consumer compiles the dereference after TryResolve with nullable warnings as errors");
+	}
+
+	[Test]
 	public async Task KeyedTryResolve_ReturnsTheRegisteredService()
 	{
 		using PolyfillFreeContainer.Root root = new();

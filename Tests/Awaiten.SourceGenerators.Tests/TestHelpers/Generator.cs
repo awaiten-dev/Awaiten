@@ -108,10 +108,37 @@ public static class Generator
 	/// <summary>
 	///     Like <see cref="Run(LanguageVersion, string, NullableContextOptions)" />, but against the references of a net48
 	///     project without a nullable polyfill, where <c>NotNullWhenAttribute</c> exists only as the internal copy inside
-	///     Awaiten's netstandard2.0 asset, with nullable enabled.
+	///     Awaiten's netstandard2.0 asset, with nullable enabled. <paramref name="laterSource" /> joins the compilation after
+	///     the generator ran, like the output of another generator.
 	/// </summary>
-	public static GeneratorResult RunPolyfillFree(LanguageVersion languageVersion, [StringSyntax("c#-test")] string source)
-		=> Collect(RunGenerator(source, [], [], languageVersion: languageVersion, nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value));
+	public static GeneratorResult RunPolyfillFree(
+		LanguageVersion languageVersion,
+		[StringSyntax("c#-test")] string source,
+		[StringSyntax("c#-test")] string? laterSource = null)
+	{
+		(Compilation output, GeneratorDriverRunResult result) = RunGenerator(
+			source, [], [], languageVersion: languageVersion, nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value);
+		if (laterSource is not null)
+		{
+			output = output.AddSyntaxTrees(CSharpSyntaxTree.ParseText(laterSource, new CSharpParseOptions(languageVersion)));
+		}
+
+		return Collect((output, result));
+	}
+
+	/// <summary>
+	///     Like <see cref="RunPolyfillFree" />, but runs the generator over <paramref name="referencedSource" /> first and
+	///     compiles <paramref name="source" /> against that assembly.
+	/// </summary>
+	public static GeneratorResult RunPolyfillFreeWithGeneratedReferencedAssembly(
+		[StringSyntax("c#-test")] string referencedSource,
+		[StringSyntax("c#-test")] string source)
+	{
+		(Compilation referenced, _) = RunGenerator(
+			referencedSource, [], [], "ReferencedAssembly", nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value);
+		return Collect(RunGenerator(
+			source, [EmitToReference(referenced),], [], nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value));
+	}
 
 	private static GeneratorResult Run(
 		[StringSyntax("c#-test")] string source,

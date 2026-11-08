@@ -470,7 +470,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// IAsyncDisposable support is emitted whenever the compilation can see it (see AsyncDisposableSupport).
 		// When absent the container is sync-dispose only.
 		bool hasAsyncDisposable = AsyncDisposableSupport(compilation) is not null;
-		bool hasNotNullWhen = NotNullWhenSupport(compilation);
+		bool declaresNotNullWhen = DeclaresNotNullWhen(compilation);
+		bool hasNotNullWhen = declaresNotNullWhen || NotNullWhenSupport(compilation);
 
 		string? containerNamespace = containerSymbol.ContainingNamespace is { IsGlobalNamespace: false, } ns
 			? ns.ToDisplayString()
@@ -546,7 +547,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<RegistrationFactory>(graph.Factories.Factories.ToArray()),
 			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
 			RecordedFaults(graph.Factories, compilation),
-			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()));
+			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()),
+			DeclaresNotNullWhen: declaresNotNullWhen);
 	}
 
 	/// <summary>

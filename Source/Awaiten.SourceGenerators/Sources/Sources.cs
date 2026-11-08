@@ -65,6 +65,21 @@ internal static partial class Sources
 			builder.AppendLine("}");
 		}
 
+		if (model.DeclaresNotNullWhen)
+		{
+			builder.AppendLine();
+			builder.AppendLine("namespace System.Diagnostics.CodeAnalysis");
+			builder.AppendLine("{");
+			builder.AppendLine("\t[global::System.AttributeUsage(global::System.AttributeTargets.Parameter, Inherited = false)]");
+			builder.AppendLine("\tfile sealed class NotNullWhenAttribute : global::System.Attribute");
+			builder.AppendLine("\t{");
+			builder.AppendLine("\t\tpublic NotNullWhenAttribute(bool returnValue) => ReturnValue = returnValue;");
+			builder.AppendLine();
+			builder.AppendLine("\t\tpublic bool ReturnValue { get; }");
+			builder.AppendLine("\t}");
+			builder.AppendLine("}");
+		}
+
 		return builder.ToString();
 	}
 
@@ -88,14 +103,14 @@ internal static partial class Sources
 		/// <summary>Whether an instance is tracked as an <c>__AsyncOnlyDisposable</c> (see <see cref="IsAsyncOnlyDisposal" />).</summary>
 		public bool AsyncOnlyDisposals { get; } = HasAsyncOnlyDisposals(Instances);
 
-		/// <summary>Whether the project can apply <c>NotNullWhenAttribute</c> (see <see cref="ContainerModel.HasNotNullWhen" />).</summary>
+		/// <summary>Whether the generated code can apply <c>NotNullWhenAttribute</c> (see <see cref="ContainerModel.HasNotNullWhen" />).</summary>
 		public bool NotNullWhen => Model is not { HasNotNullWhen: false, };
 	}
 
 	/// <summary>
-	///     The <c>out</c> parameter of <c>TryResolve</c>, annotated like the one of <c>IAwaitenResolver</c> when the project
-	///     can apply <c>NotNullWhenAttribute</c>. Without it the generated file disables CS8767, the warning that the
-	///     annotations differ, since the project cannot repeat them.
+	///     The <c>out</c> parameter of <c>TryResolve</c>, annotated like the one of <c>IAwaitenResolver</c> when the generated
+	///     code can apply <c>NotNullWhenAttribute</c>. Without it the generated file disables CS8767, the warning that the
+	///     annotations differ, since it cannot repeat them.
 	/// </summary>
 	private static string TryResolveOut(bool notNullWhen)
 		=> notNullWhen

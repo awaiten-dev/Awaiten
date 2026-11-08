@@ -16,8 +16,9 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="HiddenProperties" /> record the public types it constructs whose
 ///     <c>[Inject]</c> property another assembly cannot see. <see cref="SkipsGeneration" /> marks a container the project's
 ///     language version is too old for, which only reports its <see cref="Diagnostics" />. <see cref="HasNotNullWhen" />
-///     tells whether the project can apply <c>NotNullWhenAttribute</c>, which .NET Framework and netstandard2.0 have only
-///     through a polyfill.
+///     tells whether the generated code can apply <c>NotNullWhenAttribute</c>, which .NET Framework and netstandard2.0 have
+///     only through a polyfill, and <see cref="DeclaresNotNullWhen" /> whether the generated file declares its own
+///     file-local copy for it.
 /// </summary>
 internal sealed record ContainerModel(
 	string? Namespace,
@@ -41,7 +42,8 @@ internal sealed record ContainerModel(
 	EquatableArray<MemberWrapper> Wrappers = default,
 	EquatableArray<RecordedFactoryFault> Faults = default,
 	EquatableArray<SkippedRegistration> HiddenProperties = default,
-	bool SkipsGeneration = false)
+	bool SkipsGeneration = false,
+	bool DeclaresNotNullWhen = false)
 {
 	public bool Imports => ImportServices || ImportedServices.Count > 0 || ImportedDefinitions.Count > 0;
 
