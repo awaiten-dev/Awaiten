@@ -160,6 +160,18 @@ public sealed partial class OpenGenericConstraintSelectionTests
 				.Because("List<string> converts to IEnumerable<object> through covariance, so the first registration builds the closing");
 			await That(consumer.Numbers).Is<VariantConstraintShop.AnyFoo<int>>();
 		}
+
+		[Test]
+		public async Task AClosingNoOpenRegistrationAccepts_ResolvesThroughVariance()
+		{
+			using VariantRegistrationShop.Root container = new();
+
+			VariantRegistrationShop.Consumer consumer = container.Resolve<VariantRegistrationShop.Consumer>();
+
+			await That(consumer.Derived).Is<VariantRegistrationShop.BaseHandler>()
+				.Because("the open registration rejects Derived, and the registered IHandler<Base> converts to IHandler<Derived> through contravariance");
+			await That(consumer.Receipts).Is<VariantRegistrationShop.TextHandler<Receipt>>();
+		}
 	}
 
 	public sealed class Modules
@@ -253,6 +265,31 @@ public sealed partial class OpenGenericConstraintSelectionTests
 			public IFoo<List<string>> Strings => strings;
 
 			public IFoo<int> Numbers => numbers;
+		}
+	}
+
+	[Container]
+	[Transient<VariantRegistrationShop.BaseHandler, VariantRegistrationShop.IHandler<VariantRegistrationShop.Base>>]
+	[Transient(typeof(VariantRegistrationShop.TextHandler<>), typeof(VariantRegistrationShop.IHandler<>))]
+	[Transient<VariantRegistrationShop.Consumer>]
+	public static partial class VariantRegistrationShop
+	{
+		public class Base;
+
+		public sealed class Derived : Base;
+
+		public interface IHandler<in T>;
+
+		public sealed class BaseHandler : IHandler<Base>;
+
+		public sealed class TextHandler<T> : IHandler<T>
+			where T : IText;
+
+		public sealed class Consumer(IHandler<Derived> derived, IHandler<Receipt> receipts)
+		{
+			public IHandler<Derived> Derived => derived;
+
+			public IHandler<Receipt> Receipts => receipts;
 		}
 	}
 

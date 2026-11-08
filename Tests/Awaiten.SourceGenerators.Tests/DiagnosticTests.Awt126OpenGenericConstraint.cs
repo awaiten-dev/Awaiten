@@ -234,6 +234,34 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			public async Task DoesNotReport_WhenAClosedRegistrationServesTheClosingThroughVariance()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public class Base { }
+				                                                    public sealed class Derived : Base { }
+				                                                    public interface IHandler<in T> { }
+				                                                    public sealed class BaseHandler : IHandler<Base> { }
+				                                                    public sealed class TextHandler<T> : IHandler<T> where T : IText { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer(IHandler<Derived> derived) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient<BaseHandler, IHandler<Base>>]
+				                                                    [Transient(typeof(TextHandler<>), typeof(IHandler<>))]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("IHandler<Base> converts to IHandler<Derived> through contravariance, so the closing resolves without the open registration that rejects it");
+				await That(ContainerSource(result)).Contains("new global::MyCode.BaseHandler()").And
+					.DoesNotContain("TextHandler<global::MyCode.Derived>");
+			}
+
+			[Test]
 			public async Task AGenericFactoryRejectingTheClosing_IsSkippedWhenAnotherRegistrationAcceptsIt()
 			{
 				GeneratorResult result = Generator.Run(Formatters + """

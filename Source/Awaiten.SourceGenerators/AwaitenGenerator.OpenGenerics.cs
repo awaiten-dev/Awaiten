@@ -634,7 +634,11 @@ partial class AwaitenGenerator
 		INamedTypeSymbol openForm = closed.ConstructedFrom;
 		string closedService = closed.ToDisplayString(FullyQualified);
 		ITypeSymbol[] typeArguments = closed.TypeArguments.ToArray();
-		bool registeredClosed = context.Raw.Any(registration => registration.ServiceType == closedService);
+		// An unkeyed closed registration that variance converts to the closing serves it like an exact one.
+		bool registeredClosed = context.Raw.Any(registration =>
+			registration.ServiceType == closedService
+			|| (registration is { Key: null, WhenInjectedInto: null, ServiceSymbol: { TypeKind: TypeKind.Interface, } service, }
+			    && VarianceCompatible(service, closed, context.Inputs.Compilation)));
 
 		// Strong templates first (OrderBy is stable, so declaration order holds within each group), so a Fallback
 		// template can tell below whether a stronger registration already claims this closing.
