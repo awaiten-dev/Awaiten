@@ -189,6 +189,36 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task OfACollectionOfAPrivateNestedType_IsPassedWithoutAFlagByAContainerInTheSameAssembly()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IGreeter { }
+			                                       public interface IClock { }
+
+			                                       [Module]
+			                                       [Transient<GreetingModule.Greeter, IGreeter>]
+			                                       public static partial class GreetingModule
+			                                       {
+			                                           private sealed class Greeter : IGreeter
+			                                           {
+			                                               [Inject(Optional = true)] public System.Collections.Generic.IEnumerable<IClock> Clocks { get; set; } = null!;
+			                                           }
+			                                       }
+
+			                                       [Container]
+			                                       [Import(typeof(GreetingModule))]
+			                                       public static partial class LibContainer { }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the factory takes an optional collection as a plain parameter, which has no presence flag to pass");
+		}
+
+		[Test]
 		public async Task OfAPrivateNestedType_IsMarkedPresentByAContainerInTheSameAssembly()
 		{
 			GeneratorResult result = Generator.Run("""

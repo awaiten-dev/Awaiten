@@ -234,8 +234,8 @@ partial class AwaitenGenerator
 		FactoryFault? MemberFault()
 		{
 			List<InjectPropertyEntry> entries = context.InjectProperties.TryGetValue(RegisteredType(request.Info.ImplementationType), out List<InjectPropertyEntry>? found) ? found : [];
-			string? optional = InjectedProperties(implementation).FirstOrDefault(property => IsInjectOptional(property.GetAttributes()))?.Name
-			                   ?? entries.FirstOrDefault(entry => entry.Optional)?.PropertyName;
+			string? optional = InjectedProperties(implementation).FirstOrDefault(property => IsInjectOptional(property.GetAttributes()) && !IsCollectionProperty(property))?.Name
+			                   ?? entries.FirstOrDefault(entry => entry.Optional && !(ResolveNamedInstanceMember(implementation, entry.PropertyName) is IPropertySymbol property && IsCollectionProperty(property)))?.PropertyName;
 			if (optional is not null)
 			{
 				return new FactoryFault($"its property '{optional}' is injected only when its service is registered", remedy);

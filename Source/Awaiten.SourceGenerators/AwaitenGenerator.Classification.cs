@@ -512,7 +512,7 @@ partial class AwaitenGenerator
 			context.Diagnostics.Add(UnregisteredDependency(dependency, property.Type, info, location, externalServiceTypes));
 		}
 
-		return new MemberModel(property.Name, dependency, spec.Deferred, PresenceFlag: spec.Optional ? PresenceFlagName(property.Name, setter.IsInitOnly) : null);
+		return new MemberModel(property.Name, dependency, spec.Deferred, PresenceFlag: spec.Optional && !isCollection ? PresenceFlagName(property.Name, setter.IsInitOnly) : null);
 	}
 
 	/// <summary>

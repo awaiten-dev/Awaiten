@@ -832,6 +832,39 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		public async Task APrivateImplementationWithAnOptionalCollection_IsBuiltThroughTheBaseFactory()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public interface IGrinder { }
+
+			                                       [Container]
+			                                       [Singleton<Grinder, IGrinder>]
+			                                       public static partial class Shop
+			                                       {
+			                                           private sealed class Grinder : IGrinder
+			                                           {
+			                                               [Inject(Optional = true)]
+			                                               public IEnumerable<IClock> Clocks { get; set; } = null!;
+			                                           }
+			                                       }
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       public static partial class TestShop
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a collection is always filled, so the factory takes it like any other injected property");
+		}
+
+		[Test]
 		public async Task PrivateDecoratorsCompositesAndOpenGenericsOfTheBase_AreBuiltThroughItsFactories()
 		{
 			GeneratorResult result = Generator.Run("""

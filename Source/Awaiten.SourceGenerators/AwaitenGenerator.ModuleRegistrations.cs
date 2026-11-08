@@ -967,7 +967,7 @@ partial class AwaitenGenerator
 			// A collection is always filled, empty without a registration, so Optional changes nothing about it, as for a
 			// container in the module's assembly: it is assigned in the initializer, a required or init-only one too.
 			bool isOptional = IsInjectOptional(attributes)
-			                  && (isDeferred || !IsSynthesizedCollection(ClassifyDependency(property.Type, attributes, asyncFactory: false, location: null, new ExternalServiceTypes()).Kind));
+			                  && (isDeferred || !IsCollectionProperty(property));
 			string? reason = null;
 			INamedTypeSymbol? unbuildable = null;
 			if (property.SetMethod is not { } setter || !context.Compilation.IsSymbolAccessibleWithin(setter, context.Module))
@@ -1083,6 +1083,10 @@ partial class AwaitenGenerator
 	///     reports it even when it grants <c>InternalsVisibleTo</c> (see <see cref="SkipReason" />).
 	/// </summary>
 	private const string NoReachableSetter = "has no setter the module can reach";
+
+	/// <summary>Whether <paramref name="property" /> is a collection, which a container always fills, empty without a registration.</summary>
+	private static bool IsCollectionProperty(IPropertySymbol property)
+		=> IsSynthesizedCollection(ClassifyDependency(property.Type, property.GetAttributes(), asyncFactory: false, location: null, new ExternalServiceTypes()).Kind);
 
 	/// <summary>
 	///     A deterministic name for the setter wrapper of the deferred <paramref name="property" /> that the generated
