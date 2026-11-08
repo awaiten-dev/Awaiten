@@ -150,6 +150,7 @@ partial class AwaitenGenerator
 		int fallback = NamedFallback(attribute);
 		context.Open.Add(new OpenRegistration(pair.Service, pair.Mapped, lifetime, key, location, context.Origin)
 		{
+			LiveLocation = liveLocation,
 			Factory = via.Via?.Method is not null ? InInternals(via.Via.Name) : factory,
 			FactoryMethods = via.Via?.Method is { } method ? [method,] : factoryMethods,
 			Via = via.Via,
@@ -696,7 +697,7 @@ partial class AwaitenGenerator
 			closedImplIdentity,
 			candidate.Lifetime,
 			closedImpl,
-			candidate.Location?.ToLocation(),
+			candidate.LiveLocation,
 			candidate.Factory is null ? ProductionKind.Constructor : ProductionKind.Factory,
 			candidate.Factory,
 			Key: candidate.Key,
@@ -1113,6 +1114,12 @@ partial class AwaitenGenerator
 		public string? OnRelease { get; init; }
 
 		public bool SuppressDisposal { get; init; }
+
+		/// <summary>
+		///     The live <see cref="Location" />, which every closing takes, so a diagnostic about one points at the open
+		///     registration and an analyzer can suppress it there.
+		/// </summary>
+		public Location? LiveLocation { get; init; }
 
 		/// <summary>
 		///     The generic factory of the module or base that builds every closing, because the container cannot construct
