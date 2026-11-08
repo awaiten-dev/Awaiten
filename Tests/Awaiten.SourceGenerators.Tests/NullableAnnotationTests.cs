@@ -214,7 +214,7 @@ public class NullableAnnotationTests
 		[Test]
 		public async Task SelfCompiledScanInAnotherAssembly_CompilesWithoutWarnings()
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			const string module = """
 				#nullable enable
 				using Awaiten;
 				using System.Threading.Tasks;
@@ -234,7 +234,10 @@ public class NullableAnnotationTests
 				[Module]
 				[Scan<IPlugin>(As = ScanAs.MatchingInterface)]
 				public static partial class PluginModule { }
-				""", """
+				""";
+
+			GeneratorResult moduleResult = Generator.Run(module);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, """
 				#nullable enable
 				using Awaiten;
 				using Lib;
@@ -251,6 +254,8 @@ public class NullableAnnotationTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("the module's factory keeps the annotations of the constructor, and the container forgives its values");
+			await That(moduleResult.Diagnostics).IsEmpty()
+				.Because("the module's own generated factory compiles without warnings, which the referenced compilation does not report");
 		}
 
 		[Test]
@@ -357,16 +362,17 @@ public class NullableAnnotationTests
 		[Test]
 		public async Task Composite_CompilesWithoutWarnings()
 		{
-			GeneratorResult result = Generator.Run(Source("Scoped", "IStore", asyncInitialized: false,
-				registrations: "[Composite<CompositeStore, IStore>]") + """
+			GeneratorResult result = Generator.Run(Source("Scoped", "IRepo<string>", asyncInitialized: false,
+				registrations: "[Composite<CompositeRepo, IRepo<string>>]") + """
 
-				public sealed class CompositeStore : IStore
+				public sealed class CompositeRepo : IRepo<string>
 				{
-				    public CompositeStore(IReadOnlyList<IStore?> stores) { }
+				    public CompositeRepo(IReadOnlyList<IRepo<string?>> repos) { }
 				}
 				""");
 
-			await That(result.Diagnostics).IsEmpty();
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the members convert to the invariant IRepo<string?> although the registration spells IRepo<string>");
 		}
 
 		[Test]
