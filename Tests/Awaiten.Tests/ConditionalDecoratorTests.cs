@@ -368,6 +368,33 @@ public partial class ConditionalDecoratorTests
 				.Because("a predicate that threw stored no result, so the next use evaluates it again");
 			await That(Switches.Evaluations).IsEqualTo(2);
 		}
+
+		[Test]
+		public async Task PredicateServiceResolvingTheDecoratedServiceWhileBuilt_ThrowsInsteadOfOverflowingTheStack()
+		{
+			Switches.Reset(true);
+			using ReentrantPredicateShop.Root root = new();
+
+			await That(() => root.Resolve<IClient>()).Throws<InvalidOperationException>()
+				.WithMessage("*decorator predicate*ReentrantPredicateShop.MonitoringEnabled*ConditionalDecoratorTests.IClient*").AsWildcard()
+				.Because("the Func the predicate's service calls while it is built runs the guard of the link the predicate is deciding");
+			await That(() => root.Resolve<IClient>()).Throws<InvalidOperationException>()
+				.WithMessage("*decorator predicate*").AsWildcard()
+				.Because("a failed evaluation stores nothing, so the next use evaluates the predicate again");
+		}
+
+		[Test]
+		public async Task PredicateServiceResolvingTheDecoratedServiceAfterItIsBuilt_ReceivesTheDecidedChain()
+		{
+			Switches.Reset(true);
+			using DeferredPredicateShop.Root root = new();
+
+			IClient client = root.Resolve<IClient>();
+
+			await That(client).Is<MonitoringClient>();
+			await That(root.Resolve<DeferredClientSettings>().Client).IsSameAs(client)
+				.Because("a Func called after the predicate decided reads the stored result");
+		}
 	}
 
 	internal static class Log
@@ -432,6 +459,16 @@ public partial class ConditionalDecoratorTests
 			instance = serviceType == typeof(Settings) ? settings : null;
 			return instance is not null;
 		}
+	}
+
+	public sealed class EagerClientSettings
+	{
+		public EagerClientSettings(Func<IClient> client) => _ = client();
+	}
+
+	public sealed class DeferredClientSettings(Func<IClient> client)
+	{
+		public IClient Client => client();
 	}
 
 	public interface IClient;
@@ -723,5 +760,23 @@ public partial class ConditionalDecoratorTests
 	public static partial class EagerSingletonPredicateShop
 	{
 		private static bool MonitoringEnabled(Settings settings) => Switches.Read(settings) || Switches.Monitoring;
+	}
+
+	[Container]
+	[Singleton<EagerClientSettings>]
+	[Singleton<Client, IClient>]
+	[Decorate<MonitoringClient, IClient>(When = nameof(MonitoringEnabled))]
+	public static partial class ReentrantPredicateShop
+	{
+		private static bool MonitoringEnabled(EagerClientSettings settings) => Switches.Monitoring;
+	}
+
+	[Container]
+	[Singleton<DeferredClientSettings>]
+	[Singleton<Client, IClient>]
+	[Decorate<MonitoringClient, IClient>(When = nameof(MonitoringEnabled))]
+	public static partial class DeferredPredicateShop
+	{
+		private static bool MonitoringEnabled(DeferredClientSettings settings) => Switches.Monitoring;
 	}
 }

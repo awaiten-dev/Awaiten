@@ -56,7 +56,10 @@ internal static partial class Sources
 	/// <summary>
 	///     Emits the <c>Root</c> method of each predicate that takes services: it resolves them and evaluates the predicate
 	///     once, under <c>__gate</c> like a singleton, and afterwards returns the stored result without locking. A predicate
-	///     that throws stores nothing, so the next use evaluates it again.
+	///     that throws stores nothing, so the next use evaluates it again. The state 3 marks the evaluation in progress: the
+	///     gate is reentrant, so a service the predicate takes that resolves a guarded link through a <c>Func</c> or
+	///     <c>Lazy</c> while it is built would otherwise evaluate the predicate again until the stack overflows. Only the
+	///     evaluating thread can see 3 under the gate, so that throws; another thread waits for the gate.
 	/// </summary>
 	private static void EmitLazyPredicates(StringBuilder builder, int depth, EmitContext context)
 	{
@@ -76,15 +79,27 @@ internal static partial class Sources
 			Indent(builder, depth).Append("internal static bool ").Append(PredicateMethod(p)).AppendLine("(Root __s)");
 			Indent(builder, depth).AppendLine("{");
 			Indent(builder, depth + 1).Append("int __state = ").Append(field).AppendLine(";");
-			Indent(builder, depth + 1).AppendLine("if (__state == 0)");
+			Indent(builder, depth + 1).AppendLine("if (__state == 0 || __state == 3)");
 			Indent(builder, depth + 1).AppendLine("{");
 			Indent(builder, depth + 2).AppendLine("lock (__s.__gate)");
 			Indent(builder, depth + 2).AppendLine("{");
 			Indent(builder, depth + 3).Append("__state = ").Append(field).AppendLine(";");
+			Indent(builder, depth + 3).AppendLine("if (__state == 3)");
+			Indent(builder, depth + 3).AppendLine("{");
+			Indent(builder, depth + 4).Append("throw new global::System.InvalidOperationException(").Append(ReentrantPredicateMessage(predicate, context.Instances)).AppendLine(");");
+			Indent(builder, depth + 3).AppendLine("}");
+			builder.AppendLine();
 			Indent(builder, depth + 3).AppendLine("if (__state == 0)");
 			Indent(builder, depth + 3).AppendLine("{");
-			Indent(builder, depth + 4).Append("__state = ").Append(predicate.Member).Append('(').Append(arguments).AppendLine(") ? 2 : 1;");
-			Indent(builder, depth + 4).Append(field).AppendLine(" = __state;");
+			Indent(builder, depth + 4).Append(field).AppendLine(" = 3;");
+			Indent(builder, depth + 4).AppendLine("try");
+			Indent(builder, depth + 4).AppendLine("{");
+			Indent(builder, depth + 5).Append("__state = ").Append(predicate.Member).Append('(').Append(arguments).AppendLine(") ? 2 : 1;");
+			Indent(builder, depth + 4).AppendLine("}");
+			Indent(builder, depth + 4).AppendLine("finally");
+			Indent(builder, depth + 4).AppendLine("{");
+			Indent(builder, depth + 5).Append(field).AppendLine(" = __state;");
+			Indent(builder, depth + 4).AppendLine("}");
 			Indent(builder, depth + 3).AppendLine("}");
 			Indent(builder, depth + 2).AppendLine("}");
 			Indent(builder, depth + 1).AppendLine("}");
