@@ -1162,6 +1162,20 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for a type a module or base of another
+	///     assembly builds through a generated factory that returns a service rather than the type, such as a composite's,
+	///     although the user declared no <c>Factory</c>: <c>{2}</c> names the owner and <c>{3}</c> why it builds the type
+	///     (the container cannot construct it, or does not see one of its <c>[Inject]</c> properties).
+	/// </summary>
+	public static readonly DiagnosticDescriptor InjectPropertyOnOwnerFactory = new(
+		"AWT178",
+		InjectPropertyOnNonConstructed.Title,
+		"'{1}' is built by the generated factory of '{2}' because {3}, so its property '{0}' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of '{2}', so the container constructs '{1}' itself",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for an init-only property of a type a module
 	///     or base of another assembly builds through its generated factory although the user declared no <c>Factory</c>:
 	///     the container sets a container-side entry on the instance the factory returns, which only a <c>set</c> accessor

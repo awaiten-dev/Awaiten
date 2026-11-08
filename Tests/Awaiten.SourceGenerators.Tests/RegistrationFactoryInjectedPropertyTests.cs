@@ -732,6 +732,41 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task OfAPublicCompositeBesideAContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		{
+			const string module = """
+			                      using Awaiten;
+
+			                      namespace Lib;
+
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class SystemClock : IClock { }
+			                      public sealed class Greeter : IGreeter { }
+
+			                      public sealed class AllGreeters : IGreeter
+			                      {
+			                          public AllGreeters(System.Collections.Generic.IEnumerable<IGreeter> all) { }
+
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                          public IClock Backup { get; set; } = null!;
+			                      }
+
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Transient<SystemClock, IClock>]
+			                      [Composite<AllGreeters, IGreeter>]
+			                      public static partial class GreetingModule { }
+			                      """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, Consumer.Replace("[Import(typeof(GreetingModule))]", "[Import(typeof(GreetingModule))]\n[InjectProperty<AllGreeters>(nameof(AllGreeters.Backup))]"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'"));
+			await That(other.Diagnostics).DoesNotContain("*error CS*").AsWildcard()
+				.Because("the composite's factory returns the service, not the composite, so the container reports the entry instead of leaving it out");
+		}
+
+		[Test]
 		public async Task BesideAnInitOnlyContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
 		{
 			string module = Library("""

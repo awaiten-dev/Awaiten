@@ -152,11 +152,11 @@ internal static partial class Sources
 			AppendXmlSummary(builder, depth, "Sets the container-side [InjectProperty] members on the instance a generated factory returned.");
 			Indent(builder, depth).Append("private static ").Append(instances[index].ConstructedType).Append(' ').Append(names.AfterFactoryAssigner(index))
 				.Append('(').Append(instances[index].ConstructedType).Append(" __instance")
-				.Append(string.Concat(members.Select(member => $", {member.AfterFactoryType} @{member.MemberName}"))).AppendLine(")");
+				.Append(string.Concat(members.Select((member, position) => $", {member.AfterFactoryType} __value{position}"))).AppendLine(")");
 			Indent(builder, depth).AppendLine("{");
-			foreach (MemberModel member in members)
+			for (int position = 0; position < members.Length; position++)
 			{
-				Indent(builder, depth + 1).Append("__instance.").Append(member.MemberName).Append(" = @").Append(member.MemberName).AppendLine(";");
+				Indent(builder, depth + 1).Append("__instance.").Append(members[position].MemberName).Append(" = __value").Append(position).AppendLine(";");
 			}
 
 			Indent(builder, depth + 1).AppendLine("return __instance;");

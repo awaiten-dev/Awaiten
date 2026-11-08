@@ -247,26 +247,39 @@ partial class AwaitenGenerator
 		List<MemberModel> members = new();
 		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics);
 
-		// A factory read from its owner's metadata takes the [Inject] properties and the base's entries as parameters of
-		// its own, so the container sets only the other entries, on the instance the factory returns.
-		if (info.Constructor is { MethodKind: MethodKind.Ordinary, } || IsOwnerFactoryProduced(info))
+		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
+		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
+		                                                                       && (readFactory
+			                                                                       ? info.Constructor!.Parameters.Any(parameter => parameter.Name == entry.PropertyName)
+			                                                                       : OwnerFactoryTakes(info, entry.PropertyName)))).ToList();
+
+		// A registration factory read from its owner's metadata returns the implementation and takes its [Inject]
+		// properties and the base's entries as parameters of its own, so the container sets only the other entries, on
+		// the instance it returns.
+		if (IsOwnerRegistrationFactory(info))
 		{
-			List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
-			                                                                       && (info.Constructor is { MethodKind: MethodKind.Ordinary, } factory
-				                                                                       ? factory.Parameters.Any(parameter => parameter.Name == entry.PropertyName)
-				                                                                       : OwnerFactoryTakes(info, entry.PropertyName)))).ToList();
 			DiscoverInjectedMembers(info, injection, notTaken, members, afterFactory: true);
 			return members;
 		}
 
-		if (info.Production != ProductionKind.Constructor)
+		// Any other factory returns the instance whole, a decorator or composite factory read from metadata included,
+		// which returns the service rather than the type an entry names.
+		if (info.Production != ProductionKind.Constructor || readFactory)
 		{
-			foreach (InjectPropertyEntry entry in injectProperties)
+			foreach (InjectPropertyEntry entry in notTaken)
 			{
-				context.Diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InjectPropertyOnNonConstructed,
-					entry.Location ?? info.Location,
-					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				context.Diagnostics.Add((IsOwnerFactoryProduced(info) || readFactory) && info.Origin is { } owner
+					? new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnOwnerFactory,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([
+							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(owner.ToDisplayString(FullyQualified)),
+							CanConstruct(info.Symbol, context.Compilation) ? "this container does not see one of its [Inject] properties" : "this container cannot construct it",
+						]))
+					: new DiagnosticInfo(
+						Diagnostics.InjectPropertyOnNonConstructed,
+						entry.Location ?? info.Location,
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
 			}
 
 			return members;
@@ -289,6 +302,24 @@ partial class AwaitenGenerator
 	private static bool IsOwnerFactoryProduced(ImplInfo info)
 		=> info is { Production: ProductionKind.Factory, Origin: not null, ProductionMember: { } member, }
 		   && member.StartsWith(InternalsClass + ".", StringComparison.Ordinal);
+
+	/// <summary>
+	///     Whether <paramref name="info" /> is produced by the registration factory its module or base generated, closed or
+	///     the closing of a generic one, which returns the implementation itself rather than a service.
+	/// </summary>
+	private static bool IsOwnerRegistrationFactory(ImplInfo info)
+	{
+		if (!IsOwnerFactoryProduced(info))
+		{
+			return false;
+		}
+
+		string member = info.ProductionMember!;
+		int generic = member.IndexOf('<');
+		return member == InInternals(RegistrationFactoryName(info.Symbol))
+		       || member == InInternals(InternalRegistrationFactoryName(info.Symbol))
+		       || (generic < 0 ? member : member.Substring(0, generic)) == InInternals(RegistrationFactoryName(info.Symbol.OriginalDefinition));
+	}
 
 	/// <summary>
 	///     The key of the <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entries that apply to

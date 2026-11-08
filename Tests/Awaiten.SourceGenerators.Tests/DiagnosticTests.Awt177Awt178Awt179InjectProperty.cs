@@ -113,7 +113,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = RunWithWidgetModule(registration, target, "set");
 
 			await That(result.Diagnostics).IsEmpty();
-			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("__instance.Other = @Other;")
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("__instance.Other = __value0;")
 				.Because("the container sets a property with a set accessor on the instance the module's factory returns");
 		}
 

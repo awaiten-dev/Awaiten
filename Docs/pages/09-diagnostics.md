@@ -1415,7 +1415,7 @@ public static partial class CoffeeShop
 }
 ```
 
-A type that a module or base of another assembly builds through its [generated factory](./04-registration/07-modules.md#internal-implementations), an open generic one included, is different: the container sets the entry's property on the instance the factory returns, before anything else sees it. Only an init-only property is reported there, since it can be set only while the factory constructs the instance. The message then names the module or base, since the container declares no `Factory` itself.
+A type that a module or base of another assembly builds through its [generated factory](./04-registration/07-modules.md#internal-implementations), an open generic one included, is different: the container sets the entry's property on the instance the factory returns, before anything else sees it. Only an init-only property is reported there, since it can be set only while the factory constructs the instance. A composite such a module builds through its generated factory is reported, because that factory returns the service rather than the composite. The message then names the module or base, and for a composite why it builds the type, since the container declares no `Factory` itself.
 
 **Fix:** Remove the `[InjectProperty]` entry and set the property in the factory, which can take the dependency as a parameter (`MakeBarista(ITimeSystem time) => new() { Time = time }`), or let the container construct the type. For a type a generated factory builds, give the property a `set` accessor.
 
