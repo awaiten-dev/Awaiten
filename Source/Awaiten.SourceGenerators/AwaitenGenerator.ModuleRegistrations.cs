@@ -1816,7 +1816,7 @@ partial class AwaitenGenerator
 	///     member <paramref name="member" /> producing <paramref name="produced" />, derived like <see cref="MemberWrapperName" />.
 	/// </summary>
 	private static string FactorySkippedName(string member, INamedTypeSymbol produced)
-		=> "Skipped_" + MemberWrapperName("Factory", member, produced);
+		=> "FactorySkipped_" + MemberWrapperName("Factory", member, produced).Substring("Factory_".Length);
 
 	/// <summary>
 	///     Why the imported module of another assembly generated no wrapper for its <c>Factory</c> member
