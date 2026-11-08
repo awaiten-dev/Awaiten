@@ -29,7 +29,9 @@ public sealed class Cup(Grinder grinder);
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Register the missing dependency on the container (here `[Singleton<Grinder>]`) or in an imported module, or declare it `[ImportService<Grinder>]` when the host provides it.
+Every registration the container keeps is checked, also one that only a collection reaches, such as an [overridable default](./04-registration/07-modules.md#overridable-defaults) that loses single resolution to another default. A default is left out, and not checked, only when a registration of its service without `Fallback` replaces it.
+
+**Fix:** Register the missing dependency on the container (here `[Singleton<Grinder>]`) or in an imported module, or declare it `[ImportService<Grinder>]` when the host provides it. A default you don't want is replaced by a registration of its service without `Fallback`.
 
 ### AWT102
 
@@ -119,6 +121,8 @@ public sealed class EspressoMachine(Order order);   // singleton needs a scoped 
 [Scoped<Order>]
 public static partial class CoffeeShop;
 ```
+
+As with [AWT101](#awt101), this applies to every registration the container keeps, also an overridable default that only a collection reaches.
 
 **Fix:** Register the consumer with the shorter lifetime too (`[Scoped<EspressoMachine>]`), or let it take `Func<Order>`, which resolves the order on demand instead of capturing it.
 

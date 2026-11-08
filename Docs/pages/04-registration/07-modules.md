@@ -36,6 +36,8 @@ A module can offer a default that the container is free to replace. Mark it `Fal
 
 Defaults never replace each other. When several defaults provide the same service and no registration without `Fallback` does, each of them is a member of the service's collections, and the first one wins single resolution: the container's own registrations come first, then the imported modules in the order of their `[Import]`.
 
+A default that stays a member is built and checked like any other registration, also when it never wins single resolution. A missing or captive dependency of it is a compile-time error ([AWT101](../09-diagnostics.md#awt101), [AWT105](../09-diagnostics.md#awt105)), an eager one is built at startup, and its hooks and disposal apply. Only a default that a registration without `Fallback` replaces is left out entirely.
+
 ```csharp
 [Module]
 [Singleton<RealTimeSystem, ITimeSystem>(Fallback = Fallback.Warn)]

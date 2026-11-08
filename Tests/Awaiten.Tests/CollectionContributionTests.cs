@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Awaiten.Tests.Support;
 
 namespace Awaiten.Tests;
@@ -97,6 +98,17 @@ public partial class CollectionContributionTests
 				.Because("the container's registrations come before the imported ones");
 			await That(shop.Resolve<ISyrup>()).Is<Hazelnut>()
 				.Because("the container's default precedes the module's");
+		}
+
+		[Test]
+		public async Task AnEagerDefaultLosingToAnotherDefaultIsBuiltAtStartup()
+		{
+			EagerCaramel.Built = 0;
+
+			using EagerDefaultsShop.Root shop = new();
+
+			await That(EagerCaramel.Built).IsEqualTo(1)
+				.Because("a default losing single resolution to another default is still a collection member, so an eager one is built with the root");
 		}
 
 		[Test]
@@ -211,6 +223,13 @@ public partial class CollectionContributionTests
 
 	public sealed class Hazelnut : ISyrup;
 
+	public sealed class EagerCaramel : ISyrup
+	{
+		public static int Built;
+
+		public EagerCaramel() => Interlocked.Increment(ref Built);
+	}
+
 	public sealed class SyrupBar(IEnumerable<ISyrup> syrups)
 	{
 		public ISyrup[] Syrups { get; } = syrups.ToArray();
@@ -256,6 +275,10 @@ public partial class CollectionContributionTests
 	public static class CaramelDefaultModule;
 
 	[Module]
+	[Singleton<EagerCaramel, ISyrup>(Fallback = Fallback.Silent, Eager = true)]
+	public static class EagerCaramelDefaultModule;
+
+	[Module]
 	[Singleton<Vanilla, ISyrup>(Key = "house", Fallback = Fallback.Silent)]
 	public static class VanillaHouseModule;
 
@@ -296,6 +319,11 @@ public partial class CollectionContributionTests
 	[Import(typeof(CaramelModule))]
 	[Transient<SyrupBar>]
 	public static partial class MixedShop;
+
+	[Container]
+	[Import(typeof(VanillaDefaultModule))]
+	[Import(typeof(EagerCaramelDefaultModule))]
+	public static partial class EagerDefaultsShop;
 
 	[Container]
 	[Singleton<Vanilla, ISyrup>(Fallback = Fallback.Silent)]

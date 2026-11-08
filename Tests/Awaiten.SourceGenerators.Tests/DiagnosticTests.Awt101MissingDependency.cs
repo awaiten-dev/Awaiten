@@ -102,5 +102,40 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
 				.Because("a Func<T> still requires its target T to be registered");
 		}
+
+		[Test]
+		public async Task ReportsWhenADefaultLosingToAnotherDefaultHasAnUnregisteredDependency()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB(IMissing missing) : IClock { }
+			                                       public sealed class Consumer(IClock clock) { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>(Fallback = Fallback.Silent)]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       [Singleton<Consumer>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*ClockB*IMissing*").AsWildcard()
+				.Because("a default losing single resolution to another default is still a collection member, so it is built and checked like any registration");
+		}
 	}
 }
