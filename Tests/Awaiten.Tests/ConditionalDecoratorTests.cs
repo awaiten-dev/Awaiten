@@ -320,6 +320,18 @@ public partial class ConditionalDecoratorTests
 		}
 
 		[Test]
+		[Arguments(true)]
+		[Arguments(false)]
+		public async Task PredicateTakingAClosingOfAnOpenGeneric_DecidesFromTheClosedService(bool enabled)
+		{
+			Switches.Reset(enabled);
+
+			using OpenGenericPredicateShop.Root root = new();
+
+			await That(root.Resolve<IClient>() is MonitoringClient).IsEqualTo(enabled);
+		}
+
+		[Test]
 		public async Task ConcurrentFirstResolves_EvaluateThePredicateOnce()
 		{
 			Switches.Reset(true);
@@ -469,6 +481,16 @@ public partial class ConditionalDecoratorTests
 	public sealed class DeferredClientSettings(Func<IClient> client)
 	{
 		public IClient Client => client();
+	}
+
+	public interface ISwitch<T>
+	{
+		bool On { get; }
+	}
+
+	public sealed class Switch<T> : ISwitch<T>
+	{
+		public bool On => Switches.Monitoring;
 	}
 
 	public interface IClient;
@@ -760,6 +782,15 @@ public partial class ConditionalDecoratorTests
 	public static partial class EagerSingletonPredicateShop
 	{
 		private static bool MonitoringEnabled(Settings settings) => Switches.Read(settings) || Switches.Monitoring;
+	}
+
+	[Container]
+	[Singleton(typeof(Switch<>), typeof(ISwitch<>))]
+	[Singleton<Client, IClient>]
+	[Decorate<MonitoringClient, IClient>(When = nameof(MonitoringEnabled))]
+	public static partial class OpenGenericPredicateShop
+	{
+		private static bool MonitoringEnabled(ISwitch<MonitoringClient> monitoring) => monitoring.On;
 	}
 
 	[Container]

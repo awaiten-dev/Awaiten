@@ -411,6 +411,7 @@ partial class AwaitenGenerator
 		foreach (DecorateRegistration decorator in context.Inputs.Wrappers.Decorators)
 		{
 			EnqueueDecorator(decorator.Decorator, decorator.ServiceSymbol, 0, context, decorator.Via?.Producer);
+			EnqueuePredicate(decorator.Decorator, decorator.When, 0, context);
 		}
 
 		foreach (CompositeRegistration composite in context.Inputs.Wrappers.Composites)
@@ -443,6 +444,7 @@ partial class AwaitenGenerator
 			{
 				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
 				EnqueueDecorator(closedDecorator, closed, depth, context, decorator.Via?.Close(typeArguments, closedDecorator, closed)?.Producer);
+				EnqueuePredicate(closedDecorator, decorator.When, depth, context);
 			}
 		}
 
@@ -469,6 +471,18 @@ partial class AwaitenGenerator
 		    && InnerParameter(constructor, service, context.Inputs.Compilation) is { } inner)
 		{
 			Enqueue(new ExpansionWork(decorator, constructor, depth, ExpansionScan.Decorator, inner), context);
+		}
+	}
+
+	/// <summary>
+	///     Enqueues the method of a decorator's <c>When</c> predicate, so the services it takes seed expansion like a
+	///     factory's parameters. A property, a field or an unusable predicate (AWT246, AWT247) takes none.
+	/// </summary>
+	private static void EnqueuePredicate(INamedTypeSymbol decorator, DecoratorPredicate? when, int depth, ExpansionContext context)
+	{
+		if (when?.Method is { } method)
+		{
+			Enqueue(new ExpansionWork(decorator, method, depth, ExpansionScan.Factory), context);
 		}
 	}
 

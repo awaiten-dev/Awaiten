@@ -351,5 +351,66 @@ public class ConditionalDecoratorTests
 
 			await That(result.Diagnostics).Contains("*AWT101*MyContainer.Enabled' requires 'MyCode.Settings'*").AsWildcard();
 		}
+
+		[Test]
+		public async Task PredicateTakingAClosingOfAnOpenGeneric_ExpandsTheClosing()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClient { }
+			                                       public interface IRepo<T> { }
+			                                       public sealed class Settings { }
+			                                       public sealed class Repo<T> : IRepo<T> { }
+			                                       public sealed class Client : IClient { }
+			                                       public sealed class MonitoringClient : IClient { public MonitoringClient(IClient inner) { } }
+
+			                                       [Container]
+			                                       [Singleton(typeof(Repo<>), typeof(IRepo<>))]
+			                                       [Singleton<Client, IClient>]
+			                                       [Decorate<MonitoringClient, IClient>(When = nameof(Enabled))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Enabled(IRepo<Settings> settings) => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the services a predicate takes seed the open generic expansion like a factory's parameters");
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::MyCode.Repo<global::MyCode.Settings>");
+		}
+
+		[Test]
+		public async Task PredicateOfAnOpenDecorator_ExpandsTheClosingsItTakes()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IHandler<T> { }
+			                                       public interface IRepo<T> { }
+			                                       public sealed class Settings { }
+			                                       public sealed class Repo<T> : IRepo<T> { }
+			                                       public sealed class Handler<T> : IHandler<T> { }
+			                                       public sealed class TracingHandler<T> : IHandler<T> { public TracingHandler(IHandler<T> inner) { } }
+
+			                                       [Container]
+			                                       [Singleton(typeof(Repo<>), typeof(IRepo<>))]
+			                                       [Singleton<Handler<string>, IHandler<string>>]
+			                                       [Decorate(typeof(TracingHandler<>), typeof(IHandler<>), When = nameof(Enabled))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Enabled(IRepo<Settings> settings) => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a closing of the open decorator seeds the expansion with the services its predicate takes");
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Root.__When0(__s.__root)")
+				.And.Contains("global::MyCode.Repo<global::MyCode.Settings>");
+		}
 	}
 }
