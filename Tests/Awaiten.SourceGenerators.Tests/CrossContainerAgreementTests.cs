@@ -98,6 +98,55 @@ public class CrossContainerAgreementTests
 				.Because("under InternalsVisibleTo the parameter type is accessible to the friends, so the message does not claim it is not");
 			await That(library.Diagnostics).DoesNotContain("*'Lib.ISecret', which is not accessible outside the module's assembly*").AsWildcard();
 		}
+
+		private const string HookParameter = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IGreeter { }
+			internal interface ISecret { }
+			internal interface IPot { }
+			internal sealed class Secret : ISecret { public Secret(System.Func<IPot> pot) { } }
+			internal sealed class Greeter : IGreeter { }
+
+			[Module]
+			[Singleton<Secret, ISecret>]
+			[Singleton<Greeter, IGreeter>(OnActivated = nameof(Activate))]
+			public static partial class CoffeeModule
+			{
+				internal static void Activate(Greeter greeter, ISecret secret) { }
+			}
+			""";
+
+		[Test]
+		public async Task AsAHookParameter_IsReportedOnceForItsCause()
+		{
+			const string consumer = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				public static partial class MyContainer;
+				""";
+			GeneratorResult library = Generator.Run(HookParameter);
+			GeneratorResult same = Generator.Run(HookParameter + """
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				public static partial class SameContainer;
+				""");
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(HookParameter, consumer);
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("'Lib.Secret'"))
+				.Because("the hook fails only because the module cannot build the secret, which it reports once where it arises");
+			await That(same.Diagnostics).DoesNotContain("*AWT203*").AsWildcard();
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("needs the internal service 'Lib.ISecret', which the module cannot build"))
+				.Because("the container names why the module generated no hook wrapper instead of claiming a hook it cannot find (AWT164)");
+		}
 	}
 
 	public class ImplementationOfTwoModules

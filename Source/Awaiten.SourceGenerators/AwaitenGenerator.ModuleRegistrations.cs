@@ -1128,7 +1128,8 @@ partial class AwaitenGenerator
 
 				ModuleHookRequest request = new(
 					implementation, hookName, registration.Location, release, RegistrationHookWrapperName(implementation, release, hookName), subject,
-					friendsCanConstruct && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null);
+					friendsCanConstruct && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null,
+					TypeHiddenInModule(implementation, context.Module, context.Compilation) is null);
 
 				// The hooks of an implementation private to the module serve its internal factory too (see
 				// InternalRegistrationFactory), whose callers register no handles, so they take none.

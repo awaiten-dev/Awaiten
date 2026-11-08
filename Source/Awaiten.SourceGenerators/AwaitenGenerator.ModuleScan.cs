@@ -486,7 +486,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     One hook a module self-compiles: the implementation it runs on, the user hook's name, the location to
 	///     report at, the slot, the name of the wrapper to emit and the subject that names the implementation in a
-	///     diagnostic.
+	///     diagnostic. <see cref="SkipsUnbuildableNeeds" /> lets a hook whose parameter needs an internal service the
+	///     module cannot build resolve to a skipped one, for a caller that records the skip.
 	/// </summary>
 	private readonly record struct ModuleHookRequest(
 		INamedTypeSymbol MatchType,
@@ -495,7 +496,8 @@ partial class AwaitenGenerator
 		bool Release,
 		string WrapperName,
 		SelfCompiledSubject Subject,
-		bool Skippable = false);
+		bool Skippable = false,
+		bool SkipsUnbuildableNeeds = false);
 
 	/// <summary>
 	///     <see cref="ResolveModuleHookCore" /> for the hook of a registration that a container in the module's own
@@ -532,7 +534,7 @@ partial class AwaitenGenerator
 		IReadOnlyList<INamedTypeSymbol>? closedMarkers,
 		ModuleScanContext context)
 	{
-		(INamedTypeSymbol matchType, string hookName, Location? location, bool release, _, _, _) = request;
+		(INamedTypeSymbol matchType, string hookName, Location? location, bool release, _, _, _, _) = request;
 		string typeName = matchType.ToDisplayString(FullyQualified);
 		(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) =
 			CollectModuleHookOverloads(matchType, hookName, closedMarkers, context);
@@ -584,7 +586,9 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> rejections = new();
 		if (!TryMirrorHookParameters(request.Subject, hook, release, location, context with { Diagnostics = rejections, }, out EquatableArray<FactoryParameter> parameters))
 		{
-			if (request.Skippable && HookSkipReason(rejections[0], hook, release) is { } skipReason)
+			// A parameter of an internal service the module cannot build fails for the service's cause, which the module reports.
+			string? needReason = request.SkipsUnbuildableNeeds && context.Hidden is { } services && rejections.Count == 1 && services.UnbuildableNeeds.TryGetValue(rejections[0], out string? need) ? need : null;
+			if ((needReason ?? (request.Skippable ? HookSkipReason(rejections[0], hook, release) : null)) is { } skipReason)
 			{
 				return new ResolvedModuleHook(hookName, new ModuleHook(hookName, hookName, instanceCast, default, returnType, skipReason));
 			}
@@ -689,10 +693,15 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
-			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _);
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out INamedTypeSymbol? unbuildable);
 			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
 			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
+				if (unbuildable is not null && handle is null && error.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible && context.Hidden is { } services)
+				{
+					services.UnbuildableNeeds[error] = UnbuildableNeed($"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook", unbuildable);
+				}
+
 				context.Diagnostics.Add(error);
 				return false;
 			}
