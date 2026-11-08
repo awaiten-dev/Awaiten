@@ -2242,7 +2242,8 @@ internal static class Diagnostics
 	/// <summary>
 	///     The <c>When</c> of a <c>[Decorate]</c> on a module or an extended base container names a predicate the generated
 	///     container cannot call: it is private to a type of the container's assembly, or not public on a type of another
-	///     assembly (whose non-public members the container does not see).
+	///     assembly (whose non-public members the container does not see). The module's own build reports a predicate
+	///     that is not public on a public module and a private one of a module no container of its assembly imports.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InaccessibleDecoratorPredicate = new(
 		"AWT247",

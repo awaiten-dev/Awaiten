@@ -139,7 +139,7 @@
  AWT244  | Awaiten   | Error    | A container constructs a type of another assembly whose [Inject] property is not accessible from the container's assembly, so it would leave the property unset
  AWT245  | Awaiten   | Warning  | A Factory or Instance member is declared nullable or [MaybeNull], so it may produce null for a service the container serves as non-nullable
  AWT246  | Awaiten   | Error    | A decorator's When names no static bool method, property or field of the type that declares the [Decorate]
- AWT247  | Awaiten   | Error    | A decorator's When names a predicate on a module or base container that the container cannot call, because it is private, or not public in another assembly
+ AWT247  | Awaiten   | Error    | A decorator's When names a predicate on a module or base container that the container cannot call, because it is private, or not public in another assembly or on a public module
  AWT248  | Awaiten   | Error    | A decorator predicate takes a parameter the root cannot supply: an [Arg], a by-reference parameter, a relationship, a collection, or a service that is not a synchronously built singleton, Instance or imported service
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.

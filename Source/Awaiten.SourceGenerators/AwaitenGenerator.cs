@@ -151,6 +151,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
 		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
 		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
+		ReportModuleDecoratorPredicates(moduleSymbol, compilation, diagnostics);
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{

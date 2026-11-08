@@ -123,6 +123,34 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).Contains("*AWT246*the module 'MyCode.ClientModule' has no member 'Enabled'*").AsWildcard()
 				.Because("a predicate is looked up on the type that declares the [Decorate], never on the container");
+			await That(result.Diagnostics).HasCount(1)
+				.Because("the module's own build leaves a module a container of its assembly imports to that container");
+		}
+
+		[Test]
+		public async Task ReportsAPredicateOfAModuleNoContainerImportsInTheModulesOwnBuild()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClient { }
+			                                       public sealed class Client : IClient { }
+			                                       public sealed class MonitoringClient : IClient { public MonitoringClient(IClient inner) { } }
+
+			                                       [Module]
+			                                       [Singleton<Client, IClient>]
+			                                       [Decorate<MonitoringClient, IClient>(When = nameof(Enabled))]
+			                                       public static partial class ClientModule
+			                                       {
+			                                       	public static int Enabled() => 1;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT246*'MyCode.ClientModule.Enabled'*returns 'int', not bool*").AsWildcard()
+				.Because("the library that declares the module sees the mistake, not only the containers of its consumers");
+			await That(result.Diagnostics).HasCount(1);
 		}
 
 		[Test]

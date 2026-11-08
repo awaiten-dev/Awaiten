@@ -99,6 +99,56 @@ partial class AwaitenGenerator
 					: $"it is private to {DescribePredicateOwner(owner)}; make it internal or public",
 			])));
 
+	/// <summary>
+	///     Reports, in the module's own build, the <c>When</c> predicates of its <c>[Decorate]</c> attributes that a
+	///     container importing it cannot use, so the library that declares the module sees them: one that is unusable
+	///     (AWT246) or private (AWT247), unless a container of its assembly imports the module and reports it itself, and
+	///     one that is not public on a module other assemblies can import (AWT247), which no container of its assembly reports.
+	/// </summary>
+	private static void ReportModuleDecoratorPredicates(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		bool imported = AssemblyModuleIndex.Of(compilation).ImportedByContainer(module);
+		bool exported = IsExternallyAccessible(module);
+		if (imported && !exported)
+		{
+			return;
+		}
+
+		foreach (AttributeData attribute in module.GetAttributes())
+		{
+			if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
+			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
+			{
+				continue;
+			}
+
+			Location? location = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
+			if (!TryReadDecoratorPredicate(attribute, module, module, compilation, location, imported ? new List<DiagnosticInfo>() : diagnostics, out DecoratorPredicate? predicate)
+			    || predicate is null)
+			{
+				continue;
+			}
+
+			string name = predicate.Member.Substring(predicate.Member.LastIndexOf('.') + 1);
+			Accessibility accessibility = module.GetMembers(name).First(member => PredicateShapeProblem(member, compilation) is null).DeclaredAccessibility;
+			string display = Display(predicate.Member);
+			if (exported && accessibility != Accessibility.Public && !(imported && accessibility == Accessibility.Private))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.InaccessibleDecoratorPredicate,
+					LocationInfo.From(location),
+					new EquatableArray<string>([
+						display,
+						$"{DescribePredicateOwner(module)} is public, so containers in other assemblies import it, but they cannot call a predicate that is not public; make it public",
+					])));
+			}
+			else if (!exported && accessibility == Accessibility.Private)
+			{
+				ReportInaccessiblePredicate(display, module, false, location, diagnostics);
+			}
+		}
+	}
+
 	/// <summary>Names the type that declares a predicate in a diagnostic: the module, or the (extended) container.</summary>
 	private static string DescribePredicateOwner(INamedTypeSymbol owner)
 		=> HasAwaitenAttribute(owner.GetAttributes(), "ContainerAttribute")

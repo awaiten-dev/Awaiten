@@ -1104,7 +1104,7 @@ public static partial class CoffeeShop
 }
 ```
 
-The predicate is looked up only on the type that declares the `[Decorate]`, so a module's decorator never finds a member of the container.
+The predicate is looked up only on the type that declares the `[Decorate]`, so a module's decorator never finds a member of the container. The module's own build reports it too when no container of its assembly imports the module.
 
 **Fix:** Name a static `bool` method, property or field of the type that declares the `[Decorate]`. Compute an asynchronous value before you create the root and let the predicate read it.
 
@@ -1128,9 +1128,9 @@ public static class PaymentModule
 public static partial class CoffeeShop;
 ```
 
-A container in another assembly sees only the public members of a module or base container, so an internal predicate there is reported as well, even when it exists.
+A container in another assembly sees only the public members of a module or base container, so an internal predicate there is reported as well, even when it exists. The module's own build reports a predicate that is not public on a public module, which containers in other assemblies can import, and a private predicate of a module no container of its assembly imports, so the library that declares the module sees the error before its consumers do.
 
-**Fix:** Make the predicate `internal` or `public` when the container is in the same assembly, and `public` when it is in another one.
+**Fix:** Make the predicate `internal` or `public` when the container is in the same assembly, and `public` when it is in another one or the module is public.
 
 ### AWT248
 
