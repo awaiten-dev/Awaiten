@@ -212,7 +212,7 @@ partial class AwaitenGenerator
 			}
 
 			ReportUnsupportedFromKey(parameter.GetAttributes(), model.Location, display, context.Diagnostics);
-			model = RedirectVariance(model, parameter, context.ServiceToImpl, context.Variance);
+			model = RedirectVariance(model, parameter.Type, context.ServiceToImpl, context.Variance);
 			if (context.External.ImportServices && model is { Kind: DependencyKind.Direct, Key: null, } && !context.ServiceToImpl.ContainsKey(KeyOf(model)))
 			{
 				model = model with { Kind = DependencyKind.External, };
