@@ -52,7 +52,7 @@ internal sealed record HiddenHandle(string Name, string ValueType, bool Disposab
 ///     so every service shares one instance. An implementation with <c>[Arg]</c> parameters is built per call, so its
 ///     alias takes the <see cref="Arguments" /> and a factory of the instance handle it passes them to instead, and an
 ///     async counterpart returns <see cref="AsyncBody" /> from an async factory of the handle, which a container takes
-///     when the instance is async-initialized.
+///     when the handle is async-tainted.
 /// </summary>
 internal sealed record HiddenAlias(string Name, string ReturnType, string HandleType, string Body, EquatableArray<string> Arguments = default, string? AsyncBody = null);
 

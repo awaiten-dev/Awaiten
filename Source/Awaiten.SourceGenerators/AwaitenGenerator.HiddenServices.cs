@@ -1502,7 +1502,7 @@ partial class AwaitenGenerator
 	///     assembly serves its own registration of the implementation from the same instance. For an implementation built
 	///     from the runtime <paramref name="arguments" /> of its <c>[Arg]</c> parameters, each alias takes them and a factory
 	///     of the instance handle, since the container reaches such a service only through a factory, and an async
-	///     counterpart awaits an async factory of the handle, which a container takes when the instance is async-initialized.
+	///     counterpart awaits an async factory of the handle, which a container takes when the handle is async-tainted.
 	/// </summary>
 	private static IEnumerable<HiddenAlias> HiddenAliases(HiddenImplementation candidate, HiddenServices hidden, Compilation compilation, string[] arguments)
 	{
