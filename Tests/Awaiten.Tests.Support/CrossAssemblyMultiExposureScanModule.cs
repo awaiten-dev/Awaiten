@@ -73,6 +73,43 @@ internal sealed class MultiScopedRoaster : IMultiScopedPlugin, IMultiScopedRoast
 
 internal sealed class MultiTransientRoaster : IMultiTransientPlugin, IMultiTransientRoaster;
 
+/// <summary>The marker of the match of <see cref="PublicMultiExposureScanModule" />.</summary>
+public interface IPublicMultiPlugin;
+
+/// <summary>The matching interface of the match of <see cref="PublicMultiExposureScanModule" />.</summary>
+public interface IPublicMultiRoaster
+{
+	/// <summary>How often the module's <c>OnActivated</c> hook ran on the instance.</summary>
+	int Activations { get; }
+
+	/// <summary>How often a container disposed the instance.</summary>
+	int Disposals { get; }
+}
+
+/// <summary>A public match of <see cref="PublicMultiExposureScanModule" />, which a consumer may register itself.</summary>
+public sealed class PublicMultiRoaster : IPublicMultiPlugin, IPublicMultiRoaster, IDisposable
+{
+	/// <inheritdoc />
+	public int Activations { get; internal set; }
+
+	/// <inheritdoc />
+	public int Disposals { get; private set; }
+
+	/// <inheritdoc />
+	public void Dispose() => Disposals++;
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose scan exposes its public match under its marker and its matching interface, which the module
+///     shares through a generated instance handle.
+/// </summary>
+[Module]
+[Scan<IPublicMultiPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]
+public static partial class PublicMultiExposureScanModule
+{
+	internal static void Activate(PublicMultiRoaster roaster) => roaster.Activations++;
+}
+
 /// <summary>
 ///     A <c>[Module]</c> whose scans expose each internal match under its marker and its matching interface, which the
 ///     module shares through a generated instance handle per match.

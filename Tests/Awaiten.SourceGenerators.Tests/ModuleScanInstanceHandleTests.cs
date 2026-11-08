@@ -157,6 +157,92 @@ public class ModuleScanInstanceHandleTests
 			.Because("the consumer serves its own registration from the handle through the alias under the implementation, as a container in the library shares one instance");
 	}
 
+	public class AConsumerRegistrationOfAPublicMatch
+	{
+		private const string Scans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]";
+
+		private static string PublicLibrary(string? friend = null)
+			=> Library(friend, Scans).Replace("internal sealed class Roaster", "public sealed class Roaster");
+
+		private static string Container(string registration, string ns) => $$"""
+			using Awaiten;
+			using Lib;
+
+			namespace {{ns}};
+
+			public sealed class SystemClock : IClock { }
+
+			[Container]
+			[Import(typeof(PluginModule))]
+			[Singleton<SystemClock, IClock>]
+			{{registration}}
+			public static partial class MyContainer
+			{
+			    private static void Hook(Roaster roaster) { }
+			}
+			""";
+
+		private static (GeneratorResult SameAssembly, GeneratorResult External, GeneratorResult Friend) RunEverywhere(string registration)
+			=> (Generator.Run(PublicLibrary() + Container(registration, "Lib").Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace Lib;", "")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary(), Container(registration, "MyCode")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary("TestAssembly"), Container(registration, "MyCode")));
+
+		[Test]
+		public async Task WithADifferentLifetime_YieldsTheScanAsInTheModulesAssembly()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult friend) = RunEverywhere("[Transient<Roaster, IRoaster>]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty()
+				.Because("in the module's assembly the scan yields to the explicit registration");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the scan's handle yields to the explicit registration too, instead of reporting conflicting lifetimes");
+		}
+
+		[Test]
+		public async Task WithAnOverridableDefault_YieldsTheScanAsInTheModulesAssembly()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult friend) = RunEverywhere("[Scoped<Roaster, IRoaster>(Fallback = Fallback.Silent)]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("an overridable default still precedes a scan match");
+		}
+
+		[Test]
+		public async Task WithSuppressDisposal_YieldsTheScanAsInTheModulesAssembly()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult friend) = RunEverywhere("[Singleton<Roaster, IRoaster>(SuppressDisposal = true)]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the container does not dispose the handle, which leaves the instance undisposed as the registration asks");
+		}
+
+		[Test]
+		public async Task WithAHook_ReportsAwt241OnlyInAnExternalContainer()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult friend) = RunEverywhere("[Singleton<Roaster, IRoaster>(OnActivated = nameof(Hook))]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT241") && diagnostic.Contains("it sets OnActivated"))
+				.Because("the handle runs only hooks the module generated wrappers for, so it cannot run the container's hook on the instance it builds");
+		}
+
+		[Test]
+		public async Task WithTwoDifferentLifetimes_ReportsAwt107()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, _) = RunEverywhere("[Transient<Roaster, IRoaster>]\n[Scoped<Roaster>]");
+
+			await That(sameAssembly.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT107"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT107") && diagnostic.Contains("'Lib.Roaster'"))
+				.Because("the two explicit registrations still contradict each other, while the scan yields to the first");
+		}
+	}
+
 	[Test]
 	public async Task AnInternalConvention_RunsThroughItsWrapper()
 	{

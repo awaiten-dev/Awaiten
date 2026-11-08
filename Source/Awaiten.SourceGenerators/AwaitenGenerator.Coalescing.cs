@@ -49,6 +49,7 @@ partial class AwaitenGenerator
 	private static void ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		DropDuplicateScanHandles(raw, compilation, diagnostics);
+		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, compilation);
 		List<(RawRegistration Handle, int Index, string Identity)> indexed = raw
 			.Select((registration, index) => (registration, index))
 			.Where(entry => entry.registration.Hidden is not null && entry.registration.ImplementationType.Contains(HiddenKeyMarker))
@@ -56,7 +57,7 @@ partial class AwaitenGenerator
 			.ToList();
 		if (indexed.Count > 0)
 		{
-			ShareHandleWithRegistrations(raw, indexed, container, compilation, diagnostics);
+			ShareHandleWithRegistrations(raw, indexed, yieldedTo, container, compilation, diagnostics);
 		}
 
 		List<RawRegistration> handles = indexed.Select(entry => entry.Handle).ToList();
@@ -138,9 +139,7 @@ partial class AwaitenGenerator
 		List<(INamedTypeSymbol Module, INamedTypeSymbol Implementation)> dropped = new();
 		foreach (RawRegistration handle in raw)
 		{
-			if (handle is not { Hidden: { } implementation, Origin: { } module, }
-			    || !handle.ImplementationType.Contains(HiddenKeyMarker)
-			    || handle.ProductionMember != InInternals(ModuleFactoryName(implementation)))
+			if (!IsScanHandle(handle) || handle is not { Hidden: { } implementation, Origin: { } module, })
 			{
 				continue;
 			}
@@ -166,6 +165,71 @@ partial class AwaitenGenerator
 		                                                       && (SymbolEqualityComparer.Default.Equals(registration.Hidden, entry.Implementation)
 		                                                           || (registration.Aliased is not null
 		                                                               && registration.ImplementationType.EndsWith(AliasKeyMarker + TypeIdentity(entry.Implementation, compilation), StringComparison.Ordinal)))));
+	}
+
+	/// <summary>
+	///     Whether <paramref name="registration" /> is the instance handle a module scan of another assembly builds a match
+	///     exposed under several interfaces into (see <see cref="ScanInstanceHandle" />).
+	/// </summary>
+	private static bool IsScanHandle(RawRegistration registration)
+		=> registration is { Hidden: { } implementation, }
+		   && registration.ImplementationType.Contains(HiddenKeyMarker)
+		   && registration.ProductionMember == InInternals(ModuleFactoryName(implementation));
+
+	/// <summary>
+	///     Lets the first registration in precedence order that constructs or produces the implementation of a scan instance
+	///     handle (see <see cref="IsScanHandle" />) win over the scan, as an explicit registration wins over a scan match in
+	///     the module's own assembly: the handle and the scan's aliases take its lifetime and <c>SuppressDisposal</c>, and
+	///     the scan's hooks are dropped. An overridable default that coalescing drops wins nothing. Returns the winning
+	///     registration per implementation identity.
+	/// </summary>
+	private static Dictionary<string, RawRegistration> YieldScanHandles(List<RawRegistration> raw, Compilation compilation)
+	{
+		Dictionary<string, RawRegistration> winners = new(StringComparer.Ordinal);
+		HashSet<string> handled = new(raw.Where(IsScanHandle).Select(handle => TypeIdentity(handle.Hidden!, compilation)), StringComparer.Ordinal);
+		if (handled.Count == 0)
+		{
+			return winners;
+		}
+
+		HashSet<int> dropped = DroppedOverridableDefaults(raw);
+		foreach ((RawRegistration registration, int index) in InPrecedenceOrder(raw))
+		{
+			if (registration is { Hidden: null, ScanImplementation: null, IsScan: false, }
+			    && !dropped.Contains(index)
+			    && handled.Contains(registration.ImplementationType)
+			    && !winners.ContainsKey(registration.ImplementationType))
+			{
+				winners.Add(registration.ImplementationType, registration);
+			}
+		}
+
+		for (int index = 0; index < raw.Count; index++)
+		{
+			RawRegistration current = raw[index];
+			if (current is not { Hidden: { } implementation, Origin: { } module, } || !IsScanHandle(current)
+			    || !winners.TryGetValue(TypeIdentity(implementation, compilation), out RawRegistration? winner))
+			{
+				continue;
+			}
+
+			string marker = AliasKeyMarker + TypeIdentity(implementation, compilation);
+			raw[index] = Yielded(current);
+			for (int alias = 0; alias < raw.Count; alias++)
+			{
+				if (raw[alias] is { Aliased: { } aliased, } scanAlias
+				    && SymbolEqualityComparer.Default.Equals(scanAlias.Origin, module)
+				    && scanAlias.ImplementationType.EndsWith(marker, StringComparison.Ordinal))
+				{
+					raw[alias] = scanAlias with { Lifetime = winner.Lifetime, Aliased = Yielded(aliased), };
+				}
+			}
+
+			RawRegistration Yielded(RawRegistration registration)
+				=> registration with { Lifetime = winner.Lifetime, SuppressDisposal = winner.SuppressDisposal, OnActivated = null, OnRelease = null, };
+		}
+
+		return winners;
 	}
 
 	/// <summary>

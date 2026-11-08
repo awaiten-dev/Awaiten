@@ -2608,6 +2608,8 @@ A registration names an implementation that an imported module of another assemb
 
 A module builds an implementation through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) when it registers it under an internal service. When the container or another module registers the same public implementation too, the container serves that registration from the handle's instance, so there is one instance, as in the library's own assembly. The handle builds the instance, though, so it can't run an `OnActivated` or `OnRelease` hook or apply `SuppressDisposal` that the earlier registration sets.
 
+A module also builds a public implementation through a handle when its scans expose it under [several interfaces](./04-registration/07-modules.md#several-interfaces). A registration of that implementation wins over the scan, as in the library's own assembly: the shared instance takes the registration's lifetime and `SuppressDisposal`, and the scan's hooks no longer run. The handle still can't run a hook the registration sets.
+
 ```csharp no-compile
 // In a referenced library, which does not grant the application InternalsVisibleTo:
 internal interface IBeanStore;
@@ -2627,7 +2629,7 @@ public static partial class CoffeeShop
 }
 ```
 
-**Fix:** Set the directive on the module's registration, or remove it from this one. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
+**Fix:** Set the directive on the module's registration, or remove it from this one, or remove a hook from a registration that wins over a scan. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
 
 ## Extending containers
 
