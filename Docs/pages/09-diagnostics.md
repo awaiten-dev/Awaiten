@@ -2041,11 +2041,14 @@ A module `Factory`/`Instance` member is not accessible from the generated contai
 :::
 
 ```csharp expect=AWT153
+internal sealed class Burr;
+
 [Module]
 [Singleton<Grinder>(Factory = nameof(MakeGrinder))]
-public static class EquipmentModule
+public static partial class EquipmentModule
 {
-    private static Grinder MakeGrinder() => new();   // private, so the container cannot call it
+    // private, and the internal parameter keeps the module from wrapping it for a public service
+    private static Grinder MakeGrinder(Burr burr) => new();
 }
 
 [Container]
@@ -2053,7 +2056,7 @@ public static class EquipmentModule
 public static partial class CoffeeShop;
 ```
 
-A private member that produces a service the module registers under an internal type is not reported: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. A private member of an `internal`, `partial` module is not reported either, whatever the service, since only containers that can call its internal wrapper import such a module.
+A private member of a public service whose parameter types are public is not reported: a `partial` module generates a public wrapper for it, which every container calls instead. A module that is not `partial` cannot receive the wrapper and reports the member in its own build ([AWT194](#awt194)). A private member that produces a service the module registers under an internal type is not reported either: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. A private member of an `internal`, `partial` module is not reported either, whatever the service, since only containers that can call its internal wrapper import such a module.
 
 **Fix:** Make the member `public`, or `internal` when the container is in the same assembly (or one the module's assembly grants `InternalsVisibleTo`).
 
@@ -2125,7 +2128,16 @@ internal sealed class Roaster : IRoaster;
 public static class RoastingModule;
 ```
 
-A [self-compiled module scan](./04-registration/07-modules.md#self-compiled-scans) emits a factory method and a registration attribute into the module's partial, and a registration of an [internal implementation](./04-registration/07-modules.md#internal-implementations) a factory method, re-opening the whole nesting chain of a nested module. An `Eager` or async-initialized singleton the module registers under an internal type needs a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) as well, since a container builds it even when nothing depends on it. Add the `partial` modifier to the module class and every type containing it. A module whose registrations another assembly can construct, or that another assembly cannot name, needs no generated code and need not be partial. A module without a `[Scan]` is reported only when its assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module builds, and a container that can't construct the implementation reports [AWT231](#awt231). A registration of a type private to the module keeps the error, and so does a public type with an `internal` `[Inject]` property, which a container without `InternalsVisibleTo` would construct without the property. A module with a `[Scan]` keeps it too, even when its assembly grants `InternalsVisibleTo`. A container reads the matches from what the generator adds to the module, so the scan needs the `partial` modifier. The message says so when the assembly grants `InternalsVisibleTo`. Reported in the module's own build.
+A [self-compiled module scan](./04-registration/07-modules.md#self-compiled-scans) emits a factory method and a registration attribute into the module's partial, and a registration of an [internal implementation](./04-registration/07-modules.md#internal-implementations) a factory method, re-opening the whole nesting chain of a nested module. An `Eager` or async-initialized singleton the module registers under an internal type needs a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) as well, since a container builds it even when nothing depends on it. Add the `partial` modifier to the module class and every type containing it. A module whose registrations another assembly can construct, or that another assembly cannot name, needs no generated code and need not be partial. A module without a `[Scan]` is reported only when its assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module builds, and a container that can't construct the implementation reports [AWT231](#awt231). A registration of a type private to the module keeps the error, and so does a public type with an `internal` `[Inject]` property, which a container without `InternalsVisibleTo` would construct without the property. A module with a `[Scan]` keeps it too, even when its assembly grants `InternalsVisibleTo`. A container reads the matches from what the generator adds to the module, so the scan needs the `partial` modifier. The message says so when the assembly grants `InternalsVisibleTo`. A `private` `Factory` or `Instance` member is reported too, whatever the module's accessibility and the grants, since every container calls it through a wrapper the generator adds to the module. Reported in the module's own build.
+
+```csharp expect=AWT194
+[Module]
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]
+public static class EquipmentModule   // must be partial to receive the wrapper of the private factory
+{
+    private static Grinder MakeGrinder() => new();
+}
+```
 
 **Fix:** Add `partial` to the module and every type that contains it: `public static partial class PluginModule;`.
 

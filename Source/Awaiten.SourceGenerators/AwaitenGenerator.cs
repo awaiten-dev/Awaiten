@@ -165,6 +165,17 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Member wrappers and the factories of decorators are generated only into a module that can receive them, so a
 		// module that cannot keeps building without them, as it did before they existed.
 		bool receives = ReceivesGeneratedMembers(moduleSymbol);
+		if (!receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && PrivateProductionMember(moduleSymbol, compilation) is ({ } privateService, { } privateMember))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.NonPartialModuleScan,
+				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),
+				new EquatableArray<string>([
+					Display(moduleSymbol.ToDisplayString(FullyQualified)),
+					$"produces '{Display(privateService.ToDisplayString(FullyQualified))}' through its private member '{privateMember}', which a container calls only through a generated wrapper,",
+				])));
+		}
+
 		List<SkippedRegistration> skipped = new();
 		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
 		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
@@ -236,6 +247,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 		else if (!isPartial)
 		{
+			diagnostics.RemoveAll(diagnostic => diagnostic.Descriptor == Diagnostics.NonPartialModuleScan);
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.NonPartialModuleScan,
 				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),

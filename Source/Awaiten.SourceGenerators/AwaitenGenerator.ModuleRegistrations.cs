@@ -184,6 +184,26 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     The service and the name of the first <c>Factory</c> or <c>Instance</c> member of a closed registration of
+	///     <paramref name="module" /> that is private, which no container reaches except through a generated wrapper, or
+	///     <see langword="null" />.
+	/// </summary>
+	private static (INamedTypeSymbol Service, string Member)? PrivateProductionMember(INamedTypeSymbol module, Compilation compilation)
+	{
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			if (registration.Member is { } member
+			    && ProductionMemberCandidates(module, registration.Production, member, registration.Implementation, compilation).ToList() is { Count: > 0, } candidates
+			    && candidates.TrueForAll(candidate => candidate.DeclaredAccessibility == Accessibility.Private))
+			{
+				return (registration.Service, member);
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	///     Whether the module pipeline emits into <paramref name="module" />: a non-generic, static, <c>partial</c>
 	///     module whose enclosing types are <c>partial</c> too and that declares no member named like the generated
 	///     <see cref="InternalsClass" /> (see <c>BuildModuleModel</c>, which reports otherwise).
@@ -252,8 +272,9 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The public wrappers a module another assembly can name emits for the <c>Factory</c> and <c>Instance</c> members
-	///     its closed registrations name when a member is not public but its assembly can reach it, so a container in
-	///     another assembly calls the wrapper instead of the member it cannot see. A member gets one only when its
+	///     its closed registrations name when a member is not public but its assembly can reach it, or is private under a
+	///     public service, so a container in another assembly, and for a private member every container, calls the
+	///     wrapper instead of the member it cannot see. A member gets one only when its
 	///     parameter types are public, it is not generic, and no parameter carries an attribute the wrapper cannot
 	///     carry; otherwise a consumer reports the member as before (AWT108, AWT109). One that returns a type that is not
 	///     public is wrapped as the public type it is registered as, awaited for an awaitable result. A hook of a <c>Factory</c>
@@ -291,9 +312,15 @@ partial class AwaitenGenerator
 
 			if (!ProductionMemberCandidates(module, production.Production, member, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
 			{
+				// A private member of a public service is wrapped too, since no container could call it otherwise; one of an
+				// internal service is left to the handle and the internal wrapper.
+				ITypeSymbol registered = attributeClass.IsGenericType
+					? attributeClass.TypeArguments[attributeClass.TypeArguments.Length - 1]
+					: TryReadTypeofPair(attribute, out _, out INamedTypeSymbol typeofService) ? typeofService : produced;
+				ISymbol wrappable = IsExternallyAccessible(registered) ? module : module.ContainingAssembly;
 				Add(production.Production == ProductionKind.Factory
-					? FactoryWrapper(member, produced)
-					: InstanceWrapper(member, produced));
+					? FactoryWrapper(member, produced, wrappable)
+					: InstanceWrapper(member, produced, wrappable));
 			}
 
 			foreach (bool release in new[] { false, true, })
@@ -423,11 +450,18 @@ partial class AwaitenGenerator
 				new EquatableArray<FactoryParameter>([new FactoryParameter(produced.ToDisplayString(FullyQualifiedWithNullability), instance), ..parameters,]));
 		}
 
-		MemberWrapper? FactoryWrapper(string member, INamedTypeSymbol produced)
+		MemberWrapper? FactoryWrapper(string member, INamedTypeSymbol produced, ISymbol wrappable)
 		{
 			List<IMethodSymbol> candidates = FindFactoryCandidates(module, member, produced, compilation)
-				.Where(candidate => compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly))
+				.Where(candidate => compilation.IsSymbolAccessibleWithin(candidate, wrappable))
 				.ToList();
+
+			// A container in the module's assembly calls a member it reaches itself, so a private overload does not compete with it.
+			if (candidates.Exists(candidate => compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)))
+			{
+				candidates.RemoveAll(candidate => !compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly));
+			}
+
 			if (candidates.Count != 1
 			    || candidates[0] is not { IsStatic: true, IsGenericMethod: false, } method
 			    || !method.Parameters.All(parameter => IsExternallyAccessible(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null))
@@ -473,7 +507,7 @@ partial class AwaitenGenerator
 			return exposed?.WithNullableAnnotation(MayProduceNull(result, producer) ? NullableAnnotation.Annotated : result.NullableAnnotation).ToDisplayString(FullyQualifiedWithNullability);
 		}
 
-		MemberWrapper? InstanceWrapper(string member, INamedTypeSymbol produced)
+		MemberWrapper? InstanceWrapper(string member, INamedTypeSymbol produced, ISymbol wrappable)
 		{
 			foreach (ISymbol candidate in AccessibleMembers(module, member, compilation))
 			{
@@ -484,7 +518,7 @@ partial class AwaitenGenerator
 					_ => null,
 				};
 				if (type is not null
-				    && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)
+				    && compilation.IsSymbolAccessibleWithin(candidate, wrappable)
 				    && compilation.HasImplicitConversion(type, produced)
 				    && (IsExternallyAccessible(type) ? WrapperReturnType(type, candidate) : Exposed(member, produced, type, candidate)) is { } exposed)
 				{

@@ -71,8 +71,9 @@ public class ContainerExtendsTests
 
 			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT108"))).IsEqualTo(1)
 				.Because("the base's missing factory reads the same in the extending container and is reported once");
-			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT153"))).IsEqualTo(1)
-				.Because("a private module member is inaccessible to the base as well, so it is the base's problem and no AWT226");
+			await That(result.Diagnostics.Count(diagnostic => diagnostic.Contains("AWT194"))).IsEqualTo(1)
+				.Because("a private member of a module that is not partial is the module's problem, reported once by its own build, and no AWT226");
+			await That(result.Diagnostics).DoesNotContain("*AWT153*").AsWildcard();
 			await That(result.Diagnostics).DoesNotContain("*AWT226*").AsWildcard();
 		}
 

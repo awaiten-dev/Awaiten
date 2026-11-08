@@ -1482,7 +1482,8 @@ partial class AwaitenGenerator
 				if (!(SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
 				      && IsModuleOrigin(info)
 				      && candidates.Count == 1
-				      && HiddenParameter(candidates[0], owner, compilation) is not null))
+				      && HiddenParameter(candidates[0], owner, compilation) is not null)
+				    && !ReportedByNonPartialModule(info, compilation))
 				{
 					ReportInaccessibleModuleMember(info, diagnostics);
 				}
@@ -1543,14 +1544,18 @@ partial class AwaitenGenerator
 
 		if (inaccessibleMatch)
 		{
-			ReportInaccessibleModuleMember(info, diagnostics);
+			if (!ReportedByNonPartialModule(info, compilation))
+			{
+				ReportInaccessibleModuleMember(info, diagnostics);
+			}
+
 			return null;
 		}
 
 		diagnostics.Add(new DiagnosticInfo(
 			Diagnostics.InvalidInstance,
 			info.Location,
-			new EquatableArray<string>([Display(info.OwningServiceOrImpl), info.ProductionMember!, DescribeOwner(info),])));
+			new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info),])));
 		return null;
 	}
 
@@ -1597,9 +1602,9 @@ partial class AwaitenGenerator
 			: $"{info.Origin.ToDisplayString(FullyQualified)}.{SameCompilationMemberWrapper(info, compilation, modules) ?? info.ProductionMember}";
 
 	/// <summary>
-	///     The internal wrapper that the module of <paramref name="info" />, in the container's own assembly, generates in
-	///     the same run for the private <c>Factory</c> or <c>Instance</c> member of a registration under an internal service
-	///     (see <see cref="CollectModuleMemberWrappers" />), relative to the module, or <see langword="null" /> when the
+	///     The wrapper that the module of <paramref name="info" />, in the container's own assembly, generates in the same
+	///     run for a private <c>Factory</c> or <c>Instance</c> member (see <see cref="CollectModuleMemberWrappers" />),
+	///     relative to the module, or <see langword="null" /> when the
 	///     container reaches the member itself or the module generates no such wrapper.
 	/// </summary>
 	private static string? SameCompilationMemberWrapper(ImplInfo info, Compilation compilation, SameCompilationModules modules)
@@ -1615,10 +1620,23 @@ partial class AwaitenGenerator
 
 		string name = MemberWrapperName(info.Production == ProductionKind.Factory ? "Factory" : "Instance", member, info.Symbol);
 		return modules.MemberWrappers(module)
-			.Any(wrapper => wrapper.IsInternal && wrapper.Name == name)
+			.Any(wrapper => wrapper.Name == name)
 			? InInternals(name)
 			: null;
 	}
+
+	/// <summary>
+	///     Whether the member of <paramref name="info" /> is private to a module of the container's own assembly that cannot
+	///     receive the wrapper a container would call instead, which the module's own build reports (AWT194).
+	/// </summary>
+	private static bool ReportedByNonPartialModule(ImplInfo info, Compilation compilation)
+		=> info is { Origin: { } module, ProductionMember: { } member, Production: ProductionKind.Factory or ProductionKind.Instance, }
+		   && SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		   && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute")
+		   && module.IsStatic
+		   && !HasOpenTypeParameters(module)
+		   && !ReceivesGeneratedMembers(module)
+		   && ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation).All(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
 
 	/// <summary>
 	///     Whether <paramref name="within" /> reaches a <c>Factory</c> member named <paramref name="member" /> that produces
