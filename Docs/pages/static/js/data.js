@@ -1446,6 +1446,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
         "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
+      },
+      {
+        "sha": "ba5d1c247e3cc315e29c70f7945a59bcf9a2d590",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:51:08 2026 \u002B0100",
+        "message": "fix: close the gaps the review of #310 found in [Inject] properties behind module factories (#321)"
       }
     ],
     "labels": [
@@ -1689,7 +1695,8 @@ window.BENCHMARK_DATA = {
       "6a99a1ea",
       "449d1af3",
       "b6ae6d30",
-      "cd02492f"
+      "cd02492f",
+      "ba5d1c24"
     ],
     "datasets": [
       {
@@ -1936,7 +1943,8 @@ window.BENCHMARK_DATA = {
           7.136554079396384,
           7.141119308769703,
           9.006575437692495,
-          7.140325556580837
+          7.140325556580837,
+          7.150049827992916
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1948,6 +1956,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2443,7 +2452,8 @@ window.BENCHMARK_DATA = {
           7.338271382663931,
           7.372345199187596,
           7.5388804731460715,
-          7.372001637305532
+          7.372001637305532,
+          8.465377003947895
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2455,6 +2465,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2950,7 +2961,8 @@ window.BENCHMARK_DATA = {
           115.98913315931956,
           117.36254660288493,
           120.92938704490662,
-          111.23661099274953
+          111.23661099274953,
+          117.81814689636231
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2962,6 +2974,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3453,7 +3466,8 @@ window.BENCHMARK_DATA = {
           8.680305876334508,
           9.36101267039776,
           10.330754904697338,
-          9.386737954158049
+          9.386737954158049,
+          8.77501584908792
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3465,6 +3479,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3952,7 +3967,8 @@ window.BENCHMARK_DATA = {
           11.28231089413166,
           10.79080934396812,
           11.689766970276832,
-          10.74500669326101
+          10.74500669326101,
+          10.788778707385063
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3964,6 +3980,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5660,6 +5677,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
         "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
+      },
+      {
+        "sha": "ba5d1c247e3cc315e29c70f7945a59bcf9a2d590",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:51:08 2026 \u002B0100",
+        "message": "fix: close the gaps the review of #310 found in [Inject] properties behind module factories (#321)"
       }
     ],
     "labels": [
@@ -5903,7 +5926,8 @@ window.BENCHMARK_DATA = {
       "6a99a1ea",
       "449d1af3",
       "b6ae6d30",
-      "cd02492f"
+      "cd02492f",
+      "ba5d1c24"
     ],
     "datasets": [
       {
@@ -6150,7 +6174,8 @@ window.BENCHMARK_DATA = {
           8.153235055009525,
           8.15751728216807,
           10.042467822985989,
-          8.427576318383217
+          8.427576318383217,
+          8.172702137094278
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6162,6 +6187,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6657,7 +6683,8 @@ window.BENCHMARK_DATA = {
           7.298010554696832,
           7.291215027754124,
           7.523002044512675,
-          7.3025632013877235
+          7.3025632013877235,
+          8.052584845821062
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6669,6 +6696,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7164,7 +7192,8 @@ window.BENCHMARK_DATA = {
           114.08115221659342,
           119.87440228462219,
           116.21976861953735,
-          111.8595519891152
+          111.8595519891152,
+          115.82798832257589
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7176,6 +7205,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7667,7 +7697,8 @@ window.BENCHMARK_DATA = {
           8.705033413569133,
           9.340637908450194,
           10.33907768703424,
-          9.60621874673026
+          9.60621874673026,
+          8.785516109849725
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7679,6 +7710,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8166,7 +8198,8 @@ window.BENCHMARK_DATA = {
           14.866623592376708,
           14.140096595244747,
           14.96371907989184,
-          14.063288360834122
+          14.063288360834122,
+          14.212251852665629
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8178,6 +8211,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9874,6 +9908,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
         "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
+      },
+      {
+        "sha": "ba5d1c247e3cc315e29c70f7945a59bcf9a2d590",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:51:08 2026 \u002B0100",
+        "message": "fix: close the gaps the review of #310 found in [Inject] properties behind module factories (#321)"
       }
     ],
     "labels": [
@@ -10117,7 +10157,8 @@ window.BENCHMARK_DATA = {
       "6a99a1ea",
       "449d1af3",
       "b6ae6d30",
-      "cd02492f"
+      "cd02492f",
+      "ba5d1c24"
     ],
     "datasets": [
       {
@@ -10364,7 +10405,8 @@ window.BENCHMARK_DATA = {
           15.507374908242907,
           19.26665007472038,
           10.881386887814317,
-          30.165140509605408
+          30.165140509605408,
+          30.274660940681184
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10526,6 +10568,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10871,7 +10914,8 @@ window.BENCHMARK_DATA = {
           1182.5980622427803,
           1610.8537506103517,
           758.2382349650065,
-          1787.111136509822
+          1787.111136509822,
+          1762.37274945577
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10883,6 +10927,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11378,7 +11423,8 @@ window.BENCHMARK_DATA = {
           25718.3619253976,
           23965.72069091797,
           17384.310945638023,
-          25354.35304914202
+          25354.35304914202,
+          25239.178298950195
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11630,6 +11676,7 @@ window.BENCHMARK_DATA = {
           32478,
           32476,
           32478,
+          32474,
           32474
         ],
         "borderColor": "#5E2750",
@@ -11881,7 +11928,8 @@ window.BENCHMARK_DATA = {
           655.63094552358,
           672.2693241119384,
           388.25529925028485,
-          713.969929082053
+          713.969929082053,
+          712.4371791252723
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11911,6 +11959,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12380,7 +12429,8 @@ window.BENCHMARK_DATA = {
           8905.041313680013,
           11582.60394185384,
           6669.035121917725,
-          12554.000971112933
+          12554.000971112933,
+          12598.632990519205
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12628,6 +12678,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -14088,6 +14139,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
         "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
+      },
+      {
+        "sha": "ba5d1c247e3cc315e29c70f7945a59bcf9a2d590",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:51:08 2026 \u002B0100",
+        "message": "fix: close the gaps the review of #310 found in [Inject] properties behind module factories (#321)"
       }
     ],
     "labels": [
@@ -14331,7 +14388,8 @@ window.BENCHMARK_DATA = {
       "6a99a1ea",
       "449d1af3",
       "b6ae6d30",
-      "cd02492f"
+      "cd02492f",
+      "ba5d1c24"
     ],
     "datasets": [
       {
@@ -14578,7 +14636,8 @@ window.BENCHMARK_DATA = {
           112.16558281864438,
           186.18286761215754,
           80.31675535837809,
-          426.55731369654336
+          426.55731369654336,
+          401.951921081543
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14740,6 +14799,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15085,7 +15145,8 @@ window.BENCHMARK_DATA = {
           10522.51799214681,
           11068.848346416768,
           7469.809796015422,
-          15684.52485148112
+          15684.52485148112,
+          15591.836011614118
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15097,6 +15158,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15592,7 +15654,8 @@ window.BENCHMARK_DATA = {
           624431.5793457031,
           532522.6529017857,
           425445.2348257211,
-          593633.4207682292
+          593633.4207682292,
+          591879.2068359375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15844,7 +15907,8 @@ window.BENCHMARK_DATA = {
           740790,
           721097,
           737923,
-          719435
+          719435,
+          719436
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16095,7 +16159,8 @@ window.BENCHMARK_DATA = {
           34957.98446219308,
           35987.108162434895,
           23204.76030069987,
-          41610.241725376676
+          41610.241725376676,
+          41170.502982584636
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16343,6 +16408,7 @@ window.BENCHMARK_DATA = {
           80307,
           80958,
           80178,
+          80317,
           80317
         ],
         "borderColor": "#1565C0",
@@ -16594,7 +16660,8 @@ window.BENCHMARK_DATA = {
           262707.2282877604,
           320024.9271158854,
           207174.48999023438,
-          350872.66852678574
+          350872.66852678574,
+          355265.30831473216
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16842,7 +16909,8 @@ window.BENCHMARK_DATA = {
           573058,
           571205,
           573057,
-          571211
+          571211,
+          571212
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18278,6 +18346,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:38:17 2026 \u002B0100",
         "message": "feat: decorate an internal service through a base-type inner parameter in every container (#320)"
+      },
+      {
+        "sha": "ba5d1c247e3cc315e29c70f7945a59bcf9a2d590",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:51:08 2026 \u002B0100",
+        "message": "fix: close the gaps the review of #310 found in [Inject] properties behind module factories (#321)"
       }
     ],
     "labels": [
@@ -18517,7 +18591,8 @@ window.BENCHMARK_DATA = {
       "6a99a1ea",
       "449d1af3",
       "b6ae6d30",
-      "cd02492f"
+      "cd02492f",
+      "ba5d1c24"
     ],
     "datasets": [
       {
@@ -18760,7 +18835,8 @@ window.BENCHMARK_DATA = {
           252.9982936859131,
           274.06710709844316,
           203.66585115591684,
-          259.3583624913142
+          259.3583624913142,
+          252.44882256189982
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18795,6 +18871,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19259,7 +19336,8 @@ window.BENCHMARK_DATA = {
           709.2722511291504,
           625.2112270991007,
           458.2563000406538,
-          583.117000579834
+          583.117000579834,
+          448.6177563985189
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19271,6 +19349,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19758,7 +19837,8 @@ window.BENCHMARK_DATA = {
           6589.53933207194,
           6601.168085225423,
           4935.228814806257,
-          6022.617700958252
+          6022.617700958252,
+          4893.912663269043
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19842,6 +19922,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20257,7 +20338,8 @@ window.BENCHMARK_DATA = {
           401.6447895254408,
           414.80572350819904,
           331.5271722475688,
-          430.94111428942
+          430.94111428942,
+          347.9075322786967
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20269,6 +20351,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20756,7 +20839,8 @@ window.BENCHMARK_DATA = {
           738.9754593712943,
           768.3810199737549,
           548.5344422022501,
-          684.362475667681
+          684.362475667681,
+          544.7581010182698
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20768,6 +20852,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
