@@ -1167,6 +1167,21 @@ public static partial class CoffeeShop;
 
 **Fix:** Pair an implementation and a service with the same number of type parameters: `[Transient(typeof(Repository<>), typeof(IRepository<>))]`.
 
+The same error reports an open implementation, decorator, composite or service nested in a generic type. A closing of the service supplies only the type arguments of the nested type itself, so nothing binds those of the type that contains it:
+
+```csharp expect=AWT125
+public class Catalog<TShop>
+{
+    public sealed class Repository<T> : IRepository<T>;
+}
+
+[Container]
+[Transient(typeof(Catalog<>.Repository<>), typeof(IRepository<>))]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Declare the type outside the generic type, or nest it in a non-generic one.
+
 ### AWT126
 
 :::danger[Error]
@@ -2352,7 +2367,7 @@ public static partial class EquipmentModule;
 public static partial class CoffeeShop;
 ```
 
-A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor or factory parameter type that isn't public ([AWT195](#awt195)), an injected property the factory can't set, such as one named like a constructor parameter ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. The same goes for a public implementation, decorator or composite whose `[Inject]` property is `internal` or has an `internal` setter: such a container could construct it, but doesn't see the property, so the message asks to make the property public instead. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because the open registration names a lifecycle hook or a constraint type isn't public, and a container that can't construct the open type reports this error with that reason.
+A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor or factory parameter type that isn't public ([AWT195](#awt195)), an injected property the factory can't set, such as one named like a constructor parameter ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. The same goes for a public implementation, decorator or composite whose `[Inject]` property is `internal` or has an `internal` setter: such a container could construct it, but doesn't see the property, so the message asks to make the property public instead. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because a constraint type isn't public or a hook parameter type isn't, and a container that can't construct the open type reports this error with that reason.
 
 **Fix:** Grant the container's assembly `InternalsVisibleTo` in the library. Or make the implementation, its constructor and the constructor's parameter types public, make the hidden `[Inject]` property of a public implementation and its setter public, or, for a hook or a scan match, fix the reason the message names.
 
@@ -2630,7 +2645,7 @@ An implementation nested privately in the base, or in a class that contains the 
 
 - **No access to the factory.** The base is in another assembly that does not grant the extending container's assembly `InternalsVisibleTo`. Grant it.
 - **A shape the factory cannot express.** The closed type has an `Optional` or `Deferred` injected property, a hook parameter marked `[Arg]`, `[FromKey]` or `[Inject]`, or a parameter type private to the base. Make the type `internal`.
-- **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing. The generic factory fills `Optional` and `Deferred` `[Inject]` properties, but not when the open registration names a lifecycle hook, a type parameter is constrained to a type private to the base, the type is nested in a generic class, or an `[InjectProperty]` entry of the base for it is `Optional` or `Deferred` or names one of its closings. Make the type `internal`.
+- **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing. The generic factory fills `Optional` and `Deferred` `[Inject]` properties, and runs its lifecycle hooks through generic wrappers, but not when a type parameter is constrained to a type private to the base, a hook can't be wrapped, or an `[InjectProperty]` entry of the base for it is `Optional` or `Deferred` or names one of its closings. Make the type `internal`.
 
 ```csharp expect=AWT226
 [Container]

@@ -138,6 +138,7 @@ partial class AwaitenGenerator
 				context.Compilation, context.Modules, context.Inheritance, context.Inherited, diagnostics));
 			if (via.Dropped)
 			{
+				context.Open.Add(new OpenRegistration(pair.Service, pair.Mapped, lifetime, NamedKeyArgument(attribute), location, context.Origin) { Dropped = true, });
 				return;
 			}
 		}
@@ -150,6 +151,7 @@ partial class AwaitenGenerator
 		int fallback = NamedFallback(attribute);
 		context.Open.Add(new OpenRegistration(pair.Service, pair.Mapped, lifetime, key, location, context.Origin)
 		{
+			LiveLocation = liveLocation,
 			Factory = via.Via?.Method is not null ? InInternals(via.Via.Name) : factory,
 			FactoryMethods = via.Via?.Method is { } method ? [method,] : factoryMethods,
 			Via = via.Via,
@@ -203,6 +205,23 @@ partial class AwaitenGenerator
 		mapped = mapped.ConstructedFrom;
 		service = service.ConstructedFrom;
 
+		foreach (INamedTypeSymbol nested in new[] { mapped, service, })
+		{
+			if (GenericContainingType(nested) is { } containing)
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.OpenGenericNestedInGenericType,
+					location,
+					new EquatableArray<string>([
+						AwaitenGenerator.Display(mapped.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(service.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(nested.OriginalDefinition.ToDisplayString(FullyQualified)),
+						AwaitenGenerator.Display(containing.OriginalDefinition.ToDisplayString(FullyQualified)),
+					])));
+				return null;
+			}
+		}
+
 		// AWT125: the mapped type's type parameters must line up with the service's, so a closed service
 		// can be re-mapped onto it. v1 matches the open form exactly, so the arities must be equal.
 		if (mapped.Arity != service.Arity)
@@ -252,6 +271,20 @@ partial class AwaitenGenerator
 		ImmutableArray<ITypeParameterSymbol> parameters = implementation.TypeParameters;
 		return implementation.AllInterfaces.Any(@interface => MapsInOrder(@interface, service, parameters))
 		       || BaseTypes(implementation).Any(baseType => MapsInOrder(baseType, service, parameters));
+	}
+
+	/// <summary>The innermost generic type that contains <paramref name="type" />, or <see langword="null" />.</summary>
+	private static INamedTypeSymbol? GenericContainingType(INamedTypeSymbol type)
+	{
+		for (INamedTypeSymbol? containing = type.ContainingType; containing is not null; containing = containing.ContainingType)
+		{
+			if (containing.IsGenericType)
+			{
+				return containing;
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>The base types of <paramref name="type" />, from its direct base up to (but excluding) <c>object</c>.</summary>
@@ -404,7 +437,7 @@ partial class AwaitenGenerator
 				Enqueue(new ExpansionWork(registration.Implementation, factory, 0, ExpansionScan.Factory), context);
 			}
 
-			EnqueueHooks(registration, 0, context);
+			EnqueueHooks(registration, registration.Implementation, 0, context);
 			EnqueueOpenWrappers(registration, 0, context);
 		}
 
@@ -517,16 +550,19 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Enqueues the lifecycle hooks <paramref name="registration" /> names, so their parameters after the instance
 	///     seed expansion like a constructor's. Only the overload <see cref="ResolveHook" /> dispatches is scanned: an
-	///     unusable or ambiguous hook is an error (AWT164, AWT190, AWT198) that needs no closing.
+	///     unusable or ambiguous hook is an error (AWT164, AWT190, AWT198) that needs no closing. The work belongs to
+	///     <paramref name="implementation" />, the closed implementation even when a generic factory of another assembly
+	///     produces another type, so a report about it finds the open registration.
 	/// </summary>
-	private static void EnqueueHooks(RawRegistration registration, int depth, ExpansionContext context)
+	private static void EnqueueHooks(RawRegistration registration, INamedTypeSymbol implementation, int depth, ExpansionContext context)
 	{
-		EnqueueHook(registration, registration.OnActivated, registration.OnActivatedMarkers, depth, context);
-		EnqueueHook(registration, registration.OnRelease, registration.OnReleaseMarkers, depth, context);
+		EnqueueHook(registration, implementation, registration.OnActivated, registration.OnActivatedMarkers, depth, context);
+		EnqueueHook(registration, implementation, registration.OnRelease, registration.OnReleaseMarkers, depth, context);
 	}
 
 	private static void EnqueueHook(
 		RawRegistration registration,
+		INamedTypeSymbol implementation,
 		string? hookName,
 		IReadOnlyList<INamedTypeSymbol>? closedMarkers,
 		int depth,
@@ -534,6 +570,18 @@ partial class AwaitenGenerator
 	{
 		if (hookName is null)
 		{
+			return;
+		}
+
+		// A closing built through the owner's generic factory in the same compilation runs the owner's hook through the
+		// wrapper, so it seeds from the hook the owner binds, which the container itself may not reach.
+		if (registration is { ConstructVia: { } via, Origin: { } origin, } && via.IndexOf('<') >= 0)
+		{
+			if (registration.ServiceSymbol is { } closed && OwnerBoundHook(registration.Implementation, hookName, closed, origin, context.Inputs.Compilation) is { } hook)
+			{
+				Enqueue(new ExpansionWork(implementation, hook, depth, ExpansionScan.Hook), context);
+			}
+
 			return;
 		}
 
@@ -546,8 +594,28 @@ partial class AwaitenGenerator
 			context.Inputs.Compilation);
 		if (matches.Count == 1 && ambiguousMethods.Count == 0)
 		{
-			Enqueue(new ExpansionWork(registration.Implementation, matches[0], depth, ExpansionScan.Hook), context);
+			Enqueue(new ExpansionWork(implementation, matches[0], depth, ExpansionScan.Hook), context);
 		}
+	}
+
+	/// <summary>
+	///     The hook the generic wrapper of <paramref name="owner" /> runs for a closing: the overload the owner bound for
+	///     the open definition with the service constructed with its type parameters (see <see cref="OpenHookWrappers" />),
+	///     closed with the type arguments of <paramref name="closedService" /> like the wrapper, or <see langword="null" />
+	///     when the owner bound none.
+	/// </summary>
+	private static IMethodSymbol? OwnerBoundHook(INamedTypeSymbol closedImplementation, string hookName, INamedTypeSymbol closedService, INamedTypeSymbol owner, Compilation compilation)
+	{
+		INamedTypeSymbol definition = closedImplementation.OriginalDefinition;
+		INamedTypeSymbol marker = closedService.OriginalDefinition.Construct(definition.TypeParameters.Cast<ITypeSymbol>().ToArray());
+		List<IMethodSymbol> matches = CollectModuleHookOverloads(
+			definition, hookName, [marker,], new ModuleScanContext(owner, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches;
+		if (matches.Count != 1)
+		{
+			return null;
+		}
+
+		return matches[0].Arity == 0 ? matches[0] : matches[0].OriginalDefinition.Construct(closedService.TypeArguments.ToArray());
 	}
 
 	/// <summary>
@@ -584,6 +652,11 @@ partial class AwaitenGenerator
 			bool dropped = candidate.Weak && IsClaimedByStrongerRegistration(candidate, closedService, context.Raw);
 
 			RawRegistration registration = SynthesizeClosedRegistration(candidate, closed, closedService, closedImpl, TypeIdentity(closedImpl, context.Inputs.Compilation));
+			if (candidate.Via is not null && !dropped)
+			{
+				registration = WithoutAmbiguousOpenHooks(registration, candidate, closedImplName, context);
+			}
+
 			if (candidate.Via is { Method: null, } generated)
 			{
 				OwnerFactoryCall? call = generated.Close(typeArguments, closedImpl, closed);
@@ -612,7 +685,7 @@ partial class AwaitenGenerator
 				Enqueue(new ExpansionWork(closedImpl, factory.Construct(closed.TypeArguments.ToArray()), depth + 1, ExpansionScan.Factory), context);
 			}
 
-			EnqueueHooks(registration, depth + 1, context);
+			EnqueueHooks(registration, closedImpl, depth + 1, context);
 			EnqueueOpenWrappers(registration, depth + 1, context);
 		}
 	}
@@ -632,7 +705,7 @@ partial class AwaitenGenerator
 		out List<IMethodSymbol> factories)
 	{
 		factories = [];
-		if (candidate.ViaFault is not null)
+		if (candidate.ViaFault is not null || candidate.Dropped)
 		{
 			context.ConstraintRejectedServices.Add(closedService);
 			return false;
@@ -679,7 +752,7 @@ partial class AwaitenGenerator
 			closedImplIdentity,
 			candidate.Lifetime,
 			closedImpl,
-			candidate.Location?.ToLocation(),
+			candidate.LiveLocation,
 			candidate.Factory is null ? ProductionKind.Constructor : ProductionKind.Factory,
 			candidate.Factory,
 			Key: candidate.Key,
@@ -702,15 +775,61 @@ partial class AwaitenGenerator
 	///     <paramref name="owner" />, closed as <paramref name="factory" />: it produces the accessible type the factory
 	///     returns, while the closed implementation keeps the registration's identity and gives its initialization and
 	///     disposal, read off its metadata with the owner's conventions, as <see cref="ThroughGeneratedFactory" /> does for a
-	///     closed registration.
+	///     closed registration. Its hooks run through the generic wrappers the owner generated beside the factory, which
+	///     the ordinary hook binding closes with the closing's marker.
 	/// </summary>
 	private static RawRegistration ThroughOpenFactory(RawRegistration registration, INamedTypeSymbol owner, IMethodSymbol factory, Compilation compilation)
-		=> registration with
+	{
+		INamedTypeSymbol definition = registration.Implementation.OriginalDefinition;
+		return registration with
 		{
 			Implementation = (INamedTypeSymbol)factory.ReturnType,
 			Traits = TraitsOf(registration.Implementation, DeclaredAsyncInitializers(owner, compilation, null)),
 			TraitsExact = true,
+			OnActivated = registration.OnActivated is { } activation ? InInternals(RegistrationHookWrapperName(definition, release: false, activation)) : null,
+			OnRelease = registration.OnRelease is { } release ? InInternals(RegistrationHookWrapperName(definition, release: true, release)) : null,
 		};
+	}
+
+	/// <summary>
+	///     Leaves out each hook of a closing built through the owner's generic factory that more than one overload of the
+	///     owner accepts for this closing, reporting AWT190 as for a closing the container builds itself: the owner bound
+	///     the wrapper for the open definition, which an overload for one closing does not accept.
+	/// </summary>
+	private static RawRegistration WithoutAmbiguousOpenHooks(RawRegistration registration, OpenRegistration candidate, string closedImplName, ExpansionContext context)
+	{
+		return registration with
+		{
+			OnActivated = Unambiguous(registration.OnActivated, release: false),
+			OnRelease = Unambiguous(registration.OnRelease, release: true),
+		};
+
+		string? Unambiguous(string? hookName, bool release)
+		{
+			if (hookName is null)
+			{
+				return null;
+			}
+
+			INamedTypeSymbol owner = candidate.Via!.Owner;
+			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(
+				registration.Implementation, hookName, [registration.ServiceSymbol!,], new ModuleScanContext(owner, context.Inputs.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal)));
+			if (matches.Count + ambiguous.Count < 2)
+			{
+				return hookName;
+			}
+
+			if (context.ReportedConstraints.Add("hook:" + closedImplName + "\0" + hookName + "\0" + release))
+			{
+				context.Diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.AmbiguousLifecycleHook,
+					candidate.Location,
+					new EquatableArray<string>([AwaitenGenerator.Display(closedImplName), hookName, DescribeOwner(owner),])));
+			}
+
+			return null;
+		}
+	}
 
 	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
@@ -1098,6 +1217,12 @@ partial class AwaitenGenerator
 		public bool SuppressDisposal { get; init; }
 
 		/// <summary>
+		///     The live <see cref="Location" />, which every closing takes, so a diagnostic about one points at the open
+		///     registration and an analyzer can suppress it there.
+		/// </summary>
+		public Location? LiveLocation { get; init; }
+
+		/// <summary>
 		///     The generic factory of the module or base that builds every closing, because the container cannot construct
 		///     the implementation (see <see cref="ResolveOpenVia" />), or <see langword="null" />.
 		/// </summary>
@@ -1109,6 +1234,12 @@ partial class AwaitenGenerator
 		///     None of its closings is synthesized.
 		/// </summary>
 		public FactoryFault? ViaFault { get; init; }
+
+		/// <summary>
+		///     Left out after AWT230 or AWT231 (see <see cref="ResolveOpenVia" />): none of its closings is synthesized, and
+		///     their consumers do not also report them missing (AWT101).
+		/// </summary>
+		public bool Dropped { get; init; }
 	}
 
 	/// <summary>What one unit of expansion work scans for the closed generic services it requires.</summary>

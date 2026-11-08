@@ -152,3 +152,94 @@ internal sealed class SharedOpenRepository<T> : ISharedOpenRepository<T>;
 [Singleton<SharedOpenRepository<SharedOpenEntity>, ISharedOpenReader<SharedOpenEntity>>]
 [Singleton(typeof(SharedOpenRepository<>), typeof(ISharedOpenRepository<>))]
 public static partial class SharedOpenGenericModule;
+
+/// <summary>The log the hooks of <see cref="HookedOpenGenericModule" /> write to, one line per hook call.</summary>
+public sealed class OpenHookLog
+{
+	/// <summary>The hook calls in order.</summary>
+	public List<string> Entries { get; } = new();
+}
+
+/// <summary>A cache per entry type, built from an internal open generic implementation whose module hooks every closing.</summary>
+public interface IHookedOpenCache<T>
+	where T : class;
+
+internal sealed class HookedOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration names a generic activation hook and a release hook,
+///     which a container in another assembly without <c>InternalsVisibleTo</c> runs through the generic wrappers the
+///     module generates beside its generic factory.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(HookedOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class HookedOpenGenericModule
+{
+	internal static void Activate<T>(HookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Release(object cache, OpenHookLog log)
+		=> log.Entries.Add("released");
+}
+
+internal sealed class AsyncHookedOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration names an asynchronous generic activation hook and an
+///     asynchronous release hook, which a container in another assembly without <c>InternalsVisibleTo</c> awaits through
+///     the generic wrappers the module generates beside its generic factory.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(AsyncHookedOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class AsyncHookedOpenGenericModule
+{
+	internal static async Task Activate<T>(AsyncHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+	{
+		await Task.Yield();
+		log.Entries.Add($"activated {typeof(T).Name}");
+	}
+
+	internal static ValueTask Release<T>(AsyncHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+	{
+		log.Entries.Add($"released {typeof(T).Name}");
+		return default;
+	}
+}
+
+/// <summary>A journal per entry type, built from the public <see cref="InjectedOpenJournal{T}" />.</summary>
+public interface IInjectedOpenJournal<T>
+{
+	/// <summary>The clock the module's internal <c>[Inject]</c> property received.</summary>
+	IOpenClock Clock { get; }
+
+	/// <summary>The clock a container-side <c>[InjectProperty]</c> entry filled, or <see langword="null" />.</summary>
+	IOpenClock? Audit { get; }
+}
+
+/// <summary>A public open generic journal whose internal <c>[Inject]</c> property only the module's generated factory can set.</summary>
+public sealed class InjectedOpenJournal<T> : IInjectedOpenJournal<T>
+{
+	[Inject]
+	internal IOpenClock Injected { get; set; } = null!;
+
+	/// <inheritdoc />
+	public IOpenClock Clock => Injected;
+
+	/// <inheritdoc />
+	public IOpenClock? Audit { get; set; }
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose public open generic journal a container in another assembly without
+///     <c>InternalsVisibleTo</c> builds through the generated generic factory, because of its internal <c>[Inject]</c> property.
+/// </summary>
+[Module]
+[Singleton(typeof(InjectedOpenJournal<>), typeof(IInjectedOpenJournal<>))]
+public static partial class InjectedOpenJournalModule;

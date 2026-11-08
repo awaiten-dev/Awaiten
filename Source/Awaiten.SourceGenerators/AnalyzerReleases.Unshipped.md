@@ -26,7 +26,7 @@
  AWT122  | Awaiten   | Error    | A collection dependency has an async-tainted member but is materialized synchronously
  AWT123  | Awaiten   | Error    | A [Decorate] names a service with no registration to decorate
  AWT124  | Awaiten   | Error    | A decorator has no single constructor parameter assignable to the decorated service type
- AWT125  | Awaiten   | Error    | An open generic registration's implementation and service have different arity
+ AWT125  | Awaiten   | Error    | An open generic registration's implementation and service have different arity, or one of them is nested in a generic type
  AWT126  | Awaiten   | Error    | A required closed type violates the open generic implementation's type-parameter constraints
  AWT127  | Awaiten   | Error    | The typeof-argument form of a lifetime attribute must receive an unbound open generic type
  AWT128  | Awaiten   | Error    | An open generic implementation does not expose its service with type parameters in declaration order

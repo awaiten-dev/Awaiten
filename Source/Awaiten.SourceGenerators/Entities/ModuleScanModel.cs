@@ -220,7 +220,9 @@ internal readonly record struct FactoryParameter(string Type, string Name, strin
 ///     wrapper of an asynchronous hook returns its task, and forwards a mirrored <c>CancellationToken</c> parameter,
 ///     for the consumer to await; a <c>void</c> wrapper would silently discard the task.
 ///     A hook with a <see cref="SkipReason" /> gets no wrapper, because an assembly granted <c>InternalsVisibleTo</c>
-///     calls it directly: <see cref="WrapperName" /> is then the user hook's own name.
+///     calls it directly: <see cref="WrapperName" /> is then the user hook's own name. The wrapper of a hook of an open
+///     generic registration is generic: <see cref="TypeParameters" /> and <see cref="Constraints" /> are those of its
+///     generic factory, which a consumer closes alike.
 /// </summary>
 internal sealed record ModuleHook(
 	string WrapperName,
@@ -228,4 +230,6 @@ internal sealed record ModuleHook(
 	string InstanceCast,
 	EquatableArray<FactoryParameter> Parameters,
 	string ReturnType,
-	string? SkipReason = null);
+	string? SkipReason = null,
+	string? TypeParameters = null,
+	string? Constraints = null);

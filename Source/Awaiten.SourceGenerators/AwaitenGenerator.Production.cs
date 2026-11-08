@@ -893,19 +893,26 @@ partial class AwaitenGenerator
 		// owner's own resolution found exactly one hook; the container runs that hook's wrapper, which takes the
 		// factory's return type and passes the private type on. A base container wraps a scan match's hooks like an
 		// explicit registration's, since it generates one factory per implementation.
-		if (info.ConstructVia is not null && origin is not null)
+		if (info.ConstructVia is { } via && origin is not null)
 		{
+			// The closing of a generic factory runs the generic wrapper of the open definition, closed alike, so it runs
+			// the hook the owner bound for the open service, closed with the closing's type arguments.
+			bool open = via.IndexOf('<') >= 0;
 			List<INamedTypeSymbol>? markers = null;
-			if (info.IsScan)
+			if (info.IsScan || open)
 			{
 				markers = release ? info.OnReleaseMarkers : info.OnActivatedMarkers;
 			}
 
-			IMethodSymbol hook = CollectModuleHookOverloads(
-				info.Symbol, hookName, markers, new ModuleScanContext(origin, context.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches[0];
+			IMethodSymbol hook = open
+				? OwnerBoundHook(info.Symbol, hookName, markers![0], origin, context.Compilation)!
+				: CollectModuleHookOverloads(
+					info.Symbol, hookName, markers, new ModuleScanContext(origin, context.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches[0];
 			string wrapper = info.IsScan && !HasAwaitenAttribute(origin.GetAttributes(), "ContainerAttribute")
 				? ModuleHookWrapperName(info.Symbol, release)
-				: RegistrationHookWrapperName(info.Symbol, release, hookName);
+				: open
+					? RegistrationHookWrapperName(info.Symbol.OriginalDefinition, release, hookName) + via.Substring(via.IndexOf('<'))
+					: RegistrationHookWrapperName(info.Symbol, release, hookName);
 			return ($"{origin.ToDisplayString(FullyQualified)}.{InInternals(wrapper)}", ClassifyHookParameters(hook, info, release, context), hook);
 		}
 

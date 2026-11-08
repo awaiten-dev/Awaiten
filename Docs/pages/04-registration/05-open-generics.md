@@ -109,7 +109,7 @@ A request for `IRepository<Order>` calls `CreateRepository<Order>(connection)`. 
 
 ### Lifecycle hooks
 
-`OnActivated` and `OnRelease` run for every closing. The hook can be generic over the service's type arguments, which it receives like a hook on an [open-generic scan](./06-scanning.md#generic-hooks-on-an-open-marker): Awaiten binds it from the closed service, so `IConnection<Order>` calls `Opened<Order>(…)`. A non-generic hook, with its first parameter typed as `object` or a shared base, works for every closing too.
+`OnActivated` and `OnRelease` run for every closing. The hook can be generic over the service's type arguments, which it receives like a hook on an [open-generic scan](./06-scanning.md#generic-hooks-on-an-open-marker): Awaiten binds it from the closed service, so `IConnection<Order>` calls `Opened<Order>(…)`. A non-generic hook, with its first parameter typed as `object` or a shared base, works for every closing too. A hook of a module's open registration that another assembly can't call runs through a [generic wrapper](./07-modules.md#open-generics) the module generates.
 
 ```csharp
 [Container]

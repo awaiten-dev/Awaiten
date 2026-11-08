@@ -391,6 +391,20 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="OpenGenericArityMismatch">AWT125</see> for an open generic implementation or service
+	///     nested in a generic type (<c>Outer&lt;&gt;.Inner&lt;&gt;</c>): a closing of the service supplies only the type
+	///     arguments of the nested type itself, so nothing binds those of the containing type. <c>{2}</c> names the
+	///     nested type and <c>{3}</c> the generic type that contains it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor OpenGenericNestedInGenericType = new(
+		"AWT125",
+		OpenGenericArityMismatch.Title,
+		"The open generic registration of '{0}' for '{1}' is invalid: '{2}' is nested in the generic type '{3}', whose type parameters a closing of the service cannot supply; declare it outside the generic type",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A closed generic required from the graph cannot be constructed from an open generic
 	///     registration because its type arguments violate the implementation's type-parameter
 	///     constraints (e.g. <c>Repository&lt;int&gt;</c> where the implementation declares <c>where T : class</c>).

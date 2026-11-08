@@ -575,6 +575,8 @@ public class OpenGenericFactoryTests
 
 			await That(result.Diagnostics).Contains("*AWT231*it is registered under several services (Lib.IReader<T>, Lib.IWriter<T>)*").AsWildcard();
 			await That(result.Diagnostics).DoesNotContain("*error CS*").AsWildcard();
+			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard()
+				.Because("the closing the consumer needs comes from the registration AWT231 already reports");
 		}
 
 		[Test]
@@ -791,10 +793,216 @@ public class OpenGenericFactoryTests
 		}
 	}
 
-	public class Unsupported
+	public class Hooks
 	{
+		private const string Internal = """
+		                                using Awaiten;
+
+		                                namespace Lib;
+
+		                                public interface IAudit { }
+		                                public sealed class Audit : IAudit { }
+		                                public interface IRepository<T> { }
+		                                internal sealed class Repository<T> : IRepository<T> where T : class { }
+
+		                                [Module]
+		                                [Singleton<Audit, IAudit>]
+		                                [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+		                                public static partial class DataModule
+		                                {
+		                                    internal static void Activate<T>(Repository<T> repository, IAudit audit) where T : class { }
+
+		                                    internal static void Release(object repository) { }
+		                                }
+		                                """;
+
+		private const string Private = """
+		                               using Awaiten;
+
+		                               namespace Lib;
+
+		                               public interface IAudit { }
+		                               public sealed class Audit : IAudit { }
+		                               public interface IRepository<T> { }
+
+		                               [Module]
+		                               [Singleton<Audit, IAudit>]
+		                               [Scoped(typeof(DataModule.Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+		                               public static partial class DataModule
+		                               {
+		                                   private sealed class Repository<T> : IRepository<T> where T : class { }
+
+		                                   private static void Activate<T>(Repository<T> repository, IAudit audit) where T : class { }
+		                               }
+		                               """;
+
 		[Test]
-		public async Task ALifecycleHook_IsReportedWithTheReason()
+		public async Task TheLibrary_GeneratesAGenericWrapperPerHook()
+		{
+			GeneratorResult result = Generator.Run(Internal);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ModuleSource(result)).Contains("public static void Hook_OnActivated_Repository_").And
+				.Contains("<T>(global::Lib.IRepository<T> @awaiten__instance, global::Lib.IAudit @audit) where T : class => Activate<T>((global::Lib.Repository<T>)@awaiten__instance, @audit);").And
+				.Contains("<T>(global::Lib.IRepository<T> @awaiten__instance) where T : class => Release((object)@awaiten__instance);")
+				.Because("the wrapper takes the definition's type parameters and constraints, so a consumer closes it like the factory");
+		}
+
+		[Test]
+		public async Task AContainerInTheSameAssembly_CallsTheHooksItself()
+		{
+			GeneratorResult result = Generator.Run(WithContainer(Internal));
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ContainerSource(result, "LibContainer")).Contains("new global::Lib.Repository<global::Lib.Order>(").And
+				.Contains("global::Lib.DataModule.Activate<global::Lib.Order>(");
+		}
+
+		[Test]
+		public async Task AContainerInAnotherAssembly_RunsTheClosedWrappers()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Internal, Consumer);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the consumer closes the module's hook wrappers with each closing instead of reporting AWT231");
+			await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Registration_Repository_").And
+				.Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+				.Contains("global::Lib.DataModule.Internals.Hook_OnRelease_Repository_").And
+				.Contains("<global::App.Order>(");
+		}
+
+		[Test]
+		public async Task AFriendContainer_CallsTheHooksItself()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Internal), Consumer);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Activate<global::App.Order>(").And
+				.DoesNotContain("Hook_OnActivated_Repository_");
+		}
+
+		[Test]
+		public async Task APrivateImplementation_RunsTheWrapperInEveryAssembly()
+		{
+			GeneratorResult same = Generator.Run(WithContainer(Private));
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Private, Consumer);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(Private), Consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(ContainerSource(same, "LibContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+				.Contains("<global::Lib.Order>(")
+				.Because("only the module can name its private implementation and call its private hook");
+			await That(external.Diagnostics).IsEmpty();
+			await That(ContainerSource(external, "AppContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_");
+		}
+
+		[Test]
+		public async Task AHookParameterOfTheTypeParameter_ClosesPerClosing()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       public interface IValidator<T> { }
+			                       public sealed class Validator<T> : IValidator<T> { }
+			                       public interface IRepository<T> { }
+			                       internal sealed class Repository<T> : IRepository<T> { }
+
+			                       [Module]
+			                       [Singleton(typeof(Validator<>), typeof(IValidator<>))]
+			                       [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+			                       public static partial class DataModule
+			                       {
+			                           internal static void Activate<T>(Repository<T> repository, IValidator<T> validator) { }
+			                       }
+			                       """;
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the wrapper's IValidator<T> parameter closes the open validator for each closing of the repository");
+			await That(ContainerSource(result, "AppContainer")).Contains("new global::Lib.Validator<global::App.Order>(");
+		}
+
+		[Test]
+		public async Task AnExtendingContainer_RunsTheBasesWrapper()
+		{
+			const string shop = """
+			                    using Awaiten;
+
+			                    namespace Lib;
+
+			                    public interface IRepository<T> { }
+			                    public sealed class Order { }
+
+			                    [Container]
+			                    [Scoped(typeof(Shop.Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+			                    [Scoped<Shop.Checkout>]
+			                    public static partial class Shop
+			                    {
+			                        private sealed class Repository<T> : IRepository<T> { }
+
+			                        private static void Activate<T>(Repository<T> repository) { }
+
+			                        internal sealed class Checkout
+			                        {
+			                            public Checkout(IRepository<Order> orders) { }
+			                        }
+			                    }
+			                    """;
+			const string extending = """
+			                         using Awaiten;
+			                         using Lib;
+
+			                         namespace App;
+
+			                         [Container(Extends = typeof(Shop))]
+			                         public static partial class TestShop
+			                         {
+			                         }
+			                         """;
+
+			GeneratorResult same = Generator.Run(shop + extending.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(shop), extending);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(ContainerSource(same, "TestShop")).Contains("global::Lib.Shop.Internals.Hook_OnActivated_Repository_").And.Contains("<global::Lib.Order>(");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "TestShop")).Contains("global::Lib.Shop.Internals.Hook_OnActivated_Repository_");
+		}
+
+		[Test]
+		public async Task AHookParameterAnotherAssemblyCannotName_IsReportedWithTheReason()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using Awaiten;
+
+				namespace Lib;
+
+				internal sealed class Log { }
+				public interface IRepository<T> { }
+				internal sealed class Repository<T> : IRepository<T> { }
+
+				[Module]
+				[Singleton<Log>]
+				[Singleton(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+				    internal static void Activate(object repository, Log log) { }
+				}
+				""", Consumer);
+
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper")
+			                                                                           && diagnostic.Contains("Lib.Log"))
+				.Because("the closing the consumer needs is not reported missing as well");
+		}
+
+		[Test]
+		public async Task AGenericHookTheDefinitionCannotClose_IsReportedWithTheReason()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 				using Awaiten;
@@ -808,13 +1016,203 @@ public class OpenGenericFactoryTests
 				[Singleton(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
 				public static partial class DataModule
 				{
-				    internal static void Activate(object repository) { }
+				    internal static void Activate<T>(Repository<T> repository) where T : class { }
 				}
 				""", Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT231*DataModule*it names the lifecycle hook 'Activate'*").AsWildcard();
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper: the constraints of its generic overload do not hold for every closing of 'Lib.Repository<T>'")
+			                                                                           && !diagnostic.Contains("has no accessible static method"))
+				.Because("the wrapper serves every closing, so the hook's constraints must hold for the definition's own type parameters");
 		}
 
+		[Test]
+		public async Task AGenericHookWithTheTypeParametersInAnotherOrder_IsReportedWithTheReason()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IRepository<TKey, TValue> { }
+				internal sealed class Repository<TKey, TValue> : IRepository<TKey, TValue> { }
+
+				[Module]
+				[Singleton(typeof(Repository<,>), typeof(IRepository<,>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+				    internal static void Activate<TValue, TKey>(Repository<TKey, TValue> repository) { }
+				}
+				""", """
+				     using Awaiten;
+				     using Lib;
+
+				     namespace App;
+
+				     public sealed class Checkout
+				     {
+				         public Checkout(IRepository<int, string> names) { }
+				     }
+
+				     [Container]
+				     [Import(typeof(DataModule))]
+				     [Transient<Checkout>]
+				     public static partial class AppContainer
+				     {
+				     }
+				     """);
+
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper: its generic overload does not take the type parameters of 'Lib.Repository<TKey, TValue>' in their order")
+			                                                                           && !diagnostic.Contains("has no accessible static method"));
+		}
+
+		[Test]
+		public async Task AHookThatNeedsAnEverLargerClosing_IsReportedOnceAtTheImport()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IRepository<T> { }
+				internal sealed class Repository<T> : IRepository<T> { }
+
+				[Module]
+				[Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+				    internal static void Activate<T>(Repository<T> repository, IRepository<List<T>> next) { }
+				}
+				""", Consumer);
+
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.Contains("AWT129"))).HasCount(1).And
+				.All().Satisfy(diagnostic => diagnostic.StartsWith("(14,2): error AWT129", StringComparison.Ordinal))
+				.Because("the hook's work belongs to the closed implementation, so it finds the open registration and shares its report");
+		}
+
+		public class AnOverloadOnlyAClosingAccepts
+		{
+			private const string GenericFirst = """
+			                                    internal static void Activate<T>(IRepository<T> repository) { }
+
+			                                    internal static void Activate(IRepository<Ledger> repository, IAudit audit) { }
+			                                    """;
+
+			private const string ClosedFirst = """
+			                                   internal static void Activate(IRepository<Ledger> repository, IAudit audit) { }
+
+			                                   internal static void Activate<T>(IRepository<T> repository) { }
+			                                   """;
+
+			private const string LedgerConsumer = """
+			                                      using Awaiten;
+			                                      using Lib;
+
+			                                      namespace App;
+
+			                                      public sealed class Checkout
+			                                      {
+			                                          public Checkout(IRepository<Ledger> ledgers) { }
+			                                      }
+
+			                                      [Container]
+			                                      [Import(typeof(DataModule))]
+			                                      [Transient<Checkout>]
+			                                      public static partial class AppContainer
+			                                      {
+			                                      }
+			                                      """;
+
+			private static string Library(string overloads)
+				=> $$"""
+				     using Awaiten;
+
+				     namespace Lib;
+
+				     public interface IAudit { }
+				     public sealed class Audit : IAudit { }
+				     public interface IRepository<T> { }
+				     public sealed class Ledger { }
+
+				     [Module]
+				     [Singleton<Audit, IAudit>]
+				     [Scoped(typeof(DataModule.Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				     public static partial class DataModule
+				     {
+				         private sealed class Repository<T> : IRepository<T> { }
+
+				     {{overloads}}
+				     }
+				     """;
+
+			private static string SameAssembly(string overloads)
+				=> Library(overloads) + LedgerConsumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty);
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AContainerInTheSameAssembly_ReportsTheAmbiguityForThatClosing(string overloads)
+			{
+				GeneratorResult result = Generator.Run(SameAssembly(overloads));
+
+				await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT190") && diagnostic.Contains("'Activate'"))
+					.Because("both overloads accept the closing, as for a container that builds the closing itself, whatever their order");
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AFriendContainer_ReportsTheAmbiguityForThatClosing(string overloads)
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Library(overloads)), LedgerConsumer);
+
+				await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT190") && diagnostic.Contains("'Activate'"));
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AContainerInAnotherAssembly_RunsTheWrapperTheModuleBound(string overloads)
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(overloads), LedgerConsumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the internal overloads are not visible to this assembly, so it runs the generic overload the module wrapped for every closing");
+				await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+					.Contains("<global::Lib.Ledger>(");
+			}
+
+			[Test]
+			public async Task AFallbackClosingTheContainerReplaces_IsNotReported()
+			{
+				GeneratorResult result = Generator.Run(SameAssembly(GenericFirst)
+					.Replace("OnActivated = nameof(Activate))]", "OnActivated = nameof(Activate), Fallback = Fallback.Silent)]")
+					.Replace("[Transient<Checkout>]", "[Transient<Checkout>]\n[Scoped<LedgerRepository, IRepository<Ledger>>]")
+					+ "\npublic sealed class LedgerRepository : IRepository<Ledger> { }\n");
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container's own ledger repository replaces the module's closing, whose hook therefore never runs");
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AClosingOnlyTheGenericOverloadAccepts_RunsItThroughTheWrapper(string overloads)
+			{
+				GeneratorResult result = Generator.Run(WithContainer(Library(overloads)));
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the overload for the ledger repository does not accept the order repository, so the generic overload is the only one");
+				await That(ContainerSource(result, "LibContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+					.Contains("<global::Lib.Order>(");
+			}
+		}
+	}
+
+	public class Unsupported
+	{
 		[Test]
 		public async Task AModuleThatIsNotPartial_IsReportedWithTheReason()
 		{
@@ -858,8 +1256,8 @@ public class OpenGenericFactoryTests
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
 			await That(own.Diagnostics).IsEmpty();
-			await That(result.Diagnostics).Contains("*AWT231*DataModule*it is nested in the generic type 'Lib.Outer<T>'*").AsWildcard()
-				.Because("the factory could not take the containing type's type parameters from a closing of the service");
+			await That(result.Diagnostics).Contains("*AWT125*'Lib.Outer<T>.Inner<U>' is nested in the generic type 'Lib.Outer<T>'*").AsWildcard()
+				.Because("no container can take the containing type's type parameters from a closing of the service");
 		}
 	}
 
@@ -906,6 +1304,90 @@ public class OpenGenericFactoryTests
 
 			await That(result.Diagnostics).IsEmpty();
 			await That(ContainerSource(result, "AppContainer")).Contains("Injected = ");
+		}
+
+		public class ContainerSideEntry
+		{
+			private const string Library = """
+			                               using Awaiten;
+
+			                               namespace Lib;
+
+			                               public interface IClock { }
+			                               public sealed class Clock : IClock { }
+			                               public interface IRepository<T> { }
+			                               public sealed class Repository<T> : IRepository<T>
+			                               {
+			                                   [Inject] internal IClock Injected { get; set; } = null!;
+
+			                                   public IClock Audit { get; set; }
+			                               }
+
+			                               [Module]
+			                               [Singleton<Clock, IClock>]
+			                               [Singleton(typeof(Repository<>), typeof(IRepository<>))]
+			                               public static partial class DataModule { }
+			                               """;
+
+			private const string EntryConsumer = """
+			                                     using Awaiten;
+			                                     using Lib;
+
+			                                     namespace App;
+
+			                                     public sealed class Order { }
+
+			                                     public sealed class Checkout
+			                                     {
+			                                         public Checkout(IRepository<Order> orders) { }
+			                                     }
+
+			                                     [Container]
+			                                     [Import(typeof(DataModule))]
+			                                     [InjectProperty(typeof(Repository<>), nameof(Repository<object>.Audit))]
+			                                     [Transient<Checkout>]
+			                                     public static partial class AppContainer
+			                                     {
+			                                     }
+			                                     """;
+
+			[Test]
+			public async Task AContainerInTheSameAssembly_SetsItInTheObjectInitializer()
+			{
+				GeneratorResult result = Generator.Run(Library + EntryConsumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Injected = ").And.Contains("Audit = ");
+			}
+
+			[Test]
+			public async Task AContainerInAnotherAssembly_SetsItOnTheInstanceTheGenericFactoryReturns()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, EntryConsumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the entry is no AWT178: the generic factory returns the closing itself, so the container sets the property after it");
+				await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Registration_Repository_").And
+					.Contains(".Audit = ");
+			}
+
+			[Test]
+			public async Task AFriendContainer_SetsItInTheObjectInitializer()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Library), EntryConsumer);
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Injected = ").And.Contains("Audit = ").And.DoesNotContain("Registration_Repository_");
+			}
+
+			[Test]
+			public async Task ADeferredEntry_IsSetAfterTheInstanceIsCached()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, EntryConsumer.Replace(".Audit))]", ".Audit), Deferred = true)]"));
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Registration_Repository_").And.Contains("._repository.Audit = ");
+			}
 		}
 	}
 
@@ -1453,7 +1935,7 @@ public class OpenGenericFactoryTests
 				[Scoped<Shop.Checkout>]
 				public static partial class Shop
 				{
-				    private static void Activate(object repository) { }
+				    private static void Activate<T>(Repository<T> repository) where T : class { }
 
 				    private sealed class Repository<T> : IRepository<T> { }
 
@@ -1469,7 +1951,7 @@ public class OpenGenericFactoryTests
 				}
 				""");
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("it names the lifecycle hook 'Activate'"))
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper"))
 				.Because("the closing the inherited consumer needs is not reported missing as well");
 		}
 	}

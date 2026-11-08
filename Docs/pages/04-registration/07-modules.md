@@ -131,7 +131,24 @@ public static partial class RepositoryModule;
 
 Each closing behaves like one the container constructs itself: lifetimes, keys, `Fallback`, `WhenInjectedInto` and the constraint check ([AWT126](../09-diagnostics.md#awt126)) apply per closing, a decorator keeps its place in the chain, and a composite fronts the other registrations of its closing. The container reads the async initialization and disposal of each closed type off the library, with the module's [async initializer conventions](../03-core-concepts/03-async-initialization.md#which-conventions-apply), so a convention that matches only some closings runs on exactly those. A container in the module's own assembly, or one granted `InternalsVisibleTo`, calls the factory for an open type private to the module, which it can't construct either. A type the module registers both closed and as an open generic stays one instance per closing: the container builds it through whichever of the two factories returns a type that serves all of its services, and reports [AWT231](../09-diagnostics.md#awt231) when neither does.
 
-The module never fails its build over an open generic. When it can't generate the factory, it records why, and a container in another assembly reports [AWT231](../09-diagnostics.md#awt231) with the reason: an open registration with a lifecycle hook, a constraint or constructor parameter type another assembly can't name, a type parameter named like a constructor parameter or injected property, a type nested in a generic class, or a convention of the module that another assembly can't call. A module that isn't `partial` records nothing, and a container in another assembly reports [AWT230](../09-diagnostics.md#awt230).
+An `OnActivated` or `OnRelease` hook of an open registration gets a generic wrapper beside the factory, with the same type parameters and constraints, which the container closes for each closing too. The module binds a generic hook to the open type's own type parameters, as a container binds it to each closing, so the hook may take the internal type and further parameters that use them:
+
+```csharp
+internal sealed class AuditedRepository<T> : IRepository<T> where T : class;   // stays internal
+
+[Module]
+[Scoped(typeof(AuditedRepository<>), typeof(IRepository<>), OnActivated = nameof(Track))]
+public static partial class AuditModule
+{
+    internal static void Track<T>(AuditedRepository<T> repository, ITimeSystem time) where T : class { }
+}
+// generated: public static void Hook_OnActivated_AuditedRepository_…<T>(IRepository<T> instance, ITimeSystem time) where T : class
+//     => Track<T>((AuditedRepository<T>)instance, time);
+```
+
+A generic hook whose constraints the open type's type parameters don't satisfy, whose type parameters come in another order, or whose parameters the wrapper can't mirror, keeps the factory out with the reason. A container that sees another overload of the hook accepting one of its closings, such as an overload for `IRepository<Order>`, reports the hook of that closing as ambiguous ([AWT190](../09-diagnostics.md#awt190)), as it would if it built the closing itself.
+
+The module never fails its build over an open generic. When it can't generate the factory, it records why, and a container in another assembly reports [AWT231](../09-diagnostics.md#awt231) with the reason: a lifecycle hook the wrapper can't run, a constraint or constructor parameter type another assembly can't name, a type parameter named like a constructor parameter or injected property, or a convention of the module that another assembly can't call. A module that isn't `partial` records nothing, and a container in another assembly reports [AWT230](../09-diagnostics.md#awt230).
 
 ## Services only the module uses
 
