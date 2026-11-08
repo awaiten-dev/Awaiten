@@ -1264,7 +1264,7 @@ partial class AwaitenGenerator
 			         && TryReadOpenGenericPair(openDecorator, openService, LocationInfo.From(location), diagnostics) is { } pair)
 			{
 				bool decoratesHandles = false;
-				foreach ((INamedTypeSymbol decorator, OwnerFactoryCall handleVia, INamedTypeSymbol handle) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
+				foreach ((INamedTypeSymbol decorator, OwnerFactoryCall handleVia, INamedTypeSymbol handle, _) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
 				{
 					closed.Add(new DecorateRegistration(handle.ToDisplayString(FullyQualified), handle, decorator, order, declarationOrder, location, keys, inherited, handleVia, module, ThroughHandle: true));
 					decoratesHandles = true;
@@ -1296,10 +1296,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The closings of an open <c>[Decorate]</c> or <c>[Composite]</c> of a module of another assembly onto the internal
 	///     services the module registers, which this container reaches only through their handles: each closed decorator or
-	///     composite, the factory the module generates for it (see <see cref="AddHiddenOpenContributionFactories" />) and the
-	///     handle it decorates or fronts. This container cannot name such a closing, so the open form alone would miss it.
+	///     composite, the factory the module generates for it (see <see cref="AddHiddenOpenContributionFactories" />), the
+	///     handle it decorates or fronts and the internal service the handle holds. This container cannot name such a
+	///     closing, so the open form alone would miss it.
 	/// </summary>
-	private static IEnumerable<(INamedTypeSymbol Type, OwnerFactoryCall Via, INamedTypeSymbol Handle)> HandleClosings(
+	private static IEnumerable<(INamedTypeSymbol Type, OwnerFactoryCall Via, INamedTypeSymbol Handle, INamedTypeSymbol Service)> HandleClosings(
 		INamedTypeSymbol? module, bool inherited, INamedTypeSymbol definition, INamedTypeSymbol openService, string attributeName, Compilation compilation)
 	{
 		if (module is null || inherited || SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
@@ -1325,7 +1326,7 @@ partial class AwaitenGenerator
 				OwnerFactoryCall via = new(module, factory.Name, factory.ReturnType.ToDisplayString(FullyQualified), factory);
 				if (HandleProducedBy(via, service, compilation) is { } handle)
 				{
-					yield return (closed, via, handle);
+					yield return (closed, via, handle, service);
 				}
 			}
 		}
@@ -1466,7 +1467,7 @@ partial class AwaitenGenerator
 					INamedTypeSymbol? handle = HandleProducedBy(via, service, compilation);
 					INamedTypeSymbol composed = handle ?? service;
 					closed.Add(new CompositeRegistration(
-						composed.ToDisplayString(FullyQualified), composed, composite, lifetime, location, key, via, module, handle is not null));
+						composed.ToDisplayString(FullyQualified), composed, composite, lifetime, location, key, via, module, handle is not null, handle is not null ? service : null));
 				}
 			}
 			else if (attribute.ConstructorArguments.Length == 2
@@ -1475,9 +1476,9 @@ partial class AwaitenGenerator
 			         && TryReadOpenGenericPair(openComposite, openService, LocationInfo.From(location), diagnostics) is { } pair)
 			{
 				bool composesHandles = false;
-				foreach ((INamedTypeSymbol composite, OwnerFactoryCall handleVia, INamedTypeSymbol handle) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
+				foreach ((INamedTypeSymbol composite, OwnerFactoryCall handleVia, INamedTypeSymbol handle, INamedTypeSymbol service) in HandleClosings(module, inherited, pair.Mapped, pair.Service, attributeClass.Name, compilation))
 				{
-					closed.Add(new CompositeRegistration(handle.ToDisplayString(FullyQualified), handle, composite, lifetime, location, key, handleVia, module, ThroughHandle: true));
+					closed.Add(new CompositeRegistration(handle.ToDisplayString(FullyQualified), handle, composite, lifetime, location, key, handleVia, module, ThroughHandle: true, HiddenService: service));
 					composesHandles = true;
 				}
 

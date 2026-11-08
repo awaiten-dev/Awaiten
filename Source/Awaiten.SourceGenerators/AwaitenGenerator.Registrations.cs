@@ -133,7 +133,8 @@ internal sealed record OwnerFactoryCall(INamedTypeSymbol Owner, string Name, str
 ///     (<see langword="null" /> for the unkeyed registrations). Applied after coalescing (and decorator chains) as
 ///     the public single-dispatch winner, excluded from collection membership. <see cref="ThroughHandle" /> marks a
 ///     composite a module of another assembly builds into the handle of a service it registers under an internal type,
-///     which fronts that handle.
+///     which fronts that handle. <see cref="HiddenService" /> is that internal service, against which the container
+///     judges the composite's collection as a container in the module's own assembly does.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record CompositeRegistration(
@@ -145,7 +146,8 @@ internal sealed record CompositeRegistration(
 	string? Key,
 	OwnerFactoryCall? Via = null,
 	INamedTypeSymbol? Owner = null,
-	bool ThroughHandle = false);
+	bool ThroughHandle = false,
+	INamedTypeSymbol? HiddenService = null);
 
 /// <summary>
 ///     A single open generic <c>[Decorate(typeof(D&lt;&gt;), typeof(IService&lt;&gt;))]</c> registration: the unbound

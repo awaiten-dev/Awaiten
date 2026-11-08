@@ -800,7 +800,7 @@ partial class AwaitenGenerator
 				return CompositeCollectionKind.Exact;
 			}
 
-			if (relatedElement is null && compilation.HasImplicitConversion(service, element!))
+			if (relatedElement is null && (compilation.HasImplicitConversion(service, element!) || (registration.HiddenService is { } hidden && compilation.HasImplicitConversion(hidden, element!))))
 			{
 				relatedElement = element!.ToDisplayString(FullyQualified);
 			}

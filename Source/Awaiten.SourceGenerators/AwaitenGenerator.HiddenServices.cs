@@ -1185,7 +1185,7 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject = new(typeName, $"'{Display(typeName)}' {(composite ? "composes" : "decorates")} the internal service '{Display(service.ToDisplayString(FullyQualified))}', which a consuming container reaches through a generated handle", "register it in the module");
 		string handle = hidden.HandleType(service);
 		List<HiddenInitializer> initializers = new();
-		if (!TryMirrorFactoryParameters(decorator, context, null, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true)
+		if (!TryMirrorFactoryParameters(decorator, context, null, subject, out EquatableArray<FactoryParameter> parameters, mirrorProperties: true, decorated: composite ? null : service)
 		    || !TryMirrorInjectedProperties(decorator, context, null, subject, ref parameters, out MirroredMembers members)
 		    || !TryAddHiddenInitializers(decorator, handle, context, null, subject, initializers))
 		{
