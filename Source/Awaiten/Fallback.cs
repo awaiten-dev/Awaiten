@@ -2,9 +2,10 @@ namespace Awaiten;
 
 /// <summary>
 ///     Whether a <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registration is an overridable default,
-///     and how a collision between two such defaults is handled. An overridable default applies only when
-///     nothing else registers the same service; a stronger (non-fallback) registration, or an earlier
-///     fallback, replaces it entirely, even in collections. The two overridable modes differ only in whether
+///     and how a collision between two such defaults is handled. A registration without <c>Fallback</c> of the
+///     same service replaces an overridable default entirely, even in collections. Defaults that nothing else
+///     replaces are all collection members, and the first of them in precedence order wins single resolution.
+///     The two overridable modes differ only in whether
 ///     an unresolved collision between them is reported. That choice is deliberately part of the registration:
 ///     it lets a module author decide per registration whether a competing default deserves a warning
 ///     (AWT148), which a consumer's project-wide <c>.editorconfig</c> severity cannot express.
@@ -26,8 +27,8 @@ public enum Fallback
 	Warn = 1,
 
 	/// <summary>
-	///     An overridable default that defers silently: it contributes only when the service is not already
-	///     registered, and nothing is reported if something else also provides it.
+	///     An overridable default that defers silently: a registration without <c>Fallback</c> replaces it, and
+	///     nothing is reported if another default also provides the service.
 	/// </summary>
 	Silent = 2,
 }

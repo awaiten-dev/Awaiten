@@ -123,7 +123,7 @@ public static partial class CoffeeShop
 
 ### Overridable defaults
 
-`Fallback` makes an open generic an overridable default, typically in a [module](./07-modules.md#overridable-defaults). It applies per closing: a closed registration replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing.
+`Fallback` makes an open generic an overridable default, typically in a [module](./07-modules.md#overridable-defaults). It applies per closing: a closed registration without `Fallback` replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing. A closed default replaces nothing, so the open default's closing stays a member of that closing's collections, behind the closed one.
 
 ```csharp
 [Container]

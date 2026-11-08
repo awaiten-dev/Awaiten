@@ -137,8 +137,40 @@ public partial class DiagnosticTests
 			string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
 			await That(source).Contains("global::MyCode.ClockA")
 				.Because("the earlier Fallback.Silent claims the service");
-			await That(source).DoesNotContain("ClockB")
-				.Because("the losing default is dropped in full");
+			await That(source).Contains("global::MyCode.ClockB")
+				.Because("a default losing only to another default stays a collection member");
+		}
+
+		[Test]
+		public async Task Keyed_DoesNotReportAwt117ForSilentDefaultsSharingTheKey()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class ClockA : IClock { }
+			                                       public sealed class ClockB : IClock { }
+
+			                                       [Module]
+			                                       [Singleton<ClockA, IClock>(Fallback = Fallback.Silent, Key = "a")]
+			                                       public static class ModuleA { }
+
+			                                       [Module]
+			                                       [Singleton<ClockB, IClock>(Fallback = Fallback.Silent, Key = "a")]
+			                                       public static class ModuleB { }
+
+			                                       [Container]
+			                                       [Import(typeof(ModuleA))]
+			                                       [Import(typeof(ModuleB))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("two defaults under one key collide like unkeyed defaults, which Fallback.Silent keeps quiet, rather than as a duplicate key");
 		}
 
 		[Test]

@@ -210,7 +210,9 @@ public static class TimeModuleB;
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Decide the winner with a strong registration of the service on the container (one without `Fallback`), or set `Fallback = Fallback.Silent` on a default to accept that the first declared one wins.
+The first declared default wins single resolution, and both defaults stay members of the service's collections.
+
+**Fix:** Decide the winner with a strong registration of the service on the container (one without `Fallback`), which also replaces both defaults in collections, or set `Fallback = Fallback.Silent` on a default to accept that the first declared one wins.
 
 ### AWT216
 

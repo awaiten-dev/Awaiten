@@ -351,9 +351,11 @@ partial class AwaitenGenerator
 		// winner: two Defaults colliding is AWT148, two same-tier module registrations is AWT155, a contradicting
 		// lifetime/production is AWT107/AWT111. The intended overrides stay silent.
 		Dictionary<ServiceKey, RawRegistration> winners = new();
+		HashSet<ServiceKey> overridden = new();
 
-		// Registrations are processed in precedence order (see PrecedenceRank): a losing default is dropped
-		// entirely, so it is replaced transparently; a losing strong/synthesized/scan registration stays a member.
+		// Registrations are processed in precedence order (see PrecedenceRank): a default that a preceding
+		// registration without Fallback overrides is dropped entirely, so it is replaced transparently; a default
+		// losing only to another default, and a losing strong/synthesized/scan registration, stays a member.
 		foreach ((RawRegistration registration, _) in InPrecedenceOrder(raw))
 		{
 			// Record an unkeyed closed-generic-interface registration as a variance candidate, so a
@@ -413,8 +415,9 @@ partial class AwaitenGenerator
 					])));
 			}
 
-			// An overridable default whose service is already claimed is dropped in full, so the stronger (or
-			// earlier) registration replaces it transparently. Two colliding Fallback.Warn defaults warn (AWT148); Fallback.Silent is silent.
+			// An overridable default whose service a registration without Fallback already claims is dropped in full,
+			// so that registration replaces it transparently. Two colliding Fallback.Warn defaults warn (AWT148);
+			// Fallback.Silent is silent.
 			if (registration.Weak && alreadyChosen)
 			{
 				if (registration.IsDefault && winner!.IsDefault
@@ -426,7 +429,15 @@ partial class AwaitenGenerator
 						new EquatableArray<string>([Display(registration.ServiceType),])));
 				}
 
-				continue;
+				if (overridden.Contains(serviceKey))
+				{
+					continue;
+				}
+			}
+
+			if (!registration.Weak)
+			{
+				overridden.Add(serviceKey);
 			}
 
 			// Every registration is a member of the collection for its (service type, key), built even when it
@@ -436,6 +447,12 @@ partial class AwaitenGenerator
 
 			// A keyed registration is also a member of its service's keyed collection, indexed by its Key.
 			AddKeyedMember(keyedMembers, keyedMemberOrder, registration, alreadyChosen);
+
+			// A default losing to an earlier default is AWT148's to report, if anything.
+			if (alreadyChosen && registration.Weak)
+			{
+				continue;
+			}
 
 			if (alreadyChosen)
 			{
@@ -759,17 +776,23 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The registrations (by index into <paramref name="raw" />) coalescing will drop in full: an overridable
-	///     default whose service key a higher-tier or earlier registration claims. Losing strong/synthesized/scan
-	///     registrations stay collection members. Sound to compute before open generic expansion (synthesized ranks
-	///     below defaults). A contextual registration claims its context key, as in coalescing.
+	///     default whose service key a preceding registration without Fallback claims. A default losing only to
+	///     other defaults, and losing strong/synthesized/scan registrations, stay collection members. Sound to compute
+	///     before open generic expansion (synthesized ranks below defaults). A contextual registration claims its
+	///     context key, as in coalescing.
 	/// </summary>
 	private static HashSet<int> DroppedOverridableDefaults(List<RawRegistration> raw)
 	{
-		HashSet<ServiceKey> claimed = new();
+		HashSet<ServiceKey> overridden = new();
 		HashSet<int> dropped = new();
 		foreach ((RawRegistration registration, int index) in InPrecedenceOrder(raw))
 		{
-			if (!claimed.Add(new ServiceKey(registration.ServiceType, registration.WhenInjectedInto is { } consumer ? ContextKey(consumer) : registration.Key)) && registration.Weak)
+			ServiceKey key = new(registration.ServiceType, registration.WhenInjectedInto is { } consumer ? ContextKey(consumer) : registration.Key);
+			if (!registration.Weak)
+			{
+				overridden.Add(key);
+			}
+			else if (overridden.Contains(key))
 			{
 				dropped.Add(index);
 			}
