@@ -116,6 +116,34 @@ public partial class DiagnosticTests
 				.Because("the constraint violation is the single root cause; the consumer's now-unregistered IRepository<NotComparable> must not also raise AWT101");
 		}
 
+		[Test]
+		public async Task ReportsEachService_WhenOneImplementationIsRegisteredForSeveral()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IA<T> { }
+			                                       public interface IB<T> { }
+			                                       public sealed class Both<T> : IA<T>, IB<T> where T : class { }
+			                                       public sealed class Root { public Root(IA<int> a, IB<int> b) { } }
+
+			                                       [Container]
+			                                       [Transient(typeof(Both<>), typeof(IA<>))]
+			                                       [Transient(typeof(Both<>), typeof(IB<>))]
+			                                       [Transient<Root>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasCount(2);
+			await That(result.Diagnostics).Contains("*AWT126*'MyCode.Both<int>'*no other registration of 'MyCode.IA<int>' accepts them*").AsWildcard()
+				.Because("each unserved service is reported, although both closings share the implementation Both<int>");
+			await That(result.Diagnostics).Contains("*AWT126*'MyCode.Both<int>'*no other registration of 'MyCode.IB<int>' accepts them*").AsWildcard();
+		}
+
 		public class SeveralOpenRegistrations
 		{
 			private const string Formatters = """
@@ -418,6 +446,29 @@ public partial class DiagnosticTests
 
 				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.BinaryFormatter<MyCode.Receipt>'*no other registration of 'MyCode.IFormatter<MyCode.Receipt> (key: binary)' accepts them*").AsWildcard()
 					.Because("only the registration under the key 'binary' could serve the keyed request, and its constraint rejects Receipt");
+			}
+
+			[Test]
+			public async Task AKeyedRequest_ReportsTheConstraint_WhenTheImplementationIsAlsoRegisteredWithoutAKey()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        public Printer([FromKey("x")] IFormatter<Label> labels) { }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>), Key = "x")]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>(Key = "y")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.TextFormatter<MyCode.Label>'*'MyCode.IFormatter<MyCode.Label> (key: x)'*").AsWildcard()
+					.Because("the registration under the key 'x' is reported for the keyed request, although the unkeyed registration of the same implementation rejects Label too");
 			}
 
 			[Test]

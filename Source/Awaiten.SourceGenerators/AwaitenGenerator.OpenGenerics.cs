@@ -677,7 +677,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			ServiceKey key = new(closedService, candidate.WhenInjectedInto is { } consumer ? ContextKey(consumer) : candidate.Key);
+			ServiceKey key = new(closedService, EffectiveKey(candidate));
 			if (!context.DeferredRejections.TryGetValue(key, out List<DiagnosticInfo>? deferred))
 			{
 				deferred = new List<DiagnosticInfo>();
@@ -788,6 +788,10 @@ partial class AwaitenGenerator
 			_ => null,
 		};
 
+	/// <summary>The key coalescing files a closing of <paramref name="candidate" /> under: its consumer's context key, or its own key.</summary>
+	private static string? EffectiveKey(OpenRegistration candidate)
+		=> candidate.WhenInjectedInto is { } consumer ? ContextKey(consumer) : candidate.Key;
+
 	private static bool IsClaimedByStrongerRegistration(OpenRegistration candidate, string closedService, List<RawRegistration> raw)
 		=> raw.Any(registration =>
 			registration is { IsScan: false, Weak: false, }
@@ -890,7 +894,7 @@ partial class AwaitenGenerator
 	private static DiagnosticInfo? FactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
 		string factory = QualifiedMember(candidate.Origin ?? context.Inputs.ContainerSymbol, candidate.Factory);
-		if (!context.ReportedConstraints.Add("factory:" + closedService + "\0" + factory))
+		if (!context.ReportedConstraints.Add("factory:" + closedService + "\0" + EffectiveKey(candidate) + "\0" + factory))
 		{
 			return null;
 		}
@@ -909,7 +913,7 @@ partial class AwaitenGenerator
 		ExpansionContext context)
 	{
 		string closedImplName = candidate.Implementation.Construct(closed.TypeArguments.ToArray()).ToDisplayString(FullyQualified);
-		if (!context.ReportedConstraints.Add(closedImplName))
+		if (!context.ReportedConstraints.Add(closedImplName + "\0" + closedService + "\0" + EffectiveKey(candidate)))
 		{
 			return null;
 		}
