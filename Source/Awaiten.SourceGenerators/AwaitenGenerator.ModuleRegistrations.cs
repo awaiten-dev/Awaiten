@@ -933,7 +933,8 @@ partial class AwaitenGenerator
 	///     <c>Optional</c> property becomes an optional parameter after the others, followed by its presence flag (see
 	///     <see cref="PresenceFlagName" />), which a consumer sets only when it registers the service, so the factory
 	///     assigns a service that resolved to <see langword="null" /> and leaves the property as it is for a missing one,
-	///     inside the object initializer for an init-only property. A <c>Deferred</c> property is no parameter: it gets a
+	///     inside the object initializer for an init-only property. An <c>Optional</c> collection is a plain parameter,
+	///     since a consumer always fills it. A <c>Deferred</c> property is no parameter: it gets a
 	///     setter wrapper the consumer calls after it built and cached the instance, whose value parameter has a default
 	///     when the property is optional too. Reports AWT200 and returns <see langword="false" /> for what the factory
 	///     cannot express: what no container supports (an optional property that is required, a deferred one that is
@@ -961,7 +962,11 @@ partial class AwaitenGenerator
 		{
 			ImmutableArray<AttributeData> attributes = property.GetAttributes();
 			bool isDeferred = IsInjectDeferred(attributes);
-			bool isOptional = IsInjectOptional(attributes);
+
+			// A collection is always filled, empty without a registration, so Optional changes nothing about it, as for a
+			// container in the module's assembly: it is assigned in the initializer, a required or init-only one too.
+			bool isOptional = IsInjectOptional(attributes)
+			                  && (isDeferred || !IsSynthesizedCollection(ClassifyDependency(property.Type, attributes, asyncFactory: false, location: null, new ExternalServiceTypes()).Kind));
 			string? reason = null;
 			INamedTypeSymbol? unbuildable = null;
 			if (property.SetMethod is not { } setter || !context.Compilation.IsSymbolAccessibleWithin(setter, context.Module))

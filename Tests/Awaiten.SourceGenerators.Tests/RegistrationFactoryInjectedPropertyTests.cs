@@ -143,6 +143,17 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; set; }")]
+		[Arguments("public required System.Collections.Generic.IEnumerable<IClock> Clocks { get; init; }")]
+		public async Task OfARequiredCollection_IsFilledEverywhere(string property)
+		{
+			Containers containers = RunEverywhere(Library($"[Inject(Optional = true)] {property}"), clock: false);
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("a collection is always filled, empty without a registration, so the factory sets a required one like a container in the module's assembly");
+		}
+
+		[Test]
 		public async Task OfAPrivateNestedType_IsMarkedPresentByAContainerInTheSameAssembly()
 		{
 			GeneratorResult result = Generator.Run("""
