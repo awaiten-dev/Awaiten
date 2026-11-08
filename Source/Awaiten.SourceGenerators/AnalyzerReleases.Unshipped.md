@@ -134,6 +134,7 @@
  AWT238  | Awaiten   | Error    | A container imports a module whose generated members take the handle of an internal service that another module of the same assembly registers, without importing that module
  AWT240  | Awaiten   | Error    | A scan match of an imported module in another assembly cannot share one instance with another registration of its implementation, which the container builds as a type that does not convert to the match's service
  AWT241  | Awaiten   | Error    | A registration cannot share the instance an imported module of another assembly builds through a generated handle, because it sets a directive the handle cannot apply or the module generated no member to serve it
+ AWT242  | Awaiten   | Error    | A Func/Lazy/Owned/Task relationship targets a service the container imports from its external resolver, which serves only a direct dependency
  AWT243  | Awaiten   | Error    | The project compiles with a C# version older than the code generated for a container or module needs (C# 9, or C# 11 for a module that declares a [Scan]), so nothing is generated for it
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.

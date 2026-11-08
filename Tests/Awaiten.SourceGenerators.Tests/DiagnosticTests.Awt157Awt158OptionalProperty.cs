@@ -259,6 +259,43 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Inject(Optional = true)]")]
+		[Arguments("[Inject(Deferred = true, Optional = true)]")]
+		public async Task OptionalOwnedThroughLazyPropertyOfAnotherAssemblysModule_StillReportsAwt121(string inject)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                        using System;
+			                                                                        using Awaiten;
+
+			                                                                        namespace Lib;
+
+			                                                                        public sealed class Widget : IDisposable { public void Dispose() { } }
+			                                                                        public interface IWorkshop { }
+
+			                                                                        internal sealed class Workshop : IWorkshop
+			                                                                        {
+			                                                                            {{inject}} public Lazy<Owned<Widget>> Widgets { get; set; } = null!;
+			                                                                        }
+
+			                                                                        [Module]
+			                                                                        [Transient<Widget>]
+			                                                                        [Transient<Workshop, IWorkshop>]
+			                                                                        public static partial class WorkshopModule { }
+			                                                                        """, """
+			                                                                             using Awaiten;
+
+			                                                                             namespace App;
+
+			                                                                             [Container]
+			                                                                             [Import(typeof(Lib.WorkshopModule))]
+			                                                                             public static partial class MyContainer;
+			                                                                             """);
+
+			await That(result.Diagnostics).Contains("*AWT121*").AsWildcard()
+				.Because("the module's generated factory or setter fills the property, so Optional does not suppress the structurally impossible request there either");
+		}
+
+		[Test]
 		public async Task DeferredOptionalProperty_WithNoRegistration_IsDroppedWithoutDiagnostic()
 		{
 			GeneratorResult result = Generator.Run("""

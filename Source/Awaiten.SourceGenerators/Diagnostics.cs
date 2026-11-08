@@ -2108,6 +2108,22 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     A relationship (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>, <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> and their
+	///     combinations) over a service the container imports from its external resolver through <c>[ImportService]</c>
+	///     (the blanket <c>[ImportServices]</c> declares no service host-owned, so it keeps AWT101). Only a direct dependency is
+	///     routed to the external resolver, which hands back an instance, so the relationship would resolve from the
+	///     graph, which has no registration of the service. Reported instead of AWT101, which would point at a
+	///     registration that AWT175 forbids.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RelationshipOverImportedService = new(
+		"AWT242",
+		"Relationship over an imported service",
+		"'{0}' cannot be resolved: '{1}' requires '{2}', a relationship over '{3}', which the container imports from its external resolver only as a direct dependency; depend on '{3}' directly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     The project compiles with a C# version older than the code the generator would emit for a container or module
 	///     needs, so nothing is generated for it.
 	/// </summary>

@@ -1161,7 +1161,7 @@ public class GeneralTests
 	}
 
 	[Test]
-	public async Task ImportService_RoutesOnlyTheDirectDependency_ARelationshipOverTheExternalTypeStillReportsAwt101()
+	public async Task ImportService_RoutesOnlyTheDirectDependency_ARelationshipOverTheExternalTypeReportsAwt242()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using System;
@@ -1181,9 +1181,9 @@ public class GeneralTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+		await That(result.Diagnostics).Contains("*AWT242*").AsWildcard()
 			.And.Contains("*ILogger*").AsWildcard()
-			.Because("[ImportService<T>] routes only the direct dependency of T; a Func<T>/Lazy<T> relationship over it resolves from the graph and is AWT101 when unregistered");
+			.Because("[ImportService<T>] routes only the direct dependency of T; a Func<T>/Lazy<T> relationship over it resolves from the graph, which has no registration of it");
 	}
 
 	[Test]

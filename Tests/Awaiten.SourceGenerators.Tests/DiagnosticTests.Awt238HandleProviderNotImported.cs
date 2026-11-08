@@ -78,6 +78,42 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ARelationshipOverTheHandleUnderImportServices_ReportsAwt238Alone()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using System;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class BeanStore { }
+				internal sealed class Grinder : IGrinder { public Grinder(Lazy<BeanStore> store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				public static partial class StorageModule { }
+
+				[Module]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""", """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[ImportServices]
+				[Import(typeof(CoffeeModule))]
+				public static partial class MyContainer;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*AWT238*'Lib.CoffeeModule'*'Lib.BeanStore'*'Lib.StorageModule'*").AsWildcard()
+				.Because("the missing import is the one cause, so the relationship over the handle without a registration is not reported again, whatever diagnostic it would get");
+		}
+
+		[Test]
 		public async Task TheModuleThatDeclaresTheHandleImported_DoesNotReportAwt238()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, Consumer("StorageModule", "CoffeeModule"));
