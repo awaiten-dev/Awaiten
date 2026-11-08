@@ -509,7 +509,10 @@ partial class AwaitenGenerator
 		{
 			ReportNotSelfCompiled(
 				context, module, registration.Implementation, "handle",
-				ModuleShapeReason(module) ?? "it leaves the singleton to the assemblies it grants InternalsVisibleTo",
+				ModuleShapeReason(module)
+				?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
+					? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
+					: "its build reported an error for the module or ran without the Awaiten generator"),
 				$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
 		}
 	}

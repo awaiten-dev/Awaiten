@@ -149,6 +149,52 @@ public class CrossContainerAgreementTests
 		}
 	}
 
+	public class StartedInternalSingleton
+	{
+		private const string Library = """
+			using Awaiten;
+
+			namespace Lib;
+
+			internal interface ISecret { }
+			internal sealed class Secret : ISecret { }
+
+			[Module]
+			[Singleton<Secret, ISecret>(Eager = true)]
+			public static class CoffeeModule { }
+			""";
+
+		private const string Consumer = """
+			using Awaiten;
+			using Lib;
+
+			namespace MyCode;
+
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		[Test]
+		public async Task WithoutAnyGrant_DoesNotBlameInternalsVisibleTo()
+		{
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Library, Consumer);
+
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because its build reported an error for the module or ran without the Awaiten generator"))
+				.Because("the module's assembly grants no InternalsVisibleTo, so it left the singleton to no friend; its own build reported AWT194");
+		}
+
+		[Test]
+		public async Task WithAGrantToAnotherAssembly_NamesTheModuleThatIsNotPartial()
+		{
+			string granted = Library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Friend\")]\nnamespace Lib;");
+
+			await That(Generator.Run(granted).Diagnostics).IsEmpty()
+				.Because("the module leaves its internal services to the assemblies it grants InternalsVisibleTo, so the library builds");
+			await That(Generator.RunWithGeneratedReferencedAssembly(granted, Consumer).Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because the module, or a class that contains it, is not partial"));
+		}
+	}
+
 	public class ImplementationOfTwoModules
 	{
 		private static string Library() => """
