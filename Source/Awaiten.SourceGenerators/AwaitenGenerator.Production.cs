@@ -154,7 +154,8 @@ partial class AwaitenGenerator
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
-			NestedNullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNestedNullableProduct(disposalType));
+			NestedNullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNestedNullableProduct(disposalType),
+			NullableProductType: !viaModuleFactory && info.Production == ProductionKind.Factory ? NullableProductType(disposalType) : null);
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -357,7 +358,8 @@ partial class AwaitenGenerator
 			EmitType: EmitTypeOf(info),
 			Eager: info.Eager && info.Lifetime == Lifetime.Singleton,
 			PrivateServices: PrivateServices(info, containerSymbol),
-			NestedNullableProduct: memberType is not null && IsNestedNullableProduct(memberType));
+			NestedNullableProduct: memberType is not null && IsNestedNullableProduct(memberType),
+			NullableProductType: memberType is null ? null : NullableProductType(memberType));
 	}
 
 	/// <summary>
@@ -367,6 +369,16 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static bool IsNestedNullableProduct(ITypeSymbol produced)
 		=> produced.NullableAnnotation != NullableAnnotation.Annotated && HasNestedNullableAnnotation(produced);
+
+	/// <summary>
+	///     A Factory or Instance member's declared reference type that carries a nullable annotation both at and below
+	///     its top level, spelled without the nested annotations (see <see cref="InstanceModel.NullableProductType" />),
+	///     or <see langword="null" /> for any other type.
+	/// </summary>
+	private static string? NullableProductType(ITypeSymbol produced)
+		=> produced is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated, } && HasNestedNullableAnnotation(produced)
+			? produced.ToDisplayString(FullyQualified) + "?"
+			: null;
 
 	/// <summary>
 	///     The service types of <paramref name="info" /> that are private or protected nested types the generated

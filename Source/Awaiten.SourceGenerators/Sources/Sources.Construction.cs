@@ -271,7 +271,9 @@ internal static partial class Sources
 			string produced = instance.IsAsyncFactory
 				? $"await {instance.ProductionMember}({arguments}).ConfigureAwait(false)"
 				: $"{instance.ProductionMember}({arguments})";
-			return instance.NestedNullableProduct ? $"({produced})!" : produced;
+			return instance.NestedNullableProduct ? $"({produced})!"
+				: instance.NullableProductType is { } type ? $"({type})(object?)({produced})"
+				: produced;
 		}
 
 		return $"new {instance.ConstructedType}({arguments}){MemberInitializer(instance, instances, names, serviceToIndex, asynchronous)}";
