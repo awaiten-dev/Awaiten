@@ -106,6 +106,25 @@ public static class Generator
 	}
 
 	/// <summary>
+	///     Like <see cref="RunWithGeneratedReferencedAssembly" />, but with a chain of generated referenced assemblies:
+	///     each of <paramref name="referencedSources" /> is compiled with the generator against the ones before it, so a
+	///     library can reference another generated library, and <paramref name="source" /> references all of them.
+	/// </summary>
+	public static GeneratorResult RunWithGeneratedReferencedAssemblyChain(
+		string[] referencedSources,
+		[StringSyntax("c#-test")] string source)
+	{
+		List<MetadataReference> references = new();
+		foreach (string referencedSource in referencedSources)
+		{
+			(Compilation referenced, _) = RunGenerator(referencedSource, references.ToArray(), [], $"Library{references.Count + 1}");
+			references.Add(EmitToReference(referenced));
+		}
+
+		return Run(source, references.ToArray());
+	}
+
+	/// <summary>
 	///     Like <see cref="Run(LanguageVersion, string, NullableContextOptions)" />, but against the references of a net48
 	///     project without a nullable polyfill, where <c>NotNullWhenAttribute</c> exists only as the internal copy inside
 	///     Awaiten's netstandard2.0 asset, with nullable enabled. <paramref name="laterSource" /> joins the compilation after
