@@ -833,19 +833,10 @@ partial class AwaitenGenerator
 		    || !TryMirrorInjectedProperties(implementation, context with { Diagnostics = rejections, }, first.Location, subject, ref parameters, out members)
 		    || rejections.Count > 0)
 		{
-			// A parameter of an internal service the module cannot build fails only because of that service, whose cause
-			// the module reports, so a consumer names the service instead of a second, misleading cause.
-			if (context.Hidden is { } hidden
-			    && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null
-			    && rejections.Find(hidden.UnbuildableNeeds.ContainsKey) is { } need)
+			if (UnbuildableNeedsOnly(implementation, rejections, context) is { } unbuildable)
 			{
-				string unbuildable = hidden.UnbuildableNeeds[need];
-				rejections.RemoveAll(hidden.UnbuildableNeeds.ContainsKey);
-				if (rejections.Count == 0)
-				{
-					skipped.Add(new SkippedRegistration(RegistrationSkippedName(implementation), unbuildable));
-					return null;
-				}
+				skipped.Add(new SkippedRegistration(RegistrationSkippedName(implementation), unbuildable));
+				return null;
 			}
 
 			string?[] reasons = rejections.Select(rejection => SkipReason(rejection, services)).ToArray();
@@ -1108,6 +1099,26 @@ partial class AwaitenGenerator
 			.Concat(ServableTypes(implementation))
 			.Where(candidate => IsExternallyAccessible(candidate) || (hidden && LessAccessibleThanContainer(candidate, context.Module) is null))
 			.FirstOrDefault(candidate => services.All(service => context.Compilation.HasImplicitConversion(candidate, service)));
+	}
+
+	/// <summary>
+	///     Drops each of <paramref name="rejections" /> that fails only because of an internal service the module cannot
+	///     build (see <see cref="HiddenServices.UnbuildableNeeds" />), whose cause the module reports, so a consumer names
+	///     the service instead of a second, misleading cause. Returns the reason a consumer reports for
+	///     <paramref name="implementation" /> when no other rejection remains, else <see langword="null" />. An
+	///     implementation private to the module keeps its rejections, since no consumer constructs it.
+	/// </summary>
+	private static string? UnbuildableNeedsOnly(INamedTypeSymbol implementation, List<DiagnosticInfo> rejections, ModuleScanContext context)
+	{
+		if (context.Hidden is not { } hidden
+		    || TypeHiddenInModule(implementation, context.Module, context.Compilation) is not null
+		    || rejections.Find(hidden.UnbuildableNeeds.ContainsKey) is not { } need)
+		{
+			return null;
+		}
+
+		rejections.RemoveAll(hidden.UnbuildableNeeds.ContainsKey);
+		return rejections.Count == 0 ? hidden.UnbuildableNeeds[need] : null;
 	}
 
 	private static void ReportRegistrationExposures(SelfCompiledSubject subject, string exposures, string remedy, Location? location, List<DiagnosticInfo> diagnostics)

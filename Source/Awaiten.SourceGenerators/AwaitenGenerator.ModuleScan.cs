@@ -219,7 +219,8 @@ partial class AwaitenGenerator
 	///     convention of the module that initializes the match but that a consumer cannot call is AWT234. A match
 	///     that fails only with AWT195, AWT197, AWT200 or AWT234 while an assembly granted <c>InternalsVisibleTo</c> could
 	///     construct it (see <see cref="FriendsCanConstruct" />) is recorded instead, with no factory and no error. So is
-	///     a match the module also registers when an assembly granted <c>InternalsVisibleTo</c>, or any assembly, can
+	///     one that fails only because it takes an internal service the module cannot build, whose cause the module
+	///     reports (see <see cref="UnbuildableNeedsOnly" />), and a match the module also registers when an assembly granted <c>InternalsVisibleTo</c>, or any assembly, can
 	///     construct it, since a factory would split the instance a container shares with the registration.
 	///     Returns the number of factories contributed (0 or 1).
 	/// </summary>
@@ -289,7 +290,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> rejections = new();
 		if (skipReason is null && !TryMirrorFactoryParameters(type, context with { Diagnostics = rejections, }, match.Location, ScanSubject(typeName), out parameters))
 		{
-			skipReason = skippable ? SkipReason(rejections[0], []) : null;
+			skipReason = UnbuildableNeedsOnly(type, rejections, context) ?? (skippable ? SkipReason(rejections[0], []) : null);
 			if (skipReason is null)
 			{
 				diagnostics.AddRange(rejections);
