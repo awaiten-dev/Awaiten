@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Awaiten.SourceGenerators.Tests;
 
 /// <summary>
@@ -289,6 +291,16 @@ public class NullableAnnotationTests
 
 	public sealed class Consumers
 	{
+		private static string WidgetSource(string parameter, string argType, bool asyncInitialized = false)
+			=> Source("Scoped", parameter, asyncInitialized: false, registrations: "[Transient<Widget>]") + $$"""
+
+				public sealed class Widget{{(asyncInitialized ? " : IInitializable" : "")}}
+				{
+				    public Widget([Arg] {{argType}} value) { }
+				    public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+				}
+				""";
+
 		[Test]
 		public async Task FactoryParameter_CompilesWithoutWarnings()
 		{
@@ -362,7 +374,7 @@ public class NullableAnnotationTests
 		[Test]
 		public async Task FuncWithRuntimeArguments_CompilesWithoutWarnings()
 		{
-			GeneratorResult result = Generator.Run(Source("Scoped", "Func<string?, IRepo<string>, Widget<string?>>", asyncInitialized: false,
+			GeneratorResult result = Generator.Run(Source("Scoped", "Func<string?, IRepo<string?>, Widget<string?>>", asyncInitialized: false,
 				registrations: "[Transient(typeof(Widget<>))]") + """
 
 				public sealed class Widget<T>
@@ -372,6 +384,98 @@ public class NullableAnnotationTests
 				""");
 
 			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		[Arguments("Func<string?, Widget>", "string")]
+		[Arguments("Func<string?, Owned<Widget>>", "string")]
+		[Arguments("Func<string?, Task<Widget>>", "string")]
+		[Arguments("Func<string?, Task<Owned<Widget>>>", "string")]
+		[Arguments("Func<List<string?>?, Widget>", "List<string?>")]
+		[Arguments("Func<List<string>, Widget>", "List<string?>")]
+		[Arguments("Func<List<string?>, Widget>", "List<string>")]
+		public async Task FuncArgumentThatTheArgDoesNotAccept_Warns(string parameter, string argType)
+		{
+			GeneratorResult result = Generator.Run(WidgetSource(parameter, argType));
+
+			await That(result.Diagnostics).Contains("*warning CS86*").AsWildcard()
+				.Because("the consumer may pass a value the [Arg] parameter does not accept, which the compiler reports like a direct call");
+		}
+
+		[Test]
+		[Arguments("Func<string?, Widget>", "string?")]
+		[Arguments("Func<string, Widget>", "string?")]
+		[Arguments("Func<string?, Owned<Widget>>", "string?")]
+		[Arguments("Func<string?, Task<Widget>>", "string?")]
+		[Arguments("Func<string?, Task<Owned<Widget>>>", "string?")]
+		[Arguments("Func<List<string?>, Widget>", "List<string?>")]
+		[Arguments("Func<List<string?>?, Widget>", "List<string?>?")]
+		public async Task FuncArgumentThatTheArgAccepts_CompilesWithoutWarnings(string parameter, string argType)
+		{
+			GeneratorResult result = Generator.Run(WidgetSource(parameter, argType));
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task FuncArgumentIntoAnAsyncInitializedService_IsCheckedAgainstTheArg(bool nullableArg)
+		{
+			GeneratorResult result = Generator.Run(WidgetSource("Func<string?, Task<Widget>>", nullableArg ? "string?" : "string", asyncInitialized: true));
+
+			await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("warning CS86"))).IsEqualTo(!nullableArg)
+				.Because("the async resolver takes the runtime argument as the [Arg] parameter declares it");
+		}
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task FuncArgumentIntoAFactoryArg_IsCheckedAgainstTheArg(bool nullableArg)
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", "Func<string?, Widget>", asyncInitialized: false,
+				registrations: "[Transient<Widget>(Factory = nameof(CreateWidget))]",
+				members: $"private static Widget CreateWidget([Arg] {(nullableArg ? "string?" : "string")} value) => new Widget();") + """
+
+				public sealed class Widget;
+				""");
+
+			await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("warning CS86"))).IsEqualTo(!nullableArg)
+				.Because("a factory's [Arg] parameter is checked against the Func argument like a constructor's");
+		}
+
+		[Test]
+		[Arguments("Func<string?, Gadget<string?>>")]
+		[Arguments("Func<string, Gadget<string?>>")]
+		[Arguments("Func<string?, Gadget<string>>")]
+		public async Task FuncArgumentIntoAnArgOfATypeParameter_CompilesWithoutWarnings(string parameter)
+		{
+			GeneratorResult result = Generator.Run(Source("Scoped", parameter, asyncInitialized: false,
+				registrations: "[Transient(typeof(Gadget<>))]\n[Transient<OtherConsumer>]") + """
+
+				public sealed class Gadget<T>
+				{
+				    public Gadget([Arg] T value) { }
+				}
+				public sealed class OtherConsumer
+				{
+				    public OtherConsumer(Func<string, Gadget<string>> factory) { }
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("every consumer shares the closing the generated code spells without annotations, so an [Arg] of a type parameter forgives the argument rather than check it against one consumer's annotations");
+		}
+
+		[Test]
+		public async Task FuncArgument_IsNotForgiven()
+		{
+			GeneratorResult result = Generator.Run(WidgetSource("Func<string?, Widget>", "string?"));
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+				.Contains("new global::System.Func<string?, global::MyCode.Widget>(").And.DoesNotContain(")!")
+				.Because("the generated factory spells the argument types like the consumer, so the factory needs no conversion");
 		}
 
 		[Test]

@@ -129,6 +129,15 @@ internal sealed record InstanceModel(
 		.ToArray();
 
 	/// <summary>
+	///     The <see cref="ArgTypes" /> as the <c>[Arg]</c> parameters declare them, with their nullable annotations:
+	///     the parameter types of the parameterized resolvers.
+	/// </summary>
+	public string[] DeclaredArgTypes() => ConstructorParameters.AsArray()
+		.Where(p => p.Kind == DependencyKind.Arg)
+		.Select(p => p.DeclaredType ?? p.ServiceType)
+		.ToArray();
+
+	/// <summary>
 	///     Whether this instance has any <c>[Arg]</c>-marked parameters and so is parameterized: built fresh
 	///     from its runtime arguments on every request and reachable only through its
 	///     <c>Func&lt;TArg…, T&gt;</c> factory.

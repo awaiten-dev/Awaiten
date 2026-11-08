@@ -552,8 +552,26 @@ partial class AwaitenGenerator
 	private static ParameterModel ClassifyParameter(IParameterSymbol parameter, bool asyncFactory, ExternalServiceTypes externalServiceTypes)
 	{
 		LocationInfo? location = LocationInfo.From(parameter.Locations.FirstOrDefault());
-		return ClassifyDependency(parameter.Type, parameter.GetAttributes(), asyncFactory, location, externalServiceTypes);
+		ParameterModel model = ClassifyDependency(parameter.Type, parameter.GetAttributes(), asyncFactory, location, externalServiceTypes);
+		return model.Kind == DependencyKind.Arg && !ContainsTypeParameter(parameter.OriginalDefinition.Type)
+			? model with { DeclaredType = parameter.Type.ToDisplayString(FullyQualifiedWithNullability), }
+			: model;
 	}
+
+	/// <summary>
+	///     Whether <paramref name="type" /> mentions a type parameter. A closed generic's <c>[Arg]</c> type built from
+	///     one carries the annotations of whichever consumer closed the service first, so it keeps no
+	///     <see cref="ParameterModel.DeclaredType" />.
+	/// </summary>
+	private static bool ContainsTypeParameter(ITypeSymbol type)
+		=> type switch
+		{
+			ITypeParameterSymbol => true,
+			IArrayTypeSymbol array => ContainsTypeParameter(array.ElementType),
+			INamedTypeSymbol named => named.TypeArguments.Any(ContainsTypeParameter)
+			                          || (named.ContainingType is { } outer && ContainsTypeParameter(outer)),
+			_ => false,
+		};
 
 	/// <summary>
 	///     Classifies a dependency by its declared type and attributes, shared by constructor parameters and
@@ -566,7 +584,10 @@ partial class AwaitenGenerator
 	private static ParameterModel ClassifyDependency(ITypeSymbol type, ImmutableArray<AttributeData> attributes, bool asyncFactory, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
 	{
 		ParameterModel model = ClassifyDeclaredType(type, attributes, asyncFactory, location, externalServiceTypes);
-		return HasNestedNullableAnnotation(type) ? model with { NestedNullable = true, } : model;
+		bool nestedNullable = model.Kind is DependencyKind.Func or DependencyKind.FuncTask && type is INamedTypeSymbol func
+			? IsOrHasNullableAnnotation(func.TypeArguments[func.TypeArguments.Length - 1])
+			: HasNestedNullableAnnotation(type);
+		return nestedNullable ? model with { NestedNullable = true, } : model;
 	}
 
 	private static ParameterModel ClassifyDeclaredType(ITypeSymbol type, ImmutableArray<AttributeData> attributes, bool asyncFactory, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
@@ -747,6 +768,9 @@ partial class AwaitenGenerator
 		string[] argTypes = typeArgs.Take(typeArgs.Length - 1)
 			.Select(t => t.ToDisplayString(FullyQualified))
 			.ToArray();
+		EquatableArray<string> declaredArgTypes = new(typeArgs.Take(typeArgs.Length - 1)
+			.Select(t => t.ToDisplayString(FullyQualifiedWithNullability))
+			.ToArray());
 
 		// Func<…, Task<T>> is the async counterpart of Func<…, T>: an async factory that resolves (and
 		// initializes) T, awaiting it. It forwards any leading runtime arguments to T's [Arg] parameters.
@@ -757,10 +781,10 @@ partial class AwaitenGenerator
 			return IsOwned(funcTaskResult, out ITypeSymbol funcTaskOwnedInner)
 				? new ParameterModel(
 					funcTaskOwnedInner.ToDisplayString(FullyQualified), DependencyKind.FuncTask,
-					new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true)
+					new EquatableArray<string>(argTypes), Key: key, Location: location, DeclaredFuncArgTypes: declaredArgTypes, ProducesOwned: true)
 				: new ParameterModel(
 					funcTaskResult.ToDisplayString(FullyQualified), DependencyKind.FuncTask,
-					new EquatableArray<string>(argTypes), Key: key, Location: location);
+					new EquatableArray<string>(argTypes), Key: key, Location: location, DeclaredFuncArgTypes: declaredArgTypes);
 		}
 
 		// Func<…, Owned<T>> is the leak-free factory: its produced value is an Owned<T> disposal handle.
@@ -768,14 +792,14 @@ partial class AwaitenGenerator
 		{
 			return new ParameterModel(
 				funcOwnedInner.ToDisplayString(FullyQualified), DependencyKind.Func,
-				new EquatableArray<string>(argTypes), Key: key, Location: location, ProducesOwned: true);
+				new EquatableArray<string>(argTypes), Key: key, Location: location, DeclaredFuncArgTypes: declaredArgTypes, ProducesOwned: true);
 		}
 
 		// Func<…, T> over a relationship type (nesting beyond one level) falls through to a direct dependency.
 		return IsRelationshipType(service)
 			? null
 			: new ParameterModel(
-				service.ToDisplayString(FullyQualified), DependencyKind.Func, new EquatableArray<string>(argTypes), Key: key, Location: location);
+				service.ToDisplayString(FullyQualified), DependencyKind.Func, new EquatableArray<string>(argTypes), Key: key, Location: location, DeclaredFuncArgTypes: declaredArgTypes);
 	}
 
 	/// <summary>

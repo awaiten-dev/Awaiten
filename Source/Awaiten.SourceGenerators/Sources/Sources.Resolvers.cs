@@ -80,7 +80,7 @@ internal static partial class Sources
 
 		if (instance.IsParameterized)
 		{
-			string[] argTypes = instance.ArgTypes();
+			string[] argTypes = instance.DeclaredArgTypes();
 			string signature = string.Join(", ", argTypes.Select((t, i) => $"{t} a{i}"));
 			string parameterizedConstruction = EmitConstruction(instance, context.Instances, names, context.ServiceToIndex);
 			string parameterizedSummary = $"Resolves {XmlTypeRef(type)} from its <c>[Arg]</c> arguments (a new instance per call).";
@@ -461,7 +461,7 @@ internal static partial class Sources
 		// arguments alongside the token, never caching (a parameterized service is always transient).
 		if (instance.IsParameterized)
 		{
-			string[] argTypes = instance.ArgTypes();
+			string[] argTypes = instance.DeclaredArgTypes();
 			string argSignature = string.Join("", argTypes.Select((t, i) => $"{t} a{i}, "));
 			EmitAsyncFreshResolver(builder, depth, index, context, argSignature, emitDeferred);
 			return;
@@ -492,7 +492,7 @@ internal static partial class Sources
 		// A parameterized service forwards its runtime arguments to the async resolver: the synchronous resolver
 		// takes the same arguments, blocks on the (per-call) async resolver, and so still drives initialization.
 		// The async resolver is emitted on the same host (Scope or Root), so it is called with `__s` directly.
-		string[] argTypes = instance.ArgTypes();
+		string[] argTypes = instance.DeclaredArgTypes();
 		string signature = string.Join("", argTypes.Select((t, i) => $", {t} a{i}"));
 		string forward = string.Join("", argTypes.Select((_, i) => "a" + i + ", "));
 

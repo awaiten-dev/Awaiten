@@ -32,7 +32,14 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <c>NestedNullable</c> marks a declared type with a nullable annotation below its top level
 ///     (<c>IRepo&lt;string?&gt;</c>, <c>Task&lt;IStore?&gt;</c>, <c>IStore?[]</c>): the generated code spells every type
 ///     without annotations, like the registration it finds, so it forgives the value's nullability, which a
-///     nullable-enabled consumer would otherwise get as CS8619 or CS8620.
+///     nullable-enabled consumer would otherwise get as CS8619 or CS8620. For a <c>Func&lt;TArg…, T&gt;</c> only the
+///     produced <c>T</c> counts, since the generated factory spells its argument types as declared.
+///     <c>DeclaredType</c> is an <see cref="DependencyKind.Arg" /> parameter's type with its nullable annotations, and
+///     <c>DeclaredFuncArgTypes</c> are the <c>FuncArgTypes</c> with the consumer's: the runtime arguments keep them
+///     from the consumer's <c>Func</c> to the <c>[Arg]</c> parameter, so the compiler checks a nullable argument
+///     against the parameter, while <c>ServiceType</c> and <c>FuncArgTypes</c> match them without annotations. An
+///     <c>[Arg]</c> type built from a type parameter has no <c>DeclaredType</c>: its resolver spells it as registered,
+///     and the factory forgives the argument it forwards.
 /// </summary>
 internal sealed record ParameterModel(
 	string ServiceType,
@@ -44,4 +51,6 @@ internal sealed record ParameterModel(
 	string? AwaitedCollectionType = null,
 	string? KeyType = null,
 	EquatableArray<DispatchMember> DispatchMembers = default,
-	bool NestedNullable = false);
+	bool NestedNullable = false,
+	string? DeclaredType = null,
+	EquatableArray<string> DeclaredFuncArgTypes = default);

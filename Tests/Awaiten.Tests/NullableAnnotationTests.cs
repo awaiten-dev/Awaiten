@@ -52,6 +52,13 @@ public sealed partial class NullableAnnotationTests
 	{
 	}
 
+	public sealed class Label([Arg] string? text, [Arg] List<string?> tags)
+	{
+		public string? Text => text;
+
+		public List<string?> Tags => tags;
+	}
+
 	public sealed class Consumer(
 		IRepo<string?> repo,
 		Task<IRepo<string?>> repoTask,
@@ -59,8 +66,11 @@ public sealed partial class NullableAnnotationTests
 		Task<IStore?[]> stores,
 		IReadOnlyDictionary<string, IStore?> keyed,
 		Task<IReadOnlyDictionary<string, IStore?>> keyedTask,
-		Clock<string> clock)
+		Clock<string> clock,
+		Func<string?, List<string?>, Label> labels)
 	{
+		public Func<string?, List<string?>, Label> Labels => labels;
+
 		public IRepo<string?> Repo => repo;
 
 		public Task<IRepo<string?>> RepoTask => repoTask;
@@ -96,6 +106,21 @@ public sealed partial class NullableAnnotationTests
 			.Because("a factory returning Clock<string?> produces the singleton registered as Clock<string>");
 	}
 
+	[Test]
+	public async Task NullableRuntimeArguments_ReachTheArgParameters()
+	{
+		await using NullableShop.Root shop = new();
+		await using NullableShop.Scope scope = shop.CreateScope();
+		Consumer consumer = await scope.ResolveAsync<Consumer>();
+
+		List<string?> tags = [null,];
+		Label label = consumer.Labels(null, tags);
+
+		await That(label.Text).IsNull()
+			.Because("Func<string?, …> hands its null argument to the [Arg] string? parameter");
+		await That(label.Tags).IsSameAs(tags);
+	}
+
 	[Container]
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 	[Scoped(typeof(Repo<>), typeof(IRepo<>))]
@@ -103,6 +128,7 @@ public sealed partial class NullableAnnotationTests
 	[Scoped<MainStore, IStore>(Key = "main")]
 	[Scoped<BackupStore, IStore>(Key = "backup")]
 	[Singleton<Clock<string>>(Factory = nameof(CreateClock))]
+	[Transient<Label>]
 	[Transient<Consumer>]
 	public static partial class NullableShop
 	{

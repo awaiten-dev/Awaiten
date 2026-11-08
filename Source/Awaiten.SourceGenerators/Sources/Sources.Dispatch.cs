@@ -1132,6 +1132,7 @@ internal static partial class Sources
 	{
 		bool rootOwned = IsRootOwned(instance);
 		string[] argTypes = instance.ArgTypes();
+		string[] declaredArgTypes = instance.DeclaredArgTypes();
 		foreach (ServiceKey serviceKey in instance.ListedServices)
 		{
 			// Keyed registrations are reached only by [FromKey] injection, never the public dispatch table.
@@ -1162,14 +1163,14 @@ internal static partial class Sources
 				string parameterizedFunc = $"global::System.Func<{string.Join(", ", argTypes)}, {service}>";
 				seen.Add(parameterizedFunc);
 				entries.Add(funcWithheld
-					? new DispatchEntry(parameterizedFunc, FuncFactory(argTypes, service, resolver), FuncWithheldMessage(service))
-					: new DispatchEntry(parameterizedFunc, FuncFactory(argTypes, service, resolver)));
+					? new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver), FuncWithheldMessage(service))
+					: new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver)));
 
 				// The leak-free factory for a parameterized service: Func<TArg…, Owned<T>> hands each built
 				// instance back as a disposal handle instead of accumulating it on the owner.
 				string parameterizedOwnedFunc = $"global::System.Func<{string.Join(", ", argTypes)}, global::Awaiten.Owned<{service}>>";
 				seen.Add(parameterizedOwnedFunc);
-				entries.Add(new DispatchEntry(parameterizedOwnedFunc, OwnedFuncFactory(argTypes, service, resolver, rootOwned)));
+				entries.Add(new DispatchEntry(parameterizedOwnedFunc, OwnedFuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver, rootOwned)));
 				continue;
 			}
 
@@ -1275,7 +1276,7 @@ internal static partial class Sources
 		string ownedFunc = $"global::System.Func<{owned}>";
 		if (seen.Add(ownedFunc))
 		{
-			entries.Add(new DispatchEntry(ownedFunc, OwnedFuncFactory([], service, resolver, rootOwned)));
+			entries.Add(new DispatchEntry(ownedFunc, OwnedFuncFactory([], [], service, resolver, rootOwned)));
 		}
 	}
 
