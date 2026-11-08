@@ -468,7 +468,8 @@ internal sealed record OpenOwnerFactory(INamedTypeSymbol Owner, string Name, IMe
 	/// <summary>
 	///     The call of this factory closed with <paramref name="typeArguments" />, which construct
 	///     <paramref name="closedType" /> (the closing of the open definition) and <paramref name="closedService" />, or
-	///     <see langword="null" /> when no constructor of <paramref name="closedType" /> matches the generated factory.
+	///     <see langword="null" /> when no constructor of <paramref name="closedType" /> matches the generated factory, which
+	///     mirrors a constructor of the open definition.
 	/// </summary>
 	public OwnerFactoryCall? Close(ITypeSymbol[] typeArguments, INamedTypeSymbol closedType, INamedTypeSymbol closedService)
 	{
@@ -479,10 +480,12 @@ internal sealed record OpenOwnerFactory(INamedTypeSymbol Owner, string Name, IMe
 			return new OwnerFactoryCall(Owner, name, constructed.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), constructed);
 		}
 
-		if (AwaitenGenerator.MirroredConstructor(closedType, Generated!) is not { } constructor)
+		if (AwaitenGenerator.MirroredConstructor(closedType.OriginalDefinition, Generated!) is not { } definitionConstructor)
 		{
 			return null;
 		}
+
+		IMethodSymbol constructor = closedType.InstanceConstructors.First(candidate => SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, definitionConstructor));
 
 		// The factory returns the definition or one of its services, constructed with the definition's own type parameters.
 		INamedTypeSymbol definition = closedType.OriginalDefinition;

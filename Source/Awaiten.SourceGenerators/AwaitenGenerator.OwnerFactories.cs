@@ -419,12 +419,12 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The constructor of <paramref name="type" /> that a factory generated in the same run mirrors, found by its
 	///     parameter types, or <see langword="null" />. The factory's parameters for injected properties follow the
-	///     constructor's. A closing of a generic factory's type is matched by the parameters of its definition.
+	///     constructor's.
 	/// </summary>
 	internal static IMethodSymbol? MirroredConstructor(INamedTypeSymbol type, RegistrationFactory factory)
 	{
 		string[] parameters = factory.Parameters.AsArray().Take(factory.Parameters.Count - factory.Members.Count - factory.OptionalMembers.Count).Select(parameter => parameter.Type).ToArray();
 		return type.InstanceConstructors.FirstOrDefault(candidate =>
-			candidate.OriginalDefinition.Parameters.Select(parameter => parameter.Type.ToDisplayString(FullyQualifiedWithNullability)).SequenceEqual(parameters));
+			candidate.Parameters.Select(parameter => parameter.Type.ToDisplayString(FullyQualifiedWithNullability)).SequenceEqual(parameters));
 	}
 }

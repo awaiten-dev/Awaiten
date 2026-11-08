@@ -882,6 +882,34 @@ public class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task AClosingOfAPrivateDecorator_IsBuiltForAContainerInTheSameAssembly()
+		{
+			GeneratorResult result = Generator.Run(WithContainer("""
+			                                                     using Awaiten;
+
+			                                                     namespace Lib;
+
+			                                                     public interface IRepository<T> { }
+			                                                     public sealed class Repository<T> : IRepository<T> { }
+
+			                                                     [Module]
+			                                                     [Scoped<Repository<Order>, IRepository<Order>>]
+			                                                     [Decorate<DataModule.CachedRepository<Order>, IRepository<Order>>]
+			                                                     public static partial class DataModule
+			                                                     {
+			                                                         private sealed class CachedRepository<T> : IRepository<T>
+			                                                         {
+			                                                             public CachedRepository(IRepository<T> inner) { }
+			                                                         }
+			                                                     }
+			                                                     """));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the closed decorator's constructor is matched by the closed factory's parameters, not by its definition's");
+			await That(ContainerSource(result, "LibContainer")).Contains("global::Lib.DataModule.Internals.Decorator_CachedRepository_");
+		}
+
+		[Test]
 		public async Task APrivateDecorator_IsBuiltForContainersInAnotherAssembly()
 		{
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Private, Consumer);

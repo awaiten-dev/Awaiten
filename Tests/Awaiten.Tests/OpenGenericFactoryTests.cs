@@ -173,6 +173,17 @@ public sealed partial class OpenGenericFactoryTests
 			await That(container.Resolve<IRecordSink<Order>>().Count).IsEqualTo(2)
 				.Because("the private composite fronts both sinks");
 		}
+
+		[Test]
+		public async Task AClosingOfAPrivateDecorator_IsBuiltThroughItsFactory()
+		{
+			await using ClosedDecoratorContainer.Root container = new();
+
+			IRecord<Order> record = container.Resolve<IRecord<Order>>();
+
+			await That(record.GetType().Name).IsEqualTo("Wrapped`1");
+			await That(record.Inner).IsExactly<PlainRecord<Order>>();
+		}
 	}
 
 	public sealed class BaseInAnotherAssembly
@@ -299,6 +310,32 @@ public sealed partial class OpenGenericFactoryTests
 	[Import(typeof(RecordModule))]
 	[Scoped<RecordConsumer>]
 	public static partial class SameAssemblyOpenContainer;
+
+	public sealed class PlainRecord<T> : IRecord<T>
+		where T : class
+	{
+		public IRecord<T>? Inner => null;
+
+		public bool Disposed => false;
+	}
+
+	[Module]
+	[Singleton<PlainRecord<Order>, IRecord<Order>>]
+	[Decorate<ClosedDecoratorModule.Wrapped<Order>, IRecord<Order>>]
+	public static partial class ClosedDecoratorModule
+	{
+		private sealed class Wrapped<T>(IRecord<T> inner) : IRecord<T>
+			where T : class
+		{
+			public IRecord<T>? Inner => inner;
+
+			public bool Disposed => inner.Disposed;
+		}
+	}
+
+	[Container]
+	[Import(typeof(ClosedDecoratorModule))]
+	public static partial class ClosedDecoratorContainer;
 
 	[Container]
 	[Scoped(typeof(RecordShop.Record<>), typeof(IRecord<>))]
