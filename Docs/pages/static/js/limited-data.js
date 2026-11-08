@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "207516843cc922a35cb3a77bb23f0c78550bcfa1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 09:49:58 2026 \u002B0100",
-        "message": "feat: generate factories for more registration shapes (#286)"
-      },
-      {
         "sha": "47d7cde4dc97f5c14bf0c0efc107ad262f5a0561",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 10:27:31 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 22:02:48 2026 \u002B0100",
         "message": "fix: report a generic Factory or hook of a closed registration instead of emitting a call with an unbound type parameter (#345)"
+      },
+      {
+        "sha": "550fe022f575106ef486c507f4595c0a6446cfa0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 22:25:12 2026 \u002B0100",
+        "message": "fix: let containers in other assemblies run internal module hooks and name why an internal factory stays out of reach (#354)"
       }
     ],
     "labels": [
-      "20751684",
       "47d7cde4",
       "c2eb0006",
       "bba2f8ee",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "327111eb",
       "ae650025",
       "7efc634e",
-      "9ec72a90"
+      "9ec72a90",
+      "550fe022"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.625039557615916,
           7.929147485111441,
           7.134927432124432,
           6.102416787828718,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           4.024182619793074,
           7.765617289890845,
           3.7772616835740895,
-          6.678210540459706
+          6.678210540459706,
+          5.549266203244527
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          5.71879609823227,
           7.773045597331865,
           8.361563500549112,
           7.5823596360591745,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           3.8421954895768846,
           7.64637618798476,
           4.087794521450997,
-          5.867146718714919
+          5.867146718714919,
+          8.205583967268467
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          106.92758944034577,
           114.72871817861285,
           121.40528082847595,
           126.70339924494425,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           53.42860336303711,
           108.55863979657491,
           55.79625258078942,
-          136.728231493632
+          136.728231493632,
+          87.43353717327118
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.806947524348895,
           9.817431433002154,
           9.416603352874517,
           7.777860053380331,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           5.09025456905365,
           9.012350069979826,
           5.169541908303897,
-          8.621972555915514
+          8.621972555915514,
+          6.314761262673598
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          9.560916777451833,
           11.125902941823005,
           11.029202468120134,
           10.7332625325237,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           6.084552629788717,
           11.145316003606869,
           6.549267848332723,
-          10.47067702015241
+          10.47067702015241,
+          8.635641930003962
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "207516843cc922a35cb3a77bb23f0c78550bcfa1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 09:49:58 2026 \u002B0100",
-        "message": "feat: generate factories for more registration shapes (#286)"
-      },
-      {
         "sha": "47d7cde4dc97f5c14bf0c0efc107ad262f5a0561",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 10:27:31 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 22:02:48 2026 \u002B0100",
         "message": "fix: report a generic Factory or hook of a closed registration instead of emitting a call with an unbound type parameter (#345)"
+      },
+      {
+        "sha": "550fe022f575106ef486c507f4595c0a6446cfa0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 22:25:12 2026 \u002B0100",
+        "message": "fix: let containers in other assemblies run internal module hooks and name why an internal factory stays out of reach (#354)"
       }
     ],
     "labels": [
-      "20751684",
       "47d7cde4",
       "c2eb0006",
       "bba2f8ee",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "327111eb",
       "ae650025",
       "7efc634e",
-      "9ec72a90"
+      "9ec72a90",
+      "550fe022"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.256379851698876,
           8.473682566330982,
           8.286856219172478,
           6.87297858191388,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           4.197607998053233,
           8.424078018714985,
           4.346064536273479,
-          7.812836615102632
+          7.812836615102632,
+          6.036782317927906
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          5.829785167024686,
           7.810003021998065,
           7.914983614285787,
           7.554399792353312,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           3.8077315560409,
           7.503227600684533,
           4.03969646932987,
-          5.956316468971116
+          5.956316468971116,
+          6.761738719684737
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          125.16257438659667,
           114.00565416018168,
           112.13212935129802,
           128.47535875865393,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           54.58466943105062,
           116.59888793627421,
           61.9205221414566,
-          136.64759742296658
+          136.64759742296658,
+          84.15931063038963
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.680116426944733,
           9.793151976664861,
           9.407313848917301,
           7.83126597503821,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           5.054571005914893,
           9.040055798796507,
           4.963326157858739,
-          8.695648869872093
+          8.695648869872093,
+          6.18031125664711
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          9.416868659853936,
           14.355613851547242,
           14.593317925930023,
           13.529849948791357,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           7.6389928969244165,
           14.368063184831824,
           6.437598618865013,
-          10.89857622385025
+          10.89857622385025,
+          11.768637375036876
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "207516843cc922a35cb3a77bb23f0c78550bcfa1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 09:49:58 2026 \u002B0100",
-        "message": "feat: generate factories for more registration shapes (#286)"
-      },
-      {
         "sha": "47d7cde4dc97f5c14bf0c0efc107ad262f5a0561",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 10:27:31 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 22:02:48 2026 \u002B0100",
         "message": "fix: report a generic Factory or hook of a closed registration instead of emitting a call with an unbound type parameter (#345)"
+      },
+      {
+        "sha": "550fe022f575106ef486c507f4595c0a6446cfa0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 22:25:12 2026 \u002B0100",
+        "message": "fix: let containers in other assemblies run internal module hooks and name why an internal factory stays out of reach (#354)"
       }
     ],
     "labels": [
-      "20751684",
       "47d7cde4",
       "c2eb0006",
       "bba2f8ee",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "327111eb",
       "ae650025",
       "7efc634e",
-      "9ec72a90"
+      "9ec72a90",
+      "550fe022"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          11.640991925199826,
           20.340124646822613,
           21.75352410674095,
           11.818106722373228,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           11.689251612623533,
           25.848719529310863,
           17.694122968117394,
-          18.83032664656639
+          18.83032664656639,
+          15.815644014875094
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          795.2319189218374,
           1536.1326716105143,
           1560.9973545074463,
           816.1020108002883,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           808.6582307134356,
           1673.6797379084996,
           1380.2609663645426,
-          1421.0019565309797
+          1421.0019565309797,
+          1335.5768056597028
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          18532.52566964286,
           30024.65450846354,
           29977.31599644252,
           18458.976832798548,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18431.370762416296,
           24902.149934895835,
           26906.07615559896,
-          29912.833127702987
+          29912.833127702987,
+          25963.97541097005
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32476,
           32482,
           32482,
           32477,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32476,
           32478,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          424.87400003579944,
           733.0398886753962,
           751.1221101125082,
           407.6954393386841,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           393.2971302781786,
           713.6434297561646,
           625.3807200023106,
-          669.6020581381662
+          669.6020581381662,
+          552.7619277318319
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6700.985063825335,
           11716.588898794991,
           13036.082037353515,
           6561.246905008952,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6704.3650153023855,
           12081.53932800293,
           10417.0191116333,
-          11882.509128277119
+          11882.509128277119,
+          9681.394347635905
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2890,7 +2890,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "207516843cc922a35cb3a77bb23f0c78550bcfa1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 09:49:58 2026 \u002B0100",
-        "message": "feat: generate factories for more registration shapes (#286)"
-      },
       {
         "sha": "47d7cde4dc97f5c14bf0c0efc107ad262f5a0561",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 22:02:48 2026 \u002B0100",
         "message": "fix: report a generic Factory or hook of a closed registration instead of emitting a call with an unbound type parameter (#345)"
+      },
+      {
+        "sha": "550fe022f575106ef486c507f4595c0a6446cfa0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 22:25:12 2026 \u002B0100",
+        "message": "fix: let containers in other assemblies run internal module hooks and name why an internal factory stays out of reach (#354)"
       }
     ],
     "labels": [
-      "20751684",
       "47d7cde4",
       "c2eb0006",
       "bba2f8ee",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "327111eb",
       "ae650025",
       "7efc634e",
-      "9ec72a90"
+      "9ec72a90",
+      "550fe022"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          80.89287850686482,
           185.9752994378408,
           212.3369577884674,
           78.47506074394498,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           75.04897839228312,
           340.03775316874186,
           117.61618366241456,
-          160.3895860830943
+          160.3895860830943,
+          112.33386589930608
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7904.951569777269,
           15155.92276204427,
           16159.93144444057,
           7601.722882080078,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7238.157218346229,
           14942.120482308525,
           12136.089542933873,
-          14132.133163960774
+          14132.133163960774,
+          10568.865990193684
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          449377.7698692909,
           746964.2779947916,
           736745.4542518029,
           429554.3186848958,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           416771.86896623886,
           593736.0176432292,
           648925.2350027902,
-          716147.9576171875
+          716147.9576171875,
+          652642.1979166666
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          719044,
           738538,
           740464,
           739415,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           735271,
           740318,
           719731,
-          721215
+          721215,
+          741801
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          25161.313983623797,
           44836.136853899276,
           44921.04579264323,
           23718.9529296875,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           22816.632102457683,
           40233.04645182292,
           37734.77399495443,
-          41971.86191813151
+          41971.86191813151,
+          35802.60380045573
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80970,
           80082,
           80008,
           79994,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           79672,
           80763,
           80965,
-          80968
+          80968,
+          80300
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          212749.04331752233,
           359580.6168619792,
           385532.04963030136,
           200671.28181966147,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           201987.96673177084,
           339639.08872070315,
           312314.45003255206,
-          364587.8162760417
+          364587.8162760417,
+          279149.9018930289
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573076,
           573090,
           573107,
           573121,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573039,
           571190,
           573107,
-          573092
+          573092,
+          573058
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "207516843cc922a35cb3a77bb23f0c78550bcfa1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 09:49:58 2026 \u002B0100",
-        "message": "feat: generate factories for more registration shapes (#286)"
-      },
       {
         "sha": "47d7cde4dc97f5c14bf0c0efc107ad262f5a0561",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 22:02:48 2026 \u002B0100",
         "message": "fix: report a generic Factory or hook of a closed registration instead of emitting a call with an unbound type parameter (#345)"
+      },
+      {
+        "sha": "550fe022f575106ef486c507f4595c0a6446cfa0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 22:25:12 2026 \u002B0100",
+        "message": "fix: let containers in other assemblies run internal module hooks and name why an internal factory stays out of reach (#354)"
       }
     ],
     "labels": [
-      "20751684",
       "47d7cde4",
       "c2eb0006",
       "bba2f8ee",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "327111eb",
       "ae650025",
       "7efc634e",
-      "9ec72a90"
+      "9ec72a90",
+      "550fe022"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          201.70825786249978,
           265.2382357461112,
           279.33723661104835,
           251.2369601045336,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           444.5070858637492,
           242.88698859214782,
           202.0225121634347,
-          205.63182820592607
+          205.63182820592607,
+          150.73938072644748
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          449.0135433123662,
           672.2033592632839,
           649.8044139862061,
           462.403799533844,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           610.0695203940073,
           565.0554023106893,
           452.51600779805864,
-          476.11052789006914
+          476.11052789006914,
+          368.95197057724
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4751.702227456229,
           6313.839005025228,
           6755.252198791504,
           4960.147314961751,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6627.082936423166,
           4335.397855377198,
           4874.576589457194,
-          5085.062318361723
+          5085.062318361723,
+          3219.232121394231
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          327.14095272336687,
           401.7604859987895,
           429.3192598025004,
           368.7293354352315,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           396.8058190663656,
           334.61634095509845,
           337.4926118850708,
-          358.3014275868734
+          358.3014275868734,
+          241.87429658571878
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          552.9230056762696,
           737.2925818125407,
           742.4663223266601,
           546.5783175786336,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           708.2082018534343,
           625.1611949284871,
           576.8918360301426,
-          566.4528698921204
+          566.4528698921204,
+          384.6678688367208
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
