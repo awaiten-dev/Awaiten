@@ -127,6 +127,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     <see cref="InvalidFactory">AWT108</see> for a closed registration whose <c>Factory</c> names only generic
+	///     methods: only the closing of an open generic <c>typeof</c> registration supplies type arguments, so
+	///     <c>{3}</c>, the type parameters of the method, cannot be inferred and the call could not compile.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UninferableFactory = new(
+		"AWT108",
+		InvalidFactory.Title,
+		"'{0}' cannot be produced: the method '{1}' on {2} is generic, and a closed registration cannot infer its type parameter(s) {3}; declare '{1}' without type parameters, since only the closings of an open generic typeof registration supply them",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     An <c>Instance</c> registration names a member that is not a usable instance member on its owner -
 	///     the container, or the declaring module for an imported registration (it is missing, is not a field
 	///     or property, or is not assignable to the service type).
@@ -1024,6 +1037,19 @@ internal static class Diagnostics
 		"AWT164",
 		"Invalid lifecycle hook",
 		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{0}' and returning void, Task or ValueTask",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     <see cref="InvalidLifecycleHook">AWT164</see> for a registration without a marker closing whose hook names only
+	///     generic methods: only a closed form of an open generic marker or registration binds a hook's type parameters,
+	///     so <c>{3}</c>, the type parameters of the method, cannot be inferred.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UninferableLifecycleHook = new(
+		"AWT164",
+		InvalidLifecycleHook.Title,
+		"'{0}' cannot use the lifecycle hook '{1}': the method '{1}' on {2} is generic, and nothing binds its type parameter(s) {3} for this registration; declare '{1}' without type parameters, since only the closings of an open generic registration or [Scan] marker supply them",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

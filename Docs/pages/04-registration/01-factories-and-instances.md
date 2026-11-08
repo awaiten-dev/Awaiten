@@ -24,7 +24,7 @@ public static partial class CoffeeShop
 The method is `static`, like the container class that declares it. A factory that returns `Task<T>` makes the service async. See [Async initialization](../03-core-concepts/03-async-initialization.md).
 
 :::note
-A `Factory` cannot name an overloaded method ([AWT112](../09-diagnostics.md#awt112)), and a registration cannot set both `Factory` and `Instance` ([AWT110](../09-diagnostics.md#awt110)).
+A `Factory` cannot name an overloaded method ([AWT112](../09-diagnostics.md#awt112)) or a generic one, whose type parameters only the closings of an [open generic](./05-open-generics.md#generic-factories) registration supply ([AWT108](../09-diagnostics.md#awt108)), and a registration cannot set both `Factory` and `Instance` ([AWT110](../09-diagnostics.md#awt110)).
 :::
 
 ## Instance

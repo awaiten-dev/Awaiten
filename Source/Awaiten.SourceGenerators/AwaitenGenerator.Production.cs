@@ -956,6 +956,17 @@ partial class AwaitenGenerator
 			return (null, default, null);
 		}
 
+		if (matches.Count + ambiguousMethods.Count == 0
+		    && (release ? info.OnReleaseMarkers : info.OnActivatedMarkers) is null or { Count: 0, }
+		    && UninferableTypeParameters(origin ?? context.ContainerSymbol, hookName, context.Compilation) is { } typeParameters)
+		{
+			context.Diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.UninferableLifecycleHook,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), hookName, DescribeOwner(origin), typeParameters,])));
+			return (null, default, null);
+		}
+
 		// No usable match is AWT164 (unusable hook); more than one is AWT190 (an overload the container cannot pick
 		// between), where a generic overload with several bindable closings counts as usable - it could dispatch,
 		// so silently preferring its sibling would let an extra marker closing change which method runs. Either way
@@ -1452,7 +1463,8 @@ partial class AwaitenGenerator
 	///     Resolves a <c>Factory</c> registration to the method that produces it: a container method, or a
 	///     module method for an imported registration (never falling back to the container). No method of that
 	///     name returns the registered type → <see cref="Diagnostics.InvalidFactory">AWT108</see> naming the
-	///     owner; a module method that matches but is inaccessible from the generated container →
+	///     owner, or <see cref="Diagnostics.UninferableFactory">its form</see> naming the type parameters when only
+	///     generic methods have that name; a module method that matches but is inaccessible from the generated container →
 	///     <see cref="Diagnostics.InaccessibleModuleMember">AWT153</see>; more than one accessible match (an
 	///     overload) → <see cref="Diagnostics.AmbiguousFactory">AWT112</see>.
 	/// </summary>
@@ -1497,6 +1509,20 @@ partial class AwaitenGenerator
 		if (candidates.Count == 1)
 		{
 			return candidates[0];
+		}
+
+		if (candidates.Count == 0 && !info.GenericFactory && UninferableTypeParameters(owner, info.ProductionMember!, compilation) is { } typeParameters)
+		{
+			// A module of this assembly reports it in its own build (see ReportModuleProductionMembers).
+			if (!(SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly) && IsModuleOrigin(info)))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.UninferableFactory,
+					info.Location,
+					new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info), typeParameters,])));
+			}
+
+			return null;
 		}
 
 		diagnostics.Add(new DiagnosticInfo(
@@ -1765,12 +1791,13 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The candidate factory methods for a <c>Factory</c> registration: the ordinary methods named
+	///     The candidate factory methods for a <c>Factory</c> registration: the non-generic ordinary methods named
 	///     <paramref name="name" /> on the container (or an accessible base type) whose return type produces
 	///     <paramref name="serviceType" />. A sync factory's return type is implicitly convertible to the
 	///     service type; an async factory returns <c>Task&lt;T&gt;</c> / <c>ValueTask&lt;T&gt;</c> and is
-	///     matched against the unwrapped <c>T</c>. None means AWT108; more than one means an ambiguous
-	///     factory (AWT112).
+	///     matched against the unwrapped <c>T</c>. A generic method is left out, since only the closing of an open
+	///     generic registration binds its type parameters (see <see cref="FindGenericFactoryCandidates" />). None
+	///     means AWT108; more than one means an ambiguous factory (AWT112).
 	/// </summary>
 	private static List<IMethodSymbol> FindFactoryCandidates(
 		INamedTypeSymbol container, string name, ITypeSymbol serviceType, Compilation compilation)
@@ -1778,7 +1805,7 @@ partial class AwaitenGenerator
 		List<IMethodSymbol> candidates = new();
 		foreach (ISymbol member in AccessibleMembers(container, name, compilation))
 		{
-			if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary, } method
+			if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary, IsGenericMethod: false, } method
 			    && compilation.HasImplicitConversion(ProducedType(method.ReturnType, compilation), serviceType))
 			{
 				candidates.Add(method);
@@ -1787,6 +1814,16 @@ partial class AwaitenGenerator
 
 		return candidates;
 	}
+
+	/// <summary>
+	///     The type parameters, quoted for a diagnostic, of the first generic static method named <paramref name="name" />
+	///     that <paramref name="owner" /> declares or inherits, or <see langword="null" /> when it has none: what a closed
+	///     registration cannot bind when it names such a method as its factory or hook.
+	/// </summary>
+	private static string? UninferableTypeParameters(INamedTypeSymbol owner, string name, Compilation compilation)
+		=> AccessibleMembers(owner, name, compilation).OfType<IMethodSymbol>().FirstOrDefault(method => method is { MethodKind: MethodKind.Ordinary, IsStatic: true, IsGenericMethod: true, }) is { } generic
+			? string.Join(", ", generic.TypeParameters.Select(parameter => $"'{parameter.Name}'"))
+			: null;
 
 	/// <summary>
 	///     The candidate factory methods for a closing of an open generic <c>typeof</c> registration: the generic
