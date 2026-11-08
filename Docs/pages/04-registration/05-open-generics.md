@@ -74,7 +74,7 @@ public static partial class CoffeeShop;
 `IRecipe<Espresso>` is a `BrewRecipe<Espresso>` and `IRecipe<Croissant>` a `BakeRecipe<Croissant>`. The constraints of a generic `Factory` select its closings the same way.
 
 - **Several accept a closing.** The rules for several registrations apply as usual: the first one wins single resolution, `IEnumerable<IRecipe<T>>` holds every registration that accepts `T`, and two modules that both build a closing are reported for it ([AWT155](../09-diagnostics.md#awt155)).
-- **None accepts a closing.** A closing the graph asks for that neither an open nor a closed registration builds is an error that lists the candidates ([AWT126](../09-diagnostics.md#awt126)).
+- **None accepts a closing.** A closing the graph asks for that neither an open nor a closed registration builds, also through [variance](../05-resolution/08-generic-variance.md), is an error that lists the candidates ([AWT126](../09-diagnostics.md#awt126)).
 - **Options.** `Fallback` and `WhenInjectedInto` apply among the registrations that accept the closing, so an overridable default or an unconditional registration serves the closings a stronger or contextual one can't build.
 - **Keys.** A skipped registration is not reported when a registration under another key, or a contextual one, builds the closing. A request under the key or context of the skipped registration that nothing else serves reports its constraints ([AWT126](../09-diagnostics.md#awt126)).
 - **Decorators and composites** wrap every registration of a closing. One whose constraints reject a closing leaves it as it is, with a warning ([AWT171](../09-diagnostics.md#awt171)).

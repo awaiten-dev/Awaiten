@@ -409,7 +409,7 @@ internal static class Diagnostics
 	///     registration because its type arguments violate the implementation's type-parameter
 	///     constraints (e.g. <c>Repository&lt;int&gt;</c> where the implementation declares <c>where T : class</c>), and
 	///     no other registration of the closed service accepts them. A registration whose constraints reject a closing
-	///     another registration builds is skipped for it without a diagnostic. An error because the dependency is then
+	///     another registration builds is skipped for it, and reported only for a request under its key or context that nothing serves. An error because the dependency is then
 	///     unsatisfiable. The decorator/composite analogue, where the base service still resolves, is the warning
 	///     <see cref="DecoratorClosingConstraintViolation">AWT171</see>.
 	/// </summary>

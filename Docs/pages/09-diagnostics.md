@@ -1221,7 +1221,7 @@ public static partial class CoffeeShop;
 A closed type the graph requires violates the type-parameter constraints of the open generic implementation, and no other registration of the closed service accepts it, so the dependency cannot be satisfied. Each open registration that cannot build the closing is reported, and the message lists the other candidates. (For the open `[Decorate]`/`[Composite]` case, where the base service still resolves, see the warning [AWT171](#awt171).)
 :::
 
-When several open registrations share a service, a registration whose constraints reject a closing is skipped for it without a diagnostic as long as another registration builds it (see [split the closings by constraints](./04-registration/05-open-generics.md#split-the-closings-by-constraints)).
+When several open registrations share a service, a registration whose constraints reject a closing is skipped for it without a diagnostic as long as another registration builds it. Under keys or contexts, a request under the key or context of the skipped registration that nothing else serves reports it, with the key in the message (see [split the closings by constraints](./04-registration/05-open-generics.md#split-the-closings-by-constraints)).
 
 ```csharp expect=AWT126
 public sealed class Repository<T> : IRepository<T> where T : class;
