@@ -68,9 +68,12 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 		context.RegisterCompilationStartAction(static start =>
 		{
-			// Below its minimum language version the generator reports AWT243 instead of generating any container.
+			// Below its minimum language version, or when AWT243 skips a scan module of the assembly, the generator
+			// emits no container body.
 			INamedTypeSymbol? containerAttribute = start.Compilation.GetTypeByMetadataName(ContainerAttributeName);
-			if (containerAttribute is null || start.Compilation is CSharpCompilation { LanguageVersion: < AwaitenGenerator.MinimumLanguageVersion, })
+			if (containerAttribute is null
+			    || start.Compilation is CSharpCompilation { LanguageVersion: < AwaitenGenerator.MinimumLanguageVersion, }
+			    || AwaitenGenerator.SkipsAScanModule(start.Compilation))
 			{
 				return;
 			}

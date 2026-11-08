@@ -25,6 +25,8 @@ Projects that target .NET Framework or netstandard2.0 default to C# 7.3, which i
 ```xml
 <LangVersion>latest</LangVersion>
 ```
+
+Without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
 :::
 
 ## Install the package

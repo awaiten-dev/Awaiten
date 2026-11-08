@@ -18,6 +18,12 @@ public static class Generator
 		"CS8019", /* Unnecessary using directive. */
 	];
 
+	/// <summary>The compile references of <c>Awaiten.Tests.PolyfillFreeSupport</c> for net48, which the build writes next to the tests.</summary>
+	private static readonly Lazy<MetadataReference[]> PolyfillFreeReferences = new(() =>
+		System.IO.File.ReadAllLines(System.IO.Path.Combine(AppContext.BaseDirectory, "polyfill-free.references"))
+			.Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
+			.ToArray());
+
 	public static GeneratorResult Run([StringSyntax("c#-test")] string source, params Type[] assemblyTypes)
 		=> Run(source, additionalReferences: [], assemblyTypes);
 
@@ -99,6 +105,41 @@ public static class Generator
 		return Run(source, [EmitToReference(first), EmitToReference(second),]);
 	}
 
+	/// <summary>
+	///     Like <see cref="Run(LanguageVersion, string, NullableContextOptions)" />, but against the references of a net48
+	///     project without a nullable polyfill, where <c>NotNullWhenAttribute</c> exists only as the internal copy inside
+	///     Awaiten's netstandard2.0 asset, with nullable enabled. <paramref name="laterSource" /> joins the compilation after
+	///     the generator ran, like the output of another generator.
+	/// </summary>
+	public static GeneratorResult RunPolyfillFree(
+		LanguageVersion languageVersion,
+		[StringSyntax("c#-test")] string source,
+		[StringSyntax("c#-test")] string? laterSource = null)
+	{
+		(Compilation output, GeneratorDriverRunResult result) = RunGenerator(
+			source, [], [], languageVersion: languageVersion, nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value);
+		if (laterSource is not null)
+		{
+			output = output.AddSyntaxTrees(CSharpSyntaxTree.ParseText(laterSource, new CSharpParseOptions(languageVersion)));
+		}
+
+		return Collect((output, result));
+	}
+
+	/// <summary>
+	///     Like <see cref="RunPolyfillFree" />, but runs the generator over <paramref name="referencedSource" /> first and
+	///     compiles <paramref name="source" /> against that assembly.
+	/// </summary>
+	public static GeneratorResult RunPolyfillFreeWithGeneratedReferencedAssembly(
+		[StringSyntax("c#-test")] string referencedSource,
+		[StringSyntax("c#-test")] string source)
+	{
+		(Compilation referenced, _) = RunGenerator(
+			referencedSource, [], [], "ReferencedAssembly", nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value);
+		return Collect(RunGenerator(
+			source, [EmitToReference(referenced),], [], nullable: NullableContextOptions.Enable, references: PolyfillFreeReferences.Value));
+	}
+
 	private static GeneratorResult Run(
 		[StringSyntax("c#-test")] string source,
 		MetadataReference[] additionalReferences,
@@ -133,7 +174,8 @@ public static class Generator
 		string assemblyName = "TestAssembly",
 		LanguageVersion languageVersion = LanguageVersion.Latest,
 		NullableContextOptions nullable = NullableContextOptions.Disable,
-		IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null)
+		IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null,
+		MetadataReference[]? references = null)
 	{
 		CSharpParseOptions parseOptions = new(languageVersion);
 		SyntaxTree[] syntaxTrees = [CSharpSyntaxTree.ParseText(source, parseOptions),];
@@ -141,7 +183,7 @@ public static class Generator
 		CSharpCompilation compilation = CSharpCompilation.Create(
 			assemblyName,
 			syntaxTrees,
-			[..References.For(assemblyTypes), ..additionalReferences,],
+			[..references ?? [..References.For(assemblyTypes),], ..additionalReferences,],
 			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, specificDiagnosticOptions: diagnosticOptions, nullableContextOptions: nullable));
 
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(

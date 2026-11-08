@@ -11,3 +11,11 @@ public sealed class PolyfillFreeClock : IPolyfillFreeClock;
 [Singleton<PolyfillFreeClock, IPolyfillFreeClock>]
 [Singleton<PolyfillFreeClock, IPolyfillFreeClock>(Key = "keyed")]
 public static partial class PolyfillFreeContainer;
+
+/// <summary>Reads <see cref="PolyfillFreeContainer" /> through <c>TryResolve</c> with nullable warnings as errors.</summary>
+public static class PolyfillFreeLookup
+{
+	/// <summary>The type name of the clock, which <c>TryResolve</c> hands out as not null when it returns true.</summary>
+	public static string ClockName(PolyfillFreeContainer.Root root)
+		=> root.TryResolve(typeof(IPolyfillFreeClock), out object? clock) ? clock.GetType().Name : string.Empty;
+}

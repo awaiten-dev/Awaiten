@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Awaiten.SourceGenerators;
 
@@ -27,6 +28,15 @@ partial class AwaitenGenerator
 	private static bool NotNullWhenSupport(Compilation compilation)
 		=> compilation.GetTypesByMetadataName("System.Diagnostics.CodeAnalysis.NotNullWhenAttribute")
 			.Any(attribute => compilation.IsSymbolAccessibleWithin(attribute, compilation.Assembly));
+
+	/// <summary>
+	///     Whether the generated file declares its own <c>NotNullWhenAttribute</c> because the project cannot apply one (see
+	///     <see cref="NotNullWhenSupport" />). The copy is file-local, which needs C# 11: an internal copy would clash with
+	///     a polyfill another generator such as PolySharp adds unseen, and with one of a friend assembly under
+	///     InternalsVisibleTo (CS0436). The compiler honors it only within the project.
+	/// </summary>
+	private static bool DeclaresNotNullWhen(Compilation compilation)
+		=> compilation is CSharpCompilation { LanguageVersion: >= LanguageVersion.CSharp11, } && !NotNullWhenSupport(compilation);
 
 	/// <summary>
 	///     Reads the container's <c>LifetimeSafety</c> from its <c>[Container]</c> attribute, or from its base's when it

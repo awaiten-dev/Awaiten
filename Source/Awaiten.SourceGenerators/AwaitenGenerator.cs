@@ -313,7 +313,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			return new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, new EquatableArray<DiagnosticInfo>([diagnostic,]), false, default, default, null);
 		}
 
-		return SkipsAScanModule(context)
+		return SkipsAScanModule(context.SemanticModel.Compilation)
 			? new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, model.Diagnostics, false, default, default, null)
 			: model;
 	}
@@ -322,10 +322,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     Whether the project compiles below C# 11 and a module of its assembly declares a <c>[Scan]</c>, so AWT243 skips
 	///     that module. The code generated for the other containers and modules of the assembly may refer to its members,
 	///     so they generate nothing either (a container emits only its shell), and AWT243 stays the only error.
+	///     <see cref="AwaitenAnalyzer" /> then checks no container either.
 	/// </summary>
-	private static bool SkipsAScanModule(GeneratorAttributeSyntaxContext context)
-		=> ((CSharpParseOptions)context.TargetNode.SyntaxTree.Options).LanguageVersion < ModuleScanLanguageVersion
-		   && TypesWith(context.SemanticModel.Compilation.Assembly.GlobalNamespace, "ModuleAttribute")
+	internal static bool SkipsAScanModule(Compilation compilation)
+		=> compilation is CSharpCompilation { LanguageVersion: < ModuleScanLanguageVersion, }
+		   && TypesWith(compilation.Assembly.GlobalNamespace, "ModuleAttribute")
 			   .Any(module => HasAwaitenAttribute(module.GetAttributes(), "ScanAttribute"));
 
 	/// <summary>
@@ -469,7 +470,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// IAsyncDisposable support is emitted whenever the compilation can see it (see AsyncDisposableSupport).
 		// When absent the container is sync-dispose only.
 		bool hasAsyncDisposable = AsyncDisposableSupport(compilation) is not null;
-		bool hasNotNullWhen = NotNullWhenSupport(compilation);
+		bool declaresNotNullWhen = DeclaresNotNullWhen(compilation);
+		bool hasNotNullWhen = declaresNotNullWhen || NotNullWhenSupport(compilation);
 
 		string? containerNamespace = containerSymbol.ContainingNamespace is { IsGlobalNamespace: false, } ns
 			? ns.ToDisplayString()
@@ -491,9 +493,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			? $"Awaiten.{typePath}.g.cs"
 			: $"Awaiten.{containerNamespace}.{typePath}.g.cs";
 
-		if (SkipsAScanModule(context))
+		if (SkipsAScanModule(compilation))
 		{
-			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true);
+			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true, DeclaresNotNullWhen: declaresNotNullWhen);
 		}
 
 		(GraphModel graph, List<DiagnosticInfo> diagnostics) = Analyze(containerSymbol, compilation, cancellationToken);
@@ -545,7 +547,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<RegistrationFactory>(graph.Factories.Factories.ToArray()),
 			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
 			RecordedFaults(graph.Factories, compilation),
-			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()));
+			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()),
+			DeclaresNotNullWhen: declaresNotNullWhen);
 	}
 
 	/// <summary>
