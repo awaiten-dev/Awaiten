@@ -1506,6 +1506,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
         "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
+      },
+      {
+        "sha": "a256a13968edbd9a83ed3384a205cfe1b9340a40",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:31:26 2026 \u002B0100",
+        "message": "feat: let a module pass factories with runtime arguments of an internal service through handles (#341)"
       }
     ],
     "labels": [
@@ -1759,7 +1765,8 @@ window.BENCHMARK_DATA = {
       "e2c70663",
       "acc6bc06",
       "ab7425ea",
-      "780e4db4"
+      "780e4db4",
+      "a256a139"
     ],
     "datasets": [
       {
@@ -2016,7 +2023,8 @@ window.BENCHMARK_DATA = {
           5.558466794235366,
           7.688635357966025,
           7.249424491326014,
-          4.527070740503924
+          4.527070740503924,
+          5.510806714112942
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2028,6 +2036,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2543,7 +2552,8 @@ window.BENCHMARK_DATA = {
           7.530499925216039,
           8.367314628683603,
           7.755860371085314,
-          4.23394573678573
+          4.23394573678573,
+          5.024710079388959
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2555,6 +2565,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3070,7 +3081,8 @@ window.BENCHMARK_DATA = {
           138.14845272210928,
           109.08154323895772,
           133.06559287707012,
-          59.68178412743977
+          59.68178412743977,
+          116.92246038118998
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3082,6 +3094,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3593,7 +3606,8 @@ window.BENCHMARK_DATA = {
           8.072833123115393,
           8.603248942891756,
           8.184676000227531,
-          5.296231008001736
+          5.296231008001736,
+          7.2995589065055055
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3605,6 +3619,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4112,7 +4127,8 @@ window.BENCHMARK_DATA = {
           10.434835264315971,
           10.591305993497372,
           11.081356465816498,
-          6.670928644140561
+          6.670928644140561,
+          9.559869351983071
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4124,6 +4140,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5890,6 +5907,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
         "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
+      },
+      {
+        "sha": "a256a13968edbd9a83ed3384a205cfe1b9340a40",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:31:26 2026 \u002B0100",
+        "message": "feat: let a module pass factories with runtime arguments of an internal service through handles (#341)"
       }
     ],
     "labels": [
@@ -6143,7 +6166,8 @@ window.BENCHMARK_DATA = {
       "e2c70663",
       "acc6bc06",
       "ab7425ea",
-      "780e4db4"
+      "780e4db4",
+      "a256a139"
     ],
     "datasets": [
       {
@@ -6400,7 +6424,8 @@ window.BENCHMARK_DATA = {
           7.1259224495062465,
           8.229322677850723,
           8.737329898277919,
-          4.461393518107278
+          4.461393518107278,
+          6.783579487067002
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6412,6 +6437,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6927,7 +6953,8 @@ window.BENCHMARK_DATA = {
           7.533840162058671,
           8.343605825943607,
           7.583510112303954,
-          4.192935750420604
+          4.192935750420604,
+          5.241011942071574
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6939,6 +6966,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7454,7 +7482,8 @@ window.BENCHMARK_DATA = {
           140.66918441227503,
           107.13695571252278,
           136.06869400342305,
-          60.54925285066877
+          60.54925285066877,
+          124.82281907399495
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7466,6 +7495,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7977,7 +8007,8 @@ window.BENCHMARK_DATA = {
           8.197971732666096,
           8.386562468750137,
           8.23675703406334,
-          5.257738716327227
+          5.257738716327227,
+          7.4859273364146555
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7989,6 +8020,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8496,7 +8528,8 @@ window.BENCHMARK_DATA = {
           13.160191936152321,
           14.761525054063116,
           13.572243498762449,
-          6.486476276602064
+          6.486476276602064,
+          9.454418603579203
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8508,6 +8541,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10274,6 +10308,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
         "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
+      },
+      {
+        "sha": "a256a13968edbd9a83ed3384a205cfe1b9340a40",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:31:26 2026 \u002B0100",
+        "message": "feat: let a module pass factories with runtime arguments of an internal service through handles (#341)"
       }
     ],
     "labels": [
@@ -10527,7 +10567,8 @@ window.BENCHMARK_DATA = {
       "e2c70663",
       "acc6bc06",
       "ab7425ea",
-      "780e4db4"
+      "780e4db4",
+      "a256a139"
     ],
     "datasets": [
       {
@@ -10784,7 +10825,8 @@ window.BENCHMARK_DATA = {
           12.97881486586162,
           15.417523107358388,
           18.981615975499153,
-          17.775789182100976
+          17.775789182100976,
+          15.255844080022403
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10946,6 +10988,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11311,7 +11354,8 @@ window.BENCHMARK_DATA = {
           912.9025975545247,
           1165.4850970904033,
           1424.4592782338461,
-          1303.9979415893554
+          1303.9979415893554,
+          1148.2813515981038
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11323,6 +11367,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11838,7 +11883,8 @@ window.BENCHMARK_DATA = {
           19144.718843900242,
           25986.30417742048,
           29850.682055664063,
-          26348.958247258113
+          26348.958247258113,
+          25397.46143391927
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12100,6 +12146,7 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32482,
+          32478,
           32478
         ],
         "borderColor": "#5E2750",
@@ -12361,7 +12408,8 @@ window.BENCHMARK_DATA = {
           411.9698271017808,
           589.100850718362,
           723.045023282369,
-          580.7389883041382
+          580.7389883041382,
+          581.8017296473186
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12391,6 +12439,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12880,7 +12929,8 @@ window.BENCHMARK_DATA = {
           7058.468463134765,
           9099.578902180989,
           11427.441364542643,
-          9284.912739054362
+          9284.912739054362,
+          8670.280775960286
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13137,6 +13187,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24760,
+          24761,
           24761,
           24761
         ],
@@ -14658,6 +14709,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
         "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
+      },
+      {
+        "sha": "a256a13968edbd9a83ed3384a205cfe1b9340a40",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:31:26 2026 \u002B0100",
+        "message": "feat: let a module pass factories with runtime arguments of an internal service through handles (#341)"
       }
     ],
     "labels": [
@@ -14911,7 +14968,8 @@ window.BENCHMARK_DATA = {
       "e2c70663",
       "acc6bc06",
       "ab7425ea",
-      "780e4db4"
+      "780e4db4",
+      "a256a139"
     ],
     "datasets": [
       {
@@ -15168,7 +15226,8 @@ window.BENCHMARK_DATA = {
           82.3854878459658,
           112.1844208751406,
           178.2324709733327,
-          119.44574575764793
+          119.44574575764793,
+          110.01754203864506
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15330,6 +15389,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15695,7 +15755,8 @@ window.BENCHMARK_DATA = {
           7741.3115964617045,
           10591.203204345704,
           14526.22267964681,
-          11275.026426188151
+          11275.026426188151,
+          10451.171033732096
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15707,6 +15768,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -16222,7 +16284,8 @@ window.BENCHMARK_DATA = {
           447889.6991141183,
           637536.7946940104,
           728153.1501813616,
-          648301.7506277902
+          648301.7506277902,
+          636443.3013671875
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16484,7 +16547,8 @@ window.BENCHMARK_DATA = {
           739991,
           742568,
           720301,
-          741610
+          741610,
+          742548
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16745,7 +16809,8 @@ window.BENCHMARK_DATA = {
           25043.411218261717,
           35136.46859305246,
           44638.74868164062,
-          38039.46792399089
+          38039.46792399089,
+          35857.65323079427
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17003,7 +17068,8 @@ window.BENCHMARK_DATA = {
           80773,
           80977,
           80642,
-          80305
+          80305,
+          80977
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17264,7 +17330,8 @@ window.BENCHMARK_DATA = {
           226784.47591145834,
           269305.24384765624,
           355855.71226283483,
-          308157.32849121094
+          308157.32849121094,
+          271769.61268833705
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17522,7 +17589,8 @@ window.BENCHMARK_DATA = {
           573026,
           573075,
           573093,
-          573125
+          573125,
+          573010
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19018,6 +19086,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
         "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
+      },
+      {
+        "sha": "a256a13968edbd9a83ed3384a205cfe1b9340a40",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:31:26 2026 \u002B0100",
+        "message": "feat: let a module pass factories with runtime arguments of an internal service through handles (#341)"
       }
     ],
     "labels": [
@@ -19267,7 +19341,8 @@ window.BENCHMARK_DATA = {
       "e2c70663",
       "acc6bc06",
       "ab7425ea",
-      "780e4db4"
+      "780e4db4",
+      "a256a139"
     ],
     "datasets": [
       {
@@ -19520,7 +19595,8 @@ window.BENCHMARK_DATA = {
           284.6343528674199,
           440.5213768005371,
           241.93410748701828,
-          205.62027650674185
+          205.62027650674185,
+          242.71189266840616
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19555,6 +19631,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -20039,7 +20116,8 @@ window.BENCHMARK_DATA = {
           699.241168315594,
           610.550297164917,
           595.8131076267788,
-          470.43098538716634
+          470.43098538716634,
+          524.4301295280457
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -20051,6 +20129,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -20558,7 +20637,8 @@ window.BENCHMARK_DATA = {
           6634.936462402344,
           6730.166128976004,
           6541.271842956543,
-          4964.295258076986
+          4964.295258076986,
+          4088.0642073495046
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20642,6 +20722,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -21077,7 +21158,8 @@ window.BENCHMARK_DATA = {
           436.56296154430936,
           415.6545446395874,
           395.18052864074707,
-          342.2306244032724
+          342.2306244032724,
+          357.9986347516378
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21089,6 +21171,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21596,7 +21679,8 @@ window.BENCHMARK_DATA = {
           766.3444117863972,
           754.2938163121541,
           766.3011151631673,
-          556.8561541693551
+          556.8561541693551,
+          542.4759763876597
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21608,6 +21692,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
