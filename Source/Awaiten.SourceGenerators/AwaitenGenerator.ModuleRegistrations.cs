@@ -204,6 +204,41 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports, in the build of a module that receives generated members, each private <c>Factory</c> or
+	///     <c>Instance</c> member it generates no wrapper for (see <see cref="CollectModuleMemberWrappers" />), which no
+	///     container can call: AWT112 for overloads no wrapper can choose between, else AWT153. A container of the
+	///     module's assembly leaves it to the module (see <see cref="ReportedByModule" />). A member the module reports for
+	///     a type private to it (AWT216, AWT195) is left out.
+	/// </summary>
+	private static void ReportUnwrappedPrivateMembers(INamedTypeSymbol module, Compilation compilation, List<MemberWrapper> wrappers, List<DiagnosticInfo> diagnostics)
+	{
+		HashSet<string> reported = new(StringComparer.Ordinal);
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			if (registration.Member is not { } member || IsHiddenInModule(registration.Implementation.OriginalDefinition, module, compilation))
+			{
+				continue;
+			}
+
+			List<ISymbol> candidates = ProductionMemberCandidates(module, registration.Production, member, registration.Implementation, compilation).ToList();
+			string name = MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation);
+			if (candidates.Count == 0
+			    || !candidates.TrueForAll(candidate => candidate.DeclaredAccessibility == Accessibility.Private)
+			    || wrappers.Exists(wrapper => wrapper.Name == name || wrapper.Name == ImplementationWrapperName(name))
+			    || candidates.Exists(candidate => candidate is IMethodSymbol method && HiddenParameter(method, module, compilation) is not null)
+			    || !reported.Add(name))
+			{
+				continue;
+			}
+
+			string service = Display(registration.Service.ToDisplayString(FullyQualified));
+			diagnostics.Add(candidates.Count > 1
+				? new DiagnosticInfo(Diagnostics.AmbiguousFactory, LocationInfo.From(registration.Location), new EquatableArray<string>([service, member, DescribeOwner(module),]))
+				: new DiagnosticInfo(Diagnostics.InaccessibleModuleMember, LocationInfo.From(registration.Location), new EquatableArray<string>([service, Display(module.ToDisplayString(FullyQualified)), member,])));
+		}
+	}
+
+	/// <summary>
 	///     Whether the module pipeline emits into <paramref name="module" />: a non-generic, static, <c>partial</c>
 	///     module whose enclosing types are <c>partial</c> too and that declares no member named like the generated
 	///     <see cref="InternalsClass" /> (see <c>BuildModuleModel</c>, which reports otherwise).

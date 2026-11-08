@@ -2041,14 +2041,12 @@ A module `Factory`/`Instance` member is not accessible from the generated contai
 :::
 
 ```csharp expect=AWT153
-internal sealed class Burr;
-
 [Module]
 [Singleton<Grinder>(Factory = nameof(MakeGrinder))]
 public static partial class EquipmentModule
 {
-    // private, and the internal parameter keeps the module from wrapping it for a public service
-    private static Grinder MakeGrinder(Burr burr) => new();
+    // private, and generic, so the module can't wrap it
+    private static Grinder MakeGrinder<T>() => new();
 }
 
 [Container]
@@ -2056,7 +2054,7 @@ public static partial class EquipmentModule
 public static partial class CoffeeShop;
 ```
 
-A private member of a public service whose parameter types are public is not reported: a `partial` module generates a public wrapper for it, which every container calls instead. A module that is not `partial` cannot receive the wrapper and reports the member in its own build ([AWT194](#awt194)). A private member that produces a service the module registers under an internal type is not reported either: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. A private member of an `internal`, `partial` module is not reported either, whatever the service, since only containers that can call its internal wrapper import such a module.
+A private member of a `partial` module is reported only when the module can generate no wrapper for it, and then once, in the library's own build; overloads of it are [AWT112](#awt112) there instead. Otherwise the module generates an internal wrapper for it, which a container in the library's own assembly or in one the library grants `InternalsVisibleTo` calls, and for a public service whose parameter types are public also a public wrapper, which a container in another assembly calls. Such a container reaches a member that returns an internal implementation under several public services, or that takes a parameter of an internal service the module registers, through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) instead. A module that is not `partial` cannot receive a wrapper and reports the member in its own build ([AWT194](#awt194)). A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it.
 
 **Fix:** Make the member `public`, or `internal` when the container is in the same assembly (or one the module's assembly grants `InternalsVisibleTo`).
 

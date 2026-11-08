@@ -660,13 +660,14 @@ public class RegistrationFactoryShapeTests
 			}
 
 			[Test]
-			public async Task UnderSeveralPublicServices_GetsNoWrapper()
+			public async Task UnderSeveralPublicServices_GetsAHandleInsteadOfAWrapper()
 			{
 				string library = Library("[Singleton<Grinder, IGrinder>(Factory = nameof(Create))]\n[Singleton<Grinder, IMill>(Factory = nameof(Create))]");
 
-				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("public static global::Lib.IGrinder Factory_Create_")
 					.Because("no single public type converts to both services, which share one instance");
-				await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).Contains("*AWT108*Create*").AsWildcard();
+				await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).IsEmpty()
+					.Because("the consumer serves both services from the instance handle the module builds through the member");
 			}
 		}
 

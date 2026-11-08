@@ -36,9 +36,12 @@ public class ModulePrivateMemberTests
 		namespace Lib;
 
 		public interface IGreeter { }
+		public interface IOther { }
 		public interface IClock { }
 		public sealed class Clock : IClock { }
-		internal sealed class Greeter : IGreeter { }
+		internal interface ISecret { }
+		internal sealed class Secret : ISecret { }
+		internal sealed class Greeter : IGreeter, IOther { }
 
 		[Module]
 		[Singleton<Clock, IClock>]
@@ -83,6 +86,40 @@ public class ModulePrivateMemberTests
 		await That(alone.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("'Lib.CoffeeModule' produces 'Lib.IGreeter' through its private member 'Make'"))
 			.Because("no container can call the private member, and the module cannot receive the wrapper that would, so the library reports it before any consumer");
 		await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194"))
+			.Because("the container in the module's assembly leaves the one cause to the module instead of adding AWT153");
+	}
+
+	[Test]
+	[Arguments("[Singleton<Greeter, IGreeter>(Factory = nameof(Make))][Singleton<Greeter, IOther>(Factory = nameof(Make))]", "private static Greeter Make() => new Greeter();")]
+	[Arguments("[Singleton<Greeter, IGreeter>(Factory = nameof(Make))][Singleton<Greeter, IOther>(Factory = nameof(Make))]", "internal static Greeter Make() => new Greeter();")]
+	[Arguments("[Singleton<Greeter, IGreeter>(Instance = nameof(Shared))][Singleton<Greeter, IOther>(Instance = nameof(Shared))]", "private static Greeter Shared { get; } = new Greeter();")]
+	[Arguments("[Singleton<IGreeter>(Factory = nameof(Make))][Singleton<Secret, ISecret>]", "private static IGreeter Make(ISecret secret) => new Greeter();")]
+	[Arguments("[Singleton<IGreeter>(Factory = nameof(Make))][Singleton<Secret, ISecret>]", "internal static IGreeter Make(ISecret secret) => new Greeter();")]
+	public async Task NoPublicWrapperCanServe_IsBuiltThroughAHandleForAContainerInAnotherAssembly(string registration, string member)
+	{
+		(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("public static partial", registration, member));
+
+		await That(library.Diagnostics).IsEmpty();
+		await That(same.Diagnostics).IsEmpty();
+		await That(external.Diagnostics).IsEmpty()
+			.Because("no public wrapper can return an internal implementation of several services or take an internal parameter, so the module builds it through an instance handle");
+		await That(friend.Diagnostics).IsEmpty();
+		await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Internals.Alias_");
+	}
+
+	[Test]
+	[Arguments("public static partial")]
+	[Arguments("internal static partial")]
+	public async Task OverloadedPrivateFactory_IsReportedAsAmbiguousOnceInTheLibrary(string modifiers)
+	{
+		string library = Library(modifiers, "[Singleton<IGreeter>(Factory = nameof(Make))]", "private static IGreeter Make() => new Greeter(); private static IGreeter Make(IClock clock) => new Greeter();");
+
+		GeneratorResult alone = Generator.Run(library);
+		GeneratorResult same = Generator.Run(library + SameAssemblyContainer);
+
+		await That(alone.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT112") && diagnostic.Contains("more than one accessible method 'Make'"))
+			.Because("no wrapper can choose between the private overloads, so the library reports the ambiguity before any consumer does");
+		await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT112"))
 			.Because("the container in the module's assembly leaves the one cause to the module instead of adding AWT153");
 	}
 }

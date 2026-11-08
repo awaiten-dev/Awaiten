@@ -54,11 +54,33 @@ public partial class ModuleLeftoverShapeTests
 		{
 			ITuckedKettle kettle = container.Resolve<ITuckedKettle>();
 			ITuckedShelf shelf = container.Resolve<ITuckedShelf>();
+			ITuckedPot pot = container.Resolve<ITuckedPot>();
+			ITuckedPan pan = container.Resolve<ITuckedPan>();
+			ITuckedRack rack = container.Resolve<ITuckedRack>();
+			ITuckedHook hook = container.Resolve<ITuckedHook>();
+			ITuckedScale scale = container.Resolve<ITuckedScale>();
+			ITuckedSpoon spoon;
+			ITuckedLadle ladle;
+			await using (IAwaitenScope scope = container.CreateScope())
+			{
+				spoon = scope.Resolve<ITuckedSpoon>();
+				ladle = scope.Resolve<ITuckedLadle>();
+			}
+
 			await container.DisposeAsync();
 
 			await That(shelf).IsSameAs(expectedShelf);
 			await That(kettle.Disposed).IsTrue()
 				.Because("the container disposes the internal implementation the private factory returns, whatever type it holds it as");
+			await That(pan).IsSameAs(pot)
+				.Because("both services of the implementation the private factory returns share its one singleton");
+			await That(pot.Disposed).IsTrue();
+			await That(hook).IsSameAs(rack);
+			await That(ladle).IsSameAs(spoon)
+				.Because("both services of the implementation the internal factory returns share its one instance per scope");
+			await That(spoon.Disposed).IsTrue();
+			await That(scale.Weighed).IsTrue()
+				.Because("the private factory receives the internal service it takes");
 		}
 	}
 

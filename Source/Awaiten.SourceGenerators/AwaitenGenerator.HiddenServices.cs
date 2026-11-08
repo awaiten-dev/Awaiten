@@ -648,8 +648,10 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether the module builds <paramref name="implementation" /> through a handle on its own account: it registers
-	///     it under an internal service (see <see cref="IsHiddenService" />), or constructs it and registers it under
-	///     several accessible services that no accessible type covers, which one instance handle shares.
+	///     it under an internal service (see <see cref="IsHiddenService" />), constructs it and registers it under
+	///     several accessible services that no accessible type covers, which one instance handle shares, or produces it
+	///     through a member that is not public and that no public wrapper can serve: one returning an implementation
+	///     another assembly cannot name under several services, or a factory taking a parameter of an internal type.
 	/// </summary>
 	private static bool HandledShape(INamedTypeSymbol module, INamedTypeSymbol implementation, List<ModuleRegistration> registrations, Compilation compilation)
 	{
@@ -664,6 +666,16 @@ partial class AwaitenGenerator
 		}
 
 		List<INamedTypeSymbol> services = registrations.Select(registration => registration.Service).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToList();
+		if (registrations[0].Member is { } member)
+		{
+			List<ISymbol> producers = ProductionMemberCandidates(module, registrations[0].Production, member, implementation, compilation).ToList();
+			return !IsHiddenInModule(implementation, module, compilation)
+			       && producers.Count == 1
+			       && producers[0].DeclaredAccessibility != Accessibility.Public
+			       && ((services.Count >= 2 && !IsExternallyAccessible(implementation))
+			           || (producers[0] is IMethodSymbol method && method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type) && TypeHiddenInModule(parameter.Type, module, compilation) is null)));
+		}
+
 		return registrations[0].Production == ProductionKind.Constructor
 		       && services.Count >= 2
 		       && !IsHiddenInModule(implementation, module, compilation)

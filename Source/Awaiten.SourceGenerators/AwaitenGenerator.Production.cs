@@ -1483,7 +1483,7 @@ partial class AwaitenGenerator
 				      && IsModuleOrigin(info)
 				      && candidates.Count == 1
 				      && HiddenParameter(candidates[0], owner, compilation) is not null)
-				    && !ReportedByNonPartialModule(info, compilation))
+				    && !ReportedByModule(info, compilation))
 				{
 					ReportInaccessibleModuleMember(info, diagnostics);
 				}
@@ -1544,7 +1544,7 @@ partial class AwaitenGenerator
 
 		if (inaccessibleMatch)
 		{
-			if (!ReportedByNonPartialModule(info, compilation))
+			if (!ReportedByModule(info, compilation))
 			{
 				ReportInaccessibleModuleMember(info, diagnostics);
 			}
@@ -1628,16 +1628,16 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Whether the member of <paramref name="info" /> is private to a module of the container's own assembly that cannot
-	///     receive the wrapper a container would call instead, which the module's own build reports (AWT194).
+	///     Whether the member of <paramref name="info" />, which the container reaches neither itself nor through a wrapper,
+	///     is private to a module of the container's own assembly, whose own build reports it: AWT194 when the module
+	///     cannot receive the wrapper, else why it generates none (see <see cref="ReportUnwrappedPrivateMembers" />).
 	/// </summary>
-	private static bool ReportedByNonPartialModule(ImplInfo info, Compilation compilation)
+	private static bool ReportedByModule(ImplInfo info, Compilation compilation)
 		=> info is { Origin: { } module, ProductionMember: { } member, Production: ProductionKind.Factory or ProductionKind.Instance, }
 		   && SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
 		   && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute")
 		   && module.IsStatic
 		   && !HasOpenTypeParameters(module)
-		   && !ReceivesGeneratedMembers(module)
 		   && ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation).All(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
 
 	/// <summary>

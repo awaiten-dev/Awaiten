@@ -178,6 +178,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		List<SkippedRegistration> skipped = new();
 		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
+		if (receives)
+		{
+			ReportUnwrappedPrivateMembers(moduleSymbol, compilation, wrappers, diagnostics);
+		}
+
 		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
 		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
@@ -185,7 +190,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		skipped.AddRange(openSkipped);
 		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
 		    && !(hidden is { SeveralModules: true, } && hidden.Demanded.Emitting.Contains(moduleSymbol))
-		    && hidden?.Implementations.Any(candidate => candidate.Viable && IsExternallyAccessible(candidate.Implementation)) != true)
+		    && hidden?.Implementations.Any(candidate => candidate.Viable && (candidate.Shared || IsExternallyAccessible(candidate.Implementation))) != true)
 		{
 			return diagnostics.Count == 0
 				? null
