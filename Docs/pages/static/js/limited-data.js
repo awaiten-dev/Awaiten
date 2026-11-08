@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "c85bfe3327a041c5231bfdb71e32860548da0262",
-        "author": "dependabot[bot]",
-        "date": "Fri Nov 6 16:59:39 2026 \u002B0100",
-        "message": "chore: Bump actions/setup-dotnet from 6.0.0 to 6.1.0 (#249)"
-      },
-      {
         "sha": "b2992bc1e6c2e47c5fd346f5eeaf7da70877ce84",
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 6 17:26:14 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
-      "c85bfe33",
       "b2992bc1",
       "67a74870",
       "3517285b",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.149265371263027,
           7.1467096988971415,
           4.027318933109442,
           7.148781747619311,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           7.763078451156616,
           4.063436950246493,
           5.636468079686165,
-          7.766312518945107
+          7.766312518945107,
+          7.426880071560542
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.846037404877799,
           7.357836919526259,
           3.8525967294206986,
           7.964115836222967,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.28659177677972,
           3.8457346845131655,
           6.859275883684556,
-          7.671674111059734
+          7.671674111059734,
+          8.228737277785937
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          118.18540322780609,
           112.61676113605499,
           57.424207830429076,
           121.11641037464142,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           116.71404671669006,
           54.38110556772777,
           84.31481356620789,
-          114.52782589594523
+          114.52782589594523,
+          135.50187403361002
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.786670414110025,
           8.783459560147353,
           5.0659731688598795,
           8.954647744695345,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           9.30560349225998,
           4.828817519545555,
           6.6927634358406065,
-          8.77390452226003
+          8.77390452226003,
+          7.9666032701730725
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.294705616576332,
           11.041453904830492,
           6.33736432393392,
           11.013765429074947,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.280010571846596,
           6.348493470595433,
           9.025130096290793,
-          11.293270897120237
+          11.293270897120237,
+          10.298366772277015
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "c85bfe3327a041c5231bfdb71e32860548da0262",
-        "author": "dependabot[bot]",
-        "date": "Fri Nov 6 16:59:39 2026 \u002B0100",
-        "message": "chore: Bump actions/setup-dotnet from 6.0.0 to 6.1.0 (#249)"
-      },
-      {
         "sha": "b2992bc1e6c2e47c5fd346f5eeaf7da70877ce84",
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 6 17:26:14 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
-      "c85bfe33",
       "b2992bc1",
       "67a74870",
       "3517285b",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.473264307777088,
           8.15651134188686,
           4.384597300418785,
           8.167922201965537,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           8.462621819760118,
           4.367702933458181,
           6.0340286667148275,
-          8.431318338100727
+          8.431318338100727,
+          8.164587103327115
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.865316231335912,
           7.327872008085251,
           3.9434146006902058,
           7.909197246799102,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.288938575983048,
           3.8177726030349732,
           6.7789499427263555,
-          7.766304229696591
+          7.766304229696591,
+          7.993981010715166
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          128.47439767519634,
           111.68168466885885,
           58.11596295038859,
           123.30088030497232,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           111.30885116259257,
           53.38170856634776,
           82.9769646014486,
-          108.8012745777766
+          108.8012745777766,
+          102.35339501698812
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.787011313896913,
           8.777322170138358,
           5.018166161541428,
           8.936301365494728,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           9.189001728097598,
           4.765533070266247,
           6.490077846248945,
-          8.779598436676538
+          8.779598436676538,
+          8.031099703695093
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.895720315972964,
           14.394175056081552,
           6.108885458111763,
           14.664560900202819,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.85359894434611,
           6.35252739914826,
           11.748003922402859,
-          14.929735428094864
+          14.929735428094864,
+          14.209499931761197
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "c85bfe3327a041c5231bfdb71e32860548da0262",
-        "author": "dependabot[bot]",
-        "date": "Fri Nov 6 16:59:39 2026 \u002B0100",
-        "message": "chore: Bump actions/setup-dotnet from 6.0.0 to 6.1.0 (#249)"
-      },
-      {
         "sha": "b2992bc1e6c2e47c5fd346f5eeaf7da70877ce84",
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 6 17:26:14 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
-      "c85bfe33",
       "b2992bc1",
       "67a74870",
       "3517285b",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          20.82326717376709,
           19.38378887091364,
           20.735196258624395,
           19.3731257127864,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           10.702754971385001,
           19.988345096508663,
           20.873037294546762,
-          10.520108892520268
+          10.520108892520268,
+          15.899794787168503
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1518.1924101511638,
           1531.993517303467,
           1444.0473514284406,
           1431.4303059895833,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           732.0696478623611,
           1456.2136914389473,
           1427.1902675628662,
-          727.0197109222412
+          727.0197109222412,
+          1189.7602062225342
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          30397.926521809895,
           30321.697208658854,
           29176.010803222656,
           32756.13457845052,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           16896.121721540178,
           29981.123055594308,
           29536.96414388021,
-          16823.212268066407
+          16823.212268066407,
+          20196.733738490515
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2639,7 +2639,6 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32482,
-          32482,
           32478,
           32482,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32482,
-          32478
+          32478,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          744.4267992655437,
           738.6509047826131,
           810.2909317697797,
           731.5222300211589,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           379.6697268486023,
           666.0134767804827,
           705.1173110961914,
-          375.0913798258855
+          375.0913798258855,
+          554.6489065806071
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11966.580804007393,
           12667.364973958332,
           11751.22953578404,
           10995.146268572125,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6185.367768968855,
           11681.520372663226,
           11618.413262939453,
-          6125.534965515137
+          6125.534965515137,
+          9240.80404663086
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2886,7 +2886,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          24760,
           24761,
           24760,
           24760,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "c85bfe3327a041c5231bfdb71e32860548da0262",
-        "author": "dependabot[bot]",
-        "date": "Fri Nov 6 16:59:39 2026 \u002B0100",
-        "message": "chore: Bump actions/setup-dotnet from 6.0.0 to 6.1.0 (#249)"
-      },
       {
         "sha": "b2992bc1e6c2e47c5fd346f5eeaf7da70877ce84",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
-      "c85bfe33",
       "b2992bc1",
       "67a74870",
       "3517285b",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          200.91515800158183,
           172.91725888619055,
           184.97494855948858,
           141.5902172235342,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           74.59815274752103,
           164.86049674238478,
           191.2462765534719,
-          71.41494071483612
+          71.41494071483612,
+          166.30799167950948
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          15382.337182617188,
           15225.666879272461,
           14083.104546683175,
           13468.998053995769,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           6984.977747235979,
           14520.246896362305,
           14634.870766194661,
-          6892.263680521647
+          6892.263680521647,
+          9915.479292805989
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          739987.4873046875,
           751881.5854166667,
           723492.9206054688,
           814499.2859235491,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           410541.86788504466,
           744367.1699916294,
           732596.7495814732,
-          412690.0558919271
+          412690.0558919271,
+          475972.05517578125
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          739095,
           720259,
           740461,
           741805,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740300,
           741799,
           741801,
-          741067
+          741067,
+          718319
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          45353.320286342074,
           44006.25772705078,
           44796.06200299944,
           44829.646536690845,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           22465.062754313152,
           41363.218876139326,
           43334.419767252606,
-          21906.00863647461
+          21906.00863647461,
+          31946.107600285457
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80060,
           80639,
           80009,
           80304,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80302,
           80300,
           80301,
-          80307
+          80307,
+          80344
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          352361.0487234933,
           385009.0983072917,
           365904.99155970983,
           337225.419921875,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           185321.5199544271,
           351451.90206473216,
           344146.06113978795,
-          182363.89270833333
+          182363.89270833333,
+          270194.14889090403
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573042,
           573136,
           573041,
           573187,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573104,
           573091,
           573074,
-          573133
+          573133,
+          571205
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "c85bfe3327a041c5231bfdb71e32860548da0262",
-        "author": "dependabot[bot]",
-        "date": "Fri Nov 6 16:59:39 2026 \u002B0100",
-        "message": "chore: Bump actions/setup-dotnet from 6.0.0 to 6.1.0 (#249)"
-      },
       {
         "sha": "b2992bc1e6c2e47c5fd346f5eeaf7da70877ce84",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
-      "c85bfe33",
       "b2992bc1",
       "67a74870",
       "3517285b",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          422.6834803899129,
           236.67422411991998,
           245.2122559914222,
           271.3745162010193,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           289.5723221143087,
           269.4152193705241,
           202.82010078430176,
-          252.96296163967676
+          252.96296163967676,
+          200.6946506023407
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          628.0927245457967,
           587.6709549086435,
           557.1769501822336,
           631.3937287648519,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           651.45890551347,
           477.16223052342735,
           461.23183177312217,
-          622.5833545049031
+          622.5833545049031,
+          457.5192208925883
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6572.194600241525,
           6745.773671076848,
           4071.286595662435,
           6518.1974538167315,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           5131.378002929688,
           5084.931804148356,
           4897.020835289588,
-          6475.335697428385
+          6475.335697428385,
+          4694.64758845738
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          422.8361163139343,
           401.11271953582764,
           362.3488632348868,
           404.05719493230185,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           423.18393580118817,
           361.15204601287843,
           343.0717325846354,
-          390.737326780955
+          390.737326780955,
+          332.8297374089559
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          780.9252309799194,
           719.9401533762614,
           544.7228569189707,
           747.6039306004842,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           730.9944588979085,
           576.1485364278158,
           540.3498201370239,
-          722.6019562993731
+          722.6019562993731,
+          536.9384574890137
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
