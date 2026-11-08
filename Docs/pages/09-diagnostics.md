@@ -2189,7 +2189,7 @@ internal sealed class LoggingGrinder(IGrinder inner) : IGrinder;
 
 [Module]
 [Singleton<Grinder, IGrinder>]
-[Decorate<LoggingGrinder, IGrinder>]   // internal, and a module does not self-compile a decorator
+[Decorate<LoggingGrinder, IGrinder>]   // internal, and the module isn't partial, so it can't carry a factory
 public static class EquipmentModule;
 
 // In the application:
@@ -2198,9 +2198,11 @@ public static class EquipmentModule;
 public static partial class CoffeeShop;
 ```
 
-A module self-compiles its scans, its registrations of [internal implementations](./04-registration/07-modules.md#internal-implementations) and its decorators and composites, the [open generic](./04-registration/07-modules.md#open-generics) ones through generic factories. A decorator or composite gets no factory when the module isn't `partial`, or when the factory can't express it, for example because a constructor parameter type isn't public. An open generic registration, decorator or composite whose factory the module can't generate is reported as [AWT231](#awt231) with the reason the module recorded instead, unless the module isn't `partial` and so records nothing. A composite of a service the module registers under an internal type gets none either, since only a decorator is built into the service's [generated handle](./04-registration/07-modules.md#services-only-the-module-uses). When such a type, or every constructor of it, is not accessible to a container in another assembly, and the module generated no factory for it, nothing can construct it there, so the container reports it at its `[Import]` and leaves the contribution out. A container in the module's own assembly, or one the library grants `InternalsVisibleTo`, constructs the type itself.
+A module self-compiles its scans, its registrations of [internal implementations](./04-registration/07-modules.md#internal-implementations) and its decorators and composites, also those of a service it registers under an internal type, which it builds into the service's [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), and the [open generic](./04-registration/07-modules.md#open-generics) ones through generic factories. A decorator or composite gets no factory when the module isn't `partial` or is generic, or when the factory can't express it, for example because a constructor parameter type isn't public and isn't a service the module registers. An open generic registration, decorator or composite whose factory the module can't generate is reported as [AWT231](#awt231) with the reason the module recorded instead, unless the module isn't `partial` and so records nothing. When such a type, or every constructor of it, is not accessible to a container in another assembly, and the module generated no factory for it, nothing can construct it there, so the container reports it at its `[Import]` and leaves the contribution out. A container in the module's own assembly, or one the library grants `InternalsVisibleTo`, constructs the type itself.
 
-**Fix:** Make the type and its constructor public, or grant the container's assembly `InternalsVisibleTo`.
+A decorator or composite of a service the module registers under an internal type reports what a container in the module's own assembly reports instead, because the module records the cause: an internal constructor parameter type that no module of the assembly registers is [AWT101](#awt101), and a composite whose collection is of a base type of the service is [AWT133](#awt133).
+
+**Fix:** Make the type, its constructor and the constructor's parameter types public, make the module `partial`, or grant the container's assembly `InternalsVisibleTo`.
 
 ### AWT231
 
