@@ -981,6 +981,41 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task InAnotherAssembly_ReportsADecoratedRegistrationOfTheBaseWhosePropertyItCannotSetOnce()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     [Inject] internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 public sealed class LoudGreeter(IGreeter inner) : IGreeter
+			                 {
+			                     public IGreeter Inner { get; } = inner;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending.Replace("public static partial class AppContainer", "[Decorate<LoudGreeter, IGreeter>]\npublic static partial class AppContainer"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"));
+			await That(other.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
+				.Because("the decorator has nothing left to wrap only because the registration was dropped, which AWT226 already reports");
+		}
+
+		[Test]
 		public async Task InAnotherAssembly_ReportsARegistrationOfTheBaseWhoseContainerSidePropertyItCannotSet()
 		{
 			string library = """

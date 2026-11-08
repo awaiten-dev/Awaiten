@@ -34,6 +34,13 @@ partial class AwaitenGenerator
 		private readonly Dictionary<string, List<KeyedMember>> _keyedMembers;
 		private readonly Dictionary<string, DecoratorInner> _decoratorInner;
 		private readonly ExternalSurface _external;
+
+		/// <summary>
+		///     The services whose registration was dropped for a reported reason (see <see cref="BuildContext.ConstraintRejected" />),
+		///     so a decorator left with nothing to wrap reports no AWT123 on top.
+		/// </summary>
+		private readonly HashSet<string> _rejected;
+
 		private readonly List<DiagnosticInfo> _diagnostics;
 
 		/// <summary>
@@ -49,6 +56,7 @@ partial class AwaitenGenerator
 			Dictionary<string, List<KeyedMember>> keyedMembers,
 			Dictionary<string, DecoratorInner> decoratorInner,
 			ExternalSurface external,
+			HashSet<string> rejected,
 			List<DiagnosticInfo> diagnostics)
 		{
 			_containerSymbol = containerSymbol;
@@ -59,6 +67,7 @@ partial class AwaitenGenerator
 			_keyedMembers = keyedMembers;
 			_decoratorInner = decoratorInner;
 			_external = external;
+			_rejected = rejected;
 			_diagnostics = diagnostics;
 
 			_byImpl = new Dictionary<string, ImplInfo>(StringComparer.Ordinal);
@@ -177,7 +186,7 @@ partial class AwaitenGenerator
 		///     Whether the decorator wraps at least one base implementation under the keys it selects. Reports AWT210
 		///     for each key named in <c>Keys</c> without a registration, and AWT123 when an unset <c>Keys</c> or
 		///     <c>AllKeys</c> finds nothing to decorate, except for the closing of an open decorator onto a handle, whose
-		///     open decorator reports them.
+		///     open decorator reports them, and unless the service's registration was dropped for a reported reason.
 		/// </summary>
 		private bool HasSomethingToWrap(string service, DecorateRegistration decorator, List<string?> populated)
 		{
@@ -195,7 +204,7 @@ partial class AwaitenGenerator
 						service, decorator.Decorator.ToDisplayString(FullyQualified), key is null ? "null" : KeyDisplay(key));
 				}
 			}
-			else if (!any)
+			else if (!any && !_rejected.Contains(service))
 			{
 				Report(Diagnostics.DecoratedServiceNotRegistered, decorator.Location,
 					service, decorator.Decorator.ToDisplayString(FullyQualified));

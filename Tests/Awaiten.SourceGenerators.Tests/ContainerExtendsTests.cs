@@ -727,6 +727,45 @@ public class ContainerExtendsTests
 		}
 
 		[Test]
+		public async Task ABaseInAnotherAssemblyWithoutInternalsVisibleTo_ReportsNoDecoratorOfTheDroppedService()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			                                                                      using Awaiten;
+
+			                                                                      namespace Production;
+
+			                                                                      public interface IGrinder { }
+
+			                                                                      public sealed class LoggingGrinder(IGrinder inner) : IGrinder
+			                                                                      {
+			                                                                          public IGrinder Inner { get; } = inner;
+			                                                                      }
+
+			                                                                      [Container]
+			                                                                      [Singleton<Grinder, IGrinder>]
+			                                                                      public static partial class Shop
+			                                                                      {
+			                                                                          private sealed class Grinder : IGrinder { }
+			                                                                      }
+			                                                                      """, """
+			                                                                           using Awaiten;
+			                                                                           using Production;
+
+			                                                                           namespace MyCode;
+
+			                                                                           [Container(Extends = typeof(Production.Shop))]
+			                                                                           [Decorate<LoggingGrinder, IGrinder>]
+			                                                                           public static partial class TestShop
+			                                                                           {
+			                                                                           }
+			                                                                           """);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"));
+			await That(result.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
+				.Because("the decorator has nothing to wrap only because the inherited registration was dropped, which AWT226 already reports");
+		}
+
+		[Test]
 		public async Task APrivateImplementationTheFactoryCannotMirror_ReportsAwt226WithTheReason()
 		{
 			GeneratorResult result = Generator.Run("""

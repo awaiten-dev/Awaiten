@@ -829,7 +829,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, DecoratorInner> decoratorInner = new(StringComparer.Ordinal);
 		if (decorators.Count > 0)
 		{
-			new DecoratorChainBuilder(containerSymbol, compilation, graph, keyedMembers, decoratorInner, external, diagnostics)
+			new DecoratorChainBuilder(containerSymbol, compilation, graph, keyedMembers, decoratorInner, external, constraintRejected, diagnostics)
 				.Build(decorators);
 		}
 

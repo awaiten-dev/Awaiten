@@ -925,6 +925,8 @@ public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;
 public static partial class CoffeeShop;
 ```
 
+It is not reported for a closed `[Decorate]` when the service's registration was left out for another error, such as an inherited registration the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once.
+
 **Fix:** Register the service before decorating it, for example `[Singleton<CardTerminal, IPaymentTerminal>]`. If it is registered only under keys, add `Keys` or `AllKeys = true` to the `[Decorate]`.
 
 ### AWT124
