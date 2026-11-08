@@ -67,6 +67,7 @@ partial class AwaitenGenerator
 		BuildContext context)
 	{
 		List<ParameterModel> parameters = new();
+		int firstProperty = IsGeneratedOwnerFactory(producer) ? FirstPropertyOrdinal(producer) : int.MaxValue;
 		foreach (IParameterSymbol parameter in producer.Parameters)
 		{
 			// A [RequestingType] parameter of a Factory method is filled at each construction site with the
@@ -143,8 +144,10 @@ partial class AwaitenGenerator
 
 			// [ImportServices]: an otherwise-unresolved direct dependency (unkeyed) is satisfied from the
 			// external provider rather than reported as missing. Only direct dependencies fall through; an
-			// unregistered relationship type still surfaces as AWT101 below.
+			// unregistered relationship type still surfaces as AWT101 below. The parameter of a generated factory for an
+			// [Inject] property does not fall through, like the property itself.
 			if (context.External.ImportServices
+			    && parameter.Ordinal < firstProperty
 			    && parameterModel is { Kind: DependencyKind.Direct, Key: null, }
 			    && !context.ServiceToImpl.ContainsKey(KeyOf(parameterModel)))
 			{

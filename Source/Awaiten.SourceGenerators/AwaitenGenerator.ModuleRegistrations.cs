@@ -1120,6 +1120,20 @@ partial class AwaitenGenerator
 		=> $"Deferred_{factory}_{property}";
 
 	/// <summary>
+	///     A deterministic name for the constant next to the generated factory <paramref name="factory" /> that holds the
+	///     position of its first parameter for an <c>[Inject]</c> property (see <see cref="FirstPropertyOrdinal" />).
+	/// </summary>
+	internal static string FirstPropertyName(string factory)
+		=> factory + "_FirstProperty";
+
+	/// <summary>
+	///     The position of the first parameter of a generated factory that stands for an <c>[Inject]</c> property, which
+	///     a consumer cannot tell from a constructor parameter in metadata, or <see cref="int.MaxValue" /> when it has none.
+	/// </summary>
+	private static int FirstPropertyOrdinal(IMethodSymbol factory)
+		=> factory.ContainingType.GetMembers(FirstPropertyName(factory.Name)).OfType<IFieldSymbol>().FirstOrDefault()?.ConstantValue as int? ?? int.MaxValue;
+
+	/// <summary>
 	///     The name of the parameter that follows the parameter of the optional <paramref name="property" /> on a
 	///     generated factory: a consumer passes <see langword="true" /> when it registers the service, so the factory
 	///     tells a service that resolved to <see langword="null" />, or a value type's default, from a missing one. The

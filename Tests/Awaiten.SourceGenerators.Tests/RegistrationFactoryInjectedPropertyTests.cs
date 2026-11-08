@@ -94,6 +94,43 @@ public class RegistrationFactoryInjectedPropertyTests
 		     public static partial class GreetingModule { }
 		     """;
 
+	public class RequiredProperty
+	{
+		private static readonly string Module = Library("[Inject] public IClock Clock { get; set; } = null!;");
+
+		private static string ImportingServices(string source)
+			=> source.Replace("[Import(typeof(GreetingModule))]", "[Import(typeof(GreetingModule))]\n[ImportServices]");
+
+		[Test]
+		public async Task AMissingService_IsReportedEverywhereEvenUnderImportServices()
+		{
+			Containers containers = new(
+				Generator.Run(ImportingServices(WithLibraryContainer(Module, clock: false))),
+				Generator.RunWithGeneratedReferencedAssembly(Module, ImportingServices(Consumer)),
+				Generator.RunWithGeneratedReferencedAssembly(Granted(Module), ImportingServices(Consumer)));
+
+			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"))
+				.Because("the factory's parameter for an [Inject] property falls through to the host no more than the property itself does");
+			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+		}
+
+		[Test]
+		public async Task AMissingConstructorParameter_IsStillImportedFromTheHost()
+		{
+			string module = Library("""
+			                        public Greeter(IClock clock) { }
+
+			                            [Inject] public IClock Clock { get; set; } = null!;
+			                        """).Replace("public interface IClock { }", "public interface IClock { }\npublic interface IHostClock : IClock { }").Replace("public Greeter(IClock clock)", "public Greeter(IHostClock clock)");
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ImportingServices(ClockConsumer));
+
+			await That(other.Diagnostics).IsEmpty()
+				.Because("only the parameters of the factory that stand for properties are kept off the host, a constructor parameter still falls through");
+		}
+	}
+
 	public class OptionalProperty
 	{
 		private static readonly string Module = Library("[Inject(Optional = true)] public IClock Clock { get; set; } = null!;");

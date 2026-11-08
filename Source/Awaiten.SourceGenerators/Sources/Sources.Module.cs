@@ -408,6 +408,16 @@ internal static partial class Sources
 			? MirroredParameter(parameter)
 			: $"{MirroredParameter(parameter)} = default!, bool {AwaitenGenerator.PresenceFlagName(parameter.Name, factory.InitOnlyMembers.AsArray().Contains(parameter.Name))} = false"));
 		string arguments = string.Join(", ", parameters.Take(parameters.Length - members.Length - optional.Length).Select(parameter => parameter.ArgumentExpression));
+		if (members.Length > 0)
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated for a consuming container: the position of the first parameter of the factory below that stands for an",
+				"[Inject] property, which a consumer resolves like the property, never from the host through [ImportServices].");
+			Indent(builder, depth).Append(accessibility).Append(" const int ").Append(AwaitenGenerator.FirstPropertyName(factory.FactoryName)).Append(" = ")
+				.Append(parameters.Length - members.Length - optional.Length).AppendLine(";");
+			builder.AppendLine();
+		}
+
 		if (optional.Length > 0)
 		{
 			EmitFactoryWithOptionalMembers(builder, depth, factory, accessibility, signature, arguments);
