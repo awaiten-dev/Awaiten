@@ -559,9 +559,9 @@ partial class AwaitenGenerator
 		// wrapper, so it seeds from the hook the owner binds, which the container itself may not reach.
 		if (registration is { ConstructVia: { } via, Origin: { } origin, } && via.IndexOf('<') >= 0)
 		{
-			if (CollectModuleHookOverloads(registration.Implementation, hookName, closedMarkers, new ModuleScanContext(origin, context.Inputs.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches is { Count: 1, } hooks)
+			if (registration.ServiceSymbol is { } closed && OwnerBoundHook(registration.Implementation, hookName, closed, origin, context.Inputs.Compilation) is { } hook)
 			{
-				Enqueue(new ExpansionWork(registration.Implementation, hooks[0], depth, ExpansionScan.Hook), context);
+				Enqueue(new ExpansionWork(registration.Implementation, hook, depth, ExpansionScan.Hook), context);
 			}
 
 			return;
@@ -578,6 +578,26 @@ partial class AwaitenGenerator
 		{
 			Enqueue(new ExpansionWork(registration.Implementation, matches[0], depth, ExpansionScan.Hook), context);
 		}
+	}
+
+	/// <summary>
+	///     The hook the generic wrapper of <paramref name="owner" /> runs for a closing: the overload the owner bound for
+	///     the open definition with the service constructed with its type parameters (see <see cref="OpenHookWrappers" />),
+	///     closed with the type arguments of <paramref name="closedService" /> like the wrapper, or <see langword="null" />
+	///     when the owner bound none.
+	/// </summary>
+	private static IMethodSymbol? OwnerBoundHook(INamedTypeSymbol closedImplementation, string hookName, INamedTypeSymbol closedService, INamedTypeSymbol owner, Compilation compilation)
+	{
+		INamedTypeSymbol definition = closedImplementation.OriginalDefinition;
+		INamedTypeSymbol marker = closedService.OriginalDefinition.Construct(definition.TypeParameters.Cast<ITypeSymbol>().ToArray());
+		List<IMethodSymbol> matches = CollectModuleHookOverloads(
+			definition, hookName, [marker,], new ModuleScanContext(owner, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches;
+		if (matches.Count != 1)
+		{
+			return null;
+		}
+
+		return matches[0].Arity == 0 ? matches[0] : matches[0].OriginalDefinition.Construct(closedService.TypeArguments.ToArray());
 	}
 
 	/// <summary>
@@ -614,6 +634,11 @@ partial class AwaitenGenerator
 			bool dropped = candidate.Weak && IsClaimedByStrongerRegistration(candidate, closedService, context.Raw);
 
 			RawRegistration registration = SynthesizeClosedRegistration(candidate, closed, closedService, closedImpl, TypeIdentity(closedImpl, context.Inputs.Compilation));
+			if (candidate.Via is not null)
+			{
+				registration = WithoutAmbiguousOpenHooks(registration, candidate, closedImplName, context);
+			}
+
 			if (candidate.Via is { Method: null, } generated)
 			{
 				OwnerFactoryCall? call = generated.Close(typeArguments, closedImpl, closed);
@@ -746,6 +771,46 @@ partial class AwaitenGenerator
 			OnActivated = registration.OnActivated is { } activation ? InInternals(RegistrationHookWrapperName(definition, release: false, activation)) : null,
 			OnRelease = registration.OnRelease is { } release ? InInternals(RegistrationHookWrapperName(definition, release: true, release)) : null,
 		};
+	}
+
+	/// <summary>
+	///     Leaves out each hook of a closing built through the owner's generic factory that more than one overload of the
+	///     owner accepts for this closing, reporting AWT190 as for a closing the container builds itself: the owner bound
+	///     the wrapper for the open definition, which an overload for one closing does not accept.
+	/// </summary>
+	private static RawRegistration WithoutAmbiguousOpenHooks(RawRegistration registration, OpenRegistration candidate, string closedImplName, ExpansionContext context)
+	{
+		return registration with
+		{
+			OnActivated = Unambiguous(registration.OnActivated, release: false),
+			OnRelease = Unambiguous(registration.OnRelease, release: true),
+		};
+
+		string? Unambiguous(string? hookName, bool release)
+		{
+			if (hookName is null)
+			{
+				return null;
+			}
+
+			INamedTypeSymbol owner = candidate.Via!.Owner;
+			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(
+				registration.Implementation, hookName, [registration.ServiceSymbol!,], new ModuleScanContext(owner, context.Inputs.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal)));
+			if (matches.Count + ambiguous.Count < 2)
+			{
+				return hookName;
+			}
+
+			if (context.ReportedConstraints.Add("hook:" + closedImplName + "\0" + hookName + "\0" + release))
+			{
+				context.Diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.AmbiguousLifecycleHook,
+					candidate.Location,
+					new EquatableArray<string>([AwaitenGenerator.Display(closedImplName), hookName, DescribeOwner(owner),])));
+			}
+
+			return null;
+		}
 	}
 
 	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)

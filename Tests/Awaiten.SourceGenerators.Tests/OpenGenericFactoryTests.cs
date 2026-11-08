@@ -1021,6 +1021,112 @@ public class OpenGenericFactoryTests
 			                                                                  && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper"))
 				.Because("the wrapper serves every closing, so the hook's constraints must hold for the definition's own type parameters");
 		}
+
+		public class AnOverloadOnlyAClosingAccepts
+		{
+			private const string GenericFirst = """
+			                                    internal static void Activate<T>(IRepository<T> repository) { }
+
+			                                    internal static void Activate(IRepository<Ledger> repository, IAudit audit) { }
+			                                    """;
+
+			private const string ClosedFirst = """
+			                                   internal static void Activate(IRepository<Ledger> repository, IAudit audit) { }
+
+			                                   internal static void Activate<T>(IRepository<T> repository) { }
+			                                   """;
+
+			private const string LedgerConsumer = """
+			                                      using Awaiten;
+			                                      using Lib;
+
+			                                      namespace App;
+
+			                                      public sealed class Checkout
+			                                      {
+			                                          public Checkout(IRepository<Ledger> ledgers) { }
+			                                      }
+
+			                                      [Container]
+			                                      [Import(typeof(DataModule))]
+			                                      [Transient<Checkout>]
+			                                      public static partial class AppContainer
+			                                      {
+			                                      }
+			                                      """;
+
+			private static string Library(string overloads)
+				=> $$"""
+				     using Awaiten;
+
+				     namespace Lib;
+
+				     public interface IAudit { }
+				     public sealed class Audit : IAudit { }
+				     public interface IRepository<T> { }
+				     public sealed class Ledger { }
+
+				     [Module]
+				     [Singleton<Audit, IAudit>]
+				     [Scoped(typeof(DataModule.Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				     public static partial class DataModule
+				     {
+				         private sealed class Repository<T> : IRepository<T> { }
+
+				     {{overloads}}
+				     }
+				     """;
+
+			private static string SameAssembly(string overloads)
+				=> Library(overloads) + LedgerConsumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty);
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AContainerInTheSameAssembly_ReportsTheAmbiguityForThatClosing(string overloads)
+			{
+				GeneratorResult result = Generator.Run(SameAssembly(overloads));
+
+				await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT190") && diagnostic.Contains("'Activate'"))
+					.Because("both overloads accept the closing, as for a container that builds the closing itself, whatever their order");
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AFriendContainer_ReportsTheAmbiguityForThatClosing(string overloads)
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Library(overloads)), LedgerConsumer);
+
+				await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT190") && diagnostic.Contains("'Activate'"));
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AContainerInAnotherAssembly_RunsTheWrapperTheModuleBound(string overloads)
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(overloads), LedgerConsumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the internal overloads are not visible to this assembly, so it runs the generic overload the module wrapped for every closing");
+				await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+					.Contains("<global::Lib.Ledger>(");
+			}
+
+			[Test]
+			[Arguments(GenericFirst)]
+			[Arguments(ClosedFirst)]
+			public async Task AClosingOnlyTheGenericOverloadAccepts_RunsItThroughTheWrapper(string overloads)
+			{
+				GeneratorResult result = Generator.Run(WithContainer(Library(overloads)));
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the overload for the ledger repository does not accept the order repository, so the generic overload is the only one");
+				await That(ContainerSource(result, "LibContainer")).Contains("global::Lib.DataModule.Internals.Hook_OnActivated_Repository_").And
+					.Contains("<global::Lib.Order>(");
+			}
+		}
 	}
 
 	public class Unsupported

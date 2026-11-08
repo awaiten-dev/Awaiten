@@ -903,8 +903,10 @@ partial class AwaitenGenerator
 				markers = release ? info.OnReleaseMarkers : info.OnActivatedMarkers;
 			}
 
-			IMethodSymbol hook = CollectModuleHookOverloads(
-				info.Symbol, hookName, markers, new ModuleScanContext(origin, context.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches[0];
+			IMethodSymbol hook = open
+				? OwnerBoundHook(info.Symbol, hookName, markers![0], origin, context.Compilation)!
+				: CollectModuleHookOverloads(
+					info.Symbol, hookName, markers, new ModuleScanContext(origin, context.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches[0];
 			string wrapper = info.IsScan && !HasAwaitenAttribute(origin.GetAttributes(), "ContainerAttribute")
 				? ModuleHookWrapperName(info.Symbol, release)
 				: open
