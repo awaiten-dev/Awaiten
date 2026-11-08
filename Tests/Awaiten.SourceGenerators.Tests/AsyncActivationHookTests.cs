@@ -257,7 +257,7 @@ public class AsyncActivationHookTests
 				.Because("an assembly granted InternalsVisibleTo calls an async hook directly just like a synchronous one");
 			string source = result.Sources.Values.Single();
 			await That(source).Contains("public const string HookSkipped_OnActivated_Terminal_")
-				.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IPrinter>(\"Lib.Printer\", Lifetime = global::Awaiten.Lifetime.Singleton, OnActivated = \"Warm\")]")
+				.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IPrinter>(\"Lib.Printer\", Lifetime = global::Awaiten.Lifetime.Singleton, OnActivated = \"Warm\")]")
 				.And.DoesNotContain("Hook_OnActivated_Terminal_")
 				.And.DoesNotContain("ScanHook_");
 		}

@@ -150,28 +150,6 @@ namespace Awaiten
         public FromKeyAttribute(string key) { }
         public object Key { get; }
     }
-    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false)]
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public sealed class GeneratedScanExpansionAttribute : System.Attribute
-    {
-        public GeneratedScanExpansionAttribute() { }
-    }
-    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public sealed class GeneratedScanRegistrationAttribute<TService> : System.Attribute where TService : class
-    {
-        public GeneratedScanRegistrationAttribute(string factory) { }
-        public bool AsyncDisposable { get; set; }
-        public string[]? AsyncInitializerMethods { get; set; }
-        public System.Type[]? AsyncInitializers { get; set; }
-        public bool Disposable { get; set; }
-        public string Factory { get; }
-        public string? Implementation { get; set; }
-        public Awaiten.Lifetime Lifetime { get; set; }
-        public string? OnActivated { get; set; }
-        public string? OnRelease { get; set; }
-        public bool SkipUnconstructable { get; set; }
-    }
     public interface IAwaitenAsyncResolver : Awaiten.IAwaitenResolver
     {
         System.Threading.Tasks.Task<object> ResolveAsync(System.Type serviceType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
@@ -473,6 +451,28 @@ namespace Awaiten.Internals
         public bool Assignable { get; }
         public string Property { get; }
         public string Type { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public sealed class GeneratedScanExpansionAttribute : System.Attribute
+    {
+        public GeneratedScanExpansionAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public sealed class GeneratedScanRegistrationAttribute<TService> : System.Attribute where TService : class
+    {
+        public GeneratedScanRegistrationAttribute(string factory) { }
+        public bool AsyncDisposable { get; set; }
+        public string[]? AsyncInitializerMethods { get; set; }
+        public System.Type[]? AsyncInitializers { get; set; }
+        public bool Disposable { get; set; }
+        public string Factory { get; }
+        public string? Implementation { get; set; }
+        public Awaiten.Lifetime Lifetime { get; set; }
+        public string? OnActivated { get; set; }
+        public string? OnRelease { get; set; }
+        public bool SkipUnconstructable { get; set; }
     }
 }
 

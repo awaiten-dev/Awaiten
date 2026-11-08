@@ -45,7 +45,7 @@ public class GeneratedInternalsClassTests
 			public static partial class PluginModule { }
 			""");
 
-		await That(result.Sources.Single(source => source.Key.StartsWith("Awaiten.ModuleScan.", StringComparison.Ordinal)).Value).DoesNotContain("Internals");
+		await That(result.Sources.Single(source => source.Key.StartsWith("Awaiten.ModuleScan.", StringComparison.Ordinal)).Value).DoesNotContain("class Internals");
 	}
 
 	[Test]

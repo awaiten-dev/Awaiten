@@ -40,6 +40,54 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task Awt154_ReportsWhenTheModuleAssemblyCarriesTheFormerAttributeNames()
+		{
+			GeneratorResult result = Generator.RunWithReferencedAssembly("""
+				using System;
+				using Awaiten;
+
+				namespace Awaiten
+				{
+					public sealed class GeneratedScanExpansionAttribute : Attribute { }
+
+					public sealed class GeneratedScanRegistrationAttribute<TService> : Attribute
+						where TService : class
+					{
+						public GeneratedScanRegistrationAttribute(string factory) { }
+						public Lifetime Lifetime { get; set; }
+					}
+				}
+
+				namespace Lib
+				{
+					public interface IPlugin { }
+					public sealed class Roaster : IPlugin { }
+
+					[Module]
+					[Scan<IPlugin>(As = ScanAs.Marker)]
+					[GeneratedScanExpansion]
+					[GeneratedScanRegistration<IPlugin>("Lib.Roaster", Lifetime = Lifetime.Singleton)]
+					public static partial class PluginModule { }
+				}
+				""", """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(PluginModule))]
+				public static partial class MyContainer
+				{
+				}
+				""");
+
+			await That(result.Diagnostics).HasCount(1);
+			await That(result.Diagnostics).Contains("*AWT154*PluginModule*declares a [Scan]*").AsWildcard()
+				.Because("a module built by an Awaiten version that emitted the markers in the Awaiten namespace must be rebuilt, and its scan must not be dropped silently");
+		}
+
+		[Test]
 		public async Task Awt154_ReportsForAScanOnlyModuleWithoutMisleadingAwt151()
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly("""
@@ -112,6 +160,7 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly($$"""
 				using Awaiten;
+				using Awaiten.Internals;
 
 				namespace Lib;
 

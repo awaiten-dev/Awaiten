@@ -43,7 +43,7 @@ internal static partial class Sources
 		// report AWT154 only for the latter (a module assembly built without the Awaiten generator).
 		if (model.DeclaresScan)
 		{
-			Indent(builder, depth).AppendLine("[global::Awaiten.GeneratedScanExpansionAttribute]");
+			Indent(builder, depth).AppendLine("[global::Awaiten.Internals.GeneratedScanExpansionAttribute]");
 		}
 
 		// One [GeneratedScanRegistration] per generated factory, applied to the re-opened partial module. The
@@ -339,7 +339,7 @@ internal static partial class Sources
 		string disposable = factory.Traits.Disposable ? ", Disposable = true" : string.Empty;
 		string asyncDisposable = factory.Traits.AsyncDisposable ? ", AsyncDisposable = true" : string.Empty;
 		string implementation = factory is { Skip: null, ImplementationMetadataName: { } name, } ? $", Implementation = \"{name}\"" : string.Empty;
-		return $"global::Awaiten.GeneratedScanRegistrationAttribute<{factory.ServiceType}>(\"{RelativeName(factory.FactoryName, factory.Skip is null)}\", Lifetime = global::Awaiten.Lifetime.{factory.Lifetime}{skip}{onActivated}{onRelease}{asyncInitializable}{disposable}{asyncDisposable}{implementation})";
+		return $"global::Awaiten.Internals.GeneratedScanRegistrationAttribute<{factory.ServiceType}>(\"{RelativeName(factory.FactoryName, factory.Skip is null)}\", Lifetime = global::Awaiten.Lifetime.{factory.Lifetime}{skip}{onActivated}{onRelease}{asyncInitializable}{disposable}{asyncDisposable}{implementation})";
 	}
 
 	/// <summary>

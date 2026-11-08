@@ -28,6 +28,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	private const string ModuleAttributeName = "Awaiten.ModuleAttribute";
 	private const string InjectAttributeName = "Awaiten.InjectAttribute";
 	private const string AttributeNamespace = "Awaiten";
+	private const string InternalsNamespace = "Awaiten.Internals";
 
 	/// <summary>
 	///     The oldest C# version the generated code compiles under: it uses <c>not</c> patterns and static lambdas.

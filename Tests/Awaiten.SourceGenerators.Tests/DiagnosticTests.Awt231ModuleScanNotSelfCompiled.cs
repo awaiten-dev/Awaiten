@@ -91,11 +91,11 @@ public partial class DiagnosticTests
 				await That(result.Diagnostics).IsEmpty()
 					.Because("an assembly granted InternalsVisibleTo constructs the matches itself, so the module only records them");
 				string source = result.Sources.Values.Single();
-				await That(source).Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IRoaster>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
-					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
-					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IGrinder>(\"Lib.Grinder\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
-					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Grinder\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
-					.And.Contains("[global::Awaiten.GeneratedScanRegistrationAttribute<global::Lib.ITimer>(\"Lib.Timer\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
+				await That(source).Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IRoaster>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
+					.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Roaster\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
+					.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IGrinder>(\"Lib.Grinder\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
+					.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.IPlugin>(\"Lib.Grinder\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
+					.And.Contains("[global::Awaiten.Internals.GeneratedScanRegistrationAttribute<global::Lib.ITimer>(\"Lib.Timer\", Lifetime = global::Awaiten.Lifetime.Singleton)]")
 					.Because("each skipped match is recorded under every service the scans expose it as, named by its metadata name");
 				await That(source).Contains("public const string ScanSkipped_Roaster_")
 					.And.Contains("its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly")

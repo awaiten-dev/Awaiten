@@ -16,6 +16,7 @@ Correctness is a must. The other goals are strong defaults and win in this order
 - Generated code compiles for every consumer framework, including net48 through the netstandard2.0 asset.
 - Every new diagnostic needs a descriptor in `Diagnostics.cs`, a row in `AnalyzerReleases.Unshipped.md`, a `DiagnosticTests.AwtNNN*.cs` test and a section in `Docs/pages/09-diagnostics.md`. Ids are stable; never reuse one.
 - Public API changes are deliberate: update the API snapshots in `Tests/Awaiten.Api.Tests` in the same PR. Name public types by role as `CONTRIBUTING.md` describes. Public members carry XML docs.
+- A public type that only generated code emits or reads lives in `Awaiten.Internals`, never next to the types users write in `Awaiten`. It carries `[EditorBrowsable(EditorBrowsableState.Never)]` and a summary that starts with "Infrastructure for generated code.", and the generator names and matches it by that namespace.
 
 ## Validation
 
