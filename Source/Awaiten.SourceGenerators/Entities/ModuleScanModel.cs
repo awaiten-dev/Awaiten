@@ -87,9 +87,10 @@ internal sealed record MemberWrapper(
 ///     instead, beside a factory it still emits. <see cref="Open" /> marks an open generic registration, decorator or
 ///     composite the module generates no generic factory for, whatever its assembly grants. <see cref="Contribution" />
 ///     marks a decorator or composite of an internal service the module cannot build, whose constant holds the type a
-///     consumer reports instead.
+///     consumer reports instead. <see cref="Member" /> marks a <c>Factory</c> member the module neither wraps nor builds
+///     through a handle, whose constant holds why, which a consumer that cannot call the member reports (AWT108).
 /// </summary>
-internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false);
+internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false);
 
 /// <summary>
 ///     The generated factory of an implementation that only its owner can construct: a self-compiled module

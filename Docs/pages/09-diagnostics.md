@@ -528,7 +528,7 @@ public static partial class CoffeeShop
 }
 ```
 
-An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md)). It does so for a public, `partial` module, when the method's parameter and return types are public.
+An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md#factories-and-instances-in-modules)). It does so for a public, `partial` module, when the method's parameter and return types are public. A method that takes an internal service the module registers is reached through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) instead. When the module can do neither, it records why, and the message names that cause, for example `'CreateGrinder' is internal and its parameter 'store' has the type 'Lib.BeanStore', which is not public, so the module generated no public wrapper for it`. A container in the module's own assembly reports the cause itself, here [AWT101](#awt101) when no module registers `BeanStore`.
 
 **Fix:** Point `Factory` at a non-generic method on the container (or on the declaring module for an imported registration) that returns the registered service type, here `private static Grinder MakeGrinder() => new();`.
 

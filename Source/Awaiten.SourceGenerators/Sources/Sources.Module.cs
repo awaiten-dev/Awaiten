@@ -195,6 +195,12 @@ internal static partial class Sources
 					"Generated from a module registration: the type that keeps the module from building this decorator or",
 					"composite of an internal service, which a consuming container reports as a container in this assembly does.");
 			}
+			else if (skipped.Member)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module registration: why no wrapper calls this Factory member. A consuming container",
+					"that cannot call the member reports this reason.");
+			}
 			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,

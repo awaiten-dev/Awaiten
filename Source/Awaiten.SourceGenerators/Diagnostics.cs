@@ -140,6 +140,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="InvalidFactory">AWT108</see> for a <c>Factory</c> member of an imported module of
+	///     another assembly that this container cannot call, when the module's build recorded why it generated neither a
+	///     public wrapper nor a handle for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnwrappedModuleFactory = new(
+		"AWT108",
+		InvalidFactory.Title,
+		"'{0}' cannot be produced: {2} has no accessible method '{1}' returning '{0}': {3}; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     An <c>Instance</c> registration names a member that is not a usable instance member on its owner -
 	///     the container, or the declaring module for an imported registration (it is missing, is not a field
 	///     or property, or is not assignable to the service type).

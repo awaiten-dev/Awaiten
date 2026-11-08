@@ -516,13 +516,13 @@ partial class AwaitenGenerator
 	{
 		List<DiagnosticInfo> diagnostics = new();
 		List<SkippedRegistration> skipped = new();
-		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped);
 		if (CollectHiddenServices(module, compilation, cancellationToken) is not { } hidden)
 		{
 			return;
 		}
 
 		hidden.Demand = demand;
+		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped, hidden);
 		List<RegistrationFactory> contributions = CollectModuleContributionFactories(module, compilation, hidden, diagnostics);
 		ModuleExpansion expansion = ExpandModule(module, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
 		next.Services.UnionWith(hidden.Used);
@@ -620,13 +620,13 @@ partial class AwaitenGenerator
 	///     Whether anything the module declares could be built through a handle, in its own module or another: a
 	///     <c>[Scan]</c>, whose matches may take internal services, or a registration, decorator or composite that names an
 	///     internal service, or a type a container in another assembly cannot construct or that converts to an internal
-	///     type. A module that declares none of these never reads the modules of its assembly.
+	///     type, or whose <c>Factory</c> member takes a parameter of a type that is not public, which a handle passes on. A module that declares none of these never reads the modules of its assembly.
 	/// </summary>
 	private static bool MayBuildThroughHandles(INamedTypeSymbol module, Compilation compilation)
 	{
 		ImmutableArray<AttributeData> attributes = module.GetAttributes();
 		return HasAwaitenAttribute(attributes, "ScanAttribute")
-		       || ConstructedModuleRegistrations(module, compilation, members: true).Any(registration => !IsExternallyAccessible(registration.Service) || Concealed(registration.Implementation))
+		       || ConstructedModuleRegistrations(module, compilation, members: true).Any(registration => !IsExternallyAccessible(registration.Service) || Concealed(registration.Implementation) || TakesConcealedParameter(registration))
 		       || attributes.Any(attribute => attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
 		                                      && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
 		                                      && ContributedPair(attribute, attributeClass) is ({ } type, { } service)
@@ -634,6 +634,11 @@ partial class AwaitenGenerator
 
 		static bool Concealed(INamedTypeSymbol type)
 			=> !ConstructibleEverywhere(type) || ServableTypes(type).Any(servable => !IsExternallyAccessible(servable));
+
+		bool TakesConcealedParameter(ModuleRegistration registration)
+			=> registration is { Production: ProductionKind.Factory, Member: { } member, }
+			   && FindFactoryCandidates(module, member, registration.Implementation, compilation)
+				   .Any(method => method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type)));
 	}
 
 	/// <summary>

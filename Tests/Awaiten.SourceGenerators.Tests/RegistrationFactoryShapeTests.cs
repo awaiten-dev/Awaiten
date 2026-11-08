@@ -616,9 +616,9 @@ public class RegistrationFactoryShapeTests
 					.Replace("internal static Grinder Create()", "internal static void Activate(IGrinder grinder) { }\n\n    internal static Grinder Create()");
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
-				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("IGrinder Factory_Create_")
 					.Because("the hook of an implementation the consumer cannot name gets no wrapper, so a factory wrapper alone would lose it");
-				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*").AsWildcard();
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*returns 'Lib.Grinder'*").AsWildcard();
 			}
 
 			[Test]
@@ -629,7 +629,7 @@ public class RegistrationFactoryShapeTests
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
 				await That(Generator.Run(library).Diagnostics).IsEmpty();
-				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("IGrinder Factory_Create_")
 					.Because("the hook takes the implementation as a service the wrapper's return type does not convert to");
 				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*").AsWildcard();
 			}

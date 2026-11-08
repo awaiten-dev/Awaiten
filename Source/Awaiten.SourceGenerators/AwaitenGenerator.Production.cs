@@ -1534,6 +1534,18 @@ partial class AwaitenGenerator
 			return null;
 		}
 
+		if (candidates.Count == 0
+		    && info.Origin is { } module
+		    && !info.GenericFactory
+		    && SkippedFactoryReason(module, info.ProductionMember!, info.Symbol) is { } reason)
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.UnwrappedModuleFactory,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info), reason,])));
+			return null;
+		}
+
 		diagnostics.Add(new DiagnosticInfo(
 			candidates.Count == 0 ? Diagnostics.InvalidFactory : Diagnostics.AmbiguousFactory,
 			info.Location,
