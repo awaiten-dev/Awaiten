@@ -677,7 +677,7 @@ partial class AwaitenGenerator
 			}
 
 			return new FactoryFault(
-				$"its [Inject] property '{property}' is not visible outside the assembly of '{Display(Base.ToDisplayString(FullyQualified))}'",
+				$"its injected property '{property}' is not visible outside the assembly of '{Display(Base.ToDisplayString(FullyQualified))}'",
 				$"make the property and its setter public, or grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
 		}
 

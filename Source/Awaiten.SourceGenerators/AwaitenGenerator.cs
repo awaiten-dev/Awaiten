@@ -780,7 +780,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		if (factories is not null)
 		{
-			RecordHiddenInjectedProperties(containerSymbol, open, openDecorators, openComposites, factories);
+			RecordHiddenInjectedProperties(containerSymbol, compilation, injectProperties, open, openDecorators, openComposites, factories);
 		}
 
 		// A scan match a module's generated factory builds shares the instance of every other registration of its

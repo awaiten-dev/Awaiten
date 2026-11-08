@@ -2499,7 +2499,7 @@ public static partial class TestCoffeeShop;
 
 A base in another assembly that grants `InternalsVisibleTo` generates an internal wrapper for a private `Factory` or `Instance` member or lifecycle hook its registrations name, so the extending container calls the wrapper and reports nothing. This error stays for a member whose signature names a type private to the base, for a generic factory, and for an extending container in the base's own assembly.
 
-It is also reported for a public type the base registers, scans, decorates or composes itself whose `[Inject]` property is `internal` or has an `internal` setter, when the extending container lives in another assembly without `InternalsVisibleTo`: it doesn't see the property, so it would build the type without it. Make the property public, or grant the extending container's assembly `InternalsVisibleTo`.
+It is also reported for a public type the base registers, scans, decorates or composes itself whose `[Inject]` property, or a property an `[InjectProperty]` entry of the base fills, is `internal` or has an `internal` setter, when the extending container lives in another assembly without `InternalsVisibleTo`: it doesn't see the property, so it would build the type without it. Make the property public, or grant the extending container's assembly `InternalsVisibleTo`.
 
 **Fix:** Make the member or type public, or internal and grant the assembly of the extending container `[InternalsVisibleTo]`. Replacing the registration on the extending container also removes the need for it.
 

@@ -31,7 +31,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Records a public type the container constructs itself, from its own registration, scan, decorator or composite,
 	///     with an <c>[Inject]</c> property another assembly cannot see (see
-	///     <see cref="HasInjectedPropertyHiddenFromOtherAssemblies" />). A container that extends this one in an
+	///     <see cref="HasInjectedPropertyHiddenFromOtherAssemblies" />), or one the container's own <c>[InjectProperty]</c>
+	///     entry fills, which a container that extends it inherits. A container that extends this one in an
 	///     assembly without <c>InternalsVisibleTo</c> would construct the type without the property, so the record, a public
 	///     constant naming the property, tells it to report the type instead (AWT226). Only a container without
 	///     <c>Extends</c> that another assembly can name records any.
@@ -43,7 +44,7 @@ partial class AwaitenGenerator
 		    && info.Production == ProductionKind.Constructor
 		    && info.ConstructVia is null)
 		{
-			RecordHiddenType(info.Symbol, context.ContainerSymbol, factories);
+			RecordHiddenType(info.Symbol, [RegisteredType(info.ImplementationType), OpenInjectPropertyKey(info, context.Compilation),], context.InjectProperties, context.ContainerSymbol, factories);
 		}
 	}
 
@@ -54,6 +55,8 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void RecordHiddenInjectedProperties(
 		INamedTypeSymbol container,
+		Compilation compilation,
+		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
 		List<OpenRegistration> open,
 		List<OpenDecorateRegistration> openDecorators,
 		List<OpenCompositeRegistration> openComposites,
@@ -64,15 +67,25 @@ partial class AwaitenGenerator
 			.Concat(openComposites.Where(composite => composite.Owner is null).Select(composite => composite.Composite));
 		foreach (INamedTypeSymbol definition in definitions)
 		{
-			RecordHiddenType(definition, container, factories);
+			RecordHiddenType(definition, [TypeIdentity(definition, compilation),], injectProperties, container, factories);
 		}
 	}
 
-	private static void RecordHiddenType(INamedTypeSymbol type, INamedTypeSymbol container, BaseFactories factories)
+	/// <summary>
+	///     Records <paramref name="type" /> when it has an <c>[Inject]</c> property another assembly cannot see, or an
+	///     entry of <paramref name="injectProperties" /> under one of the <paramref name="keys" /> fills such a property.
+	/// </summary>
+	private static void RecordHiddenType(
+		INamedTypeSymbol type,
+		string?[] keys,
+		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
+		INamedTypeSymbol container,
+		BaseFactories factories)
 	{
+		INamedTypeSymbol definition = type.OriginalDefinition;
 		if (!IsExternallyAccessible(container)
-		    || !IsExternallyAccessible(type.OriginalDefinition)
-		    || HiddenInjectedProperty(type.OriginalDefinition) is not { } property)
+		    || !IsExternallyAccessible(definition)
+		    || (HiddenInjectedProperty(definition) ?? HiddenEntryProperty()) is not { } property)
 		{
 			return;
 		}
@@ -82,13 +95,22 @@ partial class AwaitenGenerator
 		{
 			factories.HiddenProperties.Add(new SkippedRegistration(name, property));
 		}
+
+		string? HiddenEntryProperty()
+			=> keys.SelectMany(key => key is not null && injectProperties.TryGetValue(key, out List<InjectPropertyEntry>? entries) ? entries : [])
+				.Select(entry => ResolveNamedInstanceMember(definition, entry.PropertyName))
+				.OfType<IPropertySymbol>()
+				.FirstOrDefault(IsHiddenFromOtherAssemblies)?.Name;
 	}
 
 	/// <summary>The first <c>[Inject]</c> property of <paramref name="type" /> another assembly cannot set, or <see langword="null" />.</summary>
 	private static string? HiddenInjectedProperty(INamedTypeSymbol type)
-		=> InjectedProperties(type).FirstOrDefault(property =>
-			property.DeclaredAccessibility is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal
-			|| property.SetMethod?.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal)?.Name;
+		=> InjectedProperties(type).FirstOrDefault(IsHiddenFromOtherAssemblies)?.Name;
+
+	/// <summary>Whether another assembly cannot see <paramref name="property" /> or its setter.</summary>
+	private static bool IsHiddenFromOtherAssemblies(IPropertySymbol property)
+		=> property.DeclaredAccessibility is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal
+		   || property.SetMethod?.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal;
 
 	/// <summary>A deterministic name for the record of <see cref="RecordHiddenInjectedProperty" />, derived from the type's definition.</summary>
 	private static string HiddenPropertyMarkerName(INamedTypeSymbol type)

@@ -981,6 +981,39 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
+		public async Task InAnotherAssembly_ReportsARegistrationOfTheBaseWhoseContainerSidePropertyItCannotSet()
+		{
+			string library = """
+			                 using Awaiten;
+
+			                 namespace Lib;
+
+			                 public interface IGreeter { }
+			                 public interface IClock { }
+			                 public sealed class SystemClock : IClock { }
+
+			                 public class Greeter : IGreeter
+			                 {
+			                     internal IClock Clock { get; set; } = null!;
+			                 }
+
+			                 [Container]
+			                 [Transient<Greeter, IGreeter>]
+			                 [Transient<SystemClock, IClock>]
+			                 [InjectProperty<Greeter>(nameof(Greeter.Clock))]
+			                 public static partial class LibContainer { }
+			                 """;
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter") && diagnostic.Contains("'Clock'"))
+				.Because("the base fills the internal property through its own [InjectProperty] entry, which the extending container inherits but cannot apply");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
+		}
+
+		[Test]
 		public async Task InAnotherAssembly_ReportsAClosingOfAnOpenRegistrationOfTheBaseWhosePropertyItCannotSet()
 		{
 			string library = """
