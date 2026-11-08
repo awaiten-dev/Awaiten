@@ -250,7 +250,9 @@ partial class AwaitenGenerator
 	///     Reads the <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registrations declared on the context's
 	///     owner (a container or imported module) into <paramref name="result" />, and the open generic
 	///     <c>typeof</c>-form ones into the context's open registrations; a closed <c>typeof</c> pair registers like
-	///     the generic form.
+	///     the generic form. A <c>Factory</c> or <c>Instance</c> registration of an imported module in another assembly
+	///     whose service and member this container cannot reach, and which the module builds through no handle, is
+	///     dropped like a constructed one (see <see cref="SelfCompiledRegistration" />).
 	/// </summary>
 	private static void CollectLifetimeRegistrations(
 		LifetimeCollectionContext context,
@@ -345,6 +347,16 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations && !context.Inherited
+			    && productionMember is not null
+			    && service is INamedTypeSymbol unnameable
+			    && !context.Compilation.IsSymbolAccessibleWithin(unnameable, context.Compilation.Assembly)
+			    && !ReachesProductionMember(context.Owner, production, productionMember, registration.Implementation, context.Compilation.Assembly, context.Compilation))
+			{
+				ReportStartedSingletonWithoutHandle(registration, context);
+				continue;
+			}
+
 			RawRegistration? collected = fromModule && production == ProductionKind.Constructor && !conflictingDirectives
 				? SelfCompiledRegistration(registration, context, skipGeneratedScanRegistrations, ref reportedNotSelfCompiled)
 				: WithCallableHooks(ThroughMemberWrapper(registration, origin, context.Compilation, !skipGeneratedScanRegistrations), context, fromModule && !skipGeneratedScanRegistrations);
@@ -400,15 +412,7 @@ partial class AwaitenGenerator
 			    && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, }
 			    && !CanConstruct(implementation, compilation))
 			{
-				if (registration.Lifetime == Lifetime.Singleton
-				    && (registration.Eager || TraitsOf(implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
-				{
-					ReportNotSelfCompiled(
-						context, module, implementation, "handle",
-						ModuleShapeReason(module) ?? "it leaves the singleton to the assemblies it grants InternalsVisibleTo",
-						$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
-				}
-
+				ReportStartedSingletonWithoutHandle(registration, context);
 				return null;
 			}
 
@@ -482,6 +486,24 @@ partial class AwaitenGenerator
 		}
 
 		return ThroughGeneratedFactory(registration, factory, compilation);
+	}
+
+	/// <summary>
+	///     Reports AWT231 for a registration of an imported module in another assembly that this container drops because
+	///     it can neither name its internal service nor build it, when it is an eager or async-initialized singleton
+	///     that a container starts though nothing depends on it, so dropping it would otherwise go unnoticed.
+	/// </summary>
+	private static void ReportStartedSingletonWithoutHandle(RawRegistration registration, LifetimeCollectionContext context)
+	{
+		INamedTypeSymbol module = registration.Origin!;
+		if (registration.Lifetime == Lifetime.Singleton
+		    && (registration.Eager || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, context.Compilation, null)).AsyncInitializers.Count > 0))
+		{
+			ReportNotSelfCompiled(
+				context, module, registration.Implementation, "handle",
+				ModuleShapeReason(module) ?? "it leaves the singleton to the assemblies it grants InternalsVisibleTo",
+				$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
+		}
 	}
 
 	/// <summary>

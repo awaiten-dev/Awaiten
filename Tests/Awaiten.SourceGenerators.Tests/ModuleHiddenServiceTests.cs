@@ -2541,6 +2541,61 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
+		public async Task InternalServiceThatCannotBeBuiltThroughItsFactory_IsNamedOnceByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>(Factory = nameof(Make))]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule
+				{
+				    internal static BeanStore Make(Silo silo) => new();
+				}
+				""";
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(external.Diagnostics).HasSingle()
+				.Because("the container can neither name the internal service nor call its factory, so the registration is out of its reach like a constructed one");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
+		public async Task EagerInternalSingletonThatCannotBeBuiltThroughItsFactory_IsReportedByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				internal sealed class Silo { }
+				internal sealed class BeanStore { }
+
+				[Module]
+				[Singleton<BeanStore>(Factory = nameof(Make), Eager = true)]
+				public static partial class CoffeeModule
+				{
+				    internal static BeanStore Make(Silo silo) => new();
+				}
+				""";
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(external.Diagnostics).HasSingle()
+				.Because("a container starts an eager singleton though nothing depends on it, so leaving it out must not go unnoticed");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.BeanStore'*generated no handle for it*").AsWildcard();
+		}
+
+		[Test]
 		public async Task ChainOfInternalServicesThatCannotBeBuilt_ReportsOnlyTheCauseAtItsEnd()
 		{
 			const string library = """
