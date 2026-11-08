@@ -41,6 +41,52 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task NamesTheAsyncInitializedServiceASingletonDependsOn()
+		{
+			GeneratorResult result = Generator.Run(Container("""
+			                                                 [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+			                                                 [Singleton<Store>]
+			                                                 [Singleton<Settings>]
+			                                                 """, "Settings settings", """
+			                                                                          Settings { public Settings(Store store) { } }
+			                                                                          public sealed class Store : IInitializable { public System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask; }
+			                                                                          """));
+
+			await That(result.Diagnostics).Contains("*AWT248*cannot take 'MyCode.Settings': it depends on the async-initialized service 'MyCode.Store', but a predicate is evaluated synchronously*").AsWildcard()
+				.Because("the singleton itself is not initialized asynchronously, so the message names the service that is");
+		}
+
+		[Test]
+		public async Task NamesTheDeclaredTypeOfAParameterAVarianceRedirectServes()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface ISource<out T> { }
+			                                       public class Settings { }
+			                                       public sealed class RegionSettings : Settings { }
+			                                       public sealed class RegionSource : ISource<RegionSettings> { }
+			                                       public interface IClient { }
+			                                       public sealed class Client : IClient { }
+			                                       public sealed class MonitoringClient : IClient { public MonitoringClient(IClient inner) { } }
+
+			                                       [Container]
+			                                       [Scoped<RegionSource, ISource<RegionSettings>>]
+			                                       [Scoped<Client, IClient>]
+			                                       [Decorate<MonitoringClient, IClient>(When = nameof(Enabled))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Enabled(ISource<Settings> source) => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT248*cannot take 'MyCode.ISource<MyCode.Settings>': it is scoped*").AsWildcard()
+				.Because("the diagnostic names the parameter as the predicate declares it, not the registration the variance redirect found");
+		}
+
+		[Test]
 		[Arguments("[Scoped<Settings>]", "")]
 		[Arguments("[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))] [Singleton<Settings>]", " : IInitializable")]
 		public async Task IsTheOnlyDiagnosticOfAnUnsharedServiceOfAnEagerSingleton(string registration, string settingsBase)

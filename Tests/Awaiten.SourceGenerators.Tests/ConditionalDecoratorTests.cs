@@ -323,8 +323,32 @@ public class ConditionalDecoratorTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT102*").AsWildcard()
-				.Because("evaluating the predicate would resolve the decorated service, which needs the predicate");
+			await That(result.Diagnostics).Contains("*AWT102*MyCode.MonitoringClient -> predicate MyCode.MyContainer.Enabled -> MyCode.Settings*").AsWildcard()
+				.Because("evaluating the predicate would resolve the decorated service, which needs the predicate, so the cycle names it");
+		}
+
+		[Test]
+		public async Task PredicateTakingTheDecoratedService_IsACycleThroughThePredicate()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClient { }
+			                                       public sealed class Client : IClient { }
+			                                       public sealed class MonitoringClient : IClient { public MonitoringClient(IClient inner) { } }
+
+			                                       [Container]
+			                                       [Singleton<Client, IClient>]
+			                                       [Decorate<MonitoringClient, IClient>(When = nameof(Enabled))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Enabled(IClient client) => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT102*MyCode.MonitoringClient -> predicate MyCode.MyContainer.Enabled -> MyCode.MonitoringClient*").AsWildcard();
 		}
 
 		[Test]

@@ -1,3 +1,4 @@
+using System.Text;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
@@ -919,6 +920,8 @@ partial class AwaitenGenerator
 	private static void DetectCycles(
 		List<InstanceModel> instances,
 		Dictionary<int, List<int>> dependencies,
+		Dictionary<ServiceKey, string> serviceToImpl,
+		Dictionary<string, int> implToIndex,
 		LocationInfo? containerLocation,
 		List<DiagnosticInfo> diagnostics)
 	{
@@ -967,13 +970,36 @@ partial class AwaitenGenerator
 				return;
 			}
 
-			string rendered = string.Join(" -> ", cycle.Select(index => DisplayInstance(instances[index].ImplementationType)));
+			StringBuilder rendered = new(DisplayInstance(instances[cycle[0]].ImplementationType));
+			for (int step = 1; step < cycle.Count; step++)
+			{
+				if (PredicateReaching(instances[cycle[step - 1]], cycle[step], serviceToImpl, implToIndex) is { } predicate)
+				{
+					rendered.Append(" -> predicate ").Append(Display(predicate));
+				}
+
+				rendered.Append(" -> ").Append(DisplayInstance(instances[cycle[step]].ImplementationType));
+			}
+
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.DependencyCycle,
 				containerLocation,
-				new EquatableArray<string>([rendered,])));
+				new EquatableArray<string>([rendered.ToString(),])));
 		}
 	}
+
+	/// <summary>
+	///     The predicate of <paramref name="link" /> when one of the services it takes is the instance at
+	///     <paramref name="target" />, so a cycle through that edge names the predicate that closes it.
+	/// </summary>
+	private static string? PredicateReaching(InstanceModel link, int target, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<string, int> implToIndex)
+		=> link.When is { } predicate
+		   && predicate.Parameters.AsArray().Any(parameter => parameter.Kind == DependencyKind.Direct
+		                                                      && serviceToImpl.TryGetValue(KeyOf(parameter), out string? implementation)
+		                                                      && implToIndex.TryGetValue(implementation, out int index)
+		                                                      && index == target)
+			? predicate.Member
+			: null;
 
 	/// <summary>
 	///     AWT145/AWT146/AWT147: a deferred property breaks a mutual cycle only because the owning instance is

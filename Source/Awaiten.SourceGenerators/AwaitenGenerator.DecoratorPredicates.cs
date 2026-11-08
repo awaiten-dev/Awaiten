@@ -167,13 +167,13 @@ partial class AwaitenGenerator
 			return null;
 		}
 
-		if (!context.Predicates.TryGetValue(predicate.Member, out EquatableArray<ParameterModel> parameters))
+		if (!context.Predicates.TryGetValue(predicate.Member, out PredicateModel? model))
 		{
-			parameters = ClassifyPredicateParameters(predicate, service, context);
-			context.Predicates.Add(predicate.Member, parameters);
+			model = ClassifyPredicateParameters(predicate, service, context);
+			context.Predicates.Add(predicate.Member, model);
 		}
 
-		return new PredicateModel(predicate.Member, predicate.Method is not null, parameters);
+		return model;
 	}
 
 	/// <summary>
@@ -183,16 +183,17 @@ partial class AwaitenGenerator
 	///     emitted call and every later pass stay coherent while the error fails the build. A parameter without a source
 	///     location (a module in another assembly) is located at the attribute.
 	/// </summary>
-	private static EquatableArray<ParameterModel> ClassifyPredicateParameters(DecoratorPredicate predicate, string service, BuildContext context)
+	private static PredicateModel ClassifyPredicateParameters(DecoratorPredicate predicate, string service, BuildContext context)
 	{
 		if (predicate.Method is not { Parameters.Length: > 0, } method)
 		{
-			return default;
+			return new PredicateModel(predicate.Member, predicate.Method is not null, default);
 		}
 
 		string display = Display(predicate.Member);
 		LocationInfo? attributeLocation = LocationInfo.From(predicate.Location);
 		List<ParameterModel> parameters = new();
+		List<string> declaredTypes = new();
 		foreach (IParameterSymbol parameter in method.Parameters)
 		{
 			ParameterModel model = ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes);
@@ -227,9 +228,10 @@ partial class AwaitenGenerator
 			}
 
 			parameters.Add(model);
+			declaredTypes.Add(parameter.Type.ToDisplayString(FullyQualified));
 		}
 
-		return new EquatableArray<ParameterModel>(parameters.ToArray());
+		return new PredicateModel(predicate.Member, true, new EquatableArray<ParameterModel>(parameters.ToArray()), new EquatableArray<string>(declaredTypes.ToArray()));
 	}
 
 	/// <summary>
@@ -247,8 +249,10 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			foreach (ParameterModel parameter in predicate.Parameters.AsArray())
+			ParameterModel[] parameters = predicate.Parameters.AsArray();
+			for (int p = 0; p < parameters.Length; p++)
 			{
+				ParameterModel parameter = parameters[p];
 				if (parameter.Kind != DependencyKind.Direct
 				    || !graph.ServiceToImpl.TryGetValue(KeyOf(parameter), out string? implementation)
 				    || !graph.ImplToIndex.TryGetValue(implementation, out int index))
@@ -259,16 +263,42 @@ partial class AwaitenGenerator
 				InstanceModel target = graph.Instances[index];
 				string? problem = target.IsRequestingTypeFactory ? "it is built for each consumer"
 					: target.Lifetime != Lifetime.Singleton && target.Production != ProductionKind.Instance ? $"it is {target.Lifetime.ToString().ToLowerInvariant()}"
-					: target.IsAsyncTainted ? "it is initialized asynchronously, but a predicate is evaluated synchronously"
+					: target.IsAsyncSource ? "it is initialized asynchronously, but a predicate is evaluated synchronously"
+					: target.IsAsyncTainted ? $"it depends on the async-initialized service '{DisplayInstance(graph.Instances[AsyncSourceOf(index, graph)].ImplementationType)}', but a predicate is evaluated synchronously"
 					: null;
 				if (problem is not null)
 				{
 					diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.InvalidDecoratorPredicateParameter,
 						parameter.Location,
-						new EquatableArray<string>([Display(predicate.Member), DisplayKeyed(parameter.ServiceType, parameter.Key), problem,])));
+						new EquatableArray<string>([Display(predicate.Member), DisplayKeyed(predicate.DeclaredTypes.AsArray()[p], parameter.Key), problem,])));
 				}
 			}
 		}
+	}
+
+	/// <summary>
+	///     The index of the first async-initialized instance (see <see cref="InstanceModel.IsAsyncSource" />) the
+	///     async-tainted instance at <paramref name="start" /> reaches through the dependencies that carry the taint.
+	/// </summary>
+	private static int AsyncSourceOf(int start, GraphModel graph)
+	{
+		HashSet<int> visited = [start,];
+		Queue<int> pending = new([start,]);
+		while (pending.Count > 0)
+		{
+			int index = pending.Dequeue();
+			if (graph.Instances[index].IsAsyncSource)
+			{
+				return index;
+			}
+
+			foreach (int next in graph.Dependencies[index].Where(next => graph.Instances[next].IsAsyncTainted && visited.Add(next)))
+			{
+				pending.Enqueue(next);
+			}
+		}
+
+		return start;
 	}
 }
