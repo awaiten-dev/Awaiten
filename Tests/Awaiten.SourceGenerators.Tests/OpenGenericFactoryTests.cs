@@ -575,6 +575,8 @@ public class OpenGenericFactoryTests
 
 			await That(result.Diagnostics).Contains("*AWT231*it is registered under several services (Lib.IReader<T>, Lib.IWriter<T>)*").AsWildcard();
 			await That(result.Diagnostics).DoesNotContain("*error CS*").AsWildcard();
+			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard()
+				.Because("the closing the consumer needs comes from the registration AWT231 already reports");
 		}
 
 		[Test]

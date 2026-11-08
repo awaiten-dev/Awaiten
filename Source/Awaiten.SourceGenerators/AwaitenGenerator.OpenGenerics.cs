@@ -138,6 +138,7 @@ partial class AwaitenGenerator
 				context.Compilation, context.Modules, context.Inheritance, context.Inherited, diagnostics));
 			if (via.Dropped)
 			{
+				context.Open.Add(new OpenRegistration(pair.Service, pair.Mapped, lifetime, NamedKeyArgument(attribute), location, context.Origin) { Dropped = true, });
 				return;
 			}
 		}
@@ -690,7 +691,7 @@ partial class AwaitenGenerator
 		out List<IMethodSymbol> factories)
 	{
 		factories = [];
-		if (candidate.ViaFault is not null)
+		if (candidate.ViaFault is not null || candidate.Dropped)
 		{
 			context.ConstraintRejectedServices.Add(closedService);
 			return false;
@@ -1219,6 +1220,12 @@ partial class AwaitenGenerator
 		///     None of its closings is synthesized.
 		/// </summary>
 		public FactoryFault? ViaFault { get; init; }
+
+		/// <summary>
+		///     Left out after AWT230 or AWT231 (see <see cref="ResolveOpenVia" />): none of its closings is synthesized, and
+		///     their consumers do not also report them missing (AWT101).
+		/// </summary>
+		public bool Dropped { get; init; }
 	}
 
 	/// <summary>What one unit of expansion work scans for the closed generic services it requires.</summary>
