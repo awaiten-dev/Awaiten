@@ -472,6 +472,28 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			public async Task AnInjectedProperty_ReportsTheConstraint_WhenOnlyAKeyedClosedRegistrationBuildsTheClosing()
+			{
+				GeneratorResult result = Generator.Run(Formatters + """
+				                                                    public sealed class LabelFormatter : IFormatter<Label> { }
+
+				                                                    public sealed class Printer
+				                                                    {
+				                                                        [Inject] public IFormatter<Label> Labels { get; set; }
+				                                                    }
+
+				                                                    [Container]
+				                                                    [Transient(typeof(TextFormatter<>), typeof(IFormatter<>))]
+				                                                    [Transient<LabelFormatter, IFormatter<Label>>(Key = "x")]
+				                                                    [Transient<Printer>]
+				                                                    public static partial class Shop { }
+				                                                    """);
+
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT126*'MyCode.TextFormatter<MyCode.Label>'*").AsWildcard()
+					.Because("an injected property reports the precise cause like a constructor parameter");
+			}
+
+			[Test]
 			public async Task SeveralUnservedRequests_ReportTheConstraintOnce()
 			{
 				GeneratorResult result = Generator.Run(Formatters + """
