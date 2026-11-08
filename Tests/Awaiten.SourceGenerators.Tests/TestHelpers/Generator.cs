@@ -92,6 +92,18 @@ public static class Generator
 	}
 
 	/// <summary>
+	///     Like <see cref="RunWithGeneratedReferencedAssembly(string, string)" />, but references the generated assembly as a compilation,
+	///     as the IDE references another project of the solution, so its internal members stay visible to the symbols.
+	/// </summary>
+	public static GeneratorResult RunWithGeneratedCompilationReference(
+		[StringSyntax("c#-test")] string referencedSource,
+		[StringSyntax("c#-test")] string source)
+	{
+		(Compilation referencedOutput, _) = RunGenerator(referencedSource, [], [], "ReferencedAssembly");
+		return Run(source, [referencedOutput.ToMetadataReference(),]);
+	}
+
+	/// <summary>
 	///     Like <see cref="RunWithGeneratedReferencedAssembly" />, but with two independent generated referenced
 	///     assemblies, for example two libraries that declare a type of the same name.
 	/// </summary>

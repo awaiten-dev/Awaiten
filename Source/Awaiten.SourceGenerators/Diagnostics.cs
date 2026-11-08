@@ -2193,6 +2193,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     A container constructs a type whose <c>[Inject]</c> property is declared in another assembly and not accessible
+	///     from the container's assembly. The compiler imports a referenced assembly without its internal and private
+	///     members, so the container does not see the property and would build the type without it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor HiddenInjectedProperty = new(
+		"AWT244",
+		"Injected property not visible to the container",
+		"'{0}' constructs '{1}', whose [Inject] property '{2}' is declared in the assembly '{3}' and is not accessible from this assembly, so it would be left unset; make the property and its setter public, register '{1}' through a [Module] of '{3}', whose generated factory sets an internal property, or grant this assembly [InternalsVisibleTo] in '{3}'",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level (a nullable reference
 	///     or value type) or that is marked <c>[MaybeNull]</c>, so it may produce <see langword="null" />, while the
 	///     container hands the value to every consumer as a non-nullable service.

@@ -318,6 +318,7 @@ partial class AwaitenGenerator
 			return members;
 		}
 
+		ReportHiddenInjectedProperties(info, context);
 		DiscoverInjectedMembers(info, injection, injectProperties, members);
 		return members;
 	}

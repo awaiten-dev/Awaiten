@@ -1512,6 +1512,28 @@ public static partial class CoffeeShop;
 
 **Fix:** Remove one of the two: the `[Inject]` attribute on the property or the `[InjectProperty]` entry on the container.
 
+### AWT244
+
+:::danger[Error]
+The container constructs a type whose `[Inject]` property is declared `internal` or `private` in another assembly that grants the container's assembly no `InternalsVisibleTo`. The compiler does not show such a member to another assembly, so the container would build the type and leave the property unset. Also raised for a decorator, a composite, a scan match or an open generic closing of such a type, and for a type of the container's assembly that inherits the property.
+:::
+
+```csharp no-compile
+// In the assembly CoffeeShop.Domain:
+public sealed class Barista
+{
+    [Inject] internal ITimeSystem Time { get; set; } = null!;
+}
+
+// In the application:
+[Container]
+[Singleton<Barista>]   // the container cannot see Barista.Time
+[Singleton<RealTimeSystem, ITimeSystem>]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Register the type through a [module](../04-registration/07-modules.md#internal-implementations) of its assembly, whose generated factory sets an internal property for every container. Otherwise make the property and its setter `public`, or grant the container's assembly `InternalsVisibleTo`.
+
 ## Scanning
 
 ### AWT138
