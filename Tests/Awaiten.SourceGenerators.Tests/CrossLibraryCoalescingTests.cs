@@ -102,9 +102,9 @@ public class CrossLibraryCoalescingTests
 			Consumer.Replace("using Clocks;", ""));
 
 		await That(result.Diagnostics).IsEmpty();
-		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("new global::LibA.Clock(").Exactly(1)
-			.And.DoesNotContain("IHiddenClock")
-			.Because("nothing the first library builds needs its internal service, so the container drops that registration and builds the second library's");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::LibA.LibAModule.Internals.Alias_Clock_")
+			.And.DoesNotContain("new global::LibA.Clock(")
+			.Because("the first library builds its public implementation through a handle, so the second library's registration serves that instance");
 	}
 
 	[Test]

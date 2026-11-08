@@ -103,7 +103,7 @@ public class ModuleHiddenServiceTests
 	}
 
 	[Test]
-	public async Task PublicImplementationUnderAnInternalServiceNothingNeeds_IsDroppedByAContainerInAnotherAssembly()
+	public async Task PublicImplementationUnderAnInternalServiceNothingNeeds_CompilesInAContainerInAnotherAssembly()
 	{
 		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 			using Awaiten;
@@ -127,10 +127,43 @@ public class ModuleHiddenServiceTests
 			""");
 
 		await That(result.Diagnostics).IsEmpty()
-			.Because("the container cannot name the internal service and nothing it reaches needs it, so it drops the registration as it does for an internal implementation");
-		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("IBeanStore");
+			.Because("the container cannot name the internal service, so it serves the public implementation through the handle the module builds for it");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("global::Lib.IBeanStore")
+			.And.DoesNotContain("new global::Lib.BeanStore(");
 	}
 
+	[Test]
+	public async Task PublicImplementationUnderAnInternalServiceOfAModuleWithoutGeneratedMembers_IsDroppedByAContainerInAnotherAssembly()
+	{
+		const string library = """
+			using Awaiten;
+
+			namespace Lib;
+
+			internal interface IBeanStore { }
+			public sealed class BeanStore : IBeanStore { }
+
+			[Module]
+			[Singleton<BeanStore, IBeanStore>]
+			public static class CoffeeModule { }
+			""";
+
+		GeneratorResult libraryResult = Generator.Run(library);
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+			using Awaiten;
+
+			namespace MyCode;
+
+			[Container]
+			[Import(typeof(Lib.CoffeeModule))]
+			public static partial class MyContainer { }
+			""");
+
+		await That(libraryResult.Diagnostics).IsEmpty();
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a module that is not partial builds no handle, and the container cannot name the internal service nor reach it otherwise, so it drops the registration as it does for an internal implementation");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("IBeanStore");
+	}
 	[Test]
 	public async Task EagerInternalSingleton_GetsAHandle()
 	{
