@@ -359,6 +359,43 @@ public partial class DiagnosticTests
 					.Because("the container reports the open registration once, whatever closings it injects");
 			}
 
+			[Test]
+			[Arguments("private static Secret? Make() => new Secret();", "Factory = nameof(Make)")]
+			[Arguments("[return: System.Diagnostics.CodeAnalysis.MaybeNull] private static Secret Make() => new Secret();", "Factory = nameof(Make)")]
+			[Arguments("private static Secret? Shared { get; } = new Secret();", "Instance = nameof(Shared)")]
+			public async Task AMemberOfAModuleReturningAPrivateNullableType_CompilesWithoutWarnings(string member, string production)
+			{
+				string library = $$"""
+				                   #nullable enable
+				                   using Awaiten;
+
+				                   [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+				                   namespace Lib;
+
+				                   public interface IKettle { }
+
+				                   [Module]
+				                   [Singleton<IKettle>({{production}})]
+				                   internal static partial class KettleModule
+				                   {
+				                       private sealed class Secret : IKettle { }
+
+				                       {{member}}
+				                   }
+				                   """;
+
+				GeneratorResult libraryResult = Generator.Run(library);
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+				string[] reports = await Awt245Reports(library, Consumer);
+
+				await That(libraryResult.Diagnostics).IsEmpty()
+					.Because("the wrapper exposes the private type as the nullable registered type");
+				await That(result.Diagnostics).IsEmpty();
+				await That(reports).HasCount(1)
+					.Because("the container sees the possible null through the wrapper");
+			}
+
 			private static string HandleLibrary(string registration, string member) => $$"""
 				#nullable enable
 				using Awaiten;
