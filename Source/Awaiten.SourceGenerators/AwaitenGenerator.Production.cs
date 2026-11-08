@@ -219,7 +219,9 @@ partial class AwaitenGenerator
 			         .Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == producer.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal)))
 		{
 			IMethodSymbol setter = producer.IsGenericMethod ? candidate.Construct(producer.TypeArguments.ToArray()) : candidate;
-			ParameterModel dependency = ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes);
+			ParameterModel dependency = RedirectVariance(
+				ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
 			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				continue;
@@ -260,7 +262,7 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
 
 		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
 		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
@@ -1078,8 +1080,8 @@ partial class AwaitenGenerator
 			ReportUnsupportedKeyedCollectionKey(parameterModel, parameter.Type, info, context.ServiceToImpl, context.Diagnostics);
 			ReportFromKeyOnKeyedCollection(parameterModel, parameter.Type, info, context.Diagnostics);
 
-			parameterModel = RedirectVariance(parameterModel, parameter, context.ServiceToImpl, context.Variance);
-			RecordRequestedCollectionElement(parameterModel, parameter, context.Variance);
+			parameterModel = RedirectVariance(parameterModel, parameter.Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(parameterModel, parameter.Type, context.Variance);
 
 			if (context.External.ImportServices
 			    && parameterModel is { Kind: DependencyKind.Direct, Key: null, }

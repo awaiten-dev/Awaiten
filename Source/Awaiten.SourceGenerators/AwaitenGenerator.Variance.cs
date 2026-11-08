@@ -8,7 +8,8 @@ namespace Awaiten.SourceGenerators;
 partial class AwaitenGenerator
 {
 	/// <summary>
-	///     Redirects a single-service consumer parameter requesting a closed generic interface with no exact
+	///     Redirects a single-service consumer parameter or injected property, declared as
+	///     <paramref name="declaredType" />, requesting a closed generic interface with no exact
 	///     registration to a variance-compatible registration (Part A), e.g. a registered
 	///     <c>IHandler&lt;DomainEvent&gt;</c> (<c>in T</c>) satisfying <c>IHandler&lt;OrderPlaced&gt;</c>. It runs
 	///     only on a miss, so an exact registration always wins; keyed parameters and collections are out of scope.
@@ -19,7 +20,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static ParameterModel RedirectVariance(
 		ParameterModel parameterModel,
-		IParameterSymbol parameter,
+		ITypeSymbol declaredType,
 		Dictionary<ServiceKey, string> serviceToImpl,
 		VarianceState variance)
 	{
@@ -27,7 +28,7 @@ partial class AwaitenGenerator
 		    || parameterModel.Key is not null
 		    || parameterModel.Kind is not (DependencyKind.Direct or DependencyKind.Func)
 		    || serviceToImpl.ContainsKey(KeyOf(parameterModel))
-		    || UnderlyingServiceType(parameter.Type) is not { } requested
+		    || UnderlyingServiceType(declaredType) is not { } requested
 		    // The unwrapped symbol must denote the classified service type: a shape the classification treats as
 		    // an opaque direct dependency (ValueTask<T>, a nested relationship like Func<Lazy<T>>) unwraps to a
 		    // different type here, and redirecting it would emit an argument the declared parameter type cannot
@@ -53,7 +54,7 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Records an unkeyed collection parameter whose element is a closed generic interface (Part C), so its
+	///     Records an unkeyed collection parameter or injected property whose element is a closed generic interface (Part C), so its
 	///     members can later be unioned with every variance-compatible registration (a collection of
 	///     <c>IHandler&lt;OrderPlaced&gt;</c> includes a registered <c>IHandler&lt;DomainEvent&gt;</c>). All shapes
 	///     (sync, async, awaited) share one membership per (element type, key). Keyed collections are left untouched,
@@ -61,13 +62,13 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void RecordRequestedCollectionElement(
 		ParameterModel parameterModel,
-		IParameterSymbol parameter,
+		ITypeSymbol declaredType,
 		VarianceState variance)
 	{
 		if (variance.Candidates.Count == 0
 		    || parameterModel.Key is not null
 		    || parameterModel.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable)
-		    || CollectionElementSymbol(parameter.Type) is not { } element
+		    || CollectionElementSymbol(declaredType) is not { } element
 		    || !variance.CollectionSeen.Add(parameterModel.ServiceType))
 		{
 			return;

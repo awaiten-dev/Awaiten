@@ -37,7 +37,7 @@ public interface IFactory<out T> where T : DomainEvent;
 - Invariant interfaces never match a different closure.
 - Keyed registrations are never variance candidates.
 
-Variance applies to single resolution, to collections (exact matches lead, variance matches are unioned in), to awaited collections, and to `Func<T>` relationships.
+Variance applies to single resolution, to collections (exact matches lead, variance matches are unioned in), to awaited collections, and to `Func<T>` relationships, for constructor parameters and [injected properties](./05-property-injection.md) alike. `Lazy<T>` and `Task<T>` are invariant, so a variance match does not satisfy them.
 
 ## Where to go next
 
