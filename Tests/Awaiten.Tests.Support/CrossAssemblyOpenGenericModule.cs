@@ -153,6 +153,38 @@ internal sealed class SharedOpenRepository<T> : ISharedOpenRepository<T>;
 [Singleton(typeof(SharedOpenRepository<>), typeof(ISharedOpenRepository<>))]
 public static partial class SharedOpenGenericModule;
 
+/// <summary>The log the hooks of <see cref="HookedOpenGenericModule" /> write to, one line per hook call.</summary>
+public sealed class OpenHookLog
+{
+	/// <summary>The hook calls in order.</summary>
+	public List<string> Entries { get; } = new();
+}
+
+/// <summary>A cache per entry type, built from an internal open generic implementation whose module hooks every closing.</summary>
+public interface IHookedOpenCache<T>
+	where T : class;
+
+internal sealed class HookedOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration names a generic activation hook and a release hook,
+///     which a container in another assembly without <c>InternalsVisibleTo</c> runs through the generic wrappers the
+///     module generates beside its generic factory.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(HookedOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class HookedOpenGenericModule
+{
+	internal static void Activate<T>(HookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Release(object cache, OpenHookLog log)
+		=> log.Entries.Add("released");
+}
+
 /// <summary>A journal per entry type, built from the public <see cref="InjectedOpenJournal{T}" />.</summary>
 public interface IInjectedOpenJournal<T>
 {

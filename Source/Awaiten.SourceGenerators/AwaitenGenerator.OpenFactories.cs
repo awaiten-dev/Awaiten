@@ -195,21 +195,16 @@ partial class AwaitenGenerator
 	///     Builds the generic factory of an open contribution: a method with the definition's type parameters and their
 	///     constraints, closed by each consumer per use, that mirrors the constructor and injected properties like the
 	///     factory of a closed registration and returns the definition when a consumer can name it, else the service,
-	///     both of which close positionally with the consumer's type arguments. A factory of a module that could return
-	///     only an internal type is internal. What it cannot express gets no factory but a reason: a lifecycle hook,
-	///     whose wrapper would have to bind the hook's type arguments without a closing, a constraint or parameter type a
-	///     caller cannot name, a type parameter named like a parameter, or, for a <paramref name="module" />, a convention
-	///     of the module a consumer cannot call.
+	///     both of which close positionally with the consumer's type arguments, plus a generic wrapper per lifecycle hook
+	///     (see <see cref="OpenHookWrappers" />). A factory of a module that could return only an internal type is
+	///     internal. What it cannot express gets no factory but a reason: a lifecycle hook it cannot wrap, a constraint or
+	///     parameter type a caller cannot name, a type parameter named like a parameter, or, for a
+	///     <paramref name="module" />, a convention of the module a consumer cannot call.
 	/// </summary>
 	private static OpenFactory BuildOpenFactory(OpenContribution contribution, List<INamedTypeSymbol> services, ModuleScanContext context, bool module)
 	{
 		INamedTypeSymbol definition = contribution.Definition;
 		string typeName = definition.ToDisplayString(FullyQualified);
-		if ((NamedArgument(contribution.Attribute, "OnActivated") ?? NamedArgument(contribution.Attribute, "OnRelease")) is { } hook)
-		{
-			return new OpenFactory(null, $"it names the lifecycle hook '{hook}', which a generated factory of an open generic registration does not run");
-		}
-
 		// One instance serves every open service of the definition, so the factory returns a type each of them converts from.
 		INamedTypeSymbol? returnType = Fits(definition, context)
 			? definition
@@ -261,25 +256,88 @@ partial class AwaitenGenerator
 			return new OpenFactory(null, $"its constructor parameter or injected property '{clash}' has the name of a type parameter");
 		}
 
+		string typeParameterList = $"<{string.Join(", ", definition.TypeParameters.Select(parameter => EscapedName(parameter.Name)))}>";
+		string constraints = TypeParameterConstraints(definition);
+		if (OpenHookWrappers(contribution, subject, signature, typeParameters, typeParameterList, constraints, out string? hookReason) is not { } hooks)
+		{
+			return new OpenFactory(null, hookReason);
+		}
+
 		return new OpenFactory(
 			new RegistrationFactory(
 				contribution.FactoryName,
 				returnType.ToDisplayString(FullyQualified),
 				typeName,
 				parameters,
-				default,
+				new EquatableArray<RegistrationHook>(hooks.ToArray()),
 				members.Required,
 				OptionalMembers: members.Optional,
 				DeferredMembers: members.Deferred,
 				IsInternal: signature.Internal,
 				InitOnlyMembers: members.InitOnly,
 				OptionalDeferredMembers: members.OptionalDeferred,
-				TypeParameters: $"<{string.Join(", ", definition.TypeParameters.Select(parameter => EscapedName(parameter.Name)))}>",
-				Constraints: TypeParameterConstraints(definition)),
+				TypeParameters: typeParameterList,
+				Constraints: constraints),
 			null);
 
 		bool Fits(ITypeSymbol type, ModuleScanContext scope)
 			=> FitsFactorySignature(type, scope) && TypeHiddenInModule(type, scope.Module, scope.Compilation) is null;
+	}
+
+	/// <summary>
+	///     The generic wrappers of the lifecycle hooks the owner's registrations of the definition name, which a consumer
+	///     closes with each closing like the factory: each hook is bound as a container binds it per closing, with the
+	///     open service constructed with the definition's own type parameters as the marker, so a generic hook is called
+	///     with those type parameters and a parameter after the instance may use them. Returns <see langword="null" /> and
+	///     the <paramref name="reason" /> when a hook cannot be wrapped (unusable, ambiguous, a parameter another assembly
+	///     cannot name or carrying <c>[Arg]</c>, <c>[FromKey]</c> or <c>[Inject]</c>, constraints the definition's type
+	///     parameters do not satisfy, or a parameter named like one of them).
+	/// </summary>
+	private static List<RegistrationHook>? OpenHookWrappers(
+		OpenContribution contribution,
+		SelfCompiledSubject subject,
+		ModuleScanContext context,
+		HashSet<string> typeParameters,
+		string typeParameterList,
+		string constraints,
+		out string? reason)
+	{
+		reason = null;
+		List<RegistrationHook> hooks = new();
+		HashSet<string> seen = new(StringComparer.Ordinal);
+		foreach (OpenContribution registration in OpenContributions(context.Module).Where(other => other.FactoryName == contribution.FactoryName))
+		{
+			foreach (bool release in new[] { false, true, })
+			{
+				string slot = release ? "OnRelease" : "OnActivated";
+				if (NamedArgument(registration.Attribute, slot) is not { } hookName || !seen.Add(slot + "\0" + hookName))
+				{
+					continue;
+				}
+
+				List<DiagnosticInfo> rejections = new();
+				ResolvedModuleHook? resolved = ResolveModuleHookCore(
+					new ModuleHookRequest(registration.Definition, hookName, registration.Location, release, RegistrationHookWrapperName(registration.Definition, release, hookName), subject),
+					[registration.Service,],
+					context with { Diagnostics = rejections, Hidden = null, });
+				string prefix = $"its {slot} hook '{hookName}' cannot be run through a generated wrapper";
+				if (resolved is null)
+				{
+					reason = rejections.Count > 0 ? $"{prefix}: {rejections[0].ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}" : prefix;
+					return null;
+				}
+
+				if (resolved.Wrapper.Parameters.AsArray().FirstOrDefault(parameter => typeParameters.Contains(parameter.Name)) is { Name: { } clash, })
+				{
+					reason = $"{prefix}, because its parameter '{clash}' has the name of a type parameter";
+					return null;
+				}
+
+				hooks.Add(new RegistrationHook(resolved.Wrapper with { TypeParameters = typeParameterList, Constraints = constraints, }, release));
+			}
+		}
+
+		return hooks;
 	}
 
 	/// <summary>

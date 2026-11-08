@@ -32,6 +32,40 @@ public static partial class FriendOpenGenericModule
 	}
 }
 
+/// <summary>
+///     A <c>[Module]</c> in an assembly that grants <c>InternalsVisibleTo</c>, whose open generic implementation and hook
+///     are private to it, so even a friend runs the hook through the generic wrapper the module generates.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(FriendHookedOpenGenericModule.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+public static partial class FriendHookedOpenGenericModule
+{
+	private sealed class Cache<T> : IHookedOpenCache<T>
+		where T : class;
+
+	private static void Activate<T>(Cache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+}
+
+/// <summary>
+///     A production container in a referenced assembly whose open generic registration and hook are private to it, so a
+///     test container that extends it runs the hook through the generic wrapper the base generates.
+/// </summary>
+[Container]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(HookedOpenBaseContainer.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+public static partial class HookedOpenBaseContainer
+{
+	private sealed class Cache<T> : IHookedOpenCache<T>
+		where T : class;
+
+	private static void Activate<T>(Cache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+}
+
 /// <summary>A public open generic journal whose internal <c>[Inject]</c> property a friend container sets itself.</summary>
 public sealed class FriendInjectedOpenJournal<T> : IInjectedOpenJournal<T>
 {

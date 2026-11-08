@@ -664,8 +664,8 @@ internal static partial class Sources
 		}
 
 		Indent(builder, depth)
-			.Append(accessibility).Append(" static ").Append(hook.ReturnType).Append(' ').Append(hook.WrapperName)
-			.Append('(').Append(instanceType).Append(" @").Append(instance).Append(signature).Append(") => ")
+			.Append(accessibility).Append(" static ").Append(hook.ReturnType).Append(' ').Append(hook.WrapperName).Append(hook.TypeParameters)
+			.Append('(').Append(instanceType).Append(" @").Append(instance).Append(signature).Append(')').Append(hook.Constraints).Append(" => ")
 			.Append(hook.Target).Append("((").Append(hook.InstanceCast).Append(")@").Append(instance).Append(fromHandle ? ".Value" : string.Empty).Append(arguments).AppendLine(");");
 	}
 }

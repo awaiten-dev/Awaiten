@@ -258,6 +258,128 @@ public sealed partial class OpenGenericFactoryTests
 		}
 	}
 
+	public sealed class Hooks
+	{
+		[Test]
+		public async Task AModuleInAnotherAssembly_RunsTheHooksOfEachClosingThroughTheGenericWrappers()
+		{
+			OpenHookLog log;
+			await using (HookedCacheContainer.Root container = new())
+			{
+				log = container.Resolve<OpenHookLog>();
+				await using (IAwaitenScope scope = await container.CreateScopeAsync())
+				{
+					scope.Resolve<CacheConsumer>();
+					await That(log.Entries).IsEqualTo(["activated Order", "activated Invoice",]).InAnyOrder()
+						.Because("the generic activation hook is bound to each closing's type argument");
+				}
+
+				await That(log.Entries.Count(entry => entry == "released")).IsEqualTo(2)
+					.Because("the release hook runs once per scoped closing when its scope ends");
+			}
+		}
+
+		[Test]
+		public async Task AFriendModule_RunsThePrivateHookThroughTheGenericWrapper()
+		{
+			await using FriendHookedCacheContainer.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			scope.Resolve<CacheConsumer>();
+
+			await That(container.Resolve<OpenHookLog>().Entries).IsEqualTo(["activated Order", "activated Invoice",]).InAnyOrder();
+		}
+
+		[Test]
+		public async Task AModuleInTheSameAssembly_RunsThePrivateHookThroughTheGenericWrapper()
+		{
+			await using SameAssemblyHookedCacheContainer.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			scope.Resolve<CacheConsumer>();
+
+			await That(container.Resolve<OpenHookLog>().Entries).IsEqualTo(["activated Order", "activated Invoice",]).InAnyOrder();
+		}
+
+		[Test]
+		public async Task ABaseInAnotherAssembly_RunsThePrivateHookThroughTheGenericWrapper()
+		{
+			await using HookedCacheTestContainer.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			scope.Resolve<CacheConsumer>();
+
+			await That(container.Resolve<OpenHookLog>().Entries).IsEqualTo(["activated Order", "activated Invoice",]).InAnyOrder();
+		}
+
+		[Test]
+		public async Task ABaseInTheSameAssembly_RunsThePrivateHookThroughTheGenericWrapper()
+		{
+			await using ExtendedHookedCacheShop.Root container = new();
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			scope.Resolve<CacheConsumer>();
+
+			await That(container.Resolve<OpenHookLog>().Entries).IsEqualTo(["activated Order", "activated Invoice",]).InAnyOrder();
+		}
+	}
+
+	public sealed class CacheConsumer(IHookedOpenCache<Order> orders, IHookedOpenCache<Invoice> invoices)
+	{
+		public IHookedOpenCache<Order> Orders => orders;
+
+		public IHookedOpenCache<Invoice> Invoices => invoices;
+	}
+
+	[Container]
+	[Import(typeof(HookedOpenGenericModule))]
+	[Scoped<CacheConsumer>]
+	public static partial class HookedCacheContainer;
+
+	[Container]
+	[Import(typeof(FriendHookedOpenGenericModule))]
+	[Scoped<CacheConsumer>]
+	public static partial class FriendHookedCacheContainer;
+
+	[Module]
+	[Singleton<OpenHookLog>]
+	[Scoped(typeof(SameAssemblyHookedCacheModule.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+	public static partial class SameAssemblyHookedCacheModule
+	{
+		private sealed class Cache<T> : IHookedOpenCache<T>
+			where T : class;
+
+		private static void Activate<T>(Cache<T> cache, OpenHookLog log)
+			where T : class
+			=> log.Entries.Add($"activated {typeof(T).Name}");
+	}
+
+	[Container]
+	[Import(typeof(SameAssemblyHookedCacheModule))]
+	[Scoped<CacheConsumer>]
+	public static partial class SameAssemblyHookedCacheContainer;
+
+	[Container(Extends = typeof(HookedOpenBaseContainer))]
+	[Scoped<CacheConsumer>]
+	public static partial class HookedCacheTestContainer;
+
+	[Container]
+	[Singleton<OpenHookLog>]
+	[Scoped(typeof(HookedCacheShop.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+	[Scoped<CacheConsumer>]
+	public static partial class HookedCacheShop
+	{
+		private sealed class Cache<T> : IHookedOpenCache<T>
+			where T : class;
+
+		private static void Activate<T>(Cache<T> cache, OpenHookLog log)
+			where T : class
+			=> log.Entries.Add($"activated {typeof(T).Name}");
+	}
+
+	[Container(Extends = typeof(HookedCacheShop))]
+	public static partial class ExtendedHookedCacheShop;
+
 	public sealed class ContainerSideInjectProperty
 	{
 		[Test]

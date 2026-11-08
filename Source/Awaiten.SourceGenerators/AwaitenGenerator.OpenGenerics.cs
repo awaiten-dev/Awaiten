@@ -555,6 +555,18 @@ partial class AwaitenGenerator
 			return;
 		}
 
+		// A closing built through the owner's generic factory in the same compilation runs the owner's hook through the
+		// wrapper, so it seeds from the hook the owner binds, which the container itself may not reach.
+		if (registration is { ConstructVia: { } via, Origin: { } origin, } && via.IndexOf('<') >= 0)
+		{
+			if (CollectModuleHookOverloads(registration.Implementation, hookName, closedMarkers, new ModuleScanContext(origin, context.Inputs.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal))).Matches is { Count: 1, } hooks)
+			{
+				Enqueue(new ExpansionWork(registration.Implementation, hooks[0], depth, ExpansionScan.Hook), context);
+			}
+
+			return;
+		}
+
 		(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguousMethods) = CollectHookOverloads(
 			registration.Implementation,
 			hookName,
@@ -720,15 +732,21 @@ partial class AwaitenGenerator
 	///     <paramref name="owner" />, closed as <paramref name="factory" />: it produces the accessible type the factory
 	///     returns, while the closed implementation keeps the registration's identity and gives its initialization and
 	///     disposal, read off its metadata with the owner's conventions, as <see cref="ThroughGeneratedFactory" /> does for a
-	///     closed registration.
+	///     closed registration. Its hooks run through the generic wrappers the owner generated beside the factory, which
+	///     the ordinary hook binding closes with the closing's marker.
 	/// </summary>
 	private static RawRegistration ThroughOpenFactory(RawRegistration registration, INamedTypeSymbol owner, IMethodSymbol factory, Compilation compilation)
-		=> registration with
+	{
+		INamedTypeSymbol definition = registration.Implementation.OriginalDefinition;
+		return registration with
 		{
 			Implementation = (INamedTypeSymbol)factory.ReturnType,
 			Traits = TraitsOf(registration.Implementation, DeclaredAsyncInitializers(owner, compilation, null)),
 			TraitsExact = true,
+			OnActivated = registration.OnActivated is { } activation ? InInternals(RegistrationHookWrapperName(definition, release: false, activation)) : null,
+			OnRelease = registration.OnRelease is { } release ? InInternals(RegistrationHookWrapperName(definition, release: true, release)) : null,
 		};
+	}
 
 	private static void ReportFactoryConstraintViolation(OpenRegistration candidate, string closedService, ExpansionContext context)
 	{
