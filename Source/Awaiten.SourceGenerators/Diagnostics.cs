@@ -140,6 +140,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="InvalidFactory">AWT108</see> for a <c>Factory</c> member of an imported module of
+	///     another assembly that this container cannot call, when the module's build recorded why it generated neither a
+	///     public wrapper nor a handle for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnwrappedModuleFactory = new(
+		"AWT108",
+		InvalidFactory.Title,
+		"'{0}' cannot be produced: {2} has no accessible method '{1}' returning '{0}': {3}; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     An <c>Instance</c> registration names a member that is not a usable instance member on its owner -
 	///     the container, or the declaring module for an imported registration (it is missing, is not a field
 	///     or property, or is not assignable to the service type).
@@ -1031,12 +1044,13 @@ internal static class Diagnostics
 	/// <summary>
 	///     An <c>OnActivated</c> / <c>OnRelease</c> registration names a member that is not a usable lifecycle
 	///     hook on the container: there is no accessible static method of that name returning <c>void</c>,
-	///     <c>Task</c> or <c>ValueTask</c> and accepting the registered implementation type.
+	///     <c>Task</c> or <c>ValueTask</c> and accepting the registered implementation type. The last argument names why
+	///     a method of the module that would fit is out of reach, or is empty.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InvalidLifecycleHook = new(
 		"AWT164",
 		"Invalid lifecycle hook",
-		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{0}' and returning void, Task or ValueTask",
+		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{3}' and returning void, Task or ValueTask{4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

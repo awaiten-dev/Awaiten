@@ -129,8 +129,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     assembly grants <c>InternalsVisibleTo</c> (see <see cref="FriendsConstructEveryRegistration" />); when it is, its scans and registrations are
 	///     expanded into factories in its own build (see <see cref="CollectModuleScanFactories" /> and
 	///     <see cref="CollectModuleRegistrationFactories" />). A module that self-compiles nothing still gets a model
-	///     when one of its <c>[AsyncInitializer&lt;T&gt;]</c> conventions is unusable (AWT233) or the hook of a <c>Factory</c>
-	///     registration gets no wrapper (AWT203, AWT204), which carries only those diagnostics.
+	///     when one of its <c>[AsyncInitializer&lt;T&gt;]</c> conventions is unusable (AWT233) or a hook gets no wrapper
+	///     (AWT164, AWT190, AWT203, AWT204), which carries only those diagnostics.
 	/// </summary>
 	private static ModuleScanModel? BuildModuleModel(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
 		=> context.TargetSymbol is INamedTypeSymbol moduleSymbol
@@ -178,13 +178,13 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		List<SkippedRegistration> skipped = new();
-		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped) : new();
+		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
+		List<MemberWrapper> wrappers = receives ? CollectModuleMemberWrappers(moduleSymbol, compilation, diagnostics, skipped, hidden) : new();
 		if (receives)
 		{
 			ReportUnwrappedPrivateMembers(moduleSymbol, compilation, wrappers, diagnostics);
 		}
 
-		HiddenServices? hidden = receives ? CollectHiddenServices(moduleSymbol, compilation, cancellationToken) : null;
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
 		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
 		contributions.AddRange(openFactories);

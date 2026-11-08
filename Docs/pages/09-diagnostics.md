@@ -528,7 +528,7 @@ public static partial class CoffeeShop
 }
 ```
 
-An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md)). It does so for a public, `partial` module, when the method's parameter and return types are public.
+An internal factory method of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./04-registration/07-modules.md#factories-and-instances-in-modules)). It does so for a public, `partial` module, when the method's parameter and return types are public. A method that takes an internal service the module registers is reached through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) instead. When the module can do neither, it records why, and the message names that cause, for example `'CreateGrinder' is internal and its parameter 'store' has the type 'Lib.BeanStore', which is not public, so the module generated no public wrapper for it`. A container in the module's own assembly reports the cause itself, here [AWT101](#awt101) when no module registers `BeanStore`. When the module registers `BeanStore` but cannot build it, the message names that service and the reason it cannot be built, such as [AWT195](#awt195).
 
 **Fix:** Point `Factory` at a non-generic method on the container (or on the declaring module for an imported registration) that returns the registered service type, here `private static Grinder MakeGrinder() => new();`.
 
@@ -682,9 +682,11 @@ public static partial class CoffeeShop
 }
 ```
 
+The message names the type the hook's first parameter must accept, the implementation, and ends with the reason when a method of a module that would fit is out of reach. A `private` hook of a module is no hook for a type the container constructs, since only the module itself can call it. An `internal` hook of a module in another assembly is called through the public wrapper the module generates (see [modules](./04-registration/07-modules.md#factories-and-instances-in-modules)), so the container reports this only when the module generated none. The message then says so, and names why when the module's metadata shows it, for example for a generic module. A module that isn't `partial` generates no wrapper either, which the message can't tell apart from a library built without Awaiten, so check that the module and every class that contains it are `partial`.
+
 A generic method is a usable hook only where a closing binds its type parameters: on an [open generic](./04-registration/05-open-generics.md#lifecycle-hooks) registration or an [open generic scan marker](./04-registration/06-scanning.md#generic-hooks-on-an-open-marker). On any other registration the message names the type parameters nothing binds.
 
-**Fix:** Point the hook at an accessible static method that returns `void`, `Task` or `ValueTask` and whose first parameter accepts the implementation: `private static void Ready(EspressoMachine machine) { }`.
+**Fix:** Point the hook at an accessible static method that returns `void`, `Task` or `ValueTask` and whose first parameter accepts the implementation: `private static void Ready(EspressoMachine machine) { }`. On a module, make the hook `internal` or public.
 
 ### AWT165
 

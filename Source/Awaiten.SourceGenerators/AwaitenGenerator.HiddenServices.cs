@@ -161,6 +161,22 @@ partial class AwaitenGenerator
 			}
 		}
 
+		/// <summary>What <see cref="Use" /> and <see cref="NeededNonViable" /> recorded so far, which <see cref="Restore" /> returns to.</summary>
+		public (int Used, INamedTypeSymbol[] NeededNonViable) Snapshot()
+			=> (Used.Count, NeededNonViable.ToArray());
+
+		/// <summary>Forgets what a mirrored member recorded since <paramref name="snapshot" />, for a member the module does not emit.</summary>
+		public void Restore((int Used, INamedTypeSymbol[] NeededNonViable) snapshot)
+		{
+			foreach (INamedTypeSymbol service in Used.Skip(snapshot.Used))
+			{
+				_used.Remove(service);
+			}
+
+			Used.RemoveRange(snapshot.Used, Used.Count - snapshot.Used);
+			NeededNonViable.IntersectWith(snapshot.NeededNonViable);
+		}
+
 		/// <summary>The fully qualified name of the handle of <paramref name="service" />.</summary>
 		public string HandleType(INamedTypeSymbol service)
 			=> $"{(Provider(service) ?? Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenHandleName(service)}";
@@ -516,13 +532,13 @@ partial class AwaitenGenerator
 	{
 		List<DiagnosticInfo> diagnostics = new();
 		List<SkippedRegistration> skipped = new();
-		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped);
 		if (CollectHiddenServices(module, compilation, cancellationToken) is not { } hidden)
 		{
 			return;
 		}
 
 		hidden.Demand = demand;
+		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped, hidden);
 		List<RegistrationFactory> contributions = CollectModuleContributionFactories(module, compilation, hidden, diagnostics);
 		ModuleExpansion expansion = ExpandModule(module, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
 		next.Services.UnionWith(hidden.Used);
@@ -620,13 +636,14 @@ partial class AwaitenGenerator
 	///     Whether anything the module declares could be built through a handle, in its own module or another: a
 	///     <c>[Scan]</c>, whose matches may take internal services, or a registration, decorator or composite that names an
 	///     internal service, or a type a container in another assembly cannot construct or that converts to an internal
-	///     type. A module that declares none of these never reads the modules of its assembly.
+	///     type, or whose <c>Factory</c> member or hook takes a parameter of a type that is not public, which its wrapper
+	///     takes through a handle. A module that declares none of these never reads the modules of its assembly.
 	/// </summary>
 	private static bool MayBuildThroughHandles(INamedTypeSymbol module, Compilation compilation)
 	{
 		ImmutableArray<AttributeData> attributes = module.GetAttributes();
 		return HasAwaitenAttribute(attributes, "ScanAttribute")
-		       || ConstructedModuleRegistrations(module, compilation, members: true).Any(registration => !IsExternallyAccessible(registration.Service) || Concealed(registration.Implementation))
+		       || ConstructedModuleRegistrations(module, compilation, members: true).Any(registration => !IsExternallyAccessible(registration.Service) || Concealed(registration.Implementation) || TakesConcealedParameter(registration))
 		       || attributes.Any(attribute => attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
 		                                      && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
 		                                      && ContributedPair(attribute, attributeClass) is ({ } type, { } service)
@@ -634,6 +651,14 @@ partial class AwaitenGenerator
 
 		static bool Concealed(INamedTypeSymbol type)
 			=> !ConstructibleEverywhere(type) || ServableTypes(type).Any(servable => !IsExternallyAccessible(servable));
+
+		bool TakesConcealedParameter(ModuleRegistration registration)
+			=> (registration is { Production: ProductionKind.Factory, Member: { } member, } ? FindFactoryCandidates(module, member, registration.Implementation, compilation) : [])
+				.Concat(new[] { "OnActivated", "OnRelease", }
+					.Select(slot => NamedArgument(registration.Attribute, slot))
+					.OfType<string>()
+					.SelectMany(hook => AccessibleMembers(module, hook, compilation).OfType<IMethodSymbol>()))
+				.Any(method => method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type)));
 	}
 
 	/// <summary>

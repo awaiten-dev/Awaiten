@@ -195,6 +195,12 @@ internal static partial class Sources
 					"Generated from a module registration: the type that keeps the module from building this decorator or",
 					"composite of an internal service, which a consuming container reports as a container in this assembly does.");
 			}
+			else if (skipped.Member)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module registration: why no wrapper calls this Factory member. A consuming container",
+					"that cannot call the member reports this reason.");
+			}
 			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
@@ -666,7 +672,7 @@ internal static partial class Sources
 
 		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
 		builder.Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(") => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
-			.Append('(').Append(string.Join(", ", parameters.Select(parameter => $"@{parameter.Name}"))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
+			.Append('(').Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
 
 	/// <summary>A mirrored parameter as it is declared on a generated factory or wrapper, with its attributes.</summary>

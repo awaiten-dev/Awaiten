@@ -384,7 +384,9 @@ partial class AwaitenGenerator
 	///     Applies self-compilation (see <see cref="SelfCompilesRegistration" />) to a constructed registration read
 	///     off an imported module. A same-compilation container constructs the implementation directly, through the
 	///     greediest constructor the module's generated factory mirrors, so the module registers the same thing
-	///     wherever it lives. An implementation hidden in the module it cannot construct either, so it calls
+	///     wherever it lives. A container in another assembly that constructs the implementation itself runs a hook it
+	///     cannot reach through the module's generated wrapper (see <see cref="ThroughMemberWrapper" />), or reports why
+	///     the module generated none (see <see cref="WithCallableHooks" />). An implementation hidden in the module it cannot construct either, so it calls
 	///     the factory the module generates in the same run, found by its deterministic name, and runs the hooks through
 	///     the generated wrappers; a hook the module's own build rejected (and reports) is dropped. A container in
 	///     another assembly that cannot construct the implementation calls the generated factory instead and runs the
@@ -429,7 +431,7 @@ partial class AwaitenGenerator
 				return null;
 			}
 
-			return registration;
+			return WithCallableHooks(ThroughMemberWrapper(registration, module, compilation, !sameCompilation), context, !sameCompilation);
 		}
 
 		if (sameCompilation && IsHiddenInModule(implementation, module, compilation))

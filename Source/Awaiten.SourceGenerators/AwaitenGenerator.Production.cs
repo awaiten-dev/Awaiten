@@ -981,11 +981,42 @@ partial class AwaitenGenerator
 		// so silently preferring its sibling would let an extra marker closing change which method runs. Either way
 		// no hook is emitted - the error fails the build, and picking one arbitrarily would only add a confusing
 		// secondary diagnostic from the parameters of the guessed overload.
-		context.Diagnostics.Add(new DiagnosticInfo(
-			matches.Count + ambiguousMethods.Count == 0 ? Diagnostics.InvalidLifecycleHook : Diagnostics.AmbiguousLifecycleHook,
-			info.Location,
-			new EquatableArray<string>([Display(info.OwningServiceOrImpl), hookName, DescribeOwner(origin),])));
+		context.Diagnostics.Add(matches.Count + ambiguousMethods.Count == 0
+			? new DiagnosticInfo(
+				Diagnostics.InvalidLifecycleHook,
+				info.Location,
+				new EquatableArray<string>([
+					Display(info.OwningServiceOrImpl), hookName, DescribeOwner(origin), Display(info.Symbol.ToDisplayString(FullyQualified)),
+					UnreachableHookCause(origin, hookName, info.Symbol, context.Compilation),
+				]))
+			: new DiagnosticInfo(
+				Diagnostics.AmbiguousLifecycleHook,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), hookName, DescribeOwner(origin),])));
 		return (null, default, null);
+	}
+
+	/// <summary>
+	///     Why a module's method <paramref name="hookName" /> that would run as the hook of <paramref name="implementation" />
+	///     is out of reach, as a clause the AWT164 message ends with, or an empty string: it is private, which only a type
+	///     private to the module may use, or the module is in another assembly that does not grant this one access, whose
+	///     internal methods this compilation cannot see, and the module generated no wrapper for the hook.
+	/// </summary>
+	private static string UnreachableHookCause(INamedTypeSymbol? origin, string hookName, ITypeSymbol implementation, Compilation compilation)
+	{
+		if (origin is null || HasAwaitenAttribute(origin.GetAttributes(), "ContainerAttribute"))
+		{
+			return string.Empty;
+		}
+
+		if (HookCandidates(origin, hookName, implementation, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Private))
+		{
+			return $"; '{hookName}' is private, which no container can call, so make it internal";
+		}
+
+		return SymbolEqualityComparer.Default.Equals(origin.ContainingAssembly, compilation.Assembly) || origin.ContainingAssembly.GivesAccessTo(compilation.Assembly)
+			? string.Empty
+			: $"; this assembly does not see a method internal to the module's assembly, and the module generated no wrapper for one{(ModuleShapeReason(origin) is { } shape ? $", because {shape}" : string.Empty)}";
 	}
 
 	/// <summary>
@@ -1531,6 +1562,18 @@ partial class AwaitenGenerator
 					new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info), typeParameters,])));
 			}
 
+			return null;
+		}
+
+		if (candidates.Count == 0
+		    && info.Origin is { } module
+		    && !info.GenericFactory
+		    && SkippedFactoryReason(module, info.ProductionMember!, info.Symbol) is { } reason)
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.UnwrappedModuleFactory,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info), reason,])));
 			return null;
 		}
 

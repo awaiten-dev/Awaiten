@@ -1469,20 +1469,58 @@ public class RegistrationFactoryShapeTests
 		                                                   }
 		                                                   """;
 
-		[Test]
-		public async Task AHookWithAnInternalParameterType_ReportsAwt203()
-		{
-			GeneratorResult result = Generator.Run(InternalParameterHookModule);
+		private const string LogConsumer = """
+		                                   using Awaiten;
+		                                   using Lib;
 
-			await That(result.Diagnostics).Contains("*AWT203*OnActivated*Lib.Log*").AsWildcard()
-				.Because("a public wrapper cannot expose the internal parameter type");
+		                                   namespace App;
+
+		                                   [Container]
+		                                   [Import(typeof(GreetingModule))]
+		                                   [Singleton<Log>]
+		                                   public static partial class AppContainer
+		                                   {
+		                                   }
+		                                   """;
+
+		[Test]
+		public async Task AHookWithAnInternalServiceParameter_IsWrappedTakingTheServiceThroughItsHandle()
+		{
+			GeneratorResult library = Generator.Run(InternalParameterHookModule);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(InternalParameterHookModule, Consumer);
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(ModuleSource(library)).Contains("public static void Hook_OnActivated_IKettle_*(global::Lib.IKettle @awaiten__instance, global::Lib.GreetingModule.Internals.Hidden_Log_* @log) => Boil(@awaiten__instance, @log.Value);").AsWildcard()
+				.Because("the wrapper takes the internal service the module registers through its public handle");
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources.Single(source => source.Key.Contains("AppContainer")).Value).Contains("global::Lib.GreetingModule.Internals.Hook_OnActivated_IKettle_");
 		}
 
 		[Test]
-		public async Task AHookWithAnInternalParameterType_IsCalledDirectlyByAnAssemblyGrantedInternalsVisibleTo()
+		public async Task AHookWithAnInternalServiceParameter_IsCalledDirectlyByAnAssemblyGrantedInternalsVisibleTo()
 		{
-			GeneratorResult library = Generator.Run(Granted(InternalParameterHookModule));
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(InternalParameterHookModule), Consumer);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources.Single(source => source.Key.Contains("AppContainer")).Value).Contains("global::Lib.GreetingModule.Boil(")
+				.Because("an assembly granted InternalsVisibleTo builds the internal service itself and calls the hook directly");
+		}
+
+		[Test]
+		public async Task AHookWithAnUnregisteredInternalParameterType_ReportsAwt203()
+		{
+			GeneratorResult result = Generator.Run(InternalParameterHookModule.Replace("[Singleton<Log>]", ""));
+
+			await That(result.Diagnostics).Contains("*AWT203*OnActivated*Lib.Log*").AsWildcard()
+				.Because("the module registers no Log it could pass through a handle, and a public wrapper cannot expose the internal parameter type");
+		}
+
+		[Test]
+		public async Task AHookWithAnUnregisteredInternalParameterType_IsCalledDirectlyByAnAssemblyGrantedInternalsVisibleTo()
+		{
+			string module = Granted(InternalParameterHookModule.Replace("[Singleton<Log>]", ""));
+			GeneratorResult library = Generator.Run(module);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, LogConsumer);
 
 			await That(library.Diagnostics).IsEmpty()
 				.Because("an assembly granted InternalsVisibleTo calls the hook directly, so the module needs no wrapper");
@@ -1492,10 +1530,10 @@ public class RegistrationFactoryShapeTests
 		}
 
 		[Test]
-		public async Task AHookWithAnInternalParameterType_ReportsAwt231ToAnAssemblyNotGrantedInternalsVisibleTo()
+		public async Task AHookWithAnUnregisteredInternalParameterType_ReportsAwt231ToAnAssemblyNotGrantedInternalsVisibleTo()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
-				Granted(InternalParameterHookModule).Replace("\"TestAssembly\"", "\"OtherAssembly\""), Consumer);
+				Granted(InternalParameterHookModule.Replace("[Singleton<Log>]", "")).Replace("\"TestAssembly\"", "\"OtherAssembly\""), Consumer);
 
 			await That(result.Diagnostics).Contains("*AWT231*Lib.GreetingModule*OnActivated hook 'Boil'*Lib.Log*").AsWildcard()
 				.Because("the consumer can neither call the internal hook nor a wrapper the module did not generate");
@@ -1615,7 +1653,6 @@ public class RegistrationFactoryShapeTests
 
 		                                                   [Module]
 		                                                   [AsyncInitializer<Appliance>(nameof(Appliance.StartAsync))]
-		                                                   [Singleton<Log>]
 		                                                   [Singleton<Kettle>(Factory = nameof(CreateKettle), OnActivated = nameof(Boil))]
 		                                                   public static partial class GreetingModule
 		                                                   {
@@ -1629,7 +1666,7 @@ public class RegistrationFactoryShapeTests
 		public async Task AnInternalConventionOfAFactoryRegistrationWithASkippedHook_IsCalledByAnAssemblyGrantedInternalsVisibleTo()
 		{
 			GeneratorResult library = Generator.Run(Granted(SkippedHookConventionModule));
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(SkippedHookConventionModule), Consumer);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(SkippedHookConventionModule), LogConsumer);
 
 			await That(library.Diagnostics).IsEmpty();
 			await That(ModuleSource(library)).Contains("HookSkipped_OnActivated_Kettle_");
