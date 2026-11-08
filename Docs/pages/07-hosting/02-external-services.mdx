@@ -112,7 +112,7 @@ Each closing is routed exactly as if it were imported on its own: a `[FromKey]` 
 
 ## Fall through everything with `[ImportServices]`
 
-Put `[ImportServices]` on the container and any unregistered direct dependency falls through to the external provider automatically. You trade some compile-time safety for less annotation. An injected property (`[Inject]` or `[InjectProperty]`) is the exception: it does not fall through, so an unregistered one is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)) unless its type is declared with `[ImportService]`.
+Put `[ImportServices]` on the container and any unregistered direct dependency falls through to the external provider automatically. You trade some compile-time safety for less annotation. An injected property (`[Inject]` or `[InjectProperty]`) is the exception: it does not fall through, so an unregistered one is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)), or left at its default when it is `Optional`, unless its type is declared with `[ImportService]`.
 
 ```csharp
 [Container]
