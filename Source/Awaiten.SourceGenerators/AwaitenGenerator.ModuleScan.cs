@@ -29,8 +29,9 @@ partial class AwaitenGenerator
 	///     library's <c>internal</c> types (the whole point: keep implementations internal, expose interfaces).
 	///     Reuses the container scan's candidate discovery, filters and their diagnostics
 	///     (AWT138/AWT143/AWT172/AWT173/AWT174/AWT183/AWT184/AWT185), and adds AWT195/AWT196/AWT197/AWT200/AWT202
-	///     for the self-compilation constraints (accessible parameters, a single accessible exposure per match, no
-	///     injection metadata the factory could not mirror, the module's own assembly only). With
+	///     for the self-compilation constraints (accessible parameters, an accessible exposure per match, several only
+	///     through an instance handle, no injection metadata the factory could not mirror, the module's own assembly
+	///     only). With
 	///     <paramref name="internalFactories" />, the factories may take any type the module's assembly can name, as a
 	///     container there or in an assembly granted <c>InternalsVisibleTo</c> calls them (see <see cref="InternalScanFactories" />).
 	/// </summary>
@@ -79,7 +80,8 @@ partial class AwaitenGenerator
 	///     against the claimed slot - a different name still conflicts, and a restated name re-resolves over the
 	///     accumulated union - rather than re-claiming it fresh from a narrower marker set; a consumer wires a hook
 	///     only when its wrapper exists (see <c>Collect</c>). <see cref="SkippedServices" /> holds every service of a
-	///     match the module generates no factory for (see <see cref="ScanSkip" />).
+	///     match the module generates no factory for (see <see cref="ScanSkip" />), <see cref="Exposures" /> every service
+	///     of a match it builds through an instance handle (see <see cref="ScanInstanceHandle" />).
 	/// </summary>
 	private sealed record ModuleScanExpansion(
 		ModuleFactory Factory,
@@ -90,7 +92,8 @@ partial class AwaitenGenerator
 		string? OnRelease = null,
 		IReadOnlyList<INamedTypeSymbol>? OnActivatedMarkers = null,
 		IReadOnlyList<INamedTypeSymbol>? OnReleaseMarkers = null,
-		IReadOnlyList<INamedTypeSymbol>? SkippedServices = null);
+		IReadOnlyList<INamedTypeSymbol>? SkippedServices = null,
+		IReadOnlyList<INamedTypeSymbol>? Exposures = null);
 
 	/// <summary>
 	///     The per-module state the scan expansion shares (the module that owns the hooks, the compilation, and the
@@ -205,16 +208,17 @@ partial class AwaitenGenerator
 	private readonly record struct ScanMarkerInfo(INamedTypeSymbol? Marker, bool Open, INamedTypeSymbol? Definition);
 
 	/// <summary>
-	///     Emits the factory for one module-scan match, or reports why it cannot: the exposure must resolve to a
-	///     single interface every consumer of the module can name (AWT196 when none, AWT197 when several, since a
-	///     factory returns one accessible type and a shared instance across interfaces cannot be expressed), and the
+	///     Emits the factory for one module-scan match, or reports why it cannot: the exposure must resolve to
+	///     interfaces every consumer of the module can name (AWT196 when none), several of which the factory serves
+	///     through an instance handle (see <see cref="WithInstanceHandle" />, AWT197 when no handle can share the
+	///     instance, see <see cref="UnsharedExposuresFault" />), and the
 	///     constructor's parameters must all be accessible outside the assembly (AWT195), because they appear on the
 	///     generated <c>public</c> factory and are resolved from the consumer's graph. A match carrying injection
 	///     metadata the factory cannot mirror ([Inject] properties, [Inject]/[Arg] parameters) is AWT200. A match
 	///     another scan of this module already exposed the same way is deduped to the first factory, merging the
 	///     overlap's lifecycle hooks per slot like two container scans' (see <see cref="ResolveOverlap" />; a
 	///     differing lifetime across the overlap is AWT142, first scan wins); one another scan exposed under a
-	///     <em>different</em> interface is AWT197, since two factories would split the shared instance. A match hidden
+	///     <em>different</em> interface joins the first factory's instance handle. A match hidden
 	///     in the module (see <see cref="IsHiddenInModule" />) that the module also registers yields to that registration with AWT193. A
 	///     convention of the module that initializes the match but that a consumer cannot call is AWT234. A match
 	///     that fails only with AWT195, AWT197, AWT200 or AWT234 while an assembly granted <c>InternalsVisibleTo</c> could
@@ -247,16 +251,9 @@ partial class AwaitenGenerator
 
 		bool registered = ModuleRegisters(type, context);
 		bool skippable = FriendsCanConstruct(type, context) || (registered && ConstructibleEverywhere(type));
-		if (distinct.Count > 1 && !skippable)
+		if (distinct.Count > 1 && !skippable && UnsharedExposuresFault(type, distinct, match.Location, context) is { } unshared)
 		{
-			diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.ModuleScanMultipleExposures,
-				LocationInfo.From(match.Location),
-				new EquatableArray<string>([
-					ScanSubject(typeName).Subject,
-					string.Join(", ", distinct.Select(exposure => Display(exposure.ToDisplayString(FullyQualified)))),
-					ScanSingleExposureRemedy,
-				])));
+			diagnostics.Add(unshared);
 			return 0;
 		}
 
@@ -285,7 +282,7 @@ partial class AwaitenGenerator
 			return 0;
 		}
 
-		string? skipReason = distinct.Count > 1 ? SeveralExposuresReason(distinct) : null;
+		string? skipReason = distinct.Count > 1 && skippable ? SeveralExposuresReason(distinct) : null;
 		EquatableArray<FactoryParameter> parameters = default;
 		List<DiagnosticInfo> rejections = new();
 		if (skipReason is null && !TryMirrorFactoryParameters(type, context with { Diagnostics = rejections, }, match.Location, ScanSubject(typeName), out parameters))
@@ -298,7 +295,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		if (skipReason is null && ModuleAsyncInitializerFault(type, context, ScanSubject(typeName), match.Location) is { } initializerFault)
+		if (skipReason is null && distinct.Count == 1 && ModuleAsyncInitializerFault(type, context, ScanSubject(typeName), match.Location) is { } initializerFault)
 		{
 			skipReason = skippable ? SkipReason(initializerFault, []) : null;
 			if (skipReason is null)
@@ -325,19 +322,31 @@ partial class AwaitenGenerator
 		ResolvedModuleHook? onRelease = ResolveModuleHook(type, match, release: true, hookMarkers, context);
 		skipReason ??= onActivated?.Wrapper.SkipReason ?? onRelease?.Wrapper.SkipReason;
 
+		ModuleFactory factory = new(
+			ModuleFactoryName(type),
+			serviceName,
+			typeName,
+			match.Lifetime,
+			match.SkipUnconstructable,
+			parameters,
+			onActivated?.Wrapper,
+			onRelease?.Wrapper,
+			TraitsOf(type, DeclaredAsyncInitializers(context.Module, context.Compilation, null)),
+			skipReason is null ? null : SkipOf(type, skipReason, distinct),
+			MetadataNameOf(type));
+		bool handled = skipReason is null && distinct.Count > 1;
+		if (handled)
+		{
+			if (WithInstanceHandle(factory, type, distinct, match.Location, context) is not { } shared)
+			{
+				return 0;
+			}
+
+			factory = shared;
+		}
+
 		factories.Add(new ModuleScanExpansion(
-			new ModuleFactory(
-				ModuleFactoryName(type),
-				serviceName,
-				typeName,
-				match.Lifetime,
-				match.SkipUnconstructable,
-				parameters,
-				onActivated?.Wrapper,
-				onRelease?.Wrapper,
-				TraitsOf(type, DeclaredAsyncInitializers(context.Module, context.Compilation, null)),
-				skipReason is null ? null : SkipOf(type, skipReason, distinct),
-				MetadataNameOf(type)),
+			factory,
 			service,
 			type,
 			match.Location,
@@ -345,8 +354,100 @@ partial class AwaitenGenerator
 			match.OnRelease,
 			match.OnActivated is null ? null : hookMarkers,
 			match.OnRelease is null ? null : hookMarkers,
-			skipReason is null ? null : distinct));
+			skipReason is null ? null : distinct,
+			handled ? distinct : null));
 		return 1;
+	}
+
+	/// <summary>
+	///     AWT197 for a match exposed under several interfaces that no generated instance handle can share (see
+	///     <see cref="WithInstanceHandle" />), or <see langword="null" />: the match is private to the module, so no handle
+	///     can name it, or a module of the assembly registers it too, whose instance a container in the assembly shares
+	///     with the match while a consumer would build one through the registration and one through the scan's handle.
+	/// </summary>
+	private static DiagnosticInfo? UnsharedExposuresFault(INamedTypeSymbol type, IEnumerable<INamedTypeSymbol> services, Location? location, ModuleScanContext context)
+	{
+		string reason;
+		string share;
+		string remedy = ScanSingleExposureRemedy;
+		if (IsHiddenInModule(type, context.Module, context.Compilation))
+		{
+			reason = "it is private to the module or a class containing it";
+			share = "hold its one instance";
+			remedy = "narrow the As to one interface, make it internal or exclude the type from the scan";
+		}
+		else if (AssemblyModuleIndex.Of(context.Compilation).Registrations
+			         .Where(entry => entry.Value.Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, type)))
+			         .Select(entry => entry.Key.ToDisplayString(FullyQualified))
+			         .OrderBy(name => name, StringComparer.Ordinal)
+			         .FirstOrDefault() is { } registering)
+		{
+			reason = $"the module '{Display(registering)}' registers it too";
+			share = "share its one instance with that registration";
+		}
+		else
+		{
+			return null;
+		}
+
+		return new DiagnosticInfo(
+			Diagnostics.ModuleScanExposuresNotShared,
+			LocationInfo.From(location),
+			new EquatableArray<string>([
+				ScanSubject(type.ToDisplayString(FullyQualified)).Subject,
+				string.Join(", ", services.Select(service => Display(service.ToDisplayString(FullyQualified)))),
+				reason,
+				share,
+				remedy,
+			]));
+	}
+
+	/// <summary>
+	///     <paramref name="factory" /> building a match exposed under <paramref name="services" /> into its instance handle,
+	///     as the module builds an internal implementation it registers under several services: the factory wraps the
+	///     instance in the handle, an alias serves each service from it, and the module's conventions run on it through
+	///     initializer wrappers. A public implementation gets an alias under its own type too, through which a consumer
+	///     serves its own registration of the implementation from the same instance. A factory already built into the handle
+	///     keeps its initializers. Returns <see langword="null" /> after reporting a convention parameter the wrapper
+	///     cannot mirror.
+	/// </summary>
+	private static ModuleFactory? WithInstanceHandle(ModuleFactory factory, INamedTypeSymbol type, IReadOnlyList<INamedTypeSymbol> services, Location? location, ModuleScanContext context)
+	{
+		Compilation compilation = context.Compilation;
+		string name = HiddenInstanceName(type);
+		string handle = $"{context.Module.ToDisplayString(FullyQualified)}.{InternalsClass}.{name}";
+		List<HiddenInitializer> initializers = new();
+		if (factory.Shared is { } shared)
+		{
+			initializers.AddRange(shared.Initializers.AsArray());
+		}
+		else if (!TryAddHiddenInitializers(type, handle, context, location, ScanSubject(factory.ImplementationType), initializers))
+		{
+			return null;
+		}
+
+		IEnumerable<INamedTypeSymbol> aliased = IsExternallyAccessible(type) && !services.Contains(type, SymbolEqualityComparer.Default)
+			? services.Concat([type,])
+			: services;
+		ImplementationTraits traits = TraitsOf(type, []);
+		return factory with
+		{
+			Shared = new ScanInstanceHandle(
+				handle,
+				HandleVariant(traits),
+				new HiddenHandle(
+					name,
+					InstanceValueType(type, compilation),
+					traits is { Disposable: true, AsyncDisposable: false, },
+					traits is { Disposable: false, AsyncDisposable: true, },
+					traits is { Disposable: true, AsyncDisposable: true, }),
+				new EquatableArray<string>(services.Select(service => service.ToDisplayString(FullyQualified)).ToArray()),
+				new EquatableArray<HiddenAlias>(aliased
+					.Select(service => service.ToDisplayString(FullyQualified))
+					.Select(service => new HiddenAlias(HiddenAliasName(type, service), service, handle, InstanceValue(type, service, compilation)))
+					.ToArray()),
+				new EquatableArray<HiddenInitializer>(initializers.ToArray())),
+		};
 	}
 
 	/// <summary>
@@ -864,10 +965,11 @@ partial class AwaitenGenerator
 	///     hook fills a slot no earlier scan claimed, a restated hook contributes this scan's closed marker forms
 	///     (re-resolved over the union, so a closing that leaves a generic hook ambiguous is AWT198 at the module
 	///     build, just as a consuming container would see it), and naming a different method for a claimed slot is
-	///     AWT199, the first scan winning. Under a different exposure the overlap is AWT197, because each factory
-	///     constructs its own instance, so the single shared instance a container scan gives one implementation
-	///     across interfaces cannot be expressed and emitting both would silently split it, unless the match may be
-	///     skipped (see <see cref="FriendsCanConstruct" />): it then keeps no factory and joins every exposure.
+	///     AWT199, the first scan winning. Under a different exposure the overlap joins the first factory, which then
+	///     builds the match into its instance handle and serves every exposure from it (see <see cref="WithInstanceHandle" />),
+	///     so the two scans share one instance as a container scan's would, unless no handle can share it (AWT197, see
+	///     <see cref="UnsharedExposuresFault" />). A match that may be skipped (see <see cref="FriendsCanConstruct" />), or
+	///     whose factory is skipped already, keeps no factory and joins every exposure.
 	/// </summary>
 	private static ModuleScanExpansion ResolveOverlap(
 		ModuleScanExpansion overlapping,
@@ -877,23 +979,27 @@ partial class AwaitenGenerator
 		ScanMarkerInfo markerInfo,
 		ModuleScanContext context)
 	{
-		string serviceName = exposure.Services[0].ToDisplayString(FullyQualified);
-		bool sameExposure = overlapping.SkippedServices is null && exposure.Services.Count == 1 && overlapping.Factory.ServiceType == serviceName;
-		if (!sameExposure && exposure.Skippable)
+		IReadOnlyList<INamedTypeSymbol> current = overlapping.SkippedServices ?? overlapping.Exposures ?? [overlapping.Service,];
+		List<INamedTypeSymbol> added = exposure.Services.Where(service => !current.Contains(service, SymbolEqualityComparer.Default)).ToList();
+		if (added.Count > 0 && (exposure.Skippable || overlapping.Factory.Skip is not null))
 		{
 			overlapping = JoinSkippedExposures(overlapping, type, exposure.Services);
 		}
-		else if (!sameExposure)
+		else if (added.Count > 0)
 		{
-			context.Diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.ModuleScanMultipleExposures,
-				LocationInfo.From(match.Location),
-				new EquatableArray<string>([
-					ScanSubject(exposure.TypeName).Subject,
-					$"{Display(overlapping.Factory.ServiceType)}, {Display(serviceName)}",
-					ScanSingleExposureRemedy,
-				])));
-			return overlapping;
+			List<INamedTypeSymbol> joined = [..current, ..added,];
+			if (UnsharedExposuresFault(type, joined, match.Location, context) is { } unshared)
+			{
+				context.Diagnostics.Add(unshared);
+				return overlapping;
+			}
+
+			if (WithInstanceHandle(overlapping.Factory, type, joined, match.Location, context) is not { } shared)
+			{
+				return overlapping;
+			}
+
+			overlapping = overlapping with { Factory = shared, Exposures = joined, };
 		}
 
 		if (overlapping.Factory.Lifetime != match.Lifetime)
@@ -945,7 +1051,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static ModuleScanExpansion JoinSkippedExposures(ModuleScanExpansion overlapping, INamedTypeSymbol type, List<INamedTypeSymbol> services)
 	{
-		IReadOnlyList<INamedTypeSymbol> current = overlapping.SkippedServices ?? [overlapping.Service,];
+		IReadOnlyList<INamedTypeSymbol> current = overlapping.SkippedServices ?? overlapping.Exposures ?? [overlapping.Service,];
 		List<INamedTypeSymbol> joined = new(current);
 		joined.AddRange(services.Where(service => !current.Contains(service, SymbolEqualityComparer.Default)));
 		string reason = overlapping.Factory.Skip is { } skip && skip.Reason != SeveralExposuresReason(current)
@@ -953,8 +1059,9 @@ partial class AwaitenGenerator
 			: SeveralExposuresReason(joined);
 		return overlapping with
 		{
-			Factory = overlapping.Factory with { Parameters = default, Skip = SkipOf(type, reason, joined), },
+			Factory = overlapping.Factory with { Parameters = default, Skip = SkipOf(type, reason, joined), Shared = null, },
 			SkippedServices = joined,
+			Exposures = null,
 		};
 	}
 

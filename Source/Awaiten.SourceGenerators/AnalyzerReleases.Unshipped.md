@@ -96,7 +96,7 @@
  AWT194  | Awaiten   | Error    | A [Module] that declares a [Scan] or a registration another assembly cannot construct is not partial (or is nested in a non-partial type), so it cannot be self-compiled
  AWT195  | Awaiten   | Error    | A self-compiled module [Scan] match or registration has a constructor or factory parameter type inaccessible outside the module's assembly or private to the module or a class containing it
  AWT196  | Awaiten   | Warning  | A self-compiled module [Scan] match has no exposure interface accessible outside the module's assembly, so it is skipped
- AWT197  | Awaiten   | Error    | A self-compiled module [Scan] match or registration would be exposed under multiple interfaces, which a single-exposure factory cannot express
+ AWT197  | Awaiten   | Error    | A self-compiled module registration would be exposed under multiple interfaces, which a single-exposure factory cannot express, or a module [Scan] match exposed under multiple interfaces that no generated instance handle can share
  AWT198  | Awaiten   | Error    | A generic lifecycle hook on an open-generic [Scan] marker could bind a match through more than one closed marker form, so its type arguments are ambiguous
  AWT199  | Awaiten   | Warning  | Two [Scan] attributes match one implementation with conflicting OnActivated/OnRelease hooks; the first scan's hook is used
  AWT200  | Awaiten   | Error    | A self-compiled module [Scan] match or registration carries [Inject]/[Arg]/[FromKey] metadata the generated factory cannot mirror
@@ -132,7 +132,7 @@
  AWT236  | Awaiten   | Error    | A self-compiled module member needs an internal service that only another module of the same assembly registers, which the module's generated handles cannot serve
  AWT237  | Awaiten   | Error    | A self-compiled module member takes an internal service the module registers in a shape its generated factory cannot pass on from the service's handle
  AWT238  | Awaiten   | Error    | A container imports a module whose generated members take the handle of an internal service that another module of the same assembly registers, without importing that module
- AWT240  | Awaiten   | Error    | A scan match of an imported module in another assembly cannot share one instance with another registration of its implementation, which the container builds as a type that does not convert to the match's service
+ AWT240  | Awaiten   | Error    | A scan match of an imported module in another assembly cannot share one instance with another registration of its implementation, which the container builds as a type that does not convert to the match's service, or two imported modules build it through generated handles of their own
  AWT241  | Awaiten   | Error    | A registration cannot share the instance an imported module of another assembly builds through a generated handle, because it sets a directive the handle cannot apply or the module generated no member to serve it
  AWT242  | Awaiten   | Error    | A Func/Lazy/Owned/Task relationship targets a service the container imports from its external resolver, which serves only a direct dependency
  AWT243  | Awaiten   | Error    | The project compiles with a C# version older than the code generated for a container or module needs (C# 9, or C# 11 for a module that declares a [Scan]), so nothing is generated for it

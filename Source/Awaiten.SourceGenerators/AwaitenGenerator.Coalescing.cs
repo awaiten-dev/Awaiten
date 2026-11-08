@@ -43,10 +43,12 @@ partial class AwaitenGenerator
 	///     builds through a generated handle (see <see cref="ThroughHandle" />). The handle hides the instance, so the
 	///     match can only serve it through an alias that serves the implementation under a service that converts to the
 	///     match's service, whose identity it takes so coalescing keeps one instance. Without such an alias the match's
-	///     factory would build a second instance, so the match is dropped after reporting AWT240.
+	///     factory would build a second instance, so the match is dropped after reporting AWT240. Two modules that each
+	///     build a scan match through a handle of their own are AWT240 first (see <see cref="DropDuplicateScanHandles" />).
 	/// </summary>
 	private static void ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
+		DropDuplicateScanHandles(raw, compilation, diagnostics);
 		List<(RawRegistration Handle, int Index, string Identity)> indexed = raw
 			.Select((registration, index) => (registration, index))
 			.Where(entry => entry.registration.Hidden is not null && entry.registration.ImplementationType.Contains(HiddenKeyMarker))
@@ -123,6 +125,48 @@ partial class AwaitenGenerator
 			   ? factory.TypeArguments[factory.TypeArguments.Length - 1].ToDisplayString(FullyQualified) == handle
 			     && alias.Parameters.Skip(1).Select(parameter => parameter.Type).SequenceEqual(factory.TypeArguments.Take(factory.TypeArguments.Length - 1), SymbolEqualityComparer.Default)
 			   : alias.Parameters.Length == 1 && alias.Parameters[0].Type.ToDisplayString(FullyQualified) == handle);
+
+	/// <summary>
+	///     Drops the instance handle, and the aliases served from it, of every module of another assembly whose scan
+	///     builds an implementation through a handle (see <see cref="ScanInstanceHandle" />) that the scan of an earlier
+	///     imported module builds through a handle of its own, after reporting AWT240 once per module: the two handles
+	///     would hold two instances where a container in their assembly shares one.
+	/// </summary>
+	private static void DropDuplicateScanHandles(List<RawRegistration> raw, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		Dictionary<INamedTypeSymbol, INamedTypeSymbol> first = new(SymbolEqualityComparer.Default);
+		List<(INamedTypeSymbol Module, INamedTypeSymbol Implementation)> dropped = new();
+		foreach (RawRegistration handle in raw)
+		{
+			if (handle is not { Hidden: { } implementation, Origin: { } module, }
+			    || !handle.ImplementationType.Contains(HiddenKeyMarker)
+			    || handle.ProductionMember != InInternals(ModuleFactoryName(implementation)))
+			{
+				continue;
+			}
+
+			if (!first.TryGetValue(implementation, out INamedTypeSymbol? kept))
+			{
+				first[implementation] = module;
+				continue;
+			}
+
+			dropped.Add((module, implementation));
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.ScanMatchHandledTwice,
+				LocationInfo.From(handle.Location),
+				new EquatableArray<string>([
+					Display(implementation.ToDisplayString(FullyQualified)),
+					Display(kept.ToDisplayString(FullyQualified)),
+					Display(module.ToDisplayString(FullyQualified)),
+				])));
+		}
+
+		raw.RemoveAll(registration => dropped.Exists(entry => SymbolEqualityComparer.Default.Equals(registration.Origin, entry.Module)
+		                                                       && (SymbolEqualityComparer.Default.Equals(registration.Hidden, entry.Implementation)
+		                                                           || (registration.Aliased is not null
+		                                                               && registration.ImplementationType.EndsWith(AliasKeyMarker + TypeIdentity(entry.Implementation, compilation), StringComparison.Ordinal)))));
+	}
 
 	/// <summary>
 	///     Gives the scan match of a module in another assembly the identity of the implementation its generated factory

@@ -57,6 +57,14 @@ internal static partial class Sources
 					Indent(builder, depth).Append('[').Append(RegistrationAttribute(factory with { FactoryName = skip.ImplementationMetadataName, ServiceType = service, })).AppendLine("]");
 				}
 			}
+			else if (factory.Shared is { } shared)
+			{
+				foreach (string service in shared.Exposures.AsArray())
+				{
+					string alias = shared.Aliases.AsArray().First(candidate => candidate.ReturnType == service).Name;
+					Indent(builder, depth).Append('[').Append(RegistrationAttribute(factory with { FactoryName = alias, ServiceType = service, })).AppendLine("]");
+				}
+			}
 			else
 			{
 				Indent(builder, depth).Append('[').Append(RegistrationAttribute(factory)).AppendLine("]");
@@ -97,16 +105,25 @@ internal static partial class Sources
 
 			// The lifecycle-hook wrappers, emitted beside the factory: public so a cross-assembly consumer can run
 			// them, but bodied inside the module so they may cast to and call its internal implementation and hook.
+			string instanceType = factory.Shared?.Type ?? factory.ServiceType;
 			if (factory.OnActivated is { SkipReason: null, } activation)
 			{
 				builder.AppendLine();
-				EmitModuleHook(builder, depth + 2, factory.ServiceType, activation, release: false, ScanOrigin);
+				EmitModuleHook(builder, depth + 2, instanceType, activation, release: false, ScanOrigin, factory.Shared is not null);
 			}
 
 			if (factory.OnRelease is { SkipReason: null, } release)
 			{
 				builder.AppendLine();
-				EmitModuleHook(builder, depth + 2, factory.ServiceType, release, release: true, ScanOrigin);
+				EmitModuleHook(builder, depth + 2, instanceType, release, release: true, ScanOrigin, factory.Shared is not null);
+			}
+
+			if (factory is { Skip: null, Shared: { } handle, })
+			{
+				builder.AppendLine();
+				EmitHiddenHandle(builder, depth + 2, handle.Declaration);
+				EmitAliases(builder, depth + 2, handle.Aliases.AsArray());
+				EmitInitializers(builder, depth + 2, handle.Initializers.AsArray());
 			}
 		}
 
@@ -133,53 +150,8 @@ internal static partial class Sources
 			EmitHiddenHandle(builder, depth + 2, handle);
 		}
 
-		foreach (HiddenAlias alias in model.Aliases.AsArray())
-		{
-			builder.AppendLine();
-			string[] arguments = alias.Arguments.AsArray();
-			if (arguments.Length == 0)
-			{
-				AppendXmlSummary(builder, depth + 2,
-					"Generated from a module registration: serves a service of an implementation the module builds through a handle,",
-					"from the instance handle of the implementation, so every service shares the one instance.");
-			}
-			else
-			{
-				AppendXmlSummary(builder, depth + 2,
-					"Generated from a module registration: serves a service of an implementation the module builds through a handle",
-					"from runtime arguments, passing them to a factory of the instance handle of the implementation.");
-			}
-
-			Indent(builder, depth + 2).Append("public static ").Append(alias.ReturnType).Append(' ').Append(alias.Name).Append('(')
-				.Append(arguments.Length == 0 ? alias.HandleType : $"global::System.Func<{string.Concat(arguments.Select(argument => argument + ", "))}{alias.HandleType}>")
-				.Append(" @awaiten__handle")
-				.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
-				.Append(") => ").Append(alias.Body).AppendLine(";");
-			if (alias.AsyncBody is { } asyncBody)
-			{
-				builder.AppendLine();
-				AppendXmlSummary(builder, depth + 2,
-					"Generated from a module registration: serves a service of an implementation the module builds through a handle",
-					"from runtime arguments, passing them to an async factory of the instance handle, for a handle resolved asynchronously.");
-				Indent(builder, depth + 2).Append("public static async global::System.Threading.Tasks.Task<").Append(alias.ReturnType).Append("> ").Append(alias.Name).Append("Async(")
-					.Append("global::System.Func<").Append(string.Concat(arguments.Select(argument => argument + ", "))).Append("global::System.Threading.Tasks.Task<").Append(alias.HandleType).Append(">> @awaiten__handle")
-					.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
-					.Append(") => ").Append(asyncBody).AppendLine(";");
-			}
-		}
-
-		foreach (HiddenInitializer initializer in model.Initializers.AsArray())
-		{
-			builder.AppendLine();
-			AppendXmlSummary(builder, depth + 2,
-				"Generated from a module [AsyncInitializer]: runs the convention on the instance a handle holds, so a consuming",
-				"container initializes a service the module registers under an internal service type.");
-			FactoryParameter[] parameters = initializer.Parameters.AsArray();
-			Indent(builder, depth + 2).Append("public static ").Append(initializer.ReturnType).Append(' ').Append(initializer.Name).Append('(')
-				.Append(initializer.HandleType).Append(" @awaiten__instance").Append(string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}")))
-				.Append(") => ((").Append(initializer.ConventionType).Append(")@awaiten__instance.Value).").Append(initializer.Method).Append('(')
-				.Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).AppendLine(");");
-		}
+		EmitAliases(builder, depth + 2, model.Aliases.AsArray());
+		EmitInitializers(builder, depth + 2, model.Initializers.AsArray());
 
 		foreach (MemberWrapper wrapper in model.Wrappers.AsArray())
 		{
@@ -256,6 +228,62 @@ internal static partial class Sources
 		}
 
 		return builder.ToString();
+	}
+
+	/// <summary>Emits the aliases that serve each service of an implementation from its instance handle.</summary>
+	private static void EmitAliases(StringBuilder builder, int depth, HiddenAlias[] aliases)
+	{
+		foreach (HiddenAlias alias in aliases)
+		{
+			builder.AppendLine();
+			string[] arguments = alias.Arguments.AsArray();
+			if (arguments.Length == 0)
+			{
+				AppendXmlSummary(builder, depth,
+					"Generated from a module registration or scan: serves a service of an implementation the module builds through a",
+					"handle, from the instance handle of the implementation, so every service shares the one instance.");
+			}
+			else
+			{
+				AppendXmlSummary(builder, depth,
+					"Generated from a module registration or scan: serves a service of an implementation the module builds through a",
+					"handle from runtime arguments, passing them to a factory of the instance handle of the implementation.");
+			}
+
+			Indent(builder, depth).Append("public static ").Append(alias.ReturnType).Append(' ').Append(alias.Name).Append('(')
+				.Append(arguments.Length == 0 ? alias.HandleType : $"global::System.Func<{string.Concat(arguments.Select(argument => argument + ", "))}{alias.HandleType}>")
+				.Append(" @awaiten__handle")
+				.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
+				.Append(") => ").Append(alias.Body).AppendLine(";");
+			if (alias.AsyncBody is { } asyncBody)
+			{
+				builder.AppendLine();
+				AppendXmlSummary(builder, depth,
+					"Generated from a module registration or scan: serves a service of an implementation the module builds through a",
+					"handle from runtime arguments, passing them to an async factory of the instance handle, for a handle resolved asynchronously.");
+				Indent(builder, depth).Append("public static async global::System.Threading.Tasks.Task<").Append(alias.ReturnType).Append("> ").Append(alias.Name).Append("Async(")
+					.Append("global::System.Func<").Append(string.Concat(arguments.Select(argument => argument + ", "))).Append("global::System.Threading.Tasks.Task<").Append(alias.HandleType).Append(">> @awaiten__handle")
+					.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
+					.Append(") => ").Append(asyncBody).AppendLine(";");
+			}
+		}
+	}
+
+	/// <summary>Emits the wrappers that run the module's conventions on the instance a handle holds.</summary>
+	private static void EmitInitializers(StringBuilder builder, int depth, HiddenInitializer[] initializers)
+	{
+		foreach (HiddenInitializer initializer in initializers)
+		{
+			builder.AppendLine();
+			AppendXmlSummary(builder, depth,
+				"Generated from a module [AsyncInitializer]: runs the convention on the instance a handle holds, so a consuming",
+				"container initializes a service the module builds through a handle.");
+			FactoryParameter[] parameters = initializer.Parameters.AsArray();
+			Indent(builder, depth).Append("public static ").Append(initializer.ReturnType).Append(' ').Append(initializer.Name).Append('(')
+				.Append(initializer.HandleType).Append(" @awaiten__instance").Append(string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}")))
+				.Append(") => ((").Append(initializer.ConventionType).Append(")@awaiten__instance.Value).").Append(initializer.Method).Append('(')
+				.Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).AppendLine(");");
+		}
 	}
 
 	/// <summary>
@@ -637,20 +665,30 @@ internal static partial class Sources
 
 	private static void EmitModuleFactory(StringBuilder builder, int depth, ModuleFactory factory)
 	{
-		AppendXmlSummary(builder, depth,
-			"Generated from a module [Scan]: constructs the scanned implementation and exposes it through its",
-			"accessible interface, so a consuming container resolves it without naming the implementation.");
+		if (factory.Shared is null)
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated from a module [Scan]: constructs the scanned implementation and exposes it through its",
+				"accessible interface, so a consuming container resolves it without naming the implementation.");
+		}
+		else
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated from a module [Scan]: constructs the scanned implementation into its instance handle, from which",
+				"an alias serves each interface the scans expose it as, so every interface shares the one instance.");
+		}
 
 		// Parameter names are emitted verbatim-prefixed: a scanned constructor may legally name a parameter with a
 		// reserved keyword ('@event'), whose symbol name carries no '@', and the prefix is harmless otherwise.
 		FactoryParameter[] parameters = factory.Parameters.AsArray();
 		string signature = string.Join(", ", parameters.Select(MirroredParameter));
 		string arguments = string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression));
+		string construction = $"new {factory.ImplementationType}({arguments})";
 
 		Indent(builder, depth)
-			.Append("public static ").Append(factory.ServiceType).Append(' ').Append(factory.FactoryName)
-			.Append('(').Append(signature).Append(") => new ").Append(factory.ImplementationType)
-			.Append('(').Append(arguments).AppendLine(");");
+			.Append("public static ").Append(factory.Shared?.Type ?? factory.ServiceType).Append(' ').Append(factory.FactoryName)
+			.Append('(').Append(signature).Append(") => ")
+			.Append(factory.Shared is { } shared ? $"new {shared.Type}{shared.Variant}({construction})" : construction).AppendLine(";");
 	}
 
 	/// <summary>

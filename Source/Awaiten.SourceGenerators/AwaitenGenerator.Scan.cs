@@ -1243,7 +1243,9 @@ partial class AwaitenGenerator
 	///     Drops every implementation from a <c>[Scan(SkipUnconstructable = true)]</c> that the container cannot
 	///     construct, reporting AWT141 where the default keeps the AWT101 error, so an incidentally-matched helper
 	///     type does not break the build. An implementation also registered explicitly, or by a scan without the
-	///     opt-in, is never dropped. Iterates to a fixpoint, since dropping one match can orphan another.
+	///     opt-in, is never dropped. The instance handle of a module scan match exposed under several interfaces carries
+	///     the scan's opt-in, and dropping it drops its aliases with it, so the match is reported once.
+	///     Iterates to a fixpoint, since dropping one match can orphan another.
 	/// </summary>
 	private static void PruneUnconstructableScanMatches(
 		List<RawRegistration> raw,
@@ -1328,7 +1330,9 @@ partial class AwaitenGenerator
 				Diagnostics.ScanMatchSkipped,
 				LocationInfo.From(registration.Location),
 				new EquatableArray<string>([DisplayInstance(registration.ImplementationType), reason,])));
-			raw.RemoveAll(r => r.IsScan && r.ImplementationType == registration.ImplementationType);
+			string? aliases = registration.Hidden is { } handled ? AliasKeyMarker + TypeIdentity(handled, compilation) : null;
+			raw.RemoveAll(r => ((r.IsScan || r.Hidden is not null) && r.ImplementationType == registration.ImplementationType)
+			                   || (aliases is not null && r.Aliased is not null && r.ImplementationType.EndsWith(aliases, StringComparison.Ordinal)));
 
 			// The dropped match no longer registers under anything, so its queued ambiguity warning (AWT187)
 			// would contradict the AWT141 just reported. The other per-match warnings cannot co-occur with a

@@ -1577,17 +1577,32 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
-	///     A self-compiled module <c>[Scan]</c> match or module registration of an inaccessible implementation would
-	///     be exposed under more than one accessible interface, by one scan, by several, by several registrations or
-	///     by a registration and a scan. A self-compiled implementation is reached only through a generated factory
-	///     that returns a single accessible type, so a shared instance across several interfaces needs one that covers
-	///     them all, which a registration's factory finds among the services and the implementation's public base types
-	///     and a scan's does not; emitting a factory per interface would silently split it.
+	///     A self-compiled module registration of an inaccessible implementation would be exposed under more than one
+	///     accessible interface, by several registrations or by a registration and a scan. A self-compiled
+	///     implementation is reached only through a generated factory that returns a single accessible type, so a shared
+	///     instance across several interfaces needs one that covers them all, which a registration's factory finds among
+	///     the services and the implementation's public base types, or a generated handle; emitting a factory per
+	///     interface would silently split it. A scan match exposed under several interfaces has its own form
+	///     (<see cref="ModuleScanExposuresNotShared" />).
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleScanMultipleExposures = new(
 		"AWT197",
 		"Self-compiled implementation has multiple exposures",
 		"{0}, but it would be exposed under multiple interfaces ({1}); a self-compiled implementation supports a single exposure, so {2}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="ModuleScanMultipleExposures">AWT197</see> for a self-compiled module <c>[Scan]</c> match
+	///     exposed under several interfaces, which the module shares through a generated instance handle unless no handle
+	///     can serve it: the match is private to the module, so no handle can name it, or a module of the assembly
+	///     registers it too, whose instance a container there shares with the match but the scan's handle could not.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleScanExposuresNotShared = new(
+		"AWT197",
+		ModuleScanMultipleExposures.Title,
+		"{0}, but it would be exposed under multiple interfaces ({1}), and {2}, so no generated handle can {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -2183,6 +2198,20 @@ internal static class Diagnostics
 		"AWT240",
 		"Scan match of another assembly cannot share its implementation's instance",
 		"'{0}' is matched by the [Scan] of the imported module '{1}' as '{2}', but this container builds its one instance of '{0}' as '{3}', which does not convert to '{2}', and cannot construct '{0}' itself; the match's generated factory would build a second instance, so the match is dropped; grant this assembly InternalsVisibleTo in the module's assembly, or exclude '{0}' from the scan",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="ScanMatchNotShared">AWT240</see> for two imported modules of another assembly whose scans
+	///     each expose the same implementation under several interfaces, and so each build it through a generated instance
+	///     handle of their own. A container in their assembly shares one instance, so the matches of the later module are
+	///     dropped.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ScanMatchHandledTwice = new(
+		"AWT240",
+		ScanMatchNotShared.Title,
+		"'{0}' is matched by the [Scan]s of the imported modules '{1}' and '{2}', which each build it through a generated handle of their own, while a container in their assembly shares one instance; the matches of '{2}' are dropped; import only one of the modules, grant this assembly InternalsVisibleTo in their assembly, or exclude '{0}' from one of the scans",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
