@@ -123,6 +123,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// container that imports the module.
 		List<DiagnosticInfo> diagnostics = new();
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
+		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{
@@ -242,7 +243,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			hintName,
 			expanded,
 			new EquatableArray<ModuleFactory>(factories.ToArray()),
-			new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()),
+			new EquatableArray<DiagnosticInfo>(diagnostics.Distinct().ToArray()),
 			declaresScan,
 			new EquatableArray<RegistrationFactory>(registrations.ToArray()),
 			new EquatableArray<SkippedRegistration>(skipped.ToArray()),
@@ -468,6 +469,19 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			                && baseDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
 			RemoveBaseDiagnostics(diagnostics, baseDiagnostics);
 		}
+
+		// A module of this assembly reports a member producing a type private to it in its own build, which leaves the
+		// registration out of the graph here (see BuildInstance), so only the shell is emitted.
+		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
+			.Select(module => module.Symbol)
+			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
+			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
+			.Any(module =>
+			{
+				List<DiagnosticInfo> moduleDiagnostics = new();
+				ReportModuleProductionMembers(module, compilation, moduleDiagnostics);
+				return moduleDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
+			});
 
 		return new ContainerModel(
 			containerNamespace,

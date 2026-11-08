@@ -264,8 +264,11 @@ partial class AwaitenGenerator
 	///     assembly grants <c>InternalsVisibleTo</c> to any assembly, a hook whose wrapper fails only with AWT203 or
 	///     AWT204 lands in <paramref name="skipped" /> instead, since such an assembly calls it directly. A private member
 	///     of a registration under an internal service, which a container in another assembly reaches through the
-	///     service's handle, gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its signature is
-	///     internal or public throughout, so a container in the module's assembly or in a friend calls it too.
+	///     service's handle, gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its parameters are
+	///     internal or public, so a container in the module's assembly or in a friend calls it too. A return type private
+	///     to the module is exposed as the registered type (see <see cref="OwnedMemberType" />). Whether a public member
+	///     already serves a registration is judged by the members that produce its type and the hooks that take it, so a
+	///     public overload of another type does not stand in for an internal one.
 	/// </summary>
 	private static List<MemberWrapper> CollectModuleMemberWrappers(
 		INamedTypeSymbol module,
@@ -290,7 +293,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (!AccessibleMembers(module, member, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
+			if (!ProductionMemberCandidates(module, production.Production, member, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
 			{
 				Add(production.Production == ProductionKind.Factory
 					? FactoryWrapper(member, produced)
@@ -327,23 +330,44 @@ partial class AwaitenGenerator
 			if (production == ProductionKind.Factory)
 			{
 				List<IMethodSymbol> candidates = FindFactoryCandidates(module, member, produced, compilation);
-				return candidates.Count == 1
-				       && candidates[0] is { IsStatic: true, IsGenericMethod: false, } method
-				       && FitsAssembly(method.ReturnType)
-				       && method.Parameters.All(parameter => FitsAssembly(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null)
-					? new MemberWrapper(MemberWrapperName("Factory", member, produced), method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters), IsInternal: true)
-					: null;
+				if (candidates.Count != 1
+				    || candidates[0] is not { IsStatic: true, IsGenericMethod: false, } method
+				    || !method.Parameters.All(parameter => FitsAssembly(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null))
+				{
+					return null;
+				}
+
+				// A private return type is exposed as the registered type, which no container could otherwise name.
+				string name = MemberWrapperName("Factory", member, produced);
+				if (FitsAssembly(method.ReturnType))
+				{
+					return new MemberWrapper(name, method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters), IsInternal: true);
+				}
+
+				if (!FitsAssembly(produced))
+				{
+					return null;
+				}
+
+				string returnType = IsAsyncFactoryReturn(method.ReturnType, compilation, out _)
+					? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{produced.ToDisplayString(FullyQualified)}>"
+					: produced.ToDisplayString(FullyQualified);
+				return new MemberWrapper(name, returnType, member, MirroredParameters(method.Parameters), IsInternal: true, Awaited: IsAsyncFactoryReturn(method.ReturnType, compilation, out _));
 			}
 
-			return AccessibleMembers(module, member, compilation)
+			List<ITypeSymbol> instanceTypes = AccessibleMembers(module, member, compilation)
 				.Select(candidate => candidate switch
 				{
 					IFieldSymbol { IsStatic: true, } field => field.Type,
 					IPropertySymbol { IsStatic: true, GetMethod: not null, } property => property.Type,
 					_ => null,
 				})
-				.FirstOrDefault(type => type is not null && compilation.HasImplicitConversion(type, produced) && FitsAssembly(type)) is { } instanceType
-				? new MemberWrapper(MemberWrapperName("Instance", member, produced), instanceType.ToDisplayString(FullyQualifiedWithNullability), member, default, IsProperty: true, IsInternal: true)
+				.OfType<ITypeSymbol>()
+				.Where(type => compilation.HasImplicitConversion(type, produced))
+				.ToList();
+			ITypeSymbol? exposed = instanceTypes.FirstOrDefault(FitsAssembly) ?? (instanceTypes.Count > 0 && FitsAssembly(produced) ? produced : null);
+			return exposed is not null
+				? new MemberWrapper(MemberWrapperName("Instance", member, produced), exposed.ToDisplayString(FullyQualifiedWithNullability), member, default, IsProperty: true, IsInternal: true)
 				: null;
 		}
 
@@ -362,10 +386,14 @@ partial class AwaitenGenerator
 		{
 			string name = RegistrationHookWrapperName(produced, release, hookName);
 			string skippedName = RegistrationHookSkippedName(produced, release, hookName);
+
+			// A public overload for another type does not serve the registration, but without any hook for it a container reports the public one.
+			List<IMethodSymbol> candidates = HookCandidates(module, hookName, produced, compilation).ToList();
 			if (!IsExternallyAccessible(produced)
 			    || wrappers.Any(existing => existing.Name == name)
 			    || skipped.Any(existing => existing.MarkerName == skippedName)
-			    || AccessibleMembers(module, hookName, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
+			    || candidates.Exists(candidate => candidate.DeclaredAccessibility == Accessibility.Public)
+			    || (candidates.Count == 0 && AccessibleMembers(module, hookName, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public)))
 			{
 				return null;
 			}
@@ -471,6 +499,117 @@ partial class AwaitenGenerator
 			return null;
 		}
 	}
+
+	/// <summary>
+	///     Reports, in the module's own build, what is wrong with the <c>Factory</c> and <c>Instance</c> members of its
+	///     closed registrations whatever container imports the module, since a container in another assembly sees neither
+	///     a member's body nor a private member: a registered type private to the module (AWT216), which no container can
+	///     name, a factory parameter of a type private to the module (AWT195), which no container can resolve, worded like
+	///     the handle's own report of it, so the module reports it once, a factory body that hides async initialization
+	///     behind the declared return type (AWT106), and a convention
+	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
+	///     <see cref="OwnedMemberType" />).
+	/// </summary>
+	private static void ReportModuleProductionMembers(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		List<AsyncInitializerConvention>? conventions = null;
+		HashSet<IMethodSymbol> checkedFactories = new(SymbolEqualityComparer.Default);
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			if (registration.Member is not { } member)
+			{
+				continue;
+			}
+
+			INamedTypeSymbol implementation = registration.Implementation;
+			string typeName = Display(implementation.ToDisplayString(FullyQualified));
+			if (IsHiddenInModule(implementation.OriginalDefinition, module, compilation))
+			{
+				string attribute = registration.Attribute.AttributeClass!.Name;
+				string usage = $"{attribute.Substring(0, attribute.Length - "Attribute".Length)}<{Display(registration.Service.ToDisplayString(FullyQualified))}>({(registration.Production == ProductionKind.Factory ? "Factory" : "Instance")} = nameof({member}))";
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.RegisteredTypeLessAccessible,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([
+						typeName,
+						typeName,
+						$"only the module can name it, so no container can hold what the module's member '{member}' produces as it",
+						$"register the member under its service, as [{usage}], or make '{typeName}' internal",
+					])));
+				continue;
+			}
+
+			if (registration.Production != ProductionKind.Factory
+			    || FindFactoryCandidates(module, member, implementation, compilation) is not { Count: 1, } candidates
+			    || !checkedFactories.Add(candidates[0]))
+			{
+				continue;
+			}
+
+			IMethodSymbol factory = candidates[0];
+			if (HiddenParameter(factory, module, compilation) is { } hiddenParameter)
+			{
+				string subject = IsHiddenService(registration.Service, module, compilation)
+					? $"'{typeName}' is registered under the internal service '{Display(registration.Service.ToDisplayString(FullyQualified))}', which a consuming container reaches through a generated handle"
+					: $"'{typeName}' is produced by the module's factory '{member}'";
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.ModuleParameterHiddenInModule,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([subject, hiddenParameter.Name, Display(TypeHiddenInModule(hiddenParameter.Type, module, compilation)!.ToDisplayString(FullyQualified)),])));
+			}
+
+			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
+			ITypeSymbol declared = ProducedType(factory.ReturnType, compilation);
+			if (!IsAsyncFactoryReturn(factory.ReturnType, compilation, out _))
+			{
+				ReportFactoryHidingAsyncInitialization(factory, compilation, conventions, diagnostics);
+			}
+
+			if (SymbolEqualityComparer.Default.Equals(OwnedMemberType(declared, implementation, module, compilation), declared))
+			{
+				continue;
+			}
+
+			foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(conventions, declared, convention => IsOfConventionType(declared, convention.Type) && !IsOfConventionType(implementation, convention.Type)))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.InaccessibleAsyncInitializer,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([
+						$"'{Display(declared.ToDisplayString(FullyQualified))}', which the module's factory '{member}' returns,",
+						Display(convention.Type.ToDisplayString(FullyQualified)),
+						convention.Method.Name,
+						$"the type is private to the module, so every container sees the factory return the registered type '{typeName}' instead, which the convention does not initialize",
+						$"declare the factory to return '{typeName}' and initialize the instance inside an async factory, or make '{Display(declared.ToDisplayString(FullyQualified))}' internal",
+					])));
+			}
+		}
+
+		foreach (AttributeData attribute in module.GetAttributes())
+		{
+			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, } attributeClass
+			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
+			    || ReadProduction(attribute) is not { Production: ProductionKind.Factory, Member: { } member, Conflicting: false, }
+			    || !TryReadTypeofPair(attribute, out INamedTypeSymbol implementation, out _)
+			    || !implementation.IsUnboundGenericType)
+			{
+				continue;
+			}
+
+			foreach (IMethodSymbol factory in AccessibleMembers(module, member, compilation).OfType<IMethodSymbol>()
+				         .Where(method => method.MethodKind == MethodKind.Ordinary && method.Arity == implementation.Arity && !IsAsyncFactoryReturn(method.ReturnType, compilation, out _)))
+			{
+				if (checkedFactories.Add(factory))
+				{
+					ReportFactoryHidingAsyncInitialization(factory, compilation, conventions ??= DeclaredAsyncInitializers(module, compilation, null), diagnostics);
+				}
+			}
+		}
+	}
+
+	/// <summary>The first parameter of <paramref name="factory" /> whose type is private to <paramref name="module" /> (see <see cref="TypeHiddenInModule" />), or <see langword="null" />.</summary>
+	private static IParameterSymbol? HiddenParameter(IMethodSymbol factory, INamedTypeSymbol module, Compilation compilation)
+		=> factory.Parameters.FirstOrDefault(parameter => TypeHiddenInModule(parameter.Type, module, compilation) is not null);
 
 	/// <summary>
 	///     The factories a module generates for its closed decorators and composites whose type another assembly cannot

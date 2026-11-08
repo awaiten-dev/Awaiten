@@ -78,7 +78,8 @@ internal static class Diagnostics
 	///     own initialization (the container awaits the factory itself). This is a best-effort lint (Warning):
 	///     it fires only when the concrete returned type is statically provable from the body, so it has false
 	///     negatives by design (a helper-returned or runtime-selected implementation is not reported), but is
-	///     intended to have no false positives.
+	///     intended to have no false positives. A module's factory is checked in the module's own build, since a
+	///     container in another assembly sees no body.
 	/// </summary>
 	public static readonly DiagnosticDescriptor FactoryHidesAsyncInitialization = new(
 		"AWT106",

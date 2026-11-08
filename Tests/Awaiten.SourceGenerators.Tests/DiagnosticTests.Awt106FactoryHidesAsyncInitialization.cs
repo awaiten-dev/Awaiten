@@ -441,5 +441,55 @@ public partial class DiagnosticTests
 			await That(diagnostic).Contains("async-initialized")
 				.Because("async initialization - not disposal - is the unfixable capability the lint reports");
 		}
+
+		public class InAModule
+		{
+			private const string Container = """
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				public static partial class MyContainer;
+				""";
+
+			private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+			private static string Library(string registration, string factory, bool grant = false) => $$"""
+				using System.Threading.Tasks;
+				using Awaiten;
+
+				{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+				namespace Lib;
+
+				public interface IInitializable { Task InitializeAsync(); }
+				public interface IFoo { }
+				public interface IRepo<T> { }
+				public sealed class FooImpl : IFoo, IInitializable { public Task InitializeAsync() => Task.CompletedTask; }
+				public sealed class Repo<T> : IRepo<T>, IInitializable { public Task InitializeAsync() => Task.CompletedTask; }
+
+				[Module]
+				[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+				[{{registration}}]
+				public static partial class CoffeeModule
+				{
+				    {{factory}}
+				}
+				""";
+
+			[Test]
+			[Arguments("Singleton<IFoo>(Factory = nameof(Create))", "public static IFoo Create() => new FooImpl();")]
+			[Arguments("Singleton<IFoo>(Factory = nameof(Create))", "internal static IFoo Create() => new FooImpl();")]
+			[Arguments("Singleton(typeof(IRepo<>), Factory = nameof(Create))", "public static IRepo<T> Create<T>() => new Repo<T>();")]
+			public async Task IsReportedOnceInTheModulesOwnBuild(string registration, string factory)
+			{
+				await That(Generator.Run(Library(registration, factory)).Diagnostics).HasSingle().Which.Contains("*AWT106*'Create'*").AsWildcard()
+					.Because("a container in another assembly sees no body, so the module checks its own factories");
+				await That(Generator.Run(Library(registration, factory, grant: true)).Diagnostics).HasSingle().Which.Contains("*AWT106*").AsWildcard();
+				await That(Generator.Run(Library(registration, factory) + Container).Diagnostics).HasSingle().Which.Contains("*AWT106*").AsWildcard()
+					.Because("the container in the module's assembly leaves it to the module, so it is reported once");
+				await That(Generator.RunWithGeneratedReferencedAssembly(Library(registration, factory), Consumer).Diagnostics).DoesNotContain("*AWT106*").AsWildcard();
+				await That(Generator.RunWithGeneratedReferencedAssembly(Library(registration, factory, grant: true), Consumer).Diagnostics).DoesNotContain("*AWT106*").AsWildcard()
+					.Because("every container agrees: the module's build is the one that reports it");
+			}
+		}
 	}
 }
