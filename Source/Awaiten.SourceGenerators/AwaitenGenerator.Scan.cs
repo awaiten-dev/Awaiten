@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
@@ -492,6 +494,13 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     The candidates of each marker in a compilation's own assembly, keyed by the marker, or by the assembly for a
+	///     markerless scan. Every module build, and every round in which <see cref="AssemblyModuleIndex" /> expands the
+	///     modules again, scans the same assembly, so the walk runs once per marker and compilation.
+	/// </summary>
+	private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<ISymbol, IReadOnlyList<ScanCandidate>>> OwnAssemblyScanCandidates = new();
+
+	/// <summary>
 	///     The concrete-type candidates a <c>[Scan]</c> enumerates: the <paramref name="viewpoint" /> assembly (the
 	///     scanning container's own, by default the compilation's) when <paramref name="assemblies" /> is
 	///     <see langword="null" /> (<c>InAssembliesOf</c> unset), else the listed assemblies. Filtered to concrete
@@ -500,7 +509,7 @@ partial class AwaitenGenerator
 	///     fully-qualified name so the registrations are reproducible. Reports AWT140 for any <c>InAssembliesOf</c>
 	///     assembly that holds no such type (a likely missing <c>ProjectReference</c>).
 	/// </summary>
-	private static List<ScanCandidate> ScanCandidates(
+	private static IReadOnlyList<ScanCandidate> ScanCandidates(
 		List<IAssemblySymbol>? assemblies,
 		Compilation compilation,
 		INamedTypeSymbol? marker,
@@ -508,9 +517,15 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> diagnostics,
 		IAssemblySymbol? viewpoint = null)
 	{
-		List<ScanCandidate> candidates = new();
 		IAssemblySymbol scanner = viewpoint ?? compilation.Assembly;
+		if (assemblies is null && SymbolEqualityComparer.Default.Equals(scanner, compilation.Assembly))
+		{
+			return OwnAssemblyScanCandidates
+				.GetValue(compilation, static _ => new ConcurrentDictionary<ISymbol, IReadOnlyList<ScanCandidate>>(SymbolEqualityComparer.Default))
+				.GetOrAdd((ISymbol?)marker ?? scanner, _ => Sorted(ScanCandidatesIn(scanner.GlobalNamespace, marker, compilation, scanner).ToList()));
+		}
 
+		List<ScanCandidate> candidates = new();
 		if (assemblies is null)
 		{
 			candidates.AddRange(ScanCandidatesIn(scanner.GlobalNamespace, marker, compilation, scanner));
@@ -523,12 +538,17 @@ partial class AwaitenGenerator
 			}
 		}
 
+		return Sorted(candidates);
+
 		// Cross-assembly enumeration order is not guaranteed stable; sort by fully-qualified name so the
 		// generated output (and any snapshot) is reproducible.
-		candidates.Sort((left, right) => string.CompareOrdinal(
-			left.Type.ToDisplayString(FullyQualified),
-			right.Type.ToDisplayString(FullyQualified)));
-		return candidates;
+		static List<ScanCandidate> Sorted(List<ScanCandidate> candidates)
+		{
+			candidates.Sort((left, right) => string.CompareOrdinal(
+				left.Type.ToDisplayString(FullyQualified),
+				right.Type.ToDisplayString(FullyQualified)));
+			return candidates;
+		}
 	}
 
 	/// <summary>

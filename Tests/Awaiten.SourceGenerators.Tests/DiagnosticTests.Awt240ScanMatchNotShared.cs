@@ -193,6 +193,47 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("IKettle")]
+		[Arguments("ISpecialKettle")]
+		public async Task AScanMatchOfAnImplementationAnotherModuleBuildsThroughAHandleAndAnAliasOfAServiceDerivedFromTheScannedOne_SharesTheHandle(string alias)
+		{
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IAppliance { }
+				public interface IKettle : IAppliance { }
+				public interface ISpecialKettle : IKettle { }
+				internal interface IHiddenKettle { }
+				internal sealed class Kettle : ISpecialKettle, IHiddenKettle { }
+
+				[Module]
+				[Singleton<Kettle, IHiddenKettle>]
+				[Singleton<Kettle, {{alias}}>]
+				public static partial class KettleModule { }
+
+				[Module]
+				[Scan<IAppliance>(As = ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+				public static partial class ScanModule { }
+				""";
+			string sameConsumer = Consumer.Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace MyCode;", "");
+
+			GeneratorResult same = Generator.Run(library + sameConsumer);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;"), Consumer);
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the match serves the handle's instance through an alias of a service that derives from the scanned interface");
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Internals.Alias_Kettle_")
+				.And.DoesNotContain("Scan_Kettle_")
+				.Because("an alias serves every service of the one instance, so no scan factory builds a second one");
+		}
+
+		[Test]
 		public async Task AScanMatchOfAnImplementationItsModuleRegistersThroughAFactoryMember_ReportsAwt240()
 		{
 			const string library = """

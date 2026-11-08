@@ -536,7 +536,7 @@ internal static partial class Sources
 	private static void EmitMemberWrapper(StringBuilder builder, int depth, MemberWrapper wrapper, string accessibility, params string[] summary)
 	{
 		AppendXmlSummary(builder, depth, summary);
-		Indent(builder, depth).Append(accessibility).Append(" static ").Append(wrapper.ReturnType).Append(' ').Append(wrapper.Name);
+		Indent(builder, depth).Append(accessibility).Append(wrapper.Awaited ? " static async " : " static ").Append(wrapper.ReturnType).Append(' ').Append(wrapper.Name);
 		if (wrapper.IsProperty)
 		{
 			builder.Append(" => ").Append(wrapper.Target).AppendLine(";");
@@ -544,8 +544,8 @@ internal static partial class Sources
 		}
 
 		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
-		builder.Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(") => ").Append(wrapper.Target)
-			.Append('(').Append(string.Join(", ", parameters.Select(parameter => $"@{parameter.Name}"))).AppendLine(");");
+		builder.Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(") => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
+			.Append('(').Append(string.Join(", ", parameters.Select(parameter => $"@{parameter.Name}"))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
 
 	/// <summary>A mirrored parameter as it is declared on a generated factory or wrapper, with its attributes.</summary>

@@ -94,6 +94,17 @@ partial class AwaitenGenerator
 			                                       && IsExternallyAccessible(other.Key)
 			                                       && other.Value.Any(registration => SymbolEqualityComparer.Default.Equals(registration.Service, service)));
 
+		/// <summary>
+		///     Whether another module of the assembly that another assembly can import registers
+		///     <paramref name="implementation" /> too. A container in the module's own assembly coalesces both into one
+		///     instance with the directives of the first, so a consuming container needs the instance this module builds
+		///     through a handle, even when nothing takes its internal services.
+		/// </summary>
+		public bool ImplementedElsewhere(INamedTypeSymbol implementation)
+			=> Assembly.Registrations.Any(other => !SymbolEqualityComparer.Default.Equals(other.Key, Module)
+			                                       && IsExternallyAccessible(other.Key)
+			                                       && other.Value.Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation)));
+
 		/// <summary>Whether the module's assembly grants <c>InternalsVisibleTo</c>, so a failure may be left to such an assembly.</summary>
 		public bool Friends { get; }
 
@@ -120,6 +131,21 @@ partial class AwaitenGenerator
 
 		/// <summary>Whether <see cref="Use" /> records the services a mirrored member needs; off while viability is decided.</summary>
 		public bool Tracking { get; set; }
+
+		/// <summary>The implementations <see cref="CompleteHiddenServices" /> built through a handle, in the order it built them.</summary>
+		public List<HiddenImplementation> Built { get; } = new();
+
+		/// <summary>The implementations of other modules whose instance handle an alias of the module's scans serves (see <see cref="ScanAliases" />).</summary>
+		public HashSet<INamedTypeSymbol> ScanAliased { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>
+		///     What the modules of the assembly need of each other's handles while <see cref="AssemblyModuleIndex.Demand" />
+		///     computes it, or <see langword="null" /> to read it from the index.
+		/// </summary>
+		public HandleDemand? Demand { get; set; }
+
+		/// <summary>What the other modules of the assembly need of this module's handles, nothing for the only module.</summary>
+		public HandleDemand Demanded => !SeveralModules ? HandleDemand.None : Demand ?? Assembly.Demand(_cancellationToken);
 
 		public void Use(INamedTypeSymbol service)
 		{
@@ -163,6 +189,7 @@ partial class AwaitenGenerator
 		private readonly Compilation _compilation;
 		private readonly Lazy<HashSet<INamedTypeSymbol>> _imported;
 		private Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>>? _buildable;
+		private HandleDemand? _demand;
 
 		private AssemblyModuleIndex(Compilation compilation)
 		{
@@ -309,6 +336,50 @@ partial class AwaitenGenerator
 			return Interlocked.CompareExchange(ref _buildable, buildable, null) ?? buildable;
 		}
 
+		/// <summary>
+		///     What the modules of <see cref="Modules" /> need of each other's handles. A container in another assembly may
+		///     import any of them, so a module emits a handle, an instance handle or a factory only when the members some
+		///     module emits take it. Each module's generated members are expanded as its own build expands them, given what
+		///     the others need so far, and expanded again only when the demand for a service or implementation it registers
+		///     grows. The demand only grows, so the expansion ends, and the result depends neither on the order of the
+		///     modules nor on cycles between them.
+		/// </summary>
+		/// <remarks>A cancelled computation caches nothing, so a later build of the same compilation computes it again with its own token.</remarks>
+		public HandleDemand Demand(CancellationToken cancellationToken)
+		{
+			if (Volatile.Read(ref _demand) is { } known)
+			{
+				return known;
+			}
+
+			HandleDemand demand = new();
+			Dictionary<INamedTypeSymbol, HandleDemand> contributions = new(SymbolEqualityComparer.Default);
+			List<INamedTypeSymbol> pending = Modules;
+			while (pending.Count > 0)
+			{
+				foreach (INamedTypeSymbol module in pending)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					HandleDemand contribution = new();
+					ExpandForDemand(module, _compilation, demand, contribution, cancellationToken);
+					contributions[module] = contribution;
+				}
+
+				HandleDemand next = new();
+				next.Add(demand);
+				foreach (INamedTypeSymbol module in Modules.Where(contributions.ContainsKey))
+				{
+					next.Add(contributions[module]);
+				}
+
+				HashSet<INamedTypeSymbol> changed = next.ChangedSince(demand);
+				demand = next;
+				pending = Modules.Where(module => Registrations[module].Any(registration => changed.Contains(registration.Service) || changed.Contains(registration.Implementation))).ToList();
+			}
+
+			return Interlocked.CompareExchange(ref _demand, demand, null) ?? demand;
+		}
+
 		private HiddenServices? Judge(INamedTypeSymbol module, Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>> buildable, CancellationToken cancellationToken)
 		{
 			HiddenServices? judgement = CollectHiddenServices(module, _compilation, cancellationToken, buildable);
@@ -321,6 +392,99 @@ partial class AwaitenGenerator
 			}
 
 			return judgement;
+		}
+	}
+
+	/// <summary>
+	///     What the generated members of the modules of an assembly take of each other's handles (see
+	///     <see cref="AssemblyModuleIndex.Demand" />). It holds symbols only while the compilation lives and never reaches a
+	///     model.
+	/// </summary>
+	private sealed class HandleDemand
+	{
+		public static readonly HandleDemand None = new();
+
+		/// <summary>The internal services whose handle a generated member takes, which every module that registers one builds.</summary>
+		public HashSet<INamedTypeSymbol> Services { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>The implementations a scan alias serves from their instance handle, which every module that handles one builds.</summary>
+		public HashSet<INamedTypeSymbol> Scanned { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>The implementations some module builds into their instance handle, with how each module produces them.</summary>
+		public Dictionary<INamedTypeSymbol, HashSet<ProductionKind>> Built { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>The disposal traits of each decorator or composite a module builds into the handle of an internal service.</summary>
+		public List<(INamedTypeSymbol Service, ImplementationTraits Traits)> DecoratorTraits { get; } = new();
+
+		/// <summary>The modules that emit a handle, factory, alias or initializer.</summary>
+		public HashSet<INamedTypeSymbol> Emitting { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>Adds everything <paramref name="other" /> needs.</summary>
+		public void Add(HandleDemand other)
+		{
+			Services.UnionWith(other.Services);
+			Scanned.UnionWith(other.Scanned);
+			Emitting.UnionWith(other.Emitting);
+			DecoratorTraits.AddRange(other.DecoratorTraits.Where(decorator => !DecoratorTraits.Contains(decorator)));
+			foreach (KeyValuePair<INamedTypeSymbol, HashSet<ProductionKind>> built in other.Built)
+			{
+				if (!Built.TryGetValue(built.Key, out HashSet<ProductionKind>? productions))
+				{
+					Built[built.Key] = productions = new HashSet<ProductionKind>();
+				}
+
+				productions.UnionWith(built.Value);
+			}
+		}
+
+		/// <summary>
+		///     The services and implementations whose demand grew since <paramref name="earlier" />, which only the modules
+		///     that register them expand differently for.
+		/// </summary>
+		public HashSet<INamedTypeSymbol> ChangedSince(HandleDemand earlier)
+		{
+			HashSet<INamedTypeSymbol> changed = new(Services.Where(service => !earlier.Services.Contains(service)), SymbolEqualityComparer.Default);
+			changed.UnionWith(Scanned.Where(implementation => !earlier.Scanned.Contains(implementation)));
+			changed.UnionWith(DecoratorTraits.Where(decorator => !earlier.DecoratorTraits.Contains(decorator)).Select(decorator => decorator.Service));
+			changed.UnionWith(Built.Where(built => !earlier.Built.TryGetValue(built.Key, out HashSet<ProductionKind>? productions) || productions.Count != built.Value.Count).Select(built => built.Key));
+			return changed;
+		}
+	}
+
+	/// <summary>
+	///     Expands the generated members of <paramref name="module" /> as its own build does (see <c>BuildModuleModel</c>),
+	///     given what the modules of its assembly need so far (<paramref name="demand" />), and adds what its members take to
+	///     <paramref name="next" />. The diagnostics are the module build's to report.
+	/// </summary>
+	private static void ExpandForDemand(INamedTypeSymbol module, Compilation compilation, HandleDemand demand, HandleDemand next, CancellationToken cancellationToken)
+	{
+		List<DiagnosticInfo> diagnostics = new();
+		List<SkippedRegistration> skipped = new();
+		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped);
+		if (CollectHiddenServices(module, compilation, cancellationToken) is not { } hidden)
+		{
+			return;
+		}
+
+		hidden.Demand = demand;
+		List<RegistrationFactory> contributions = CollectModuleContributionFactories(module, compilation, hidden, diagnostics);
+		ModuleExpansion expansion = ExpandModule(module, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
+		next.Services.UnionWith(hidden.Used);
+		next.Scanned.UnionWith(hidden.ScanAliased);
+		next.DecoratorTraits.AddRange(hidden.DecoratorTraits);
+		foreach (HiddenImplementation built in hidden.Built)
+		{
+			if (!next.Built.TryGetValue(built.Implementation, out HashSet<ProductionKind>? productions))
+			{
+				next.Built[built.Implementation] = productions = new HashSet<ProductionKind>();
+			}
+
+			productions.Add(built.Production);
+		}
+
+		if (expansion.Registrations.Count + expansion.Handles.Count + expansion.Aliases.Count + expansion.Initializers.Count > 0)
+		{
+			next.Emitting.Add(module);
 		}
 	}
 
@@ -549,11 +713,14 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Completes the handles of a module once its scans and registrations were mirrored, which recorded the internal
-	///     services they need: builds every implementation registered under accessible services too, every eager or
-	///     async-initialized singleton, and in an assembly with several modules every implementation it can, then follows
-	///     the services each built implementation needs. Returns the factories, handles, aliases and initializer wrappers
-	///     to emit. Reports why a needed service cannot be built, unless an assembly granted <c>InternalsVisibleTo</c>
-	///     builds what needs it instead.
+	///     services they need: builds every public implementation, which a consumer may register itself and then shares,
+	///     every implementation registered under accessible services too, every eager or
+	///     async-initialized singleton, and in an assembly with several modules every implementation another module
+	///     registers too, serves through a scan alias, or takes an internal service of (see
+	///     <see cref="AssemblyModuleIndex.Demand" />), then follows the services each built implementation needs. Declares
+	///     the handles and instance handles that it or another module takes, with a variant for every decorator of any
+	///     module. Returns the factories, handles, aliases and initializer wrappers to emit. Reports why a needed service
+	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead.
 	/// </summary>
 	private static (List<RegistrationFactory> Factories, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers) CompleteHiddenServices(
 		HiddenServices hidden,
@@ -567,18 +734,22 @@ partial class AwaitenGenerator
 		}
 
 		List<AsyncInitializerConvention> conventions = DeclaredAsyncInitializers(module, compilation, null);
+		HandleDemand demand = hidden.Demanded;
 		List<HiddenImplementation> pending = hidden.Implementations
 			.Where(candidate => candidate.Viable
-			                    && (hidden.SeveralModules
+			                    && (IsExternallyAccessible(candidate.Implementation)
 			                        || candidate.Registrations.Any(registration => !IsHiddenService(registration.Service, module, compilation))
-			                        || (candidate.Registrations[0].Attribute.AttributeClass?.Name == "SingletonAttribute" && (candidate.Registrations.Any(registration => NamedFlag(registration.Attribute, "Eager")) || IsHiddenAsyncInitialized(candidate.Implementation, candidate.Registrations, module, compilation, conventions)))))
+			                        || (candidate.Registrations[0].Attribute.AttributeClass?.Name == "SingletonAttribute" && (candidate.Registrations.Any(registration => NamedFlag(registration.Attribute, "Eager")) || IsHiddenAsyncInitialized(candidate.Implementation, candidate.Registrations, module, compilation, conventions)))
+			                        || demand.Scanned.Contains(candidate.Implementation)
+			                        || candidate.HiddenServices(module, compilation).Any(demand.Services.Contains)
+			                        || (hidden.SeveralModules && hidden.ImplementedElsewhere(candidate.Implementation))))
 			.ToList();
 
 		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal), hidden);
 		List<RegistrationFactory> factories = new();
 		List<HiddenAlias> aliases = new();
 		List<HiddenInitializer> initializers = new(hidden.DecoratorInitializers);
-		List<HiddenImplementation> built = new();
+		List<HiddenImplementation> built = hidden.Built;
 		int used = 0;
 		while (true)
 		{
@@ -614,17 +785,16 @@ partial class AwaitenGenerator
 			diagnostics.AddRange(candidate.Rejections.Where(rejection => !diagnostics.Contains(rejection)));
 		}
 
-		IEnumerable<INamedTypeSymbol> declared = hidden.SeveralModules
-			? hidden.Used.Concat(hidden.Services.Keys.Where(service => !hidden.Used.Contains(service, SymbolEqualityComparer.Default)))
-			: hidden.Used;
+		IEnumerable<INamedTypeSymbol> declared = hidden.Used.Concat(Declared(demand.Services, hidden.Provider));
 		List<HiddenHandle> handles = declared
+			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
 			.Where(hidden.Declares)
 			.Select(service =>
 			{
 				ImplementationTraits[] traits = hidden.DecoratorTraits
+					.Concat(demand.DecoratorTraits)
 					.Where(decorator => SymbolEqualityComparer.Default.Equals(decorator.Service, service))
 					.Select(decorator => decorator.Traits)
-					.Concat(hidden.SeveralModules ? OtherModulesDecoratorTraits(service, hidden) : [])
 					.ToArray();
 				return new HiddenHandle(
 					HiddenHandleName(service),
@@ -635,9 +805,8 @@ partial class AwaitenGenerator
 			})
 			.ToList();
 
-		IEnumerable<INamedTypeSymbol> instances = hidden.SeveralModules
-			? hidden.Assembly.RegistrationsOf(module).Select(registration => registration.Implementation).Where(hidden.Assembly.HandledBy.ContainsKey)
-			: built.Select(candidate => candidate.Implementation);
+		IEnumerable<INamedTypeSymbol> instances = built.Select(candidate => candidate.Implementation)
+			.Concat(Declared(demand.Built.Keys.Concat(demand.Scanned), hidden.InstanceProvider));
 		foreach (INamedTypeSymbol implementation in instances.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).Where(hidden.DeclaresInstance))
 		{
 			(bool constructed, bool wrap) = InstanceHandleNeeds(implementation, hidden);
@@ -652,6 +821,11 @@ partial class AwaitenGenerator
 		}
 
 		return (factories, handles, aliases, initializers);
+
+		IEnumerable<INamedTypeSymbol> Declared(IEnumerable<INamedTypeSymbol> needed, Func<INamedTypeSymbol, INamedTypeSymbol?> provider)
+			=> needed
+				.Where(type => provider(type) is { } declaring && SymbolEqualityComparer.Default.Equals(declaring, module))
+				.OrderBy(type => type.ToDisplayString(FullyQualified), StringComparer.Ordinal);
 	}
 
 	/// <summary>
@@ -770,34 +944,20 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Whether the instance handle of <paramref name="implementation" />, which every module of the assembly that registers
+	///     Whether the instance handle of <paramref name="implementation" />, which every module of the assembly that builds
 	///     the implementation builds it into, needs the variants of a constructed implementation, and whether it needs to
 	///     wrap the result of a <c>Factory</c> member, whose disposal shows only at run time.
 	/// </summary>
 	private static (bool Constructed, bool Wrap) InstanceHandleNeeds(INamedTypeSymbol implementation, HiddenServices hidden)
 	{
-		List<ProductionKind> all = (hidden.SeveralModules ? hidden.Assembly.Modules : [hidden.Module,])
-			.Select(other => HandledTogether(hidden.Assembly.RegistrationsOf(other)
-				.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation))))
-			.Where(registrations => registrations.Count > 0)
-			.Select(registrations => registrations[0].Production)
-			.ToList();
+		HashSet<ProductionKind> all = new(hidden.Built.Where(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation, implementation)).Select(candidate => candidate.Production));
+		if (hidden.Demanded.Built.TryGetValue(implementation, out HashSet<ProductionKind>? elsewhere))
+		{
+			all.UnionWith(elsewhere);
+		}
+
 		return (all.Contains(ProductionKind.Constructor), all.Contains(ProductionKind.Factory));
 	}
-
-	/// <summary>
-	///     The disposal traits of every decorator and composite the other modules of the assembly declare over
-	///     <paramref name="service" />, which they build into its handle, so the handle carries a variant for each.
-	/// </summary>
-	private static IEnumerable<ImplementationTraits> OtherModulesDecoratorTraits(INamedTypeSymbol service, HiddenServices hidden)
-		=> hidden.Assembly.Modules
-			.Where(other => !SymbolEqualityComparer.Default.Equals(other, hidden.Module))
-			.SelectMany(other => other.GetAttributes())
-			.Where(attribute => attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
-			                    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
-			                    && ContributedPair(attribute, attributeClass) is ({ }, { } decorated)
-			                    && SymbolEqualityComparer.Default.Equals(decorated, service))
-			.Select(attribute => TraitsOf(ContributedPair(attribute, attribute.AttributeClass!).Item1!, []));
 
 	/// <summary>
 	///     The factory of an implementation the module builds through a handle: it constructs the implementation like the
@@ -1164,6 +1324,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			hidden.ScanAliased.Add(implementation);
 			yield return new HiddenAlias(HiddenAliasName(implementation, factory.ServiceType), factory.ServiceType, hidden.InstanceHandleType(implementation), InstanceValue(implementation, factory.ServiceType, hidden.Compilation));
 		}
 	}

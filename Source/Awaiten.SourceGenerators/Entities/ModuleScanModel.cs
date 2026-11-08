@@ -65,6 +65,8 @@ internal sealed record HiddenInitializer(string Name, string HandleType, string 
 ///     <see cref="Parameters" /> and calling <see cref="Target" /> with them, or, for <see cref="IsProperty" />, a
 ///     property returning it. An <see cref="IsInternal" /> wrapper of a module forwards to a private member under an
 ///     internal service, for the containers that build the service themselves instead of through its handle.
+///     <see cref="Awaited" /> marks a wrapper that awaits the target, because its awaitable result converts to the
+///     wrapper's only through the awaited value.
 /// </summary>
 internal sealed record MemberWrapper(
 	string Name,
@@ -72,7 +74,8 @@ internal sealed record MemberWrapper(
 	string Target,
 	EquatableArray<FactoryParameter> Parameters,
 	bool IsProperty = false,
-	bool IsInternal = false);
+	bool IsInternal = false,
+	bool Awaited = false);
 
 /// <summary>
 ///     An implementation the module generates no factory for, because an assembly granted <c>InternalsVisibleTo</c>

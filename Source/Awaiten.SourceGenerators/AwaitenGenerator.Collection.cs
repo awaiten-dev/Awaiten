@@ -532,7 +532,10 @@ partial class AwaitenGenerator
 	///     <c>Factory</c> or <c>Instance</c> member and its lifecycle hooks (see <see cref="CollectModuleMemberWrappers" />
 	///     and <see cref="RecordBaseWrappers" />), for each member this compilation cannot reach while it can reach the
 	///     wrapper. Only <paramref name="applies" /> to an owner in another assembly, whose generated members this
-	///     compilation can see. The hooks of an implementation hidden in its owner are left to its generated factory.
+	///     compilation can see. A wrapper of a member that produces an implementation this compilation cannot name returns
+	///     the public service instead, which then stands in for the implementation, while the conventions and disposal
+	///     are read off the implementation, as a container in the owner's assembly reads them. The hooks of an
+	///     implementation hidden in its owner are left to its generated factory.
 	/// </summary>
 	private static RawRegistration ThroughMemberWrapper(RawRegistration registration, INamedTypeSymbol? owner, Compilation compilation, bool applies)
 	{
@@ -542,16 +545,34 @@ partial class AwaitenGenerator
 		}
 
 		string? member = registration.ProductionMember;
+		INamedTypeSymbol implementation = registration.Implementation;
+		ImplementationTraits? traits = registration.Traits;
 		if (registration.Production is ProductionKind.Factory or ProductionKind.Instance && member is not null)
 		{
 			string wrapper = InInternals(MemberWrapperName(registration.Production == ProductionKind.Factory ? "Factory" : "Instance", member, registration.Implementation));
-			member = !ReachesProductionMember(owner, registration.Production, member, registration.Implementation, compilation.Assembly, compilation) && Reachable(wrapper) ? wrapper : member;
+			if (!ReachesProductionMember(owner, registration.Production, member, registration.Implementation, compilation.Assembly, compilation) && Reachable(wrapper))
+			{
+				member = wrapper;
+				if (!compilation.IsSymbolAccessibleWithin(implementation, compilation.Assembly)
+				    && MembersNamed(owner, wrapper).Select(candidate => candidate switch
+				    {
+					    IMethodSymbol method => ProducedType(method.ReturnType, compilation),
+					    IPropertySymbol property => property.Type,
+					    _ => null,
+				    }).FirstOrDefault() is INamedTypeSymbol exposed)
+				{
+					implementation = (INamedTypeSymbol)exposed.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+					traits = TraitsOf(registration.Implementation, DeclaredAsyncInitializers(owner, compilation, null));
+				}
+			}
 		}
 
 		bool hidden = IsHiddenInModule(registration.Implementation.OriginalDefinition, owner, compilation);
 		return registration with
 		{
+			Implementation = implementation,
 			ProductionMember = member,
+			Traits = traits,
 			OnActivated = hidden || registration.OnActivated is not { } activation ? registration.OnActivated : Wrapped(activation, InInternals(RegistrationHookWrapperName(registration.Implementation, release: false, activation))),
 			OnRelease = hidden || registration.OnRelease is not { } release ? registration.OnRelease : Wrapped(release, InInternals(RegistrationHookWrapperName(registration.Implementation, release: true, release))),
 		};
