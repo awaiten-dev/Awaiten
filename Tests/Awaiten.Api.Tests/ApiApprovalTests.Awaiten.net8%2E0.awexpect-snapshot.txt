@@ -463,5 +463,14 @@ namespace Awaiten.Internals
     {
         public static System.Threading.Tasks.Task<T> AsTask<T>(System.Threading.Tasks.Task<object> resolution) { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public sealed class GeneratedHiddenInjectedPropertyAttribute : System.Attribute
+    {
+        public GeneratedHiddenInjectedPropertyAttribute(string type, string property, bool assignable) { }
+        public bool Assignable { get; }
+        public string Property { get; }
+        public string Type { get; }
+    }
 }
 

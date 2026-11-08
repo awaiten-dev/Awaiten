@@ -541,6 +541,115 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 	}
 
+	public class ClosingOfAnOpenGeneric
+	{
+		private const string RepositoryConsumer = """
+		                                          using Awaiten;
+		                                          using Lib;
+
+		                                          namespace App;
+
+		                                          [Container]
+		                                          [Import(typeof(GreetingModule))]
+		                                          [Transient(typeof(Repository<>), typeof(IRepository<>))]
+		                                          public static partial class AppContainer { }
+		                                          """;
+
+		private static string Module(string property)
+			=> $$"""
+			     using Awaiten;
+
+			     namespace Lib;
+
+			     public interface IGreeter { }
+			     public interface IRepository<T> { }
+			     public sealed class Repository<T> : IRepository<T> where T : class { }
+
+			     internal sealed class Greeter : IGreeter
+			     {
+			         {{property}}
+			     }
+
+			     [Module]
+			     [Transient<Greeter, IGreeter>]
+			     public static partial class GreetingModule { }
+			     """;
+
+		private static Containers RunEverywhere(string module)
+			=> new(
+				Generator.Run(module + "\n[Container]\n[Import(typeof(GreetingModule))]\n[Transient(typeof(Repository<>), typeof(IRepository<>))]\npublic static partial class LibContainer { }\n"),
+				Generator.RunWithGeneratedReferencedAssembly(module, RepositoryConsumer),
+				Generator.RunWithGeneratedReferencedAssembly(Granted(module), RepositoryConsumer));
+
+		[Test]
+		[Arguments("[Inject(Deferred = true)] public IRepository<string> Names { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true, Deferred = true)] public IRepository<string> Names { get; set; } = null!;")]
+		public async Task ForADeferredProperty_IsClosedEverywhere(string property)
+		{
+			Containers containers = RunEverywhere(Module(property));
+
+			await That(containers.AllDiagnostics).IsEmpty()
+				.Because("the setter of a deferred property demands its closing of the open generic like the property itself");
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains("Deferred_Registration_Greeter_")
+				.And.Contains("new global::Lib.Repository<string>()");
+		}
+
+		[Test]
+		[Arguments("[Inject(Optional = true)] public IRepository<int> Numbers { get; set; } = null!;")]
+		[Arguments("[Inject(Optional = true, Deferred = true)] public IRepository<int> Numbers { get; set; } = null!;")]
+		public async Task ThatTheConstraintsReject_IsReportedForAnOptionalPropertyEverywhere(string property)
+		{
+			Containers containers = RunEverywhere(Module(property));
+
+			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"));
+			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"))
+				.Because("an optional property is filled when its service resolves, so a closing the constraints reject is the same error wherever the module lives");
+			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"));
+		}
+
+		private static string GenericGreeterModule()
+			=> """
+			   using Awaiten;
+
+			   namespace Lib;
+
+			   public interface IGreeter<T> { }
+			   public interface IRepository<T> { }
+			   public sealed class Repository<T> : IRepository<T> where T : class { }
+
+			   internal sealed class Greeter<T> : IGreeter<T>
+			   {
+			       [Inject(Deferred = true)] public IRepository<T> Items { get; set; } = null!;
+			   }
+
+			   [Module]
+			   [Transient(typeof(Greeter<>), typeof(IGreeter<>))]
+			   public static partial class GreetingModule { }
+			   """;
+
+		private static string GenericGreeterConsumer(string closing)
+			=> RepositoryConsumer.Replace("public static partial class AppContainer", "[Transient<Reader>]\npublic static partial class AppContainer")
+			   + $"\npublic sealed class Reader {{ public Reader(IGreeter<{closing}> greeter) {{ }} }}\n";
+
+		[Test]
+		public async Task ForADeferredPropertyOfAGenericFactory_ClosesTheRequestedClosing()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(GenericGreeterModule(), GenericGreeterConsumer("string"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the setter next to a generic factory is generic too, so it demands the closing of the requested type arguments, not its own type parameter");
+			await That(ContainerSource(result, "AppContainer")).Contains("new global::Lib.Repository<string>()");
+		}
+
+		[Test]
+		public async Task ForADeferredPropertyOfAGenericFactory_ReportsAClosingTheConstraintsReject()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(GenericGreeterModule(), GenericGreeterConsumer("int"));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("Repository<int>"));
+		}
+	}
+
 	public class RejectedShapes
 	{
 		[Test]

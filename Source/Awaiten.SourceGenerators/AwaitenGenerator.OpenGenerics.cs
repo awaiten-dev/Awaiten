@@ -746,7 +746,8 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The service types one unit of expansion work depends on: a factory's parameters, a hook's parameters after
+	///     The service types one unit of expansion work depends on: a factory's parameters and those of the setter
+	///     wrappers a module generated next to it for its deferred properties, a hook's parameters after
 	///     the instance, a decorator's constructor parameters but the inner one plus its <c>[Inject]</c> properties
 	///     (an <c>[InjectProperty]</c> entry does not reach a chain link), or the constructor and injected members of an
 	///     implementation the container constructs.
@@ -754,7 +755,7 @@ partial class AwaitenGenerator
 	private static IEnumerable<ITypeSymbol> ScannedServiceTypes(ExpansionWork work, ExpansionContext context)
 		=> work.Scan switch
 		{
-			ExpansionScan.Factory => ParameterServiceTypes(work.Method!.Parameters),
+			ExpansionScan.Factory => ParameterServiceTypes(work.Method!.Parameters.Concat(DeferredSetters(work.Method).Select(setter => setter.Parameters[1]))),
 			ExpansionScan.Hook => ParameterServiceTypes(work.Method!.Parameters.Skip(1)),
 			ExpansionScan.Decorator => ParameterServiceTypes(work.Method!.Parameters.Where(parameter => !SymbolEqualityComparer.Default.Equals(parameter, work.Inner)))
 				.Concat(InjectedProperties(work.Implementation).Select(property => RequiredServiceType(property.Type))),

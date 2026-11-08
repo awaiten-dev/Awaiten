@@ -208,18 +208,13 @@ partial class AwaitenGenerator
 			return members.Select(member => member.Deferred ? member with { Setter = $"{owner}.{DeferredSetterName(factory, member.MemberName)}{typeArguments}", } : member).ToList();
 		}
 
-		if (!IsGeneratedOwnerFactory(producer))
-		{
-			return members;
-		}
-
 		string prefix = DeferredSetterName(producer.Name, string.Empty);
 		string closing = producer.IsGenericMethod ? $"<{string.Join(", ", producer.TypeArguments.Select(argument => argument.ToDisplayString(FullyQualified)))}>" : string.Empty;
-		foreach (IMethodSymbol candidate in producer.ContainingType.GetMembers().OfType<IMethodSymbol>()
-			         .Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == producer.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal)))
+		foreach (IMethodSymbol setter in DeferredSetters(producer))
 		{
-			IMethodSymbol setter = producer.IsGenericMethod ? candidate.Construct(producer.TypeArguments.ToArray()) : candidate;
-			ParameterModel dependency = ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes);
+			ParameterModel dependency = RedirectVariance(
+				ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
 			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				continue;
@@ -230,6 +225,24 @@ partial class AwaitenGenerator
 		}
 
 		return members;
+	}
+
+	/// <summary>
+	///     The setter wrappers next to the generated factory <paramref name="factory" /> (see <see cref="DeferredSetterName" />),
+	///     or none for any other method. A wrapper next to a generic factory is generic too, so it is constructed with the
+	///     factory's type arguments.
+	/// </summary>
+	private static IEnumerable<IMethodSymbol> DeferredSetters(IMethodSymbol factory)
+	{
+		if (!IsGeneratedOwnerFactory(factory))
+		{
+			return [];
+		}
+
+		string prefix = DeferredSetterName(factory.Name, string.Empty);
+		return factory.ContainingType.GetMembers().OfType<IMethodSymbol>()
+			.Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == factory.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal))
+			.Select(method => factory.IsGenericMethod ? method.Construct(factory.TypeArguments.ToArray()) : method);
 	}
 
 	/// <summary>Whether <paramref name="method" /> is a factory a module or base container generated into its <c>Internals</c> class.</summary>
@@ -260,7 +273,7 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
 
 		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
 		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
@@ -300,6 +313,7 @@ partial class AwaitenGenerator
 			return members;
 		}
 
+		ReportHiddenInjectedProperties(info, context);
 		DiscoverInjectedMembers(info, injection, injectProperties, members);
 		return members;
 	}
@@ -1078,8 +1092,8 @@ partial class AwaitenGenerator
 			ReportUnsupportedKeyedCollectionKey(parameterModel, parameter.Type, info, context.ServiceToImpl, context.Diagnostics);
 			ReportFromKeyOnKeyedCollection(parameterModel, parameter.Type, info, context.Diagnostics);
 
-			parameterModel = RedirectVariance(parameterModel, parameter, context.ServiceToImpl, context.Variance);
-			RecordRequestedCollectionElement(parameterModel, parameter, context.Variance);
+			parameterModel = RedirectVariance(parameterModel, parameter.Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(parameterModel, parameter.Type, context.Variance);
 
 			if (context.External.ImportServices
 			    && parameterModel is { Kind: DependencyKind.Direct, Key: null, }

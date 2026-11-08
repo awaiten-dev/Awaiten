@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
@@ -25,6 +26,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 {
 	private const string ContainerAttributeName = "Awaiten.ContainerAttribute";
 	private const string ModuleAttributeName = "Awaiten.ModuleAttribute";
+	private const string InjectAttributeName = "Awaiten.InjectAttribute";
 	private const string AttributeNamespace = "Awaiten";
 
 	/// <summary>
@@ -92,6 +94,26 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			else if (model.NotPartialMarker is not null)
 			{
 				spc.AddSource(model.HintName, SourceText.From(Sources.EmitModuleNotPartialMarker(model), Encoding.UTF8));
+			}
+		});
+
+		// A third root: the [Inject] properties another assembly cannot see, which a container there reads to report them (AWT244, AWT136).
+		IncrementalValueProvider<ImmutableArray<(string Type, string Property, bool Assignable)>> hiddenInjectedProperties = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				InjectAttributeName,
+				static (node, _) => node is PropertyDeclarationSyntax,
+				static (ctx, _) => HiddenInjectedPropertyEntry(ctx))
+			.Where(static entry => entry is not null)
+			.Select(static (entry, _) => entry!.Value)
+			.Collect();
+
+		context.RegisterSourceOutput(hiddenInjectedProperties, static (spc, entries) =>
+		{
+			if (entries.Length > 0)
+			{
+				spc.AddSource("Awaiten.HiddenInjectedProperties.g.cs", SourceText.From(
+					Sources.EmitHiddenInjectedProperties(entries.OrderBy(entry => entry.Type, StringComparer.Ordinal).ThenBy(entry => entry.Property, StringComparer.Ordinal)),
+					Encoding.UTF8));
 			}
 		});
 	}
@@ -745,7 +767,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		ServedTypes ServedTypes,
 		BaseFactories? Factories,
 		AsyncInitializerScopes AsyncInitializers,
-		SameCompilationModules Modules);
+		SameCompilationModules Modules,
+		HiddenInjectedProperties HiddenInjectedProperties);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -931,7 +954,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation));
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

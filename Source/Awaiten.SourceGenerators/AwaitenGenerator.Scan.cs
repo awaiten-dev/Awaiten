@@ -1399,7 +1399,7 @@ partial class AwaitenGenerator
 
 		foreach (IPropertySymbol property in InjectedProperties(implementation))
 		{
-			if (UnsatisfiableInjectedMemberReason(property, containerSymbol, compilation, surface.Services, surface.ConstraintRejected, surface.External.ServiceTypes) is { } reason)
+			if (UnsatisfiableInjectedMemberReason(property, containerSymbol, compilation, surface) is { } reason)
 			{
 				return reason;
 			}
@@ -1455,19 +1455,17 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The reason a scanned implementation's <c>[Inject]</c> member cannot be satisfied (an AWT141 fragment), or
-	///     <see langword="null" /> otherwise. An injected member resolves from the graph like a Direct parameter (no
-	///     external fall-through or variance redirect, though an <c>[ImportService&lt;T&gt;]</c> member does resolve
-	///     externally). A not-settable, <c>[Arg]</c>-marked, external, optional or collection member is never a reason.
+	///     <see langword="null" /> otherwise. An injected member resolves from the graph like a Direct parameter,
+	///     variance redirect included (no external fall-through, though an <c>[ImportService&lt;T&gt;]</c> member does
+	///     resolve externally). A not-settable, <c>[Arg]</c>-marked, external, optional or collection member is never a reason.
 	/// </summary>
 	private static string? UnsatisfiableInjectedMemberReason(
 		IPropertySymbol property,
 		INamedTypeSymbol containerSymbol,
 		Compilation compilation,
-		HashSet<ServiceKey> services,
-		HashSet<string> constraintRejected,
-		ExternalServiceTypes externalServiceTypes)
+		ScanSatisfiability surface)
 	{
-		ParameterModel member = ClassifyDependency(property.Type, property.GetAttributes(), asyncFactory: false, location: null, externalServiceTypes);
+		ParameterModel member = ClassifyDependency(property.Type, property.GetAttributes(), asyncFactory: false, location: null, surface.External.ServiceTypes);
 		if (property.SetMethod is not { } setter || !IsAccessibleSetter(setter, containerSymbol, compilation)
 		    || member.Kind is DependencyKind.Arg or DependencyKind.External || IsInjectOptional(property.GetAttributes()))
 		{
@@ -1475,8 +1473,9 @@ partial class AwaitenGenerator
 		}
 
 		if (!IsSynthesizedCollection(member.Kind)
-		    && !services.Contains(KeyOf(member))
-		    && !constraintRejected.Contains(member.ServiceType))
+		    && !surface.Services.Contains(KeyOf(member))
+		    && !surface.ConstraintRejected.Contains(member.ServiceType)
+		    && !IsVarianceSatisfiable(member, property.Type, surface.Variance))
 		{
 			return $"its injected member '{property.Name}' requires '{DisplayKeyed(member.ServiceType, member.Key)}', which is not registered";
 		}

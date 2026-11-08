@@ -126,21 +126,21 @@ partial class AwaitenGenerator
 			ReportUnsupportedKeyedCollectionKey(parameterModel, parameter.Type, info, context.ServiceToImpl, context.Diagnostics);
 			ReportFromKeyOnKeyedCollection(parameterModel, parameter.Type, info, context.Diagnostics);
 
-			// The optional property of a generated factory is classified like the property itself, which neither a
-			// variant registration nor the [ImportServices] fall-through below fills.
+			// Variance: a closed-generic-interface request with no exact registration is redirected to a
+			// variance-compatible registration before the [ImportServices] fall-through below. A match makes the
+			// dependency container-resolved, so it is no longer "otherwise-unresolved" and never falls through to
+			// the external provider.
+			parameterModel = RedirectVariance(parameterModel, parameter.Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(parameterModel, parameter.Type, context.Variance);
+
+			// The optional property of a generated factory is classified like the property itself, which the
+			// [ImportServices] fall-through below does not fill.
 			if (parameter.HasExplicitDefaultValue
 			    && IsGeneratedOwnerFactory(producer)
 			    && IsMissingOptional(parameterModel, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				parameterModel = parameterModel with { Kind = DependencyKind.Absent, };
 			}
-
-			// Variance: a closed-generic-interface request with no exact registration is redirected to a
-			// variance-compatible registration before the [ImportServices] fall-through below. A match makes the
-			// dependency container-resolved, so it is no longer "otherwise-unresolved" and never falls through to
-			// the external provider.
-			parameterModel = RedirectVariance(parameterModel, parameter, context.ServiceToImpl, context.Variance);
-			RecordRequestedCollectionElement(parameterModel, parameter, context.Variance);
 
 			// [ImportServices]: an otherwise-unresolved direct dependency (unkeyed) is satisfied from the
 			// external provider rather than reported as missing. Only direct dependencies fall through; an
@@ -280,7 +280,8 @@ partial class AwaitenGenerator
 	///     stay small: the container symbol, the compilation (which answers whether a setter is reachable from the
 	///     container), the coalesced service map, the constraint-rejected and consumed-context sets, the
 	///     <c>[ImportService&lt;T&gt;]</c> external service types (a member of one resolves externally rather than
-	///     being reported missing), the closings a dispatch dictionary can key, and the diagnostics sink.
+	///     being reported missing), the closings a dispatch dictionary can key, the variance state a member is
+	///     redirected through like a constructor parameter, and the diagnostics sink.
 	/// </summary>
 	private sealed record InjectionContext(
 		INamedTypeSymbol ContainerSymbol,
@@ -290,6 +291,7 @@ partial class AwaitenGenerator
 		HashSet<ServiceKey> ConsumedConditionals,
 		ExternalServiceTypes ExternalServiceTypes,
 		List<(string ServiceType, INamedTypeSymbol Symbol)> DispatchCandidates,
+		VarianceState Variance,
 		List<DiagnosticInfo> Diagnostics);
 
 	/// <summary>
@@ -441,6 +443,18 @@ partial class AwaitenGenerator
 		// property read from another assembly.
 		LocationInfo? location = spec.EntryLocation ?? LocationInfo.From(property.Locations.FirstOrDefault()) ?? info.Location;
 
+		// AWT244: a project reference in the IDE, or a reference assembly that grants another assembly InternalsVisibleTo,
+		// shows a property the build reports through HiddenInjectedProperties when the container's view lacks it.
+		if (spec.EntryLocation is null
+		    && info.ConstructVia is null
+		    && property is { DeclaredAccessibility: Accessibility.Internal, SetMethod.DeclaredAccessibility: Accessibility.Internal, }
+		    && !SymbolEqualityComparer.Default.Equals(property.ContainingAssembly, context.Compilation.Assembly)
+		    && !context.Compilation.IsSymbolAccessibleWithin(property, context.ContainerSymbol))
+		{
+			context.Diagnostics.Add(HiddenInjectedPropertyDiagnostic(context.ContainerSymbol, info, property.MetadataName, property.ContainingAssembly));
+			return null;
+		}
+
 		// AWT136: an injected property must have a set/init accessor the container can assign through the object
 		// initializer. The container is not a derived type, so a protected/private-protected setter (and an
 		// internal one in an assembly that grants the container no [InternalsVisibleTo]) is out of reach even
@@ -505,6 +519,9 @@ partial class AwaitenGenerator
 		// explicitly registered dictionary was rewritten to Direct above and resolves that registration.
 		ReportUnsupportedKeyedCollectionKey(dependency, property.Type, info, context.ServiceToImpl, context.Diagnostics);
 		ReportFromKeyOnKeyedCollection(dependency, property.Type, info, context.Diagnostics);
+
+		dependency = RedirectVariance(dependency, property.Type, context.ServiceToImpl, context.Variance);
+		RecordRequestedCollectionElement(dependency, property.Type, context.Variance);
 
 		// AWT101: a direct/relationship member edge needs a registration to satisfy it (a collection member is
 		// satisfied elsewhere, like a constructor parameter, and yields an empty collection when unregistered).
