@@ -107,7 +107,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task ReportsAnUnkeyedRelationshipUnderImportServices()
+		public async Task ReportsARelationshipOverAnExplicitImportUnderImportServices()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using System;
@@ -120,12 +120,39 @@ public partial class DiagnosticTests
 
 			                                       [Container]
 			                                       [ImportServices]
+			                                       [ImportService<IClock>]
 			                                       [Singleton<Reader>]
 			                                       public static partial class MyContainer;
 			                                       """);
 
 			await That(result.Diagnostics).Contains("*AWT242*'MyCode.IClock'*").AsWildcard()
-				.Because("[ImportServices] routes an unregistered unkeyed direct dependency to the host, but not a relationship over it");
+				.Because("the explicit import declares the service host-owned, whatever the blanket fall-through does");
+			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ReportsARelationshipOverAnInheritedImport()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class Reader { public Reader(Lazy<IClock> clock) { } }
+
+			                                       [Container]
+			                                       [ImportService<IClock>]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<Reader>]
+			                                       public static partial class TestShop;
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT242*'MyCode.IClock'*").AsWildcard()
+				.Because("an extending container routes the imports of its base like its own");
 			await That(result.Diagnostics).DoesNotContain("*AWT101*").AsWildcard();
 		}
 
@@ -322,6 +349,57 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).Contains("*AWT101*IGrinder*").AsWildcard()
 				.Because("a service the container does not import is simply missing");
+			await That(result.Diagnostics).DoesNotContain("*AWT242*").AsWildcard();
+		}
+
+		[Test]
+		[Arguments("Lazy<Typo>")]
+		[Arguments("Func<Typo>")]
+		[Arguments("Owned<Typo>")]
+		[Arguments("Task<Typo>")]
+		public async Task DoesNotReportARelationshipUnderImportServicesAlone(string relationship)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using System;
+			                                         using System.Threading.Tasks;
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public sealed class Typo { }
+			                                         public sealed class Reader { public Reader({{relationship}} typo) { } }
+
+			                                         [Container]
+			                                         [ImportServices]
+			                                         [Singleton<Reader>]
+			                                         public static partial class MyContainer;
+			                                         """);
+
+			await That(result.Diagnostics).Contains("*AWT101*'MyCode.Typo'*").AsWildcard()
+				.Because("the blanket fall-through does not declare a service host-owned, so an unregistered one is most likely a forgotten registration");
+			await That(result.Diagnostics).DoesNotContain("*AWT242*").AsWildcard();
+		}
+
+		[Test]
+		public async Task DoesNotReportAParameterizedFuncUnderImportServicesAlone()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Widget { public Widget([Arg] int size) { } }
+			                                       public sealed class Reader { public Reader(Func<int, Widget> widget) { } }
+
+			                                       [Container]
+			                                       [ImportServices]
+			                                       [Singleton<Reader>]
+			                                       public static partial class MyContainer;
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*'MyCode.Widget'*").AsWildcard()
+				.Because("a widget needs a runtime argument the host cannot supply, so it is a missing registration, not a service to take directly from the host");
 			await That(result.Diagnostics).DoesNotContain("*AWT242*").AsWildcard();
 		}
 

@@ -127,7 +127,7 @@ public static partial class CoffeeShop;
 
 The external resolver hands back one instance of the type it is asked for, so only a direct dependency of an imported service is routed to it. Take the imported service directly: the host owns it and decides its lifetime, whatever shape the consumer would like to hold it in.
 
-A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). Under `[ImportServices]` this holds for an unkeyed relationship over any unregistered type.
+A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). `[ImportServices]` declares no type imported, so under it alone an unregistered relationship is still a missing registration ([AWT101](../09-diagnostics.md#awt101)).
 
 ```csharp expect=AWT242
 public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // AWT242: take IPaymentGateway directly

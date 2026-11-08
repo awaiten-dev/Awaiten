@@ -11,10 +11,9 @@ namespace Awaiten;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Only unkeyed direct dependencies fall through to the external provider. An unregistered keyed
-///         (<c>[FromKey]</c>) dependency is still reported as missing, and an unregistered relationship-typed one
-///         (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>, <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c>) as AWT242 when it is
-///         unkeyed, because the external provider serves only the direct dependency.
+///         Only unkeyed direct dependencies fall through to the external provider. Unregistered keyed
+///         (<c>[FromKey]</c>) and relationship-typed dependencies (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
+///         <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c>) are still reported as missing.
 ///     </para>
 ///     <para>
 ///         This trades compile-time safety for flexibility: a forgotten or mistyped dependency is not
