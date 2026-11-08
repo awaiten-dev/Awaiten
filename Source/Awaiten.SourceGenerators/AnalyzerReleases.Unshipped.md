@@ -61,7 +61,7 @@
  AWT158  | Awaiten   | Warning  | An [Inject(Optional = true)] property is init-only, so an unregistered dependency leaves it permanently at its default
  AWT159  | Awaiten   | Error    | A keyed dictionary (IReadOnlyDictionary<TKey, TService>) has a key type that is neither string nor an enum, or that mismatches its keyed registrations
  AWT160  | Awaiten   | Error    | A [FromKey] is applied to a synthesized keyed collection (IReadOnlyDictionary<string, TService>), which resolves every key
- AWT161  | Awaiten   | Error    | An Eager singleton is async-initialized and cannot be constructed synchronously at container build time
+ AWT161  | Awaiten   | Error    | An Eager singleton is async-initialized and cannot be constructed synchronously at container build time; a warning in the build of the module that registers it
  AWT162  | Awaiten   | Error    | A [RequestingType] factory parameter is not of type System.Type
  AWT163  | Awaiten   | Error    | A factory has both a [RequestingType] parameter and an [Arg] runtime-argument parameter
  AWT164  | Awaiten   | Error    | An OnActivated/OnRelease registration names a member that is not a usable lifecycle hook

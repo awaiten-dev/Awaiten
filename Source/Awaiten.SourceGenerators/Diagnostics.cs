@@ -952,6 +952,21 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     <see cref="EagerAsyncSingleton" /> in the build of the module that registers the singleton: the module does not
+	///     know whether an importing container opts into <c>AsyncSafety.SyncAfterInit</c>, so it warns its author, while
+	///     every container with the default reports the error. Only what the module itself makes asynchronous counts: a
+	///     convention, an async factory or an async <c>OnActivated</c> hook. A container in the module's own assembly that
+	///     imports it reports it instead. Reported as a warning; the descriptor keeps the id's severity for release tracking.
+	/// </summary>
+	public static readonly DiagnosticDescriptor EagerAsyncSingletonInModule = new(
+		"AWT161",
+		EagerAsyncSingleton.Title,
+		"'{0}' is marked Eager but is async-initialized, so a container with the default AsyncSafety cannot construct it synchronously at build time and reports AWT161; drop Eager, since InitializeAsync already warms the async singletons, unless every importing container opts into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)]",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A <c>[RequestingType]</c> factory parameter is declared with a type other than
 	///     <c>System.Type</c>. The generator fills that slot with the requesting consumer's
 	///     <c>typeof(…)</c>, so the parameter must be <c>System.Type</c> to receive it.

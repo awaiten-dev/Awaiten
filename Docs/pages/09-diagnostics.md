@@ -429,6 +429,8 @@ An eager singleton is async-initialized and cannot be constructed synchronously 
 
 An eager singleton is built with its decorators, so an async-initialized decorator reports it too.
 
+A module doesn't know whether the container that imports it opts into `AsyncSafety.SyncAfterInit`, so for an eager singleton the module itself makes async-initialized, with a convention, an async factory or an async `OnActivated` hook, the library's build reports a warning instead. Every importing container with the default still reports the error. When a container in the library's own assembly imports the module, the library's build leaves it to that container.
+
 ```csharp expect=AWT161
 public sealed class EspressoMachine : IWarmUp
 {

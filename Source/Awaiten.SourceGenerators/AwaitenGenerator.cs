@@ -124,6 +124,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		List<DiagnosticInfo> diagnostics = new();
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
 		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
+		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{

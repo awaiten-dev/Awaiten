@@ -603,6 +603,43 @@ partial class AwaitenGenerator
 		}
 	}
 
+	/// <summary>
+	///     Warns, in the module's own build, about each eager singleton of the module that the module itself makes
+	///     asynchronous (see <see cref="Diagnostics.EagerAsyncSingletonInModule" />), unless a container of its assembly
+	///     imports the module and reports it itself.
+	/// </summary>
+	private static void ReportModuleEagerAsyncSingletons(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		if (AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
+		{
+			return;
+		}
+
+		List<AsyncInitializerConvention>? conventions = null;
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			if (registration.Attribute.AttributeClass?.Name != "SingletonAttribute"
+			    || registration.Production == ProductionKind.Instance
+			    || !NamedFlag(registration.Attribute, "Eager"))
+			{
+				continue;
+			}
+
+			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
+			if ((registration is { Production: ProductionKind.Factory, Member: { } member, }
+			     && ProducingMethod(module, member, registration.Implementation, compilation) is { } factory
+			     && IsAsyncFactoryReturn(factory.ReturnType, compilation, out _))
+			    || IsHiddenAsyncInitialized(registration.Implementation, [registration,], module, compilation, conventions))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.EagerAsyncSingletonInModule,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([Display(registration.Implementation.ToDisplayString(FullyQualified)),]),
+					DiagnosticSeverity.Warning));
+			}
+		}
+	}
+
 	/// <summary>The first parameter of <paramref name="factory" /> whose type is private to <paramref name="module" /> (see <see cref="TypeHiddenInModule" />), or <see langword="null" />.</summary>
 	private static IParameterSymbol? HiddenParameter(IMethodSymbol factory, INamedTypeSymbol module, Compilation compilation)
 		=> factory.Parameters.FirstOrDefault(parameter => TypeHiddenInModule(parameter.Type, module, compilation) is not null);
