@@ -1518,6 +1518,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
         "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
+      },
+      {
+        "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
+        "message": "fix: stop emitting a read of a private Instance member that AWT194 reports, and assert diagnostics exactly (#344)"
       }
     ],
     "labels": [
@@ -1773,7 +1779,8 @@ window.BENCHMARK_DATA = {
       "ab7425ea",
       "780e4db4",
       "a256a139",
-      "327111eb"
+      "327111eb",
+      "ae650025"
     ],
     "datasets": [
       {
@@ -2032,7 +2039,8 @@ window.BENCHMARK_DATA = {
           7.249424491326014,
           4.527070740503924,
           5.510806714112942,
-          4.024182619793074
+          4.024182619793074,
+          7.765617289890845
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2044,6 +2052,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2563,7 +2572,8 @@ window.BENCHMARK_DATA = {
           7.755860371085314,
           4.23394573678573,
           5.024710079388959,
-          3.8421954895768846
+          3.8421954895768846,
+          7.64637618798476
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,6 +2585,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3094,7 +3105,8 @@ window.BENCHMARK_DATA = {
           133.06559287707012,
           59.68178412743977,
           116.92246038118998,
-          53.42860336303711
+          53.42860336303711,
+          108.55863979657491
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3106,6 +3118,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3621,7 +3634,8 @@ window.BENCHMARK_DATA = {
           8.184676000227531,
           5.296231008001736,
           7.2995589065055055,
-          5.09025456905365
+          5.09025456905365,
+          9.012350069979826
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3633,6 +3647,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4144,7 +4159,8 @@ window.BENCHMARK_DATA = {
           11.081356465816498,
           6.670928644140561,
           9.559869351983071,
-          6.084552629788717
+          6.084552629788717,
+          11.145316003606869
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4156,6 +4172,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5936,6 +5953,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
         "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
+      },
+      {
+        "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
+        "message": "fix: stop emitting a read of a private Instance member that AWT194 reports, and assert diagnostics exactly (#344)"
       }
     ],
     "labels": [
@@ -6191,7 +6214,8 @@ window.BENCHMARK_DATA = {
       "ab7425ea",
       "780e4db4",
       "a256a139",
-      "327111eb"
+      "327111eb",
+      "ae650025"
     ],
     "datasets": [
       {
@@ -6450,7 +6474,8 @@ window.BENCHMARK_DATA = {
           8.737329898277919,
           4.461393518107278,
           6.783579487067002,
-          4.197607998053233
+          4.197607998053233,
+          8.424078018714985
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6462,6 +6487,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6981,7 +7007,8 @@ window.BENCHMARK_DATA = {
           7.583510112303954,
           4.192935750420604,
           5.241011942071574,
-          3.8077315560409
+          3.8077315560409,
+          7.503227600684533
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6993,6 +7020,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7512,7 +7540,8 @@ window.BENCHMARK_DATA = {
           136.06869400342305,
           60.54925285066877,
           124.82281907399495,
-          54.58466943105062
+          54.58466943105062,
+          116.59888793627421
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7524,6 +7553,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8039,7 +8069,8 @@ window.BENCHMARK_DATA = {
           8.23675703406334,
           5.257738716327227,
           7.4859273364146555,
-          5.054571005914893
+          5.054571005914893,
+          9.040055798796507
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8051,6 +8082,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8562,7 +8594,8 @@ window.BENCHMARK_DATA = {
           13.572243498762449,
           6.486476276602064,
           9.454418603579203,
-          7.6389928969244165
+          7.6389928969244165,
+          14.368063184831824
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8574,6 +8607,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10354,6 +10388,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
         "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
+      },
+      {
+        "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
+        "message": "fix: stop emitting a read of a private Instance member that AWT194 reports, and assert diagnostics exactly (#344)"
       }
     ],
     "labels": [
@@ -10609,7 +10649,8 @@ window.BENCHMARK_DATA = {
       "ab7425ea",
       "780e4db4",
       "a256a139",
-      "327111eb"
+      "327111eb",
+      "ae650025"
     ],
     "datasets": [
       {
@@ -10868,7 +10909,8 @@ window.BENCHMARK_DATA = {
           18.981615975499153,
           17.775789182100976,
           15.255844080022403,
-          11.689251612623533
+          11.689251612623533,
+          25.848719529310863
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11030,6 +11072,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11399,7 +11442,8 @@ window.BENCHMARK_DATA = {
           1424.4592782338461,
           1303.9979415893554,
           1148.2813515981038,
-          808.6582307134356
+          808.6582307134356,
+          1673.6797379084996
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11411,6 +11455,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11930,7 +11975,8 @@ window.BENCHMARK_DATA = {
           29850.682055664063,
           26348.958247258113,
           25397.46143391927,
-          18431.370762416296
+          18431.370762416296,
+          24902.149934895835
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12194,7 +12240,8 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32478,
-          32478
+          32478,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12457,7 +12504,8 @@ window.BENCHMARK_DATA = {
           723.045023282369,
           580.7389883041382,
           581.8017296473186,
-          393.2971302781786
+          393.2971302781786,
+          713.6434297561646
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12487,6 +12535,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12980,7 +13029,8 @@ window.BENCHMARK_DATA = {
           11427.441364542643,
           9284.912739054362,
           8670.280775960286,
-          6704.3650153023855
+          6704.3650153023855,
+          12081.53932800293
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13240,6 +13290,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -14772,6 +14823,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
         "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
+      },
+      {
+        "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
+        "message": "fix: stop emitting a read of a private Instance member that AWT194 reports, and assert diagnostics exactly (#344)"
       }
     ],
     "labels": [
@@ -15027,7 +15084,8 @@ window.BENCHMARK_DATA = {
       "ab7425ea",
       "780e4db4",
       "a256a139",
-      "327111eb"
+      "327111eb",
+      "ae650025"
     ],
     "datasets": [
       {
@@ -15286,7 +15344,8 @@ window.BENCHMARK_DATA = {
           178.2324709733327,
           119.44574575764793,
           110.01754203864506,
-          75.04897839228312
+          75.04897839228312,
+          340.03775316874186
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15448,6 +15507,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15817,7 +15877,8 @@ window.BENCHMARK_DATA = {
           14526.22267964681,
           11275.026426188151,
           10451.171033732096,
-          7238.157218346229
+          7238.157218346229,
+          14942.120482308525
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15829,6 +15890,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -16348,7 +16410,8 @@ window.BENCHMARK_DATA = {
           728153.1501813616,
           648301.7506277902,
           636443.3013671875,
-          416771.86896623886
+          416771.86896623886,
+          593736.0176432292
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16612,7 +16675,8 @@ window.BENCHMARK_DATA = {
           720301,
           741610,
           742548,
-          735271
+          735271,
+          740318
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16875,7 +16939,8 @@ window.BENCHMARK_DATA = {
           44638.74868164062,
           38039.46792399089,
           35857.65323079427,
-          22816.632102457683
+          22816.632102457683,
+          40233.04645182292
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17135,7 +17200,8 @@ window.BENCHMARK_DATA = {
           80642,
           80305,
           80977,
-          79672
+          79672,
+          80763
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17398,7 +17464,8 @@ window.BENCHMARK_DATA = {
           355855.71226283483,
           308157.32849121094,
           271769.61268833705,
-          201987.96673177084
+          201987.96673177084,
+          339639.08872070315
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17658,7 +17725,8 @@ window.BENCHMARK_DATA = {
           573093,
           573125,
           573010,
-          573039
+          573039,
+          571190
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19166,6 +19234,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
         "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
+      },
+      {
+        "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
+        "message": "fix: stop emitting a read of a private Instance member that AWT194 reports, and assert diagnostics exactly (#344)"
       }
     ],
     "labels": [
@@ -19417,7 +19491,8 @@ window.BENCHMARK_DATA = {
       "ab7425ea",
       "780e4db4",
       "a256a139",
-      "327111eb"
+      "327111eb",
+      "ae650025"
     ],
     "datasets": [
       {
@@ -19672,7 +19747,8 @@ window.BENCHMARK_DATA = {
           241.93410748701828,
           205.62027650674185,
           242.71189266840616,
-          444.5070858637492
+          444.5070858637492,
+          242.88698859214782
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19707,6 +19783,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -20195,7 +20272,8 @@ window.BENCHMARK_DATA = {
           595.8131076267788,
           470.43098538716634,
           524.4301295280457,
-          610.0695203940073
+          610.0695203940073,
+          565.0554023106893
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -20207,6 +20285,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -20718,7 +20797,8 @@ window.BENCHMARK_DATA = {
           6541.271842956543,
           4964.295258076986,
           4088.0642073495046,
-          6627.082936423166
+          6627.082936423166,
+          4335.397855377198
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20802,6 +20882,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -21241,7 +21322,8 @@ window.BENCHMARK_DATA = {
           395.18052864074707,
           342.2306244032724,
           357.9986347516378,
-          396.8058190663656
+          396.8058190663656,
+          334.61634095509845
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21253,6 +21335,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21764,7 +21847,8 @@ window.BENCHMARK_DATA = {
           766.3011151631673,
           556.8561541693551,
           542.4759763876597,
-          708.2082018534343
+          708.2082018534343,
+          625.1611949284871
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21776,6 +21860,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
