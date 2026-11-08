@@ -235,6 +235,40 @@ public partial class ModuleHiddenDecoratorShapeTests
 			await That(Ids(external)).IsEqualTo(["AWT133",]);
 			await That(Ids(friend)).IsEqualTo(["AWT133",]);
 		}
+
+		[Test]
+		[Arguments("[Singleton<OtherStore, IStore>]")]
+		public async Task OfAnInternalBaseTypeOfTheService_ReportsAwt133InEveryContainer(string registration)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll($$"""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				internal interface IStore { }
+				public interface IGrinder { }
+				internal interface IBeanStore : IStore { }
+				internal sealed class BeanStore : IBeanStore { }
+				internal sealed class OtherStore : IStore { }
+				internal sealed class AllStores : IBeanStore { public AllStores(IEnumerable<IStore> stores) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(IBeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore, IBeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				{{registration}}
+				[Composite<AllStores, IBeanStore>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(Ids(same)).IsEqualTo(["AWT133",]);
+			await That(external.Diagnostics).Contains("*AWT133*'Lib.AllStores' fans out over a collection of 'Lib.IStore', not the composed service 'Lib.IBeanStore*").AsWildcard()
+				.Because("the container judges the collection against the internal service, whether the factory takes it as the handles of the internal base type or the module could build no factory");
+			await That(Ids(external)).IsEqualTo(["AWT133",]);
+			await That(Ids(friend)).IsEqualTo(["AWT133",]);
+		}
 	}
 
 	public class SharedImplementation
