@@ -70,6 +70,16 @@ partial class AwaitenGenerator
 					handles[Display(instance.ToDisplayString(FullyQualified))] = (Display(registration.Implementation.ToDisplayString(FullyQualified)), moduleName);
 				}
 			}
+
+			foreach (AttributeData scanned in module.GetAttributes().Where(attribute => attribute.AttributeClass is { Name: "GeneratedScanRegistrationAttribute", }))
+			{
+				if (scanned.ConstructorArguments.Length == 1
+				    && scanned.ConstructorArguments[0].Value is string factory
+				    && ScanInstanceHandleOf(module, factory, NamedArgument(scanned, "Implementation"), compilation) is var (implementation, handle, _))
+				{
+					handles[Display(handle.ReturnType.ToDisplayString(FullyQualified))] = (Display(implementation.ToDisplayString(FullyQualified)), moduleName);
+				}
+			}
 		}
 
 		if (handles.Count == 0 && hooks.Count == 0)
@@ -365,9 +375,10 @@ partial class AwaitenGenerator
 	///     one instance: a registration of the container, or of a module that can name the implementation. It is served
 	///     through the alias that returns the implementation from its instance handle, with the handle's lifetime. The two
 	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166).
-	///     A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
+	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
+	///     which therefore comes first. A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
 	/// </summary>
-	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		HashSet<string> lifetimes = new(StringComparer.Ordinal);
 		HashSet<string> productions = new(StringComparer.Ordinal);
@@ -383,10 +394,13 @@ partial class AwaitenGenerator
 			}
 
 			INamedTypeSymbol implementation = handle.Hidden!;
+			bool scan = IsScanHandle(handle);
 			if (!registration.IsScan)
 			{
 				RawRegistration plain = registration with { HiddenProduction = DescribeProduction(registration.Production, registration.ProductionMember, registration.Origin ?? container) };
-				bool registrationFirst = (PrecedenceRank(registration), index).CompareTo((PrecedenceRank(handle), handleIndex)) < 0;
+				bool registrationFirst = scan
+					? yieldedTo.TryGetValue(registration.ImplementationType, out RawRegistration? winner) && ReferenceEquals(winner, registration)
+					: (PrecedenceRank(registration), index).CompareTo((PrecedenceRank(handle), handleIndex)) < 0;
 				ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
 				if (registrationFirst)
 				{
@@ -394,7 +408,9 @@ partial class AwaitenGenerator
 					foreach ((string directive, string _, string _) in ConflictingDirectives(NewImplInfo(handle), registration, container)
 						         .Where(directive => directive.Directive != "Eager" && !conflicting.Contains(directive.Directive)))
 					{
-						Report($"it sets {directive}, which the handle cannot apply to the instance it builds", $"set {directive} on the module's registration, or remove it");
+						Report($"it sets {directive}, which the handle cannot apply to the instance it builds", scan
+							? $"remove {directive}, or grant this assembly InternalsVisibleTo in the module's assembly"
+							: $"set {directive} on the module's registration, or remove it");
 					}
 				}
 			}

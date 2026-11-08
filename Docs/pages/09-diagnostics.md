@@ -2239,15 +2239,16 @@ An `internal` module is imported only by its own assembly and by the assemblies 
 ### AWT197
 
 :::danger[Error]
-A self-compiled module `[Scan]` match or registered internal implementation would be exposed under more than one interface.
+A self-compiled module registration of an internal implementation would be exposed under more than one service, or a module `[Scan]` match under more than one interface, and no generated handle can share its instance.
 :::
 
 ```csharp expect=AWT197
-internal sealed class Roaster : IPlugin, IRoaster;
-
 [Module]
 [Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]   // IPlugin and IRoaster both apply
-public static partial class PluginModule;
+public static partial class PluginModule
+{
+    private sealed class Roaster : IPlugin, IRoaster;   // private to the module
+}
 ```
 
 ```csharp expect=AWT197
@@ -2260,9 +2261,18 @@ public static partial class RoastingModule
 }
 ```
 
-A self-compiled implementation is reached through a generated factory that returns a single accessible interface, so a shared instance across several interfaces cannot be expressed (unlike a container, whose registrations coalesce on the concrete type). The same applies across scans: two `[Scan]`s on one module that expose the same type under two different interfaces would emit two factories and silently split the instance, so that overlap is also rejected, as is an [internal implementation](./04-registration/07-modules.md#internal-implementations) that a scan of the same module matches too, including one the module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses). Several keys of one service share the factory and stay one instance. A registered internal implementation can serve several services when one public type covers them all: the factory returns a registered service that converts to the others, or a public base class or interface of the implementation. Without such a type, the module shares the instance through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) instead. An implementation the handle's factory can't build is still rejected, and so is a type private to the module: no container can name it, so none could hold the one instance and serve each service from it. Give such a type a base type or interface that covers its services, which may be internal, register it under a single service, or make it internal so every container shares one instance. Narrow the exposure to a single interface (typically `ScanAs.MatchingInterface`), or exclude the match. This is a v1 limitation. For an internal implementation registered under several services, a match its scans expose under two interfaces, or an internal implementation that the module both registers and scans, this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, both factories in the last case, and a container that can't construct the implementation reports [AWT231](#awt231). A public implementation with a public constructor that the module both registers and scans is never reported: every container constructs it and shares one instance, so the scan generates no factory.
+A self-compiled implementation is reached through a generated factory. A registered internal implementation can serve several services when one public type covers them all: the factory returns a registered service that converts to the others, or a public base class or interface of the implementation. Without such a type, the module shares the instance through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) instead. A module `[Scan]` match exposed under several interfaces, by one scan or by several scans of the module, is always built through such a handle (see [several interfaces](./04-registration/07-modules.md#several-interfaces)). Several keys of one service share the factory and stay one instance.
 
-**Fix:** Narrow `As` to a single interface, typically `As = ScanAs.MatchingInterface`, or exclude the match; register an internal implementation under a single service, give it a public base type or interface that covers its services, or make it public; give a type private to the module a base type or interface that covers its services, or make it internal.
+A handle can't serve every implementation, so these are rejected:
+
+- **A type private to the module.** No container can name it, so none could hold the one instance and serve each service from it.
+- **A registration the handle's factory can't build.**
+- **An internal implementation that a scan of the module matches too,** including one the module builds through a handle: the scan's factory would build a second instance.
+- **A scan match that a module of the assembly also registers.** A container in the assembly shares one instance between the registration and the match, but a container in another assembly would build one through the registration and one through the scan's handle.
+
+For an internal implementation registered under several services, a match its scans expose under several interfaces, or an internal implementation that the module both registers and scans, this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, both factories in the last case, and a container that can't construct the implementation reports [AWT231](#awt231). A public implementation with a public constructor that the module both registers and scans is never reported: every container constructs it and shares one instance, so the scan generates no factory.
+
+**Fix:** Give a type private to the module a base type or interface that covers its services, which may be internal, or make it internal so every container shares one instance. Register an internal implementation under a single service, give it a public base type or interface that covers its services, or make it public. Narrow a scan's `As` to a single interface, typically `As = ScanAs.MatchingInterface`, exclude the match, or remove the registration the scan also matches.
 
 ### AWT200
 
@@ -2429,7 +2439,7 @@ A module generates a factory for each [internal implementation](./04-registratio
 An `[AsyncInitializer<T>]` convention initializes an implementation, but the code that calls it cannot reach `T` or its method.
 :::
 
-A container calls a module's conventions itself. When the module lives in another assembly, `T` and its method must be public. The module's own build reports it for an implementation it [builds through a generated factory](./04-registration/07-modules.md#internal-implementations), and a container reports it for an implementation it constructs itself, such as one a module's `Factory` member returns.
+A container calls a module's conventions itself. When the module lives in another assembly, `T` and its method must be public. The module's own build reports it for an implementation it [builds through a generated factory](./04-registration/07-modules.md#internal-implementations), and a container reports it for an implementation it constructs itself, such as one a module's `Factory` member returns. A module that builds an implementation through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), such as a scan match it exposes under [several interfaces](./04-registration/07-modules.md#several-interfaces), runs the convention through a generated wrapper instead, so the convention may stay internal.
 
 An `internal` module is imported only by its own assembly and by the assemblies it grants `InternalsVisibleTo`. So for such a module, an internal convention is accessible too. A convention type nested privately in the module is not, and the message says it is private to the module.
 
@@ -2566,7 +2576,29 @@ public static partial class CoffeeShop;
 
 When the other module builds the implementation through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), for example because it registers it under an internal service, the scanning module generates an alias that serves the match from the handle, so the container shares the handle's instance instead.
 
-**Fix:** Grant the container's assembly `InternalsVisibleTo` in the library, so the container constructs the implementation once for all of them. Or keep the scan from matching the implementation, or register it under a service that converts to the scan's interface.
+The scans of two modules can also each expose the same implementation under several interfaces. Each module then builds it through a [handle of its own](./04-registration/07-modules.md#several-interfaces), while a container in their assembly shares one instance, so a container in another assembly that imports both reports this error and leaves out the matches of the later module.
+
+```csharp no-compile
+// In a referenced library, which does not grant the application InternalsVisibleTo:
+internal sealed class Roaster : IPlugin, IRoaster;
+
+[Module]
+[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]
+public static partial class PluginModule;
+
+[Module]
+[Scan<IRoaster>(As = ScanAs.Marker)]
+[Scan<IPlugin>(As = ScanAs.Marker)]
+public static partial class RoasterModule;
+
+// In the application:
+[Container]
+[Import(typeof(PluginModule))]
+[Import(typeof(RoasterModule))]   // both modules build Roaster through a handle of their own
+public static partial class CoffeeShop;
+```
+
+**Fix:** Grant the container's assembly `InternalsVisibleTo` in the library, so the container constructs the implementation once for all of them. Or keep the scan from matching the implementation, register it under a service that converts to the scan's interface, or import only one of two modules whose scans both expose it under several interfaces.
 
 ### AWT241
 
@@ -2575,6 +2607,8 @@ A registration names an implementation that an imported module of another assemb
 :::
 
 A module builds an implementation through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) when it registers it under an internal service. When the container or another module registers the same public implementation too, the container serves that registration from the handle's instance, so there is one instance, as in the library's own assembly. The handle builds the instance, though, so it can't run an `OnActivated` or `OnRelease` hook or apply `SuppressDisposal` that the earlier registration sets.
+
+A module also builds a public implementation through a handle when its scans expose it under [several interfaces](./04-registration/07-modules.md#several-interfaces). A registration of that implementation wins over the scan, as in the library's own assembly: the shared instance takes the registration's lifetime and `SuppressDisposal`, and the scan's hooks no longer run. The handle still can't run a hook the registration sets.
 
 ```csharp no-compile
 // In a referenced library, which does not grant the application InternalsVisibleTo:
@@ -2595,7 +2629,7 @@ public static partial class CoffeeShop
 }
 ```
 
-**Fix:** Set the directive on the module's registration, or remove it from this one. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
+**Fix:** Set the directive on the module's registration, or remove it from this one, or remove a hook from a registration that wins over a scan. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
 
 ## Extending containers
 

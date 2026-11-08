@@ -160,7 +160,8 @@ partial class AwaitenGenerator
 	///     factory it cannot resolve. A match hidden in the module it cannot construct either, so it calls the
 	///     factory the module generates in the same run, by its deterministic name, and runs the hooks through the
 	///     generated wrappers; a module that cannot receive the factory (AWT194) contributes no such match. A match the
-	///     module generates no factory for is registered under every service its scans expose it as. A
+	///     module generates no factory for, or builds through an instance handle, is registered under every service its
+	///     scans expose it as, all constructing the one implementation, so they share its instance. A
 	///     referenced-assembly module is excluded: its metadata carries the self-compiled
 	///     expansion instead, and re-running its scan here would double-register every match. The expansion's
 	///     diagnostics are discarded: the module pipeline (BuildModuleModel) already reports on the same <c>[Scan]</c>
@@ -182,7 +183,7 @@ partial class AwaitenGenerator
 
 			foreach (ModuleScanExpansion expansion in sameCompilationModules.Scans(moduleSymbol))
 			{
-				if (expansion.SkippedServices is { } services)
+				if ((expansion.SkippedServices ?? expansion.Exposures) is { } services)
 				{
 					result.AddRange(services.Select(service => SameCompilationScanRegistration(expansion, moduleSymbol) with
 					{
@@ -743,6 +744,10 @@ partial class AwaitenGenerator
 	///     the container expands directly (see <see cref="Collect" />). An attribute that names a match the module
 	///     generated no factory for (see <see cref="SkippedScanMatch" />) registers the match itself when this container
 	///     can construct it, exactly as a scan would, and is otherwise dropped after reporting AWT231 once per match. An
+	///     attribute that names the alias of a match the module builds through an instance handle (see
+	///     <see cref="ScanInstanceHandleOf" />) registers the handle once per module, as a dependency-only service built
+	///     by the module's scan factory with the scan's lifetime, hooks and traits, and the match as the alias that serves
+	///     its service from the handle, as a module registration built through a handle is (see <see cref="ThroughHandle" />). An
 	///     attribute of an imported module that is malformed, or that names neither a generated member nor a skipped
 	///     match, was written by another version of the generator and is dropped after reporting AWT154.
 	/// </summary>
@@ -864,7 +869,7 @@ partial class AwaitenGenerator
 
 		string qualifiedFactory = origin is null ? factory : $"{TypeIdentity(origin, context.Compilation)}.{factory}";
 
-		result.Add(new RawRegistration(
+		RawRegistration match = new(
 			serviceType,
 			$"{serviceType}{ScanKeyMarker}{qualifiedFactory}",
 			lifetime,
@@ -880,11 +885,55 @@ partial class AwaitenGenerator
 			// wrapper is a plain public static method, so ResolveHook binds it directly and ClassifyHookParameters
 			// resolves its post-instance parameters from this container's graph.
 			OnActivated: onActivated,
-			OnRelease: onRelease,
-			Traits: traits.IsEmpty ? null : traits,
-			ScanImplementation: origin is null || implementationName is null ? null : origin.ContainingAssembly.GetTypeByMetadataName(implementationName)));
+			OnRelease: onRelease);
+		if (origin is not null && ScanInstanceHandleOf(origin, factory, implementationName, context.Compilation) is var (handled, handle, alias))
+		{
+			string identity = $"{TypeIdentity(handled, context.Compilation)}{HiddenKeyMarker}{TypeIdentity(origin, context.Compilation)}";
+			if (!result.Exists(registration => registration.ImplementationType == identity))
+			{
+				result.Add(match with
+				{
+					ServiceType = handle.ReturnType.ToDisplayString(FullyQualified),
+					ServiceSymbol = (INamedTypeSymbol)handle.ReturnType,
+					ImplementationType = identity,
+					Implementation = (INamedTypeSymbol)handle.ReturnType,
+					ProductionMember = InInternals(handle.Name),
+					IsScan = false,
+					HiddenProduction = DescribeProduction(ProductionKind.Constructor, null, origin),
+					Traits = traits,
+					TraitsExact = true,
+					Unlisted = true,
+					Hidden = handled,
+				});
+			}
+
+			result.Add(ThroughAlias(match, origin, handled, alias, context.Compilation) with { Aliased = match, });
+			return true;
+		}
+
+		result.Add(match with
+		{
+			Traits = traits.IsEmpty ? null : traits,
+			ScanImplementation = origin is null || implementationName is null ? null : origin.ContainingAssembly.GetTypeByMetadataName(implementationName),
+		});
 		return true;
 	}
+
+	/// <summary>
+	///     The implementation, its handle factory and the alias that <paramref name="factory" /> names, when a
+	///     <c>[GeneratedScanRegistration]</c> of <paramref name="module" /> serves a match the module builds through an
+	///     instance handle (see <see cref="ScanInstanceHandle" />): the named member takes the instance handle that the
+	///     module's scan factory of <paramref name="implementationName" /> returns, or a factory of it (see
+	///     <see cref="TakesHandle" />). Otherwise <see langword="null" />.
+	/// </summary>
+	private static (INamedTypeSymbol Implementation, IMethodSymbol Handle, IMethodSymbol Alias)? ScanInstanceHandleOf(INamedTypeSymbol module, string factory, string? implementationName, Compilation compilation)
+		=> implementationName is not null
+		   && module.ContainingAssembly.GetTypeByMetadataName(implementationName) is { } implementation
+		   && GeneratedFactoryNamed(module, ModuleFactoryName(implementation), compilation) is { } handle
+		   && handle.ReturnType.Name == HiddenInstanceName(implementation)
+		   && MembersNamed(module, factory).OfType<IMethodSymbol>().FirstOrDefault(member => TakesHandle(member, handle.ReturnType.ToDisplayString(FullyQualified))) is { } alias
+			? (implementation, handle, alias)
+			: null;
 
 	/// <summary>
 	///     AWT168: a contextual binding is stored under a synthetic per-consumer key (see <c>ContextKey</c>), which

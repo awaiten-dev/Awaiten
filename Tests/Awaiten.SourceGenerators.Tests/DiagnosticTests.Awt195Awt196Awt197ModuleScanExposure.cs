@@ -108,7 +108,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task Awt197_ReportsWhenAMatchWouldHaveMultipleExposures()
+		public async Task Awt197_DoesNotReportWhenAMatchHasMultipleExposures()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -124,12 +124,12 @@ public partial class DiagnosticTests
 			                                       public static partial class PluginModule { }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT197*Roaster*").AsWildcard()
-				.Because("a self-compiled match is reached through a single-interface factory, so multiple exposures are unsupported in v1");
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a generated instance handle shares the match across its exposures");
 		}
 
 		[Test]
-		public async Task Awt197_ReportsWhenTwoScansExposeOneMatchUnderDifferentInterfaces()
+		public async Task Awt197_ReportsWhenAMatchPrivateToTheModuleHasMultipleExposures()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -138,16 +138,68 @@ public partial class DiagnosticTests
 
 			                                       public interface IPlugin { }
 			                                       public interface IRoaster { }
-			                                       internal sealed class Roaster : IPlugin, IRoaster { }
+
+			                                       [Module]
+			                                       [Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]
+			                                       public static partial class PluginModule
+			                                       {
+			                                           private sealed class Roaster : IPlugin, IRoaster { }
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT197")
+			                                                                  && diagnostic.Contains("'Lib.PluginModule.Roaster' matched the module scan, but it would be exposed under multiple interfaces (Lib.IPlugin, Lib.IRoaster), and it is private to the module or a class containing it, so no generated handle can hold its one instance; narrow the As to one interface, make it internal or exclude the type from the scan"))
+				.Because("the instance handle would have to name a type only the module can see");
+		}
+
+		[Test]
+		public async Task Awt197_ReportsWhenTwoScansExposeOneMatchPrivateToTheModuleUnderDifferentInterfaces()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IPlugin { }
+			                                       public interface IRoaster { }
 
 			                                       [Module]
 			                                       [Scan<IPlugin>(As = ScanAs.Marker)]
 			                                       [Scan<IRoaster>(As = ScanAs.Marker)]
-			                                       public static partial class PluginModule { }
+			                                       public static partial class PluginModule
+			                                       {
+			                                           private sealed class Roaster : IPlugin, IRoaster { }
+			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT197*Roaster*IPlugin, Lib.IRoaster*").AsWildcard()
-				.Because("two scans exposing the same type under different interfaces would emit two factories, splitting the single shared instance a container scan gives one implementation, so the overlap is rejected like a multi-exposure within one scan");
+			await That(result.Diagnostics).Contains("*AWT197*Roaster*(Lib.IPlugin, Lib.IRoaster)*private to the module*").AsWildcard()
+				.Because("two scans exposing a private type under different interfaces would emit two factories and split its instance");
+		}
+
+		[Test]
+		public async Task Awt197_ReportsWhenAModuleRegistersAMatchWithMultipleExposures()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IPlugin { }
+			                                       public interface IRoaster { }
+			                                       public interface IGrinder { }
+			                                       internal sealed class Roaster : IPlugin, IRoaster, IGrinder { }
+
+			                                       [Module]
+			                                       [Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface)]
+			                                       public static partial class PluginModule;
+
+			                                       [Module]
+			                                       [Singleton<Roaster, IGrinder>]
+			                                       public static partial class GrinderModule;
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*error AWT197*'Lib.Roaster' matched the module scan, but it would be exposed under multiple interfaces (Lib.IPlugin, Lib.IRoaster), and the module 'Lib.GrinderModule' registers it too, so no generated handle can share its one instance with that registration; narrow the As to one interface or exclude the type from the scan*").AsWildcard()
+				.Because("the scan's handle and the registration would build two instances where a container in the assembly shares one");
 		}
 
 		[Test]

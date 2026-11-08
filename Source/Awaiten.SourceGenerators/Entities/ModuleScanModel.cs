@@ -175,7 +175,9 @@ internal readonly record struct ImplementationTraits(EquatableArray<string> Asyn
 ///     factory signature (resolved from the consuming container's graph, exactly like a hand-written module
 ///     factory's parameters). <see cref="Traits" /> tells the consumer how the match it cannot see is initialized
 ///     and disposed. <see cref="Skip" /> marks a match the module emits no factory for. <see cref="ImplementationMetadataName" />
-///     lets the consumer share one instance with every other registration of the implementation.
+///     lets the consumer share one instance with every other registration of the implementation. A match exposed under
+///     several interfaces is built into the instance handle <see cref="Shared" /> instead of being returned as
+///     <see cref="ServiceType" />.
 /// </summary>
 internal sealed record ModuleFactory(
 	string FactoryName,
@@ -188,7 +190,24 @@ internal sealed record ModuleFactory(
 	ModuleHook? OnRelease = null,
 	ImplementationTraits Traits = default,
 	ScanSkip? Skip = null,
-	string? ImplementationMetadataName = null);
+	string? ImplementationMetadataName = null,
+	ScanInstanceHandle? Shared = null);
+
+/// <summary>
+///     The generated instance handle a module-scan match exposed under several interfaces is built into, as an internal
+///     implementation a module registers under several services is: the factory returns <see cref="Type" />, wrapping
+///     the instance in its <see cref="Variant" />, and each of the <see cref="Exposures" /> is registered through the
+///     one of the <see cref="Aliases" /> that returns it, so every exposure shares the one instance. A public
+///     implementation gets an alias under its own type too. <see cref="Declaration" /> declares the handle, and
+///     <see cref="Initializers" /> run the module's conventions on the instance it holds.
+/// </summary>
+internal sealed record ScanInstanceHandle(
+	string Type,
+	string Variant,
+	HiddenHandle Declaration,
+	EquatableArray<string> Exposures,
+	EquatableArray<HiddenAlias> Aliases,
+	EquatableArray<HiddenInitializer> Initializers);
 
 /// <summary>
 ///     A module-scan match the module emits no factory for, because an assembly granted <c>InternalsVisibleTo</c>

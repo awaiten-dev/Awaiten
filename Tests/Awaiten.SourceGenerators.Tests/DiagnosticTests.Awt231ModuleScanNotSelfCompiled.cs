@@ -79,7 +79,8 @@ public partial class DiagnosticTests
 
 				await That(result.Diagnostics).Contains("*AWT195*Roaster*Secret*").AsWildcard()
 					.Because("no other assembly could ever construct the match, so the missing factory is an error in the module's own build");
-				await That(result.Diagnostics).Contains("*AWT197*Grinder*").AsWildcard();
+				await That(result.Diagnostics).DoesNotContain("*Grinder*").AsWildcard()
+					.Because("the module builds a match its scans expose under several interfaces through a generated instance handle");
 				await That(result.Diagnostics).Contains("*AWT200*Timer*Clock*[Inject]*").AsWildcard();
 			}
 
