@@ -136,7 +136,11 @@ internal sealed class ShapeLedgerReader(IHiddenShapeLedger ledger, [FromKey("aud
 [Decorate<BaseInnerLedger, IHiddenShapeLedger>(AllKeys = true)]
 [Decorate<AuditLedger, IHiddenShapeLedger>(Keys = new object?[] { "audit", })]
 [Decorate<ViewLedger, IShapeLedgerView>]
+#if CONTAINER_SUPPORT
+public static partial class FriendHiddenLedgerShapeModule;
+#else
 public static partial class HiddenLedgerShapeModule;
+#endif
 
 internal interface IHiddenShapeChannel : IShapeChannel;
 
@@ -174,7 +178,11 @@ internal sealed class ShapeChannelNotifier(IHiddenShapeChannel channel, IEnumera
 [Singleton<ShapeChannelNotifier, IShapeChannelNotifier>]
 [Composite<AllChannels, IHiddenShapeChannel>]
 [Decorate<TracedChannel, IHiddenShapeChannel>]
+#if CONTAINER_SUPPORT
+public static partial class FriendHiddenChannelShapeModule;
+#else
 public static partial class HiddenChannelShapeModule;
+#endif
 
 internal interface IHiddenShapeTill
 {
@@ -206,33 +214,41 @@ internal sealed class ShapeTillReader(IHiddenShapeTill till) : IShapeTillReader
 [Singleton<ShapeTill, IHiddenShapeTill>]
 [Singleton<ShapeTillReader, IShapeTillReader>]
 [Decorate<FirstTill, IHiddenShapeTill>]
+#if CONTAINER_SUPPORT
+public static partial class FriendHiddenTillShapeModule;
+#else
 public static partial class HiddenTillShapeModule;
+#endif
 
-/// <summary>A <c>[Module]</c> that decorates the internal till <see cref="HiddenTillShapeModule" /> registers.</summary>
+/// <summary>A <c>[Module]</c> that decorates the internal till the other till module registers.</summary>
 [Module]
 [Decorate<SecondTill, IHiddenShapeTill>]
+#if CONTAINER_SUPPORT
+public static partial class FriendHiddenTillDecoratorShapeModule;
+#else
 public static partial class HiddenTillDecoratorShapeModule;
+#endif
 #if CONTAINER_SUPPORT
 
-/// <summary>A container in the modules' own assembly that imports <see cref="HiddenLedgerShapeModule" />.</summary>
+/// <summary>A container in the modules' own assembly that imports <see cref="FriendHiddenLedgerShapeModule" />.</summary>
 [Container]
-[Import(typeof(HiddenLedgerShapeModule))]
+[Import(typeof(FriendHiddenLedgerShapeModule))]
 public static partial class LocalLedgerShapeContainer;
 
-/// <summary>A container in the modules' own assembly that imports <see cref="HiddenChannelShapeModule" />.</summary>
+/// <summary>A container in the modules' own assembly that imports <see cref="FriendHiddenChannelShapeModule" />.</summary>
 [Container]
-[Import(typeof(HiddenChannelShapeModule))]
+[Import(typeof(FriendHiddenChannelShapeModule))]
 public static partial class LocalChannelShapeContainer;
 
 /// <summary>A container in the modules' own assembly that imports the till modules, registering one first.</summary>
 [Container]
-[Import(typeof(HiddenTillShapeModule))]
-[Import(typeof(HiddenTillDecoratorShapeModule))]
+[Import(typeof(FriendHiddenTillShapeModule))]
+[Import(typeof(FriendHiddenTillDecoratorShapeModule))]
 public static partial class LocalTillShapeContainer;
 
 /// <summary>A container in the modules' own assembly that imports the till modules, decorating one first.</summary>
 [Container]
-[Import(typeof(HiddenTillDecoratorShapeModule))]
-[Import(typeof(HiddenTillShapeModule))]
+[Import(typeof(FriendHiddenTillDecoratorShapeModule))]
+[Import(typeof(FriendHiddenTillShapeModule))]
 public static partial class LocalReversedTillShapeContainer;
 #endif

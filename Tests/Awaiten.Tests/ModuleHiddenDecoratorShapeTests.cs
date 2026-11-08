@@ -148,7 +148,7 @@ public class ModuleHiddenDecoratorShapeTests
 public static partial class ExternalLedgerShapeContainer;
 
 [Container]
-[Import(typeof(ContainerSupport.HiddenLedgerShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenLedgerShapeModule))]
 public static partial class FriendLedgerShapeContainer;
 
 [Container]
@@ -156,7 +156,7 @@ public static partial class FriendLedgerShapeContainer;
 public static partial class ExternalChannelShapeContainer;
 
 [Container]
-[Import(typeof(ContainerSupport.HiddenChannelShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenChannelShapeModule))]
 public static partial class FriendChannelShapeContainer;
 
 [Container]
@@ -170,11 +170,11 @@ public static partial class ExternalTillShapeContainer;
 public static partial class ExternalReversedTillShapeContainer;
 
 [Container]
-[Import(typeof(ContainerSupport.HiddenTillShapeModule))]
-[Import(typeof(ContainerSupport.HiddenTillDecoratorShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenTillShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenTillDecoratorShapeModule))]
 public static partial class FriendTillShapeContainer;
 
 [Container]
-[Import(typeof(ContainerSupport.HiddenTillDecoratorShapeModule))]
-[Import(typeof(ContainerSupport.HiddenTillShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenTillDecoratorShapeModule))]
+[Import(typeof(ContainerSupport.FriendHiddenTillShapeModule))]
 public static partial class FriendReversedTillShapeContainer;
