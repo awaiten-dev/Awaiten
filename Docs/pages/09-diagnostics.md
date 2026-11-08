@@ -2765,6 +2765,8 @@ The project compiles with a C# version older than the code Awaiten generates nee
 </PropertyGroup>
 ```
 
+On .NET Framework and netstandard2.0 without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
+
 ## Composition boundary
 
 These guard the line between your domain and the container. They are suppressible warnings, reported by the analyzer rather than the generator, so a deliberate exception can opt out in source.
