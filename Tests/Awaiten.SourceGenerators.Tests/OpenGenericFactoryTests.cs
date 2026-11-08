@@ -995,9 +995,10 @@ public class OpenGenericFactoryTests
 				}
 				""", Consumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231")
-			                                                                  && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper")
-			                                                                  && diagnostic.Contains("Lib.Log"));
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper")
+			                                                                           && diagnostic.Contains("Lib.Log"))
+				.Because("the closing the consumer needs is not reported missing as well");
 		}
 
 		[Test]
@@ -1938,7 +1939,7 @@ public class OpenGenericFactoryTests
 				}
 				""");
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper"))
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper"))
 				.Because("the closing the inherited consumer needs is not reported missing as well");
 		}
 	}
