@@ -676,17 +676,74 @@ public class RegistrationFactoryInjectedPropertyTests
 		}
 
 		[Test]
-		public async Task BesideAContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		[Arguments("[InjectProperty<Greeter>(nameof(Greeter.Backup))]", "Backup = ")]
+		[Arguments("[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]", "created.Backup = ")]
+		public async Task BesideAContainerSideEntry_IsFilledEverywhere(string entry, string assignment)
 		{
 			string module = Library("""
 			                        [Inject] internal IClock Clock { get; set; } = null!;
 			                            public IClock Backup { get; set; } = null!;
 			                        """, UserType);
+			string withEntry = $"{entry}\n[Transient<SystemClock, IClock>]";
+
+			Containers containers = new(
+				Generator.Run(WithLibraryContainer(module, clock: true).Replace("[Transient<SystemClock, IClock>]\npublic static partial class LibContainer", withEntry + "\npublic static partial class LibContainer")),
+				Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", withEntry)),
+				Generator.RunWithGeneratedReferencedAssembly(Granted(module), ClockConsumer.Replace("[Transient<SystemClock, IClock>]", withEntry)));
+
+			await That(containers.AllDiagnostics).IsEmpty();
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_").And.Contains(assignment)
+				.Because("the container sets a property it sees on the instance the module's factory returns, as it would on one it constructs");
+			await That(ContainerSource(containers.Same, "LibContainer")).Contains(assignment);
+			await That(ContainerSource(containers.Friend, "AppContainer")).Contains(assignment);
+		}
+
+		[Test]
+		public async Task OfAnInternalServiceTypeBesideAContainerSideEntry_IsFilledByAContainerInAnotherAssembly()
+		{
+			string module = """
+			                using Awaiten;
+
+			                namespace Lib;
+
+			                public interface IGreeter { }
+			                internal interface IKettle { }
+			                internal sealed class Kettle : IKettle { }
+			                public interface IClock { }
+			                public sealed class SystemClock : IClock { }
+
+			                public sealed class Greeter : IGreeter
+			                {
+			                    [Inject] internal IKettle Kettle { get; set; } = null!;
+			                    public IClock Backup { get; set; } = null!;
+			                }
+
+			                [Module]
+			                [Singleton<Kettle, IKettle>]
+			                [Transient<Greeter, IGreeter>]
+			                public static partial class GreetingModule { }
+			                """;
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\n[Transient<SystemClock, IClock>]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178"))
-				.Because("the module's factory builds the implementation whole, so the container reports the entry it cannot fill instead of leaving it out");
+			await That(other.Diagnostics).IsEmpty();
+			await That(ContainerSource(other, "AppContainer")).Contains("__AssignGreeter(")
+				.Because("the factory takes the internal service through its handle, and the container still sets its own entry on the instance it returns");
+		}
+
+		[Test]
+		public async Task BesideAnInitOnlyContainerSideEntry_IsReportedByAContainerInAnotherAssembly()
+		{
+			string module = Library("""
+			                        [Inject] internal IClock Clock { get; set; } = null!;
+			                            public IClock Backup { get; init; } = null!;
+			                        """, UserType);
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\n[Transient<SystemClock, IClock>]"));
+
+			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178"));
+			await That(other.Diagnostics).Contains("*AWT178*'Lib.Greeter' is built by the generated factory of 'Lib.GreetingModule'*init-only property 'Backup'*").AsWildcard()
+				.Because("only the object initializer of the module's factory could set an init-only property, so the container reports the entry instead of leaving it out");
 		}
 		[Test]
 		public async Task OfAPublicDecorator_IsSetEverywhere()

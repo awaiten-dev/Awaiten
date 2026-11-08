@@ -16,5 +16,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     implementation built through its factory, which the container calls instead of assigning the property.
 ///     <see cref="PresenceFlag" /> names the presence flag a module's factory takes beside an
 ///     <c>[Inject(Optional = true)]</c> member, whose service is registered, since a missing one yields no member.
+///     <see cref="AfterFactoryType" /> is the property type of a container-side <c>[InjectProperty]</c> member of an
+///     implementation built through an owner's generated factory read from metadata, which the factory does not take, so
+///     the container assigns it on the instance the factory returns, before anything else sees it.
 /// </summary>
-internal sealed record MemberModel(string MemberName, ParameterModel Dependency, bool Deferred = false, string? Setter = null, string? PresenceFlag = null);
+internal sealed record MemberModel(string MemberName, ParameterModel Dependency, bool Deferred = false, string? Setter = null, string? PresenceFlag = null, string? AfterFactoryType = null);

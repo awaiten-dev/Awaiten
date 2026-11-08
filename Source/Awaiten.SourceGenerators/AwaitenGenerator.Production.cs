@@ -227,8 +227,9 @@ partial class AwaitenGenerator
 	///     filled; a Factory/Instance-produced implementation is produced whole by its source, so an
 	///     <c>[InjectProperty]</c> entry on it yields no member and is
 	///     <see cref="Diagnostics.InjectPropertyOnNonConstructed">AWT178</see> (mirroring the
-	///     <see cref="ProductionKind.Constructor" /> gate). Extracted from <see cref="BuildInstance" /> to keep its
-	///     branching flat.
+	///     <see cref="ProductionKind.Constructor" /> gate). An implementation an owner's generated factory builds is the
+	///     exception: the container sets its entries on the instance the factory returns. Extracted from
+	///     <see cref="BuildInstance" /> to keep its branching flat.
 	/// </summary>
 	private static List<MemberModel> BuildInjectedMembers(ImplInfo info, BuildContext context)
 	{
@@ -244,39 +245,34 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics);
 
-		// A factory read from its owner's metadata takes the injected properties as parameters of its own.
-		if (info.Constructor is { MethodKind: MethodKind.Ordinary, })
+		// A factory read from its owner's metadata takes the [Inject] properties and the base's entries as parameters of
+		// its own, so the container sets only the other entries, on the instance the factory returns.
+		if (info.Constructor is { MethodKind: MethodKind.Ordinary, } || IsOwnerFactoryProduced(info))
 		{
+			List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
+			                                                                       && (info.Constructor is { MethodKind: MethodKind.Ordinary, } factory
+				                                                                       ? factory.Parameters.Any(parameter => parameter.Name == entry.PropertyName)
+				                                                                       : OwnerFactoryTakes(info, entry.PropertyName)))).ToList();
+			DiscoverInjectedMembers(info, injection, notTaken, members, afterFactory: true);
 			return members;
 		}
 
 		if (info.Production != ProductionKind.Constructor)
 		{
-			foreach (InjectPropertyEntry entry in injectProperties.Where(entry => !(entry.Inherited && OwnerFactoryTakes(info, entry.PropertyName))))
+			foreach (InjectPropertyEntry entry in injectProperties)
 			{
-				context.Diagnostics.Add(IsOwnerFactoryProduced(info)
-					? new DiagnosticInfo(
-						Diagnostics.InjectPropertyOnOwnerFactory,
-						entry.Location ?? info.Location,
-						new EquatableArray<string>([
-							entry.PropertyName, DisplayInstance(info.ImplementationType), Display(info.Origin!.ToDisplayString(FullyQualified)),
-							CanConstruct(info.Symbol, context.Compilation) ? "this container does not see one of its [Inject] properties" : "this container cannot construct it",
-						]))
-					: new DiagnosticInfo(
-						Diagnostics.InjectPropertyOnNonConstructed,
-						entry.Location ?? info.Location,
-						new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				context.Diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.InjectPropertyOnNonConstructed,
+					entry.Location ?? info.Location,
+					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
 			}
 
 			return members;
 		}
 
-		DiscoverInjectedMembers(
-			info,
-			new InjectionContext(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Diagnostics),
-			injectProperties,
-			members);
+		DiscoverInjectedMembers(info, injection, injectProperties, members);
 		return members;
 	}
 

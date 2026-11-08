@@ -129,8 +129,44 @@ internal static partial class Sources
 			EmitAsyncArrayHelper(builder, depth);
 		}
 
+		EmitAfterFactoryAssigners(builder, depth, context.Instances, names);
 		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray());
 	}
+
+	/// <summary>
+	///     Emits, for each instance built through an owner's generated factory with container-side members that factory
+	///     does not take (see <see cref="MemberModel.AfterFactoryType" />), a helper that sets them on the instance the
+	///     factory returns and hands it back, so the construction stays one expression on every resolver path.
+	/// </summary>
+	private static void EmitAfterFactoryAssigners(StringBuilder builder, int depth, InstanceModel[] instances, Names names)
+	{
+		for (int index = 0; index < instances.Length; index++)
+		{
+			MemberModel[] members = AfterFactoryMembers(instances[index]);
+			if (members.Length == 0)
+			{
+				continue;
+			}
+
+			builder.AppendLine();
+			AppendXmlSummary(builder, depth, "Sets the container-side [InjectProperty] members on the instance a generated factory returned.");
+			Indent(builder, depth).Append("private static ").Append(instances[index].ConstructedType).Append(' ').Append(names.AfterFactoryAssigner(index))
+				.Append('(').Append(instances[index].ConstructedType).Append(" __instance")
+				.Append(string.Concat(members.Select(member => $", {member.AfterFactoryType} @{member.MemberName}"))).AppendLine(")");
+			Indent(builder, depth).AppendLine("{");
+			foreach (MemberModel member in members)
+			{
+				Indent(builder, depth + 1).Append("__instance.").Append(member.MemberName).Append(" = @").Append(member.MemberName).AppendLine(";");
+			}
+
+			Indent(builder, depth + 1).AppendLine("return __instance;");
+			Indent(builder, depth).AppendLine("}");
+		}
+	}
+
+	/// <summary>The members of <paramref name="instance" /> set on the instance its owner's generated factory returned.</summary>
+	private static MemberModel[] AfterFactoryMembers(InstanceModel instance)
+		=> instance.InjectedMembers.AsArray().Where(member => member.AfterFactoryType is not null).ToArray();
 
 	/// <summary>
 	///     Emits the <c>internal</c> factory and hook wrappers of each implementation private to the container, which a

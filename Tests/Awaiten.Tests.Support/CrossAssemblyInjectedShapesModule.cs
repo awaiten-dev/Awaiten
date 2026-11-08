@@ -85,6 +85,22 @@ public sealed class SupportShapeUser : IInjectedShapeUser
 }
 
 /// <summary>
+///     A public implementation whose internal <c>[Inject]</c> property only the module's generated factory sets, beside a
+///     plain property a consuming container fills through an <c>[InjectProperty]</c> entry of its own.
+/// </summary>
+public sealed class SupportEntryUser
+{
+	[Inject]
+	internal IInjectedShapeKettle InternalKettle { get; set; } = null!;
+
+	/// <summary>The kettle the module's generated factory set.</summary>
+	public IInjectedShapeKettle InjectedKettle => InternalKettle;
+
+	/// <summary>A plain property a consuming container fills through an <c>[InjectProperty]</c> entry of its own.</summary>
+	public IInjectedShapeKettle? EntryKettle { get; set; }
+}
+
+/// <summary>
 ///     A <c>[Module]</c> whose registrations carry the <c>[Inject]</c> property shapes a generated factory fills for a
 ///     container in another assembly without <c>InternalsVisibleTo</c>.
 /// </summary>
@@ -93,6 +109,7 @@ public sealed class SupportShapeUser : IInjectedShapeUser
 [Singleton<SupportShapeKettle, IInjectedShapeKettle>]
 [Singleton<SupportHiddenKettle, ISupportHiddenKettle>]
 [Transient<SupportShapeUser, IInjectedShapeUser>]
+[Transient<SupportEntryUser>]
 public static partial class CrossAssemblyInjectedShapesModule;
 
 /// <summary>A <c>[Module]</c> that registers <see cref="SupportShapeUser" /> for <see cref="CrossAssemblyInjectedShapesBaseContainer" />.</summary>

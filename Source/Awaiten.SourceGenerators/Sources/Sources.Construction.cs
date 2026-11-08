@@ -255,7 +255,7 @@ internal static partial class Sources
 		{
 			// Only an implementation built through its owner's generated factory has injected members here: the factory
 			// takes each as a parameter named like the property, except a deferred one, assigned through its setter wrapper.
-			foreach (MemberModel member in instance.InjectedMembers.AsArray().Where(member => !member.Deferred))
+			foreach (MemberModel member in instance.InjectedMembers.AsArray().Where(member => member is { Deferred: false, AfterFactoryType: null, }))
 			{
 				arguments.Append(arguments.Length > 0 ? ", @" : "@").Append(member.MemberName).Append(": ")
 					.Append(DependencyValue(member.Dependency, instances, names, serviceToIndex, asynchronous, requestingType));
@@ -271,6 +271,13 @@ internal static partial class Sources
 			string produced = instance.IsAsyncFactory
 				? $"await {instance.ProductionMember}({arguments}).ConfigureAwait(false)"
 				: $"{instance.ProductionMember}({arguments})";
+			MemberModel[] afterFactory = AfterFactoryMembers(instance);
+			if (afterFactory.Length > 0)
+			{
+				string values = string.Concat(afterFactory.Select(member => ", " + DependencyValue(member.Dependency, instances, names, serviceToIndex, asynchronous, requestingType)));
+				produced = $"{names.AfterFactoryAssigner(System.Array.IndexOf(instances, instance))}({produced}{values})";
+			}
+
 			return instance.NestedNullableProduct ? $"({produced})!"
 				: instance.NullableProductType is { } type ? $"({type})(object?)({produced})"
 				: produced;
