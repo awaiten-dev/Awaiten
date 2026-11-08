@@ -638,7 +638,7 @@ partial class AwaitenGenerator
 			bool dropped = candidate.Weak && IsClaimedByStrongerRegistration(candidate, closedService, context.Raw);
 
 			RawRegistration registration = SynthesizeClosedRegistration(candidate, closed, closedService, closedImpl, TypeIdentity(closedImpl, context.Inputs.Compilation));
-			if (candidate.Via is not null)
+			if (candidate.Via is not null && !dropped)
 			{
 				registration = WithoutAmbiguousOpenHooks(registration, candidate, closedImplName, context);
 			}

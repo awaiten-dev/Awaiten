@@ -1185,6 +1185,18 @@ public class OpenGenericFactoryTests
 			}
 
 			[Test]
+			public async Task AFallbackClosingTheContainerReplaces_IsNotReported()
+			{
+				GeneratorResult result = Generator.Run(SameAssembly(GenericFirst)
+					.Replace("OnActivated = nameof(Activate))]", "OnActivated = nameof(Activate), Fallback = Fallback.Silent)]")
+					.Replace("[Transient<Checkout>]", "[Transient<Checkout>]\n[Scoped<LedgerRepository, IRepository<Ledger>>]")
+					+ "\npublic sealed class LedgerRepository : IRepository<Ledger> { }\n");
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container's own ledger repository replaces the module's closing, whose hook therefore never runs");
+			}
+
+			[Test]
 			[Arguments(GenericFirst)]
 			[Arguments(ClosedFirst)]
 			public async Task AClosingOnlyTheGenericOverloadAccepts_RunsItThroughTheWrapper(string overloads)
