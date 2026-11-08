@@ -144,7 +144,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
 		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
-		    && hidden is not { Implementations.Count: > 0, SeveralModules: true, })
+		    && !(hidden is { SeveralModules: true, } && hidden.Demanded.Emitting.Contains(moduleSymbol))
+		    && hidden?.Implementations.Any(candidate => candidate.Viable && IsExternallyAccessible(candidate.Implementation)) != true)
 		{
 			return diagnostics.Count == 0
 				? null
@@ -213,40 +214,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 		else
 		{
-			if (declaresScan)
-			{
-				// An assembly granted InternalsVisibleTo calls the scan factories too, and it resolves the internal
-				// services themselves rather than their handles, so scans take handles only without such a grant.
-				factories = CollectModuleScanFactories(moduleSymbol, compilation, diagnostics, cancellationToken, hidden is { Friends: false, } ? hidden : null)
-					.Select(expansion => expansion.Factory)
-					.ToList();
-			}
-
-			if (hidden is not null)
-			{
-				RejectScannedHiddenImplementations(hidden, factories, diagnostics);
-			}
-
-			registrations = CollectModuleRegistrationFactories(moduleSymbol, compilation, diagnostics, factories, skipped, hidden);
-			wrappers.RemoveAll(wrapper => registrations.Any(registration => registration.Hooks.AsArray().Any(hook => hook.Hook.WrapperName == wrapper.Name)));
-			skipped = skipped.GroupBy(entry => entry.MarkerName, StringComparer.Ordinal).Select(group => group.First()).ToList();
-			registrations.AddRange(contributions);
-			if (factories.Any(factory => factory.Skip is null && factory.Parameters.AsArray().Any(parameter => parameter.Argument is not null)))
-			{
-				// A private match whose factory takes a handle gets an internal factory that takes the service directly,
-				// which a container in the module's own assembly calls, since it builds the internal services itself.
-				registrations.AddRange(InternalScanFactories(moduleSymbol, compilation, cancellationToken)
-					.Where(expansion => factories.Any(factory => factory.Skip is null && "Internal" + factory.FactoryName == expansion.Factory.FactoryName))
-					.Select(expansion => new RegistrationFactory(expansion.Factory.FactoryName, expansion.Factory.ServiceType, expansion.Factory.ImplementationType, expansion.Factory.Parameters, default, IsInternal: true)));
-			}
-
-			if (hidden is not null)
-			{
-				(List<RegistrationFactory> hiddenFactories, handles, aliases, initializers) = CompleteHiddenServices(hidden, compilation, diagnostics);
-				registrations.AddRange(hiddenFactories);
-				aliases.AddRange(ScanAliases(hidden, factories));
-			}
-
+			(factories, registrations, handles, aliases, initializers) = ExpandModule(moduleSymbol, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
 			expanded = true;
 		}
 
@@ -333,6 +301,66 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				LocationInfo.From(context.TargetSymbol.Locations.FirstOrDefault()),
 				new EquatableArray<string>([Display(context.TargetSymbol.ToDisplayString(FullyQualified)), required.ToDisplayString(), version.ToDisplayString(),]));
 	}
+
+	/// <summary>
+	///     Expands the scans, registrations and handles of a module that receives generated members into what it emits,
+	///     which <see cref="ExpandForDemand" /> repeats for every module of the assembly to learn what they take of each
+	///     other's handles. Drops the member <paramref name="wrappers" /> a registration factory's hooks replace and the
+	///     duplicates among <paramref name="skipped" />.
+	/// </summary>
+	private static ModuleExpansion ExpandModule(
+		INamedTypeSymbol module,
+		Compilation compilation,
+		HiddenServices? hidden,
+		List<MemberWrapper> wrappers,
+		List<SkippedRegistration> skipped,
+		List<RegistrationFactory> contributions,
+		List<DiagnosticInfo> diagnostics,
+		CancellationToken cancellationToken)
+	{
+		List<ModuleFactory> factories = new();
+		if (HasAwaitenAttribute(module.GetAttributes(), "ScanAttribute"))
+		{
+			// An assembly granted InternalsVisibleTo calls the scan factories too, and it resolves the internal
+			// services themselves rather than their handles, so scans take handles only without such a grant.
+			factories = CollectModuleScanFactories(module, compilation, diagnostics, cancellationToken, hidden is { Friends: false, } ? hidden : null)
+				.Select(expansion => expansion.Factory)
+				.ToList();
+		}
+
+		if (hidden is not null)
+		{
+			RejectScannedHiddenImplementations(hidden, factories, diagnostics);
+		}
+
+		List<RegistrationFactory> registrations = CollectModuleRegistrationFactories(module, compilation, diagnostics, factories, skipped, hidden);
+		wrappers.RemoveAll(wrapper => registrations.Any(registration => registration.Hooks.AsArray().Any(hook => hook.Hook.WrapperName == wrapper.Name)));
+		List<SkippedRegistration> distinct = skipped.GroupBy(entry => entry.MarkerName, StringComparer.Ordinal).Select(group => group.First()).ToList();
+		skipped.Clear();
+		skipped.AddRange(distinct);
+		registrations.AddRange(contributions);
+		if (factories.Any(factory => factory.Skip is null && factory.Parameters.AsArray().Any(parameter => parameter.Argument is not null)))
+		{
+			// A private match whose factory takes a handle gets an internal factory that takes the service directly,
+			// which a container in the module's own assembly calls, since it builds the internal services itself.
+			registrations.AddRange(InternalScanFactories(module, compilation, cancellationToken)
+				.Where(expansion => factories.Any(factory => factory.Skip is null && "Internal" + factory.FactoryName == expansion.Factory.FactoryName))
+				.Select(expansion => new RegistrationFactory(expansion.Factory.FactoryName, expansion.Factory.ServiceType, expansion.Factory.ImplementationType, expansion.Factory.Parameters, default, IsInternal: true)));
+		}
+
+		if (hidden is null)
+		{
+			return new ModuleExpansion(factories, registrations, new List<HiddenHandle>(), new List<HiddenAlias>(), new List<HiddenInitializer>());
+		}
+
+		(List<RegistrationFactory> hiddenFactories, List<HiddenHandle> handles, List<HiddenAlias> aliases, List<HiddenInitializer> initializers) = CompleteHiddenServices(hidden, compilation, diagnostics);
+		registrations.AddRange(hiddenFactories);
+		aliases.AddRange(ScanAliases(hidden, factories));
+		return new ModuleExpansion(factories, registrations, handles, aliases, initializers);
+	}
+
+	/// <summary>What a module that receives generated members emits (see <see cref="ExpandModule" />).</summary>
+	private sealed record ModuleExpansion(List<ModuleFactory> Factories, List<RegistrationFactory> Registrations, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers);
 
 	/// <summary>
 	///     Reports AWT235 when <paramref name="type" />, a module or container, declares a member named like the

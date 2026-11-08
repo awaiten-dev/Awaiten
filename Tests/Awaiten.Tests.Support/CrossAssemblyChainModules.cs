@@ -14,6 +14,8 @@ internal interface IChainKettle
 
 internal sealed class ChainBean;
 
+internal sealed class ChainSpareBean;
+
 internal sealed class ChainKettle(ChainBean bean) : IChainKettle
 {
 	public object Bean => bean;
@@ -34,7 +36,8 @@ public static partial class CrossAssemblyChainKettleModule;
 [Singleton<ChainUser, IChainUser>]
 public static partial class CrossAssemblyChainUserModule;
 
-/// <summary>Registers the internal bean.</summary>
+/// <summary>Registers the internal bean, and a spare bean nothing takes, which therefore gets no handle.</summary>
 [Module]
 [Singleton<ChainBean>]
+[Singleton<ChainSpareBean>]
 public static partial class CrossAssemblyChainBeanModule;

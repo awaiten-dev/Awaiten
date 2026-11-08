@@ -256,8 +256,9 @@ partial class AwaitenGenerator
 	///     The public wrappers a module another assembly can name emits for the <c>Factory</c> and <c>Instance</c> members
 	///     its closed registrations name when a member is not public but its assembly can reach it, so a container in
 	///     another assembly calls the wrapper instead of the member it cannot see. A member gets one only when its
-	///     signature is public throughout, it is not generic, and no parameter carries an attribute the wrapper cannot
-	///     carry; otherwise a consumer reports the member as before (AWT108, AWT109). A hook of a <c>Factory</c>
+	///     parameter types are public, it is not generic, and no parameter carries an attribute the wrapper cannot
+	///     carry; otherwise a consumer reports the member as before (AWT108, AWT109). One that returns a type that is not
+	///     public is wrapped as the public type it is registered as, awaited for an awaitable result. A hook of a <c>Factory</c>
 	///     registration that is not public gets a public wrapper too, resolved and checked like the hook of a
 	///     self-compiled registration (AWT203, AWT204), unless the registered type is not public. When the module's
 	///     assembly grants <c>InternalsVisibleTo</c> to any assembly, a hook whose wrapper fails only with AWT203 or
@@ -403,12 +404,47 @@ partial class AwaitenGenerator
 			List<IMethodSymbol> candidates = FindFactoryCandidates(module, member, produced, compilation)
 				.Where(candidate => compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly))
 				.ToList();
-			return candidates.Count == 1
-			       && candidates[0] is { IsStatic: true, IsGenericMethod: false, } method
-			       && IsExternallyAccessible(method.ReturnType)
-			       && method.Parameters.All(parameter => IsExternallyAccessible(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null)
-				? new MemberWrapper(MemberWrapperName("Factory", member, produced), method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters))
+			if (candidates.Count != 1
+			    || candidates[0] is not { IsStatic: true, IsGenericMethod: false, } method
+			    || !method.Parameters.All(parameter => IsExternallyAccessible(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null))
+			{
+				return null;
+			}
+
+			if (IsExternallyAccessible(method.ReturnType))
+			{
+				return new MemberWrapper(MemberWrapperName("Factory", member, produced), method.ReturnType.ToDisplayString(FullyQualifiedWithNullability), member, MirroredParameters(method.Parameters));
+			}
+
+			bool awaited = IsAsyncFactoryReturn(method.ReturnType, compilation, out ITypeSymbol result);
+			return Exposed(member, produced, result) is { } exposed
+				? new MemberWrapper(
+					MemberWrapperName("Factory", member, produced),
+					awaited ? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{exposed}>" : exposed,
+					member,
+					MirroredParameters(method.Parameters),
+					Awaited: awaited)
 				: null;
+		}
+
+		// A member that produces a type another assembly cannot name is exposed as the public type it is registered as,
+		// as nullable as the member's result. Several services leave that type ambiguous, and a hook that is not public
+		// gets no wrapper for such a type, so the consumer would silently skip it.
+		string? Exposed(string member, INamedTypeSymbol produced, ITypeSymbol result)
+		{
+			List<ModuleRegistration> registrations = ConstructedModuleRegistrations(module, compilation, members: true)
+				.Where(registration => registration.Member == member && SymbolEqualityComparer.Default.Equals(registration.Implementation, produced))
+				.ToList();
+			List<INamedTypeSymbol> services = registrations.Select(registration => registration.Service).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToList();
+			INamedTypeSymbol? exposed = IsExternallyAccessible(produced)
+				? produced
+				: services.Count == 1
+				  && IsExternallyAccessible(services[0])
+				  && !registrations.Any(registration => new[] { "OnActivated", "OnRelease", }.Any(slot => NamedArgument(registration.Attribute, slot) is { } hook
+				                                                                                         && !AccessibleMembers(module, hook, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public)))
+					? services[0]
+					: null;
+			return exposed?.WithNullableAnnotation(result.NullableAnnotation).ToDisplayString(FullyQualifiedWithNullability);
 		}
 
 		MemberWrapper? InstanceWrapper(string member, INamedTypeSymbol produced)
@@ -424,9 +460,9 @@ partial class AwaitenGenerator
 				if (type is not null
 				    && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)
 				    && compilation.HasImplicitConversion(type, produced)
-				    && IsExternallyAccessible(type))
+				    && (IsExternallyAccessible(type) ? type.ToDisplayString(FullyQualifiedWithNullability) : Exposed(member, produced, type)) is { } exposed)
 				{
-					return new MemberWrapper(MemberWrapperName("Instance", member, produced), type.ToDisplayString(FullyQualifiedWithNullability), member, default, IsProperty: true);
+					return new MemberWrapper(MemberWrapperName("Instance", member, produced), exposed, member, default, IsProperty: true);
 				}
 			}
 

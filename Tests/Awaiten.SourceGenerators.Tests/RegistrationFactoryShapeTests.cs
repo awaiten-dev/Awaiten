@@ -519,6 +519,116 @@ public class RegistrationFactoryShapeTests
 				.Because("a consumer that can reach the internal member calls it directly");
 		}
 
+		public class ProducingAnInternalImplementation
+		{
+			private static string Library(string registration) => $$"""
+				#nullable enable
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				public interface IMill { }
+				internal sealed class Grinder : IGrinder, IMill { }
+
+				[Module]
+				{{registration}}
+				public static partial class GreetingModule
+				{
+				    internal static Grinder Create() => new Grinder();
+
+				    internal static Grinder? CreateOrNull() => new Grinder();
+
+				    internal static System.Threading.Tasks.Task<Grinder?> CreateOrNullAsync() => System.Threading.Tasks.Task.FromResult<Grinder?>(new Grinder());
+
+				    internal static System.Threading.Tasks.Task<Grinder> CreateAsync() => System.Threading.Tasks.Task.FromResult(new Grinder());
+
+				    internal static Grinder Shared { get; } = new Grinder();
+				}
+				""";
+
+			private const string GrinderConsumer = """
+				using Awaiten;
+				using Lib;
+
+				namespace App;
+
+				[Container]
+				[Import(typeof(GreetingModule))]
+				public static partial class AppContainer
+				{
+				    public static async System.Threading.Tasks.Task<IGrinder> Grind()
+				    {
+				        await using Root root = new();
+				        return await root.ResolveAsync<IGrinder>();
+				    }
+				}
+				""";
+
+			[Test]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(Create))]")]
+			[Arguments("[Singleton<IGrinder>(Factory = nameof(Create))]")]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(CreateAsync))]")]
+			[Arguments("[Singleton<Grinder, IGrinder>(Instance = nameof(Shared))]")]
+			[Arguments("[Singleton<IGrinder>(Instance = nameof(Shared))]")]
+			public async Task EveryContainer_ResolvesItWithoutDiagnostics(string registration)
+			{
+				string library = Library(registration);
+
+				await That(Generator.Run(library).Diagnostics).IsEmpty();
+				await That(Generator.Run(library + GrinderConsumer.Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace App;", "")).Diagnostics).IsEmpty();
+				await That(Generator.RunWithGeneratedReferencedAssembly(Granted(library), GrinderConsumer).Diagnostics).IsEmpty();
+				await That(Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer).Diagnostics).IsEmpty()
+					.Because("the consumer calls the public wrapper, which returns the internal implementation as the public service it is registered as");
+			}
+
+			[Test]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(Create))]", "public static global::Lib.IGrinder Factory_Create_", "() => Create();")]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(CreateAsync))]", "public static async global::System.Threading.Tasks.Task<global::Lib.IGrinder> Factory_CreateAsync_", "() => await CreateAsync().ConfigureAwait(false);")]
+			[Arguments("[Singleton<Grinder, IGrinder>(Instance = nameof(Shared))]", "public static global::Lib.IGrinder Instance_Shared_", " => Shared;")]
+			public async Task TheModule_WrapsTheMemberAsThePublicService(string registration, string signature, string body)
+			{
+				string module = ModuleSource(Generator.Run(Library(registration)));
+
+				await That(module).Contains(signature).And.Contains(body)
+					.Because("a public wrapper cannot return the internal implementation, but the public service it converts to");
+			}
+
+			[Test]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(CreateOrNull))]", "public static global::Lib.IGrinder? Factory_CreateOrNull_")]
+			[Arguments("[Singleton<Grinder, IGrinder>(Factory = nameof(CreateOrNullAsync))]", "public static async global::System.Threading.Tasks.Task<global::Lib.IGrinder?> Factory_CreateOrNullAsync_")]
+			public async Task ANullableResult_KeepsItsAnnotation(string registration, string signature)
+			{
+				GeneratorResult result = Generator.Run(Library(registration));
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the wrapper returns the service as nullable as the member's result, so it passes on a possible null without a warning");
+				await That(ModuleSource(result)).Contains(signature);
+			}
+
+			[Test]
+			public async Task WithAHookThatIsNotPublic_GetsNoWrapper()
+			{
+				string library = Library("[Singleton<Grinder, IGrinder>(Factory = nameof(Create), OnActivated = nameof(Activate))]")
+					.Replace("internal static Grinder Create()", "internal static void Activate(IGrinder grinder) { }\n\n    internal static Grinder Create()");
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+					.Because("the hook of an implementation the consumer cannot name gets no wrapper, so a factory wrapper alone would lose it");
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*").AsWildcard();
+			}
+
+			[Test]
+			public async Task UnderSeveralPublicServices_GetsNoWrapper()
+			{
+				string library = Library("[Singleton<Grinder, IGrinder>(Factory = nameof(Create))]\n[Singleton<Grinder, IMill>(Factory = nameof(Create))]");
+
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+					.Because("no single public type converts to both services, which share one instance");
+				await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).Contains("*AWT108*Create*").AsWildcard();
+			}
+		}
+
 		[Test]
 		public async Task AMemberWithAnInternalParameterType_GetsNoWrapper()
 		{
