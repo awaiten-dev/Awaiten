@@ -682,10 +682,34 @@ partial class AwaitenGenerator
 			: null;
 	}
 
-	/// <summary>The first registration of <paramref name="module" /> that is self-compiled, or <see langword="null" />.</summary>
+	/// <summary>
+	///     The first registration of <paramref name="module" /> that is self-compiled, else the first of its
+	///     <see cref="ContributionsWithHiddenProperties" />, or <see langword="null" />.
+	/// </summary>
 	private static ModuleRegistration? FirstSelfCompiledRegistration(INamedTypeSymbol module, Compilation compilation)
 		=> ConstructedModuleRegistrations(module, compilation)
-			.FirstOrDefault(registration => SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation));
+			   .FirstOrDefault(registration => SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation))
+		   ?? ContributionsWithHiddenProperties(module, compilation).FirstOrDefault();
+
+	/// <summary>
+	///     The closed decorators and composites of <paramref name="module" /> that every assembly could construct, but
+	///     whose <c>[Inject]</c> property another assembly cannot see, so only the module's generated factory sets it
+	///     there, like for a registration.
+	/// </summary>
+	private static IEnumerable<ModuleRegistration> ContributionsWithHiddenProperties(INamedTypeSymbol module, Compilation compilation)
+	{
+		foreach (AttributeData attribute in module.GetAttributes())
+		{
+			if (attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
+			    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+			    && ContributedPair(attribute, attributeClass) is ({ } type, { } service)
+			    && ConstructibleEverywhere(type)
+			    && SelfCompilesRegistration(module, type, service, compilation))
+			{
+				yield return new ModuleRegistration(attribute, type, service, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+			}
+		}
+	}
 
 	/// <summary>
 	///     Builds the factory of every self-compiled registration of a module (see
@@ -1220,10 +1244,12 @@ partial class AwaitenGenerator
 	///     Whether an assembly granted <c>InternalsVisibleTo</c> can construct every self-compiled registration of
 	///     <paramref name="module" /> itself: the module's assembly grants it to any assembly, and no such registration
 	///     is hidden in the module (see <see cref="TypeHiddenInModule" />) or public, which any assembly constructs, so
-	///     one without the grant would leave out the <c>[Inject]</c> property it cannot see.
+	///     one without the grant would leave out the <c>[Inject]</c> property it cannot see. The same holds for any of
+	///     the <see cref="ContributionsWithHiddenProperties" />.
 	/// </summary>
 	private static bool FriendsConstructEveryRegistration(INamedTypeSymbol module, Compilation compilation)
 		=> GrantsInternalsVisibleTo(compilation.Assembly)
+		   && !ContributionsWithHiddenProperties(module, compilation).Any()
 		   && !ConstructedModuleRegistrations(module, compilation).Any(registration =>
 			   SelfCompilesRegistration(module, registration.Implementation, registration.Service, compilation)
 			   && (TypeHiddenInModule(registration.Implementation, module, compilation) is not null || ConstructibleEverywhere(registration.Implementation)));

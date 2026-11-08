@@ -620,7 +620,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer);
 
 			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"));
-			await That(result.Diagnostics).Contains("*registers 'Lib.Greeter', whose [Inject] property this container does not see*make the [Inject] properties of 'Lib.Greeter' and their setters public*").AsWildcard()
+			await That(result.Diagnostics).Contains("*registers 'Lib.Greeter', whose [Inject] property this container does not see*make the [Inject] properties of 'Lib.Greeter', their setters and their types public*").AsWildcard()
 				.Because("the container can construct the public implementation, but not set the property it does not see");
 		}
 
@@ -717,6 +717,39 @@ public class RegistrationFactoryInjectedPropertyTests
 				.Because("a container in another assembly constructs the public decorator itself and would silently leave out the property it does not see");
 			await That(granted.Diagnostics).IsEmpty()
 				.Because("a friend constructs the decorator itself, so the module records the reason for a container without the grant");
+		}
+
+		[Test]
+		public async Task OfAPublicDecoratorOfAModuleThatIsNotPartial_IsReported()
+		{
+			const string module = """
+			                      using Awaiten;
+
+			                      namespace Lib;
+
+			                      public interface IGreeter { }
+			                      public interface IClock { }
+			                      public sealed class Greeter : IGreeter { }
+
+			                      public sealed class LoudGreeter : IGreeter
+			                      {
+			                          public LoudGreeter(IGreeter inner) { }
+
+			                          [Inject] internal IClock Clock { get; set; } = null!;
+			                      }
+
+			                      [Module]
+			                      [Transient<Greeter, IGreeter>]
+			                      [Decorate<LoudGreeter, IGreeter>]
+			                      public static class GreetingModule { }
+			                      """;
+
+			GeneratorResult result = Generator.Run(module);
+			GeneratorResult granted = Generator.Run(Granted(module));
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
+				.Because("a container in another assembly constructs the public decorator itself, so only the module's factory can set the property");
+			await That(granted.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194"));
 		}
 
 		[Test]

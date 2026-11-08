@@ -1999,7 +1999,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleRegistrationPropertyNotSet = new(
 		"AWT231",
 		ModuleRegistrationNotSelfCompiled.Title,
-		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make the [Inject] properties of '{1}' and their setters public",
+		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make the [Inject] properties of '{1}', their setters and their types public",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
