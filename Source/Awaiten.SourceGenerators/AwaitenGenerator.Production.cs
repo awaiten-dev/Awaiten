@@ -234,6 +234,22 @@ partial class AwaitenGenerator
 		return members;
 	}
 
+	/// <summary>
+	///     The setter wrappers next to the generated factory <paramref name="factory" /> (see <see cref="DeferredSetterName" />),
+	///     or none for any other method.
+	/// </summary>
+	private static IEnumerable<IMethodSymbol> DeferredSetters(IMethodSymbol factory)
+	{
+		if (!IsGeneratedOwnerFactory(factory))
+		{
+			return [];
+		}
+
+		string prefix = DeferredSetterName(factory.Name, string.Empty);
+		return factory.ContainingType.GetMembers().OfType<IMethodSymbol>()
+			.Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Name.StartsWith(prefix, StringComparison.Ordinal));
+	}
+
 	/// <summary>Whether <paramref name="method" /> is a factory a module or base container generated into its <c>Internals</c> class.</summary>
 	private static bool IsGeneratedOwnerFactory(IMethodSymbol method)
 		=> method is { MethodKind: MethodKind.Ordinary, ContainingType: { Name: InternalsClass, ContainingType: not null, }, };
