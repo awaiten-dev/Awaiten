@@ -1398,6 +1398,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
@@ -1633,7 +1639,8 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
@@ -1872,7 +1879,8 @@ window.BENCHMARK_DATA = {
           7.763078451156616,
           4.063436950246493,
           5.636468079686165,
-          7.766312518945107
+          7.766312518945107,
+          7.426880071560542
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1884,6 +1892,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2363,7 +2372,8 @@ window.BENCHMARK_DATA = {
           7.28659177677972,
           3.8457346845131655,
           6.859275883684556,
-          7.671674111059734
+          7.671674111059734,
+          8.228737277785937
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2375,6 +2385,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2854,7 +2865,8 @@ window.BENCHMARK_DATA = {
           116.71404671669006,
           54.38110556772777,
           84.31481356620789,
-          114.52782589594523
+          114.52782589594523,
+          135.50187403361002
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2866,6 +2878,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3341,7 +3354,8 @@ window.BENCHMARK_DATA = {
           9.30560349225998,
           4.828817519545555,
           6.6927634358406065,
-          8.77390452226003
+          8.77390452226003,
+          7.9666032701730725
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3353,6 +3367,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3824,7 +3839,8 @@ window.BENCHMARK_DATA = {
           11.280010571846596,
           6.348493470595433,
           9.025130096290793,
-          11.293270897120237
+          11.293270897120237,
+          10.298366772277015
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3836,6 +3852,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5476,6 +5493,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
@@ -5711,7 +5734,8 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
@@ -5950,7 +5974,8 @@ window.BENCHMARK_DATA = {
           8.462621819760118,
           4.367702933458181,
           6.0340286667148275,
-          8.431318338100727
+          8.431318338100727,
+          8.164587103327115
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -5962,6 +5987,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6441,7 +6467,8 @@ window.BENCHMARK_DATA = {
           7.288938575983048,
           3.8177726030349732,
           6.7789499427263555,
-          7.766304229696591
+          7.766304229696591,
+          7.993981010715166
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6453,6 +6480,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6932,7 +6960,8 @@ window.BENCHMARK_DATA = {
           111.30885116259257,
           53.38170856634776,
           82.9769646014486,
-          108.8012745777766
+          108.8012745777766,
+          102.35339501698812
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -6944,6 +6973,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7419,7 +7449,8 @@ window.BENCHMARK_DATA = {
           9.189001728097598,
           4.765533070266247,
           6.490077846248945,
-          8.779598436676538
+          8.779598436676538,
+          8.031099703695093
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7431,6 +7462,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7902,7 +7934,8 @@ window.BENCHMARK_DATA = {
           14.85359894434611,
           6.35252739914826,
           11.748003922402859,
-          14.929735428094864
+          14.929735428094864,
+          14.209499931761197
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -7914,6 +7947,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9554,6 +9588,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
@@ -9789,7 +9829,8 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
@@ -10028,7 +10069,8 @@ window.BENCHMARK_DATA = {
           10.702754971385001,
           19.988345096508663,
           20.873037294546762,
-          10.520108892520268
+          10.520108892520268,
+          15.899794787168503
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10190,6 +10232,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10519,7 +10562,8 @@ window.BENCHMARK_DATA = {
           732.0696478623611,
           1456.2136914389473,
           1427.1902675628662,
-          727.0197109222412
+          727.0197109222412,
+          1189.7602062225342
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10531,6 +10575,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11010,7 +11055,8 @@ window.BENCHMARK_DATA = {
           16896.121721540178,
           29981.123055594308,
           29536.96414388021,
-          16823.212268066407
+          16823.212268066407,
+          20196.733738490515
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11254,7 +11300,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32482,
-          32478
+          32478,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11497,7 +11544,8 @@ window.BENCHMARK_DATA = {
           379.6697268486023,
           666.0134767804827,
           705.1173110961914,
-          375.0913798258855
+          375.0913798258855,
+          554.6489065806071
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11527,6 +11575,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -11980,7 +12029,8 @@ window.BENCHMARK_DATA = {
           6185.367768968855,
           11681.520372663226,
           11618.413262939453,
-          6125.534965515137
+          6125.534965515137,
+          9240.80404663086
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12220,7 +12270,8 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13632,6 +13683,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
@@ -13867,7 +13924,8 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
@@ -14106,7 +14164,8 @@ window.BENCHMARK_DATA = {
           74.59815274752103,
           164.86049674238478,
           191.2462765534719,
-          71.41494071483612
+          71.41494071483612,
+          166.30799167950948
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14268,6 +14327,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -14597,7 +14657,8 @@ window.BENCHMARK_DATA = {
           6984.977747235979,
           14520.246896362305,
           14634.870766194661,
-          6892.263680521647
+          6892.263680521647,
+          9915.479292805989
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14609,6 +14670,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15088,7 +15150,8 @@ window.BENCHMARK_DATA = {
           410541.86788504466,
           744367.1699916294,
           732596.7495814732,
-          412690.0558919271
+          412690.0558919271,
+          475972.05517578125
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15332,7 +15395,8 @@ window.BENCHMARK_DATA = {
           740300,
           741799,
           741801,
-          741067
+          741067,
+          718319
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15575,7 +15639,8 @@ window.BENCHMARK_DATA = {
           22465.062754313152,
           41363.218876139326,
           43334.419767252606,
-          21906.00863647461
+          21906.00863647461,
+          31946.107600285457
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15815,7 +15880,8 @@ window.BENCHMARK_DATA = {
           80302,
           80300,
           80301,
-          80307
+          80307,
+          80344
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16058,7 +16124,8 @@ window.BENCHMARK_DATA = {
           185321.5199544271,
           351451.90206473216,
           344146.06113978795,
-          182363.89270833333
+          182363.89270833333,
+          270194.14889090403
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16298,7 +16365,8 @@ window.BENCHMARK_DATA = {
           573104,
           573091,
           573074,
-          573133
+          573133,
+          571205
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17686,6 +17754,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 00:39:09 2026 \u002B0100",
         "message": "docs: drop the NuGet and coverage badges from the package README (#312)"
+      },
+      {
+        "sha": "b29e260099e3887c1afcc4dca4f224630028fe49",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 01:53:05 2026 \u002B0100",
+        "message": "fix: forgive nested nullable annotations in generated code and keep Scope members out of the public API (#314)"
       }
     ],
     "labels": [
@@ -17917,7 +17991,8 @@ window.BENCHMARK_DATA = {
       "a0feb990",
       "34215114",
       "cfdeece9",
-      "35be27e5"
+      "35be27e5",
+      "b29e2600"
     ],
     "datasets": [
       {
@@ -18152,7 +18227,8 @@ window.BENCHMARK_DATA = {
           289.5723221143087,
           269.4152193705241,
           202.82010078430176,
-          252.96296163967676
+          252.96296163967676,
+          200.6946506023407
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18187,6 +18263,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -18635,7 +18712,8 @@ window.BENCHMARK_DATA = {
           651.45890551347,
           477.16223052342735,
           461.23183177312217,
-          622.5833545049031
+          622.5833545049031,
+          457.5192208925883
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -18647,6 +18725,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19118,7 +19197,8 @@ window.BENCHMARK_DATA = {
           5131.378002929688,
           5084.931804148356,
           4897.020835289588,
-          6475.335697428385
+          6475.335697428385,
+          4694.64758845738
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19202,6 +19282,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -19601,7 +19682,8 @@ window.BENCHMARK_DATA = {
           423.18393580118817,
           361.15204601287843,
           343.0717325846354,
-          390.737326780955
+          390.737326780955,
+          332.8297374089559
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19613,6 +19695,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20084,7 +20167,8 @@ window.BENCHMARK_DATA = {
           730.9944588979085,
           576.1485364278158,
           540.3498201370239,
-          722.6019562993731
+          722.6019562993731,
+          536.9384574890137
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20096,6 +20180,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
