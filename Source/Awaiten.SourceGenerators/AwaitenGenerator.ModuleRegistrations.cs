@@ -265,7 +265,9 @@ partial class AwaitenGenerator
 	///     AWT204 lands in <paramref name="skipped" /> instead, since such an assembly calls it directly. A private member
 	///     of a registration under an internal service, which a container in another assembly reaches through the
 	///     service's handle, gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its parameters are
-	///     internal or public, so a container in the module's assembly or in a friend calls it too. A return type private
+	///     internal or public, so a container in the module's assembly or in a friend calls it too. An internal module,
+	///     which only its own assembly and its friends import, gets only such internal wrappers, for every private member
+	///     whatever the service. A return type private
 	///     to the module is exposed as the registered type (see <see cref="OwnedMemberType" />). Whether a public member
 	///     already serves a registration is judged by the members that produce its type and the hooks that take it, so a
 	///     public overload of another type does not stand in for an internal one.
@@ -277,13 +279,9 @@ partial class AwaitenGenerator
 		List<SkippedRegistration> skipped)
 	{
 		List<MemberWrapper> wrappers = new();
-		if (!IsExternallyAccessible(module))
-		{
-			return wrappers;
-		}
-
+		bool external = IsExternallyAccessible(module);
 		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal));
-		foreach (AttributeData attribute in module.GetAttributes())
+		foreach (AttributeData attribute in external ? module.GetAttributes() : [])
 		{
 			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
@@ -312,7 +310,7 @@ partial class AwaitenGenerator
 
 		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
 		{
-			if (registration.Member is { } member && !IsExternallyAccessible(registration.Service))
+			if (registration.Member is { } member && (!external || !IsExternallyAccessible(registration.Service)))
 			{
 				Add(InternalWrapper(registration.Production, member, registration.Implementation));
 			}

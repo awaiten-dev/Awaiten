@@ -1918,7 +1918,7 @@ public static class EquipmentModule
 public static partial class CoffeeShop;
 ```
 
-A private member that produces a service the module registers under an internal type is not reported: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it.
+A private member that produces a service the module registers under an internal type is not reported: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. A private member of an `internal`, `partial` module is not reported either, whatever the service, since only containers that can call its internal wrapper import such a module.
 
 **Fix:** Make the member `public`, or `internal` when the container is in the same assembly (or one the module's assembly grants `InternalsVisibleTo`).
 

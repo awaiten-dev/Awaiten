@@ -183,6 +183,47 @@ public partial class ModulePrivateMemberTests
 		await That(barista.Rack.Disposed).IsFalse();
 	}
 
+	[Test]
+	public async Task InternalModule_ContainerInAnAssemblyGrantedInternalsVisibleTo_ProducesItsServicesThroughThePrivateMembers()
+	{
+		IFriendPrivateMemberState heater;
+		IFriendPrivateMemberState shelf;
+		await using (InternalModuleFriendContainer.Root container = new())
+		{
+			heater = await container.ResolveAsync<IFriendPrivateMemberState>();
+			shelf = await container.ResolveAsync<IInternalModuleShelf>();
+
+			await That(await container.ResolveAsync<IFriendPrivateMemberState>()).IsSameAs(heater)
+				.Because("the private factory of the internal module produces one singleton");
+		}
+
+		await That(heater.Disposed).IsTrue()
+			.Because("the container disposes what the private factory produced");
+		await That(shelf.Disposed).IsFalse()
+			.Because("the container never disposes an Instance");
+	}
+
+	[Test]
+	public async Task InternalModule_ContainerInTheModulesAssembly_ProducesItsServicesThroughThePrivateMembers()
+	{
+		IFriendPrivateMemberState heater;
+		IFriendPrivateMemberState shelf;
+		await using (InternalModuleLocalContainer.Root container = new())
+		{
+			heater = await container.ResolveAsync<IFriendPrivateMemberState>();
+			shelf = await container.ResolveAsync<IInternalModuleShelf>();
+
+			await That(await container.ResolveAsync<IFriendPrivateMemberState>()).IsSameAs(heater);
+		}
+
+		await That(heater.Disposed).IsTrue();
+		await That(shelf.Disposed).IsFalse();
+	}
+
+	[Container]
+	[Import(typeof(InternalPrivateMemberModule))]
+	internal static partial class InternalModuleFriendContainer;
+
 	[Container]
 	[Import(typeof(CrossAssemblyPrivateMemberModule))]
 	public static partial class PrivateMemberContainer;

@@ -214,3 +214,26 @@ public static partial class SupportFriendPrivateMemberModule
 [Container]
 [Import(typeof(SupportFriendPrivateMemberModule))]
 public static partial class FriendPrivateMemberLocalContainer;
+
+internal interface IInternalModuleShelf : IFriendPrivateMemberState;
+
+internal sealed class InternalModuleShelf : FriendPrivateMemberPart, IInternalModuleShelf;
+
+/// <summary>
+///     An internal <c>[Module]</c> that produces a public and an internal service through private members, which only this
+///     assembly and the assemblies it grants <c>InternalsVisibleTo</c> can import, so each calls internal wrappers.
+/// </summary>
+[Module]
+[Singleton<IFriendPrivateMemberState>(Factory = nameof(MakeHeater))]
+[Singleton<IInternalModuleShelf>(Instance = nameof(Shelf))]
+internal static partial class InternalPrivateMemberModule
+{
+	private static readonly IInternalModuleShelf Shelf = new InternalModuleShelf();
+
+	private static IFriendPrivateMemberState MakeHeater() => new FriendPrivateMemberPart();
+}
+
+/// <summary>A container in the module's own assembly that imports <see cref="InternalPrivateMemberModule" />.</summary>
+[Container]
+[Import(typeof(InternalPrivateMemberModule))]
+internal static partial class InternalModuleLocalContainer;

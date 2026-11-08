@@ -1936,6 +1936,54 @@ public class ModuleHiddenServiceTests
 		}
 	}
 
+	public class PrivateMemberOfAnInternalModule
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(string service, string production, string member) => $$"""
+			using Awaiten;
+
+			[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			namespace Lib;
+
+			{{service}} interface IKettle { }
+			internal sealed class Kettle : IKettle { }
+
+			[Module]
+			[Singleton<IKettle>({{production}})]
+			internal static partial class CoffeeModule
+			{
+			    {{member}}
+			}
+			""";
+
+		[Test]
+		[Arguments("internal", "Factory = nameof(Make)", "private static IKettle Make() => new Kettle();")]
+		[Arguments("internal", "Instance = nameof(Shared)", "private static readonly IKettle Shared = new Kettle();")]
+		[Arguments("public", "Factory = nameof(Make)", "private static IKettle Make() => new Kettle();")]
+		[Arguments("public", "Instance = nameof(Shared)", "private static readonly IKettle Shared = new Kettle();")]
+		public async Task EveryContainer_CallsItThroughAnInternalWrapper(string service, string production, string member)
+		{
+			string library = Library(service, production, member);
+			string kind = production.StartsWith("Instance") ? "Instance" : "Factory";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(Generator.Run(library + Container).Diagnostics).IsEmpty()
+				.Because("the container in the module's assembly calls the internal wrapper instead of the private member");
+			await That(Generator.Run(library + Container).Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{kind}_");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).IsEmpty()
+				.Because("only the module's assembly and its friends can import an internal module, and each of them reaches an internal wrapper");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{kind}_");
+		}
+	}
+
 	public class HookOfAnotherType
 	{
 		private const string Container = """
