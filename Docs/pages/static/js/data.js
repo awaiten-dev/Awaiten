@@ -1410,6 +1410,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
         "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
+      },
+      {
+        "sha": "94f200915f51d6a221e1735716acf08d5be03d94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 08:45:54 2026 \u002B0100",
+        "message": "fix: report AWT243 when the language version is too old for the generated code (#316)"
       }
     ],
     "labels": [
@@ -1647,7 +1653,8 @@ window.BENCHMARK_DATA = {
       "cfdeece9",
       "35be27e5",
       "b29e2600",
-      "9d28761a"
+      "9d28761a",
+      "94f20091"
     ],
     "datasets": [
       {
@@ -1888,7 +1895,8 @@ window.BENCHMARK_DATA = {
           5.636468079686165,
           7.766312518945107,
           7.426880071560542,
-          7.141798602541288
+          7.141798602541288,
+          6.824906795152596
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1900,6 +1908,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2383,7 +2392,8 @@ window.BENCHMARK_DATA = {
           6.859275883684556,
           7.671674111059734,
           8.228737277785937,
-          7.288507178425789
+          7.288507178425789,
+          6.267078934113185
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2395,6 +2405,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2878,7 +2889,8 @@ window.BENCHMARK_DATA = {
           84.31481356620789,
           114.52782589594523,
           135.50187403361002,
-          141.97931515375774
+          141.97931515375774,
+          125.0120700677236
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2890,6 +2902,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3369,7 +3382,8 @@ window.BENCHMARK_DATA = {
           6.6927634358406065,
           8.77390452226003,
           7.9666032701730725,
-          8.796249111111347
+          8.796249111111347,
+          8.905288657546043
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3381,6 +3395,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3856,7 +3871,8 @@ window.BENCHMARK_DATA = {
           9.025130096290793,
           11.293270897120237,
           10.298366772277015,
-          11.067694428775992
+          11.067694428775992,
+          11.598129068102155
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3868,6 +3884,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5522,6 +5539,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
         "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
+      },
+      {
+        "sha": "94f200915f51d6a221e1735716acf08d5be03d94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 08:45:54 2026 \u002B0100",
+        "message": "fix: report AWT243 when the language version is too old for the generated code (#316)"
       }
     ],
     "labels": [
@@ -5759,7 +5782,8 @@ window.BENCHMARK_DATA = {
       "cfdeece9",
       "35be27e5",
       "b29e2600",
-      "9d28761a"
+      "9d28761a",
+      "94f20091"
     ],
     "datasets": [
       {
@@ -6000,7 +6024,8 @@ window.BENCHMARK_DATA = {
           6.0340286667148275,
           8.431318338100727,
           8.164587103327115,
-          8.431419599056245
+          8.431419599056245,
+          7.976194777091345
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6012,6 +6037,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6495,7 +6521,8 @@ window.BENCHMARK_DATA = {
           6.7789499427263555,
           7.766304229696591,
           7.993981010715166,
-          7.302177597696964
+          7.302177597696964,
+          6.371495060125986
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6507,6 +6534,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6990,7 +7018,8 @@ window.BENCHMARK_DATA = {
           82.9769646014486,
           108.8012745777766,
           102.35339501698812,
-          144.5688849767049
+          144.5688849767049,
+          124.84713789621989
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7002,6 +7031,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7481,7 +7511,8 @@ window.BENCHMARK_DATA = {
           6.490077846248945,
           8.779598436676538,
           8.031099703695093,
-          8.840591277678808
+          8.840591277678808,
+          8.864592114729541
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7493,6 +7524,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7968,7 +8000,8 @@ window.BENCHMARK_DATA = {
           11.748003922402859,
           14.929735428094864,
           14.209499931761197,
-          14.489318547504288
+          14.489318547504288,
+          11.679318968454997
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -7980,6 +8013,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9634,6 +9668,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
         "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
+      },
+      {
+        "sha": "94f200915f51d6a221e1735716acf08d5be03d94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 08:45:54 2026 \u002B0100",
+        "message": "fix: report AWT243 when the language version is too old for the generated code (#316)"
       }
     ],
     "labels": [
@@ -9871,7 +9911,8 @@ window.BENCHMARK_DATA = {
       "cfdeece9",
       "35be27e5",
       "b29e2600",
-      "9d28761a"
+      "9d28761a",
+      "94f20091"
     ],
     "datasets": [
       {
@@ -10112,7 +10153,8 @@ window.BENCHMARK_DATA = {
           20.873037294546762,
           10.520108892520268,
           15.899794787168503,
-          11.561920223633448
+          11.561920223633448,
+          12.162520055259977
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10274,6 +10316,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10607,7 +10650,8 @@ window.BENCHMARK_DATA = {
           1427.1902675628662,
           727.0197109222412,
           1189.7602062225342,
-          827.4684765497843
+          827.4684765497843,
+          883.0445566177368
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10619,6 +10663,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11102,7 +11147,8 @@ window.BENCHMARK_DATA = {
           29536.96414388021,
           16823.212268066407,
           20196.733738490515,
-          18649.861855643136
+          18649.861855643136,
+          19639.7637285505
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11348,7 +11394,8 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32474,
-          32477
+          32477,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11593,7 +11640,8 @@ window.BENCHMARK_DATA = {
           705.1173110961914,
           375.0913798258855,
           554.6489065806071,
-          403.88460502624514
+          403.88460502624514,
+          439.56129458972384
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11623,6 +11671,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12080,7 +12129,8 @@ window.BENCHMARK_DATA = {
           11618.413262939453,
           6125.534965515137,
           9240.80404663086,
-          6891.526905314127
+          6891.526905314127,
+          7235.634893417358
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12321,6 +12371,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -13746,6 +13797,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
         "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
+      },
+      {
+        "sha": "94f200915f51d6a221e1735716acf08d5be03d94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 08:45:54 2026 \u002B0100",
+        "message": "fix: report AWT243 when the language version is too old for the generated code (#316)"
       }
     ],
     "labels": [
@@ -13983,7 +14040,8 @@ window.BENCHMARK_DATA = {
       "cfdeece9",
       "35be27e5",
       "b29e2600",
-      "9d28761a"
+      "9d28761a",
+      "94f20091"
     ],
     "datasets": [
       {
@@ -14224,7 +14282,8 @@ window.BENCHMARK_DATA = {
           191.2462765534719,
           71.41494071483612,
           166.30799167950948,
-          80.21981965700785
+          80.21981965700785,
+          81.68429501851399
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14386,6 +14445,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -14719,7 +14779,8 @@ window.BENCHMARK_DATA = {
           14634.870766194661,
           6892.263680521647,
           9915.479292805989,
-          7912.996672410231
+          7912.996672410231,
+          8085.709020996093
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14731,6 +14792,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15214,7 +15276,8 @@ window.BENCHMARK_DATA = {
           732596.7495814732,
           412690.0558919271,
           475972.05517578125,
-          468640.24724469864
+          468640.24724469864,
+          466334.13004557294
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15460,7 +15523,8 @@ window.BENCHMARK_DATA = {
           741801,
           741067,
           718319,
-          741115
+          741115,
+          735272
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15705,7 +15769,8 @@ window.BENCHMARK_DATA = {
           43334.419767252606,
           21906.00863647461,
           31946.107600285457,
-          24398.42371544471
+          24398.42371544471,
+          24795.246392822264
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15947,7 +16012,8 @@ window.BENCHMARK_DATA = {
           80301,
           80307,
           80344,
-          80304
+          80304,
+          79668
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16192,7 +16258,8 @@ window.BENCHMARK_DATA = {
           344146.06113978795,
           182363.89270833333,
           270194.14889090403,
-          212507.17651367188
+          212507.17651367188,
+          202877.45229492188
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16434,7 +16501,8 @@ window.BENCHMARK_DATA = {
           573074,
           573133,
           571205,
-          572994
+          572994,
+          573072
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17834,6 +17902,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 02:14:28 2026 \u002B0100",
         "message": "docs: make the amber dot a terminal at the end of the arc (#315)"
+      },
+      {
+        "sha": "94f200915f51d6a221e1735716acf08d5be03d94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 08:45:54 2026 \u002B0100",
+        "message": "fix: report AWT243 when the language version is too old for the generated code (#316)"
       }
     ],
     "labels": [
@@ -18067,7 +18141,8 @@ window.BENCHMARK_DATA = {
       "cfdeece9",
       "35be27e5",
       "b29e2600",
-      "9d28761a"
+      "9d28761a",
+      "94f20091"
     ],
     "datasets": [
       {
@@ -18304,7 +18379,8 @@ window.BENCHMARK_DATA = {
           202.82010078430176,
           252.96296163967676,
           200.6946506023407,
-          256.2456090450287
+          256.2456090450287,
+          292.915201480572
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18339,6 +18415,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -18791,7 +18868,8 @@ window.BENCHMARK_DATA = {
           461.23183177312217,
           622.5833545049031,
           457.5192208925883,
-          612.2372065952846
+          612.2372065952846,
+          652.5955965335553
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -18803,6 +18881,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19278,7 +19357,8 @@ window.BENCHMARK_DATA = {
           4897.020835289588,
           6475.335697428385,
           4694.64758845738,
-          6735.1605730692545
+          6735.1605730692545,
+          5237.947938028971
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19362,6 +19442,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -19765,7 +19846,8 @@ window.BENCHMARK_DATA = {
           343.0717325846354,
           390.737326780955,
           332.8297374089559,
-          423.8524970372518
+          423.8524970372518,
+          415.28731482369557
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19777,6 +19859,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20252,7 +20335,8 @@ window.BENCHMARK_DATA = {
           540.3498201370239,
           722.6019562993731,
           536.9384574890137,
-          740.799795627594
+          740.799795627594,
+          730.7450074513753
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20264,6 +20348,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
