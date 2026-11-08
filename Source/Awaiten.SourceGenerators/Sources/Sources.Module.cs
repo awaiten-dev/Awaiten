@@ -139,8 +139,12 @@ internal static partial class Sources
 			AppendXmlSummary(builder, depth + 2,
 				"Generated from a module registration: serves a service of an implementation the module builds through a handle,",
 				"from the instance handle of the implementation, so every service shares the one instance.");
+			string[] arguments = alias.Arguments.AsArray();
 			Indent(builder, depth + 2).Append("public static ").Append(alias.ReturnType).Append(' ').Append(alias.Name).Append('(')
-				.Append(alias.HandleType).Append(" @awaiten__handle) => ").Append(alias.Body).AppendLine(";");
+				.Append(arguments.Length == 0 ? alias.HandleType : $"global::System.Func<{string.Concat(arguments.Select(argument => argument + ", "))}{alias.HandleType}>")
+				.Append(" @awaiten__handle")
+				.Append(string.Concat(arguments.Select((argument, index) => $", [global::Awaiten.Arg] {argument} @awaiten__arg{index + 1}")))
+				.Append(") => ").Append(alias.Body).AppendLine(";");
 		}
 
 		foreach (HiddenInitializer initializer in model.Initializers.AsArray())

@@ -597,6 +597,8 @@ partial class AwaitenGenerator
 		Lazy,
 		Owned,
 		FuncOwned,
+		FuncWithArguments,
+		FuncWithArgumentsOwned,
 		Collection,
 	}
 
@@ -841,12 +843,14 @@ partial class AwaitenGenerator
 			foreach (HiddenImplementation candidate in pending.Where(candidate => !built.Contains(candidate)).Distinct().ToList())
 			{
 				built.Add(candidate);
-				if (BuildHiddenFactory(candidate, context, initializers, warnings) is { } factory)
+				RegistrationFactory? factory = BuildHiddenFactory(candidate, context, initializers, warnings);
+				if (factory is not null)
 				{
 					factories.Add(factory);
 				}
 
-				aliases.AddRange(HiddenAliases(candidate, hidden, compilation));
+				string[] arguments = factory?.Parameters.AsArray().Where(parameter => parameter.Attributes == ArgAttribute).Select(parameter => parameter.Type).ToArray() ?? [];
+				aliases.AddRange(HiddenAliases(candidate, hidden, compilation, arguments));
 			}
 
 			pending.Clear();
@@ -1495,10 +1499,15 @@ partial class AwaitenGenerator
 	///     The aliases of an implementation the module builds through a handle: one per service it is registered under,
 	///     returning its instance from its instance handle, as the accessible service or wrapped in the handle of the
 	///     internal service. A public implementation gets one under its own type too, through which a container in another
-	///     assembly serves its own registration of the implementation from the same instance.
+	///     assembly serves its own registration of the implementation from the same instance. For an implementation built
+	///     from the runtime <paramref name="arguments" /> of its <c>[Arg]</c> parameters, each alias takes them and a factory
+	///     of the instance handle, since the container reaches such a service only through a factory.
 	/// </summary>
-	private static IEnumerable<HiddenAlias> HiddenAliases(HiddenImplementation candidate, HiddenServices hidden, Compilation compilation)
+	private static IEnumerable<HiddenAlias> HiddenAliases(HiddenImplementation candidate, HiddenServices hidden, Compilation compilation, string[] arguments)
 	{
+		string handle = arguments.Length == 0
+			? "@awaiten__handle"
+			: $"@awaiten__handle({string.Join(", ", arguments.Select((_, index) => $"@awaiten__arg{index + 1}"))})";
 		INamedTypeSymbol implementation = candidate.Implementation;
 		IEnumerable<INamedTypeSymbol> services = candidate.Registrations.Select(registration => registration.Service);
 		if (IsExternallyAccessible(implementation))
@@ -1515,12 +1524,13 @@ partial class AwaitenGenerator
 			}
 
 			string returnType = internalService ? hidden.HandleType(service) : service.ToDisplayString(FullyQualified);
-			string value = InstanceValue(implementation, service.ToDisplayString(FullyQualified), compilation);
+			string value = InstanceValue(implementation, service.ToDisplayString(FullyQualified), compilation, handle);
 			yield return new HiddenAlias(
 				HiddenAliasName(implementation, service),
 				returnType,
 				hidden.InstanceHandleType(implementation),
-				internalService ? $"new {returnType}({value})" : value);
+				internalService ? $"new {returnType}({value})" : value,
+				new EquatableArray<string>(arguments));
 		}
 	}
 
@@ -1536,8 +1546,8 @@ partial class AwaitenGenerator
 	///     The instance an alias reads from the instance handle of <paramref name="implementation" /> as
 	///     <paramref name="service" />, cast when the handle holds it as <see cref="object" /> (see <see cref="InstanceValueType" />).
 	/// </summary>
-	private static string InstanceValue(INamedTypeSymbol implementation, string service, Compilation compilation)
-		=> compilation.IsSymbolAccessibleWithin(implementation, compilation.Assembly) ? "@awaiten__handle.Value" : $"(({service})@awaiten__handle.Value)";
+	private static string InstanceValue(INamedTypeSymbol implementation, string service, Compilation compilation, string handle = "@awaiten__handle")
+		=> compilation.IsSymbolAccessibleWithin(implementation, compilation.Assembly) ? $"{handle}.Value" : $"(({service}){handle}.Value)";
 
 	/// <summary>
 	///     The aliases of the matches of the module's scans whose implementation only other modules of the assembly
@@ -1569,7 +1579,8 @@ partial class AwaitenGenerator
 	///     generated member passes the instance on. Reports AWT237 for a shape it cannot pass on, and returns
 	///     <see langword="null" /> when the member takes no such service, or one that cannot be built, which is then
 	///     recorded so its cause is reported and returned as <paramref name="unbuildable" />, while the member falls back
-	///     to AWT195. Only in the module's own build.
+	///     to AWT195. A factory with a runtime argument another assembly cannot name falls back to AWT195 too. Only in the
+	///     module's own build.
 	/// </summary>
 	private static HiddenMirror? MirrorHiddenService(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context, out INamedTypeSymbol? unbuildable)
 	{
@@ -1580,7 +1591,11 @@ partial class AwaitenGenerator
 		}
 
 		(HiddenShape? shape, ITypeSymbol inner) = HiddenShapeOf(type);
-		if (shape is { } known && inner is INamedTypeSymbol service && (hidden.Services.ContainsKey(service) || hidden.ProvidedElsewhere(service)))
+		ITypeSymbol[] arguments = shape is HiddenShape.FuncWithArguments or HiddenShape.FuncWithArgumentsOwned
+			? ((INamedTypeSymbol)type).TypeArguments.Take(((INamedTypeSymbol)type).TypeArguments.Length - 1).ToArray()
+			: [];
+		if (shape is { } known && inner is INamedTypeSymbol service && (hidden.Services.ContainsKey(service) || hidden.ProvidedElsewhere(service))
+		    && arguments.All(argument => FitsFactorySignature(argument, context)))
 		{
 			hidden.Referenced?.Add(service);
 			if (hidden.NonViable.Contains(service))
@@ -1594,12 +1609,17 @@ partial class AwaitenGenerator
 			string handle = hidden.HandleType(service);
 			string value = service.ToDisplayString(FullyQualified);
 			const string unwrap = "awaiten__handle => awaiten__handle.Value";
+			string argumentTypes = string.Concat(arguments.Select(argument => argument.ToDisplayString(FullyQualifiedWithNullability) + ", "));
+			string lambdaArguments = string.Join(", ", arguments.Select((_, index) => $"awaiten__arg{index + 1}"));
 			(string parameterType, string argument) = known switch
 			{
 				HiddenShape.Func => ($"global::System.Func<{handle}>", $"() => @{name}().Value"),
 				HiddenShape.Lazy => ($"global::System.Lazy<{handle}>", $"new global::System.Lazy<{value}>(() => @{name}.Value.Value)"),
 				HiddenShape.Owned => ($"global::Awaiten.Owned<{handle}>", $"global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}, {unwrap})"),
 				HiddenShape.FuncOwned => ($"global::System.Func<global::Awaiten.Owned<{handle}>>", $"() => global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}(), {unwrap})"),
+				HiddenShape.FuncWithArguments => ($"global::System.Func<{argumentTypes}{handle}>", $"({lambdaArguments}) => @{name}({lambdaArguments}).Value"),
+				HiddenShape.FuncWithArgumentsOwned => ($"global::System.Func<{argumentTypes}global::Awaiten.Owned<{handle}>>",
+					$"({lambdaArguments}) => global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}({lambdaArguments}), {unwrap})"),
 				HiddenShape.Collection => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
 					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(@{name}, {unwrap}))"),
 				_ => (handle, $"@{name}.Value"),
@@ -1630,13 +1650,20 @@ partial class AwaitenGenerator
 			return array.Rank == 1 ? (HiddenShape.Collection, array.ElementType) : (null, type);
 		}
 
-		if (type is not INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named)
+		if (type is not INamedTypeSymbol { IsGenericType: true, } named)
 		{
 			return (HiddenShape.Direct, type);
 		}
 
-		ITypeSymbol argument = named.TypeArguments[0];
 		string? ns = named.ContainingNamespace?.ToDisplayString();
+		ITypeSymbol argument = named.TypeArguments[named.TypeArguments.Length - 1];
+		if (named.TypeArguments.Length > 1)
+		{
+			return (ns, named.Name) is ("System", "Func")
+				? IsOwned(argument, out ITypeSymbol ownedResult) ? (HiddenShape.FuncWithArgumentsOwned, ownedResult) : (HiddenShape.FuncWithArguments, argument)
+				: (HiddenShape.Direct, type);
+		}
+
 		return (ns, named.Name) switch
 		{
 			("System", "Func") => IsOwned(argument, out ITypeSymbol owned) ? (HiddenShape.FuncOwned, owned) : (HiddenShape.Func, argument),

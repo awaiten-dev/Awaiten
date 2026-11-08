@@ -255,16 +255,17 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Marks each alias (see <see cref="ThroughAlias" />) that takes a transient instance handle the container tracks
-	///     for teardown (<see cref="InstanceModel.TracksHandleDisposal" />): building the alias builds and tracks the
-	///     implementation, so strict lifetime safety withholds it on the Root, as it withholds the implementation in a
-	///     container of the module's own assembly, while the handle keeps owning the disposal.
+	///     for teardown, or a factory of one for an implementation with <c>[Arg]</c> parameters
+	///     (<see cref="InstanceModel.TracksHandleDisposal" />): building the alias builds and tracks the implementation, so
+	///     strict lifetime safety withholds it on the Root, as it withholds the implementation in a container of the
+	///     module's own assembly, while the handle keeps owning the disposal.
 	/// </summary>
 	private static void MarkAliasesOfTrackedHandles(List<InstanceModel> instances, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<string, int> implToIndex)
 	{
 		for (int index = 0; index < instances.Count; index++)
 		{
 			if (instances[index].ImplementationType.Contains(AliasKeyMarker)
-			    && instances[index].ConstructorParameters.AsArray().Any(parameter => parameter.Kind == DependencyKind.Direct
+			    && instances[index].ConstructorParameters.AsArray().Any(parameter => parameter.Kind is DependencyKind.Direct or DependencyKind.Func
 			                                                                         && serviceToImpl.TryGetValue(new ServiceKey(parameter.ServiceType, parameter.Key), out string? handle)
 			                                                                         && implToIndex.TryGetValue(handle, out int handleIndex)
 			                                                                         && instances[handleIndex] is { Lifetime: Lifetime.Transient, } tracked
@@ -276,13 +277,13 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The instance handle an alias (see <see cref="ThroughAlias" />) serves its instance from, or
-	///     <paramref name="index" /> itself for any other instance, so a check of what a relationship reaches judges and
-	///     names the implementation, as a container in the module's own assembly does.
+	///     The instance handle an alias (see <see cref="ThroughAlias" />) serves its instance from, directly or through a
+	///     factory, or <paramref name="index" /> itself for any other instance, so a check of what a relationship reaches
+	///     judges and names the implementation, as a container in the module's own assembly does.
 	/// </summary>
 	private static int AliasedInstance(int index, List<InstanceModel> instances, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<string, int> implToIndex)
 		=> instances[index].ImplementationType.Contains(AliasKeyMarker)
-		   && instances[index].ConstructorParameters.AsArray().FirstOrDefault(parameter => parameter.Kind == DependencyKind.Direct) is { } handle
+		   && instances[index].ConstructorParameters.AsArray().FirstOrDefault(parameter => parameter.Kind is DependencyKind.Direct or DependencyKind.Func) is { } handle
 		   && serviceToImpl.TryGetValue(new ServiceKey(handle.ServiceType, handle.Key), out string? implementation)
 		   && implToIndex.TryGetValue(implementation, out int handleIndex)
 			? handleIndex
