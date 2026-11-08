@@ -89,8 +89,83 @@ public partial class ModuleScanInstanceHandleTests
 			await using MultiExposureContainer.Root container = new();
 			await container.InitializeAsync();
 
-			await That(container.Resolve<IMultiTransientRoaster>()).IsNotSameAs(container.Resolve<IMultiTransientRoaster>());
-			await That((object)container.Resolve<IMultiTransientPlugin>()).IsNotSameAs(container.Resolve<IMultiTransientRoaster>());
+			await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+			await That(scope.Resolve<IMultiTransientRoaster>()).IsNotSameAs(scope.Resolve<IMultiTransientRoaster>());
+			await That((object)scope.Resolve<IMultiTransientPlugin>()).IsNotSameAs(scope.Resolve<IMultiTransientRoaster>());
+		}
+
+		[Test]
+		public async Task AScopedMatch_RunsItsHooksOncePerScope()
+		{
+			await using MultiExposureContainer.Root container = new();
+			await container.InitializeAsync();
+
+			IMultiScopedRoaster roaster;
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				roaster = scope.Resolve<IMultiScopedRoaster>();
+				_ = scope.Resolve<IMultiScopedPlugin>();
+				await That(roaster.Activations).IsEqualTo(1)
+					.Because("the hook runs once on the instance the scope shares across both exposures");
+				await That(roaster.Releases).IsEqualTo(0);
+			}
+
+			await That(roaster.Releases).IsEqualTo(1)
+				.Because("the scope releases the shared instance once");
+			await That(roaster.Disposals).IsEqualTo(1);
+		}
+
+		[Test]
+		public async Task ATransientMatch_RunsItsHooksOncePerInstance()
+		{
+			await using MultiExposureContainer.Root container = new();
+			await container.InitializeAsync();
+
+			IMultiTransientRoaster first;
+			IMultiTransientRoaster second;
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				first = scope.Resolve<IMultiTransientRoaster>();
+				second = (IMultiTransientRoaster)scope.Resolve<IMultiTransientPlugin>();
+				await That(second).IsNotSameAs(first);
+				await That(first.Activations).IsEqualTo(1);
+				await That(second.Activations).IsEqualTo(1)
+					.Because("each resolution builds a new instance, on which the hook runs once");
+			}
+
+			await That(first.Releases).IsEqualTo(1)
+				.Because("the scope releases each transient instance it tracked once");
+			await That(second.Releases).IsEqualTo(1);
+			await That(first.Disposals).IsEqualTo(1);
+			await That(second.Disposals).IsEqualTo(1);
+		}
+
+		[Test]
+		public async Task AnAsyncOnlyDisposableMatch_IsDisposedOnceAsynchronously()
+		{
+			IMultiAsyncRoaster roaster;
+			await using (MultiExposureContainer.Root container = new())
+			{
+				await container.InitializeAsync();
+				roaster = container.Resolve<IMultiAsyncRoaster>();
+				await That((object)container.Resolve<IMultiAsyncPlugin>()).IsSameAs(roaster);
+			}
+
+			await That(roaster.Disposals).IsEqualTo(1)
+				.Because("the handle forwards only the asynchronous disposal of the instance, once");
+		}
+
+		[Test]
+		public async Task ACollection_MixesTheHandledMatchWithTheOthersInScanOrder()
+		{
+			await using MixedExposureContainer.Root container = new();
+
+			string[] plugins = container.Resolve<IEnumerable<IMixedPlugin>>().Select(plugin => plugin.GetType().Name).ToArray();
+
+			await That(plugins).IsEqualTo(["MixedAlpha", "MixedBeta", "MixedGamma",])
+				.Because("the match served from a handle keeps its place among the matches the container builds directly");
+			await That((object)container.Resolve<IMixedBeta>()).IsSameAs(container.Resolve<IEnumerable<IMixedPlugin>>().ElementAt(1));
 		}
 
 		[Test]
@@ -159,6 +234,10 @@ public partial class ModuleScanInstanceHandleTests
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(MultiExposureScanModule))]
 		public static partial class MultiExposureContainer;
+
+		[Container]
+		[Import(typeof(MixedExposureScanModule))]
+		public static partial class MixedExposureContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(MultiExposureScanModule))]

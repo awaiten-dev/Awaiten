@@ -33,17 +33,42 @@ public interface IMultiWarmable
 public interface IMultiScopedPlugin;
 
 /// <summary>The matching interface of the scoped match of <see cref="MultiExposureScanModule" />.</summary>
-public interface IMultiScopedRoaster
-{
-	/// <summary>How often a container disposed the instance.</summary>
-	int Disposals { get; }
-}
+public interface IMultiScopedRoaster : IMultiCounters;
 
 /// <summary>The marker of the transient match of <see cref="MultiExposureScanModule" />.</summary>
 public interface IMultiTransientPlugin;
 
 /// <summary>The matching interface of the transient match of <see cref="MultiExposureScanModule" />.</summary>
-public interface IMultiTransientRoaster;
+public interface IMultiTransientRoaster : IMultiCounters;
+
+/// <summary>What the scoped and transient matches of <see cref="MultiExposureScanModule" /> count.</summary>
+public interface IMultiCounters
+{
+	/// <summary>How often the module's <c>OnActivated</c> hook ran on the instance.</summary>
+	int Activations { get; }
+
+	/// <summary>How often the module's <c>OnRelease</c> hook ran on the instance.</summary>
+	int Releases { get; }
+
+	/// <summary>How often a container disposed the instance.</summary>
+	int Disposals { get; }
+}
+
+/// <summary>The marker of the async-only disposable match of <see cref="MultiExposureScanModule" />.</summary>
+public interface IMultiAsyncPlugin;
+
+/// <summary>The matching interface of the async-only disposable match of <see cref="MultiExposureScanModule" />.</summary>
+public interface IMultiAsyncRoaster
+{
+	/// <summary>How often a container disposed the instance asynchronously.</summary>
+	int Disposals { get; }
+}
+
+/// <summary>The marker of the matches of <see cref="MixedExposureScanModule" />.</summary>
+public interface IMixedPlugin;
+
+/// <summary>The matching interface of the only match of <see cref="MixedExposureScanModule" /> exposed under several interfaces.</summary>
+public interface IMixedBeta;
 
 internal sealed class MultiRoaster : IMultiPlugin, IMultiRoaster, IMultiWarmable, IDisposable
 {
@@ -64,14 +89,37 @@ internal sealed class MultiRoaster : IMultiPlugin, IMultiRoaster, IMultiWarmable
 	public void Dispose() => Disposals++;
 }
 
-internal sealed class MultiScopedRoaster : IMultiScopedPlugin, IMultiScopedRoaster, IDisposable
+internal abstract class CountedRoaster : IMultiCounters, IDisposable
 {
+	public int Activations { get; set; }
+
+	public int Releases { get; set; }
+
 	public int Disposals { get; private set; }
 
 	public void Dispose() => Disposals++;
 }
 
-internal sealed class MultiTransientRoaster : IMultiTransientPlugin, IMultiTransientRoaster;
+internal sealed class MultiScopedRoaster : CountedRoaster, IMultiScopedPlugin, IMultiScopedRoaster;
+
+internal sealed class MultiTransientRoaster : CountedRoaster, IMultiTransientPlugin, IMultiTransientRoaster;
+
+internal sealed class MultiAsyncRoaster : IMultiAsyncPlugin, IMultiAsyncRoaster, IAsyncDisposable
+{
+	public int Disposals { get; private set; }
+
+	public ValueTask DisposeAsync()
+	{
+		Disposals++;
+		return default;
+	}
+}
+
+internal sealed class MixedAlpha : IMixedPlugin;
+
+internal sealed class MixedBeta : IMixedPlugin, IMixedBeta;
+
+internal sealed class MixedGamma : IMixedPlugin;
 
 /// <summary>The marker of the match of <see cref="PublicMultiExposureScanModule" />.</summary>
 public interface IPublicMultiPlugin;
@@ -117,11 +165,28 @@ public static partial class PublicMultiExposureScanModule
 [Module]
 [AsyncInitializer<IMultiWarmable>(nameof(IMultiWarmable.WarmAsync))]
 [Scan<IMultiPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate), OnRelease = nameof(Release))]
-[Scan<IMultiScopedPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Scoped)]
-[Scan<IMultiTransientPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Transient)]
+[Scan<IMultiScopedPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Scoped, OnActivated = nameof(ActivateScoped), OnRelease = nameof(ReleaseScoped))]
+[Scan<IMultiTransientPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Transient, OnActivated = nameof(ActivateTransient), OnRelease = nameof(ReleaseTransient))]
+[Scan<IMultiAsyncPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
 public static partial class MultiExposureScanModule
 {
 	internal static void Activate(MultiRoaster roaster) => roaster.Activations++;
 
 	internal static void Release(MultiRoaster roaster) => roaster.Releases++;
+
+	internal static void ActivateScoped(MultiScopedRoaster roaster) => roaster.Activations++;
+
+	internal static void ReleaseScoped(MultiScopedRoaster roaster) => roaster.Releases++;
+
+	internal static void ActivateTransient(MultiTransientRoaster roaster) => roaster.Activations++;
+
+	internal static void ReleaseTransient(MultiTransientRoaster roaster) => roaster.Releases++;
 }
+
+/// <summary>
+///     A <c>[Module]</c> whose scan exposes one match under its marker and its matching interface and the others under
+///     their marker only, so the marker's collection mixes a match served from a handle with matches built directly.
+/// </summary>
+[Module]
+[Scan<IMixedPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+public static partial class MixedExposureScanModule;
