@@ -1056,7 +1056,7 @@ A key in a `[Decorate]`'s `Keys` matches no registration of the decorated servic
 public static partial class CoffeeShop;
 ```
 
-It is not reported for the open generic form when a closing of the service was left out for another error, such as an inherited closing the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once.
+It is not reported for the open generic form when a closing of the service under that key was left out for another error, such as an inherited closing the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once. A closing left out under another key doesn't explain the key, so a typo in it is still reported.
 
 **Fix:** Register the decorated service under that key, or remove the key from `Keys`.
 
