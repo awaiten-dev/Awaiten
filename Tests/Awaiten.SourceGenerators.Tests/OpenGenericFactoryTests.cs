@@ -190,7 +190,7 @@ public class OpenGenericFactoryTests
 			                                                                                 }
 			                                                                                 """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT126"))
 				.Because("the closing is checked against the implementation's constraints, which the factory carries too, and the missing closing is not reported again");
 		}
 	}
@@ -266,7 +266,7 @@ public class OpenGenericFactoryTests
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library("Repository", covering: string.Empty), ReaderConsumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("Lib.IReader<Lib.Item>, Lib.IRepository<Lib.Item>"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("Lib.IReader<Lib.Item>, Lib.IRepository<Lib.Item>"))
 				.Because("neither generated factory returns a type that serves both services of the one instance");
 		}
 
@@ -275,7 +275,7 @@ public class OpenGenericFactoryTests
 		{
 			GeneratorResult result = Generator.Run(InTheSameAssembly(Library("DataModule.Hidden", covering: string.Empty)));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT216") && diagnostic.Contains("no accessible type it converts to covers all of its services"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT216") && diagnostic.Contains("no accessible type it converts to covers all of its services"));
 		}
 
 		[Test]
@@ -1608,7 +1608,7 @@ public class OpenGenericFactoryTests
 
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, ReaderConsumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT210") && diagnostic.Contains("'Lib.IRepository<T>'"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT210") && diagnostic.Contains("'Lib.IRepository<T>'"))
 				.Because("the open decorator reports the key once, as in the module's own assembly, and not again for its closing onto the handle");
 		}
 	}
@@ -1879,7 +1879,7 @@ public class OpenGenericFactoryTests
 		{
 			GeneratorResult result = Generator.Run(InjectPropertyBase($$"""[InjectProperty(typeof(Shop.Repository<>), "Clock", {{option}})]""") + ExtendingInTheSameAssembly);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains($"its property 'Clock' {reason}"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains($"its property 'Clock' {reason}"));
 		}
 
 		[Test]
@@ -1915,7 +1915,7 @@ public class OpenGenericFactoryTests
 		{
 			GeneratorResult result = Generator.Run(InjectPropertyBase("""[InjectProperty(typeof(Shop.Repository<Order>), "Clock")]""") + ExtendingInTheSameAssembly);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("'Lib.Shop.Repository<Lib.Order>'"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("'Lib.Shop.Repository<Lib.Order>'"))
 				.Because("one generic factory serves every closing, so it cannot fill a property for one closing only");
 		}
 

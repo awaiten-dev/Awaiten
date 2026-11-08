@@ -58,10 +58,10 @@ public class CrossContainerAgreementTests
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Library, consumer);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(Library), consumer);
 
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"));
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"))
+			await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"));
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"))
 				.Because("the container calls the module's generated wrapper, but the user declared the member the wrapper calls");
-			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"));
+			await That(friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.CoffeeModule.Make'"));
 		}
 	}
 
@@ -94,7 +94,7 @@ public class CrossContainerAgreementTests
 
 			await That(library.Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Greeter'*its constructor parameter 'secret' needs the internal service 'Lib.ISecret', which the module cannot build*").AsWildcard()
 				.Because("the private implementation fails only because of the service, whose own cause the module reports, not because the service is internal");
-			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("needs the internal service 'Lib.ISecret'"))
+			await That(friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("needs the internal service 'Lib.ISecret'"))
 				.Because("under InternalsVisibleTo the parameter type is accessible to the friends, so the message does not claim it is not");
 			await That(library.Diagnostics).DoesNotContain("*'Lib.ISecret', which is not accessible outside the module's assembly*").AsWildcard();
 		}
@@ -141,10 +141,10 @@ public class CrossContainerAgreementTests
 				""");
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(HookParameter, consumer);
 
-			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("'Lib.Secret'"))
+			await That(library.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT195") && diagnostic.Contains("'Lib.Secret'"))
 				.Because("the hook fails only because the module cannot build the secret, which it reports once where it arises");
 			await That(same.Diagnostics).DoesNotContain("*AWT203*").AsWildcard();
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("needs the internal service 'Lib.ISecret', which the module cannot build"))
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("needs the internal service 'Lib.ISecret', which the module cannot build"))
 				.Because("the container names why the module generated no hook wrapper instead of claiming a hook it cannot find (AWT164)");
 		}
 	}
@@ -180,7 +180,7 @@ public class CrossContainerAgreementTests
 		{
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Library, Consumer);
 
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because its build reported an error for the module or ran without the Awaiten generator"))
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because its build reported an error for the module or ran without the Awaiten generator"))
 				.Because("the module's assembly grants no InternalsVisibleTo, so it left the singleton to no friend; its own build reported AWT194");
 		}
 
@@ -191,7 +191,7 @@ public class CrossContainerAgreementTests
 
 			await That(Generator.Run(granted).Diagnostics).IsEmpty()
 				.Because("the module leaves its internal services to the assemblies it grants InternalsVisibleTo, so the library builds");
-			await That(Generator.RunWithGeneratedReferencedAssembly(granted, Consumer).Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because the module, or a class that contains it, is not partial"));
+			await That(Generator.RunWithGeneratedReferencedAssembly(granted, Consumer).Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("because the module, or a class that contains it, is not partial"));
 		}
 	}
 
@@ -269,7 +269,7 @@ public class CrossContainerAgreementTests
 
 			await That(Generator.Run(library).Sources.Values).Contains("*HiddenRegistration_Greeter_*").AsWildcard()
 				.Because("the modules build the implementation into a shared instance handle");
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'") && diagnostic.Contains("share one instance of it through a generated handle"))
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'") && diagnostic.Contains("share one instance of it through a generated handle"))
 				.Because("the handle builds the implementation inside the module, so the container reports the entry instead of warning that nothing registers the type and leaving it out");
 			await That(friend.Diagnostics).IsEmpty()
 				.Because("a friend constructs the implementation itself and fills the entry");
@@ -289,7 +289,7 @@ public class CrossContainerAgreementTests
 
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
 
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("registered under the internal service 'Lib.ISecret'"))
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("registered under the internal service 'Lib.ISecret'"))
 				.Because("one module builds the implementation through a handle for its internal service, so no other module shares it and the reason names that service");
 		}
 
@@ -309,8 +309,8 @@ public class CrossContainerAgreementTests
 				""");
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("(a constructor and factory 'Lib.OtherModule.Create')"));
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("(a constructor and factory 'Lib.OtherModule.Create')"))
+			await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("(a constructor and factory 'Lib.OtherModule.Create')"));
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("(a constructor and factory 'Lib.OtherModule.Create')"))
 				.Because("the module's generated factory stands for the constructor the user registered");
 		}
 	}

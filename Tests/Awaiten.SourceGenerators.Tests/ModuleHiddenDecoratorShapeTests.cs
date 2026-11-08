@@ -366,10 +366,10 @@ public partial class ModuleHiddenDecoratorShapeTests
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(OfAPublicService(decorator, attribute));
 
 			await That(library.Diagnostics).IsEmpty();
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
+			await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
 				.Because("the module records the internal dependency nothing registers, so the container reports it as a container in the module's assembly does");
-			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
 		}
 
 		[Test]
@@ -399,10 +399,10 @@ public partial class ModuleHiddenDecoratorShapeTests
 				""");
 
 			await That(library.Diagnostics).IsEmpty();
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
-			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
+			await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected))
 				.Because("the recorded dependency names the service behind the relationship and its key, as a container in the module's assembly does");
-			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
+			await That(friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains(expected));
 		}
 
 		[Test]

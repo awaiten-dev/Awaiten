@@ -916,7 +916,7 @@ public class RegistrationFactoryShapeTests
 			                                                                      public static partial class GreetingModule { }
 			                                                                      """, Consumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'Lib.LoudGreeter' requires 'Lib.ILog'"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("'Lib.LoudGreeter' requires 'Lib.ILog'"))
 				.Because("the module records the internal parameter type nothing registers, which a container in its own assembly reports as AWT101 too");
 		}
 
@@ -1598,7 +1598,7 @@ public class RegistrationFactoryShapeTests
 			await That(own.Diagnostics).IsEmpty()
 				.Because("the container constructs a Factory registration itself, so the container judges the convention, as for any registration it builds");
 			await That(ModuleSource(own)).Contains("Hook_OnActivated_Kettle_");
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT234") && diagnostic.Contains("not accessible from the container"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT234") && diagnostic.Contains("not accessible from the container"))
 				.Because("the hook wrapper makes the hook callable, but the container still cannot call the internal convention");
 		}
 

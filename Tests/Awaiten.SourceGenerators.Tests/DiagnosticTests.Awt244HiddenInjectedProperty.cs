@@ -79,7 +79,7 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = Run(reference, Library(members), Consumer("[Transient<Greeter, IGreeter>]"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT244"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT244"))
 				.Because("the container cannot reach the property and would build the type without it, whether the reference shows it or not");
 			await That(result.Diagnostics).Contains("*error AWT244*'App.AppContainer'*'Lib.Greeter'*'Clock'*'ReferencedAssembly'*[Module]*InternalsVisibleTo*").AsWildcard();
 		}
@@ -101,9 +101,12 @@ public partial class DiagnosticTests
 			GeneratorResult other = Run(reference, library, Consumer("[Transient<Greeter, IGreeter>]"));
 			GeneratorResult same = Generator.Run(SameAssembly(library, "[Transient<Greeter, IGreeter>]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Clock'"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Clock'"))
 				.Because("no container can assign the property, so neither a module nor InternalsVisibleTo would help, whether the reference shows it or not");
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"));
+			await That(same.Diagnostics).HasCount(2)
+				.Because("in its own assembly the module also rejects the property its factory cannot set (AWT200), and the container reports it like any container");
+			await That(same.Diagnostics).Contains("*AWT136*'Clock'*").AsWildcard();
+			await That(same.Diagnostics).Contains("*AWT200*'Lib.Greeter'*").AsWildcard();
 		}
 
 		[Test]
@@ -139,7 +142,7 @@ public partial class DiagnosticTests
 
 			GeneratorResult result = Run(reference, library, Consumer("[Transient<Greeter, IGreeter>]"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136"))
 				.Because("InternalsVisibleTo shows no private member to another assembly, and no container can assign it");
 		}
 
@@ -179,9 +182,9 @@ public partial class DiagnosticTests
 			GeneratorResult other = Run(reference, library, Consumer("[Transient<Greeter, IGreeter>]"));
 			GeneratorResult same = Generator.Run(SameAssembly(library, "[Transient<Greeter, IGreeter>]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"))
 				.Because("no container can assign an explicit interface implementation, so making it public or registering it through a module would not help");
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"));
+			await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136") && diagnostic.Contains("'Lib.IHasClock.Clock'"));
 		}
 
 		[Test]
@@ -192,7 +195,7 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = Run(reference, Library("[Inject] public IClock Clock { get; internal set; } = null!;"), Consumer("[Transient<Greeter, IGreeter>]"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136"))
 				.Because("the container sees the public property and reports its unreachable setter itself");
 		}
 
@@ -205,7 +208,7 @@ public partial class DiagnosticTests
 				Library("[Inject] internal IClock Clock { get; set; } = null!;", "public class Greeter : IGreeter"),
 				Consumer("[Transient<LoudGreeter, IGreeter>]") + "\npublic sealed class LoudGreeter : Greeter { }\n");
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'App.LoudGreeter'"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'App.LoudGreeter'"));
 		}
 
 		[Test]
@@ -236,7 +239,7 @@ public partial class DiagnosticTests
 
 			GeneratorResult result = Run(reference, library, Consumer("[Transient<Greeter, IGreeter>]\n[Decorate<LoudGreeter, IGreeter>]"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.LoudGreeter'"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.LoudGreeter'"));
 		}
 
 		[Test]
@@ -261,7 +264,7 @@ public partial class DiagnosticTests
 
 			GeneratorResult result = Run(reference, library, Consumer("[Transient(typeof(Repository<>), typeof(IRepository<>))]\n[Transient<Reader>]") + "\npublic sealed class Reader { public Reader(IRepository<string> names) { } }\n");
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.Repository<string>'"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.Repository<string>'"));
 		}
 
 		[Test]
@@ -274,7 +277,7 @@ public partial class DiagnosticTests
 
 			GeneratorResult result = Run(reference, library, Consumer("[Transient<Outer.Inner, IGreeter>]"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.Outer.Inner'"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT244") && diagnostic.Contains("'Lib.Outer.Inner'"));
 		}
 
 		[Test]
@@ -322,7 +325,7 @@ public partial class DiagnosticTests
 			                                                                               public static partial class TestShop { }
 			                                                                               """);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226"))
 				.Because("an extending container drops an inherited registration whose property it cannot see before it builds the type, so AWT244 does not fire on top");
 		}
 	}

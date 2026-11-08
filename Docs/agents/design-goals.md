@@ -34,7 +34,7 @@ When goals conflict, the earlier one wins.
 ## Tests
 
 - Tests use TUnit with aweXpect: `await That(...)`, with the reason in `.Because(...)` instead of a comment, so each test explains itself and the tests stay reorderable. Group related cases in nested classes rather than separating them with comments.
-- A diagnostic test runs the generator over an in-memory source and asserts the id by wildcard (`Contains("*AWT130*").AsWildcard()`), with cases that report and cases that must not. A runtime exception is asserted by its characteristic fragments (`WithMessage("*ResolveAsync*").AsWildcard()`), not by the whole text.
+- A diagnostic test runs the generator over an in-memory source and asserts the id by wildcard (`Contains("*AWT130*").AsWildcard()`), with cases that report and cases that must not. To assert that a diagnostic is the only one, use `HasSingle().Which...` or `HasCount(n)`: `HasSingle().Matching(...)` passes as long as exactly one diagnostic matches, whatever else the generator reports. When the generator reports others too, assert them as well. A runtime exception is asserted by its characteristic fragments (`WithMessage("*ResolveAsync*").AsWildcard()`), not by the whole text.
 - A behaviour change has a runtime test that declares a real `[Container]` in the test file and resolves from it; a generator-only test is not enough.
 - A fix starts with a test that fails without it.
 

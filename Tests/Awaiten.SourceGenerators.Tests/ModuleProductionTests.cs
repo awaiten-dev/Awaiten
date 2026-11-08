@@ -181,7 +181,7 @@ public class ModuleProductionTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'CreateClock'"))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'CreateClock'"))
 			.Because("no container calls a private member except through a generated wrapper, which only a partial module can receive, so the module reports it once instead of the container AWT153");
 	}
 
@@ -210,7 +210,7 @@ public class ModuleProductionTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'Clock'"))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("private member 'Clock'"))
 			.Because("no container reads a private member except through a generated wrapper, which only a partial module can receive");
 	}
 

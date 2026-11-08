@@ -109,10 +109,10 @@ public class RegistrationFactoryInjectedPropertyTests
 				Generator.RunWithGeneratedReferencedAssembly(Module, ImportingServices(Consumer)),
 				Generator.RunWithGeneratedReferencedAssembly(Granted(Module), ImportingServices(Consumer)));
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"))
+			await That(containers.Same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+			await That(containers.Other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"))
 				.Because("the factory's parameter for an [Inject] property falls through to the host no more than the property itself does");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
+			await That(containers.Friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.Contains("Lib.IClock"));
 		}
 
 		[Test]
@@ -187,7 +187,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			GeneratorResult result = Generator.Run(Library($"{first}\n{second}"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("presence flag"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("presence flag"))
 				.Because("the factory would declare two parameters of the same name, so the module reports the property instead of emitting code that does not compile");
 		}
 
@@ -311,10 +311,10 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			await That(containers.AllDiagnostics).IsEmpty()
 				.Because("the analyzer reports the warning, so it can be suppressed in source");
-			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"))
+			await That(analyses.Same).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"))
 				.Because("a container in another assembly warns about the init-only optional property like one that sees it");
-			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
 		}
 
 		[Test]
@@ -322,9 +322,9 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			Analyses analyses = await AnalyzeEverywhere(WithLibraryContainer(Module, clock: true), Module, ClockConsumer);
 
-			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+			await That(analyses.Other).HasSingle().Which.Satisfies(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
 				.Because("a warning with a location can be suppressed where it arises instead of for the whole project");
-			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
+			await That(analyses.Friend).HasSingle().Which.Satisfies(diagnostic => diagnostic.StartsWith("(7,2): warning AWT158", StringComparison.Ordinal))
 				.Because("a property read from another assembly has no location of its own");
 		}
 
@@ -398,7 +398,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult result = Generator.Run(source);
 
 			await That(result.Diagnostics).IsEmpty();
-			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
 			await That(ContainerSource(result, "LibContainer")).Contains("awaiten__init_Clock: true");
 		}
 
@@ -428,7 +428,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			GeneratorResult result = Generator.Run(Library(InitOnlyClocks(5)));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200"));
 			await That(result.Diagnostics).Contains("*AWT200*Lib.Greeter*'Clock4' is one of more than 4 init-only optional [Inject] properties*").AsWildcard()
 				.Because("each further init-only optional property doubles the object initializers the factory needs");
 		}
@@ -471,9 +471,9 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			await That(containers.AllDiagnostics).IsEmpty()
 				.Because("the factory takes the internal service through its handle, whose value it assigns when the flag says the handle is present");
-			await That(analyses.Same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(analyses.Other).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
-			await That(analyses.Friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Same).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Other).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
+			await That(analyses.Friend).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
 		}
 	}
 
@@ -601,10 +601,10 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			Containers containers = RunEverywhere(Module(property));
 
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"))
+			await That(containers.Same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT126"));
+			await That(containers.Other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT126"))
 				.Because("an optional property is filled when its service resolves, so a closing the constraints reject is the same error wherever the module lives");
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126"));
+			await That(containers.Friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT126"));
 		}
 
 		private static string GenericGreeterModule()
@@ -646,7 +646,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(GenericGreeterModule(), GenericGreeterConsumer("int"));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("Repository<int>"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT126") && diagnostic.Contains("Repository<int>"));
 		}
 	}
 
@@ -663,7 +663,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult own = Generator.Run(module);
 			GeneratorResult same = Generator.Run(WithLibraryContainer(module, clock: true));
 
-			await That(own.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(own.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200"));
 			await That(own.Diagnostics).Contains($"*AWT200*Lib.Greeter*'Clock'{reason}which no container supports*").AsWildcard();
 			await That(same.Diagnostics).Contains($"*{containerId}*").AsWildcard()
 				.Because("a container in the module's assembly rejects the property itself");
@@ -735,8 +735,8 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult granted = Generator.Run(Granted(module));
 			GeneratorResult same = Generator.Run(WithLibraryContainer(module, clock: true));
 
-			await That(own.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("'Clock' has no setter"));
-			await That(granted.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"))
+			await That(own.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("'Clock' has no setter"));
+			await That(granted.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200"))
 				.Because("a friend assembly cannot see a private property either, so it would silently leave it out");
 			await That(same.Diagnostics).Contains("*AWT136*").AsWildcard();
 		}
@@ -749,7 +749,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult result = Generator.Run(module);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200"));
 			await That(result.Diagnostics).Contains("*'Lib.Greeter' is self-compiled from a module registration because its [Inject] property 'Helper' is not public*make the [Inject] property 'Helper', its setter and its type public*").AsWildcard()
 				.Because("the implementation and its constructor are public already, so only the hidden property keeps another assembly from constructing it");
 		}
@@ -765,7 +765,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"));
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231"));
 			await That(result.Diagnostics).Contains("*registers 'Lib.Greeter', whose [Inject] property this container does not see*make the [Inject] properties of 'Lib.Greeter', their setters and their types public*").AsWildcard()
 				.Because("the container can construct the public implementation, but not set the property it does not see");
 		}
@@ -779,9 +779,9 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			await That(Generator.Run(module).Diagnostics).IsEmpty()
 				.Because("another assembly sees the protected setter, so its container reports it like one in the module's assembly");
-			await That(containers.Same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"));
-			await That(containers.Other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"));
-			await That(containers.Friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT136"));
+			await That(containers.Same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136"));
+			await That(containers.Other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136"));
+			await That(containers.Friend.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT136"));
 		}
 
 		[Test]
@@ -870,7 +870,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, Consumer.Replace("[Import(typeof(GreetingModule))]", "[Import(typeof(GreetingModule))]\n[InjectProperty<AllGreeters>(nameof(AllGreeters.Backup))]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'"));
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'"));
 			await That(other.Diagnostics).DoesNotContain("*error CS*").AsWildcard()
 				.Because("the composite's factory returns the service, not the composite, so the container reports the entry instead of leaving it out");
 		}
@@ -885,7 +885,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(module, ClockConsumer.Replace("[Transient<SystemClock, IClock>]", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\n[Transient<SystemClock, IClock>]"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT178"));
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178"));
 			await That(other.Diagnostics).Contains("*AWT178*'Lib.Greeter' is built by the generated factory of 'Lib.GreetingModule'*init-only property 'Backup'*").AsWildcard()
 				.Because("only the object initializer of the module's factory could set an init-only property, so the container reports the entry instead of leaving it out");
 		}
@@ -951,7 +951,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult result = Generator.Run(module);
 			GeneratorResult granted = Generator.Run(Granted(module));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("has the name of a constructor parameter"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT200") && diagnostic.Contains("has the name of a constructor parameter"))
 				.Because("a container in another assembly constructs the public decorator itself and would silently leave out the property it does not see");
 			await That(granted.Diagnostics).IsEmpty()
 				.Because("a friend constructs the decorator itself, so the module records the reason for a container without the grant");
@@ -985,9 +985,9 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult result = Generator.Run(module);
 			GeneratorResult granted = Generator.Run(Granted(module));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
 				.Because("a container in another assembly constructs the public decorator itself, so only the module's factory can set the property");
-			await That(granted.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194"));
+			await That(granted.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194"));
 		}
 
 		[Test]
@@ -995,7 +995,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			GeneratorResult result = Generator.Run(Granted(Library("[Inject] internal IClock Clock { get; set; } = null!;", UserType).Replace("public static partial class", "public static class")));
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT194") && diagnostic.Contains("whose [Inject] property another assembly cannot set"))
 				.Because("a container without InternalsVisibleTo constructs the public implementation itself, so only the module's factory can set the property");
 		}
 	}
@@ -1056,7 +1056,7 @@ public class RegistrationFactoryInjectedPropertyTests
 		{
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(Module), Consumer);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"))
 				.Because("the container could construct the decorator, but not set the property it does not see");
 		}
 
@@ -1071,7 +1071,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(GrantedToAnother(module), Consumer);
 
 			await That(library.Diagnostics).IsEmpty();
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"));
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("'Lib.LoudGreeter'"));
 		}
 	}
 
@@ -1119,7 +1119,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(module, Extending);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231"))
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT231"))
 				.Because("the module recorded why it generated no factory, and the extending container cannot set the property it does not see");
 		}
 
@@ -1149,7 +1149,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"))
 				.Because("the extending container cannot set the internal property it does not see, so it never builds the type without it");
 			await That(friend.Diagnostics).IsEmpty();
 			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
@@ -1180,7 +1180,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT193") && diagnostic.Contains("Lib.Greeter"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT193") && diagnostic.Contains("Lib.Greeter"))
 				.Because("a scan never fails the build, so the extending container skips the match with a warning instead of building it without the property");
 		}
 
@@ -1214,7 +1214,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("decorator 'Lib.LoudGreeter'"));
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("decorator 'Lib.LoudGreeter'"));
 			await That(friend.Diagnostics).IsEmpty();
 		}
 
@@ -1248,7 +1248,7 @@ public class RegistrationFactoryInjectedPropertyTests
 
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending.Replace("public static partial class AppContainer", "[Decorate<LoudGreeter, IGreeter>]\npublic static partial class AppContainer"));
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"));
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter"));
 			await That(other.Diagnostics).DoesNotContain("*AWT123*").AsWildcard()
 				.Because("the decorator has nothing left to wrap only because the registration was dropped, which AWT226 already reports");
 		}
@@ -1280,7 +1280,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, Extending);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter") && diagnostic.Contains("'Clock'"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Greeter") && diagnostic.Contains("'Clock'"))
 				.Because("the base fills the internal property through its own [InjectProperty] entry, which the extending container inherits but cannot apply");
 			await That(friend.Diagnostics).IsEmpty();
 			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
@@ -1313,7 +1313,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, extending);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), extending);
 
-			await That(other.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Gen<int>") && diagnostic.Contains("'Clock'"))
+			await That(other.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("Lib.Gen<int>") && diagnostic.Contains("'Clock'"))
 				.Because("the base records the hidden property of its open registration, so no closing is built without it, even one the base never builds itself");
 			await That(friend.Diagnostics).IsEmpty();
 			await That(ContainerSource(friend, "AppContainer")).Contains("Clock = ");
