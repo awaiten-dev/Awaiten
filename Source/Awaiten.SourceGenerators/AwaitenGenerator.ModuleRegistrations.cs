@@ -562,7 +562,7 @@ partial class AwaitenGenerator
 			ITypeSymbol declared = ProducedType(factory.ReturnType, compilation);
 			if (!IsAsyncFactoryReturn(factory.ReturnType, compilation, out _))
 			{
-				ReportFactoryHidingAsyncInitialization(factory, compilation, conventions, diagnostics);
+				ReportFactoryHidingAsyncInitialization(factory, compilation, conventions, diagnostics, module);
 			}
 
 			if (SymbolEqualityComparer.Default.Equals(OwnedMemberType(declared, implementation, module, compilation), declared))
@@ -601,7 +601,7 @@ partial class AwaitenGenerator
 			{
 				if (checkedFactories.Add(factory))
 				{
-					ReportFactoryHidingAsyncInitialization(factory, compilation, conventions ??= DeclaredAsyncInitializers(module, compilation, null), diagnostics);
+					ReportFactoryHidingAsyncInitialization(factory, compilation, conventions ??= DeclaredAsyncInitializers(module, compilation, null), diagnostics, module);
 				}
 			}
 		}

@@ -90,6 +90,18 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     <see cref="FactoryHidesAsyncInitialization" /> for a module's factory that constructs a type private to the
+	///     module: no container can name that type, so returning it is no remedy (it would be AWT234 instead).
+	/// </summary>
+	public static readonly DiagnosticDescriptor FactoryHidesAsyncInitializationInPrivateType = new(
+		"AWT106",
+		FactoryHidesAsyncInitialization.Title,
+		"The factory '{0}' constructs '{1}', which is async-initialized by '{3}', but declares return type '{2}'; the container cannot see that it needs initialization, so the initializer never runs. '{1}' is private to the module, so no container can see it as the return type; make the factory 'async Task<{2}>' and handle initialization inside it, or make '{1}' internal and return it.",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     The same implementation is registered with more than one lifetime; coalescing into a single
 	///     instance would silently drop one of the declared lifetimes.
 	/// </summary>

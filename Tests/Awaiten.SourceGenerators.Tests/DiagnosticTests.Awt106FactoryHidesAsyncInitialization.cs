@@ -490,6 +490,20 @@ public partial class DiagnosticTests
 				await That(Generator.RunWithGeneratedReferencedAssembly(Library(registration, factory, grant: true), Consumer).Diagnostics).DoesNotContain("*AWT106*").AsWildcard()
 					.Because("every container agrees: the module's build is the one that reports it");
 			}
+
+			[Test]
+			public async Task ConcreteTypePrivateToTheModule_OffersOnlyTheFixesNoContainerRejects()
+			{
+				string library = Library(
+					"Singleton<IFoo>(Factory = nameof(Create))",
+					"private sealed class Warm : IFoo, IInitializable { public Task InitializeAsync() => Task.CompletedTask; }\n    private static IFoo Create() => new Warm();");
+
+				string[] diagnostics = Generator.Run(library).Diagnostics;
+
+				await That(diagnostics).HasSingle().Which.Contains("*AWT106*'Lib.CoffeeModule.Warm'*private to the module*'async Task<Lib.IFoo>'*make 'Lib.CoffeeModule.Warm' internal*").AsWildcard();
+				await That(diagnostics).DoesNotContain("*Return 'Lib.CoffeeModule.Warm'*").AsWildcard()
+					.Because("returning the private type would only trade this warning for AWT234, since no container can name it");
+			}
 		}
 	}
 }

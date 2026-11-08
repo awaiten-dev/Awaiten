@@ -1238,13 +1238,15 @@ partial class AwaitenGenerator
 	///     Conservative by design: it inspects only the producer's own <c>return</c> expressions, never descending
 	///     into nested lambdas or local functions, and fires only when the returned static type is a non-abstract,
 	///     non-interface type a convention matches. An unanalyzable return type yields no diagnostic. False negatives
-	///     are accepted; false positives are not.
+	///     are accepted; false positives are not. For the factory of a <paramref name="module" />, a type private to the
+	///     module gets a message that does not suggest returning it.
 	/// </remarks>
 	private static void ReportFactoryHidingAsyncInitialization(
 		IMethodSymbol producer,
 		Compilation compilation,
 		List<AsyncInitializerConvention> conventions,
-		List<DiagnosticInfo> diagnostics)
+		List<DiagnosticInfo> diagnostics,
+		INamedTypeSymbol? module = null)
 	{
 		ITypeSymbol declaredReturnType = producer.ReturnType;
 
@@ -1284,7 +1286,9 @@ partial class AwaitenGenerator
 				}
 
 				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.FactoryHidesAsyncInitialization,
+					module is not null && IsHiddenInModule(concrete.OriginalDefinition, module, compilation)
+						? Diagnostics.FactoryHidesAsyncInitializationInPrivateType
+						: Diagnostics.FactoryHidesAsyncInitialization,
 					LocationInfo.From(returnExpression.GetLocation()),
 					new EquatableArray<string>([
 						producer.Name,
