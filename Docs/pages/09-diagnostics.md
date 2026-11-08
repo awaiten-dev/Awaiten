@@ -944,7 +944,7 @@ new ServiceCollection().AddAwaitenContainer<CoffeeShop.Root>();   // MS.DI would
 ### AWT123
 
 :::danger[Error]
-A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. Also raised when an open generic `[Decorate(typeof(D<>), typeof(IService<>))]` matches no closing of its service in the graph.
+A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported, like an open composite.
 :::
 
 ```csharp expect=AWT123
@@ -1055,6 +1055,8 @@ A key in a `[Decorate]`'s `Keys` matches no registration of the decorated servic
 [Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { "backup" })]   // nothing is registered under "backup"
 public static partial class CoffeeShop;
 ```
+
+It is not reported for the open generic form when a closing of the service was left out for another error, such as an inherited closing the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once.
 
 **Fix:** Register the decorated service under that key, or remove the key from `Keys`.
 

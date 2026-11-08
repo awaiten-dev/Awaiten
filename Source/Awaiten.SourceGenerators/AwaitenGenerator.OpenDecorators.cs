@@ -13,14 +13,18 @@ partial class AwaitenGenerator
 	///     constructing the matching closing of the decorator. The synthesized registrations carry the open form's
 	///     <c>Order</c>, declaration order and the keys present for that closing, so the existing
 	///     <see cref="DecoratorChainBuilder" /> interleaves them with explicit closed decorators of the same closing.
-	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT123 for
-	///     an open decorator that matches no closing at all and AWT210 for a selected key that no closing has.
+	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT210 for a
+	///     selected key that no closing has, unless a closing of its service was dropped for a reported reason
+	///     (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
+	///     decorates nothing and reports nothing, so a base container meant for extension, or a module, may declare one
+	///     for the closings its consumers register.
 	/// </summary>
 	private static void ExpandOpenDecorators(
 		List<DecorateRegistration> decorators,
 		List<OpenDecorateRegistration> open,
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenDecorateRegistration decorator in open)
@@ -29,7 +33,10 @@ partial class AwaitenGenerator
 				display => decorator.Keys is not { } keys
 					? PresentUnderAnyKey(graph, display)
 					: keys.Any(key => PresentUnderKey(graph, display, key)));
-			ReportUnmatchedOpenDecorator(decorator, closings, graph, diagnostics);
+			if (!rejected.Any(service => NamesClosingOf(service, decorator.Service)))
+			{
+				ReportUnmatchedOpenDecorator(decorator, closings, graph, diagnostics);
+			}
 
 			foreach (INamedTypeSymbol closed in closings)
 			{
@@ -63,8 +70,46 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Whether the fully qualified <paramref name="closed" /> names a closing of the generic definition of
+	///     <paramref name="open" />, with as many type arguments. A definition nested in a generic type is never matched.
+	/// </summary>
+	private static bool NamesClosingOf(string closed, INamedTypeSymbol open)
+	{
+		string definition = open.OriginalDefinition.ToDisplayString(FullyQualified);
+		int bracket = definition.IndexOf('<');
+		if (bracket < 0 || open.ContainingType is { IsGenericType: true, } || !closed.StartsWith(definition.Substring(0, bracket + 1), StringComparison.Ordinal) || closed[closed.Length - 1] != '>')
+		{
+			return false;
+		}
+
+		int depth = 0;
+		int arguments = 1;
+		for (int index = bracket + 1; index < closed.Length - 1; index++)
+		{
+			switch (closed[index])
+			{
+				case '<' or '(' or '[':
+					depth++;
+					break;
+				case '>' or ')' or ']':
+					if (--depth < 0)
+					{
+						return false;
+					}
+
+					break;
+				case ',' when depth == 0:
+					arguments++;
+					break;
+			}
+		}
+
+		return depth == 0 && arguments == open.Arity;
+	}
+
+	/// <summary>
 	///     Reports AWT210 for each key an open decorator selects that none of its <paramref name="closings" /> is
-	///     registered under, or AWT123 when it selects no key and has no closing at all.
+	///     registered under.
 	/// </summary>
 	private static void ReportUnmatchedOpenDecorator(
 		OpenDecorateRegistration decorator,
@@ -86,17 +131,6 @@ partial class AwaitenGenerator
 						key is null ? "null" : KeyDisplay(key),
 					])));
 			}
-		}
-		else if (closings.Count == 0 && !decorator.DecoratesHandles)
-		{
-			// AWT123: the open decorator names a service that has no closing in the graph to decorate.
-			diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.DecoratedServiceNotRegistered,
-				LocationInfo.From(decorator.Location),
-				new EquatableArray<string>([
-					Display(decorator.Service.ToDisplayString(FullyQualified)),
-					Display(decorator.Decorator.ToDisplayString(FullyQualified)),
-				])));
 		}
 	}
 

@@ -911,7 +911,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic decorators: synthesize a closed [Decorate] per matching closing before building the chains,
 		// so they flow through the same DecoratorChainBuilder as the closed form and interleave with it. A no-op
 		// when there are none (closedServices is then empty and the expansion has nothing to iterate).
-		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, diagnostics);
+		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, diagnostics);
 
 		// Decorator chains: for each [Decorate]d service, move the base impl(s) onto a synthetic key and register
 		// each decorator as a chain link whose inner parameter redirects to the next-lower key. decoratorInner

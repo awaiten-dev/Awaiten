@@ -7,7 +7,7 @@ namespace Awaiten.SourceGenerators.Tests;
 ///     is synthesized per closing of the service present in the graph and flows through the same chain/composite
 ///     builders as the closed forms. The forms reuse the open generic diagnostics AWT127 (not unbound) and AWT125
 ///     (arity); a closing whose type arguments violate the decorator's/composite's constraints warns AWT171 (a
-///     warning, since the base service still resolves); an open decorator that matches no closing reports AWT123.
+///     warning, since the base service still resolves); an open decorator that matches no closing reports nothing, like an open composite.
 /// </summary>
 public class OpenGenericDecoratorTests
 {
@@ -125,7 +125,7 @@ public class OpenGenericDecoratorTests
 	}
 
 	[Test]
-	public async Task OpenDecorator_WithNoClosingToDecorate_ReportsAwt123()
+	public async Task OpenDecorator_WithNoClosingToDecorate_ReportsNothing()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using Awaiten;
@@ -144,9 +144,34 @@ public class OpenGenericDecoratorTests
 		                                       }
 		                                       """);
 
-		// Nothing requires a closed IHandler<…>, so no closing is expanded and there is nothing to decorate.
-		await That(result.Diagnostics).Contains("*AWT123*").AsWildcard()
-			.Because("the open decorator matches no closing of the service");
+		await That(result.Diagnostics).IsEmpty()
+			.Because("like an open composite, an open decorator applies to whatever closings the graph has, here none, since nothing requires a closed IHandler<T>");
+	}
+
+	[Test]
+	public async Task OpenDecorator_InABaseWithoutAClosing_DecoratesTheClosingOfAnExtendingContainer()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public interface IHandler<T> { }
+		                                       public sealed class OrderHandler : IHandler<int> { }
+		                                       public sealed class Logging<T> : IHandler<T> { public Logging(IHandler<T> inner) { } }
+
+		                                       [Container]
+		                                       [Decorate(typeof(Logging<>), typeof(IHandler<>))]
+		                                       public static partial class BaseContainer;
+
+		                                       [Container(Extends = typeof(BaseContainer))]
+		                                       [Transient<OrderHandler, IHandler<int>>]
+		                                       public static partial class MyContainer;
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a base meant for extension may declare an open decorator for the closings its extending containers register");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("new global::MyCode.Logging<int>(");
 	}
 
 	[Test]
