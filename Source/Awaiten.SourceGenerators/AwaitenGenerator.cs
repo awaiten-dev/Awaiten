@@ -284,7 +284,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 	/// <summary>
 	///     Replaces the model of a module that generates code with one that carries only AWT243 when the project's
-	///     language version is older than that code needs.
+	///     language version is older than that code needs, or with one that generates nothing when AWT243 skips a
+	///     module of its assembly (see <see cref="SkipsAScanModule" />).
 	/// </summary>
 	private static ModuleScanModel? RequireLanguageVersion(ModuleScanModel? model, GeneratorAttributeSyntaxContext context)
 	{
@@ -294,10 +295,25 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		LanguageVersion required = model.DeclaresScan ? ModuleScanLanguageVersion : MinimumLanguageVersion;
-		return UnsupportedLanguageVersion(context, required) is { } diagnostic
-			? new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, new EquatableArray<DiagnosticInfo>([diagnostic,]), false, default, default, null)
+		if (UnsupportedLanguageVersion(context, required) is { } diagnostic)
+		{
+			return new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, new EquatableArray<DiagnosticInfo>([diagnostic,]), false, default, default, null);
+		}
+
+		return SkipsAScanModule(context)
+			? new ModuleScanModel(null, default, model.TypeName, string.Empty, false, default, model.Diagnostics, false, default, default, null)
 			: model;
 	}
+
+	/// <summary>
+	///     Whether the project compiles below C# 11 and a module of its assembly declares a <c>[Scan]</c>, so AWT243 skips
+	///     that module. The code generated for the other containers and modules of the assembly may refer to its members,
+	///     so they generate nothing either (a container emits only its shell), and AWT243 stays the only error.
+	/// </summary>
+	private static bool SkipsAScanModule(GeneratorAttributeSyntaxContext context)
+		=> ((CSharpParseOptions)context.TargetNode.SyntaxTree.Options).LanguageVersion < ModuleScanLanguageVersion
+		   && TypesWith(context.SemanticModel.Compilation.Assembly.GlobalNamespace, "ModuleAttribute")
+			   .Any(module => HasAwaitenAttribute(module.GetAttributes(), "ScanAttribute"));
 
 	/// <summary>
 	///     AWT243 when the project compiles with a C# version older than <paramref name="required" />, otherwise
@@ -380,21 +396,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// IAsyncDisposable support is emitted whenever the compilation can see it (see AsyncDisposableSupport).
 		// When absent the container is sync-dispose only.
 		bool hasAsyncDisposable = AsyncDisposableSupport(compilation) is not null;
-
-		(GraphModel graph, List<DiagnosticInfo> diagnostics) = Analyze(containerSymbol, compilation, cancellationToken);
-
-		// A base reports its own problems; the extending container re-checks the whole graph but reports only what it
-		// changes, so an unchanged base problem is not reported twice. A base with errors leaves the inherited graph
-		// broken, so the extending container then emits only its shell, like a container with errors of its own. A base
-		// in a referenced assembly compiled, so what fails it here is only what this assembly cannot see (AWT226).
-		bool hasBaseErrors = false;
-		if (ReadExtends(containerSymbol) is { } baseContainer)
-		{
-			List<DiagnosticInfo> baseDiagnostics = Analyze(baseContainer, compilation, cancellationToken).Diagnostics;
-			hasBaseErrors = SymbolEqualityComparer.Default.Equals(baseContainer.ContainingAssembly, containerSymbol.ContainingAssembly)
-			                && baseDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
-			RemoveBaseDiagnostics(diagnostics, baseDiagnostics);
-		}
+		bool hasNotNullWhen = NotNullWhenSupport(compilation);
 
 		string? containerNamespace = containerSymbol.ContainingNamespace is { IsGlobalNamespace: false, } ns
 			? ns.ToDisplayString()
@@ -415,6 +417,25 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		string hintName = containerNamespace is null
 			? $"Awaiten.{typePath}.g.cs"
 			: $"Awaiten.{containerNamespace}.{typePath}.g.cs";
+		if (SkipsAScanModule(context))
+		{
+			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true);
+		}
+
+		(GraphModel graph, List<DiagnosticInfo> diagnostics) = Analyze(containerSymbol, compilation, cancellationToken);
+
+		// A base reports its own problems; the extending container re-checks the whole graph but reports only what it
+		// changes, so an unchanged base problem is not reported twice. A base with errors leaves the inherited graph
+		// broken, so the extending container then emits only its shell, like a container with errors of its own. A base
+		// in a referenced assembly compiled, so what fails it here is only what this assembly cannot see (AWT226).
+		bool hasBaseErrors = false;
+		if (ReadExtends(containerSymbol) is { } baseContainer)
+		{
+			List<DiagnosticInfo> baseDiagnostics = Analyze(baseContainer, compilation, cancellationToken).Diagnostics;
+			hasBaseErrors = SymbolEqualityComparer.Default.Equals(baseContainer.ContainingAssembly, containerSymbol.ContainingAssembly)
+			                && baseDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
+			RemoveBaseDiagnostics(diagnostics, baseDiagnostics);
+		}
 
 		return new ContainerModel(
 			containerNamespace,
@@ -426,7 +447,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			strict,
 			syncAfterInit,
 			hasAsyncDisposable,
-			NotNullWhenSupport(compilation),
+			hasNotNullWhen,
 			new EquatableArray<ServiceMembers>(graph.Collections.ToArray()),
 			new EquatableArray<string>(graph.VarianceCandidates.ToArray()),
 			new EquatableArray<KeyedServiceMembers>(graph.KeyedCollections.ToArray()),

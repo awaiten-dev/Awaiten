@@ -174,6 +174,49 @@ public class LanguageVersionTests
 	}
 
 	[Test]
+	[Arguments(LanguageVersion.CSharp9)]
+	[Arguments(LanguageVersion.CSharp10)]
+	public async Task ABroadAssemblyWithAScanModule_ReportsOnlyAwt243BelowCSharp11(LanguageVersion languageVersion)
+	{
+		GeneratorResult result = Generator.Run(languageVersion, Shop.ReplaceLineEndings("\n").Replace("namespace Shop\n{\n", "namespace Shop\n{\n" + """
+			public interface IPrinter { }
+			internal sealed class Printer : IPrinter { }
+			internal sealed class BeanStore { }
+			public interface IMill { }
+			internal sealed class Mill : IMill { public Mill(BeanStore store) { } }
+
+			[Module]
+			[Scan(typeof(IPrinter))]
+			[Singleton(typeof(BeanStore))]
+			[Singleton(typeof(PrinterModule.FakeClock), typeof(IClock), Key = "fake")]
+			public static partial class PrinterModule
+			{
+			    private sealed class FakeClock : IClock { public DateTime Now => DateTime.MinValue; }
+			}
+
+			[Module]
+			[Singleton(typeof(Mill), typeof(IMill))]
+			public static partial class MillModule { }
+
+			[Container]
+			[Import(typeof(PrinterModule))]
+			[Import(typeof(MillModule))]
+			public static partial class PrintShop { }
+
+			[Container(Extends = typeof(PrintShop))]
+			public static partial class PrintFranchise { }
+
+			public static class PrintUsage
+			{
+			    public static IMill Mill(PrintFranchise.Root root) => root.Resolve<IMill>();
+			}
+			""").ReplaceLineEndings("\n"));
+
+		await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*Shop.PrinterModule*C# 11.0*").AsWildcard()
+			.Because("no container or module of the assembly refers to the members the skipped scan module would generate");
+	}
+
+	[Test]
 	public async Task AModuleWithInternalServicesInAnotherAssembly_CompilesAtCSharp9()
 	{
 		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(

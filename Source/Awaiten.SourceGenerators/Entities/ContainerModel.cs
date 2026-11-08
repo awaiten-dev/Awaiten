@@ -5,8 +5,8 @@ namespace Awaiten.SourceGenerators.Entities;
 
 /// <summary>
 ///     The fully-resolved, equatable model of a single <c>[Container]</c> partial class, ready for
-///     emission. <see cref="HasBaseErrors" /> marks a container whose extended base has an error that only the
-///     base reports, so the graph is still broken and only its shell is emitted. <see cref="ImportServices" />,
+///     emission. <see cref="ErrorsElsewhere" /> marks a container whose graph is broken by an error another declaration
+///     reports, its extended base or a module of its assembly that AWT243 skips, so only its shell is emitted. <see cref="ImportServices" />,
 ///     <see cref="ImportedServices" /> and <see cref="ImportedDefinitions" /> are the types the container leaves to
 ///     the host: <c>[ImportServices]</c>, the closed <c>[ImportService]</c> types and the unbound generic
 ///     definitions of the open ones. <see cref="Factories" /> are the factories the container generates for its private
@@ -29,7 +29,7 @@ internal sealed record ContainerModel(
 	EquatableArray<ServiceMembers> Collections = default,
 	EquatableArray<string> VarianceCandidates = default,
 	EquatableArray<KeyedServiceMembers> KeyedCollections = default,
-	bool HasBaseErrors = false,
+	bool ErrorsElsewhere = false,
 	bool ImportServices = false,
 	EquatableArray<string> ImportedServices = default,
 	EquatableArray<string> ImportedDefinitions = default,
@@ -43,7 +43,7 @@ internal sealed record ContainerModel(
 	{
 		get
 		{
-			if (HasBaseErrors)
+			if (ErrorsElsewhere)
 			{
 				return true;
 			}

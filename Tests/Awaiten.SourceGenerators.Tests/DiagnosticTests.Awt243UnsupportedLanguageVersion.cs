@@ -31,7 +31,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.Run(languageVersion, Source);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT243"))
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*").AsWildcard()
 					.Because("the generated code would not compile, so the build shows the cause instead of compiler errors in it");
 				await That(result.Diagnostics).Contains("*MyCode.MyContainer*C# 9.0*").AsWildcard();
 				await That(result.Sources).IsEmpty();
@@ -100,7 +100,7 @@ public partial class DiagnosticTests
 					}
 					""");
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT243"))
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*").AsWildcard()
 					.Because("the graph is not analyzed until the generated code can compile, so AWT101 follows once the version is raised");
 			}
 
@@ -167,7 +167,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.Run(languageVersion, ScanModule);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT243"))
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*").AsWildcard()
 					.Because("the registrations a module generates for its scan matches are generic attributes");
 				await That(result.Diagnostics).Contains("*Lib.HandlerModule*C# 11.0*").AsWildcard();
 				await That(result.Sources).IsEmpty();
@@ -187,7 +187,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.Run(LanguageVersion.CSharp8, RegistrationModule);
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT243"));
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*").AsWildcard();
 				await That(result.Diagnostics).Contains("*Lib.GrinderModule*C# 9.0*").AsWildcard();
 				await That(result.Sources).IsEmpty();
 			}
@@ -250,8 +250,117 @@ public partial class DiagnosticTests
 					}
 					""");
 
-				await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT243") && diagnostic.Contains("Lib.HandlerModule"))
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*Lib.HandlerModule*").AsWildcard()
 					.Because("a container of the module's own assembly expands the scan itself and needs only C# 9");
+			}
+
+			[Test]
+			[Arguments(LanguageVersion.CSharp9)]
+			[Arguments(LanguageVersion.CSharp10)]
+			public async Task AContainerImportingAScanModuleWithAPrivateRegistrationOfItsOwnAssemblyBelowCSharp11_ReportsOnlyAwt243(LanguageVersion languageVersion)
+			{
+				GeneratorResult result = Generator.Run(languageVersion, """
+					using Awaiten;
+
+					namespace Shop
+					{
+					    public interface IPrinter { }
+					    internal sealed class Printer : IPrinter { }
+					    public interface IClock { }
+
+					    [Module]
+					    [Scan(typeof(IPrinter))]
+					    [Singleton(typeof(ShopModule.FakeClock), typeof(IClock))]
+					    public static partial class ShopModule
+					    {
+					        private sealed class FakeClock : IClock { }
+					    }
+
+					    [Container]
+					    [Import(typeof(ShopModule))]
+					    public static partial class ShopContainer { }
+
+					    public static class Use
+					    {
+					        public static IClock Clock(ShopContainer.Root root) => root.Resolve<IClock>();
+					    }
+					}
+					""");
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*Shop.ShopModule*").AsWildcard()
+					.Because("the container would build the private clock through the factory the skipped module does not generate, so it emits only its shell");
+			}
+
+			[Test]
+			[Arguments(LanguageVersion.CSharp9)]
+			[Arguments(LanguageVersion.CSharp10)]
+			public async Task ModulesSharingHandlesWithAScanModuleOfTheirAssemblyBelowCSharp11_ReportOnlyAwt243(LanguageVersion languageVersion)
+			{
+				GeneratorResult result = Generator.Run(languageVersion, """
+					using Awaiten;
+
+					namespace Lib
+					{
+					    public interface ILamp { }
+					    public interface IUser { }
+					    internal interface IBulbSource { }
+					    internal sealed class Bulb : ILamp, IBulbSource { }
+					    internal sealed class User : IUser { public User(IBulbSource bulb) { } }
+
+					    [Module]
+					    [Singleton(typeof(Bulb), typeof(IBulbSource))]
+					    [Singleton(typeof(User), typeof(IUser))]
+					    public static partial class BulbModule { }
+
+					    [Module]
+					    [Scan(typeof(ILamp), As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+					    public static partial class LampScanModule { }
+
+					    [Container]
+					    [Import(typeof(BulbModule))]
+					    [Import(typeof(LampScanModule))]
+					    public static partial class AppContainer { }
+
+					    public static class Use
+					    {
+					        public static IUser User(AppContainer.Root root) => root.Resolve<IUser>();
+					    }
+					}
+					""");
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*Lib.LampScanModule*").AsWildcard()
+					.Because("no generated code may refer to the members the skipped scan module does not generate");
+			}
+
+			[Test]
+			[Arguments(LanguageVersion.CSharp9)]
+			[Arguments(LanguageVersion.CSharp10)]
+			public async Task AModuleTakingTheHandleOfAScanModuleOfItsAssemblyBelowCSharp11_ReportsOnlyAwt243(LanguageVersion languageVersion)
+			{
+				GeneratorResult result = Generator.Run(languageVersion, """
+					using Awaiten;
+
+					namespace Lib
+					{
+					    public interface IHandler { }
+					    public interface IGrinder { }
+					    internal sealed class OrderHandler : IHandler { }
+					    internal sealed class BeanStore { }
+					    internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+					    [Module]
+					    [Scan(typeof(IHandler), As = ScanAs.Marker)]
+					    [Singleton(typeof(BeanStore))]
+					    public static partial class StorageModule { }
+
+					    [Module]
+					    [Singleton(typeof(Grinder), typeof(IGrinder))]
+					    public static partial class CoffeeModule { }
+					}
+					""");
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT243*Lib.StorageModule*").AsWildcard()
+					.Because("the module that takes the store's handle must not refer to the handle the skipped scan module does not generate");
 			}
 
 			[Test]
