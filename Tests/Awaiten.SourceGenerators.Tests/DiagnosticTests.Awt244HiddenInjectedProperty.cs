@@ -305,12 +305,14 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task AnExtendingContainerInAnotherAssembly_IsNotSilent()
+		[Arguments(Reference.ImplementationAssembly)]
+		[Arguments(Reference.ReferenceAssembly)]
+		public async Task AnExtendingContainerInAnotherAssembly_ReportsOnlyAwt226(Reference reference)
 		{
 			string library = Library("[Inject] internal IClock Clock { get; set; } = null!;")
 			                 + "\n[Container]\n[Transient<SystemClock, IClock>]\n[Transient<Greeter, IGreeter>]\npublic static partial class Shop { }\n";
 
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+			GeneratorResult result = Run(reference, library, """
 			                                                                               using Awaiten;
 			                                                                               using Lib;
 
@@ -320,8 +322,8 @@ public partial class DiagnosticTests
 			                                                                               public static partial class TestShop { }
 			                                                                               """);
 
-			await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("AWT244") || diagnostic.Contains("AWT226"))).IsTrue()
-				.Because("an extending container that cannot see the property never builds the inherited type without it");
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226"))
+				.Because("an extending container drops an inherited registration whose property it cannot see before it builds the type, so AWT244 does not fire on top");
 		}
 	}
 }
