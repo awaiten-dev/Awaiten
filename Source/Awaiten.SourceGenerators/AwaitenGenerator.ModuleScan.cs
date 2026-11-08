@@ -64,6 +64,12 @@ partial class AwaitenGenerator
 			}
 		}
 
+		foreach (ModuleScanExpansion faulted in factories.Where(expansion => expansion.InitializerFault is not null))
+		{
+			diagnostics.Add(faulted.InitializerFault!);
+		}
+
+		factories.RemoveAll(expansion => expansion.InitializerFault is not null);
 		return factories;
 	}
 
@@ -81,7 +87,9 @@ partial class AwaitenGenerator
 	///     accumulated union - rather than re-claiming it fresh from a narrower marker set; a consumer wires a hook
 	///     only when its wrapper exists (see <c>Collect</c>). <see cref="SkippedServices" /> holds every service of a
 	///     match the module generates no factory for (see <see cref="ScanSkip" />), <see cref="Exposures" /> every service
-	///     of a match it builds through an instance handle (see <see cref="ScanInstanceHandle" />).
+	///     of a match it builds through an instance handle (see <see cref="ScanInstanceHandle" />). <see cref="InitializerFault" />
+	///     holds the AWT234 of a match with one exposure, reported once the module's scans are expanded unless a later scan
+	///     joins the match to an instance handle, whose wrappers run the convention.
 	/// </summary>
 	private sealed record ModuleScanExpansion(
 		ModuleFactory Factory,
@@ -93,7 +101,8 @@ partial class AwaitenGenerator
 		IReadOnlyList<INamedTypeSymbol>? OnActivatedMarkers = null,
 		IReadOnlyList<INamedTypeSymbol>? OnReleaseMarkers = null,
 		IReadOnlyList<INamedTypeSymbol>? SkippedServices = null,
-		IReadOnlyList<INamedTypeSymbol>? Exposures = null);
+		IReadOnlyList<INamedTypeSymbol>? Exposures = null,
+		DiagnosticInfo? InitializerFault = null);
 
 	/// <summary>
 	///     The per-module state the scan expansion shares (the module that owns the hooks, the compilation, and the
@@ -220,7 +229,8 @@ partial class AwaitenGenerator
 	///     differing lifetime across the overlap is AWT142, first scan wins); one another scan exposed under a
 	///     <em>different</em> interface joins the first factory's instance handle. A match hidden
 	///     in the module (see <see cref="IsHiddenInModule" />) that the module also registers yields to that registration with AWT193. A
-	///     convention of the module that initializes the match but that a consumer cannot call is AWT234. A match
+	///     convention of the module that initializes the match but that a consumer cannot call is AWT234, unless another
+	///     scan of the module joins the match to an instance handle (see <see cref="ModuleScanExpansion.InitializerFault" />). A match
 	///     that fails only with AWT195, AWT197, AWT200 or AWT234 while an assembly granted <c>InternalsVisibleTo</c> could
 	///     construct it (see <see cref="FriendsCanConstruct" />) is recorded instead, with no factory and no error. So is
 	///     one that fails only because it takes an internal service the module cannot build, whose cause the module
@@ -295,14 +305,11 @@ partial class AwaitenGenerator
 			}
 		}
 
-		if (skipReason is null && distinct.Count == 1 && ModuleAsyncInitializerFault(type, context, ScanSubject(typeName), match.Location) is { } initializerFault)
+		DiagnosticInfo? initializerFault = skipReason is null && distinct.Count == 1 ? ModuleAsyncInitializerFault(type, context, ScanSubject(typeName), match.Location) : null;
+		if (initializerFault is not null && skippable)
 		{
-			skipReason = skippable ? SkipReason(initializerFault, []) : null;
-			if (skipReason is null)
-			{
-				diagnostics.Add(initializerFault);
-				return 0;
-			}
+			skipReason = SkipReason(initializerFault, []);
+			initializerFault = null;
 		}
 
 		if (skipReason is null && registered && skippable)
@@ -355,7 +362,8 @@ partial class AwaitenGenerator
 			match.OnActivated is null ? null : hookMarkers,
 			match.OnRelease is null ? null : hookMarkers,
 			skipReason is null ? null : distinct,
-			handled ? distinct : null));
+			handled ? distinct : null,
+			initializerFault));
 		return 1;
 	}
 
@@ -999,7 +1007,7 @@ partial class AwaitenGenerator
 				return overlapping;
 			}
 
-			overlapping = overlapping with { Factory = shared, Exposures = joined, };
+			overlapping = overlapping with { Factory = shared, Exposures = joined, InitializerFault = null, };
 		}
 
 		if (overlapping.Factory.Lifetime != match.Lifetime)

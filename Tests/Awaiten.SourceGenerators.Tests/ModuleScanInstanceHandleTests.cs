@@ -254,6 +254,32 @@ public class ModuleScanInstanceHandleTests
 	}
 
 	[Test]
+	public async Task AnInternalConventionOfAMatchOfTwoScans_RunsThroughItsWrapper()
+	{
+		string library = Library(scans: """
+		                                [Scan<IPlugin>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+		                                [Scan<IRoaster>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+		                                """).Replace("public interface IWarmable", "internal interface IWarmable");
+
+		GeneratorResult result = Generator.Run(library);
+		GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the second scan joins the match to the handle of the first, whose wrapper runs the convention, so a consumer never calls it");
+		await That(external.Diagnostics).IsEmpty();
+		await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("HiddenInitializer_Roaster_");
+	}
+
+	[Test]
+	public async Task AnInternalConventionOfAMatchOfOneScanWithOneExposure_IsAwt234()
+	{
+		GeneratorResult result = Generator.Run(Library(scans: "[Scan<IPlugin>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]").Replace("public interface IWarmable", "internal interface IWarmable"));
+
+		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT234"))
+			.Because("a match with one exposure is returned as its interface, so a consumer would have to call the internal convention itself");
+	}
+
+	[Test]
 	public async Task TwoScansExposingTheMatchUnderDifferentInterfaces_ShareOneHandle()
 	{
 		GeneratorResult result = Generator.Run(Library(scans: """
