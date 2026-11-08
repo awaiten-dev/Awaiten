@@ -633,8 +633,21 @@ partial class AwaitenGenerator
 	/// </summary>
 	internal sealed record CrossModuleDuplicate(string Service, LocationInfo? Location, string Winner, string Loser)
 	{
+		/// <summary>
+		///     Whether the graph also consumes <see cref="Service" /> as a collection or keyed dictionary, where an
+		///     overridden default would be missing.
+		/// </summary>
+		public bool Collected { get; init; }
+
 		/// <summary>The arguments of the AWT155 message.</summary>
-		public EquatableArray<string> MessageArgs() => new([Display(Service), Winner, Loser,]);
+		public EquatableArray<string> MessageArgs() => new([
+			Display(Service),
+			Winner,
+			Loser,
+			Collected
+				? "register the implementation single resolution should use on the container too, which keeps every member in the collection"
+				: "override it on the container, or make one registration an overridable default",
+		]);
 	}
 
 	/// <summary>
@@ -981,7 +994,8 @@ partial class AwaitenGenerator
 	///     singly, directly or through a relationship such as <c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
 	///     <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> or a dispatch dictionary entry. A collection or keyed dictionary
 	///     receives every contribution, and a composite fronting the service takes single resolution itself, so neither
-	///     depends on the [Import] order. Returns the first unreported duplicate of each service no composite fronts,
+	///     depends on the [Import] order. The remedy suggests no Fallback when the graph also collects the service (see
+	///     <see cref="CrossModuleDuplicate.Collected" />). Returns the first unreported duplicate of each service no composite fronts,
 	///     which a typed resolve in user code still depends on (see <c>AwaitenAnalyzer</c>).
 	/// </summary>
 	private static Dictionary<string, CrossModuleDuplicate> ReportCrossModuleDuplicates(
@@ -996,12 +1010,21 @@ partial class AwaitenGenerator
 			return unresolved;
 		}
 
+		List<ParameterModel> dependencies = AnalyzedDependencies(instances.SelectMany(instance => instance.WalkedDependencies())).ToList();
 		HashSet<string> resolvedSingly = new(
-			AnalyzedDependencies(instances.SelectMany(instance => instance.WalkedDependencies()))
+			dependencies
 				.Where(dependency => dependency is { Key: null, Kind: DependencyKind.Direct or DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask, })
 				.Select(dependency => dependency.ServiceType),
 			StringComparer.Ordinal);
-		foreach (CrossModuleDuplicate duplicate in duplicates.Where(duplicate => !composites.Any(composite => composite.Key is null && composite.Service == duplicate.Service)))
+		HashSet<string> collected = new(
+			dependencies
+				.Where(dependency => dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection
+				                     || dependency is { Key: null, Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, })
+				.Select(dependency => dependency.ServiceType),
+			StringComparer.Ordinal);
+		foreach (CrossModuleDuplicate duplicate in duplicates
+			         .Where(duplicate => !composites.Any(composite => composite.Key is null && composite.Service == duplicate.Service))
+			         .Select(duplicate => duplicate with { Collected = collected.Contains(duplicate.Service), }))
 		{
 			if (resolvedSingly.Contains(duplicate.Service))
 			{
