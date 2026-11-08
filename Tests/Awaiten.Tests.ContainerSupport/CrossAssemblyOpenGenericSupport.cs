@@ -38,7 +38,7 @@ public static partial class FriendOpenGenericModule
 /// </summary>
 [Module]
 [Singleton<OpenHookLog>]
-[Scoped(typeof(FriendHookedOpenGenericModule.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+[Scoped(typeof(FriendHookedOpenGenericModule.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
 public static partial class FriendHookedOpenGenericModule
 {
 	private sealed class Cache<T> : IHookedOpenCache<T>
@@ -47,6 +47,10 @@ public static partial class FriendHookedOpenGenericModule
 	private static void Activate<T>(Cache<T> cache, OpenHookLog log)
 		where T : class
 		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	private static void Release<T>(Cache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"released {typeof(T).Name}");
 }
 
 /// <summary>
@@ -55,7 +59,7 @@ public static partial class FriendHookedOpenGenericModule
 /// </summary>
 [Container]
 [Singleton<OpenHookLog>]
-[Scoped(typeof(HookedOpenBaseContainer.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate))]
+[Scoped(typeof(HookedOpenBaseContainer.Cache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
 public static partial class HookedOpenBaseContainer
 {
 	private sealed class Cache<T> : IHookedOpenCache<T>
@@ -64,6 +68,10 @@ public static partial class HookedOpenBaseContainer
 	private static void Activate<T>(Cache<T> cache, OpenHookLog log)
 		where T : class
 		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	private static void Release<T>(Cache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"released {typeof(T).Name}");
 }
 
 /// <summary>A public open generic journal whose internal <c>[Inject]</c> property a friend container sets itself.</summary>

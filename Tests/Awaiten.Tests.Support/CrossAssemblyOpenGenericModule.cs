@@ -185,6 +185,34 @@ public static partial class HookedOpenGenericModule
 		=> log.Entries.Add("released");
 }
 
+internal sealed class AsyncHookedOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration names an asynchronous generic activation hook and an
+///     asynchronous release hook, which a container in another assembly without <c>InternalsVisibleTo</c> awaits through
+///     the generic wrappers the module generates beside its generic factory.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(AsyncHookedOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class AsyncHookedOpenGenericModule
+{
+	internal static async Task Activate<T>(AsyncHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+	{
+		await Task.Yield();
+		log.Entries.Add($"activated {typeof(T).Name}");
+	}
+
+	internal static ValueTask Release<T>(AsyncHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+	{
+		log.Entries.Add($"released {typeof(T).Name}");
+		return default;
+	}
+}
+
 /// <summary>A journal per entry type, built from the public <see cref="InjectedOpenJournal{T}" />.</summary>
 public interface IInjectedOpenJournal<T>
 {
