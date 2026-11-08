@@ -258,6 +258,11 @@ partial class AwaitenGenerator
 			return new OpenFactory(null, rejections.Count > 0 ? OpenSkipReason(rejections[0]) : $"'{Display(typeName)}' cannot be built through a generated factory");
 		}
 
+		if (!module && MirrorBaseInjectProperties(definition, signature, ref parameters, ref members) is { } entryReason)
+		{
+			return new OpenFactory(null, entryReason);
+		}
+
 		HashSet<string> typeParameters = new(definition.TypeParameters.Select(parameter => parameter.Name), StringComparer.Ordinal);
 		if (parameters.AsArray().Concat(members.Deferred.AsArray()).FirstOrDefault(parameter => typeParameters.Contains(parameter.Name)) is { Name: { } clash, })
 		{
@@ -283,6 +288,62 @@ partial class AwaitenGenerator
 
 		bool Fits(ITypeSymbol type, ModuleScanContext scope)
 			=> FitsFactorySignature(type, scope) && TypeHiddenInModule(type, scope.Module, scope.Compilation) is null;
+	}
+
+	/// <summary>
+	///     Appends a parameter per <c>[InjectProperty(typeof(Definition&lt;&gt;), name)]</c> entry of the base to the
+	///     mirrored <paramref name="parameters" />, after the required <c>[Inject]</c> ones, since an extending container
+	///     fills the property through the factory: it passes the value by name in the base's assembly and resolves the
+	///     parameter in another. Returns why it cannot instead, as for a closed type (see <see cref="BaseFactoryFault" />):
+	///     an optional or deferred entry, a property the factory cannot set or that has the name of another parameter, or
+	///     an entry for one closing, which one generic factory for every closing cannot fill.
+	/// </summary>
+	private static string? MirrorBaseInjectProperties(INamedTypeSymbol definition, ModuleScanContext context, ref EquatableArray<FactoryParameter> parameters, ref MirroredMembers members)
+	{
+		foreach (AttributeData attribute in context.Module.GetAttributes())
+		{
+			if (TryReadInjectProperty(attribute, out ITypeSymbol? target, out _, out _)
+			    && target is INamedTypeSymbol { IsUnboundGenericType: false, } closing
+			    && SymbolEqualityComparer.Default.Equals(closing.OriginalDefinition, definition))
+			{
+				return $"the [InjectProperty] entry for its closing '{Display(closing.ToDisplayString(FullyQualified))}' would need a factory of that closing";
+			}
+		}
+
+		if (!CollectInjectProperties(context.Module, context.Compilation, new List<DiagnosticInfo>()).TryGetValue(TypeIdentity(definition, context.Compilation), out List<InjectPropertyEntry>? entries))
+		{
+			return null;
+		}
+
+		List<FactoryParameter> mirrored = new(parameters.AsArray());
+		List<string> required = new(members.Required.AsArray());
+		foreach (InjectPropertyEntry entry in entries)
+		{
+			if (entry.Optional || entry.Deferred)
+			{
+				return $"its property '{entry.PropertyName}' is injected {(entry.Optional ? "only when its service is registered" : "after construction")}";
+			}
+
+			if (mirrored.Concat(members.Deferred.AsArray()).Any(parameter => parameter.Name == entry.PropertyName))
+			{
+				return $"its injected property '{entry.PropertyName}' has the name of a constructor parameter or of another injected property";
+			}
+
+			if (ResolveNamedInstanceMember(definition, entry.PropertyName) is not IPropertySymbol { SetMethod: { } setter, } property
+			    || !context.Compilation.IsSymbolAccessibleWithin(setter, context.Module)
+			    || !FitsFactorySignature(property.Type, context)
+			    || TypeHiddenInModule(property.Type, context.Module, context.Compilation) is not null)
+			{
+				return $"its injected property '{entry.PropertyName}' cannot be set by a generated factory";
+			}
+
+			mirrored.Insert(mirrored.Count - members.Optional.Count, new FactoryParameter(property.Type.ToDisplayString(FullyQualifiedWithNullability), entry.PropertyName, KeyAttribute(entry.Key)));
+			required.Add(entry.PropertyName);
+		}
+
+		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
+		members = members with { Required = new EquatableArray<string>(required.ToArray()), };
+		return null;
 	}
 
 	/// <summary>The reason recorded for an open contribution whose factory would fail with <paramref name="rejection" />.</summary>

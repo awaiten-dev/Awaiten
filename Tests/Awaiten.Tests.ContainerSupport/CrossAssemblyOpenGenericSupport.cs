@@ -41,7 +41,13 @@ public interface IBaseOpenStore<T>
 
 	/// <summary>Whether the container disposed the store.</summary>
 	bool Disposed { get; }
+
+	/// <summary>The clock the base's <c>[InjectProperty]</c> entry fills.</summary>
+	IOpenClock? Clock { get; }
 }
+
+/// <summary>The clock <see cref="SupportOpenBaseContainer" /> registers.</summary>
+public sealed class BaseOpenClock : IOpenClock;
 
 /// <summary>An entity type the checkout of <see cref="SupportOpenBaseContainer" /> stores.</summary>
 public sealed class BaseOpenOrder;
@@ -55,10 +61,13 @@ public sealed class BaseOpenCheckout(IBaseOpenStore<BaseOpenOrder> orders)
 
 /// <summary>
 ///     A production container in a referenced assembly whose open generic registration and decorator are private to it,
-///     so a test container in another assembly closes the generic factories the base generates.
+///     so a test container in another assembly closes the generic factories the base generates, which also fill the
+///     property of the base's <c>[InjectProperty]</c> entry.
 /// </summary>
 [Container]
+[Singleton<BaseOpenClock, IOpenClock>]
 [Scoped(typeof(SupportOpenBaseContainer.Store<>), typeof(IBaseOpenStore<>))]
+[InjectProperty(typeof(SupportOpenBaseContainer.Store<>), nameof(IBaseOpenStore<BaseOpenOrder>.Clock))]
 [Decorate(typeof(SupportOpenBaseContainer.Guard<>), typeof(IBaseOpenStore<>))]
 [Scoped<BaseOpenCheckout>]
 public static partial class SupportOpenBaseContainer
@@ -70,6 +79,8 @@ public static partial class SupportOpenBaseContainer
 
 		public bool Disposed { get; private set; }
 
+		public IOpenClock? Clock { get; set; }
+
 		public void Dispose() => Disposed = true;
 	}
 
@@ -79,5 +90,7 @@ public static partial class SupportOpenBaseContainer
 		public IBaseOpenStore<T>? Inner => inner;
 
 		public bool Disposed => inner.Disposed;
+
+		public IOpenClock? Clock => inner.Clock;
 	}
 }

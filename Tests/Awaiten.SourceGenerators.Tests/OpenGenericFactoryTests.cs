@@ -1221,6 +1221,89 @@ public class OpenGenericFactoryTests
 			await That(result.Diagnostics).Contains("*AWT226*Lib.Shop.Repository<T>*internal generated factory*InternalsVisibleTo*").AsWildcard();
 		}
 
+		private const string ExtendingInTheSameAssembly = """
+
+		                                                  [Container(Extends = typeof(Shop))]
+		                                                  public static partial class TestShop
+		                                                  {
+		                                                  }
+		                                                  """;
+
+		private static string InjectPropertyBase(string entry, string clock = "[Singleton<Clock, IClock>]")
+			=> $$"""
+			     using Awaiten;
+
+			     namespace Lib;
+
+			     public interface IClock { }
+			     public sealed class Clock : IClock { }
+			     public interface IRepository<T> { }
+			     public sealed class Order { }
+
+			     [Container]
+			     {{clock}}
+			     [Scoped(typeof(Shop.Repository<>), typeof(IRepository<>))]
+			     {{entry}}
+			     [Scoped<Shop.Checkout>]
+			     public static partial class Shop
+			     {
+			         private sealed class Repository<T> : IRepository<T>
+			         {
+			             public IClock Clock { get; set; } = null!;
+			         }
+
+			         internal sealed class Checkout
+			         {
+			             public Checkout(IRepository<Order> orders) { }
+			         }
+			     }
+			     """;
+
+		[Test]
+		public async Task AnInjectPropertyEntryOfTheBase_IsSetByTheGenericFactory()
+		{
+			string library = InjectPropertyBase("""[InjectProperty(typeof(Shop.Repository<>), "Clock")]""");
+
+			GeneratorResult same = Generator.Run(library + ExtendingInTheSameAssembly);
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Extending);
+
+			await That(ContainerSource(same, ".Shop.")).Contains("<T>(global::Lib.IClock @Clock) => new global::Lib.Shop.Repository<T>() { Clock = @Clock };")
+				.Because("the base mirrors its container-side entry onto the factory like an [Inject] property");
+			await That(same.Diagnostics).IsEmpty()
+				.Because("the extending container in the same assembly passes the property by name");
+			await That(other.Diagnostics).IsEmpty();
+			await That(ContainerSource(other, "TestShop")).Contains("global::Lib.Shop.Internals.Registration_Repository_").And.DoesNotContain("<global::Lib.Order>()")
+				.Because("the extending container in another assembly resolves the factory's parameter instead of dropping the property");
+		}
+
+		[Test]
+		public async Task AKeyedInjectPropertyEntryOfTheBase_IsMirroredWithItsKey()
+		{
+			GeneratorResult result = Generator.Run(InjectPropertyBase("""[InjectProperty(typeof(Shop.Repository<>), "Clock", Key = "wall")]""", """[Singleton<Clock, IClock>(Key = "wall")]""") + ExtendingInTheSameAssembly);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(ContainerSource(result, ".Shop.")).Contains("""<T>([global::Awaiten.FromKey("wall")] global::Lib.IClock @Clock)""");
+		}
+
+		[Test]
+		[Arguments("Optional = true", "is injected only when its service is registered")]
+		[Arguments("Deferred = true", "is injected after construction")]
+		public async Task AnInjectPropertyEntryTheFactoryCannotExpress_IsReportedWithTheReason(string option, string reason)
+		{
+			GeneratorResult result = Generator.Run(InjectPropertyBase($$"""[InjectProperty(typeof(Shop.Repository<>), "Clock", {{option}})]""") + ExtendingInTheSameAssembly);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains($"its property 'Clock' {reason}"));
+		}
+
+		[Test]
+		public async Task AClosedInjectPropertyEntryForAClosing_IsReportedWithTheReason()
+		{
+			GeneratorResult result = Generator.Run(InjectPropertyBase("""[InjectProperty(typeof(Shop.Repository<Order>), "Clock")]""") + ExtendingInTheSameAssembly);
+
+			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT226") && diagnostic.Contains("'Lib.Shop.Repository<Lib.Order>'"))
+				.Because("one generic factory serves every closing, so it cannot fill a property for one closing only");
+		}
+
 		[Test]
 		public async Task AnOpenRegistrationTheBaseCannotBuild_IsReportedWithTheReason()
 		{

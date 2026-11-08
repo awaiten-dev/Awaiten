@@ -198,6 +198,8 @@ public sealed partial class OpenGenericFactoryTests
 				store = scope.Resolve<BaseOpenCheckout>().Orders;
 				await That(store.GetType().Name).IsEqualTo("Guard`1");
 				await That(store.Inner!.GetType().Name).IsEqualTo("Store`1");
+				await That(store.Clock).IsSameAs(container.Resolve<IOpenClock>())
+					.Because("the base's generic factory takes the property of its [InjectProperty] entry as a parameter");
 			}
 
 			await That(store.Disposed).IsTrue();
@@ -221,7 +223,43 @@ public sealed partial class OpenGenericFactoryTests
 			await That(record.Disposed).IsTrue();
 			await That(container.Resolve<IRecordSink<Order>>().Count).IsEqualTo(2);
 		}
+
+		[Test]
+		public async Task TheBasesInjectPropertyEntry_IsFilledThroughTheGenericFactory()
+		{
+			await using ExtendedClockedShop.Root container = new();
+
+			IClocked<Order> clocked = container.Resolve<ClockedConsumer>().Clocked;
+
+			await That(clocked.Clock).IsSameAs(container.Resolve<IOpenClock>());
+		}
 	}
+
+	public sealed class ClockedConsumer(IClocked<Order> clocked)
+	{
+		public IClocked<Order> Clocked => clocked;
+	}
+
+	public interface IClocked<T>
+	{
+		IOpenClock? Clock { get; }
+	}
+
+	[Container]
+	[Singleton<OpenClock, IOpenClock>]
+	[Singleton(typeof(ClockedShop.Clocked<>), typeof(IClocked<>))]
+	[InjectProperty(typeof(ClockedShop.Clocked<>), nameof(IClocked<Order>.Clock))]
+	[Transient<ClockedConsumer>]
+	public static partial class ClockedShop
+	{
+		private sealed class Clocked<T> : IClocked<T>
+		{
+			public IOpenClock? Clock { get; set; }
+		}
+	}
+
+	[Container(Extends = typeof(ClockedShop))]
+	public static partial class ExtendedClockedShop;
 
 	public interface IRecord<T>
 		where T : class
