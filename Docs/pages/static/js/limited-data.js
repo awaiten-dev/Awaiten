@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "25c12b4f1515471af77d69ee9ca94963e5148b24",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 06:34:00 2026 \u002B0100",
-        "message": "fix: wire the root to the host when the provider factory builds it, and explain a missing required service (#277)"
-      },
-      {
         "sha": "e3f54e32137b331103f65754dcf35a598f1d7eaf",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 07:23:42 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:00:48 2026 \u002B0100",
         "message": "fix!: let several modules contribute to one collection without AWT155 or lost members (#337)"
+      },
+      {
+        "sha": "780e4db46cea23cb6a7308575b307874833ca138",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
+        "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
       }
     ],
     "labels": [
-      "25c12b4f",
       "e3f54e32",
       "0d542565",
       "1f582413",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
-      "ab7425ea"
+      "ab7425ea",
+      "780e4db4"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.60893460895334,
           5.442413080483675,
           7.754577210793893,
           9.328384884198506,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           5.082547610768905,
           5.558466794235366,
           7.688635357966025,
-          7.249424491326014
+          7.249424491326014,
+          4.527070740503924
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.504670562346776,
           6.684987880862677,
           8.610362975725106,
           6.884327889553139,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           5.10968748430411,
           7.530499925216039,
           8.367314628683603,
-          7.755860371085314
+          7.755860371085314,
+          4.23394573678573
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          116.95757095019023,
           96.40774822235107,
           118.41469117800395,
           140.5269817193349,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           103.47543415852955,
           138.14845272210928,
           109.08154323895772,
-          133.06559287707012
+          133.06559287707012,
+          59.68178412743977
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.831362144305157,
           6.5507001007596655,
           9.726211112279158,
           10.293473132451375,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           7.0694118221600855,
           8.072833123115393,
           8.603248942891756,
-          8.184676000227531
+          8.184676000227531,
+          5.296231008001736
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.170236507287392,
           8.367060718933741,
           11.018385034054518,
           12.220266785224279,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           9.403942479441563,
           10.434835264315971,
           10.591305993497372,
-          11.081356465816498
+          11.081356465816498,
+          6.670928644140561
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "25c12b4f1515471af77d69ee9ca94963e5148b24",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 06:34:00 2026 \u002B0100",
-        "message": "fix: wire the root to the host when the provider factory builds it, and explain a missing required service (#277)"
-      },
-      {
         "sha": "e3f54e32137b331103f65754dcf35a598f1d7eaf",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 07:23:42 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:00:48 2026 \u002B0100",
         "message": "fix!: let several modules contribute to one collection without AWT155 or lost members (#337)"
+      },
+      {
+        "sha": "780e4db46cea23cb6a7308575b307874833ca138",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
+        "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
       }
     ],
     "labels": [
-      "25c12b4f",
       "e3f54e32",
       "0d542565",
       "1f582413",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
-      "ab7425ea"
+      "ab7425ea",
+      "780e4db4"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.723820370435714,
           6.071785822510719,
           8.460138532977838,
           10.140788753827414,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.199101925960609,
           7.1259224495062465,
           8.229322677850723,
-          8.737329898277919
+          8.737329898277919,
+          4.461393518107278
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.444825304547946,
           6.529049445192019,
           7.301970677716391,
           6.884511306881905,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           5.120544544779337,
           7.533840162058671,
           8.343605825943607,
-          7.583510112303954
+          7.583510112303954,
+          4.192935750420604
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          109.60562057495117,
           96.71319056408745,
           133.15486079851786,
           145.9845119714737,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           105.44659826755523,
           140.66918441227503,
           107.13695571252278,
-          136.06869400342305
+          136.06869400342305,
+          60.54925285066877
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.80580143057383,
           6.54388976842165,
           9.713619984113253,
           10.210193548064966,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           6.876946711769471,
           8.197971732666096,
           8.386562468750137,
-          8.23675703406334
+          8.23675703406334,
+          5.257738716327227
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.516431087007126,
           8.489655514558157,
           14.64030282731567,
           16.35344121058782,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           9.681645086407661,
           13.160191936152321,
           14.761525054063116,
-          13.572243498762449
+          13.572243498762449,
+          6.486476276602064
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "25c12b4f1515471af77d69ee9ca94963e5148b24",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 06:34:00 2026 \u002B0100",
-        "message": "fix: wire the root to the host when the provider factory builds it, and explain a missing required service (#277)"
-      },
-      {
         "sha": "e3f54e32137b331103f65754dcf35a598f1d7eaf",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 07:23:42 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:00:48 2026 \u002B0100",
         "message": "fix!: let several modules contribute to one collection without AWT155 or lost members (#337)"
+      },
+      {
+        "sha": "780e4db46cea23cb6a7308575b307874833ca138",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
+        "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
       }
     ],
     "labels": [
-      "25c12b4f",
       "e3f54e32",
       "0d542565",
       "1f582413",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
-      "ab7425ea"
+      "ab7425ea",
+      "780e4db4"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          16.531011655926704,
           21.84052317738533,
           15.630354762077332,
           10.732851804296176,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           19.81194956700007,
           12.97881486586162,
           15.417523107358388,
-          18.981615975499153
+          18.981615975499153,
+          17.775789182100976
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1139.6790691103254,
           1494.0794151306152,
           1174.3671323140463,
           720.3112782069614,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1463.9618835449219,
           912.9025975545247,
           1165.4850970904033,
-          1424.4592782338461
+          1424.4592782338461,
+          1303.9979415893554
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          25562.579516601563,
           30042.996541341145,
           25368.809422084265,
           17231.84678548177,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           29543.194970703124,
           19144.718843900242,
           25986.30417742048,
-          29850.682055664063
+          29850.682055664063,
+          26348.958247258113
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32478,
           32482,
           32478,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32482,
           32477,
           32478,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          565.583544031779,
           714.5200277056013,
           599.1916379928589,
           381.6618014403752,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           704.0583344187055,
           411.9698271017808,
           589.100850718362,
-          723.045023282369
+          723.045023282369,
+          580.7389883041382
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8728.227014814105,
           11794.975818634033,
           9127.567311604818,
           6167.829593658447,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11494.40445251465,
           7058.468463134765,
           9099.578902180989,
-          11427.441364542643
+          11427.441364542643,
+          9284.912739054362
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24761,
-          24761,
           24760,
           24761,
           24760,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "25c12b4f1515471af77d69ee9ca94963e5148b24",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 06:34:00 2026 \u002B0100",
-        "message": "fix: wire the root to the host when the provider factory builds it, and explain a missing required service (#277)"
-      },
       {
         "sha": "e3f54e32137b331103f65754dcf35a598f1d7eaf",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:00:48 2026 \u002B0100",
         "message": "fix!: let several modules contribute to one collection without AWT155 or lost members (#337)"
+      },
+      {
+        "sha": "780e4db46cea23cb6a7308575b307874833ca138",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
+        "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
       }
     ],
     "labels": [
-      "25c12b4f",
       "e3f54e32",
       "0d542565",
       "1f582413",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
-      "ab7425ea"
+      "ab7425ea",
+      "780e4db4"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          109.22288527659008,
           192.00864906311034,
           111.1582202230181,
           73.0721077521642,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           180.41212045351665,
           82.3854878459658,
           112.1844208751406,
-          178.2324709733327
+          178.2324709733327,
+          119.44574575764793
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          10365.120604451497,
           15496.840397135416,
           10662.155179341635,
           7103.10112116887,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14319.290048217774,
           7741.3115964617045,
           10591.203204345704,
-          14526.22267964681
+          14526.22267964681,
+          11275.026426188151
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          621552.8912527902,
           742562.5684344952,
           633059.9933733259,
           415945.89020647324,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           725291.8731119792,
           447889.6991141183,
           637536.7946940104,
-          728153.1501813616
+          728153.1501813616,
+          648301.7506277902
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740059,
           740450,
           740319,
           720386,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740459,
           739991,
           742568,
-          720301
+          720301,
+          741610
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          34854.955467811,
           44771.6337483724,
           35957.258579799105,
           22425.831917317708,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           43555.69718279158,
           25043.411218261717,
           35136.46859305246,
-          44638.74868164062
+          44638.74868164062,
+          38039.46792399089
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80009,
           80009,
           80001,
           80305,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80011,
           80773,
           80977,
-          80642
+          80642,
+          80305
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          265795.9797363281,
           355901.13414588344,
           280722.10408528644,
           185029.9194173177,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           351065.3192313058,
           226784.47591145834,
           269305.24384765624,
-          355855.71226283483
+          355855.71226283483,
+          308157.32849121094
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573059,
           573203,
           573074,
           573040,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573072,
           573026,
           573075,
-          573093
+          573093,
+          573125
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "25c12b4f1515471af77d69ee9ca94963e5148b24",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 06:34:00 2026 \u002B0100",
-        "message": "fix: wire the root to the host when the provider factory builds it, and explain a missing required service (#277)"
-      },
       {
         "sha": "e3f54e32137b331103f65754dcf35a598f1d7eaf",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 20:00:48 2026 \u002B0100",
         "message": "fix!: let several modules contribute to one collection without AWT155 or lost members (#337)"
+      },
+      {
+        "sha": "780e4db46cea23cb6a7308575b307874833ca138",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 20:37:43 2026 \u002B0100",
+        "message": "fix: select among several open generic registrations of one service by their constraints (#338)"
       }
     ],
     "labels": [
-      "25c12b4f",
       "e3f54e32",
       "0d542565",
       "1f582413",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
-      "ab7425ea"
+      "ab7425ea",
+      "780e4db4"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          244.31128461020333,
           251.27400483403886,
           286.62438780466715,
           301.53457052367077,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           215.0781934091023,
           284.6343528674199,
           440.5213768005371,
-          241.93410748701828
+          241.93410748701828,
+          205.62027650674185
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          602.7085116068522,
           572.7826052445632,
           616.8113985061646,
           684.7794905390058,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           496.8834877649943,
           699.241168315594,
           610.550297164917,
-          595.8131076267788
+          595.8131076267788,
+          470.43098538716634
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6551.773107256208,
           6526.4305828639435,
           7015.630447896322,
           5319.679785664876,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           3837.7540189302886,
           6634.936462402344,
           6730.166128976004,
-          6541.271842956543
+          6541.271842956543,
+          4964.295258076986
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          385.44796439579557,
           391.37754821777344,
           411.61658833821616,
           435.426789410909,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           339.2960881846292,
           436.56296154430936,
           415.6545446395874,
-          395.18052864074707
+          395.18052864074707,
+          342.2306244032724
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          714.054590733846,
           735.8377890904744,
           751.8731012980144,
           771.1621587753295,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           539.8268969609187,
           766.3444117863972,
           754.2938163121541,
-          766.3011151631673
+          766.3011151631673,
+          556.8561541693551
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
