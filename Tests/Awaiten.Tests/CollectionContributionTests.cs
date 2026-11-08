@@ -123,6 +123,32 @@ public partial class CollectionContributionTests
 			await That(shop.Resolve<ITopping<Order>>()).Is<OrderTopping>()
 				.Because("a closed registration precedes the closing of an open one");
 		}
+
+		[Test]
+		public async Task AStrongOpenRegistrationDoesNotReplaceAClosedDefault()
+		{
+			using StrongOpenOverClosedDefaultShop.Root shop = new();
+
+			ToppingBar bar = shop.Resolve<ToppingBar>();
+
+			await That(bar.Toppings.Select(topping => topping.GetType())).IsEqualTo([typeof(OrderTopping), typeof(GenericTopping<Order>),])
+				.Because("only an explicit closed registration without Fallback replaces a closed default, not the closing of an open one");
+			await That(shop.Resolve<ITopping<Order>>()).Is<OrderTopping>()
+				.Because("the closed default precedes the closing of the open registration");
+		}
+
+		[Test]
+		public async Task AScanMatchDoesNotReplaceADefault()
+		{
+			using ScanOverDefaultShop.Root shop = new();
+
+			GlazeBar bar = shop.Resolve<GlazeBar>();
+
+			await That(bar.Glazes.Select(glaze => glaze.GetType())).IsEqualTo([typeof(SugarGlaze), typeof(HoneyGlaze),])
+				.Because("a scan match yields to every other registration and replaces no default");
+			await That(shop.Resolve<IGlaze>()).Is<SugarGlaze>()
+				.Because("the default precedes the scan matches");
+		}
 	}
 
 	public class KeyedContributions
@@ -183,6 +209,30 @@ public partial class CollectionContributionTests
 				.Because("a default of the extending container's module overrides no default of the base's module");
 			await That(shop.Resolve<ISyrup>()).Is<Vanilla>()
 				.Because("the base's imports precede the extending container's own");
+		}
+
+		[Test]
+		public async Task ADefaultOnTheExtendingContainerJoinsAnInheritedDefault()
+		{
+			using ExtendingDefaultShop.Root shop = new();
+
+			SyrupBar bar = shop.Resolve<SyrupBar>();
+
+			await That(bar.Syrups.Select(syrup => syrup.GetType())).IsEqualTo([typeof(Caramel), typeof(Vanilla),])
+				.Because("a default on the extending container replaces no inherited default, so both are collection members");
+			await That(shop.Resolve<ISyrup>()).Is<Caramel>()
+				.Because("the extending container's own registrations precede the inherited ones");
+		}
+
+		[Test]
+		public async Task AnInheritedRegistrationWithoutFallbackReplacesADefaultOnTheExtendingContainer()
+		{
+			using ExtendingStrongBaseShop.Root shop = new();
+
+			SyrupBar bar = shop.Resolve<SyrupBar>();
+
+			await That(bar.Syrups.Select(syrup => syrup.GetType())).IsEqualTo([typeof(Vanilla),])
+				.Because("a default on the extending container replaces nothing, and the inherited registration without Fallback replaces it");
 		}
 	}
 
@@ -294,9 +344,24 @@ public partial class CollectionContributionTests
 	[Singleton<Caramel, ISyrup>(Key = "caramel")]
 	public static class CaramelKeyedModule;
 
+	public interface IGlaze;
+
+	public sealed class SugarGlaze : IGlaze;
+
+	public sealed class HoneyGlaze : IGlaze;
+
+	public sealed class GlazeBar(IEnumerable<IGlaze> glazes)
+	{
+		public IGlaze[] Glazes { get; } = glazes.ToArray();
+	}
+
 	[Module]
 	[Singleton<OrderTopping, ITopping<Order>>(Fallback = Fallback.Silent)]
 	public static class OrderToppingModule;
+
+	[Module]
+	[Singleton<SugarGlaze, IGlaze>(Fallback = Fallback.Silent)]
+	public static class SugarGlazeDefaultModule;
 
 	[Module]
 	[Singleton(typeof(GenericTopping<>), typeof(ITopping<>), Fallback = Fallback.Silent)]
@@ -344,6 +409,18 @@ public partial class CollectionContributionTests
 	public static partial class OpenDefaultsShop;
 
 	[Container]
+	[Import(typeof(OrderToppingModule))]
+	[Singleton(typeof(GenericTopping<>), typeof(ITopping<>))]
+	[Transient<ToppingBar>]
+	public static partial class StrongOpenOverClosedDefaultShop;
+
+	[Container]
+	[Import(typeof(SugarGlazeDefaultModule))]
+	[Scan<IGlaze>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+	[Transient<GlazeBar>]
+	public static partial class ScanOverDefaultShop;
+
+	[Container]
 	[Import(typeof(VanillaHouseModule))]
 	[Import(typeof(CaramelHouseModule))]
 	public static partial class KeyedDefaultsShop;
@@ -367,6 +444,24 @@ public partial class CollectionContributionTests
 	[Container(Extends = typeof(BaseShop))]
 	[Import(typeof(CaramelDefaultModule))]
 	public static partial class ExtendingShop;
+
+	[Container]
+	[Singleton<Vanilla, ISyrup>(Fallback = Fallback.Silent)]
+	[Transient<SyrupBar>]
+	public static partial class BaseDefaultShop;
+
+	[Container(Extends = typeof(BaseDefaultShop))]
+	[Singleton<Caramel, ISyrup>(Fallback = Fallback.Silent)]
+	public static partial class ExtendingDefaultShop;
+
+	[Container]
+	[Singleton<Vanilla, ISyrup>]
+	[Transient<SyrupBar>]
+	public static partial class StrongBaseShop;
+
+	[Container(Extends = typeof(StrongBaseShop))]
+	[Singleton<Caramel, ISyrup>(Fallback = Fallback.Silent)]
+	public static partial class ExtendingStrongBaseShop;
 
 	[Container]
 	[Import(typeof(CrossAssemblyVanillaModule))]

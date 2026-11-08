@@ -66,7 +66,7 @@ A registration written directly on the extending container replaces every inheri
 - **Keys.** A keyed registration replaces only the inherited registration with the same key. A `WhenInjectedInto` registration has a key of its own per consumer, so a plain registration does not replace it, and a `WhenInjectedInto` registration replaces only the one for the same consumer.
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
 - **Open generics.** A closed registration replaces its closing of an inherited open generic, and the other closings still come from the base. An open registration replaces an inherited open registration of the same generic.
-- **Fallback.** A registration with `Fallback` only fills a gap, as it does in a module, so it replaces nothing.
+- **Fallback.** A registration with `Fallback` is an [overridable default](./07-modules.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
 - **Decorators.** The inherited decorators wrap the replacement. A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed.
 - **Shared instances.** When the base registers one implementation under several services, replacing one of them leaves the others on the production implementation, which then no longer shares an instance with the replacement.
 

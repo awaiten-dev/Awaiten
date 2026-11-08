@@ -5,8 +5,8 @@ namespace Awaiten;
 /// <summary>
 ///     Imports a <see cref="ModuleAttribute">module</see>'s registrations into the container. The
 ///     container's own registrations take precedence over imported ones, and an imported overridable default
-///     (<c>Fallback.Warn</c> / <c>Fallback.Silent</c>) registration is replaced by any registration of the same
-///     service without <c>Fallback</c>.
+///     (<c>Fallback.Warn</c> / <c>Fallback.Silent</c>) registration is replaced by a registration of the same
+///     service without <c>Fallback</c>, as <see cref="Fallback" /> describes.
 ///     Imports are resolved one level deep: a module carrying its own <see cref="ImportAttribute" /> is rejected
 ///     (AWT150). Import the nested module on the container directly.
 /// </summary>

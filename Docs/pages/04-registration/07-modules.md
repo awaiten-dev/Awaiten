@@ -32,7 +32,7 @@ Everything the module registers is now part of the container.
 
 ## Overridable defaults
 
-A module can offer a default that the container is free to replace. Mark it `Fallback = Fallback.Warn`. If the container, or another module, registers the same service without `Fallback`, that registration wins and the default is dropped entirely, even from collections. Use `Fallback = Fallback.Silent` for the same kind of default that stays quiet when another overridable default competes with it (`Warn` reports [AWT148](../09-diagnostics.md#awt148) in that case). The choice belongs to the module author on purpose: it sets the collision severity per registration, which a consumer's `.editorconfig` cannot do, because a diagnostic severity there applies to the whole project.
+A module can offer a default that the container is free to replace. Mark it `Fallback = Fallback.Warn`. If the container, or another module, registers the same service without `Fallback`, that registration wins and the default is dropped entirely, even from collections. Two kinds of registration without `Fallback` don't replace a default: a [scan](./06-scanning.md) match, and the closing of an [open generic](./05-open-generics.md) registration for a closed default. Both stay members of the collections, behind the default, which keeps single resolution. Use `Fallback = Fallback.Silent` for the same kind of default that stays quiet when another overridable default competes with it (`Warn` reports [AWT148](../09-diagnostics.md#awt148) in that case). The choice belongs to the module author on purpose: it sets the collision severity per registration, which a consumer's `.editorconfig` cannot do, because a diagnostic severity there applies to the whole project.
 
 Defaults never replace each other. When several defaults provide the same service and no registration without `Fallback` does, each of them is a member of the service's collections, and the first one wins single resolution: the container's own registrations come first, then the imported modules in the order of their `[Import]`.
 
@@ -84,7 +84,7 @@ public static partial class CoffeeShop;
 public sealed class SyrupBar(IEnumerable<ISyrup> syrups);   // VanillaSyrup and CaramelSyrup
 ```
 
-There is no need for `Fallback` here. A default is meant to be replaced: it stays in the collection only as long as no registration of the service without `Fallback` exists, so one such registration in another module would drop every default from it.
+There is no need for `Fallback` here. A default is meant to be replaced: it stays in the collection only as long as no registration of the service without `Fallback` replaces it, so one such registration in another module would drop every default from it.
 
 A single `ISyrup` still resolves to one contribution, the one from the earlier import, as in Microsoft.Extensions.DependencyInjection a single service resolves to one registration. Because neither module shows which one that is, a dependency in the graph on a single `ISyrup` is reported ([AWT155](../09-diagnostics.md#awt155)), and so is a `Resolve<ISyrup>()` on the generated `Root` or `Scope`. A collection, a [keyed dictionary](../05-resolution/04-keyed-dictionaries.md) or a [composite](./03-composites.md) receives every contribution and is never reported.
 

@@ -67,8 +67,8 @@ public sealed class ScopedAttribute : Attribute
 
 	/// <summary>
 	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
-	///     without Fallback, on the container or another module, replaces it. For an open generic this
-	///     holds per closing. <c>Fallback.Warn</c> reports AWT148 if another overridable default competes with
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or, for a
+	///     closed default, the closing of an open generic registration. For an open generic this holds per closing. <c>Fallback.Warn</c> reports AWT148 if another overridable default competes with
 	///     nothing stronger to resolve it; <c>Fallback.Silent</c> defers without a warning. Defaults to
 	///     <c>Fallback.None</c>, a normal registration.
 	/// </summary>
@@ -138,7 +138,8 @@ public sealed class ScopedAttribute<TImplementation> : Attribute
 
 	/// <summary>
 	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
-	///     without Fallback, on the container or another module, replaces it. <c>Fallback.Warn</c>
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or the
+	///     closing of an open generic registration. <c>Fallback.Warn</c>
 	///     reports AWT148 if another overridable default competes with nothing stronger to resolve it;
 	///     <c>Fallback.Silent</c> defers without a warning. Defaults to <c>Fallback.None</c>, a normal registration.
 	/// </summary>
@@ -206,7 +207,8 @@ public sealed class ScopedAttribute<TImplementation, TService> : Attribute
 
 	/// <summary>
 	///     Marks this as an overridable default, usually declared in a module: a registration of the same service
-	///     without Fallback, on the container or another module, replaces it. <c>Fallback.Warn</c>
+	///     without Fallback, on the container or another module, replaces it, unless it is a scan match or the
+	///     closing of an open generic registration. <c>Fallback.Warn</c>
 	///     reports AWT148 if another overridable default competes with nothing stronger to resolve it;
 	///     <c>Fallback.Silent</c> defers without a warning. Defaults to <c>Fallback.None</c>, a normal registration.
 	/// </summary>

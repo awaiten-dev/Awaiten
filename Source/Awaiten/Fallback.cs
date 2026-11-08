@@ -3,7 +3,9 @@ namespace Awaiten;
 /// <summary>
 ///     Whether a <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registration is an overridable default,
 ///     and how a collision between two such defaults is handled. A registration without <c>Fallback</c> of the
-///     same service replaces an overridable default entirely, even in collections. Defaults that nothing else
+///     same service replaces an overridable default entirely, even in collections, except a scan match and, for a
+///     closed default, the closing of an open generic registration, which both stay members behind the default.
+///     Defaults that nothing else
 ///     replaces are all collection members, and the first of them in precedence order wins single resolution.
 ///     Every default that stays a member is built and validated like any registration, also when it does not win
 ///     single resolution: a missing or captive dependency is a compile-time error, an eager one is built at startup,
@@ -29,8 +31,8 @@ public enum Fallback
 	Warn = 1,
 
 	/// <summary>
-	///     An overridable default that defers silently: a registration without <c>Fallback</c> replaces it, and
-	///     nothing is reported if another default also provides the service.
+	///     An overridable default that defers silently: it is replaced like a <c>Warn</c> default, and nothing is
+	///     reported if another default also provides the service.
 	/// </summary>
 	Silent = 2,
 }
