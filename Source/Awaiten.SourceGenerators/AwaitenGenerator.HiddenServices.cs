@@ -1018,7 +1018,7 @@ partial class AwaitenGenerator
 				}
 
 				ModuleHookRequest request = new(implementation, hookName, registration.Location, release, HiddenHookName(implementation, release, hookName), subject);
-				if (ResolveModuleHookCore(request, null, context) is not { } resolved)
+				if (ResolveRegistrationHook(request, context) is not { } resolved)
 				{
 					return null;
 				}

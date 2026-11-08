@@ -1936,6 +1936,46 @@ public class ModuleHiddenServiceTests
 		}
 	}
 
+	public class HookOfAnotherType
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private static string Library(string service, string factory) => $$"""
+			using Awaiten;
+
+			namespace Lib;
+
+			{{service}} interface IKettle { }
+			internal interface IOther { }
+			internal sealed class Kettle : IKettle { }
+			public interface IUser { }
+			internal sealed class User : IUser { public User(IKettle kettle) { } }
+
+			[Module]
+			[Singleton<IKettle>(Factory = nameof(Make), OnActivated = nameof(Heat))]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    {{factory}} static IKettle Make() => new Kettle();
+			    internal static void Heat(IOther other) { }
+			}
+			""";
+
+		[Test]
+		[Arguments("public", "internal")]
+		[Arguments("internal", "private")]
+		public async Task IsReportedOnceInEveryBuild(string service, string factory)
+		{
+			await That(Generator.Run(Library(service, factory)).Diagnostics).Contains("*AWT164*'Heat'*").AsWildcard().Exactly(1);
+			await That(Generator.Run(Library(service, factory) + Container).Diagnostics).Contains("*AWT164*'Heat'*").AsWildcard().Exactly(1)
+				.Because("the container in the module's assembly reports the hook itself, so the module leaves it to it");
+		}
+	}
+
 	public class FactoryMemberConventions
 	{
 		private const string Container = """

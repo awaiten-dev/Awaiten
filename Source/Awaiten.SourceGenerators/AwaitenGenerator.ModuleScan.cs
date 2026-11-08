@@ -498,6 +498,29 @@ partial class AwaitenGenerator
 		bool Skippable = false);
 
 	/// <summary>
+	///     <see cref="ResolveModuleHookCore" /> for the hook of a registration that a container in the module's own
+	///     assembly resolves itself, since it builds the implementation itself. Such a container reports an unusable
+	///     (AWT164) or overloaded (AWT190) hook at the same place, so the module leaves those to it when one imports it.
+	/// </summary>
+	private static ResolvedModuleHook? ResolveRegistrationHook(ModuleHookRequest request, ModuleScanContext context)
+	{
+		int reported = context.Diagnostics.Count;
+		ResolvedModuleHook? resolved = ResolveModuleHookCore(request, null, context);
+		if (!IsHiddenInModule(request.MatchType, context.Module, context.Compilation) && AssemblyModuleIndex.Of(context.Compilation).ImportedByContainer(context.Module))
+		{
+			for (int index = context.Diagnostics.Count - 1; index >= reported; index--)
+			{
+				if (context.Diagnostics[index].Descriptor == Diagnostics.InvalidLifecycleHook || context.Diagnostics[index].Descriptor == Diagnostics.AmbiguousLifecycleHook)
+				{
+					context.Diagnostics.RemoveAt(index);
+				}
+			}
+		}
+
+		return resolved;
+	}
+
+	/// <summary>
 	///     The resolution behind <see cref="ResolveModuleHook" />, reporting every failure into the context's sink;
 	///     the wrapper dedupes repeated failures of one already-reported attempt across overlapping scans. A
 	///     <see cref="ModuleHookRequest.Skippable" /> hook whose wrapper fails only with AWT203 or AWT204 resolves to a

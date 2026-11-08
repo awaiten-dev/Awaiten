@@ -401,7 +401,7 @@ partial class AwaitenGenerator
 			ModuleHookRequest request = new(
 				produced, hookName, location, release, name, new SelfCompiledSubject(produced.ToDisplayString(FullyQualified), subject, "make the hook public"),
 				GrantsInternalsVisibleTo(compilation.Assembly));
-			if (ResolveModuleHookCore(request, null, context) is not { Wrapper: var hook, })
+			if (ResolveRegistrationHook(request, context) is not { Wrapper: var hook, })
 			{
 				return null;
 			}
