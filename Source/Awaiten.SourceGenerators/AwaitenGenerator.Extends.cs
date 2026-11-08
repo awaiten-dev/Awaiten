@@ -392,13 +392,13 @@ partial class AwaitenGenerator
 			                  ?? (registration.ServiceSymbol is { } service ? inheritance.InaccessibleType(service, registration.IsScan) : null);
 			subject ??= registration.Production switch
 			{
-				ProductionKind.Factory => inheritance.InaccessibleMember(owner, registration.ProductionMember, "factory"),
-				ProductionKind.Instance => inheritance.InaccessibleMember(owner, registration.ProductionMember, "instance member"),
+				ProductionKind.Factory => inheritance.InaccessibleMember(owner, registration.ProductionMember, "factory", registration.Implementation, ProductionKind.Factory),
+				ProductionKind.Instance => inheritance.InaccessibleMember(owner, registration.ProductionMember, "instance member", registration.Implementation, ProductionKind.Instance),
 				_ => inheritance.InaccessibleConstructor(registration.Implementation),
 			};
 			return subject
-			       ?? inheritance.InaccessibleMember(owner, registration.OnActivated, "lifecycle hook")
-			       ?? inheritance.InaccessibleMember(owner, registration.OnRelease, "lifecycle hook");
+			       ?? inheritance.InaccessibleMember(owner, registration.OnActivated, "lifecycle hook", registration.Implementation)
+			       ?? inheritance.InaccessibleMember(owner, registration.OnRelease, "lifecycle hook", registration.Implementation);
 		}
 	}
 
@@ -713,12 +713,31 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     The AWT226 subject when the base can access a member <paramref name="name" /> of <paramref name="owner" />
-		///     but the container cannot access any, else <see langword="null" />.
+		///     but the container cannot access any, else <see langword="null" />. A non-generic method counts only when
+		///     it is one of the <see cref="ProductionMemberCandidates" /> of the <paramref name="production" />, or without
+		///     one one of the <see cref="HookCandidates" />, of <paramref name="produced" />, so an overload of another
+		///     type does not stand in for the member the base calls.
 		/// </summary>
-		public string? InaccessibleMember(INamedTypeSymbol owner, string? name, string kind)
-			=> !string.IsNullOrEmpty(name) && Hidden(MembersNamed(owner, name!))
+		public string? InaccessibleMember(INamedTypeSymbol owner, string? name, string kind, ITypeSymbol produced, ProductionKind? production = null)
+		{
+			if (string.IsNullOrEmpty(name))
+			{
+				return null;
+			}
+
+			IEnumerable<ISymbol> candidates = MembersNamed(owner, name!);
+			if (!name!.StartsWith(InternalsClass + ".", StringComparison.Ordinal))
+			{
+				HashSet<ISymbol> fitting = new(production is { } kindOfProduction
+					? ProductionMemberCandidates(owner, kindOfProduction, name, produced, _compilation)
+					: HookCandidates(owner, name, produced, _compilation), SymbolEqualityComparer.Default);
+				candidates = candidates.Where(member => member is not IMethodSymbol { IsGenericMethod: false, } || fitting.Contains(member));
+			}
+
+			return Hidden(candidates)
 				? $"The {kind} '{Display(owner.ToDisplayString(FullyQualified))}.{name}'"
 				: null;
+		}
 
 		/// <summary>
 		///     Whether the container can access none of <paramref name="candidates" /> although the base can access one.
