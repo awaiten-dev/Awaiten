@@ -124,18 +124,27 @@ public class PolyfillFreeConsumerTests
 	[Test]
 	public async Task SeveralContainers_EachDeclareTheirOwnCopy()
 	{
-		GeneratorResult result = Generator.RunPolyfillFree(LanguageVersion.Latest, Shop + """
+		GeneratorResult result = Generator.RunPolyfillFree(LanguageVersion.Latest, Shop + Caller + """
 			namespace Shop
 			{
 			    [Awaiten.Container]
 			    [Awaiten.Transient(typeof(Clock), typeof(IClock))]
 			    public static partial class OtherContainer { }
+
+			    public static class OtherCaller
+			    {
+			        public static string Clock(OtherContainer.Root root)
+			            => root.TryResolve(typeof(IClock), out object? clock) ? clock.ToString() : "";
+			    }
 			}
 			""");
 
 		await That(result.Sources).HasCount(2);
+		await That(result.Sources["Awaiten.Shop.ShopContainer.g.cs"]).Contains("file sealed class NotNullWhenAttribute");
+		await That(result.Sources["Awaiten.Shop.OtherContainer.g.cs"]).Contains("file sealed class NotNullWhenAttribute")
+			.Because("a file-local copy is visible only in its own file, so every generated container file needs one");
 		await That(result.Diagnostics).IsEmpty()
-			.Because("a file-local type never clashes with the copy in another generated file");
+			.Because("a file-local type never clashes with the copy in another generated file, and each copy annotates the TryResolve of its own container, so neither caller gets CS8602");
 	}
 
 	[Test]
