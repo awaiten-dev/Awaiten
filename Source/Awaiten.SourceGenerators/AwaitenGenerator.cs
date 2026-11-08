@@ -495,7 +495,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		if (SkipsAScanModule(compilation))
 		{
-			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true);
+			return new ContainerModel(containerNamespace, new EquatableArray<TypeDeclaration>(containingTypes.ToArray()), containerSymbol.Name, hintName, default, default, strict, syncAfterInit, hasAsyncDisposable, hasNotNullWhen, ErrorsElsewhere: true, DeclaresNotNullWhen: declaresNotNullWhen);
 		}
 
 		(GraphModel graph, List<DiagnosticInfo> diagnostics) = Analyze(containerSymbol, compilation, cancellationToken);
