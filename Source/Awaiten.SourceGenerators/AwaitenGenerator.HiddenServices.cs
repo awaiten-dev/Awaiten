@@ -620,7 +620,8 @@ partial class AwaitenGenerator
 	///     Whether anything the module declares could be built through a handle, in its own module or another: a
 	///     <c>[Scan]</c>, whose matches may take internal services, or a registration, decorator or composite that names an
 	///     internal service, or a type a container in another assembly cannot construct or that converts to an internal
-	///     type, or whose <c>Factory</c> member takes a parameter of a type that is not public, which a handle passes on. A module that declares none of these never reads the modules of its assembly.
+	///     type, or whose <c>Factory</c> member or hook takes a parameter of a type that is not public, which its wrapper
+	///     takes through a handle. A module that declares none of these never reads the modules of its assembly.
 	/// </summary>
 	private static bool MayBuildThroughHandles(INamedTypeSymbol module, Compilation compilation)
 	{
@@ -636,9 +637,12 @@ partial class AwaitenGenerator
 			=> !ConstructibleEverywhere(type) || ServableTypes(type).Any(servable => !IsExternallyAccessible(servable));
 
 		bool TakesConcealedParameter(ModuleRegistration registration)
-			=> registration is { Production: ProductionKind.Factory, Member: { } member, }
-			   && FindFactoryCandidates(module, member, registration.Implementation, compilation)
-				   .Any(method => method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type)));
+			=> (registration is { Production: ProductionKind.Factory, Member: { } member, } ? FindFactoryCandidates(module, member, registration.Implementation, compilation) : [])
+				.Concat(new[] { "OnActivated", "OnRelease", }
+					.Select(slot => NamedArgument(registration.Attribute, slot))
+					.OfType<string>()
+					.SelectMany(hook => AccessibleMembers(module, hook, compilation).OfType<IMethodSymbol>()))
+				.Any(method => method.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type)));
 	}
 
 	/// <summary>

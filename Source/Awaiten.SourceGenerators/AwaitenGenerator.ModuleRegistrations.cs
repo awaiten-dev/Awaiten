@@ -314,11 +314,14 @@ partial class AwaitenGenerator
 	///     carry; otherwise a consumer reports the member as before (AWT108, AWT109), and for a <c>Factory</c> member the
 	///     module neither wraps nor builds through a handle of <paramref name="hidden" />, with the reason the module records
 	///     in <paramref name="skipped" />. One that returns a type that is not
-	///     public is wrapped as the public type it is registered as, awaited for an awaitable result. A hook of a <c>Factory</c>
-	///     registration that is not public gets a public wrapper too, resolved and checked like the hook of a
-	///     self-compiled registration (AWT203, AWT204), unless the registered type is not public. When the module's
-	///     assembly grants <c>InternalsVisibleTo</c> to any assembly, a hook whose wrapper fails only with AWT203 or
-	///     AWT204 lands in <paramref name="skipped" /> instead, since such an assembly calls it directly. A private member
+	///     public is wrapped as the public type it is registered as, awaited for an awaitable result. A hook that is not
+	///     public of a <c>Factory</c> registration, or of a registration the module neither self-compiles nor builds through
+	///     a handle, gets a public wrapper too, resolved and checked like the hook of a self-compiled registration (AWT203,
+	///     AWT204), unless the registered type is not public; a parameter of an internal service is taken through its
+	///     handle. When the module's assembly grants <c>InternalsVisibleTo</c> to any assembly, a hook whose wrapper fails
+	///     only with AWT203 or AWT204 lands in <paramref name="skipped" /> instead, since such an assembly calls it
+	///     directly; so does such a hook of a constructed registration whatever the assembly grants, since a container in
+	///     the module's assembly calls it directly, and that container reports what is wrong with the hook. A private member
 	///     gets an internal wrapper (see <see cref="MemberWrapper.IsInternal" />) when its parameters are internal or
 	///     public, so a container in the module's assembly or in a friend calls it too; one whose public wrapper returns
 	///     the public service in place of the implementation those containers name gets it under
@@ -337,49 +340,70 @@ partial class AwaitenGenerator
 	{
 		List<MemberWrapper> wrappers = new();
 		bool external = IsExternallyAccessible(module);
-		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal));
+		ModuleScanContext context = new(module, compilation, diagnostics, new HashSet<string>(StringComparer.Ordinal), hidden);
 		foreach (AttributeData attribute in external ? module.GetAttributes() : [])
 		{
 			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
-			    || ReadProduction(attribute) is not { Production: ProductionKind.Factory or ProductionKind.Instance, Member: { } member, Conflicting: false, } production
+			    || ReadProduction(attribute) is not { Conflicting: false, } production
 			    || ProducedRegistrationType(attribute, attributeClass) is not { } produced)
 			{
 				continue;
 			}
 
-			if (!ProductionMemberCandidates(module, production.Production, member, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
+			ITypeSymbol registered = attributeClass.IsGenericType
+				? attributeClass.TypeArguments[attributeClass.TypeArguments.Length - 1]
+				: TryReadTypeofPair(attribute, out _, out INamedTypeSymbol typeofService) ? typeofService : produced;
+			string subject;
+			if (production is { Production: ProductionKind.Factory or ProductionKind.Instance, Member: { } member, })
 			{
-				// A private member of a public service is wrapped too, since no container could call it otherwise; one of an
-				// internal service is left to the handle and the internal wrapper.
-				ITypeSymbol registered = attributeClass.IsGenericType
-					? attributeClass.TypeArguments[attributeClass.TypeArguments.Length - 1]
-					: TryReadTypeofPair(attribute, out _, out INamedTypeSymbol typeofService) ? typeofService : produced;
-				ISymbol wrappable = IsExternallyAccessible(registered) ? module : module.ContainingAssembly;
-				MemberWrapper? wrapper = production.Production == ProductionKind.Factory
-					? FactoryWrapper(member, produced, wrappable)
-					: InstanceWrapper(member, produced, wrappable);
-				Add(wrapper);
-				if (wrapper is null
-				    && production.Production == ProductionKind.Factory
-				    && IsExternallyAccessible(registered)
-				    && hidden?.Handles(produced) != true
-				    && UnwrappedFactoryReason(member, produced) is { } reason)
+				if (!ProductionMemberCandidates(module, production.Production, member, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
 				{
-					string marker = FactorySkippedName(member, produced);
-					if (skipped.TrueForAll(existing => existing.MarkerName != marker))
+					// A private member of a public service is wrapped too, since no container could call it otherwise; one of an
+					// internal service is left to the handle and the internal wrapper.
+					ISymbol wrappable = IsExternallyAccessible(registered) ? module : module.ContainingAssembly;
+					MemberWrapper? wrapper = production.Production == ProductionKind.Factory
+						? FactoryWrapper(member, produced, wrappable)
+						: InstanceWrapper(member, produced, wrappable);
+					Add(wrapper);
+					if (wrapper is null
+					    && production.Production == ProductionKind.Factory
+					    && IsExternallyAccessible(registered)
+					    && hidden?.Handles(produced) != true
+					    && UnwrappedFactoryReason(member, produced) is { } reason)
 					{
-						skipped.Add(new SkippedRegistration(marker, reason, Member: true));
+						string marker = FactorySkippedName(member, produced);
+						if (skipped.TrueForAll(existing => existing.MarkerName != marker))
+						{
+							skipped.Add(new SkippedRegistration(marker, reason, Member: true));
+						}
 					}
 				}
+
+				if (production.Production == ProductionKind.Instance)
+				{
+					continue;
+				}
+
+				subject = $"'{Display(produced.ToDisplayString(FullyQualified))}' is registered through the module's factory '{member}'";
+			}
+			else if (production.Production == ProductionKind.Constructor
+			         && registered is INamedTypeSymbol service
+			         && !SelfCompilesRegistration(module, produced, service, compilation)
+			         && hidden?.Handles(produced) != true)
+			{
+				subject = $"'{Display(produced.ToDisplayString(FullyQualified))}' is registered by the module";
+			}
+			else
+			{
+				continue;
 			}
 
 			foreach (bool release in new[] { false, true, })
 			{
-				if (production.Production == ProductionKind.Factory && NamedArgument(attribute, release ? "OnRelease" : "OnActivated") is { } hookName)
+				if (NamedArgument(attribute, release ? "OnRelease" : "OnActivated") is { } hookName)
 				{
-					Add(HookWrapper(hookName, produced, release, $"'{Display(produced.ToDisplayString(FullyQualified))}' is registered through the module's factory '{member}'",
-						attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
+					Add(HookWrapper(hookName, produced, release, subject, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(), production.Production == ProductionKind.Constructor));
 				}
 			}
 		}
@@ -500,7 +524,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		MemberWrapper? HookWrapper(string hookName, INamedTypeSymbol produced, bool release, string subject, Location? location)
+		MemberWrapper? HookWrapper(string hookName, INamedTypeSymbol produced, bool release, string subject, Location? location, bool constructed)
 		{
 			string name = RegistrationHookWrapperName(produced, release, hookName);
 			string skippedName = RegistrationHookSkippedName(produced, release, hookName);
@@ -516,10 +540,19 @@ partial class AwaitenGenerator
 				return null;
 			}
 
+			// A container in the module's assembly constructs the implementation and resolves the hook itself, so a hook of a
+			// constructed registration that no wrapper can expose is left to that container, which also reports its faults.
 			ModuleHookRequest request = new(
 				produced, hookName, location, release, name, new SelfCompiledSubject(produced.ToDisplayString(FullyQualified), subject, "make the hook public"),
-				GrantsInternalsVisibleTo(compilation.Assembly));
-			if (ResolveRegistrationHook(request, context) is not { Wrapper: var hook, })
+				constructed || GrantsInternalsVisibleTo(compilation.Assembly), constructed);
+			int reported = diagnostics.Count;
+			ResolvedModuleHook? resolved = ResolveRegistrationHook(request, context);
+			if (constructed && AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
+			{
+				diagnostics.RemoveRange(reported, diagnostics.Count - reported);
+			}
+
+			if (resolved is not { Wrapper: var hook, })
 			{
 				return null;
 			}

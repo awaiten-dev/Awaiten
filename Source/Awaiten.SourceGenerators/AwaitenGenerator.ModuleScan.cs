@@ -684,10 +684,12 @@ partial class AwaitenGenerator
 
 		if (matches.Count != 1 || ambiguous.Count > 0)
 		{
-			context.Diagnostics.Add(new DiagnosticInfo(
-				matches.Count + ambiguous.Count == 0 ? Diagnostics.InvalidLifecycleHook : Diagnostics.AmbiguousLifecycleHook,
-				LocationInfo.From(location),
-				new EquatableArray<string>([Display(typeName), hookName, owner,])));
+			context.Diagnostics.Add(matches.Count + ambiguous.Count == 0
+				? new DiagnosticInfo(
+					Diagnostics.InvalidLifecycleHook,
+					LocationInfo.From(location),
+					new EquatableArray<string>([Display(typeName), hookName, owner, Display(typeName), UnreachableHookCause(context.Module, hookName, matchType, context.Compilation),]))
+				: new DiagnosticInfo(Diagnostics.AmbiguousLifecycleHook, LocationInfo.From(location), new EquatableArray<string>([Display(typeName), hookName, owner,])));
 			return null;
 		}
 

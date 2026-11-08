@@ -1044,12 +1044,13 @@ internal static class Diagnostics
 	/// <summary>
 	///     An <c>OnActivated</c> / <c>OnRelease</c> registration names a member that is not a usable lifecycle
 	///     hook on the container: there is no accessible static method of that name returning <c>void</c>,
-	///     <c>Task</c> or <c>ValueTask</c> and accepting the registered implementation type.
+	///     <c>Task</c> or <c>ValueTask</c> and accepting the registered implementation type. The last argument names why
+	///     a method of the module that would fit is out of reach, or is empty.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InvalidLifecycleHook = new(
 		"AWT164",
 		"Invalid lifecycle hook",
-		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{0}' and returning void, Task or ValueTask",
+		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{3}' and returning void, Task or ValueTask{4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

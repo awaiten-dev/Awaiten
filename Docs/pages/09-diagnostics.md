@@ -682,9 +682,11 @@ public static partial class CoffeeShop
 }
 ```
 
+The message names the type the hook's first parameter must accept, the implementation, and ends with the reason when a method of a module that would fit is out of reach. A `private` hook of a module is no hook for a type the container constructs, since only the module itself can call it. An `internal` hook of a module in another assembly is called through the public wrapper the module generates (see [modules](./04-registration/07-modules.md#factories-and-instances-in-modules)), so the container reports this only when the module generated none, for example because it isn't `partial`.
+
 A generic method is a usable hook only where a closing binds its type parameters: on an [open generic](./04-registration/05-open-generics.md#lifecycle-hooks) registration or an [open generic scan marker](./04-registration/06-scanning.md#generic-hooks-on-an-open-marker). On any other registration the message names the type parameters nothing binds.
 
-**Fix:** Point the hook at an accessible static method that returns `void`, `Task` or `ValueTask` and whose first parameter accepts the implementation: `private static void Ready(EspressoMachine machine) { }`.
+**Fix:** Point the hook at an accessible static method that returns `void`, `Task` or `ValueTask` and whose first parameter accepts the implementation: `private static void Ready(EspressoMachine machine) { }`. On a module, make the hook `internal` or public.
 
 ### AWT165
 

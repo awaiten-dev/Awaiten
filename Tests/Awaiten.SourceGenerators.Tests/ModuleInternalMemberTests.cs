@@ -118,6 +118,7 @@ public class ModuleInternalMemberTests
 			""";
 
 		[Test]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store) { }")]
 		[Arguments("[Singleton<Plugin>(Factory = nameof(Create))]", "internal static Plugin Create(BeanStore store) => new Plugin();")]
 		public async Task IsTakenThroughTheOtherModulesHandle(string registration, string member)
 		{
@@ -128,6 +129,100 @@ public class ModuleInternalMemberTests
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, TwoModuleContainer).Diagnostics).IsEmpty()
 				.Because("the module passes the internal service on from the handle of the module that registers it");
 			await That(Generator.RunWithGeneratedReferencedAssembly(library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;"), TwoModuleContainer).Diagnostics).IsEmpty();
+		}
+	}
+
+	public class Hooks
+	{
+		[Test]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnRelease = nameof(Ready))]", "internal static void Ready(Plugin plugin) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(IPlugin plugin) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(PluginBase plugin) { }")]
+		[Arguments("[Singleton<Plugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin) { }")]
+		[Arguments("[Transient<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static Task Ready(Plugin plugin, CancellationToken cancellationToken) => Task.CompletedTask;")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnRelease = nameof(Ready))]", "internal static ValueTask Ready(Plugin plugin) => default;")]
+		[Arguments("[Singleton<BeanStore>][Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store) { }")]
+		[Arguments("[Singleton<Beans, IBeans>][Singleton<Plugin, IPlugin>(OnRelease = nameof(Ready))]", "internal static void Ready(Plugin plugin, IBeans beans) { }")]
+		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin) { } internal static void Ready(IGrinder grinder) { }")]
+		[Arguments("[Singleton<BeanStore>][Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Ready))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore()); internal static void Ready(IGrinder grinder, BeanStore store) { }")]
+		public async Task Internal_IsUsableEverywhere(string registration, string member)
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library(registration, member));
+
+			await That(library.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the module generates a public wrapper for the internal hook, which takes an internal service through its handle");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Internals.Hook_");
+			await That(same.Sources["Awaiten.Lib.SameContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Ready(")
+				.Because("a container in the module's assembly calls the internal hook directly");
+			await That(friend.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Ready(")
+				.Because("a friend calls the internal hook directly");
+		}
+
+		[Test]
+		public async Task Private_IsReportedEverywhere_NamingTheImplementationAndTheCause()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "private static void Ready(Plugin plugin) { }"));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164") && diagnostic.Contains("accepting 'Lib.Plugin'") && diagnostic.Contains("'Ready' is private"))
+				.Because("no container calls a private hook of a public implementation, so the module reports it in its own build");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164") && diagnostic.Contains("'Lib.IPlugin' cannot use the lifecycle hook 'Ready'") && diagnostic.Contains("accepting 'Lib.Plugin'") && diagnostic.Contains("'Ready' is private"))
+				.Because("the hook takes the implementation, which the message names, not the service");
+			await That(external.Diagnostics).Contains("*AWT164*").AsWildcard();
+			await That(friend.Diagnostics).Contains("*AWT164*").AsWildcard();
+		}
+
+		[Test]
+		public async Task Generic_OfAClosedRegistration_IsReportedEverywhere()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready<T>(T plugin) { }"));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"))
+				.Because("a generic hook binds its type arguments only from an open generic scan's marker, so no container can close it for a closed registration");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"));
+			await That(external.Diagnostics).Contains("*AWT164*").AsWildcard();
+			await That(friend.Diagnostics).Contains("*AWT164*").AsWildcard();
+		}
+
+		[Test]
+		public async Task Overloaded_IsReportedAsAmbiguous()
+		{
+			(GeneratorResult library, GeneratorResult same, _, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin) { } internal static void Ready(IPlugin plugin) { }"));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT190"))
+				.Because("no wrapper can choose between the overloads, so the module reports the ambiguity in its own build, as a container of its assembly does");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT190"))
+				.Because("the module leaves the report to the container of its assembly, which reports it once");
+			await That(friend.Diagnostics).Contains("*AWT190*").AsWildcard();
+		}
+
+		[Test]
+		public async Task WithAnArgParameter_IsReportedOnceByAContainerOfTheModulesAssembly()
+		{
+			(GeneratorResult library, GeneratorResult same, _, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, [Arg] string name) { }"));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT189"))
+				.Because("no container can pass a runtime argument to a hook, so the module reports it in its own build");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT189"))
+				.Because("the container of the module's assembly resolves the hook itself, so the module leaves the report to it");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT189"));
+		}
+
+		[Test]
+		public async Task WithAParameterNoWrapperCanExpose_IsLeftToTheModulesAssemblyAndReportedByAnother()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, Settings settings) { }"));
+
+			await That(library.Diagnostics).IsEmpty()
+				.Because("a container of the module's assembly may register the internal service itself and call the hook directly, so the module only records why it generated no wrapper");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101"));
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT101"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231") && diagnostic.Contains("OnActivated hook 'Ready'"))
+				.Because("a container in another assembly cannot call the hook, so it reports the reason the module recorded instead of dropping the hook");
 		}
 	}
 }

@@ -672,7 +672,7 @@ internal static partial class Sources
 
 		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
 		builder.Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(") => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
-			.Append('(').Append(string.Join(", ", parameters.Select(parameter => $"@{parameter.Name}"))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
+			.Append('(').Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
 
 	/// <summary>A mirrored parameter as it is declared on a generated factory or wrapper, with its attributes.</summary>
