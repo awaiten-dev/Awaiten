@@ -583,8 +583,10 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			if (key is null
 			    && CachedGraph(graphByContainer, container, compilation, context.CancellationToken).Graph.UnresolvedDuplicates.TryGetValue(display, out AwaitenGenerator.CrossModuleDuplicate? duplicate))
 			{
+				// Code outside the graph may also resolve the collection, through IAwaitenRoot or the MS.DI bridge
+				// where no call names it, so the Fallback advice that would drop a member from it is left out.
 				context.ReportDiagnostic(Diagnostic.Create(
-					Diagnostics.CrossModuleDuplicate, invocation.Syntax.GetLocation(), duplicate.MessageArgs().AsArray().Cast<object?>().ToArray()));
+					Diagnostics.CrossModuleDuplicate, invocation.Syntax.GetLocation(), (duplicate with { Collected = true, }).MessageArgs().AsArray().Cast<object?>().ToArray()));
 			}
 
 			return;

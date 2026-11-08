@@ -848,7 +848,8 @@ internal static class Diagnostics
 	///     unintended: override the service on the container, or mark one module's registration
 	///     Fallback.Warn or Fallback.Silent. When the graph also consumes the service as a collection or keyed
 	///     dictionary, the message suggests no Fallback, which would drop the overridden member from it, but registering
-	///     the implementation single resolution should use on the container as well. A cross-tier loss (an explicit registration beating another module's expanded
+	///     the implementation single resolution should use on the container as well, as it does at a typed resolve,
+	///     where code outside the graph may collect the service unseen. A cross-tier loss (an explicit registration beating another module's expanded
 	///     template) is deterministic regardless of import order and stays silent, as does the container
 	///     overriding a module: that is the intended override mechanism. Reported by the generator only when a
 	///     dependency in the graph resolves the service singly: a collection, a keyed dictionary or a composite

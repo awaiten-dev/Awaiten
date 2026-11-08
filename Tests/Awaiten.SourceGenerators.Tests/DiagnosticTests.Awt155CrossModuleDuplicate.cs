@@ -945,5 +945,49 @@ public partial class DiagnosticTests
 			await That(awt155).DoesNotContain("overridable default")
 				.Because("the collection the graph consumes would lose the member a strong registration overrides");
 		}
+
+		[Test]
+		public async Task Analyzer_DoesNotSuggestAnOverridableDefaultWhenCodeOutsideTheGraphMayResolveTheCollection()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using System.Collections.Generic;
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class ClockA : IClock { }
+			                                                           public sealed class ClockB : IClock { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockA, IClock>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<ClockB, IClock>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IEnumerable<IClock> clocks = root.Resolve<IEnumerable<IClock>>();
+			                                                                   IClock clock = root.Resolve<IClock>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			string awt155 = diagnostics.Single(diagnostic => diagnostic.Contains("AWT155"));
+			await That(awt155).DoesNotContain("overridable default")
+				.Because("code outside the graph, here a resolve of the collection, may depend on every member, which an overridden default would leave");
+			await That(awt155).Contains("on the container too")
+				.Because("registering the winning implementation on the container decides single resolution and keeps every member");
+		}
 	}
 }
