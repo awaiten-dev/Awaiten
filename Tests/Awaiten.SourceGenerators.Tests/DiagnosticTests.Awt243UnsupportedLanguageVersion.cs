@@ -255,6 +255,38 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			[Arguments(LanguageVersion.CSharp10, false)]
+			[Arguments(LanguageVersion.CSharp11, true)]
+			public async Task TheAnalyzer_ChecksNoContainerOfAnAssemblyWhoseScanModuleIsSkipped(LanguageVersion languageVersion, bool reported)
+			{
+				string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>(languageVersion, """
+					using System;
+					using Awaiten;
+
+					namespace Lib
+					{
+					    public interface IHandler { }
+					    internal sealed class OrderHandler : IHandler { }
+
+					    [Module]
+					    [Scan(typeof(IHandler), As = ScanAs.Marker)]
+					    public static partial class HandlerModule { }
+
+					    public sealed class Tool : IDisposable { public void Dispose() { } }
+					    public sealed class Depot { public Depot(Func<Tool> tools) { } }
+
+					    [Container]
+					    [Transient(typeof(Tool))]
+					    [Singleton(typeof(Depot))]
+					    public static partial class AppContainer { }
+					}
+					""");
+
+				await That(diagnostics.Any(diagnostic => diagnostic.Contains("AWT118"))).IsEqualTo(reported)
+					.Because("below C# 11 AWT243 skips the scan module and the containers of its assembly emit only their shell, so AWT243 stays the only diagnostic");
+			}
+
+			[Test]
 			[Arguments(LanguageVersion.CSharp9)]
 			[Arguments(LanguageVersion.CSharp10)]
 			public async Task AContainerImportingAScanModuleWithAPrivateRegistrationOfItsOwnAssemblyBelowCSharp11_ReportsOnlyAwt243(LanguageVersion languageVersion)
