@@ -1019,9 +1019,51 @@ public class OpenGenericFactoryTests
 				}
 				""", Consumer);
 
-			await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT231")
-			                                                                  && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper"))
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper: the constraints of its generic overload do not hold for every closing of 'Lib.Repository<T>'")
+			                                                                           && !diagnostic.Contains("has no accessible static method"))
 				.Because("the wrapper serves every closing, so the hook's constraints must hold for the definition's own type parameters");
+		}
+
+		[Test]
+		public async Task AGenericHookWithTheTypeParametersInAnotherOrder_IsReportedWithTheReason()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IRepository<TKey, TValue> { }
+				internal sealed class Repository<TKey, TValue> : IRepository<TKey, TValue> { }
+
+				[Module]
+				[Singleton(typeof(Repository<,>), typeof(IRepository<,>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+				    internal static void Activate<TValue, TKey>(Repository<TKey, TValue> repository) { }
+				}
+				""", """
+				     using Awaiten;
+				     using Lib;
+
+				     namespace App;
+
+				     public sealed class Checkout
+				     {
+				         public Checkout(IRepository<int, string> names) { }
+				     }
+
+				     [Container]
+				     [Import(typeof(DataModule))]
+				     [Transient<Checkout>]
+				     public static partial class AppContainer
+				     {
+				     }
+				     """);
+
+			await That(result.Diagnostics).HasCount(1).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT231")
+			                                                                           && diagnostic.Contains("its OnActivated hook 'Activate' cannot be run through a generated wrapper: its generic overload does not take the type parameters of 'Lib.Repository<TKey, TValue>' in their order")
+			                                                                           && !diagnostic.Contains("has no accessible static method"));
 		}
 
 		[Test]

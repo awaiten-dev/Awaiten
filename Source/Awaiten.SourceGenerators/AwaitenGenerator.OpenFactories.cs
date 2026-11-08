@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
@@ -323,7 +324,9 @@ partial class AwaitenGenerator
 				string prefix = $"its {slot} hook '{hookName}' cannot be run through a generated wrapper";
 				if (resolved is null)
 				{
-					reason = rejections.Count > 0 ? $"{prefix}: {rejections[0].ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}" : prefix;
+					reason = rejections.Count == 0
+						? prefix
+						: $"{prefix}: {(rejections[0].Descriptor == Diagnostics.InvalidLifecycleHook ? UnboundGenericHook(registration, hookName, context) : null) ?? rejections[0].ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}";
 					return null;
 				}
 
@@ -338,6 +341,42 @@ partial class AwaitenGenerator
 		}
 
 		return hooks;
+	}
+
+	/// <summary>
+	///     Why a generic overload of the hook does not bind for the open definition of <paramref name="registration" />,
+	///     although it may for a closing, or <see langword="null" /> when the hook has no such overload: its constraints
+	///     do not hold for the definition's type parameters, or it does not take them in their order.
+	/// </summary>
+	private static string? UnboundGenericHook(OpenContribution registration, string hookName, ModuleScanContext context)
+	{
+		INamedTypeSymbol definition = registration.Definition;
+		string type = Display(definition.ToDisplayString(FullyQualified));
+		ImmutableArray<ITypeSymbol> typeParameters = registration.Service.TypeArguments;
+		HashSet<INamedTypeSymbol> shapes = new(new[] { definition, registration.Service.OriginalDefinition, }
+			.Concat(definition.AllInterfaces.Select(type => type.OriginalDefinition))
+			.Concat(BaseTypes(definition).Select(type => type.OriginalDefinition)), SymbolEqualityComparer.Default);
+		foreach (IMethodSymbol method in context.Module.GetMembers(hookName).OfType<IMethodSymbol>())
+		{
+			if (method is not { MethodKind: MethodKind.Ordinary, IsStatic: true, Parameters.Length: >= 1, } || method.Arity != typeParameters.Length)
+			{
+				continue;
+			}
+
+			if (context.Compilation.HasImplicitConversion(definition, method.Construct(typeParameters.ToArray()).Parameters[0].Type))
+			{
+				if (!SatisfiesConstraints(method, typeParameters, context.Compilation))
+				{
+					return $"the constraints of its generic overload do not hold for every closing of '{type}'; constrain the type parameters of '{type}' alike";
+				}
+			}
+			else if (method.Parameters[0].Type is INamedTypeSymbol instance && shapes.Contains(instance.OriginalDefinition))
+			{
+				return $"its generic overload does not take the type parameters of '{type}' in their order; declare them in the same order on the hook";
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>
