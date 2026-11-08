@@ -508,9 +508,10 @@ partial class AwaitenGenerator
 	///     the module reports once (see <see cref="DistinctModuleDiagnostics" />), a factory body that hides async initialization
 	///     behind the declared return type (AWT106), and a convention
 	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
-	///     <see cref="OwnedMemberType" />).
+	///     <see cref="OwnedMemberType" />). Without <paramref name="lintBodies" />, the factory bodies are not read, so
+	///     AWT106, which never leaves a registration out, is not reported.
 	/// </summary>
-	private static void ReportModuleProductionMembers(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void ReportModuleProductionMembers(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics, bool lintBodies = true)
 	{
 		List<AsyncInitializerConvention>? conventions = null;
 		HashSet<IMethodSymbol> checkedFactories = new(SymbolEqualityComparer.Default);
@@ -557,7 +558,7 @@ partial class AwaitenGenerator
 
 			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
 			ITypeSymbol declared = ProducedType(factory.ReturnType, compilation);
-			if (!IsAsyncFactoryReturn(factory.ReturnType, compilation, out _))
+			if (lintBodies && !IsAsyncFactoryReturn(factory.ReturnType, compilation, out _))
 			{
 				ReportFactoryHidingAsyncInitialization(factory, compilation, conventions, diagnostics, module);
 			}
@@ -582,7 +583,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		foreach (AttributeData attribute in module.GetAttributes())
+		foreach (AttributeData attribute in lintBodies ? module.GetAttributes() : [])
 		{
 			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace

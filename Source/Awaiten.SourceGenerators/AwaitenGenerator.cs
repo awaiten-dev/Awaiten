@@ -267,6 +267,34 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
+	///     Whether <paramref name="diagnostic" />, an error by default, still fails the build of
+	///     <paramref name="compilation" /> once the severity the user sets for its id applies: in an <c>.editorconfig</c> or
+	///     global config, or through <c>NoWarn</c> and <c>WarningsAsErrors</c>. A warning fails it under
+	///     <c>TreatWarningsAsErrors</c>.
+	/// </summary>
+	private static bool FailsBuild(DiagnosticInfo diagnostic, Compilation compilation)
+	{
+		if (diagnostic.EffectiveSeverity != DiagnosticSeverity.Error)
+		{
+			return false;
+		}
+
+		CompilationOptions options = compilation.Options;
+		string id = diagnostic.Descriptor.Id;
+		SyntaxTree? tree = diagnostic.Location is { } location ? compilation.SyntaxTrees.FirstOrDefault(candidate => candidate.FilePath == location.FilePath) : null;
+		ReportDiagnostic report = ReportDiagnostic.Default;
+		_ = (tree is not null && options.SyntaxTreeOptionsProvider?.TryGetDiagnosticValue(tree, id, CancellationToken.None, out report) == true)
+		    || options.SyntaxTreeOptionsProvider?.TryGetGlobalDiagnosticValue(id, CancellationToken.None, out report) == true
+		    || options.SpecificDiagnosticOptions.TryGetValue(id, out report);
+		return report switch
+		{
+			ReportDiagnostic.Default or ReportDiagnostic.Error => true,
+			ReportDiagnostic.Warn => options.GeneralDiagnosticOption == ReportDiagnostic.Error,
+			_ => false,
+		};
+	}
+
+	/// <summary>
 	///     Replaces the model of a module that generates code with one that carries only AWT243 when the project's
 	///     language version is older than that code needs, or with one that generates nothing when AWT243 skips a
 	///     module of its assembly (see <see cref="SkipsAScanModule" />).
@@ -483,7 +511,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		// A module of this assembly reports a member producing a type private to it in its own build, which leaves the
-		// registration out of the graph here (see BuildInstance), so only the shell is emitted.
+		// registration out of the graph here (see BuildInstance), so only the shell is emitted while that fails the build.
 		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
 			.Select(module => module.Symbol)
 			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
@@ -491,8 +519,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			.Any(module =>
 			{
 				List<DiagnosticInfo> moduleDiagnostics = new();
-				ReportModuleProductionMembers(module, compilation, moduleDiagnostics);
-				return moduleDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
+				ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
+				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation));
 			});
 
 		return new ContainerModel(

@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Awaiten.SourceGenerators.Tests;
 
@@ -1864,6 +1866,23 @@ public class ModuleHiddenServiceTests
 			await That(Generator.Run(Library(registration, members, grant: true)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard();
 			await That(Generator.Run(Library(registration, members) + Container).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
 				.Because("the module reports it once, so the container in its assembly adds nothing");
+		}
+
+		[Test]
+		[Arguments(ReportDiagnostic.Warn)]
+		[Arguments(ReportDiagnostic.Suppress)]
+		public async Task RegisteredType_LoweredBelowAnError_LeavesTheContainerInTheModulesAssemblyNoShell(ReportDiagnostic severity)
+		{
+			string library = Library("Singleton<CoffeeModule.Impl, IKettle>(Factory = nameof(Make))", "private static Impl Make() => new Impl();")
+				.Replace("[Singleton<User, IUser>]", "");
+
+			GeneratorResult lowered = Generator.Run(library + Container, new Dictionary<string, ReportDiagnostic> { ["AWT216"] = severity, });
+			GeneratorResult error = Generator.Run(library + Container, new Dictionary<string, ReportDiagnostic>());
+
+			await That(lowered.Sources["Awaiten.Lib.MyContainer.g.cs"]).DoesNotContain("has registration errors")
+				.Because("the library build no longer fails, so a shell would compile and throw only at run time");
+			await That(error.Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains("has registration errors")
+				.Because("the module's error fails the build, and the graph lacks the registration it rejects");
 		}
 
 		[Test]
