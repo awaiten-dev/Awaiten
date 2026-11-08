@@ -42,7 +42,7 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     though the alias owns nothing itself.
 ///     <see cref="NullableProduct" /> marks a Factory or Instance member whose declared type carries a nullable
 ///     annotation the registered type cannot spell, below its top level (<c>Repo&lt;string?&gt;</c>) or at it
-///     (<c>IKettle?</c>, reported as <see cref="Diagnostics.NullableProduct">AWT242</see> at the registration), so the
+///     (<c>IKettle?</c>, reported as <see cref="Diagnostics.NullableProduct">AWT245</see> at the registration), so the
 ///     generated code forgives the produced value's nullability.
 /// </summary>
 internal sealed record InstanceModel(

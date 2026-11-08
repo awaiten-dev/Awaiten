@@ -2,7 +2,7 @@ namespace Awaiten.SourceGenerators.Tests;
 
 public partial class DiagnosticTests
 {
-	public class Awt242NullableProduct
+	public class Awt245NullableProduct
 	{
 		private const string Kettle = """
 			public interface IKettle { }
@@ -39,26 +39,26 @@ public partial class DiagnosticTests
 		[Arguments("Transient", "Kettle, IKettle", "Kettle?", "new Kettle()")]
 		[Arguments("Singleton", "IKettle", "Task<IKettle?>", "Task.FromResult<IKettle?>(new Kettle())")]
 		[Arguments("Transient", "Kettle, IKettle", "Task<Kettle?>", "Task.FromResult<Kettle?>(new Kettle())")]
-		public async Task AFactoryThatMayReturnNull_ReportsAwt242AndCompilesWithoutWarnings(string lifetime, string registration, string returnType, string body)
+		public async Task AFactoryThatMayReturnNull_ReportsAwt245AndCompilesWithoutWarnings(string lifetime, string registration, string returnType, string body)
 		{
 			GeneratorResult result = Generator.Run(Container(
 				$"[{lifetime}<{registration}>(Factory = nameof(Make))]",
 				$"private static {returnType} Make() => {body};"));
 
-			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*The Factory 'Make' may produce null*'MyCode.IKettle'*").AsWildcard()
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*The Factory 'Make' may produce null*'MyCode.IKettle'*").AsWildcard()
 				.Because("the declared nullable result is reported once at the registration instead of as nullable warnings in the generated code");
 		}
 
 		[Test]
 		[Arguments("IKettle", "IKettle?")]
 		[Arguments("Kettle, IKettle", "Kettle?")]
-		public async Task AnInstanceThatMayBeNull_ReportsAwt242AndCompilesWithoutWarnings(string registration, string memberType)
+		public async Task AnInstanceThatMayBeNull_ReportsAwt245AndCompilesWithoutWarnings(string registration, string memberType)
 		{
 			GeneratorResult result = Generator.Run(Container(
 				$"[Singleton<{registration}>(Instance = nameof(Shared))]",
 				$"private static {memberType} Shared {{ get; }} = new Kettle();"));
 
-			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*The Instance 'Shared' may produce null*").AsWildcard()
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*The Instance 'Shared' may produce null*").AsWildcard()
 				.Because("an Instance member of a nullable type is held to the same rule as a factory");
 		}
 
@@ -66,17 +66,17 @@ public partial class DiagnosticTests
 		[Arguments("Singleton", "Kettle, IKettle", "Kettle? Make() => new Kettle()")]
 		[Arguments("Scoped", "IKettle", "IKettle? Make() => new Kettle()")]
 		[Arguments("Transient", "Kettle, IKettle", "Task<Kettle?> Make() => Task.FromResult<Kettle?>(new Kettle())")]
-		public async Task AFactoryOfAnInternalImplementation_ReportsAwt242AndCompilesWithoutWarnings(string lifetime, string registration, string factory)
+		public async Task AFactoryOfAnInternalImplementation_ReportsAwt245AndCompilesWithoutWarnings(string lifetime, string registration, string factory)
 		{
 			GeneratorResult result = Generator.Run(Container($"[{lifetime}<{registration}>(Factory = nameof(Make))]", $"private static {factory};")
 				.Replace("public sealed class Kettle", "internal sealed class Kettle"));
 
-			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*'Make'*").AsWildcard()
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*'Make'*").AsWildcard()
 				.Because("the resolvers of an internal implementation return an accessible type and test the value for disposal at run time, which must not warn either");
 		}
 
 		[Test]
-		public async Task AFactoryOfAModuleInTheSameAssembly_ReportsAwt242AndCompilesWithoutWarnings()
+		public async Task AFactoryOfAModuleInTheSameAssembly_ReportsAwt245AndCompilesWithoutWarnings()
 		{
 			GeneratorResult result = Generator.Run($$"""
 				#nullable enable
@@ -99,7 +99,7 @@ public partial class DiagnosticTests
 				public static partial class MyContainer { }
 				""");
 
-			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*'Make'*").AsWildcard();
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*'Make'*").AsWildcard();
 		}
 
 		public sealed class AcrossAssemblies
@@ -147,7 +147,7 @@ public partial class DiagnosticTests
 			[Arguments("internal", "IKettle", "public static IKettle?", false)]
 			[Arguments("internal", "Kettle, IKettle", "internal static Kettle?", true)]
 			[Arguments("internal", "IKettle", "internal static IKettle?", true)]
-			public async Task AFactoryOfAModuleInAnotherAssembly_ReportsAwt242AndCompilesWithoutWarnings(string implementation, string registration, string factory, bool grant)
+			public async Task AFactoryOfAModuleInAnotherAssembly_ReportsAwt245AndCompilesWithoutWarnings(string implementation, string registration, string factory, bool grant)
 			{
 				string source = Library(implementation, registration, factory, grant);
 				GeneratorResult library = Generator.Run(source);
@@ -155,7 +155,7 @@ public partial class DiagnosticTests
 
 				await That(library.Diagnostics).IsEmpty()
 					.Because("the module's own generated code compiles without warnings");
-				await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*'Make'*").AsWildcard()
+				await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*'Make'*").AsWildcard()
 					.Because("the container that hands the result to its consumers reports the possible null once");
 			}
 
@@ -201,7 +201,7 @@ public partial class DiagnosticTests
 				GeneratorResult libraryResult = Generator.Run(library);
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, HandleConsumer);
 
-				await That(libraryResult.Diagnostics).HasCount(1).And.Contains($"*warning AWT242*The {subject} may produce null*").AsWildcard()
+				await That(libraryResult.Diagnostics).HasCount(1).And.Contains($"*warning AWT245*The {subject} may produce null*").AsWildcard()
 					.Because("a container in another assembly reaches the member only through the handle, so the module's build reports it, and its handle wrapper compiles without nullable warnings");
 				await That(result.Diagnostics).IsEmpty()
 					.Because("the handle carries a non-nullable value, so the container has nothing to report again");
@@ -213,7 +213,7 @@ public partial class DiagnosticTests
 				GeneratorResult result = Generator.Run(HandleLibrary("Singleton<IKettle>(Factory = nameof(Make))", "private static IKettle? Make() => new Kettle();")
 				                                       + HandleConsumer.Replace("#nullable enable", "").Replace("using Awaiten;", "").Replace("namespace MyCode;", ""));
 
-				await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*").AsWildcard()
+				await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT245*").AsWildcard()
 					.Because("the module leaves the report to the container of its assembly that imports it, which reports it at the same place");
 			}
 
@@ -281,7 +281,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.Run(Base + Extending);
 
-				await That(result.Diagnostics).HasCount(2).And.All().Satisfy(diagnostic => diagnostic!.Contains("warning AWT242"))
+				await That(result.Diagnostics).HasCount(2).And.All().Satisfy(diagnostic => diagnostic!.Contains("warning AWT245"))
 					.Because("the base reports its two nullable factories, and the extending container compiles its inherited calls of them without warnings");
 			}
 
@@ -305,7 +305,7 @@ public partial class DiagnosticTests
 		[Test]
 		[Arguments("IKettle", "new Kettle()")]
 		[Arguments("Task<IKettle>", "Task.FromResult<IKettle>(new Kettle())")]
-		public async Task AFactoryThatCannotReturnNull_DoesNotReportAwt242(string returnType, string body)
+		public async Task AFactoryThatCannotReturnNull_DoesNotReportAwt245(string returnType, string body)
 		{
 			GeneratorResult result = Generator.Run(Container(
 				"[Singleton<IKettle>(Factory = nameof(Make))]",
@@ -315,7 +315,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task AFactoryInAnObliviousContext_DoesNotReportAwt242()
+		public async Task AFactoryInAnObliviousContext_DoesNotReportAwt245()
 		{
 			GeneratorResult result = Generator.Run(Container(
 				"[Singleton<IKettle>(Factory = nameof(Make))]",

@@ -435,7 +435,7 @@ partial class AwaitenGenerator
 	///     Whether a Factory or Instance member's declared type carries a nullable annotation the registered type cannot
 	///     spell (see <see cref="InstanceModel.NullableProduct" />). One at the top level means the member may produce
 	///     <see langword="null" />, which is reported once at the registration as
-	///     <see cref="Diagnostics.NullableProduct">AWT242</see> instead of as warnings throughout the generated code.
+	///     <see cref="Diagnostics.NullableProduct">AWT245</see> instead of as warnings throughout the generated code.
 	/// </summary>
 	private static bool IsNullableProduct(ITypeSymbol produced, ImplInfo info, List<DiagnosticInfo> diagnostics)
 		=> IsNullableProduct(produced, info.Production, info.ProductionMember!, info.OwningServiceOrImpl, info.Location, diagnostics);

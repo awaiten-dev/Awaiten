@@ -2199,7 +2199,7 @@ internal static class Diagnostics
 	///     A warning like the compiler's own nullable warnings, which it replaces.
 	/// </summary>
 	public static readonly DiagnosticDescriptor NullableProduct = new(
-		"AWT242",
+		"AWT245",
 		"Factory or Instance member may produce null",
 		"The {0} '{1}' may produce null, since it is declared to produce '{2}?', but the container serves it to consumers of '{3}' as non-nullable; declare it to produce '{2}' and never produce null",
 		"Awaiten",
