@@ -67,10 +67,6 @@ partial class AwaitenGenerator
 		BuildContext context)
 	{
 		List<ParameterModel> parameters = new();
-
-		// Measured before synthesis suppression, like an injected member, so an explicitly registered collection of an
-		// init-only optional property earns no AWT158 either.
-		bool previousIsCollection = false;
 		foreach (IParameterSymbol parameter in producer.Parameters)
 		{
 			// A [RequestingType] parameter of a Factory method is filled at each construction site with the
@@ -98,7 +94,7 @@ partial class AwaitenGenerator
 			{
 				ParameterModel? value = parameters.Count > 0 ? parameters[parameters.Count - 1] : null;
 				parameters.Add(new ParameterModel("bool", value?.Kind == DependencyKind.Absent ? DependencyKind.Absent : DependencyKind.Present));
-				if (parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal) && value is not null && !previousIsCollection)
+				if (parameter.Name.StartsWith(InitOnlyPresenceFlagPrefix, StringComparison.Ordinal) && value is not null)
 				{
 					context.Diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.OptionalPropertyIsInitOnly,
@@ -120,7 +116,6 @@ partial class AwaitenGenerator
 			// redirect also keeps the parameter off the [ImportServices] fall-through below.
 			parameterModel = RedirectContextualBinding(parameterModel, info, context.ServiceToImpl, context.ConsumedConditionals);
 
-			previousIsCollection = IsSynthesizedCollection(parameterModel.Kind);
 			parameterModel = SuppressRegisteredCollectionSynthesis(parameterModel, parameter.Type, context.ServiceToImpl);
 			parameterModel = ResolveTypeDispatch(parameterModel, parameter.Type, info, context.DispatchCandidates, context.Diagnostics);
 
