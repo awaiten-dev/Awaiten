@@ -32,6 +32,27 @@ public static partial class FriendOpenGenericModule
 	}
 }
 
+/// <summary>A public open generic journal whose internal <c>[Inject]</c> property a friend container sets itself.</summary>
+public sealed class FriendInjectedOpenJournal<T> : IInjectedOpenJournal<T>
+{
+	[Inject]
+	internal IOpenClock Injected { get; set; } = null!;
+
+	/// <inheritdoc />
+	public IOpenClock Clock => Injected;
+
+	/// <inheritdoc />
+	public IOpenClock? Audit { get; set; }
+}
+
+/// <summary>
+///     A <c>[Module]</c> in an assembly that grants <c>InternalsVisibleTo</c>, whose public open generic journal a friend
+///     container constructs itself, internal <c>[Inject]</c> property included.
+/// </summary>
+[Module]
+[Singleton(typeof(FriendInjectedOpenJournal<>), typeof(IInjectedOpenJournal<>))]
+public static partial class FriendInjectedOpenJournalModule;
+
 /// <summary>A store per entity type, built from an open generic implementation private to <see cref="SupportOpenBaseContainer" />.</summary>
 public interface IBaseOpenStore<T>
 	where T : class

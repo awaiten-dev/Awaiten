@@ -258,6 +258,88 @@ public sealed partial class OpenGenericFactoryTests
 		}
 	}
 
+	public sealed class ContainerSideInjectProperty
+	{
+		[Test]
+		public async Task AModuleInAnotherAssembly_FillsTheEntryOnTheInstanceTheGenericFactoryReturns()
+		{
+			await using InjectedJournalContainer.Root container = new();
+
+			IInjectedOpenJournal<Order> journal = container.Resolve<JournalConsumer>().Orders;
+
+			await That(journal.Clock).IsSameAs(container.Resolve<IOpenClock>())
+				.Because("the generic factory sets the module's internal [Inject] property");
+			await That(journal.Audit).IsSameAs(container.Resolve<IOpenClock>())
+				.Because("the container sets its own entry on the instance the factory returned");
+			await That(container.Resolve<JournalConsumer>().Invoices.Audit).IsSameAs(container.Resolve<IOpenClock>())
+				.Because("the open entry applies to every closing");
+		}
+
+		[Test]
+		public async Task AFriendModule_FillsTheEntryItself()
+		{
+			await using FriendInjectedJournalContainer.Root container = new();
+
+			IInjectedOpenJournal<Order> journal = container.Resolve<JournalConsumer>().Orders;
+
+			await That(journal.Clock).IsSameAs(container.Resolve<IOpenClock>());
+			await That(journal.Audit).IsSameAs(container.Resolve<IOpenClock>());
+		}
+
+		[Test]
+		public async Task AModuleInTheSameAssembly_FillsTheEntryItself()
+		{
+			await using SameAssemblyInjectedJournalContainer.Root container = new();
+
+			IInjectedOpenJournal<Order> journal = container.Resolve<JournalConsumer>().Orders;
+
+			await That(journal.Clock).IsSameAs(container.Resolve<IOpenClock>());
+			await That(journal.Audit).IsSameAs(container.Resolve<IOpenClock>());
+		}
+	}
+
+	public sealed class JournalConsumer(IInjectedOpenJournal<Order> orders, IInjectedOpenJournal<Invoice> invoices)
+	{
+		public IInjectedOpenJournal<Order> Orders => orders;
+
+		public IInjectedOpenJournal<Invoice> Invoices => invoices;
+	}
+
+	public sealed class SameAssemblyInjectedJournal<T> : IInjectedOpenJournal<T>
+	{
+		[Inject]
+		internal IOpenClock Injected { get; set; } = null!;
+
+		public IOpenClock Clock => Injected;
+
+		public IOpenClock? Audit { get; set; }
+	}
+
+	[Module]
+	[Singleton(typeof(SameAssemblyInjectedJournal<>), typeof(IInjectedOpenJournal<>))]
+	public static partial class SameAssemblyInjectedJournalModule;
+
+	[Container]
+	[Import(typeof(InjectedOpenJournalModule))]
+	[Singleton<OpenClock, IOpenClock>]
+	[InjectProperty(typeof(InjectedOpenJournal<>), nameof(IInjectedOpenJournal<Order>.Audit))]
+	[Transient<JournalConsumer>]
+	public static partial class InjectedJournalContainer;
+
+	[Container]
+	[Import(typeof(FriendInjectedOpenJournalModule))]
+	[Singleton<OpenClock, IOpenClock>]
+	[InjectProperty(typeof(FriendInjectedOpenJournal<>), nameof(IInjectedOpenJournal<Order>.Audit))]
+	[Transient<JournalConsumer>]
+	public static partial class FriendInjectedJournalContainer;
+
+	[Container]
+	[Import(typeof(SameAssemblyInjectedJournalModule))]
+	[Singleton<OpenClock, IOpenClock>]
+	[InjectProperty(typeof(SameAssemblyInjectedJournal<>), nameof(IInjectedOpenJournal<Order>.Audit))]
+	[Transient<JournalConsumer>]
+	public static partial class SameAssemblyInjectedJournalContainer;
+
 	public sealed class ClockedConsumer(IClocked<Order> clocked)
 	{
 		public IClocked<Order> Clocked => clocked;

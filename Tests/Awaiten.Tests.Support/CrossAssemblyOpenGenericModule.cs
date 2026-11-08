@@ -152,3 +152,34 @@ internal sealed class SharedOpenRepository<T> : ISharedOpenRepository<T>;
 [Singleton<SharedOpenRepository<SharedOpenEntity>, ISharedOpenReader<SharedOpenEntity>>]
 [Singleton(typeof(SharedOpenRepository<>), typeof(ISharedOpenRepository<>))]
 public static partial class SharedOpenGenericModule;
+
+/// <summary>A journal per entry type, built from the public <see cref="InjectedOpenJournal{T}" />.</summary>
+public interface IInjectedOpenJournal<T>
+{
+	/// <summary>The clock the module's internal <c>[Inject]</c> property received.</summary>
+	IOpenClock Clock { get; }
+
+	/// <summary>The clock a container-side <c>[InjectProperty]</c> entry filled, or <see langword="null" />.</summary>
+	IOpenClock? Audit { get; }
+}
+
+/// <summary>A public open generic journal whose internal <c>[Inject]</c> property only the module's generated factory can set.</summary>
+public sealed class InjectedOpenJournal<T> : IInjectedOpenJournal<T>
+{
+	[Inject]
+	internal IOpenClock Injected { get; set; } = null!;
+
+	/// <inheritdoc />
+	public IOpenClock Clock => Injected;
+
+	/// <inheritdoc />
+	public IOpenClock? Audit { get; set; }
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose public open generic journal a container in another assembly without
+///     <c>InternalsVisibleTo</c> builds through the generated generic factory, because of its internal <c>[Inject]</c> property.
+/// </summary>
+[Module]
+[Singleton(typeof(InjectedOpenJournal<>), typeof(IInjectedOpenJournal<>))]
+public static partial class InjectedOpenJournalModule;

@@ -907,6 +907,90 @@ public class OpenGenericFactoryTests
 			await That(result.Diagnostics).IsEmpty();
 			await That(ContainerSource(result, "AppContainer")).Contains("Injected = ");
 		}
+
+		public class ContainerSideEntry
+		{
+			private const string Library = """
+			                               using Awaiten;
+
+			                               namespace Lib;
+
+			                               public interface IClock { }
+			                               public sealed class Clock : IClock { }
+			                               public interface IRepository<T> { }
+			                               public sealed class Repository<T> : IRepository<T>
+			                               {
+			                                   [Inject] internal IClock Injected { get; set; } = null!;
+
+			                                   public IClock Audit { get; set; }
+			                               }
+
+			                               [Module]
+			                               [Singleton<Clock, IClock>]
+			                               [Singleton(typeof(Repository<>), typeof(IRepository<>))]
+			                               public static partial class DataModule { }
+			                               """;
+
+			private const string EntryConsumer = """
+			                                     using Awaiten;
+			                                     using Lib;
+
+			                                     namespace App;
+
+			                                     public sealed class Order { }
+
+			                                     public sealed class Checkout
+			                                     {
+			                                         public Checkout(IRepository<Order> orders) { }
+			                                     }
+
+			                                     [Container]
+			                                     [Import(typeof(DataModule))]
+			                                     [InjectProperty(typeof(Repository<>), nameof(Repository<object>.Audit))]
+			                                     [Transient<Checkout>]
+			                                     public static partial class AppContainer
+			                                     {
+			                                     }
+			                                     """;
+
+			[Test]
+			public async Task AContainerInTheSameAssembly_SetsItInTheObjectInitializer()
+			{
+				GeneratorResult result = Generator.Run(Library + EntryConsumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Injected = ").And.Contains("Audit = ");
+			}
+
+			[Test]
+			public async Task AContainerInAnotherAssembly_SetsItOnTheInstanceTheGenericFactoryReturns()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, EntryConsumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the entry is no AWT178: the generic factory returns the closing itself, so the container sets the property after it");
+				await That(ContainerSource(result, "AppContainer")).Contains("global::Lib.DataModule.Internals.Registration_Repository_").And
+					.Contains(".Audit = ");
+			}
+
+			[Test]
+			public async Task AFriendContainer_SetsItInTheObjectInitializer()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Granted(Library), EntryConsumer);
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Injected = ").And.Contains("Audit = ").And.DoesNotContain("Registration_Repository_");
+			}
+
+			[Test]
+			public async Task ADeferredEntry_IsSetAfterTheInstanceIsCached()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, EntryConsumer.Replace(".Audit))]", ".Audit), Deferred = true)]"));
+
+				await That(result.Diagnostics).IsEmpty();
+				await That(ContainerSource(result, "AppContainer")).Contains("Registration_Repository_").And.Contains("._repository.Audit = ");
+			}
+		}
 	}
 
 	public class Decorators
