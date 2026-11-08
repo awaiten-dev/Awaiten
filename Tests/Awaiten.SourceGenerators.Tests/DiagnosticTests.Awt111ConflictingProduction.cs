@@ -614,5 +614,43 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).Contains("*AWT111*").AsWildcard()
 				.Because("coalescing one implementation across services keeps the first factory, so a second, different one must not be silently dropped");
 		}
+
+		[Test]
+		[Arguments("[Transient<Kettle>]")]
+		[Arguments("[Transient<Kettle, IKettle>]")]
+		public async Task NamesTheModuleWhenAContainerOfAnotherAssemblyConstructsWhatAModuleConstructsThroughItsGeneratedFactory(string registration)
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IKettle { }
+				public sealed class Kettle : IKettle { internal Kettle() { } }
+
+				[Module]
+				[Transient<Kettle, IKettle>]
+				public static partial class KettleModule { }
+				""";
+			string container = $$"""
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(KettleModule))]
+				{{registration}}
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult same = Generator.Run(library + "\n[Container]\n[Import(typeof(KettleModule))]\n" + registration + "\npublic static partial class SameContainer;");
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, container);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).Contains("*AWT111*(a constructor and the constructor that module 'Lib.KettleModule' calls through its generated factory)*").AsWildcard()
+				.Because("the module's generated factory can call what the container cannot, so the message tells the two constructors apart instead of naming 'a constructor' twice");
+			await That(external.Diagnostics).Contains("*AWT104*'Lib.Kettle'*").AsWildcard();
+		}
 	}
 }

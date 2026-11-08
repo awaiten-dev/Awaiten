@@ -879,13 +879,21 @@ partial class AwaitenGenerator
 
 		if (ConflictsWith(info, registration) && reportedProductionConflicts.Add(registration.ImplementationType))
 		{
+			string winner = info.HiddenProduction ?? DescribeProduction(info.Production, info.ProductionMember, info.Origin ?? containerSymbol);
+			string loser = registration.HiddenProduction ?? DescribeProduction(registration.Production, registration.ProductionMember, registration.Origin ?? containerSymbol);
+			if (winner == loser)
+			{
+				winner = DescribeGeneratedConstruction(info.HiddenProduction, info.ProductionMember, info.Origin) ?? winner;
+				loser = DescribeGeneratedConstruction(registration.HiddenProduction, registration.ProductionMember, registration.Origin) ?? loser;
+			}
+
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.ConflictingProduction,
 				LocationInfo.From(registration.Location),
 				new EquatableArray<string>([
 					DisplayInstance(registration.ImplementationType),
-					info.HiddenProduction ?? DescribeProduction(info.Production, info.ProductionMember, info.Origin ?? containerSymbol),
-					registration.HiddenProduction ?? DescribeProduction(registration.Production, registration.ProductionMember, registration.Origin ?? containerSymbol),
+					winner,
+					loser,
 				])));
 		}
 
@@ -1160,4 +1168,14 @@ partial class AwaitenGenerator
 			ProductionKind.Instance => $"instance '{Display(QualifiedMember(owner, UserMemberName(member)))}'",
 			_ => "a constructor",
 		};
+
+	/// <summary>
+	///     Names the constructor that <paramref name="module" /> of another assembly calls through its generated registration
+	///     factory, for an AWT111 message whose two strategies <see cref="DescribeProduction" /> would both name "a
+	///     constructor", or <see langword="null" /> for any other production.
+	/// </summary>
+	private static string? DescribeGeneratedConstruction(string? hiddenProduction, string? member, INamedTypeSymbol? module)
+		=> hiddenProduction is null && module is not null && IsGeneratedRegistrationFactory(member)
+			? $"the constructor that module '{Display(module.ToDisplayString(FullyQualified))}' calls through its generated factory"
+			: null;
 }
