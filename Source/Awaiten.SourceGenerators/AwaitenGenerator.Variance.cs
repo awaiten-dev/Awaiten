@@ -297,6 +297,14 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     The registered service among <paramref name="candidates" /> that a typed resolve of
+	///     <paramref name="requested" /> without an exact registration reaches through the run-time variance fallback,
+	///     which picks it like <see cref="FindVarianceMatch" />, or <see langword="null" />.
+	/// </summary>
+	internal static string? NearestVarianceMatch(INamedTypeSymbol requested, List<(string ServiceType, INamedTypeSymbol Symbol)> candidates, Compilation compilation)
+		=> FindVarianceMatch(requested, requested.ToDisplayString(FullyQualified), new VarianceState(candidates, compilation));
+
+	/// <summary>
 	///     True when an instance of the constructed generic interface <paramref name="from" /> IS-A
 	///     <paramref name="to" /> through declared C# variance: both must be the same generic interface
 	///     definition, and at each type-argument position the declared variance must hold. Covariant (<c>out</c>)

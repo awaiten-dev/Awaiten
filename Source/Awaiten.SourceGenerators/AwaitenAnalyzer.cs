@@ -581,7 +581,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			    : surface.FailsKeyed(display, AwaitenGenerator.KeyLiteral(key), onRoot, asynchronous, out guidance)))
 		{
 			if (key is null
-			    && CachedGraph(graphByContainer, container, compilation, context.CancellationToken).Graph.UnresolvedDuplicates.TryGetValue(display, out AwaitenGenerator.CrossModuleDuplicate? duplicate))
+			    && ContestedDuplicate(service, display, CachedGraph(graphByContainer, container, compilation, context.CancellationToken).Graph, invocation, compilation) is { } duplicate)
 			{
 				// Code outside the graph may also resolve the collection, through IAwaitenRoot or the MS.DI bridge
 				// where no call names it, so the Fallback advice that would drop a member from it is left out.
@@ -609,6 +609,74 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 				key is null ? "unkeyed registration" : $"registration under the key {AwaitenGenerator.KeyArgumentDisplay(key)}",
 				container.ToDisplayString(), call, UnprovidedRemedy(service, display, key, graph)));
 		}
+	}
+
+	// The AWT155 collision whose single winner a successful unkeyed resolve of the service hands out: the service itself,
+	// the target of a Func<T>, Lazy<T>, Owned<T> or Func<Owned<T>> the container does not register as a service of its
+	// own, or the registered service the run-time variance fallback routes a variant request to.
+	private static AwaitenGenerator.CrossModuleDuplicate? ContestedDuplicate(
+		ITypeSymbol service,
+		string display,
+		GraphModel graph,
+		IInvocationOperation invocation,
+		Compilation compilation)
+	{
+		if (graph.UnresolvedDuplicates.Count == 0)
+		{
+			return null;
+		}
+
+		if (graph.UnresolvedDuplicates.TryGetValue(display, out AwaitenGenerator.CrossModuleDuplicate? duplicate))
+		{
+			return duplicate;
+		}
+
+		if (graph.ServiceToImpl.ContainsKey(new ServiceKey(display, null)))
+		{
+			return null;
+		}
+
+		if (RelationshipTarget(service) is { } target)
+		{
+			return graph.UnresolvedDuplicates.TryGetValue(target.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), out duplicate) ? duplicate : null;
+		}
+
+		if (!MayBeVariant(service) || invocation.SemanticModel is not { } model)
+		{
+			return null;
+		}
+
+		List<(string ServiceType, INamedTypeSymbol Symbol)> candidates = new();
+		foreach (string candidate in graph.VarianceCandidates)
+		{
+			if (model.GetSpeculativeTypeInfo(invocation.Syntax.SpanStart, SyntaxFactory.ParseTypeName(candidate), SpeculativeBindingOption.BindAsTypeOrNamespace).Type is INamedTypeSymbol symbol)
+			{
+				candidates.Add((candidate, symbol));
+			}
+		}
+
+		return AwaitenGenerator.NearestVarianceMatch((INamedTypeSymbol)service, candidates, compilation) is { } match
+		       && graph.UnresolvedDuplicates.TryGetValue(match, out duplicate)
+			? duplicate
+			: null;
+	}
+
+	private static ITypeSymbol? RelationshipTarget(ITypeSymbol type)
+	{
+		if (type is not INamedTypeSymbol { TypeArguments.Length: 1, } named)
+		{
+			return null;
+		}
+
+		ITypeSymbol argument = named.TypeArguments[0];
+		return (named.ContainingNamespace?.ToDisplayString(), named.Name) switch
+		{
+			("System", "Func") => argument is INamedTypeSymbol { Name: "Owned", TypeArguments.Length: 1, } owned && owned.ContainingNamespace?.ToDisplayString() == "Awaiten"
+				? owned.TypeArguments[0]
+				: argument,
+			("System", "Lazy") or ("Awaiten", "Owned") => argument,
+			_ => null,
+		};
 	}
 
 	// The service a resolve names: the type argument of a generic overload, or the typeof argument of a Type overload.

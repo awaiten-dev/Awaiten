@@ -823,6 +823,134 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Func<IClock>")]
+		[Arguments("Lazy<IClock>")]
+		[Arguments("Owned<IClock>")]
+		[Arguments("Func<Owned<IClock>>")]
+		public async Task Analyzer_ReportsAtATypedResolveOfARelationship(string shape)
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>($$"""
+			                                                             using System;
+			                                                             using Awaiten;
+
+			                                                             namespace MyCode;
+
+			                                                             public interface IClock { }
+			                                                             public sealed class ClockA : IClock { }
+			                                                             public sealed class ClockB : IClock { }
+
+			                                                             [Module]
+			                                                             [Singleton<ClockA, IClock>]
+			                                                             public static class ModuleA { }
+
+			                                                             [Module]
+			                                                             [Singleton<ClockB, IClock>]
+			                                                             public static class ModuleB { }
+
+			                                                             [Container]
+			                                                             [Import(typeof(ModuleA))]
+			                                                             [Import(typeof(ModuleB))]
+			                                                             public static partial class MyContainer;
+
+			                                                             public static class Program
+			                                                             {
+			                                                                 public static void Run()
+			                                                                 {
+			                                                                     using MyContainer.Root root = new();
+			                                                                     object relationship = root.Resolve<{{shape}}>();
+			                                                                 }
+			                                                             }
+			                                                             """);
+
+			await That(diagnostics).Contains("*AWT155*IClock*ModuleA*ModuleB*").AsWildcard()
+				.Because("the relationship hands out the single winner, which only the order of the imports decides");
+		}
+
+		[Test]
+		public async Task Analyzer_ReportsAtATypedResolveThatVarianceRedirectsToTheService()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public class Base { }
+			                                                           public sealed class Derived : Base { }
+			                                                           public interface IHandler<in T> { }
+			                                                           public sealed class HandlerA : IHandler<Base> { }
+			                                                           public sealed class HandlerB : IHandler<Base> { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerA, IHandler<Base>>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerB, IHandler<Base>>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IHandler<Derived> handler = root.Resolve<IHandler<Derived>>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).Contains("*AWT155*IHandler<MyCode.Base>*ModuleA*ModuleB*").AsWildcard()
+				.Because("the run-time variance fallback routes IHandler<Derived> to the single winner of IHandler<Base>");
+		}
+
+		[Test]
+		public async Task Analyzer_DoesNotReportWhenVarianceRedirectsToAnUncontestedService()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+
+			                                                           namespace MyCode;
+
+			                                                           public class Base { }
+			                                                           public sealed class Derived : Base { }
+			                                                           public interface IHandler<in T> { }
+			                                                           public sealed class HandlerA : IHandler<object> { }
+			                                                           public sealed class HandlerB : IHandler<object> { }
+			                                                           public sealed class BaseHandler : IHandler<Base> { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerA, IHandler<object>>]
+			                                                           public static class ModuleA { }
+
+			                                                           [Module]
+			                                                           [Singleton<HandlerB, IHandler<object>>]
+			                                                           public static class ModuleB { }
+
+			                                                           [Container]
+			                                                           [Import(typeof(ModuleA))]
+			                                                           [Import(typeof(ModuleB))]
+			                                                           [Singleton<BaseHandler, IHandler<Base>>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Program
+			                                                           {
+			                                                               public static void Run()
+			                                                               {
+			                                                                   using MyContainer.Root root = new();
+			                                                                   IHandler<Derived> handler = root.Resolve<IHandler<Derived>>();
+			                                                               }
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).DoesNotContain("*AWT155*").AsWildcard()
+				.Because("the nearest variance-compatible service, IHandler<Base>, has a single registration");
+		}
+
+		[Test]
 		public async Task Analyzer_DoesNotReportAtAResolveOfTheCollection()
 		{
 			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
