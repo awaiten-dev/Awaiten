@@ -447,7 +447,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static bool IsNullableProduct(ITypeSymbol produced, ProductionKind production, string member, string service, LocationInfo? location, List<DiagnosticInfo>? diagnostics)
 	{
-		if (produced is not { IsValueType: false, NullableAnnotation: NullableAnnotation.Annotated, })
+		if (!MayProduceNull(produced))
 		{
 			return HasNestedNullableAnnotation(produced);
 		}
@@ -463,6 +463,10 @@ partial class AwaitenGenerator
 			])));
 		return true;
 	}
+
+	/// <summary>Whether a <c>Factory</c> or <c>Instance</c> member of the declared type <paramref name="produced" /> may produce <see langword="null" />.</summary>
+	private static bool MayProduceNull(ITypeSymbol produced)
+		=> produced is { IsValueType: false, NullableAnnotation: NullableAnnotation.Annotated, };
 
 	/// <summary>
 	///     The service types of <paramref name="info" /> that are private or protected nested types the generated

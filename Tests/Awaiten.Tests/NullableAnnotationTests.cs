@@ -133,8 +133,10 @@ public sealed partial class NullableAnnotationTests
 	}
 
 	[Container]
+#pragma warning disable AWT245
 	[Singleton<IStore>(Factory = nameof(CreateStore))]
 	[Singleton<Clock<string>>(Instance = nameof(Clock))]
+#pragma warning restore AWT245
 	public static partial class NullableProductShop
 	{
 		internal static Clock<string>? Clock { get; } = new();

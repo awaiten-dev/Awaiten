@@ -29,8 +29,9 @@ namespace Awaiten.SourceGenerators;
 ///     child <c>Scope</c>'s disposal. Also reports <see cref="Diagnostics.SuppressedDisposalProjected">AWT214</see>
 ///     where a container that suppresses the disposal of a possibly disposable service is projected into
 ///     Microsoft.Extensions.DependencyInjection, which would dispose it anyway. Also reports
-///     <see cref="Diagnostics.DuplicateInjectProperty">AWT179</see> and <see cref="Diagnostics.OptionalPropertyIsInitOnly">AWT158</see>,
-///     which the graph build detects and the generator leaves to the analyzer so that they can be suppressed in source. Also reports
+///     <see cref="Diagnostics.DuplicateInjectProperty">AWT179</see>, <see cref="Diagnostics.OptionalPropertyIsInitOnly">AWT158</see> and
+///     <see cref="Diagnostics.NullableProduct">AWT245</see>, which the graph or module build detects and the generator
+///     leaves to the analyzer so that they can be suppressed in source. Also reports
 ///     <see cref="Diagnostics.TypedResolveOfUnprovidedService">AWT218</see> and
 ///     <see cref="Diagnostics.TypedResolveOfWithheldService">AWT219</see> at a typed <c>Resolve&lt;T&gt;()</c>,
 ///     <c>ResolveAsync&lt;T&gt;()</c> or <c>Resolve(typeof(T))</c>, keyed or not, on a generated <c>Root</c> or
@@ -52,6 +53,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 {
 	private const string ContainerAttributeName = "Awaiten.ContainerAttribute";
 
+	private const string ModuleAttributeName = "Awaiten.ModuleAttribute";
+
 	// The analyzer ships without a reference to the MS.DI bridge, so its entry points are matched by name.
 	private const string BridgeNamespace = "Awaiten.Extensions.DependencyInjection";
 
@@ -59,7 +62,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
 		ImmutableArray.Create(Diagnostics.RootAccumulatingFactory, Diagnostics.RootAccumulatingFactoryStrict, Diagnostics.AsyncOnlyDisposal,
 			Diagnostics.SuppressedDisposalProjected, Diagnostics.DuplicateInjectProperty, Diagnostics.OptionalPropertyIsInitOnly, Diagnostics.TypedResolveOfUnprovidedService,
-			Diagnostics.TypedResolveOfWithheldService);
+			Diagnostics.TypedResolveOfWithheldService, Diagnostics.NullableProduct);
 
 	/// <inheritdoc />
 	public override void Initialize(AnalysisContext context)
@@ -84,10 +87,19 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			ConcurrentDictionary<INamedTypeSymbol, Lazy<ContainerGraph>> graphByContainer =
 				new(SymbolEqualityComparer.Default);
 
+			// Several containers report AWT245 at the registration of a module they all import.
+			ConcurrentDictionary<DiagnosticInfo, bool> nullableProducts = new();
 			start.RegisterSymbolAction(
 				ctx => Analyze(
-					(INamedTypeSymbol)ctx.Symbol, containerAttribute, start.Compilation, graphByContainer, ctx.ReportDiagnostic, ctx.CancellationToken),
+					(INamedTypeSymbol)ctx.Symbol, containerAttribute, start.Compilation, graphByContainer, nullableProducts, ctx.ReportDiagnostic, ctx.CancellationToken),
 				SymbolKind.NamedType);
+
+			if (start.Compilation.GetTypeByMetadataName(ModuleAttributeName) is { } moduleAttribute)
+			{
+				start.RegisterSymbolAction(
+					ctx => AnalyzeModule((INamedTypeSymbol)ctx.Symbol, moduleAttribute, start.Compilation, ctx.ReportDiagnostic, ctx.CancellationToken),
+					SymbolKind.NamedType);
+			}
 
 			start.RegisterOperationAction(
 				ctx => AnalyzeProjection(ctx, containerAttribute, start.Compilation, graphByContainer),
@@ -123,6 +135,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		INamedTypeSymbol containerAttribute,
 		Compilation compilation,
 		ConcurrentDictionary<INamedTypeSymbol, Lazy<ContainerGraph>> graphByContainer,
+		ConcurrentDictionary<DiagnosticInfo, bool> nullableProducts,
 		Action<Diagnostic> report,
 		CancellationToken cancellationToken)
 	{
@@ -150,19 +163,43 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			report(ToDiagnostic(diagnostic, compilation));
 		}
 
-		// AWT179 and AWT158 come out of the graph build, but the generator leaves them to the analyzer so that they can
-		// be suppressed in source. An AWT158 the base reports itself is not repeated on a container that extends it.
+		// AWT179, AWT158 and AWT245 come out of the graph build, but the generator leaves them to the analyzer so that
+		// they can be suppressed in source. An AWT158 or AWT245 the base reports itself is not repeated on a container
+		// that extends it, and an AWT245 at the registration of a module several containers import is reported once.
 		List<DiagnosticInfo> fromGraph = built.Diagnostics
-			.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly))
+			.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
+			                     || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct))
 			.Distinct()
 			.ToList();
 		if (AwaitenGenerator.ReadExtends(type) is { } extended)
 		{
 			AwaitenGenerator.RemoveBaseDiagnostics(fromGraph, CachedGraph(graphByContainer, extended, compilation, cancellationToken).Diagnostics
-				.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)));
+				.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)));
 		}
 
-		foreach (DiagnosticInfo diagnostic in fromGraph)
+		foreach (DiagnosticInfo diagnostic in fromGraph.Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct) || nullableProducts.TryAdd(diagnostic, true)))
+		{
+			report(ToDiagnostic(diagnostic, compilation));
+		}
+	}
+
+	// AWT245 for a member a module wraps for a handle comes out of the module's own build when no container of its
+	// assembly imports the module. The generator leaves it to the analyzer so that it can be suppressed in source.
+	private static void AnalyzeModule(
+		INamedTypeSymbol type,
+		INamedTypeSymbol moduleAttribute,
+		Compilation compilation,
+		Action<Diagnostic> report,
+		CancellationToken cancellationToken)
+	{
+		if (!type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, moduleAttribute))
+		    || !AwaitenGenerator.MayReportNullableProduct(type, compilation)
+		    || AwaitenGenerator.BuildModuleModel(type, type.DeclaringSyntaxReferences[0].GetSyntax(cancellationToken), compilation, cancellationToken) is not { } model)
+		{
+			return;
+		}
+
+		foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray().Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)))
 		{
 			report(ToDiagnostic(diagnostic, compilation));
 		}

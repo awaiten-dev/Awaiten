@@ -627,7 +627,7 @@ public static partial class CoffeeShop
 A `Factory` or `Instance` member is declared nullable, such as `Grinder?` or `Task<Grinder?>`, so it may produce `null`, while the container hands the value to every consumer of the service as non-nullable. The warning is reported once at the registration, and the generated code compiles without nullable warnings of its own.
 :::
 
-A container reports it for its own members and for those of the modules it imports. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle.
+A container reports it for its own members and for those of the modules it imports. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle. This is an analyzer diagnostic, so it can be suppressed at a single registration with `#pragma warning disable AWT245` or `[SuppressMessage]`.
 
 ```csharp expect=AWT245
 [Container]

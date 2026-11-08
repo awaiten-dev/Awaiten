@@ -718,6 +718,22 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Whether the build of <paramref name="module" /> may report <see cref="Diagnostics.NullableProduct">AWT245</see>
+	///     for a member it wraps for a handle: a static member of it may produce <see langword="null" />, other assemblies can
+	///     name it, and no container of its assembly imports it, which would report the member itself.
+	/// </summary>
+	internal static bool MayReportNullableProduct(INamedTypeSymbol module, Compilation compilation)
+		=> module.GetMembers().Any(member => member.IsStatic && member switch
+		   {
+			   IMethodSymbol { MethodKind: MethodKind.Ordinary, } method => MayProduceNull(ProducedType(method.ReturnType, compilation)),
+			   IFieldSymbol field => MayProduceNull(field.Type),
+			   IPropertySymbol property => MayProduceNull(property.Type),
+			   _ => false,
+		   })
+		   && IsExternallyAccessible(module)
+		   && !AssemblyModuleIndex.Of(compilation).ImportedByContainer(module);
+
+	/// <summary>
 	///     Completes the handles of a module once its scans and registrations were mirrored, which recorded the internal
 	///     services they need: builds every public implementation, which a consumer may register itself and then shares,
 	///     every implementation registered under accessible services too, every eager or
