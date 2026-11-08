@@ -851,12 +851,12 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static bool IsHiddenAsyncInitialized(
 		INamedTypeSymbol implementation,
-		List<ModuleRegistration> registrations,
+		IEnumerable<ModuleRegistration> registrations,
 		INamedTypeSymbol module,
 		Compilation compilation,
 		List<AsyncInitializerConvention> conventions)
-		=> (HiddenInitializedType(module, registrations[0].Production, registrations[0].Member, implementation, compilation) is var initialized
-		    && MatchingAsyncInitializers(conventions, initialized, convention => IsOfConventionType(initialized, convention.Type)).Count > 0)
+		=> registrations.Any(registration => HiddenInitializedType(module, registration.Production, registration.Member, implementation, compilation) is var initialized
+		                                     && MatchingAsyncInitializers(conventions, initialized, convention => IsOfConventionType(initialized, convention.Type)).Count > 0)
 		   || registrations.Any(registration => NamedArgument(registration.Attribute, "OnActivated") is { } hook
 		                                        && AccessibleMembers(module, hook, compilation).OfType<IMethodSymbol>().Any(method => IsAsyncHookReturn(method.ReturnType, compilation)));
 
