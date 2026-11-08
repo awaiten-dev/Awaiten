@@ -33,10 +33,7 @@ partial class AwaitenGenerator
 				display => decorator.Keys is not { } keys
 					? PresentUnderAnyKey(graph, display)
 					: keys.Any(key => PresentUnderKey(graph, display, key)));
-			if (!rejected.Any(service => NamesClosingOf(service, decorator.Service)))
-			{
-				ReportUnmatchedOpenDecorator(decorator, closings, graph, diagnostics);
-			}
+			ReportUnmatchedOpenDecorator(decorator, closings, graph, rejected, diagnostics);
 
 			foreach (INamedTypeSymbol closed in closings)
 			{
@@ -67,6 +64,34 @@ partial class AwaitenGenerator
 					When: decorator.When));
 			}
 		}
+	}
+
+	/// <summary>
+	///     Records that the registration of <paramref name="service" /> under <paramref name="key" /> was dropped for a
+	///     reported reason: the service, which the checks of missing dependencies look up, and the service with its key,
+	///     which an open decorator selecting that key looks up (see <see cref="RejectedClosingUnderKey" />). No fully
+	///     qualified type name contains the separator, so the two never collide.
+	/// </summary>
+	private static void RecordRejected(HashSet<string> rejected, string service, string? key)
+	{
+		rejected.Add(service);
+		rejected.Add($"{service}{RejectedKeySeparator}{key ?? RejectedUnkeyed}");
+	}
+
+	private const char RejectedKeySeparator = '\0';
+
+	private const string RejectedUnkeyed = "\u0001";
+
+	/// <summary>
+	///     Whether the <paramref name="entry" /> of <see cref="RecordRejected" /> names a closing of
+	///     <paramref name="open" /> dropped under <paramref name="key" />.
+	/// </summary>
+	private static bool RejectedClosingUnderKey(string entry, INamedTypeSymbol open, string? key)
+	{
+		int separator = entry.IndexOf(RejectedKeySeparator);
+		return separator >= 0
+		       && string.Equals(entry.Substring(separator + 1), key ?? RejectedUnkeyed, StringComparison.Ordinal)
+		       && NamesClosingOf(entry.Substring(0, separator), open);
 	}
 
 	/// <summary>
@@ -109,18 +134,21 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Reports AWT210 for each key an open decorator selects that none of its <paramref name="closings" /> is
-	///     registered under.
+	///     registered under, unless a closing of its service was dropped under that key for a reported reason (see
+	///     <see cref="RecordRejected" />).
 	/// </summary>
 	private static void ReportUnmatchedOpenDecorator(
 		OpenDecorateRegistration decorator,
 		List<INamedTypeSymbol> closings,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		// AWT210: a selected key that no closing of the service is registered under.
 		if (decorator.Keys is { Count: > 0, } selected && !(selected.Count == 1 && selected[0] is null))
 		{
-			foreach (string? key in selected.Where(key => !closings.Any(closed => PresentUnderKey(graph, closed.ToDisplayString(FullyQualified), key))))
+			foreach (string? key in selected.Where(key => !closings.Any(closed => PresentUnderKey(graph, closed.ToDisplayString(FullyQualified), key))
+			                                             && !rejected.Any(entry => RejectedClosingUnderKey(entry, decorator.Service, key))))
 			{
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.DecoratedKeyNotRegistered,

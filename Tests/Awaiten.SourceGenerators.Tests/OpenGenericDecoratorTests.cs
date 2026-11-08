@@ -267,6 +267,36 @@ public class OpenGenericDecoratorTests
 	}
 
 	[Test]
+	[Arguments("main", "main", false)]
+	[Arguments("main", "typo", true)]
+	[Arguments(null, "typo", true)]
+	public async Task OpenDecorator_WithAKeyNoClosingHas_ReportsAwt210UnlessTheRejectedClosingHadIt(string? registrationKey, string decoratorKey, bool reported)
+	{
+		string key = registrationKey is null ? string.Empty : $", Key = \"{registrationKey}\"";
+		string fromKey = registrationKey is null ? string.Empty : $"[FromKey(\"{registrationKey}\")] ";
+		GeneratorResult result = Generator.Run($$"""
+		                                         using Awaiten;
+
+		                                         namespace MyCode;
+
+		                                         public interface IRepo<T> { }
+		                                         public sealed class Repo<T> : IRepo<T> where T : class { }
+		                                         public sealed class LoggingRepo<T> : IRepo<T> { public LoggingRepo(IRepo<T> inner) { } }
+		                                         public sealed class Consumer { public Consumer({{fromKey}}IRepo<int> repo) { } }
+
+		                                         [Container]
+		                                         [Singleton(typeof(Repo<>), typeof(IRepo<>){{key}})]
+		                                         [Transient<Consumer>]
+		                                         [Decorate(typeof(LoggingRepo<>), typeof(IRepo<>), Keys = new object[] { "{{decoratorKey}}" })]
+		                                         public static partial class MyContainer;
+		                                         """);
+
+		await That(result.Diagnostics).Contains("*AWT126*").AsWildcard();
+		await That(result.Diagnostics.Any(diagnostic => diagnostic.Contains("AWT210"))).IsEqualTo(reported)
+			.Because("only a closing dropped under the decorator's key explains why no closing has that key, while a typo stays visible");
+	}
+
+	[Test]
 	public async Task OpenComposite_WithKey_FrontsTheClosingsUnderThatKey()
 	{
 		GeneratorResult result = Generator.Run("""

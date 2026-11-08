@@ -299,7 +299,7 @@ partial class AwaitenGenerator
 			}
 
 			inheritance.ReportUnbuildable(registration, fault, diagnostics);
-			constraintRejected.Add(registration.ServiceType);
+			RecordRejected(constraintRejected, registration.ServiceType, registration.Key);
 			registrations.RemoveAt(index--);
 		}
 	}
@@ -353,7 +353,7 @@ partial class AwaitenGenerator
 				}
 
 				inheritance.ReportUnbuildable(registration, hiddenProperty, diagnostics);
-				constraintRejected.Add(registration.ServiceType);
+				RecordRejected(constraintRejected, registration.ServiceType, registration.Key);
 				return true;
 			}
 
@@ -374,7 +374,7 @@ partial class AwaitenGenerator
 				inheritance.Report(subject, diagnostics);
 			}
 
-			constraintRejected.Add(registration.ServiceType);
+			RecordRejected(constraintRejected, registration.ServiceType, registration.Key);
 			return true;
 		});
 
