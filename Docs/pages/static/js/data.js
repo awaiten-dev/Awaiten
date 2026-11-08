@@ -1434,6 +1434,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:08:28 2026 \u002B0100",
         "message": "fix: report relationships over imported services as AWT242 instead of AWT101 (#319)"
+      },
+      {
+        "sha": "b6ae6d30c19337e8710ba1fb7296c01e0580d15e",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
+        "message": "fix: report one precise diagnostic per cause across containers (#323)"
       }
     ],
     "labels": [
@@ -1675,7 +1681,8 @@ window.BENCHMARK_DATA = {
       "94f20091",
       "f8fe7b0e",
       "6a99a1ea",
-      "449d1af3"
+      "449d1af3",
+      "b6ae6d30"
     ],
     "datasets": [
       {
@@ -1920,7 +1927,8 @@ window.BENCHMARK_DATA = {
           6.824906795152596,
           7.770508497953415,
           7.136554079396384,
-          7.141119308769703
+          7.141119308769703,
+          9.006575437692495
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1932,6 +1940,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2423,7 +2432,8 @@ window.BENCHMARK_DATA = {
           6.267078934113185,
           7.374247633985111,
           7.338271382663931,
-          7.372345199187596
+          7.372345199187596,
+          7.5388804731460715
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2435,6 +2445,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2926,7 +2937,8 @@ window.BENCHMARK_DATA = {
           125.0120700677236,
           128.7923367206867,
           115.98913315931956,
-          117.36254660288493
+          117.36254660288493,
+          120.92938704490662
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2938,6 +2950,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3425,7 +3438,8 @@ window.BENCHMARK_DATA = {
           8.905288657546043,
           9.684199734528859,
           8.680305876334508,
-          9.36101267039776
+          9.36101267039776,
+          10.330754904697338
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3437,6 +3451,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3920,7 +3935,8 @@ window.BENCHMARK_DATA = {
           11.598129068102155,
           11.290196977555752,
           11.28231089413166,
-          10.79080934396812
+          10.79080934396812,
+          11.689766970276832
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3932,6 +3948,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5614,6 +5631,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:08:28 2026 \u002B0100",
         "message": "fix: report relationships over imported services as AWT242 instead of AWT101 (#319)"
+      },
+      {
+        "sha": "b6ae6d30c19337e8710ba1fb7296c01e0580d15e",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
+        "message": "fix: report one precise diagnostic per cause across containers (#323)"
       }
     ],
     "labels": [
@@ -5855,7 +5878,8 @@ window.BENCHMARK_DATA = {
       "94f20091",
       "f8fe7b0e",
       "6a99a1ea",
-      "449d1af3"
+      "449d1af3",
+      "b6ae6d30"
     ],
     "datasets": [
       {
@@ -6100,7 +6124,8 @@ window.BENCHMARK_DATA = {
           7.976194777091345,
           8.484177969396114,
           8.153235055009525,
-          8.15751728216807
+          8.15751728216807,
+          10.042467822985989
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6112,6 +6137,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6603,7 +6629,8 @@ window.BENCHMARK_DATA = {
           6.371495060125986,
           7.28302375972271,
           7.298010554696832,
-          7.291215027754124
+          7.291215027754124,
+          7.523002044512675
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6615,6 +6642,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7106,7 +7134,8 @@ window.BENCHMARK_DATA = {
           124.84713789621989,
           124.46529998779297,
           114.08115221659342,
-          119.87440228462219
+          119.87440228462219,
+          116.21976861953735
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7118,6 +7147,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7605,7 +7635,8 @@ window.BENCHMARK_DATA = {
           8.864592114729541,
           9.719227088185457,
           8.705033413569133,
-          9.340637908450194
+          9.340637908450194,
+          10.33907768703424
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7617,6 +7648,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8100,7 +8132,8 @@ window.BENCHMARK_DATA = {
           11.679318968454997,
           14.6636613458395,
           14.866623592376708,
-          14.140096595244747
+          14.140096595244747,
+          14.96371907989184
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8112,6 +8145,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9794,6 +9828,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:08:28 2026 \u002B0100",
         "message": "fix: report relationships over imported services as AWT242 instead of AWT101 (#319)"
+      },
+      {
+        "sha": "b6ae6d30c19337e8710ba1fb7296c01e0580d15e",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
+        "message": "fix: report one precise diagnostic per cause across containers (#323)"
       }
     ],
     "labels": [
@@ -10035,7 +10075,8 @@ window.BENCHMARK_DATA = {
       "94f20091",
       "f8fe7b0e",
       "6a99a1ea",
-      "449d1af3"
+      "449d1af3",
+      "b6ae6d30"
     ],
     "datasets": [
       {
@@ -10280,7 +10321,8 @@ window.BENCHMARK_DATA = {
           12.162520055259977,
           14.801651886531285,
           15.507374908242907,
-          19.26665007472038
+          19.26665007472038,
+          10.881386887814317
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10442,6 +10484,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -10783,7 +10826,8 @@ window.BENCHMARK_DATA = {
           883.0445566177368,
           1099.0976589747838,
           1182.5980622427803,
-          1610.8537506103517
+          1610.8537506103517,
+          758.2382349650065
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -10795,6 +10839,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11286,7 +11331,8 @@ window.BENCHMARK_DATA = {
           19639.7637285505,
           25004.452722167967,
           25718.3619253976,
-          23965.72069091797
+          23965.72069091797,
+          17384.310945638023
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11536,7 +11582,8 @@ window.BENCHMARK_DATA = {
           32476,
           32478,
           32478,
-          32476
+          32476,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11785,7 +11832,8 @@ window.BENCHMARK_DATA = {
           439.56129458972384,
           551.3071691513062,
           655.63094552358,
-          672.2693241119384
+          672.2693241119384,
+          388.25529925028485
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11815,6 +11863,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12280,7 +12329,8 @@ window.BENCHMARK_DATA = {
           7235.634893417358,
           8538.042793273926,
           8905.041313680013,
-          11582.60394185384
+          11582.60394185384,
+          6669.035121917725
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12526,7 +12576,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13974,6 +14025,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:08:28 2026 \u002B0100",
         "message": "fix: report relationships over imported services as AWT242 instead of AWT101 (#319)"
+      },
+      {
+        "sha": "b6ae6d30c19337e8710ba1fb7296c01e0580d15e",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
+        "message": "fix: report one precise diagnostic per cause across containers (#323)"
       }
     ],
     "labels": [
@@ -14215,7 +14272,8 @@ window.BENCHMARK_DATA = {
       "94f20091",
       "f8fe7b0e",
       "6a99a1ea",
-      "449d1af3"
+      "449d1af3",
+      "b6ae6d30"
     ],
     "datasets": [
       {
@@ -14460,7 +14518,8 @@ window.BENCHMARK_DATA = {
           81.68429501851399,
           109.56254595120748,
           112.16558281864438,
-          186.18286761215754
+          186.18286761215754,
+          80.31675535837809
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14622,6 +14681,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -14963,7 +15023,8 @@ window.BENCHMARK_DATA = {
           8085.709020996093,
           10200.926851545062,
           10522.51799214681,
-          11068.848346416768
+          11068.848346416768,
+          7469.809796015422
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14975,6 +15036,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -15466,7 +15528,8 @@ window.BENCHMARK_DATA = {
           466334.13004557294,
           619696.5127704327,
           624431.5793457031,
-          532522.6529017857
+          532522.6529017857,
+          425445.2348257211
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15716,7 +15779,8 @@ window.BENCHMARK_DATA = {
           735272,
           738536,
           740790,
-          721097
+          721097,
+          737923
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15965,7 +16029,8 @@ window.BENCHMARK_DATA = {
           24795.246392822264,
           34915.62215576172,
           34957.98446219308,
-          35987.108162434895
+          35987.108162434895,
+          23204.76030069987
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16211,7 +16276,8 @@ window.BENCHMARK_DATA = {
           79668,
           80274,
           80307,
-          80958
+          80958,
+          80178
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16460,7 +16526,8 @@ window.BENCHMARK_DATA = {
           202877.45229492188,
           260533.3045828683,
           262707.2282877604,
-          320024.9271158854
+          320024.9271158854,
+          207174.48999023438
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16706,7 +16773,8 @@ window.BENCHMARK_DATA = {
           573072,
           573076,
           573058,
-          571205
+          571205,
+          573057
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18130,6 +18198,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 15:08:28 2026 \u002B0100",
         "message": "fix: report relationships over imported services as AWT242 instead of AWT101 (#319)"
+      },
+      {
+        "sha": "b6ae6d30c19337e8710ba1fb7296c01e0580d15e",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 15:26:30 2026 \u002B0100",
+        "message": "fix: report one precise diagnostic per cause across containers (#323)"
       }
     ],
     "labels": [
@@ -18367,7 +18441,8 @@ window.BENCHMARK_DATA = {
       "94f20091",
       "f8fe7b0e",
       "6a99a1ea",
-      "449d1af3"
+      "449d1af3",
+      "b6ae6d30"
     ],
     "datasets": [
       {
@@ -18608,7 +18683,8 @@ window.BENCHMARK_DATA = {
           292.915201480572,
           266.3239319665091,
           252.9982936859131,
-          274.06710709844316
+          274.06710709844316,
+          203.66585115591684
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -18643,6 +18719,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19103,7 +19180,8 @@ window.BENCHMARK_DATA = {
           652.5955965335553,
           611.1438227381025,
           709.2722511291504,
-          625.2112270991007
+          625.2112270991007,
+          458.2563000406538
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19115,6 +19193,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -19598,7 +19677,8 @@ window.BENCHMARK_DATA = {
           5237.947938028971,
           6813.818317667643,
           6589.53933207194,
-          6601.168085225423
+          6601.168085225423,
+          4935.228814806257
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19682,6 +19762,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20093,7 +20174,8 @@ window.BENCHMARK_DATA = {
           415.28731482369557,
           429.8875028746469,
           401.6447895254408,
-          414.80572350819904
+          414.80572350819904,
+          331.5271722475688
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20105,6 +20187,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -20588,7 +20671,8 @@ window.BENCHMARK_DATA = {
           730.7450074513753,
           763.383392906189,
           738.9754593712943,
-          768.3810199737549
+          768.3810199737549,
+          548.5344422022501
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20600,6 +20684,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
