@@ -1488,6 +1488,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
         "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
+      },
+      {
+        "sha": "acc6bc0635fb15d53da0061dc37fd1a40432c2a6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 19:08:14 2026 \u002B0100",
+        "message": "fix!: let every container report the same precise diagnostic once after the module merges (#336)"
       }
     ],
     "labels": [
@@ -1738,7 +1744,8 @@ window.BENCHMARK_DATA = {
       "85160537",
       "707aa9d3",
       "ac9638ce",
-      "e2c70663"
+      "e2c70663",
+      "acc6bc06"
     ],
     "datasets": [
       {
@@ -1992,7 +1999,8 @@ window.BENCHMARK_DATA = {
           7.885323155384797,
           4.541306248732975,
           5.082547610768905,
-          5.558466794235366
+          5.558466794235366,
+          7.688635357966025
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2004,6 +2012,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2513,7 +2522,8 @@ window.BENCHMARK_DATA = {
           7.576357462085211,
           4.444243139525255,
           5.10968748430411,
-          7.530499925216039
+          7.530499925216039,
+          8.367314628683603
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2525,6 +2535,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3034,7 +3045,8 @@ window.BENCHMARK_DATA = {
           142.36944518089294,
           64.61763139565785,
           103.47543415852955,
-          138.14845272210928
+          138.14845272210928,
+          109.08154323895772
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3046,6 +3058,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3551,7 +3564,8 @@ window.BENCHMARK_DATA = {
           9.130574363682951,
           4.859109921256701,
           7.0694118221600855,
-          8.072833123115393
+          8.072833123115393,
+          8.603248942891756
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3563,6 +3577,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4064,7 +4079,8 @@ window.BENCHMARK_DATA = {
           11.22900964663579,
           6.3969748745361965,
           9.403942479441563,
-          10.434835264315971
+          10.434835264315971,
+          10.591305993497372
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4076,6 +4092,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5821,6 +5838,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
         "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
+      },
+      {
+        "sha": "acc6bc0635fb15d53da0061dc37fd1a40432c2a6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 19:08:14 2026 \u002B0100",
+        "message": "fix!: let every container report the same precise diagnostic once after the module merges (#336)"
       }
     ],
     "labels": [
@@ -6071,7 +6094,8 @@ window.BENCHMARK_DATA = {
       "85160537",
       "707aa9d3",
       "ac9638ce",
-      "e2c70663"
+      "e2c70663",
+      "acc6bc06"
     ],
     "datasets": [
       {
@@ -6325,7 +6349,8 @@ window.BENCHMARK_DATA = {
           8.718613616549051,
           4.575609500209491,
           6.199101925960609,
-          7.1259224495062465
+          7.1259224495062465,
+          8.229322677850723
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6337,6 +6362,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6846,7 +6872,8 @@ window.BENCHMARK_DATA = {
           7.542134915788968,
           4.336470920840899,
           5.120544544779337,
-          7.533840162058671
+          7.533840162058671,
+          8.343605825943607
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -6858,6 +6885,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7367,7 +7395,8 @@ window.BENCHMARK_DATA = {
           144.4542724609375,
           77.94411536852519,
           105.44659826755523,
-          140.66918441227503
+          140.66918441227503,
+          107.13695571252278
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7379,6 +7408,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -7884,7 +7914,8 @@ window.BENCHMARK_DATA = {
           9.157581228476305,
           4.767391532162825,
           6.876946711769471,
-          8.197971732666096
+          8.197971732666096,
+          8.386562468750137
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -7896,6 +7927,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8397,7 +8429,8 @@ window.BENCHMARK_DATA = {
           14.719674525352625,
           8.25977043578258,
           9.681645086407661,
-          13.160191936152321
+          13.160191936152321,
+          14.761525054063116
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8409,6 +8442,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10154,6 +10188,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
         "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
+      },
+      {
+        "sha": "acc6bc0635fb15d53da0061dc37fd1a40432c2a6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 19:08:14 2026 \u002B0100",
+        "message": "fix!: let every container report the same precise diagnostic once after the module merges (#336)"
       }
     ],
     "labels": [
@@ -10404,7 +10444,8 @@ window.BENCHMARK_DATA = {
       "85160537",
       "707aa9d3",
       "ac9638ce",
-      "e2c70663"
+      "e2c70663",
+      "acc6bc06"
     ],
     "datasets": [
       {
@@ -10658,7 +10699,8 @@ window.BENCHMARK_DATA = {
           19.405794709920883,
           23.268973253667355,
           19.81194956700007,
-          12.97881486586162
+          12.97881486586162,
+          15.417523107358388
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -10820,6 +10862,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11179,7 +11222,8 @@ window.BENCHMARK_DATA = {
           1502.5202003479003,
           1623.9141528265816,
           1463.9618835449219,
-          912.9025975545247
+          912.9025975545247,
+          1165.4850970904033
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11191,6 +11235,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -11700,7 +11745,8 @@ window.BENCHMARK_DATA = {
           29986.344799804687,
           31356.95405796596,
           29543.194970703124,
-          19144.718843900242
+          19144.718843900242,
+          25986.30417742048
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -11959,7 +12005,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32482,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12217,7 +12264,8 @@ window.BENCHMARK_DATA = {
           758.6436236699423,
           787.4553489049275,
           704.0583344187055,
-          411.9698271017808
+          411.9698271017808,
+          589.100850718362
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12247,6 +12295,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -12730,7 +12779,8 @@ window.BENCHMARK_DATA = {
           12150.998370361329,
           13283.391186305455,
           11494.40445251465,
-          7058.468463134765
+          7058.468463134765,
+          9099.578902180989
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12985,6 +13035,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -14487,6 +14538,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
         "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
+      },
+      {
+        "sha": "acc6bc0635fb15d53da0061dc37fd1a40432c2a6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 19:08:14 2026 \u002B0100",
+        "message": "fix!: let every container report the same precise diagnostic once after the module merges (#336)"
       }
     ],
     "labels": [
@@ -14737,7 +14794,8 @@ window.BENCHMARK_DATA = {
       "85160537",
       "707aa9d3",
       "ac9638ce",
-      "e2c70663"
+      "e2c70663",
+      "acc6bc06"
     ],
     "datasets": [
       {
@@ -14991,7 +15049,8 @@ window.BENCHMARK_DATA = {
           180.51691462312425,
           194.80716727330133,
           180.41212045351665,
-          82.3854878459658
+          82.3854878459658,
+          112.1844208751406
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15153,6 +15212,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -15512,7 +15572,8 @@ window.BENCHMARK_DATA = {
           14785.285142008464,
           16379.489182692309,
           14319.290048217774,
-          7741.3115964617045
+          7741.3115964617045,
+          10591.203204345704
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15524,6 +15585,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -16033,7 +16095,8 @@ window.BENCHMARK_DATA = {
           750553.693359375,
           794303.281640625,
           725291.8731119792,
-          447889.6991141183
+          447889.6991141183,
+          637536.7946940104
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16292,7 +16355,8 @@ window.BENCHMARK_DATA = {
           738521,
           736500,
           740459,
-          739991
+          739991,
+          742568
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16550,7 +16614,8 @@ window.BENCHMARK_DATA = {
           46934.35944010417,
           49341.25580240886,
           43555.69718279158,
-          25043.411218261717
+          25043.411218261717,
+          35136.46859305246
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16805,7 +16870,8 @@ window.BENCHMARK_DATA = {
           80083,
           81172,
           80011,
-          80773
+          80773,
+          80977
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17063,7 +17129,8 @@ window.BENCHMARK_DATA = {
           376631.10891927086,
           412483.72054036456,
           351065.3192313058,
-          226784.47591145834
+          226784.47591145834,
+          269305.24384765624
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17318,7 +17385,8 @@ window.BENCHMARK_DATA = {
           573106,
           573139,
           573072,
-          573026
+          573026,
+          573075
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18796,6 +18864,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:16:10 2026 \u002B0100",
         "message": "feat: run hooks of open generic registrations through generated factories and close the other open generic leftovers (#335)"
+      },
+      {
+        "sha": "acc6bc0635fb15d53da0061dc37fd1a40432c2a6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 8 19:08:14 2026 \u002B0100",
+        "message": "fix!: let every container report the same precise diagnostic once after the module merges (#336)"
       }
     ],
     "labels": [
@@ -19042,7 +19116,8 @@ window.BENCHMARK_DATA = {
       "85160537",
       "707aa9d3",
       "ac9638ce",
-      "e2c70663"
+      "e2c70663",
+      "acc6bc06"
     ],
     "datasets": [
       {
@@ -19292,7 +19367,8 @@ window.BENCHMARK_DATA = {
           245.07016881306967,
           171.93412189483644,
           215.0781934091023,
-          284.6343528674199
+          284.6343528674199,
+          440.5213768005371
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -19327,6 +19403,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -19805,7 +19882,8 @@ window.BENCHMARK_DATA = {
           729.9382561047872,
           429.698066677366,
           496.8834877649943,
-          699.241168315594
+          699.241168315594,
+          610.550297164917
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -19817,6 +19895,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -20318,7 +20397,8 @@ window.BENCHMARK_DATA = {
           6690.71885735648,
           4248.451327187674,
           3837.7540189302886,
-          6634.936462402344
+          6634.936462402344,
+          6730.166128976004
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20402,6 +20482,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -20831,7 +20912,8 @@ window.BENCHMARK_DATA = {
           399.97638374964396,
           279.62450671195984,
           339.2960881846292,
-          436.56296154430936
+          436.56296154430936,
+          415.6545446395874
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20843,6 +20925,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -21344,7 +21427,8 @@ window.BENCHMARK_DATA = {
           723.8585012299674,
           429.7898153236934,
           539.8268969609187,
-          766.3444117863972
+          766.3444117863972,
+          754.2938163121541
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21356,6 +21440,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
