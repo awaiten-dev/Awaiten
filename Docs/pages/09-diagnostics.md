@@ -2710,7 +2710,7 @@ This checks that the project can compile the code Awaiten generates.
 ### AWT243
 
 :::danger[Error]
-The project compiles with a C# version older than the code Awaiten generates needs. A container, and a module that generates code, needs C# 9 or later; a module that declares a `[Scan]` needs C# 11 or later, because it records each match as a generic attribute. Awaiten generates nothing for that container or module and reports only this error, at its declaration, instead of the compiler errors the generated code would cause. Projects that target .NET Framework or netstandard2.0 default to C# 7.3.
+The project compiles with a C# version older than the code Awaiten generates needs. A container, and a module that generates code, needs C# 9 or later; a module that declares a `[Scan]` needs C# 11 or later, because it records each match as a generic attribute. Awaiten generates nothing for that container or module and reports only this error, at its declaration, instead of the compiler errors the generated code would cause. When it skips a module that declares a `[Scan]`, the other containers and modules of the assembly could refer to the code that module lacks, so they generate nothing either and a container keeps only a placeholder `Root`. Projects that target .NET Framework or netstandard2.0 default to C# 7.3.
 :::
 
 ```xml title="CoffeeShop.csproj"
@@ -2719,7 +2719,7 @@ The project compiles with a C# version older than the code Awaiten generates nee
 </PropertyGroup>
 ```
 
-**Fix:** Raise the language version in the project file. Any target framework, .NET Framework 4.8 included, can use the latest version:
+**Fix:** Raise the language version in the project file. Any target framework, .NET Framework 4.8 included, can use the latest version, and the generated code needs no polyfill package for it:
 
 ```xml title="CoffeeShop.csproj"
 <PropertyGroup>
