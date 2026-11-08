@@ -628,7 +628,9 @@ public partial class ContainerExtendsTests
 	public static partial class DecoratedTestShop;
 
 	[Container]
+#pragma warning disable AWT249 // the extending container registers the closing
 	[Decorate(typeof(AuditedRepository<>), typeof(IRepository<>))]
+#pragma warning restore AWT249
 	public static partial class OpenDecoratedShop;
 
 	[Container(Extends = typeof(OpenDecoratedShop))]

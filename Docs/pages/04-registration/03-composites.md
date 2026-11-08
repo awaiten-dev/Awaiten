@@ -61,10 +61,13 @@ public sealed class CompositeHandler<T>(IEnumerable<IHandler<T>> inner) : IHandl
     public Task HandleAsync(T request) => Task.WhenAll(inner.Select(h => h.HandleAsync(request)));
 }
 
+public sealed class ReceiptDesk(IHandler<Receipt> handler);
+
 [Container]
 [Transient(typeof(EmailHandler<>), typeof(IHandler<>))]
 [Transient(typeof(SmsHandler<>), typeof(IHandler<>))]
 [Composite(typeof(CompositeHandler<>), typeof(IHandler<>))]
+[Transient<ReceiptDesk>]   // needs IHandler<Receipt>, so that closing is in the graph
 public static partial class CoffeeShop;
 
 // Resolve<IHandler<Receipt>>() returns CompositeHandler<Receipt> fanning out to the Receipt handlers
