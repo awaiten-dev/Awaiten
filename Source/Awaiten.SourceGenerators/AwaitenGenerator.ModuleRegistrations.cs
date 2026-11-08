@@ -504,8 +504,8 @@ partial class AwaitenGenerator
 	///     Reports, in the module's own build, what is wrong with the <c>Factory</c> and <c>Instance</c> members of its
 	///     closed registrations whatever container imports the module, since a container in another assembly sees neither
 	///     a member's body nor a private member: a registered type private to the module (AWT216), which no container can
-	///     name, a factory parameter of a type private to the module (AWT195), which no container can resolve, worded like
-	///     the handle's own report of it, so the module reports it once, a factory body that hides async initialization
+	///     name, a factory parameter of a type private to the module (AWT195), which no container can resolve and which
+	///     the module reports once (see <see cref="DistinctModuleDiagnostics" />), a factory body that hides async initialization
 	///     behind the declared return type (AWT106), and a convention
 	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
 	///     <see cref="OwnedMemberType" />).
@@ -549,13 +549,10 @@ partial class AwaitenGenerator
 			IMethodSymbol factory = candidates[0];
 			if (HiddenParameter(factory, module, compilation) is { } hiddenParameter)
 			{
-				string subject = IsHiddenService(registration.Service, module, compilation)
-					? $"'{typeName}' is registered under the internal service '{Display(registration.Service.ToDisplayString(FullyQualified))}', which a consuming container reaches through a generated handle"
-					: $"'{typeName}' is produced by the module's factory '{member}'";
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.ModuleParameterHiddenInModule,
 					LocationInfo.From(registration.Location),
-					new EquatableArray<string>([subject, hiddenParameter.Name, Display(TypeHiddenInModule(hiddenParameter.Type, module, compilation)!.ToDisplayString(FullyQualified)),])));
+					new EquatableArray<string>([$"'{typeName}' is registered through the module", $"the parameter '{hiddenParameter.Name}' of its factory '{member}'",Display(TypeHiddenInModule(hiddenParameter.Type, module, compilation)!.ToDisplayString(FullyQualified)),])));
 			}
 
 			conventions ??= DeclaredAsyncInitializers(module, compilation, null);

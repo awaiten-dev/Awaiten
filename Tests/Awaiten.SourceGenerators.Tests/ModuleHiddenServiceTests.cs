@@ -1871,14 +1871,49 @@ public class ModuleHiddenServiceTests
 		{
 			const string registration = "Singleton<IKettle>(Factory = nameof(Make))";
 			const string members = "private static IKettle Make(Impl impl) => impl;";
-			const string expected = "*AWT195*'Lib.IKettle' is registered under the internal service 'Lib.IKettle'*parameter 'impl' needs 'Lib.CoffeeModule.Impl', which is private to the module*";
+			const string expected = "*AWT195*'Lib.IKettle' is registered through the module, but the parameter 'impl' of its factory 'Make' needs 'Lib.CoffeeModule.Impl', which is private to the module*";
 
-			await That(Generator.Run(Library(registration, members)).Diagnostics).Contains(expected).AsWildcard()
+			await That(Generator.Run(Library(registration, members)).Diagnostics).Contains(expected).AsWildcard();
+			await That(Generator.Run(Library(registration, members)).Diagnostics).Contains("*AWT195*'impl'*").AsWildcard().Exactly(1)
 				.Because("the module reports it once, though its handle reports the same parameter");
 			await That(Generator.Run(Library(registration, members, grant: true)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
-				.Because("no container can resolve a type private to the module, so a friend cannot either");
+				.Because("no container can resolve a type private to the module, so a friend cannot either, and a friend reaches no handle");
 			await That(Generator.Run(Library(registration, members) + Container).Diagnostics).IsEqualTo(Generator.Run(Library(registration, members)).Diagnostics)
 				.Because("the module reports it, so the container in its assembly adds nothing");
+		}
+	}
+
+	public class PrivateParameterOfAPrivateImplementation
+	{
+		private static string Library(bool grant = false) => $$"""
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			internal interface IFoo { }
+			public interface IUser { }
+			internal sealed class User : IUser { public User(IFoo foo) { } }
+
+			[Module]
+			[Singleton<CoffeeModule.Impl, IFoo>]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    private sealed class Other { }
+			    private sealed class Impl : IFoo { public Impl(Other other) { } }
+			}
+			""";
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task IsReportedOnce(bool grant)
+		{
+			await That(Generator.Run(Library(grant)).Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Impl' is self-compiled*constructor parameter 'other' needs 'Lib.CoffeeModule.Other'*").AsWildcard().Exactly(1);
+			await That(Generator.Run(Library(grant)).Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Other'*").AsWildcard().Exactly(1)
+				.Because("the module's factory and the service's handle reject the same parameter, which is one problem");
 		}
 	}
 

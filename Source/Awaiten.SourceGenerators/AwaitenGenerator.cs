@@ -243,7 +243,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			hintName,
 			expanded,
 			new EquatableArray<ModuleFactory>(factories.ToArray()),
-			new EquatableArray<DiagnosticInfo>(diagnostics.Distinct().ToArray()),
+			new EquatableArray<DiagnosticInfo>(DistinctModuleDiagnostics(diagnostics).ToArray()),
 			declaresScan,
 			new EquatableArray<RegistrationFactory>(registrations.ToArray()),
 			new EquatableArray<SkippedRegistration>(skipped.ToArray()),
@@ -252,6 +252,18 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<HiddenHandle>(handles.ToArray()),
 			new EquatableArray<HiddenAlias>(aliases.ToArray()),
 			new EquatableArray<HiddenInitializer>(initializers.ToArray()));
+	}
+
+	/// <summary>
+	///     The distinct <paramref name="diagnostics" /> of a module, keeping only the first report of a parameter type
+	///     private to the module (AWT195) at one place: the module's factory of a type and the handle of its service, or
+	///     the module's report of a <c>Factory</c> member and the member's handle, reject the same parameter.
+	/// </summary>
+	private static IEnumerable<DiagnosticInfo> DistinctModuleDiagnostics(List<DiagnosticInfo> diagnostics)
+	{
+		HashSet<(LocationInfo?, string)> hiddenParameters = new();
+		return diagnostics.Distinct().Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.ModuleParameterHiddenInModule)
+		                                                  || hiddenParameters.Add((diagnostic.Location, diagnostic.MessageArgs.AsArray()[2])));
 	}
 
 	/// <summary>
