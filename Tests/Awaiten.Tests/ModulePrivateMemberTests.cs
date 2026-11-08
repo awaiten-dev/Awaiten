@@ -117,6 +117,113 @@ public partial class ModulePrivateMemberTests
 			.Because("the container never disposes an Instance");
 	}
 
+	[Test]
+	public async Task ContainerInAnotherAssembly_ProducesPrivateTypesAndRunsTheMembersOfOverloadedNames()
+	{
+		IPrivateMemberBarista barista;
+		await using (PrivateMemberContainer.Root container = new())
+		{
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				barista = await scope.ResolveAsync<IPrivateMemberBarista>();
+			}
+
+			await That(barista.Pot.Started).IsTrue()
+				.Because("the convention initializes the type the private factory returns, though its service does not implement it");
+			await That(barista.Spoon.Activated && barista.Spoon.Disposed).IsTrue()
+				.Because("the internal factory and hook run though public overloads of other types share their names");
+			await That(barista.Heater.Disposed || barista.Pot.Disposed).IsFalse();
+		}
+
+		await That(barista.Heater.Disposed && barista.Pot.Disposed).IsTrue()
+			.Because("the container disposes what the private factories produced, a type private to the module included");
+		await That(barista.Rack.Disposed).IsFalse()
+			.Because("the container never disposes an Instance");
+	}
+
+	[Test]
+	public async Task ContainerInAnAssemblyGrantedInternalsVisibleTo_ProducesPrivateTypesAndRunsTheMembersOfOverloadedNames()
+	{
+		IFriendPrivateMemberBarista barista;
+		await using (FriendPrivateMemberContainer.Root container = new())
+		{
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				barista = await scope.ResolveAsync<IFriendPrivateMemberBarista>();
+			}
+
+			await That(barista.Pot.Started).IsTrue()
+				.Because("the convention initializes the type the private factory returns, as in a container in another assembly");
+			await That(barista.Spoon.Activated && barista.Spoon.Disposed).IsTrue();
+			await That(barista.Heater.Disposed || barista.Pot.Disposed).IsFalse();
+		}
+
+		await That(barista.Heater.Disposed && barista.Pot.Disposed).IsTrue()
+			.Because("the internal wrapper returns the service in place of the type private to the module, whose disposal shows at run time");
+		await That(barista.Rack.Disposed).IsFalse();
+	}
+
+	[Test]
+	public async Task ContainerInTheModulesAssembly_ProducesPrivateTypesAndRunsTheMembersOfOverloadedNames()
+	{
+		IFriendPrivateMemberBarista barista;
+		await using (FriendPrivateMemberLocalContainer.Root container = new())
+		{
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				barista = await scope.ResolveAsync<IFriendPrivateMemberBarista>();
+			}
+
+			await That(barista.Pot.Started).IsTrue();
+			await That(barista.Spoon.Activated && barista.Spoon.Disposed).IsTrue();
+			await That(barista.Heater.Disposed || barista.Pot.Disposed).IsFalse();
+		}
+
+		await That(barista.Heater.Disposed && barista.Pot.Disposed).IsTrue();
+		await That(barista.Rack.Disposed).IsFalse();
+	}
+
+	[Test]
+	public async Task InternalModule_ContainerInAnAssemblyGrantedInternalsVisibleTo_ProducesItsServicesThroughThePrivateMembers()
+	{
+		IFriendPrivateMemberState heater;
+		IFriendPrivateMemberState shelf;
+		await using (InternalModuleFriendContainer.Root container = new())
+		{
+			heater = await container.ResolveAsync<IFriendPrivateMemberState>();
+			shelf = await container.ResolveAsync<IInternalModuleShelf>();
+
+			await That(await container.ResolveAsync<IFriendPrivateMemberState>()).IsSameAs(heater)
+				.Because("the private factory of the internal module produces one singleton");
+		}
+
+		await That(heater.Disposed).IsTrue()
+			.Because("the container disposes what the private factory produced");
+		await That(shelf.Disposed).IsFalse()
+			.Because("the container never disposes an Instance");
+	}
+
+	[Test]
+	public async Task InternalModule_ContainerInTheModulesAssembly_ProducesItsServicesThroughThePrivateMembers()
+	{
+		IFriendPrivateMemberState heater;
+		IFriendPrivateMemberState shelf;
+		await using (InternalModuleLocalContainer.Root container = new())
+		{
+			heater = await container.ResolveAsync<IFriendPrivateMemberState>();
+			shelf = await container.ResolveAsync<IInternalModuleShelf>();
+
+			await That(await container.ResolveAsync<IFriendPrivateMemberState>()).IsSameAs(heater);
+		}
+
+		await That(heater.Disposed).IsTrue();
+		await That(shelf.Disposed).IsFalse();
+	}
+
+	[Container]
+	[Import(typeof(InternalPrivateMemberModule))]
+	internal static partial class InternalModuleFriendContainer;
+
 	[Container]
 	[Import(typeof(CrossAssemblyPrivateMemberModule))]
 	public static partial class PrivateMemberContainer;

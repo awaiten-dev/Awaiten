@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Awaiten.SourceGenerators.Tests;
 
@@ -232,6 +234,7 @@ public class ModuleHiddenServiceTests
 			public sealed class Clock : IClock { }
 			internal interface IStartable { Task StartAsync(); }
 			internal sealed class Warmer : IStartable { public Task StartAsync() => Task.CompletedTask; }
+			internal sealed class Boiler { }
 
 			[Module]
 			[AsyncInitializer<IStartable>(nameof(IStartable.StartAsync))]
@@ -241,37 +244,37 @@ public class ModuleHiddenServiceTests
 			""";
 
 		[Test]
-		[Arguments("[Singleton<Warmer>(Eager = true)]")]
-		[Arguments("[Singleton<Warmer>]")]
-		public async Task InternalSingletonAConsumerStarts_GetsAHandleInAModuleWithNothingElseToGenerate(string registration)
+		[Arguments("[Singleton<Boiler>(Eager = true)]", "global::Lib.Boiler")]
+		[Arguments("[Singleton<Warmer>]", "global::Lib.Warmer")]
+		public async Task InternalSingletonAConsumerStarts_GetsAHandleInAModuleWithNothingElseToGenerate(string registration, string implementation)
 		{
 			GeneratorResult result = RunLibrary(Library(registration));
 
 			await That(result.Diagnostics).IsEmpty();
-			await That(ModuleSource(result)).Contains(HiddenFactory("global::Lib.Warmer"))
+			await That(ModuleSource(result)).Contains(HiddenFactory(implementation))
 				.Because("a consumer builds an eager or async-initialized singleton though nothing depends on it, so the module needs its handle even without any other generated member");
 		}
 
 		[Test]
-		[Arguments("[Singleton<Warmer>(Eager = true)]", "eager")]
-		[Arguments("[Singleton<Warmer>]", "async-initialized")]
-		public async Task InternalSingletonAConsumerStarts_InAModuleThatIsNotPartial_ReportsAwt194(string registration, string kind)
+		[Arguments("[Singleton<Boiler>(Eager = true)]", "eager internal singleton 'Lib.Boiler'")]
+		[Arguments("[Singleton<Warmer>]", "async-initialized internal singleton 'Lib.Warmer'")]
+		public async Task InternalSingletonAConsumerStarts_InAModuleThatIsNotPartial_ReportsAwt194(string registration, string singleton)
 		{
 			GeneratorResult result = RunLibrary(Library(registration, partial: false));
 
-			await That(result.Diagnostics).Contains($"*AWT194*'Lib.CoffeeModule' registers the {kind} internal singleton 'Lib.Warmer'*not partial*").AsWildcard()
+			await That(result.Diagnostics).Contains($"*AWT194*'Lib.CoffeeModule' registers the {singleton}*not partial*").AsWildcard()
 				.Because("a module that cannot receive the handle would let a container in another assembly drop the singleton silently");
 		}
 
 		[Test]
 		public async Task InternalSingletonAConsumerStarts_InAModuleThatIsNotPartialUnderAGrant_ReportsAwt231InAConsumerWithoutIt()
 		{
-			string library = Library("[Singleton<Warmer>(Eager = true)]", partial: false, grant: true);
+			string library = Library("[Singleton<Boiler>(Eager = true)]", partial: false, grant: true);
 
 			await That(RunLibrary(library).Diagnostics).IsEmpty()
 				.Because("an assembly granted InternalsVisibleTo constructs the singleton itself");
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer.Container).Diagnostics)
-				.Contains("*AWT231*'Lib.CoffeeModule' registers 'Lib.Warmer'*no handle for it because the module, or a class that contains it, is not partial*").AsWildcard()
+				.Contains("*AWT231*'Lib.CoffeeModule' registers 'Lib.Boiler'*no handle for it because the module, or a class that contains it, is not partial*").AsWildcard()
 				.Because("a container that can neither name nor construct the singleton reports it instead of silently never building it");
 		}
 
@@ -1775,6 +1778,428 @@ public class ModuleHiddenServiceTests
 			await That(Generator.Run(Library(production, service: "IPublicKettle") + Container).Diagnostics).HasSingle().Which.Contains($"*AWT153*'{member}'*").AsWildcard();
 			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle"), Consumer).Diagnostics).HasSingle().Which.Contains($"*{id}*'{member}'*").AsWildcard();
 			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, service: "IPublicKettle", grant: true), Consumer).Diagnostics).HasSingle().Which.Contains($"*{id}*'{member}'*").AsWildcard();
+		}
+	}
+
+	public class PrivateTypeInTheSignatureOfAPrivateMember
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(string registration, string members, bool grant = false) => $$"""
+			using System.Threading.Tasks;
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			public interface IUser { }
+			internal interface IKettle { }
+			internal interface IWarm { Task WarmAsync(); }
+			internal sealed class User : IUser { public User(IKettle kettle) { } }
+
+			[Module]
+			[AsyncInitializer<IWarm>(nameof(IWarm.WarmAsync))]
+			[{{registration}}]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    private sealed class Impl : IKettle { }
+			    private sealed class WarmImpl : IKettle, IWarm { public Task WarmAsync() => Task.CompletedTask; }
+			    {{members}}
+			}
+			""";
+
+		private static string Wrapper(string kind, string member)
+			=> $"{kind}_{member}_{Fnv1a($"{member}\0global::Lib.IKettle"):x8}";
+
+		[Test]
+		[Arguments("Factory = nameof(Make)", "private static Impl Make() => new Impl();", "internal static global::Lib.IKettle Factory_Make_{0}() => Make();")]
+		[Arguments("Factory = nameof(Make)", "private static async Task<Impl> Make() { await Task.Yield(); return new Impl(); }", "internal static async global::System.Threading.Tasks.Task<global::Lib.IKettle> Factory_Make_{0}() => await Make().ConfigureAwait(false);")]
+		[Arguments("Instance = nameof(Make)", "private static readonly Impl Make = new();", "internal static global::Lib.IKettle Instance_Make_{0} => Make;")]
+		public async Task ReturnType_EveryContainerBuildsItThroughAWrapperReturningTheRegisteredType(string production, string members, string wrapper)
+		{
+			string library = Library($"Singleton<IKettle>({production})", members);
+			string granted = Library($"Singleton<IKettle>({production})", members, grant: true);
+			string kind = production.StartsWith("Instance") ? "Instance" : "Factory";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(ModuleSource(Generator.Run(library))).Contains(string.Format(wrapper, Fnv1a("Make\0global::Lib.IKettle").ToString("x8")))
+				.Because("no container can name the private type, so the wrapper returns the registered type");
+			await That(Generator.Run(granted).Diagnostics).IsEmpty();
+			await That(Generator.Run(library + Container).Diagnostics).IsEmpty();
+			await That(Generator.Run(library + Container).Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{Wrapper(kind, "Make")}");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).IsEmpty()
+				.Because("a container in another assembly takes the internal service through its handle");
+			await That(Generator.RunWithGeneratedReferencedAssembly(granted, Consumer).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(granted, Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{Wrapper(kind, "Make")}")
+				.Because("a friend calls the wrapper like a container in the module's own assembly");
+		}
+
+		[Test]
+		public async Task ReturnTypeInitializedByAConventionTheRegisteredTypeIsNot_IsReportedInTheLibraryBuild()
+		{
+			string library = Library("Singleton<IKettle>(Factory = nameof(Make))", "private static WarmImpl Make() => new WarmImpl();");
+			const string expected = "*AWT234*'Lib.CoffeeModule.WarmImpl', which the module's factory 'Make' returns,*'Lib.IWarm.WarmAsync'*private to the module*registered type 'Lib.IKettle'*";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
+				.Because("every container sees the factory return the registered type, so the convention would silently never run");
+			await That(Generator.Run(Library("Singleton<IKettle>(Factory = nameof(Make))", "private static WarmImpl Make() => new WarmImpl();", grant: true)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard();
+			await That(Generator.Run(library + Container).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
+				.Because("the module reports it once, so the container in its assembly adds nothing");
+		}
+
+		[Test]
+		[Arguments("Singleton<CoffeeModule.Impl, IKettle>(Factory = nameof(Make))", "private static Impl Make() => new Impl();", "Factory")]
+		[Arguments("Singleton<CoffeeModule.Impl, IKettle>(Instance = nameof(Make))", "private static readonly Impl Make = new();", "Instance")]
+		public async Task RegisteredType_IsReportedInTheLibraryBuild(string registration, string members, string kind)
+		{
+			string expected = $"*AWT216*'Lib.CoffeeModule.Impl' cannot be registered*only the module can name it*[Singleton<Lib.IKettle>({kind} = nameof(Make))]*";
+
+			await That(Generator.Run(Library(registration, members)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
+				.Because("no container can name the private type it would hold the instance as, wherever it imports the module");
+			await That(Generator.Run(Library(registration, members, grant: true)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard();
+			await That(Generator.Run(Library(registration, members) + Container).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
+				.Because("the module reports it once, so the container in its assembly adds nothing");
+		}
+
+		[Test]
+		[Arguments(ReportDiagnostic.Warn)]
+		[Arguments(ReportDiagnostic.Suppress)]
+		public async Task RegisteredType_LoweredBelowAnError_LeavesTheContainerInTheModulesAssemblyNoShell(ReportDiagnostic severity)
+		{
+			string library = Library("Singleton<CoffeeModule.Impl, IKettle>(Factory = nameof(Make))", "private static Impl Make() => new Impl();")
+				.Replace("[Singleton<User, IUser>]", "");
+
+			GeneratorResult lowered = Generator.Run(library + Container, new Dictionary<string, ReportDiagnostic> { ["AWT216"] = severity, });
+			GeneratorResult error = Generator.Run(library + Container, new Dictionary<string, ReportDiagnostic>());
+
+			await That(lowered.Sources["Awaiten.Lib.MyContainer.g.cs"]).DoesNotContain("has registration errors")
+				.Because("the library build no longer fails, so a shell would compile and throw only at run time");
+			await That(error.Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains("has registration errors")
+				.Because("the module's error fails the build, and the graph lacks the registration it rejects");
+		}
+
+		[Test]
+		public async Task Parameter_IsReportedInTheLibraryBuildWhetherOrNotItGrantsInternalsVisibleTo()
+		{
+			const string registration = "Singleton<IKettle>(Factory = nameof(Make))";
+			const string members = "private static IKettle Make(Impl impl) => impl;";
+			const string expected = "*AWT195*'Lib.IKettle' is registered through the module, but the parameter 'impl' of its factory 'Make' needs 'Lib.CoffeeModule.Impl', which is private to the module*";
+
+			await That(Generator.Run(Library(registration, members)).Diagnostics).Contains(expected).AsWildcard();
+			await That(Generator.Run(Library(registration, members)).Diagnostics).Contains("*AWT195*'impl'*").AsWildcard().Exactly(1)
+				.Because("the module reports it once, though its handle reports the same parameter");
+			await That(Generator.Run(Library(registration, members, grant: true)).Diagnostics).HasSingle().Which.Contains(expected).AsWildcard()
+				.Because("no container can resolve a type private to the module, so a friend cannot either, and a friend reaches no handle");
+			await That(Generator.Run(Library(registration, members) + Container).Diagnostics).IsEqualTo(Generator.Run(Library(registration, members)).Diagnostics)
+				.Because("the module reports it, so the container in its assembly adds nothing");
+		}
+	}
+
+	public class PrivateParameterOfAPrivateImplementation
+	{
+		private static string Library(bool grant = false) => $$"""
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			internal interface IFoo { }
+			public interface IUser { }
+			internal sealed class User : IUser { public User(IFoo foo) { } }
+
+			[Module]
+			[Singleton<CoffeeModule.Impl, IFoo>]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    private sealed class Other { }
+			    private sealed class Impl : IFoo { public Impl(Other other) { } }
+			}
+			""";
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task IsReportedOnce(bool grant)
+		{
+			await That(Generator.Run(Library(grant)).Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Impl' is self-compiled*constructor parameter 'other' needs 'Lib.CoffeeModule.Other'*").AsWildcard().Exactly(1);
+			await That(Generator.Run(Library(grant)).Diagnostics).Contains("*AWT195*'Lib.CoffeeModule.Other'*").AsWildcard().Exactly(1)
+				.Because("the module's factory and the service's handle reject the same parameter, which is one problem");
+		}
+	}
+
+	public class PrivateMemberOfAnInternalModule
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(string service, string production, string member) => $$"""
+			using Awaiten;
+
+			[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+			namespace Lib;
+
+			{{service}} interface IKettle { }
+			internal sealed class Kettle : IKettle { }
+
+			[Module]
+			[Singleton<IKettle>({{production}})]
+			internal static partial class CoffeeModule
+			{
+			    {{member}}
+			}
+			""";
+
+		[Test]
+		[Arguments("internal", "Factory = nameof(Make)", "private static IKettle Make() => new Kettle();")]
+		[Arguments("internal", "Instance = nameof(Shared)", "private static readonly IKettle Shared = new Kettle();")]
+		[Arguments("public", "Factory = nameof(Make)", "private static IKettle Make() => new Kettle();")]
+		[Arguments("public", "Instance = nameof(Shared)", "private static readonly IKettle Shared = new Kettle();")]
+		public async Task EveryContainer_CallsItThroughAnInternalWrapper(string service, string production, string member)
+		{
+			string library = Library(service, production, member);
+			string kind = production.StartsWith("Instance") ? "Instance" : "Factory";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(Generator.Run(library + Container).Diagnostics).IsEmpty()
+				.Because("the container in the module's assembly calls the internal wrapper instead of the private member");
+			await That(Generator.Run(library + Container).Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{kind}_");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).IsEmpty()
+				.Because("only the module's assembly and its friends can import an internal module, and each of them reaches an internal wrapper");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains($"global::Lib.CoffeeModule.Internals.{kind}_");
+		}
+	}
+
+	public class HookOfAnotherType
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private static string Library(string service, string factory) => $$"""
+			using Awaiten;
+
+			namespace Lib;
+
+			{{service}} interface IKettle { }
+			internal interface IOther { }
+			internal sealed class Kettle : IKettle { }
+			public interface IUser { }
+			internal sealed class User : IUser { public User(IKettle kettle) { } }
+
+			[Module]
+			[Singleton<IKettle>(Factory = nameof(Make), OnActivated = nameof(Heat))]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    {{factory}} static IKettle Make() => new Kettle();
+			    internal static void Heat(IOther other) { }
+			}
+			""";
+
+		[Test]
+		[Arguments("public", "internal")]
+		[Arguments("internal", "private")]
+		public async Task IsReportedOnceInEveryBuild(string service, string factory)
+		{
+			await That(Generator.Run(Library(service, factory)).Diagnostics).Contains("*AWT164*'Heat'*").AsWildcard().Exactly(1);
+			await That(Generator.Run(Library(service, factory) + Container).Diagnostics).Contains("*AWT164*'Heat'*").AsWildcard().Exactly(1)
+				.Because("the container in the module's assembly reports the hook itself, so the module leaves it to it");
+		}
+	}
+
+	public class FactoryMemberConventions
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(string accessibility, bool grant = false) => $$"""
+			using System.Threading.Tasks;
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			public interface IUser { }
+			internal interface IKettle { }
+			internal sealed class Kettle : IKettle { public Task WarmAsync() => Task.CompletedTask; }
+			internal sealed class User : IUser { public User(IKettle kettle) { } }
+
+			[Module]
+			[AsyncInitializer<Kettle>(nameof(Kettle.WarmAsync))]
+			[Singleton<IKettle>(Factory = nameof(Make))]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    {{accessibility}} static Kettle Make() => new Kettle();
+			}
+			""";
+
+		[Test]
+		[Arguments("private")]
+		[Arguments("internal")]
+		public async Task EveryContainer_RunsTheConventionsOfTheTypeTheFactoryReturns(string accessibility)
+		{
+			const string initializer = "((global::Lib.Kettle)created).WarmAsync()";
+
+			await That(Generator.Run(Library(accessibility)).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library(accessibility, grant: true)).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library(accessibility) + Container).Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains(initializer);
+			await That(ModuleSource(Generator.Run(Library(accessibility)))).Contains("=> ((global::Lib.Kettle)@awaiten__instance.Value).WarmAsync();")
+				.Because("the handle's initializer runs the convention of the type the factory returns, not of the registered service");
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(accessibility), Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Internals.HiddenInitializer_IKettle_")
+				.Because("a container in another assembly runs the convention through the handle's initializer");
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(accessibility, grant: true), Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains(initializer);
+		}
+	}
+
+	public class UnconsumedInternalService
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(string production, string member, bool grant = false) => $$"""
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			public interface IUser { }
+			internal interface IKettle { }
+			internal interface IHeater { }
+			internal sealed class Kettle : IKettle { }
+			internal sealed class Heater : IHeater { }
+			internal sealed class User : IUser { public User(IKettle kettle) { } }
+
+			[Module]
+			[Singleton<Kettle, IKettle>]
+			[Singleton<IHeater>({{production}})]
+			[Singleton<User, IUser>]
+			public static partial class CoffeeModule
+			{
+			    {{member}}
+			}
+			""";
+
+		[Test]
+		[Arguments("Factory = nameof(MakeHeater)", "internal static IHeater MakeHeater(IKettle kettle) => new Heater();")]
+		[Arguments("Factory = nameof(MakeHeater)", "private static IHeater MakeHeater(IKettle kettle) => new Heater();")]
+		[Arguments("Instance = nameof(Heater)", "internal static readonly IHeater Heater = new Lib.Heater();")]
+		public async Task EveryContainer_BuildsWithoutDiagnostics(string production, string member)
+		{
+			await That(Generator.Run(Library(production, member)).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library(production, member, grant: true)).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library(production, member) + Container).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, member), Consumer).Diagnostics).IsEmpty()
+				.Because("nothing the module exposes takes the internal service and the container cannot name it, so nothing there can resolve it");
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(production, member, grant: true), Consumer).Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task ContainerInAnotherAssembly_LeavesItOut()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library("Factory = nameof(MakeHeater)", "internal static IHeater MakeHeater(IKettle kettle) => new Heater();"), Consumer);
+
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("MakeHeater")
+				.Because("the container could neither call the internal factory nor name what it produces");
+		}
+
+		[Test]
+		public async Task EagerSingletonOfAModuleWithoutHandles_IsReportedByAContainerInAnotherAssembly()
+		{
+			string library = Library("Factory = nameof(MakeHeater), Eager = true", "internal static IHeater MakeHeater(IKettle kettle) => new Heater();", grant: true)
+				.Replace("public static partial class CoffeeModule", "public static class CoffeeModule");
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("the module leaves its internal services to the assemblies it grants InternalsVisibleTo");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer).Diagnostics).IsEmpty()
+				.Because("a friend builds the eager singleton itself");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library.Replace("\"TestAssembly\"", "\"OtherAssembly\""), Consumer).Diagnostics).Contains("*AWT231*'Lib.IHeater'*not partial*").AsWildcard()
+				.Because("dropping the eager singleton would silently skip its construction");
+		}
+	}
+
+	public class PublicOverloadOfAnotherType
+	{
+		private const string Container = """
+			[Container]
+			[Import(typeof(CoffeeModule))]
+			public static partial class MyContainer;
+			""";
+
+		private const string Consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container;
+
+		private static string Library(bool grant = false) => $$"""
+			using Awaiten;
+
+			{{(grant ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+			namespace Lib;
+
+			public interface IKettle { }
+			public interface IOther { }
+			internal sealed class Kettle : IKettle, IOther { }
+
+			[Module]
+			[Singleton<IKettle>(Factory = nameof(Make), OnActivated = nameof(Heat))]
+			public static partial class CoffeeModule
+			{
+			    internal static IKettle Make() => new Kettle();
+			    public static IOther Make(IKettle kettle) => new Kettle();
+			    internal static void Heat(IKettle kettle) { }
+			    public static void Heat(IOther other) { }
+			}
+			""";
+
+		[Test]
+		public async Task Library_WrapsTheInternalFactoryAndHook()
+		{
+			string module = ModuleSource(Generator.Run(Library()));
+
+			await That(module).Contains($"public static global::Lib.IKettle Factory_Make_{Fnv1a("Make\0global::Lib.IKettle"):x8}() => Make();")
+				.And.Contains("public static void Hook_OnActivated_IKettle_")
+				.Because("the public overloads produce or take another type, so they do not serve the registration");
+		}
+
+		[Test]
+		public async Task EveryContainer_BuildsWithoutDiagnostics()
+		{
+			await That(Generator.Run(Library()).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library(grant: true)).Diagnostics).IsEmpty();
+			await That(Generator.Run(Library() + Container).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer).Diagnostics).IsEmpty()
+				.Because("a container in another assembly calls the wrappers of the internal factory and hook");
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer).Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Internals.Factory_Make_").And.Contains("Internals.Hook_OnActivated_IKettle_");
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library(grant: true), Consumer).Diagnostics).IsEmpty();
 		}
 	}
 

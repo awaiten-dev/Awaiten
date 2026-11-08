@@ -222,7 +222,7 @@ public static partial class CoffeeShop
 }
 ```
 
-A convention matches what a factory declares it returns. A synchronous factory that returns a matching type behind a plainer one hides its initialization, which Awaiten warns about ([AWT106](../09-diagnostics.md#awt106)).
+A convention matches what a factory declares it returns, not the registered type, whichever container builds the service. A synchronous factory that returns a matching type behind a plainer one hides its initialization, which Awaiten warns about ([AWT106](../09-diagnostics.md#awt106)). For a module's factory, the library's build reports this, since a container in another assembly can't see the factory's body. A private factory of a module may return a type private to the module, which no container can name, so the registered type counts instead (see [modules](../04-registration/07-modules.md#services-only-the-module-uses)).
 
 ## Failures are not cached
 

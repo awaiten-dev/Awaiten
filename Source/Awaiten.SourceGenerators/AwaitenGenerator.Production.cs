@@ -22,7 +22,15 @@ partial class AwaitenGenerator
 		    && LessAccessibleThanContainer(info.Symbol, containerSymbol) is { } narrower
 		    && (resolverType = AccessibleResolverType(info, context)) is null)
 		{
-			ReportLessAccessibleImplementation(info, narrower, context);
+			// The module's own build reports a member producing a type private to it (see ReportModuleProductionMembers).
+			if (!(info is { Production: ProductionKind.Factory or ProductionKind.Instance, ProductionMember: not null, }
+			      && IsModuleOrigin(info)
+			      && SymbolEqualityComparer.Default.Equals(info.Origin!.ContainingAssembly, compilation.Assembly)
+			      && IsHiddenInModule(info.Symbol.OriginalDefinition, info.Origin!, compilation)))
+			{
+				ReportLessAccessibleImplementation(info, narrower, context);
+			}
+
 			return null;
 		}
 
@@ -71,7 +79,9 @@ partial class AwaitenGenerator
 		// not the Task), or the constructed implementation. Using info.Symbol for a factory would miss a
 		// DisposableX behind an IX and leak it.
 		ITypeSymbol disposalType = info.Production == ProductionKind.Factory
-			? ProducedType(producer.ReturnType, compilation)
+			? IsModuleOrigin(info)
+				? OwnedMemberType(ProducedType(producer.ReturnType, compilation), info.Symbol, info.Origin!, compilation)
+				: ProducedType(producer.ReturnType, compilation)
 			: info.Symbol;
 		// A self-compiled implementation hides behind the accessible type its module's generated factory returns, so
 		// its traits come from the module instead, as if the container constructed the implementation itself.
@@ -99,7 +109,8 @@ partial class AwaitenGenerator
 		// its body provably produces. The conventions are matched against the owned type, so a concrete type a
 		// convention initializes returned behind a plainer interface is never initialized. Not reported for an
 		// async factory (it awaits its own initialization) nor a hidden IDisposable (disposed via RuntimeDisposalCheck).
-		if (info.Production == ProductionKind.Factory && !asyncFactory && traits is null)
+		// A module's factory is checked in the module's own build, since a container in another assembly sees no body.
+		if (info.Production == ProductionKind.Factory && !asyncFactory && traits is null && !IsModuleOrigin(info))
 		{
 			ReportFactoryHidingAsyncInitialization(producer, compilation, context.AsyncInitializers.Of(info.ConventionScope(containerSymbol)), diagnostics);
 		}
@@ -172,6 +183,10 @@ partial class AwaitenGenerator
 			=> type.TypeKind is TypeKind.Interface or TypeKind.TypeParameter
 			   || (type.TypeKind == TypeKind.Class && !type.IsSealed);
 	}
+
+	/// <summary>Whether <paramref name="info" /> is registered by a <c>[Module]</c>.</summary>
+	private static bool IsModuleOrigin(ImplInfo info)
+		=> info.Origin is { } origin && HasAwaitenAttribute(origin.GetAttributes(), "ModuleAttribute");
 
 	/// <summary>
 	///     The injected members of an implementation a module's generated factory builds, completed with the deferred
@@ -1251,13 +1266,15 @@ partial class AwaitenGenerator
 	///     Conservative by design: it inspects only the producer's own <c>return</c> expressions, never descending
 	///     into nested lambdas or local functions, and fires only when the returned static type is a non-abstract,
 	///     non-interface type a convention matches. An unanalyzable return type yields no diagnostic. False negatives
-	///     are accepted; false positives are not.
+	///     are accepted; false positives are not. For the factory of a <paramref name="module" />, a type private to the
+	///     module gets a message that does not suggest returning it.
 	/// </remarks>
 	private static void ReportFactoryHidingAsyncInitialization(
 		IMethodSymbol producer,
 		Compilation compilation,
 		List<AsyncInitializerConvention> conventions,
-		List<DiagnosticInfo> diagnostics)
+		List<DiagnosticInfo> diagnostics,
+		INamedTypeSymbol? module = null)
 	{
 		ITypeSymbol declaredReturnType = producer.ReturnType;
 
@@ -1297,7 +1314,9 @@ partial class AwaitenGenerator
 				}
 
 				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.FactoryHidesAsyncInitialization,
+					module is not null && IsHiddenInModule(concrete.OriginalDefinition, module, compilation)
+						? Diagnostics.FactoryHidesAsyncInitializationInPrivateType
+						: Diagnostics.FactoryHidesAsyncInitialization,
 					LocationInfo.From(returnExpression.GetLocation()),
 					new EquatableArray<string>([
 						producer.Name,
@@ -1380,7 +1399,15 @@ partial class AwaitenGenerator
 				.ToList();
 			if (accessible.Count == 0 && SameCompilationMemberWrapper(info, compilation, modules) is null)
 			{
-				ReportInaccessibleModuleMember(info, diagnostics);
+				// The module's own build reports a parameter private to it, which no container can resolve (see ReportModuleProductionMembers).
+				if (!(SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
+				      && IsModuleOrigin(info)
+				      && candidates.Count == 1
+				      && HiddenParameter(candidates[0], owner, compilation) is not null))
+				{
+					ReportInaccessibleModuleMember(info, diagnostics);
+				}
+
 				return null;
 			}
 
@@ -1520,8 +1547,31 @@ partial class AwaitenGenerator
 	///     type does not count. The module's wrappers and the containers that call them decide alike through it.
 	/// </summary>
 	private static bool ReachesProductionMember(INamedTypeSymbol owner, ProductionKind production, string member, ITypeSymbol produced, IAssemblySymbol within, Compilation compilation)
-		=> (production == ProductionKind.Factory ? FindFactoryCandidates(owner, member, produced, compilation) : AccessibleMembers(owner, member, compilation))
+		=> ProductionMemberCandidates(owner, production, member, produced, compilation)
 			.Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, within));
+
+	/// <summary>
+	///     The <c>Factory</c> members named <paramref name="member" /> that produce <paramref name="produced" />, or every
+	///     <c>Instance</c> member of that name, whatever their accessibility (see <see cref="ReachesProductionMember" />).
+	/// </summary>
+	private static IEnumerable<ISymbol> ProductionMemberCandidates(INamedTypeSymbol owner, ProductionKind production, string member, ITypeSymbol produced, Compilation compilation)
+		=> production == ProductionKind.Factory ? FindFactoryCandidates(owner, member, produced, compilation) : AccessibleMembers(owner, member, compilation);
+
+	/// <summary>
+	///     The non-generic static methods named <paramref name="hook" /> of <paramref name="owner" /> that could run as the
+	///     lifecycle hook of <paramref name="produced" />, whatever their accessibility, so a same-named overload for
+	///     another type does not count when the module decides on a hook wrapper and a container on calling it.
+	/// </summary>
+	private static IEnumerable<IMethodSymbol> HookCandidates(INamedTypeSymbol owner, string hook, ITypeSymbol produced, Compilation compilation)
+		=> AccessibleMembers(owner, hook, compilation)
+			.OfType<IMethodSymbol>()
+			.Where(method => method is { MethodKind: MethodKind.Ordinary, IsStatic: true, Arity: 0, Parameters.Length: >= 1, }
+			                 && IsHookReturn(method, compilation)
+			                 && compilation.HasImplicitConversion(produced, method.Parameters[0].Type));
+
+	/// <summary>Whether the container's compilation reaches one of the <see cref="HookCandidates" />.</summary>
+	private static bool ReachesHook(INamedTypeSymbol owner, string hook, ITypeSymbol produced, Compilation compilation)
+		=> HookCandidates(owner, hook, produced, compilation).Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, compilation.Assembly));
 
 	/// <summary>
 	///     The <see cref="QualifiedProductionMember" /> the generated code calls, carrying the bound type arguments of a

@@ -123,6 +123,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// container that imports the module.
 		List<DiagnosticInfo> diagnostics = new();
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
+		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
+		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{
@@ -242,7 +244,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			hintName,
 			expanded,
 			new EquatableArray<ModuleFactory>(factories.ToArray()),
-			new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()),
+			new EquatableArray<DiagnosticInfo>(DistinctModuleDiagnostics(diagnostics).ToArray()),
 			declaresScan,
 			new EquatableArray<RegistrationFactory>(registrations.ToArray()),
 			new EquatableArray<SkippedRegistration>(skipped.ToArray()),
@@ -251,6 +253,46 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<HiddenHandle>(handles.ToArray()),
 			new EquatableArray<HiddenAlias>(aliases.ToArray()),
 			new EquatableArray<HiddenInitializer>(initializers.ToArray()));
+	}
+
+	/// <summary>
+	///     The distinct <paramref name="diagnostics" /> of a module, keeping only the first report of a parameter type
+	///     private to the module (AWT195) at one place: the module's factory of a type and the handle of its service, or
+	///     the module's report of a <c>Factory</c> member and the member's handle, reject the same parameter.
+	/// </summary>
+	private static IEnumerable<DiagnosticInfo> DistinctModuleDiagnostics(List<DiagnosticInfo> diagnostics)
+	{
+		HashSet<(LocationInfo?, string)> hiddenParameters = new();
+		return diagnostics.Distinct().Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.ModuleParameterHiddenInModule)
+		                                                  || hiddenParameters.Add((diagnostic.Location, diagnostic.MessageArgs.AsArray()[2])));
+	}
+
+	/// <summary>
+	///     Whether <paramref name="diagnostic" />, an error by default, still fails the build of
+	///     <paramref name="compilation" /> once the severity the user sets for its id applies: in an <c>.editorconfig</c> or
+	///     global config, or through <c>NoWarn</c> and <c>WarningsAsErrors</c>. A warning fails it under
+	///     <c>TreatWarningsAsErrors</c>.
+	/// </summary>
+	private static bool FailsBuild(DiagnosticInfo diagnostic, Compilation compilation)
+	{
+		if (diagnostic.EffectiveSeverity != DiagnosticSeverity.Error)
+		{
+			return false;
+		}
+
+		CompilationOptions options = compilation.Options;
+		string id = diagnostic.Descriptor.Id;
+		SyntaxTree? tree = diagnostic.Location is { } location ? compilation.SyntaxTrees.FirstOrDefault(candidate => candidate.FilePath == location.FilePath) : null;
+		ReportDiagnostic report = ReportDiagnostic.Default;
+		_ = (tree is not null && options.SyntaxTreeOptionsProvider?.TryGetDiagnosticValue(tree, id, CancellationToken.None, out report) == true)
+		    || options.SyntaxTreeOptionsProvider?.TryGetGlobalDiagnosticValue(id, CancellationToken.None, out report) == true
+		    || options.SpecificDiagnosticOptions.TryGetValue(id, out report);
+		return report switch
+		{
+			ReportDiagnostic.Default or ReportDiagnostic.Error => true,
+			ReportDiagnostic.Warn => options.GeneralDiagnosticOption == ReportDiagnostic.Error,
+			_ => false,
+		};
 	}
 
 	/// <summary>
@@ -468,6 +510,19 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			                && baseDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
 			RemoveBaseDiagnostics(diagnostics, baseDiagnostics);
 		}
+
+		// A module of this assembly reports a member producing a type private to it in its own build, which leaves the
+		// registration out of the graph here (see BuildInstance), so only the shell is emitted while that fails the build.
+		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
+			.Select(module => module.Symbol)
+			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
+			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
+			.Any(module =>
+			{
+				List<DiagnosticInfo> moduleDiagnostics = new();
+				ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
+				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation));
+			});
 
 		return new ContainerModel(
 			containerNamespace,

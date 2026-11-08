@@ -32,6 +32,13 @@ public static class Generator
 		=> Collect(RunGenerator(source, [], [], languageVersion: languageVersion, nullable: nullable));
 
 	/// <summary>
+	///     Like <see cref="Run(string, Type[])" />, but with the severities of <paramref name="diagnosticOptions" />, as a
+	///     user sets them in an <c>.editorconfig</c> or with <c>NoWarn</c> and <c>WarningsAsErrors</c>.
+	/// </summary>
+	public static GeneratorResult Run([StringSyntax("c#-test")] string source, IReadOnlyDictionary<string, ReportDiagnostic> diagnosticOptions)
+		=> Collect(RunGenerator(source, [], [], diagnosticOptions: diagnosticOptions));
+
+	/// <summary>
 	///     Compiles <paramref name="referencedSource" /> into a separate referenced assembly first, then runs the
 	///     generator over <paramref name="source" />. For cross-assembly scenarios such as a <c>[Module]</c> in
 	///     another project.
@@ -125,7 +132,8 @@ public static class Generator
 		Type[] assemblyTypes,
 		string assemblyName = "TestAssembly",
 		LanguageVersion languageVersion = LanguageVersion.Latest,
-		NullableContextOptions nullable = NullableContextOptions.Disable)
+		NullableContextOptions nullable = NullableContextOptions.Disable,
+		IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null)
 	{
 		CSharpParseOptions parseOptions = new(languageVersion);
 		SyntaxTree[] syntaxTrees = [CSharpSyntaxTree.ParseText(source, parseOptions),];
@@ -134,7 +142,7 @@ public static class Generator
 			assemblyName,
 			syntaxTrees,
 			[..References.For(assemblyTypes), ..additionalReferences,],
-			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: nullable));
+			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, specificDiagnosticOptions: diagnosticOptions, nullableContextOptions: nullable));
 
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(
 			[new AwaitenGenerator().AsSourceGenerator(),],

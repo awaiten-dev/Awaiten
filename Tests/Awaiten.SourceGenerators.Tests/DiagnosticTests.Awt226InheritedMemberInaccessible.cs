@@ -91,6 +91,39 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Singleton<IClock>(Factory = nameof(CreateClock))]", "internal static IClock CreateClock() => new SystemClock();\n    public static IOther CreateClock(int seed) => new SystemClock();", "The factory 'Production.Shop.CreateClock'")]
+		[Arguments("[Singleton<IClock>(Factory = nameof(CreateClock), OnActivated = nameof(Tick))]", "public static IClock CreateClock() => new SystemClock();\n    internal static void Tick(IClock clock) { }\n    public static void Tick(IOther other) { }", "The lifecycle hook 'Production.Shop.Tick'")]
+		public async Task ReportsAnInternalMemberBesideAPublicOverloadOfAnotherType(string registration, string members, string subject)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+				using Awaiten;
+
+				namespace Production;
+
+				public interface IClock { }
+				public interface IOther { }
+				internal sealed class SystemClock : IClock, IOther { }
+
+				[Container]
+				{{registration}}
+				public static partial class Shop
+				{
+				    {{members}}
+				}
+				""", """
+				     using Awaiten;
+
+				     namespace MyCode;
+
+				     [Container(Extends = typeof(Production.Shop))]
+				     public static partial class TestShop;
+				     """);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains($"*AWT226*{subject}*").AsWildcard()
+				.Because("the public overload produces or takes another type, so it cannot stand in for the internal member the extending container cannot see");
+		}
+
+		[Test]
 		public async Task DoesNotReportWhenTheBaseAssemblyGrantsInternalsVisibleTo()
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly(

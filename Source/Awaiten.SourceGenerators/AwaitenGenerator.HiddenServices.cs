@@ -845,9 +845,9 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Whether a convention of the module initializes <paramref name="implementation" />, or one of its
-	///     <paramref name="registrations" /> names an asynchronous <c>OnActivated</c> hook, so a container initializes
-	///     a singleton of it though nothing depends on it.
+	///     Whether a convention of the module initializes <paramref name="implementation" /> (see
+	///     <see cref="HiddenInitializedType" />), or one of its <paramref name="registrations" /> names an asynchronous
+	///     <c>OnActivated</c> hook, so a container initializes a singleton of it though nothing depends on it.
 	/// </summary>
 	private static bool IsHiddenAsyncInitialized(
 		INamedTypeSymbol implementation,
@@ -855,7 +855,8 @@ partial class AwaitenGenerator
 		INamedTypeSymbol module,
 		Compilation compilation,
 		List<AsyncInitializerConvention> conventions)
-		=> MatchingAsyncInitializers(conventions, implementation, convention => IsOfConventionType(implementation, convention.Type)).Count > 0
+		=> registrations.Any(registration => HiddenInitializedType(module, registration.Production, registration.Member, implementation, compilation) is var initialized
+		                                     && MatchingAsyncInitializers(conventions, initialized, convention => IsOfConventionType(initialized, convention.Type)).Count > 0)
 		   || registrations.Any(registration => NamedArgument(registration.Attribute, "OnActivated") is { } hook
 		                                        && AccessibleMembers(module, hook, compilation).OfType<IMethodSymbol>().Any(method => IsAsyncHookReturn(method.ReturnType, compilation)));
 
@@ -1017,7 +1018,7 @@ partial class AwaitenGenerator
 				}
 
 				ModuleHookRequest request = new(implementation, hookName, registration.Location, release, HiddenHookName(implementation, release, hookName), subject);
-				if (ResolveModuleHookCore(request, null, context) is not { } resolved)
+				if (ResolveRegistrationHook(request, context) is not { } resolved)
 				{
 					return null;
 				}
@@ -1026,7 +1027,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		if (!instance && !TryAddHiddenInitializers(implementation, handle, context, location, subject, initializers))
+		if (!instance && !TryAddHiddenInitializers(implementation, handle, context, location, subject, initializers, HiddenInitializedType(context.Module, candidate.Production, candidate.Member, implementation, context.Compilation)))
 		{
 			return null;
 		}
@@ -1120,9 +1121,10 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Adds an initializer wrapper to <paramref name="initializers" /> for each convention of the module that
-	///     initializes <paramref name="implementation" />, which takes its <paramref name="handle" /> and runs the
-	///     convention on the instance it holds. Returns <see langword="false" /> after reporting a convention parameter
-	///     the wrapper cannot mirror.
+	///     initializes <paramref name="implementation" />, judged by <paramref name="initialized" /> (the implementation
+	///     itself unless a <c>Factory</c> member produces it, see <see cref="HiddenInitializedType" />), which takes its
+	///     <paramref name="handle" /> and runs the convention on the instance it holds. Returns <see langword="false" />
+	///     after reporting a convention parameter the wrapper cannot mirror.
 	/// </summary>
 	private static bool TryAddHiddenInitializers(
 		INamedTypeSymbol implementation,
@@ -1130,9 +1132,11 @@ partial class AwaitenGenerator
 		ModuleScanContext context,
 		Location? location,
 		SelfCompiledSubject subject,
-		List<HiddenInitializer> initializers)
+		List<HiddenInitializer> initializers,
+		ITypeSymbol? initialized = null)
 	{
-		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(DeclaredAsyncInitializers(context.Module, context.Compilation, null), implementation, convention => IsOfConventionType(implementation, convention.Type)))
+		initialized ??= implementation;
+		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(DeclaredAsyncInitializers(context.Module, context.Compilation, null), initialized, convention => IsOfConventionType(initialized, convention.Type)))
 		{
 			List<FactoryParameter> mirrored = new();
 			foreach (IParameterSymbol parameter in convention.Method.Parameters)
@@ -1335,10 +1339,7 @@ partial class AwaitenGenerator
 			});
 		}
 
-		List<IMethodSymbol> methods = FindFactoryCandidates(module, member, candidate.Implementation, compilation)
-			.Where(method => compilation.IsSymbolAccessibleWithin(method, module))
-			.ToList();
-		if (methods.Count != 1 || methods[0] is not { IsStatic: true, IsGenericMethod: false, } factory || factory.Parameters.Any(parameter => parameter.RefKind != RefKind.None))
+		if (ProducingMethod(module, member, candidate.Implementation, compilation) is not { } factory || factory.Parameters.Any(parameter => parameter.RefKind != RefKind.None))
 		{
 			return false;
 		}
@@ -1362,6 +1363,35 @@ partial class AwaitenGenerator
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
 		return true;
 	}
+
+	/// <summary>The one static, non-generic <c>Factory</c> member of <paramref name="module" /> that produces <paramref name="produced" />, or <see langword="null" />.</summary>
+	private static IMethodSymbol? ProducingMethod(INamedTypeSymbol module, string member, INamedTypeSymbol produced, Compilation compilation)
+	{
+		List<IMethodSymbol> methods = FindFactoryCandidates(module, member, produced, compilation)
+			.Where(method => compilation.IsSymbolAccessibleWithin(method, module))
+			.ToList();
+		return methods.Count == 1 && methods[0] is { IsStatic: true, IsGenericMethod: false, } method ? method : null;
+	}
+
+	/// <summary>
+	///     The type whose conventions initialize an implementation produced by <paramref name="production" />: what a
+	///     <c>Factory</c> member returns, awaited for a <c>Task</c> or <c>ValueTask</c>, as for any factory, unless that is
+	///     private to the module, which no container can name, so the registered type counts instead, as the member's
+	///     internal wrapper returns it (see <see cref="CollectModuleMemberWrappers" />). Otherwise the registered type.
+	///     Every container decides alike: the module through it, and a container in the module's assembly or a friend
+	///     through the wrapper's return type.
+	/// </summary>
+	private static ITypeSymbol HiddenInitializedType(INamedTypeSymbol module, ProductionKind production, string? member, INamedTypeSymbol registered, Compilation compilation)
+		=> production == ProductionKind.Factory && member is not null && ProducingMethod(module, member, registered, compilation) is { } factory
+			? OwnedMemberType(ProducedType(factory.ReturnType, compilation), registered, module, compilation)
+			: registered;
+
+	/// <summary>
+	///     The type a container sees a module member produce: <paramref name="declared" />, or <paramref name="registered" />
+	///     when <paramref name="declared" /> is private to the module.
+	/// </summary>
+	private static ITypeSymbol OwnedMemberType(ITypeSymbol declared, INamedTypeSymbol registered, INamedTypeSymbol module, Compilation compilation)
+		=> compilation.IsSymbolAccessibleWithin(declared, module.ContainingAssembly) ? declared : registered;
 
 	/// <summary>
 	///     The aliases of an implementation the module builds through a handle: one per service it is registered under,

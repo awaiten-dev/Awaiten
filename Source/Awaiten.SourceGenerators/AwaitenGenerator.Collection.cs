@@ -610,8 +610,8 @@ partial class AwaitenGenerator
 			OnRelease = hidden || registration.OnRelease is not { } release ? registration.OnRelease : Wrapped(release, InInternals(RegistrationHookWrapperName(registration.Implementation, release: true, release))),
 		};
 
-		string Wrapped(string name, string wrapper)
-			=> !Reachable(name) && Reachable(wrapper) ? wrapper : name;
+		string Wrapped(string hook, string wrapper)
+			=> !ReachesHook(owner, hook, registration.Implementation, compilation) && Reachable(wrapper) ? wrapper : hook;
 
 		bool Reachable(string name)
 			=> MembersNamed(owner, name).Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, compilation.Assembly));
@@ -634,7 +634,7 @@ partial class AwaitenGenerator
 		foreach ((string? hook, bool release) in new[] { (registration.OnActivated, false), (registration.OnRelease, true), })
 		{
 			if (hook is not null
-			    && !MembersNamed(module, hook).Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, compilation.Assembly))
+			    && !ReachesHook(module, hook, registration.Implementation, compilation)
 			    && SkippedHookReason(module, registration.Implementation, release, hook) is { } reason)
 			{
 				DiagnosticInfo diagnostic = new(

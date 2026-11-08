@@ -228,6 +228,7 @@ AWT216 remains in these cases:
 - **A private `[Arg]` type.** The parameterized resolvers and the `Func<TArg, T>` a consumer asks for take the runtime argument in their signatures. Make the argument type `internal`.
 - **A type the container cannot reach.** The container registers a type that is private to a class the container is not nested in. Nest the container beside it, or make it `internal`.
 - **A struct.** Making a struct `internal` does not help: an implementation must be a class, and the compiler also reports CS0452. Wrap the struct in a class, or register an interface it implements with a `Factory` or `Instance` that returns it.
+- **A module member that produces a private type.** A module registers a type private to it, or to a class containing it, with `Factory` or `Instance`. No container can name it to hold the instance, so the library's build reports it, whichever container imports the module. Register the member under its service, such as `[Singleton<IKettle>(Factory = nameof(Make))]`, which works even when the member returns the private type, or make the type `internal`.
 
 ```csharp expect=AWT216
 [Container]
@@ -315,6 +316,8 @@ public static partial class CoffeeShop
     private static IBrewer MakeBrewer() => new AsyncBrewer();
 }
 ```
+
+For a module's factory, the library's build reports it, since a container in another assembly or in one the library grants `InternalsVisibleTo` sees no body. A container in the library's own assembly leaves it to that build, so every container agrees. When the concrete type is private to the module, no container can name it as the return type ([AWT234](#awt234)), so the message suggests only the async factory or making the type `internal`.
 
 **Fix:** Declare the concrete type as the factory's return type (here `AsyncBrewer`), so the container sees the initialization, or make the factory `async Task<IBrewer>` and initialize the instance inside it.
 
@@ -425,6 +428,8 @@ An eager singleton is async-initialized and cannot be constructed synchronously 
 :::
 
 An eager singleton is built with its decorators, so an async-initialized decorator reports it too.
+
+A module doesn't know whether the container that imports it opts into `AsyncSafety.SyncAfterInit`, so for an eager singleton the module itself makes async-initialized, with a convention, an async factory or an async `OnActivated` hook, the library's build reports a warning instead. Every importing container with the default still reports the error. When a container in the library's own assembly imports the module, the library's build leaves it to that container.
 
 ```csharp expect=AWT161
 public sealed class EspressoMachine : IWarmUp
@@ -1919,7 +1924,7 @@ public static class EquipmentModule
 public static partial class CoffeeShop;
 ```
 
-A private member that produces a service the module registers under an internal type, and whose signature names no type private to the module, is not reported: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)).
+A private member that produces a service the module registers under an internal type is not reported: a `partial` module another assembly can name generates an internal wrapper for it, which the container calls instead (see [services only the module uses](./04-registration/07-modules.md#services-only-the-module-uses)). That holds when the member returns a type private to the module too: the wrapper returns the registered type. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. A private member of an `internal`, `partial` module is not reported either, whatever the service, since only containers that can call its internal wrapper import such a module.
 
 **Fix:** Make the member `public`, or `internal` when the container is in the same assembly (or one the module's assembly grants `InternalsVisibleTo`).
 
@@ -2013,6 +2018,8 @@ public static partial class PluginModule;
 The generated factory is a `public` method whose parameters are resolved from the *consuming* container's graph, so each parameter type has to be nameable by the consumer. The same holds for the factory of an [internal implementation](./04-registration/07-modules.md#internal-implementations) a module registers. A parameter of an internal type that the module itself registers with a constructor is fine: the factory takes it through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses). The implementation of such an internal service is reported when something needs the service, or when another module of the assembly registers the service as well, since a container in another assembly would then serve that module's implementation instead. An implementation or scan match that takes such a service through its constructor, its factory or an `[Inject]` property is not reported for it as well, and neither is an internal service that fails only because it takes another one: the module reports the cause once, where it arises, and a container in another assembly reports [AWT231](#awt231) for the implementation that takes the service. An `[Arg]` parameter of such a type is still reported, since the caller passes it to the factory and has to name its type, and so is an implementation private to the module, which no other assembly can construct instead. Widen the parameter type's accessibility, or keep the type out of self-compilation. (A v1 limitation: a self-compiled factory cannot construct through an inaccessible parameter.) This is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, and a container that can't construct the implementation reports [AWT231](#awt231).
 
 The factory is as accessible as the module. The factory of an `internal` module, which builds the types private to it, is reached only from the module's own assembly and from assemblies it grants `InternalsVisibleTo`, so its parameter types may be internal too.
+
+A parameter of a type private to the module, or to a class containing it, is reported whether or not the module's assembly grants `InternalsVisibleTo`, because no container can register or resolve such a type. This holds for the parameters of a module's `Factory` member as well.
 
 **Fix:** Make the parameter type public, or exclude the match from the scan, or make a registered implementation and its constructor public.
 
@@ -2246,6 +2253,8 @@ An `[AsyncInitializer<T>]` convention initializes an implementation, but the cod
 A container calls a module's conventions itself. When the module lives in another assembly, `T` and its method must be public. The module's own build reports it for an implementation it [builds through a generated factory](./04-registration/07-modules.md#internal-implementations), and a container reports it for an implementation it constructs itself, such as one a module's `Factory` member returns.
 
 An `internal` module is imported only by its own assembly and by the assemblies it grants `InternalsVisibleTo`. So for such a module, an internal convention is accessible too. A convention type nested privately in the module is not, and the message says it is private to the module.
+
+A private `Factory` member of a module may return a type private to the module. No container can name that type, so every container sees the member return the registered type instead. A convention that initializes the private type but not the registered type would never run, so the library's build reports it. Declare the factory to return the registered type and initialize the instance in an async factory, or make the type `internal`.
 
 ```csharp no-compile
 // In a referenced library:

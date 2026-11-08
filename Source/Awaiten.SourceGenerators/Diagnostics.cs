@@ -78,12 +78,25 @@ internal static class Diagnostics
 	///     own initialization (the container awaits the factory itself). This is a best-effort lint (Warning):
 	///     it fires only when the concrete returned type is statically provable from the body, so it has false
 	///     negatives by design (a helper-returned or runtime-selected implementation is not reported), but is
-	///     intended to have no false positives.
+	///     intended to have no false positives. A module's factory is checked in the module's own build, since a
+	///     container in another assembly sees no body.
 	/// </summary>
 	public static readonly DiagnosticDescriptor FactoryHidesAsyncInitialization = new(
 		"AWT106",
 		"Factory hides asynchronous initialization behind its declared return type",
 		"The factory '{0}' constructs '{1}', which is async-initialized by '{3}', but declares return type '{2}'; the container cannot see that it needs initialization, so the initializer never runs. Return '{1}', or make the factory 'async Task<{2}>' and handle initialization inside it.",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     <see cref="FactoryHidesAsyncInitialization" /> for a module's factory that constructs a type private to the
+	///     module: no container can name that type, so returning it is no remedy (it would be AWT234 instead).
+	/// </summary>
+	public static readonly DiagnosticDescriptor FactoryHidesAsyncInitializationInPrivateType = new(
+		"AWT106",
+		FactoryHidesAsyncInitialization.Title,
+		"The factory '{0}' constructs '{1}', which is async-initialized by '{3}', but declares return type '{2}'; the container cannot see that it needs initialization, so the initializer never runs. '{1}' is private to the module, so no container can see it as the return type; make the factory 'async Task<{2}>' and handle initialization inside it, or make '{1}' internal and return it.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
@@ -934,6 +947,21 @@ internal static class Diagnostics
 		"AWT161",
 		"Eager async-initialized singleton",
 		"'{0}' is marked Eager but is async-initialized; it cannot be constructed synchronously at container build time - InitializeAsync already warms the async singletons, or opt into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)] to allow synchronous eager construction",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     <see cref="EagerAsyncSingleton" /> in the build of the module that registers the singleton: the module does not
+	///     know whether an importing container opts into <c>AsyncSafety.SyncAfterInit</c>, so it warns its author, while
+	///     every container with the default reports the error. Only what the module itself makes asynchronous counts: a
+	///     convention, an async factory or an async <c>OnActivated</c> hook. A container in the module's own assembly that
+	///     imports it reports it instead. Reported as a warning; the descriptor keeps the id's severity for release tracking.
+	/// </summary>
+	public static readonly DiagnosticDescriptor EagerAsyncSingletonInModule = new(
+		"AWT161",
+		EagerAsyncSingleton.Title,
+		"'{0}' is marked Eager but is async-initialized, so a container with the default AsyncSafety cannot construct it synchronously at build time and reports AWT161; drop Eager, since InitializeAsync already warms the async singletons, unless every importing container opts into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
