@@ -183,7 +183,8 @@ public static partial class HeaterModule
     private static Heater Make() => new();
 }
 ```
- For a registered type, scan match, decorator or composite private to the module, which only the module's factory can build, the module also generates an internal factory that takes the internal services directly. A container in the library's own assembly or in such an assembly calls it, so the type shares the services the container builds. A container in the library's own assembly constructs any other scan match that takes an internal service itself. The hooks of such a type can't take an internal service ([AWT203](../09-diagnostics.md#awt203)), because their one wrapper serves both factories. The scans of such a library don't use handles. Such a library generates neither factory for an implementation that a scan matches too.
+
+For a registered type, scan match, decorator or composite private to the module, which only the module's factory can build, the module also generates an internal factory that takes the internal services directly. A container in the library's own assembly or in an assembly the library grants `InternalsVisibleTo` calls it, so the type shares the services the container builds. A container in the library's own assembly constructs any other scan match that takes an internal service itself. The hooks of such a type can't take an internal service ([AWT203](../09-diagnostics.md#awt203)), because their one wrapper serves both factories. The scans of a library that grants `InternalsVisibleTo` don't use handles. Such a library generates neither factory for an implementation that a scan matches too.
 
 :::warning[Rebuild against each library version]
 
