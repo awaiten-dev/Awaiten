@@ -429,7 +429,8 @@ partial class AwaitenGenerator
 
 		// A member that produces a type another assembly cannot name is exposed as the public type it is registered as,
 		// as nullable as the member's result. Several services leave that type ambiguous, and a hook that is not public
-		// gets no wrapper for such a type, so the consumer would silently skip it.
+		// gets no wrapper for such a type, so the consumer would silently skip it. A public hook must take the exposed
+		// type, which the consumer passes in place of the implementation.
 		string? Exposed(string member, INamedTypeSymbol produced, ITypeSymbol result)
 		{
 			List<ModuleRegistration> registrations = ConstructedModuleRegistrations(module, compilation, members: true)
@@ -441,7 +442,8 @@ partial class AwaitenGenerator
 				: services.Count == 1
 				  && IsExternallyAccessible(services[0])
 				  && !registrations.Any(registration => new[] { "OnActivated", "OnRelease", }.Any(slot => NamedArgument(registration.Attribute, slot) is { } hook
-				                                                                                         && !AccessibleMembers(module, hook, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public)))
+				                                                                                         && !AccessibleMembers(module, hook, compilation).Any(candidate => candidate is IMethodSymbol { DeclaredAccessibility: Accessibility.Public, Parameters.Length: > 0, } method
+				                                                                                                                                                                && (method.Parameters[0].Type is ITypeParameterSymbol || compilation.HasImplicitConversion(services[0], method.Parameters[0].Type)))))
 					? services[0]
 					: null;
 			return exposed?.WithNullableAnnotation(result.NullableAnnotation).ToDisplayString(FullyQualifiedWithNullability);

@@ -622,6 +622,19 @@ public class RegistrationFactoryShapeTests
 			}
 
 			[Test]
+			public async Task WithAPublicHookOnAnotherServiceOfTheImplementation_GetsNoWrapper()
+			{
+				string library = Library("[Singleton<Grinder, IGrinder>(Factory = nameof(Create), OnActivated = nameof(Activate))]")
+					.Replace("internal static Grinder Create()", "public static void Activate(IMill mill) { }\n\n    internal static Grinder Create()");
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+				await That(Generator.Run(library).Diagnostics).IsEmpty();
+				await That(string.Concat(Generator.Run(library).Sources.Values)).DoesNotContain("Factory_Create_")
+					.Because("the hook takes the implementation as a service the wrapper's return type does not convert to");
+				await That(result.Diagnostics).HasCount(1).And.Contains("*AWT108*Create*").AsWildcard();
+			}
+
+			[Test]
 			[Arguments("public")]
 			[Arguments("internal")]
 			public async Task WithAModuleConvention_EveryContainerRunsItOnTheImplementation(string accessibility)
