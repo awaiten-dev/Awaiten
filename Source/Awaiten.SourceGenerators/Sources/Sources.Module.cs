@@ -518,8 +518,9 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits the public constant that records why the module generates no code a consumer would otherwise call.
-	///     A consumer reads it from metadata, which carries no internal member of another assembly.
+	///     Emits the public constant that records why the generator emits no code a consumer would otherwise call. In a
+	///     module's public <c>Internals</c> class a consumer reads it from metadata, which carries no internal member of
+	///     another assembly; in a container's internal one only an extending container granted <c>InternalsVisibleTo</c> does.
 	/// </summary>
 	private static void EmitSkipReason(StringBuilder builder, int depth, string name, string reason, params string[] summary)
 	{

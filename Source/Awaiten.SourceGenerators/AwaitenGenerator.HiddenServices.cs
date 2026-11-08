@@ -118,6 +118,12 @@ partial class AwaitenGenerator
 		/// <summary>The non-viable services something the module emits needed, whose cause the module reports.</summary>
 		public HashSet<INamedTypeSymbol> NeededNonViable { get; } = new(SymbolEqualityComparer.Default);
 
+		/// <summary>
+		///     The rejections of a parameter or injected property that takes a <see cref="NonViable" /> service, whose own
+		///     cause the module reports instead, each with the reason a consumer reports for what takes it.
+		/// </summary>
+		public Dictionary<DiagnosticInfo, string> UnbuildableNeeds { get; } = new();
+
 		/// <summary>The internal services a factory being built for viability takes, or <see langword="null" /> when none is.</summary>
 		public HashSet<INamedTypeSymbol>? Referenced { get; set; }
 
@@ -720,7 +726,9 @@ partial class AwaitenGenerator
 	///     <see cref="AssemblyModuleIndex.Demand" />), then follows the services each built implementation needs. Declares
 	///     the handles and instance handles that it or another module takes, with a variant for every decorator of any
 	///     module. Returns the factories, handles, aliases and initializer wrappers to emit. Reports why a needed service
-	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead.
+	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead, and in place of a
+	///     rejection that only takes another service the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />)
+	///     why that service cannot be built.
 	/// </summary>
 	private static (List<RegistrationFactory> Factories, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers) CompleteHiddenServices(
 		HiddenServices hidden,
@@ -779,10 +787,18 @@ partial class AwaitenGenerator
 			}
 		}
 
-		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => !candidate.Viable && !hidden.Friends
-		                                                                                     && candidate.HiddenServices(module, compilation).Any(service => hidden.NeededNonViable.Contains(service) || hidden.RegisteredElsewhere(service))))
+		List<HiddenImplementation> reported = hidden.Implementations
+			.Where(candidate => !candidate.Viable && !hidden.Friends
+			                    && candidate.HiddenServices(module, compilation).Any(service => hidden.NeededNonViable.Contains(service) || hidden.RegisteredElsewhere(service)))
+			.ToList();
+		for (int index = 0; index < reported.Count; index++)
 		{
-			diagnostics.AddRange(candidate.Rejections.Where(rejection => !diagnostics.Contains(rejection)));
+			HiddenImplementation candidate = reported[index];
+			diagnostics.AddRange(candidate.Rejections.Where(rejection => !hidden.UnbuildableNeeds.ContainsKey(rejection) && !diagnostics.Contains(rejection)));
+			if (candidate.Rejections.Any(hidden.UnbuildableNeeds.ContainsKey))
+			{
+				reported.AddRange(hidden.Implementations.Where(other => !other.Viable && !reported.Contains(other) && other.HiddenServices(module, compilation).Any(candidate.Needs.Contains)));
+			}
 		}
 
 		IEnumerable<INamedTypeSymbol> declared = hidden.Used.Concat(Declared(demand.Services, hidden.Provider));
@@ -1121,7 +1137,7 @@ partial class AwaitenGenerator
 			List<FactoryParameter> mirrored = new();
 			foreach (IParameterSymbol parameter in convention.Method.Parameters)
 			{
-				if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context) is { } mirror)
+				if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _) is { } mirror)
 				{
 					if (mirror.Error is { } error)
 					{
@@ -1334,10 +1350,12 @@ partial class AwaitenGenerator
 	///     service's handle: the parameter takes the handle in the same shape (see <see cref="HiddenShape" />) and the
 	///     generated member passes the instance on. Reports AWT237 for a shape it cannot pass on, and returns
 	///     <see langword="null" /> when the member takes no such service, or one that cannot be built, which is then
-	///     recorded so its cause is reported, while the member falls back to AWT195. Only in the module's own build.
+	///     recorded so its cause is reported and returned as <paramref name="unbuildable" />, while the member falls back
+	///     to AWT195. Only in the module's own build.
 	/// </summary>
-	private static HiddenMirror? MirrorHiddenService(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context)
+	private static HiddenMirror? MirrorHiddenService(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context, out INamedTypeSymbol? unbuildable)
 	{
+		unbuildable = null;
 		if (context.Hidden is not { } hidden || HasArgAttribute(attributes) || HasRequestingType(attributes))
 		{
 			return null;
@@ -1350,6 +1368,7 @@ partial class AwaitenGenerator
 			if (hidden.NonViable.Contains(service))
 			{
 				hidden.NeededNonViable.Add(service);
+				unbuildable = service;
 				return null;
 			}
 
@@ -1374,6 +1393,13 @@ partial class AwaitenGenerator
 			? new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display(referenced.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]))
 			: null;
 	}
+
+	/// <summary>
+	///     The reason a consumer reports for an implementation whose <paramref name="member" /> takes the internal
+	///     <paramref name="service" /> the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />).
+	/// </summary>
+	private static string UnbuildableNeed(string member, INamedTypeSymbol service)
+		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
 
 	/// <summary>
 	///     The shape in which <paramref name="type" /> takes a service and that service, or a <see langword="null" />

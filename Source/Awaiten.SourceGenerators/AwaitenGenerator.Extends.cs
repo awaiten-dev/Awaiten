@@ -532,7 +532,7 @@ partial class AwaitenGenerator
 				string name = RegistrationFactoryName(implementation);
 				if (_baseFactories.Factories.FirstOrDefault(candidate => candidate.FactoryName == name) is not { } factory)
 				{
-					fault = _baseFactories.Faults.TryGetValue(registration.ImplementationType, out FactoryFault reason) ? reason : missing;
+					fault = _baseFactories.Faults.TryGetValue(name, out FactoryFault reason) ? reason : missing;
 					return null;
 				}
 
@@ -546,13 +546,11 @@ partial class AwaitenGenerator
 
 			if (GeneratedFactory(Base, implementation, _compilation) is not { } method)
 			{
-				if (!Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly))
-				{
-					fault = new FactoryFault(
+				fault = Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly)
+					? RecordedBaseFault(Base, RegistrationFactoryName(implementation)) ?? missing
+					: new FactoryFault(
 						$"'{baseName}' builds it through an internal generated factory",
 						$"grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
-				}
-
 				return null;
 			}
 
@@ -591,13 +589,11 @@ partial class AwaitenGenerator
 				return new OwnerFactoryCall(Base, name, method.ReturnType.ToDisplayString(FullyQualified), method);
 			}
 
-			if (!Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly))
-			{
-				fault = new FactoryFault(
+			fault = Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly)
+				? RecordedBaseFault(Base, name) ?? fault
+				: new FactoryFault(
 					$"'{baseName}' builds it through an internal generated factory",
 					$"grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
-			}
-
 			return null;
 		}
 
@@ -627,13 +623,11 @@ partial class AwaitenGenerator
 				return new OpenOwnerFactory(Base, name, method, null);
 			}
 
-			if (!Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly))
-			{
-				fault = new FactoryFault(
+			fault = Base.ContainingAssembly.GivesAccessTo(Container.ContainingAssembly)
+				? RecordedBaseFault(Base, name) ?? fault
+				: new FactoryFault(
 					$"'{baseName}' builds it through an internal generated factory",
 					$"grant the assembly of '{Display(Container.ToDisplayString(FullyQualified))}' [InternalsVisibleTo]");
-			}
-
 			return null;
 		}
 

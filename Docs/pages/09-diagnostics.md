@@ -7,7 +7,7 @@ toc_max_heading_level: 3
 
 Awaiten checks your wiring while it builds. A mistake that other containers would surface at startup, or on the first resolve in production, is a compile error here. The barista never reaches for a cup that is not there.
 
-Every diagnostic has an `AWT###` id. Errors stop the build. Warnings point at something that is legal but probably not what you meant. This page is the full catalog, one entry per id with a concrete example that triggers it. The feature pages link here for the codes they mention.
+Every diagnostic has an `AWT###` id. Errors stop the build. Lowering an error to a warning, for example in `.editorconfig`, does not make the container usable: Awaiten generates no wiring for a container with an error, so resolving from it throws an `InvalidOperationException` that points at the build diagnostics. Fix the cause instead. Warnings point at something that is legal but probably not what you meant. This page is the full catalog, one entry per id with a concrete example that triggers it. The feature pages link here for the codes they mention.
 
 The examples reuse a few coffee-shop types (`Grinder`, `EspressoMachine`, `Order`, `Cup`, `IMilk`, `IBrewer`, and so on). Only the detail that trips the diagnostic is spelled out in each snippet. Each entry ends with a **Fix:** that names the change that resolves it.
 
@@ -1994,7 +1994,7 @@ A [self-compiled module scan](./04-registration/07-modules.md#self-compiled-scan
 ### AWT195
 
 :::danger[Error]
-A self-compiled module `[Scan]` match or registration has a constructor parameter of a type inaccessible outside the module's assembly.
+A self-compiled module `[Scan]` match or registration has a constructor or factory parameter of a type inaccessible outside the module's assembly.
 :::
 
 ```csharp expect=AWT195
@@ -2006,7 +2006,7 @@ internal sealed class Roaster(Secret secret) : IRoaster;   // Secret is internal
 public static partial class PluginModule;
 ```
 
-The generated factory is a `public` method whose parameters are resolved from the *consuming* container's graph, so each parameter type has to be nameable by the consumer. The same holds for the factory of an [internal implementation](./04-registration/07-modules.md#internal-implementations) a module registers. A parameter of an internal type that the module itself registers with a constructor is fine: the factory takes it through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses). The implementation of such an internal service is reported when something needs the service, or when another module of the assembly registers the service as well, since a container in another assembly would then serve that module's implementation instead. Widen the parameter type's accessibility, or keep the type out of self-compilation. (A v1 limitation: a self-compiled factory cannot construct through an inaccessible parameter.) This is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, and a container that can't construct the implementation reports [AWT231](#awt231).
+The generated factory is a `public` method whose parameters are resolved from the *consuming* container's graph, so each parameter type has to be nameable by the consumer. The same holds for the factory of an [internal implementation](./04-registration/07-modules.md#internal-implementations) a module registers. A parameter of an internal type that the module itself registers with a constructor is fine: the factory takes it through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses). The implementation of such an internal service is reported when something needs the service, or when another module of the assembly registers the service as well, since a container in another assembly would then serve that module's implementation instead. An implementation or scan match that takes such a service through its constructor, its factory or an `[Inject]` property is not reported for it as well, and neither is an internal service that fails only because it takes another one: the module reports the cause once, where it arises, and a container in another assembly reports [AWT231](#awt231) for the implementation that takes the service. An `[Arg]` parameter of such a type is still reported, since the caller passes it to the factory and has to name its type, and so is an implementation private to the module, which no other assembly can construct instead. Widen the parameter type's accessibility, or keep the type out of self-compilation. (A v1 limitation: a self-compiled factory cannot construct through an inaccessible parameter.) This is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, and a container that can't construct the implementation reports [AWT231](#awt231).
 
 The factory is as accessible as the module. The factory of an `internal` module, which builds the types private to it, is reached only from the module's own assembly and from assemblies it grants `InternalsVisibleTo`, so its parameter types may be internal too.
 
@@ -2210,14 +2210,15 @@ An imported module of another assembly registers an implementation the container
 
 ```csharp no-compile
 // In a referenced library that grants InternalsVisibleTo to its test project:
+internal sealed class Calibration { }
+
 internal sealed class Grinder : IGrinder
 {
-    [Inject(Optional = true)]
-    public IBurr? Burr { get; set; }
+    public Grinder(Calibration calibration) { }
 }
 
 [Module]
-[Singleton<Grinder, IGrinder>]   // the factory can't take an optional property, so the module skips it
+[Singleton<Grinder, IGrinder>]   // the factory can't take the internal Calibration, so the module skips it
 public static partial class EquipmentModule;
 
 // In the application, which the library does not grant InternalsVisibleTo:
@@ -2226,7 +2227,7 @@ public static partial class EquipmentModule;
 public static partial class CoffeeShop;
 ```
 
-A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor parameter type that isn't public ([AWT195](#awt195)), an `Optional` or `Deferred` injected property ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because the open registration names a lifecycle hook or a constraint type isn't public, and a container that can't construct the open type reports this error with that reason.
+A module generates a factory for each [internal implementation](./04-registration/07-modules.md#internal-implementations) it registers. Some registrations are beyond what the factory supports: a constructor or factory parameter type that isn't public ([AWT195](#awt195)), an injected property the factory can't set, such as one named like a constructor parameter ([AWT200](#awt200)), one implementation under several services that no public type covers ([AWT197](#awt197)), or an async initializer convention that isn't public ([AWT234](#awt234)). So is an internal implementation that the module both registers and matches with its own scan ([AWT197](#awt197)). When it is skipped, it gets neither factory, so a container that can't construct it reports this error for the registration and for the scan match. The same holds for a hook whose wrapper can't mirror its parameters ([AWT203](#awt203), [AWT204](#awt204)), the hook of a `Factory` registration included, for a match of the module's [`[Scan]`](./04-registration/07-modules.md#self-compiled-scans), and for every registration of a module that can't carry a factory at all, because it is generic ([AWT201](#awt201)) or not `partial` ([AWT194](#awt194)). When the library grants `InternalsVisibleTo` to any assembly, the module generates no factory or wrapper for such a registration or match and records why. An assembly the library grants `InternalsVisibleTo` constructs the implementation and calls its hooks itself. Any other container can't construct it, so it reports this error at its `[Import]`, names the reason, and leaves the registration out. For an [open generic](./04-registration/07-modules.md#open-generics) registration, decorator or composite, the module records why it generates no generic factory whatever it grants, for example because the open registration names a lifecycle hook or a constraint type isn't public, and a container that can't construct the open type reports this error with that reason.
 
 **Fix:** Grant the container's assembly `InternalsVisibleTo` in the library. Or make the implementation, its constructor and the constructor's parameter types public, or, for a hook or a scan match, fix the reason the message names.
 

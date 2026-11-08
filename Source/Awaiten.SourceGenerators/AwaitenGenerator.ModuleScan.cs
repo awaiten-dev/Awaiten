@@ -219,7 +219,8 @@ partial class AwaitenGenerator
 	///     convention of the module that initializes the match but that a consumer cannot call is AWT234. A match
 	///     that fails only with AWT195, AWT197, AWT200 or AWT234 while an assembly granted <c>InternalsVisibleTo</c> could
 	///     construct it (see <see cref="FriendsCanConstruct" />) is recorded instead, with no factory and no error. So is
-	///     a match the module also registers when an assembly granted <c>InternalsVisibleTo</c>, or any assembly, can
+	///     one that fails only because it takes an internal service the module cannot build, whose cause the module
+	///     reports (see <see cref="UnbuildableNeedsOnly" />), and a match the module also registers when an assembly granted <c>InternalsVisibleTo</c>, or any assembly, can
 	///     construct it, since a factory would split the instance a container shares with the registration.
 	///     Returns the number of factories contributed (0 or 1).
 	/// </summary>
@@ -289,7 +290,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> rejections = new();
 		if (skipReason is null && !TryMirrorFactoryParameters(type, context with { Diagnostics = rejections, }, match.Location, ScanSubject(typeName), out parameters))
 		{
-			skipReason = skippable ? SkipReason(rejections[0], []) : null;
+			skipReason = UnbuildableNeedsOnly(type, rejections, context) ?? (skippable ? SkipReason(rejections[0], []) : null);
 			if (skipReason is null)
 			{
 				diagnostics.AddRange(rejections);
@@ -665,7 +666,7 @@ partial class AwaitenGenerator
 		List<FactoryParameter> mirrored = new();
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
-			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context);
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _);
 			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
 			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
@@ -1091,7 +1092,7 @@ partial class AwaitenGenerator
 			return false;
 		}
 
-		if (MirrorHiddenService(parameter.Type, parameter.Name, parameterAttributes, context) is { } handle)
+		if (MirrorHiddenService(parameter.Type, parameter.Name, parameterAttributes, context, out INamedTypeSymbol? unbuildable) is { } handle)
 		{
 			if (handle.Error is { } error)
 			{
@@ -1114,16 +1115,22 @@ partial class AwaitenGenerator
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.ModuleParameterHiddenInModule,
 				LocationInfo.From(location),
-				new EquatableArray<string>([subject.Subject, parameter.Name, Display(hidden.ToDisplayString(FullyQualified)),])));
+				new EquatableArray<string>([subject.Subject, label, Display(hidden.ToDisplayString(FullyQualified)),])));
 			return false;
 		}
 
 		if (!FitsFactorySignature(parameter.Type, context))
 		{
-			diagnostics.Add(new DiagnosticInfo(
+			DiagnosticInfo rejection = new(
 				Diagnostics.ModuleScanParameterInaccessible,
 				LocationInfo.From(location),
-				new EquatableArray<string>([subject.Subject, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,])));
+				new EquatableArray<string>([subject.Subject, label, Display(parameter.Type.ToDisplayString(FullyQualified)), subject.Remedy,]));
+			if (unbuildable is not null && context.Hidden is { } services)
+			{
+				services.UnbuildableNeeds[rejection] = UnbuildableNeed(label, unbuildable);
+			}
+
+			diagnostics.Add(rejection);
 			return false;
 		}
 

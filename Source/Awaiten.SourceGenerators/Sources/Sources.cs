@@ -129,19 +129,20 @@ internal static partial class Sources
 			EmitAsyncArrayHelper(builder, depth);
 		}
 
-		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray());
+		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray());
 	}
 
 	/// <summary>
 	///     Emits the <c>internal</c> factory and hook wrappers of each implementation private to the container, which a
 	///     container that extends it calls because its own generated code cannot name the private type, and the
-	///     <c>internal</c> wrapper of each private member its registrations name, all in an <c>internal</c> nested
+	///     <c>internal</c> wrapper of each private member its registrations name, and the constants that record why it
+	///     generates no factory for another private implementation, all in an <c>internal</c> nested
 	///     <c>Internals</c> class: an extending container in another assembly reaches it through <c>InternalsVisibleTo</c>,
 	///     and a public class would only add an empty type to a public container's API.
 	/// </summary>
-	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers)
+	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults)
 	{
-		if (factories.Length == 0 && wrappers.Length == 0)
+		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0)
 		{
 			return;
 		}
@@ -184,6 +185,22 @@ internal static partial class Sources
 			EmitMemberWrapper(builder, depth, wrapper, "internal",
 				"Generated for a container that extends this one: forwards to a private member of this container, which the",
 				"extending container cannot call.");
+		}
+
+		foreach (RecordedFactoryFault fault in faults)
+		{
+			if (!first)
+			{
+				builder.AppendLine();
+			}
+
+			first = false;
+			EmitSkipReason(builder, depth, AwaitenGenerator.FaultReasonName(fault.FactoryName), fault.Reason,
+				"Generated for a container that extends this one: why this container generates no factory for an implementation",
+				"private to it, which an extending container in another assembly reports.");
+			builder.AppendLine();
+			EmitSkipReason(builder, depth, AwaitenGenerator.FaultRemedyName(fault.FactoryName), fault.Remedy,
+				"Generated for a container that extends this one: what lets an extending container build that implementation.");
 		}
 
 		Indent(builder, outerDepth).AppendLine("}");

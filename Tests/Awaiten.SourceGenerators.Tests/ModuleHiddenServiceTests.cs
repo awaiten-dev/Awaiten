@@ -2452,6 +2452,231 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_IsReportedOnceAndNamedByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""";
+
+			GeneratorResult result = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(result.Diagnostics).HasSingle()
+				.Because("the consumer of the internal service fails only because the service cannot be built, which the module reports once");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.BeanStore' is registered under the internal service*'Lib.Silo'*").AsWildcard();
+			await That(external.Diagnostics).DoesNotContain("*AWT154*").AsWildcard()
+				.Because("the module's assembly was built with the generator, so blaming a missing generator would mislead");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenThroughAnInjectedProperty_IsReportedOnceAndNamedByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Grinder : IGrinder { [Inject] public BeanStore Store { get; set; } = null!; }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Transient<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""";
+
+			GeneratorResult result = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(result.Diagnostics).HasSingle()
+				.Because("the property fails only because the service cannot be built, which the module reports once");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.BeanStore' is registered under the internal service*'Lib.Silo'*").AsWildcard();
+			await That(external.Diagnostics).DoesNotContain("*AWT154*").AsWildcard()
+				.Because("the module's assembly was built with the generator, so blaming a missing generator would mislead");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its property 'Store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenByAScanMatch_IsReportedOnceAndNamedByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Scan(typeof(IGrinder), As = ScanAs.Marker)]
+				public static partial class CoffeeModule { }
+				""";
+
+			GeneratorResult result = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(result.Diagnostics).HasSingle()
+				.Because("the scan match fails only because the service cannot be built, which the module reports once");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.BeanStore' is registered under the internal service*'Lib.Silo'*").AsWildcard();
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard()
+				.Because("a container in another assembly would otherwise lose the match without a word");
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuiltThroughItsFactory_IsNamedOnceByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>(Factory = nameof(Make))]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule
+				{
+				    internal static BeanStore Make(Silo silo) => new();
+				}
+				""";
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(external.Diagnostics).HasSingle()
+				.Because("the container can neither name the internal service nor call its factory, so the registration is out of its reach like a constructed one");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
+		public async Task EagerInternalSingletonThatCannotBeBuiltThroughItsFactory_IsReportedByAContainerInAnotherAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				internal sealed class Silo { }
+				internal sealed class BeanStore { }
+
+				[Module]
+				[Singleton<BeanStore>(Factory = nameof(Make), Eager = true)]
+				public static partial class CoffeeModule
+				{
+				    internal static BeanStore Make(Silo silo) => new();
+				}
+				""";
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(external.Diagnostics).HasSingle()
+				.Because("a container starts an eager singleton though nothing depends on it, so leaving it out must not go unnoticed");
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.BeanStore'*generated no handle for it*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ChainOfInternalServicesThatCannotBeBuilt_ReportsOnlyTheCauseAtItsEnd()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class Hopper { public Hopper(Silo silo) { } }
+				internal sealed class BeanStore { public BeanStore(Hopper hopper) { } }
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Singleton<Hopper>]
+				[Singleton<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""";
+
+			GeneratorResult result = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n[Container]\n[Import(typeof(CoffeeModule))]\npublic static partial class MyContainer;");
+
+			await That(result.Diagnostics).HasSingle()
+				.Because("BeanStore fails only because Hopper cannot be built, so only Hopper's own cause is worth fixing");
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Hopper' is registered under the internal service*'silo' has the type 'Lib.Silo'*").AsWildcard();
+			await That(external.Diagnostics).Contains("*AWT231*'Lib.Grinder'*because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which the module cannot build*").AsWildcard();
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenAsArg_ReportsTheParameterOfTheConsumer()
+		{
+			GeneratorResult result = RunLibrary("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Grinder : IGrinder { public Grinder([Arg] BeanStore store) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Transient<Grinder, IGrinder>]
+				public static partial class CoffeeModule { }
+				""");
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Grinder'*its constructor parameter 'store' has the type 'Lib.BeanStore'*").AsWildcard()
+				.Because("a caller passes an [Arg] to the generated factory, which therefore needs a type the caller can name, whether or not the module can build the service");
+		}
+
+		[Test]
+		public async Task InternalServiceThatCannotBeBuilt_TakenAsRequestingType_ReportsTheParameterOfTheConsumer()
+		{
+			GeneratorResult result = RunLibrary("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Silo { }
+				internal sealed class BeanStore { public BeanStore(Silo silo) { } }
+				internal sealed class Hopper { }
+				internal sealed class Grinder : IGrinder { public Grinder(Hopper hopper) { } }
+
+				[Module]
+				[Singleton<BeanStore>]
+				[Transient<Hopper>(Factory = nameof(MakeHopper))]
+				[Transient<Grinder, IGrinder>]
+				public static partial class CoffeeModule
+				{
+				    internal static Hopper MakeHopper([RequestingType] BeanStore store) => new();
+				}
+				""");
+
+			await That(result.Diagnostics).Contains("*AWT195*'Lib.Hopper'*the parameter 'store' of its factory 'MakeHopper' has the type 'Lib.BeanStore'*").AsWildcard()
+				.Because("a [RequestingType] parameter is filled by the consumer and never resolved from the module's handles");
+		}
+
+		[Test]
 		public async Task InternalServiceThatCannotBeBuilt_WithInternalsVisibleTo_IsLeftToTheFriendAssembly()
 		{
 			GeneratorResult result = RunLibrary("""
