@@ -108,6 +108,19 @@ public class ModuleInternalMemberTests
 			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("its parameter 'store' takes the internal service 'Lib.BeanStore', which the module cannot build (AWT195: ") && diagnostic.Contains("'Lib.Settings'"))
 				.Because("the factory would take the internal service through its handle, so the cause is what keeps the module from building that service, which the module's own build does not report while nothing it emits needs the service");
 		}
+
+		[Test]
+		public async Task Generic_IsReportedAsUninferableEverywhere()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "internal static IGrinder CreateGrinder<T>() => new Grinder(new BeanStore());"));
+
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("cannot infer its type parameter(s) 'T'"))
+				.Because("no wrapper or recorded cause can help a generic factory of a closed registration, so the module reports it in its own build");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("cannot infer its type parameter(s) 'T'"));
+			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && !diagnostic.Contains("generated no public wrapper"))
+				.Because("the module records no wrapper cause for a generic factory, since a wrapper is not what it lacks, and its own build already reports it precisely");
+			await That(friend.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("cannot infer its type parameter(s) 'T'"));
+		}
 	}
 
 	public class InternalServiceOfAnotherModule
@@ -212,11 +225,12 @@ public class ModuleInternalMemberTests
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready<T>(T plugin) { }"));
 
-			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"))
+			await That(library.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164") && diagnostic.Contains("nothing binds its type parameter(s) 'T'"))
 				.Because("a generic hook binds its type arguments only from an open generic scan's marker, so no container can close it for a closed registration");
-			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164"));
-			await That(external.Diagnostics).Contains("*AWT164*").AsWildcard();
-			await That(friend.Diagnostics).Contains("*AWT164*").AsWildcard();
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT164") && diagnostic.Contains("nothing binds its type parameter(s) 'T'"));
+			await That(external.Diagnostics).Contains("*AWT164*").AsWildcard()
+				.Because("a container in another assembly does not see the internal generic method, which the module's own build already reports precisely");
+			await That(friend.Diagnostics).Contains("*AWT164*nothing binds its type parameter(s) 'T'*").AsWildcard();
 		}
 
 		[Test]

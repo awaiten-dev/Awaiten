@@ -492,11 +492,6 @@ partial class AwaitenGenerator
 
 			IMethodSymbol method = candidates[0];
 			string declared = $"'{member}' is {SyntaxFacts.GetText(method.DeclaredAccessibility)}";
-			if (method.IsGenericMethod)
-			{
-				return $"{declared} and generic, so the module generated no public wrapper for it";
-			}
-
 			foreach (IParameterSymbol parameter in method.Parameters)
 			{
 				if (UnbuildableCause(parameter.Type) is { } unbuildable)
