@@ -164,16 +164,14 @@ public class NullableAnnotationTests
 		[Arguments("IRepo<string>", "Repo<string?>? Create() => new Repo<string?>()", "Repo<string>, IRepo<string>")]
 		[Arguments("IRepo<string>", "IRepo<string?>? Create() => new Repo<string?>()", "IRepo<string>")]
 		[Arguments("Task<IRepo<string>>", "Task<Repo<string?>?> Create() => Task.FromResult<Repo<string?>?>(new Repo<string?>())", "Repo<string>, IRepo<string>")]
-		public async Task Factory_ReturningANullableNestedAnnotation_WarnsOnlyAboutTheNull(string parameter, string factory, string registration)
+		public async Task Factory_ReturningANullableNestedAnnotation_ReportsOnlyAwt242(string parameter, string factory, string registration)
 		{
 			GeneratorResult result = Generator.Run(Source("Scoped", parameter, asyncInitialized: false,
 				members: $"private static {factory};")
 				.Replace("[Scoped(typeof(Repo<>), typeof(IRepo<>))]", $"[Scoped<{registration}>(Factory = nameof(Create))]"));
 
-			await That(result.Diagnostics).Contains("*warning CS8603*").AsWildcard()
-				.Because("a factory that may return null still gets the warning about it");
-			await That(result.Diagnostics).DoesNotContain("*warning CS8619*").AsWildcard().And.DoesNotContain("*warning CS8620*").AsWildcard()
-				.Because("the nested annotation, which the registration cannot spell, is forgiven like on a non-nullable factory");
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*").AsWildcard()
+				.Because("the possible null is reported once at the registration, and the nested annotation, which the registration cannot spell, is forgiven like on a non-nullable factory");
 		}
 
 		[Test]
@@ -187,15 +185,14 @@ public class NullableAnnotationTests
 		}
 
 		[Test]
-		public async Task Instance_OfANullableNestedAnnotation_WarnsOnlyAboutTheNull()
+		public async Task Instance_OfANullableNestedAnnotation_ReportsOnlyAwt242()
 		{
 			GeneratorResult result = Generator.Run(Source("Singleton", "IRepo<string>", asyncInitialized: false,
 					members: "private static Repo<string?>? Repo { get; } = new Repo<string?>();")
 				.Replace("[Singleton(typeof(Repo<>), typeof(IRepo<>))]", "[Singleton<Repo<string>, IRepo<string>>(Instance = nameof(Repo))]"));
 
-			await That(result.Diagnostics).Contains("*warning CS8603*").AsWildcard()
-				.Because("an Instance that may be null still gets the warning about it");
-			await That(result.Diagnostics).DoesNotContain("*warning CS8619*").AsWildcard().And.DoesNotContain("*warning CS8620*").AsWildcard();
+			await That(result.Diagnostics).HasCount(1).And.Contains("*warning AWT242*").AsWildcard()
+				.Because("an Instance that may be null is reported once at the registration");
 		}
 
 		[Test]

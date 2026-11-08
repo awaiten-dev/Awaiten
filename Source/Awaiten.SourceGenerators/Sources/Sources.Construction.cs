@@ -271,6 +271,11 @@ internal static partial class Sources
 			string produced = instance.IsAsyncFactory
 				? $"await {instance.ProductionMember}({arguments}).ConfigureAwait(false)"
 				: $"{instance.ProductionMember}({arguments})";
+			if (instance.NullableProduct)
+			{
+				produced = $"({produced})!";
+			}
+
 			MemberModel[] afterFactory = AfterFactoryMembers(instance);
 			if (afterFactory.Length > 0)
 			{
@@ -278,9 +283,7 @@ internal static partial class Sources
 				produced = $"{names.AfterFactoryAssigner(System.Array.IndexOf(instances, instance))}({produced}{values})";
 			}
 
-			return instance.NestedNullableProduct ? $"({produced})!"
-				: instance.NullableProductType is { } type ? $"({type})(object?)({produced})"
-				: produced;
+			return produced;
 		}
 
 		return $"new {instance.ConstructedType}({arguments}){MemberInitializer(instance, instances, names, serviceToIndex, asynchronous)}";

@@ -621,6 +621,25 @@ public static partial class CoffeeShop
 
 **Fix:** Take the service directly (`Barista(ILogger logger)`), or through `Func<ILogger>` or `Lazy<ILogger>`.
 
+### AWT242
+
+:::warning[Warning]
+A `Factory` or `Instance` member is declared nullable, such as `Grinder?` or `Task<Grinder?>`, so it may produce `null`, while the container hands the value to every consumer of the service as non-nullable. The warning is reported once at the registration, and the generated code compiles without nullable warnings of its own.
+:::
+
+A container reports it for its own members and for those of the modules it imports. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle.
+
+```csharp expect=AWT242
+[Container]
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]
+public static partial class CoffeeShop
+{
+    private static Grinder? MakeGrinder() => new();   // may return null
+}
+```
+
+**Fix:** Declare the member non-nullable, here `private static Grinder MakeGrinder() => new();`, and make sure it never produces `null`. Awaiten has no nullable services: to tolerate a service that may be missing, inject it into an [optional property](./05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead.
+
 ## Lifecycle hooks
 
 ### AWT164

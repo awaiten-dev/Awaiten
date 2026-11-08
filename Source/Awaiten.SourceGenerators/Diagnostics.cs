@@ -2191,4 +2191,18 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level, so it may produce
+	///     <see langword="null" />, while the container hands the value to every consumer as a non-nullable service.
+	///     Reported once at the registration in place of the nullable warnings the generated code would otherwise raise.
+	///     A warning like the compiler's own nullable warnings, which it replaces.
+	/// </summary>
+	public static readonly DiagnosticDescriptor NullableProduct = new(
+		"AWT242",
+		"Factory or Instance member may produce null",
+		"The {0} '{1}' may produce null, since it is declared to produce '{2}?', but the container serves it to consumers of '{3}' as non-nullable; declare it to produce '{2}' and never produce null",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
 }

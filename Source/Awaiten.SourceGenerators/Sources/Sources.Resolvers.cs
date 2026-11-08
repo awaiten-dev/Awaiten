@@ -214,9 +214,7 @@ internal static partial class Sources
 			Indent(builder, depth).Append("internal static ").Append(type).Append(' ').Append(resolver).AppendLine("(Root __s)");
 			Indent(builder, depth).AppendLine("{");
 			EmitDisposedGuard(builder, depth + 1, "__s.");
-			string? value = instance.NestedNullableProduct ? instance.ProductionMember + "!"
-				: instance.NullableProductType is { } nullableType ? $"({nullableType})(object?){instance.ProductionMember}"
-				: instance.ProductionMember;
+			string? value = instance.NullableProduct ? instance.ProductionMember + "!" : instance.ProductionMember;
 			Indent(builder, depth + 1).Append("return ").Append(value).AppendLine(";");
 			Indent(builder, depth).AppendLine("}");
 			return;

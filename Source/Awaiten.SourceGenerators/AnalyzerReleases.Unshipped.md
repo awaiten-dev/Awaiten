@@ -136,6 +136,7 @@
  AWT241  | Awaiten   | Error    | A registration cannot share the instance an imported module of another assembly builds through a generated handle, because it sets a directive the handle cannot apply or the module generated no member to serve it
  AWT242  | Awaiten   | Error    | A Func/Lazy/Owned/Task relationship targets a service the container imports from its external resolver, which serves only a direct dependency
  AWT243  | Awaiten   | Error    | The project compiles with a C# version older than the code generated for a container or module needs (C# 9, or C# 11 for a module that declares a [Scan]), so nothing is generated for it
+ AWT242  | Awaiten   | Warning  | A Factory or Instance member is declared nullable, so it may produce null for a service the container serves as non-nullable
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

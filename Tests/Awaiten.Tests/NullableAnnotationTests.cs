@@ -121,6 +121,27 @@ public sealed partial class NullableAnnotationTests
 		await That(label.Tags).IsSameAs(tags);
 	}
 
+	[Test]
+	public async Task NullableFactoryAndInstance_ProduceTheirValues()
+	{
+		await using NullableProductShop.Root shop = new();
+		await using NullableProductShop.Scope scope = shop.CreateScope();
+
+		await That(scope.Resolve<IStore>()).IsSameAs(shop.Resolve<IStore>())
+			.Because("the singleton a factory declared as IStore? produces is shared like any other");
+		await That(await scope.ResolveAsync<Clock<string>>()).IsSameAs(NullableProductShop.Clock);
+	}
+
+	[Container]
+	[Singleton<IStore>(Factory = nameof(CreateStore))]
+	[Singleton<Clock<string>>(Instance = nameof(Clock))]
+	public static partial class NullableProductShop
+	{
+		internal static Clock<string>? Clock { get; } = new();
+
+		private static IStore? CreateStore() => new MainStore();
+	}
+
 	[Container]
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 	[Scoped(typeof(Repo<>), typeof(IRepo<>))]

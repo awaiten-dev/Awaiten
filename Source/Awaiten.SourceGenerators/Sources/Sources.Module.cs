@@ -427,15 +427,18 @@ internal static partial class Sources
 		if (factory.Call is not null)
 		{
 			Indent(builder, depth).Append(accessibility).Append(" static ");
+			string forgive = factory.NullableProduct ? "!" : string.Empty;
 			if (factory.IsProperty)
 			{
-				builder.Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append(" => ").Append(factory.Handle).Append('(').Append(factory.Call).AppendLine(");");
+				builder.Append(factory.ReturnType).Append(' ').Append(factory.FactoryName).Append(" => ").Append(factory.Handle).Append('(').Append(factory.Call).Append(forgive).AppendLine(");");
 				return;
 			}
 
+			string produced = factory.Awaited is null
+				? $"{factory.Call}({arguments}){forgive}"
+				: factory.NullableProduct ? $"(await {factory.Call}({arguments}).ConfigureAwait(false))!" : $"await {factory.Call}({arguments}).ConfigureAwait(false)";
 			builder.Append(factory.Awaited is null ? factory.ReturnType : $"async {factory.Awaited}<{factory.ReturnType}>").Append(' ').Append(factory.FactoryName)
-				.Append('(').Append(signature).Append(") => ").Append(factory.Handle).Append('(').Append(factory.Awaited is null ? string.Empty : "await ")
-				.Append(factory.Call).Append('(').Append(arguments).Append(')').Append(factory.Awaited is null ? string.Empty : ".ConfigureAwait(false)").AppendLine(");");
+				.Append('(').Append(signature).Append(") => ").Append(factory.Handle).Append('(').Append(produced).AppendLine(");");
 			return;
 		}
 

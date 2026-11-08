@@ -166,8 +166,7 @@ partial class AwaitenGenerator
 			IsAsyncRelease: asyncRelease,
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
-			NestedNullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNestedNullableProduct(disposalType),
-			NullableProductType: !viaModuleFactory && info.Production == ProductionKind.Factory ? NullableProductType(disposalType) : null);
+			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, info, diagnostics));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -429,27 +428,41 @@ partial class AwaitenGenerator
 			EmitType: EmitTypeOf(info),
 			Eager: info.Eager && info.Lifetime == Lifetime.Singleton,
 			PrivateServices: PrivateServices(info, containerSymbol),
-			NestedNullableProduct: memberType is not null && IsNestedNullableProduct(memberType),
-			NullableProductType: memberType is null ? null : NullableProductType(memberType));
+			NullableProduct: memberType is not null && IsNullableProduct(memberType, info, diagnostics));
 	}
 
 	/// <summary>
-	///     Whether a Factory or Instance member's declared type carries a nullable annotation below its top level (see
-	///     <see cref="InstanceModel.NestedNullableProduct" />). A top-level <c>?</c> is left alone: the member may then
-	///     really produce <see langword="null" />, which the consumer's compiler rightly warns about.
+	///     Whether a Factory or Instance member's declared type carries a nullable annotation the registered type cannot
+	///     spell (see <see cref="InstanceModel.NullableProduct" />). One at the top level means the member may produce
+	///     <see langword="null" />, which is reported once at the registration as
+	///     <see cref="Diagnostics.NullableProduct">AWT242</see> instead of as warnings throughout the generated code.
 	/// </summary>
-	private static bool IsNestedNullableProduct(ITypeSymbol produced)
-		=> produced.NullableAnnotation != NullableAnnotation.Annotated && HasNestedNullableAnnotation(produced);
+	private static bool IsNullableProduct(ITypeSymbol produced, ImplInfo info, List<DiagnosticInfo> diagnostics)
+		=> IsNullableProduct(produced, info.Production, info.ProductionMember!, info.OwningServiceOrImpl, info.Location, diagnostics);
 
 	/// <summary>
-	///     A Factory or Instance member's declared reference type that carries a nullable annotation both at and below
-	///     its top level, spelled without the nested annotations (see <see cref="InstanceModel.NullableProductType" />),
-	///     or <see langword="null" /> for any other type.
+	///     The form of the <see cref="ImplInfo" /> overload for the wrapper a module generates over its <c>Factory</c> or
+	///     <c>Instance</c> member, which puts the result into a handle. Without <paramref name="diagnostics" /> it reports
+	///     nothing, for a trial build of the wrapper.
 	/// </summary>
-	private static string? NullableProductType(ITypeSymbol produced)
-		=> produced is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated, } && HasNestedNullableAnnotation(produced)
-			? produced.ToDisplayString(FullyQualified) + "?"
-			: null;
+	private static bool IsNullableProduct(ITypeSymbol produced, ProductionKind production, string member, string service, LocationInfo? location, List<DiagnosticInfo>? diagnostics)
+	{
+		if (produced is not { IsValueType: false, NullableAnnotation: NullableAnnotation.Annotated, })
+		{
+			return HasNestedNullableAnnotation(produced);
+		}
+
+		diagnostics?.Add(new DiagnosticInfo(
+			Diagnostics.NullableProduct,
+			location,
+			new EquatableArray<string>([
+				production == ProductionKind.Factory ? "Factory" : "Instance",
+				member,
+				Display(produced.ToDisplayString(FullyQualified)),
+				Display(service),
+			])));
+		return true;
+	}
 
 	/// <summary>
 	///     The service types of <paramref name="info" /> that are private or protected nested types the generated
