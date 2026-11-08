@@ -1098,7 +1098,10 @@ public class ContainerExtendsTests
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(shop), Extending);
 
 			await That(own.Diagnostics).IsEmpty()
-				.Because("like an open composite, an open decorator without a closing in its own container decorates nothing yet");
+				.Because("an open decorator without a closing in its own container decorates nothing yet, which is no error");
+			await That(await Analyzer.Run<AwaitenAnalyzer>(shop)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+				.Because("the base warns at the attribute, where a base meant only for extension suppresses it");
+			await That(await Analyzer.Run<AwaitenAnalyzer>(shop.Replace("[Decorate(", "#pragma warning disable AWT249\n[Decorate(").Replace("typeof(IHandler<>))]", "typeof(IHandler<>))]\n#pragma warning restore AWT249"))).IsEmpty();
 			await That(same.Diagnostics).IsEmpty();
 			await That(other.Diagnostics).IsEmpty();
 			await That(friend.Diagnostics).IsEmpty();

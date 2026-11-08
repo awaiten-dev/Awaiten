@@ -1153,6 +1153,31 @@ public static partial class CoffeeShop
 
 **Fix:** Take only singletons, `Instance` registrations or imported services that are not initialized asynchronously, or read the value the predicate needs from a singleton such as a settings object. A decision that varies per scope or per call belongs in the decorator itself, which can take its options and pass calls through when it is disabled.
 
+### AWT249
+
+:::warning[Warning]
+An unkeyed open generic `[Decorate]` or `[Composite]` that a container declares itself applies to no closing of its service, because no closing of the service is registered or consumed in the container's graph. Usually the service type is wrong. A warning, not an error, because a base container meant only for [extension](./04-registration/08-extending-containers.md) may declare it for the closings its extending containers register.
+:::
+
+```csharp expect=AWT249
+[Container]
+[Transient(typeof(Handler<>), typeof(IHandler<>))]
+[Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]   // nothing registers or consumes a closing of IHandler<T>
+public static partial class CoffeeShop;
+```
+
+It is not reported for an open decorator or composite that a module or an extended base declares, since the containers that import or extend them register the closings, nor when a closing of the service was left out for another error, such as a constraint violation ([AWT126](#awt126)). A closed decorator without a registration is [AWT123](#awt123), and a key no closing has is [AWT210](#awt210) or [AWT212](#awt212). This is an analyzer diagnostic, so it can be suppressed at the attribute with `#pragma warning disable AWT249` or `[SuppressMessage]`.
+
+**Fix:** Register or consume a closing, or correct the service type. On a base container meant only for extension, suppress the warning at the attribute:
+
+```csharp
+[Container]
+#pragma warning disable AWT249 // the extending containers register the closings
+[Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]
+#pragma warning restore AWT249
+public static partial class CoffeeShopBase;
+```
+
 ## Open generics
 
 ### AWT125

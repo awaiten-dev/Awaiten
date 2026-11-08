@@ -7,7 +7,7 @@ namespace Awaiten.SourceGenerators.Tests;
 ///     is synthesized per closing of the service present in the graph and flows through the same chain/composite
 ///     builders as the closed forms. The forms reuse the open generic diagnostics AWT127 (not unbound) and AWT125
 ///     (arity); a closing whose type arguments violate the decorator's/composite's constraints warns AWT171 (a
-///     warning, since the base service still resolves); an open decorator that matches no closing reports nothing, like an open composite.
+///     warning, since the base service still resolves); an unkeyed open decorator or composite that matches no closing warns AWT249 through the analyzer.
 /// </summary>
 public class OpenGenericDecoratorTests
 {
@@ -125,9 +125,9 @@ public class OpenGenericDecoratorTests
 	}
 
 	[Test]
-	public async Task OpenDecorator_WithNoClosingToDecorate_ReportsNothing()
+	public async Task OpenDecorator_WithNoClosingToDecorate_WarnsAwt249()
 	{
-		GeneratorResult result = Generator.Run("""
+		const string source = """
 		                                       using Awaiten;
 
 		                                       namespace MyCode;
@@ -142,10 +142,11 @@ public class OpenGenericDecoratorTests
 		                                       public static partial class MyContainer
 		                                       {
 		                                       }
-		                                       """);
+		                                       """;
 
-		await That(result.Diagnostics).IsEmpty()
-			.Because("like an open composite, an open decorator applies to whatever closings the graph has, here none, since nothing requires a closed IHandler<T>");
+		await That(Generator.Run(source).Diagnostics).IsEmpty();
+		await That(await Analyzer.Run<AwaitenAnalyzer>(source)).HasSingle().Matching(diagnostic => diagnostic.Contains("warning AWT249"))
+			.Because("the open decorator applies to no closing, since nothing requires a closed IHandler<T>, which a container that is not extended likely did not mean");
 	}
 
 	[Test]

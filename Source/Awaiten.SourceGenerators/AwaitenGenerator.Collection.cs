@@ -1545,7 +1545,7 @@ partial class AwaitenGenerator
 					composesHandles = true;
 				}
 
-				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module, openVia.Via, composesHandles));
+				open.Add(new OpenCompositeRegistration(pair.Service, pair.Mapped, lifetime, location, key, module, openVia.Via, composesHandles, inherited));
 			}
 		}
 

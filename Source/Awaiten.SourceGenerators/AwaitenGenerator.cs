@@ -632,11 +632,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179, AWT158 and AWT245 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
+		// AWT179, AWT158, AWT245 and AWT249 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
 		// tied to a syntax tree, so it could not be suppressed in source.
 		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty)
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
-		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct));
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)
+		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OpenContributionWithoutClosing));
 
 		ValidateRuntimeArguments(graph.Instances, graph.InstanceLocations, graph.ServiceToImpl, graph.ImplToIndex, diagnostics);
 		ValidateDecoratorPredicates(graph, diagnostics);
@@ -943,7 +944,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic composites: synthesize a closed [Composite] per matching closing before building the
 		// composites, so they flow through the same BuildComposites as the closed form (fronting the decorated
 		// members). A no-op when there are none, as with the open decorators above.
-		ExpandOpenComposites(composites, openComposites, closedServices, graph, diagnostics);
+		ExpandOpenComposites(composites, openComposites, closedServices, graph, constraintRejected, diagnostics);
 
 		// Composites: each [Composite<TComposite, TService>] registers the composite and makes it the public
 		// winner for TService, excluded from its own collection so its collection parameter fans out to the

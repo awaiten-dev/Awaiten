@@ -2293,4 +2293,21 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     An unkeyed open generic <c>[Decorate]</c> or <c>[Composite]</c> that a container declares itself applies to no
+	///     closing of its service in the container's graph: <c>{0}</c> is <c>decorator</c> or
+	///     <c>composite</c>. A warning reported by <see cref="AwaitenAnalyzer" /> at the attribute, so a base container
+	///     meant only for extension, whose extending containers register the closings, can suppress it there, while a
+	///     wrong service type in any other container stays visible. A closed decorator without a registration is
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see>, and a keyed open one
+	///     <see cref="DecoratedKeyNotRegistered">AWT210</see>.
+	/// </summary>
+	public static readonly DiagnosticDescriptor OpenContributionWithoutClosing = new(
+		"AWT249",
+		"Open decorator or composite applies to no closing",
+		"The open {0} '{1}' applies to no closing of '{2}', since the container's graph has none; register or consume a closing, or correct the service type, or, on a base container meant only for extension, suppress this warning there",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
 }

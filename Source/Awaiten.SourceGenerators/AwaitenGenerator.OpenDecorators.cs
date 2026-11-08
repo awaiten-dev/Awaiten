@@ -16,8 +16,8 @@ partial class AwaitenGenerator
 	///     Warns AWT171 and skips a closing whose type arguments violate the decorator's constraints; reports AWT210 for a
 	///     selected key that no closing has, unless a closing of its service was dropped for a reported reason
 	///     (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
-	///     decorates nothing and reports nothing, so a base container meant for extension, or a module, may declare one
-	///     for the closings its consumers register.
+	///     decorates nothing; one the container declares itself warns AWT249 (see
+	///     <see cref="ReportOpenContributionWithoutClosing" />).
 	/// </summary>
 	private static void ExpandOpenDecorators(
 		List<DecorateRegistration> decorators,
@@ -34,6 +34,12 @@ partial class AwaitenGenerator
 					? PresentUnderAnyKey(graph, display)
 					: keys.Any(key => PresentUnderKey(graph, display, key)));
 			ReportUnmatchedOpenDecorator(decorator, closings, graph, rejected, diagnostics);
+			if (decorator is { Owner: null, Inherited: false, DecoratesHandles: false, }
+			    && (decorator.Keys is null || (decorator.Keys.Count == 1 && decorator.Keys[0] is null))
+			    && closings.Count == 0)
+			{
+				ReportOpenContributionWithoutClosing("decorator", decorator.Decorator, decorator.Service, decorator.Location, rejected, diagnostics);
+			}
 
 			foreach (INamedTypeSymbol closed in closings)
 			{
@@ -63,6 +69,23 @@ partial class AwaitenGenerator
 					decorator.Owner,
 					When: decorator.When));
 			}
+		}
+	}
+
+	/// <summary>
+	///     Reports AWT249 for an unkeyed open <paramref name="kind" /> the container declares itself that applies to no
+	///     closing of <paramref name="service" />, unless a closing of it was dropped for a reported reason
+	///     (<paramref name="rejected" />), which explains it. The analyzer reports it, so it can be suppressed at the
+	///     attribute; one a module or an extended base declares is left alone, since its consumers register the closings.
+	/// </summary>
+	private static void ReportOpenContributionWithoutClosing(string kind, INamedTypeSymbol type, INamedTypeSymbol service, Location? location, HashSet<string> rejected, List<DiagnosticInfo> diagnostics)
+	{
+		if (!rejected.Any(entry => NamesClosingOf(entry, service)))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.OpenContributionWithoutClosing,
+				LocationInfo.From(location),
+				new EquatableArray<string>([kind, Display(type.ToDisplayString(FullyQualified)), Display(service.ToDisplayString(FullyQualified)),])));
 		}
 	}
 
@@ -167,13 +190,16 @@ partial class AwaitenGenerator
 	///     <see cref="CompositeRegistration" /> for every closing of its service present in the coalesced graph under the
 	///     composite's key, constructing the matching closing of the composite. Each synthesized composite then follows
 	///     the closed <c>[Composite]</c> rules in <see cref="BuildComposites" />. Warns AWT171 and skips a closing whose
-	///     type arguments violate the composite's constraints; reports AWT212 for a key that no closing has.
+	///     type arguments violate the composite's constraints; reports AWT212 for a key that no closing has, and warns
+	///     AWT249 for an unkeyed one the container declares itself that has no closing (see
+	///     <see cref="ReportOpenContributionWithoutClosing" />).
 	/// </summary>
 	private static void ExpandOpenComposites(
 		List<CompositeRegistration> composites,
 		List<OpenCompositeRegistration> open,
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
+		HashSet<string> rejected,
 		List<DiagnosticInfo> diagnostics)
 	{
 		foreach (OpenCompositeRegistration composite in open)
@@ -188,6 +214,11 @@ partial class AwaitenGenerator
 					composite.Composite.ToDisplayString(FullyQualified), composite.Service.ToDisplayString(FullyQualified),
 					composite.Key, composite.Location, diagnostics);
 				continue;
+			}
+
+			if (composite is { Key: null, Owner: null, Inherited: false, ComposesHandles: false, } && closings.Count == 0)
+			{
+				ReportOpenContributionWithoutClosing("composite", composite.Composite, composite.Service, composite.Location, rejected, diagnostics);
 			}
 
 			foreach (INamedTypeSymbol closed in closings)
