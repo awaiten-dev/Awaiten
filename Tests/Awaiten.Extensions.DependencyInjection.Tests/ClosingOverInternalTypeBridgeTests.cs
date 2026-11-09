@@ -16,6 +16,10 @@ public sealed partial class ClosingOverInternalTypeBridgeTests
 	[ImportService(typeof(IClosingLog<>))]
 	public static partial class ImportedClosingContainer;
 
+	[Container]
+	[Import(typeof(CrossAssemblyClosingModule))]
+	public static partial class RegisteredClosingContainer;
+
 	private static ServiceProvider BuildProvider(bool registerLog = true)
 	{
 		ServiceCollection services = new();
@@ -73,5 +77,17 @@ public sealed partial class ClosingOverInternalTypeBridgeTests
 		await That(services.Select(descriptor => descriptor.ServiceType.Name)).DoesNotContain(name => name.StartsWith("Closed_", StringComparison.Ordinal))
 			.Because("a closing handle is no registration, so the projection does not add it to the service collection");
 		await That(services.Select(descriptor => descriptor.ServiceType)).Contains(typeof(IImportedClosingTea));
+	}
+
+	[Test]
+	public async Task Projection_LeavesTheHandleOfTheModulesRegistrationOut()
+	{
+		ServiceCollection services = new();
+		services.AddAwaitenContainer<RegisteredClosingContainer.Root>();
+		using ServiceProvider provider = services.BuildServiceProvider(validateScopes: true);
+
+		await That(services.Select(descriptor => descriptor.ServiceType.Name)).DoesNotContain(name => name.StartsWith("Closed_", StringComparison.Ordinal))
+			.Because("the handle the module's open registration builds is a dependency-only service, which the projection does not add");
+		await That(provider.GetRequiredService<IClosingBrew>().Log.Category.Name).IsEqualTo("ClosingBrew");
 	}
 }

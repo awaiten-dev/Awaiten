@@ -187,15 +187,25 @@ public class ModuleClosingOverInternalTypeTests
 		}
 
 		[Test]
-		public async Task AnOpenImport_WinsOverTheModulesOpenRegistration()
+		[Arguments("[Singleton(typeof(Log<>), typeof(ILog<>))]", "")]
+		[Arguments("[Singleton(typeof(Log<>), typeof(ILog<>), Fallback = Fallback.Silent)]", "")]
+		[Arguments("", "[Singleton(typeof(Lib.Log<>), typeof(Lib.ILog<>))]")]
+		public async Task AnOpenImportOfARegisteredDefinition_ReportsAwt175(string registrations, string containerRegistrations)
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer("[ImportService(typeof(Lib.ILog<>))]"));
-			string container = ContainerSource(result);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(registrations), Consumer("[ImportService(typeof(Lib.ILog<>))]" + containerRegistrations));
 
-			await That(result.Diagnostics).IsEmpty();
-			await That(container).Contains($"{QualifiedHandle}.FromImport(")
-				.Because("an imported definition is host-owned, as it is for a closing the container can name");
-			await That(container).DoesNotContain($"Registration_{Handle}(");
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT175: 'Lib.ILog<Lib.Brew>' is drawn from the external provider by [ImportService] but also registered on the container;*").AsWildcard()
+				.Because("the definition is either host-owned or Awaiten-owned, as it is for a closing the container can name");
+		}
+
+		[Test]
+		public async Task AnOpenImportOfARegisteredDefinition_ReportsAwt175LikeAPublicClosing()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+				Library().Replace("internal sealed class Brew", "public sealed class Brew"),
+				Consumer("[ImportService(typeof(Lib.ILog<>))]"));
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT175: 'Lib.ILog<Lib.Brew>' is drawn from the external provider by [ImportService] but also registered on the container;*").AsWildcard();
 		}
 
 		[Test]

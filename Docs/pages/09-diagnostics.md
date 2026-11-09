@@ -2701,7 +2701,7 @@ public static partial class BrewingModule;
 public static partial class CoffeeShop;
 ```
 
-The container can't name a [closing over an internal type](./04-registration/07-modules.md#closings-over-internal-types) such as `ILogger<PourOver>`, so it serves the closing only in two ways: it asks its host when it imports the definition, or it builds the closing through the factory the module generated from its own open registration of the definition. The message says why neither applies: nothing provides the definition, the container or another module registers it, which would have to close it over a type it can't name, the container decorates or composes it, which couldn't apply to that closing, or the module registers it but generated no factory for the closing, for example because the registration names a hook, which the message names.
+The container can't name a [closing over an internal type](./04-registration/07-modules.md#closings-over-internal-types) such as `ILogger<PourOver>`, so it serves the closing only in two ways: it asks its host when it imports the definition, or it builds the closing through the factory the module generated from its own open registration of the definition. The message says why neither applies: nothing provides the definition, the closing is keyed, which only the host serves, the container or another module registers it, which would have to close it over a type it can't name, the container decorates or composes it, which couldn't apply to that closing, or the module registers it but generated no factory for the closing, for example because the registration names a hook, which the message names.
 
 **Fix:** Import the definition from the host with `[ImportService(typeof(ILogger<>))]`, or register it as an open generic in the module whose implementation takes the closing, without a hook, a generic factory or a decorator. Granting the container's assembly `InternalsVisibleTo` in the library lets the container close the definition itself.
 
@@ -2958,7 +2958,7 @@ public static partial class CoffeeShop;
 ### AWT175
 
 :::danger[Error]
-A type is declared `[ImportService]` (drawn from the host provider) but is also registered on the container. A type is either host-owned or Awaiten-owned, not both. For an open generic import such as `[ImportService(typeof(ILogger<>))]`, this is reported for each closing that a dependency routes to the host while the container also registers it.
+A type is declared `[ImportService]` (drawn from the host provider) but is also registered on the container. A type is either host-owned or Awaiten-owned, not both. For an open generic import such as `[ImportService(typeof(ILogger<>))]`, this is reported for each closing that a dependency routes to the host while the container also registers it, including a [closing over a type internal to a module's assembly](./04-registration/07-modules.md#closings-over-internal-types) that the container can't name.
 :::
 
 ```csharp expect=AWT175

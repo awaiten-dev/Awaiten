@@ -757,6 +757,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		/// </summary>
 		public HashSet<ServiceKey> Decorated { get; } = new();
 
+		/// <summary>
+		///     Each closing handle of an imported module whose <see cref="Open" /> definition the container also registers,
+		///     mapped to the closing it holds, which AWT175 names when the handle is routed (see <c>RegisterClosings</c>).
+		/// </summary>
+		public Dictionary<string, string> RegisteredClosingHandles { get; } = new(StringComparer.Ordinal);
+
 		/// <summary>Whether a direct dependency of <paramref name="type" /> (displayed as <paramref name="serviceType" />) is routed externally.</summary>
 		public bool Routes(ITypeSymbol type, string serviceType)
 			=> Closed.Contains(serviceType) || (Open.Count > 0 && OpenDefinitionOf(type) is { } definition && Open.Contains(definition));

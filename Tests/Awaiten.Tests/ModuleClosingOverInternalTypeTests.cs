@@ -18,11 +18,6 @@ public partial class ModuleClosingOverInternalTypeTests
 	public static partial class RegisteredClosingContainer;
 
 	[Container]
-	[Import(typeof(CrossAssemblyClosingModule))]
-	[ImportService(typeof(IClosingLog<>))]
-	public static partial class ImportOverRegistrationContainer;
-
-	[Container]
 	[Import(typeof(CrossAssemblyImportedClosingModule))]
 	[ImportService(typeof(IClosingLog<>))]
 	public static partial class ImportedClosingContainer;
@@ -90,19 +85,6 @@ public partial class ModuleClosingOverInternalTypeTests
 
 		await That(resolver.Served[0].Disposed).IsFalse()
 			.Because("the host owns what it provides, so the container never disposes it");
-	}
-
-	[Test]
-	public async Task AnImportedDefinition_WinsOverTheModulesOpenRegistration()
-	{
-		LogResolver resolver = new();
-		using ImportOverRegistrationContainer.Root container = new(resolver);
-
-		IClosingBrew brew = container.Resolve<IClosingBrew>();
-
-		await That(brew.Log).IsSameAs(resolver.Served[0])
-			.Because("a definition the container imports is host-owned, as for a closing the container can name");
-		await That(resolver.Requests).HasSingle().Which.Satisfies(type => type.GetGenericArguments()[0].Name == "ClosingBrew");
 	}
 
 	[Test]

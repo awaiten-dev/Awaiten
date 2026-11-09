@@ -166,7 +166,8 @@ partial class AwaitenGenerator
 	///     keeps for the definition (unkeyed, without a context, one without <c>Fallback</c> first) is the module's, the
 	///     module generated the factory of the closing, and nothing the container applies to the definition would be lost
 	///     on it. The handle is built with the lifetime of that registration and disposes what it holds. A handle whose
-	///     definition the container imports from its host is resolved externally instead (see <c>ClassifyDeclaredType</c>).
+	///     definition the container imports from its host is resolved externally instead (see <c>ClassifyDeclaredType</c>), and is
+	///     recorded for AWT175 when the container also registers the definition, as a closing it can name would be.
 	///     A container in the module's own assembly, or in one it grants <c>InternalsVisibleTo</c>, constructs what takes
 	///     the closing itself and needs no handle.
 	///     Returns, for every other handle, why the container cannot build it, which it reports when something takes the
@@ -189,12 +190,23 @@ partial class AwaitenGenerator
 		{
 			foreach (INamedTypeSymbol handle in module.GetTypeMembers(InternalsClass).SelectMany(internals => internals.GetTypeMembers()))
 			{
-				if (ClosingHandleOf(handle) is not var (definition, _) || external.ServiceTypes.Open.Contains(definition))
+				if (ClosingHandleOf(handle) is not var (definition, closing))
 				{
 					continue;
 				}
 
 				string handleType = handle.ToDisplayString(FullyQualified);
+				if (external.ServiceTypes.Open.Contains(definition))
+				{
+					// Like a closing the container can name, which every open registration of the definition closes (AWT175).
+					if (open.Any(candidate => !candidate.Dropped && UnboundDisplay(candidate.Service) == definition))
+					{
+						external.ServiceTypes.RegisteredClosingHandles[handleType] = closing;
+					}
+
+					continue;
+				}
+
 				string moduleName = Display(module.ToDisplayString(FullyQualified));
 				OpenRegistration? kept = open
 					.Where(candidate => candidate is { Dropped: false, Key: null, WhenInjectedInto: null, } && UnboundDisplay(candidate.Service) == definition)
@@ -246,15 +258,15 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     AWT253 for a dependency on the closing handle <paramref name="dependency" /> the container neither builds nor
-	///     resolves externally, with why from <paramref name="faults" /> (see <see cref="RegisterClosings" />), or because
-	///     nothing provides the definition.
+	///     resolves externally, with why from <paramref name="faults" /> (see <see cref="RegisterClosings" />), because
+	///     it is keyed, which only the host serves, or because nothing provides the definition.
 	/// </summary>
 	private static DiagnosticInfo UnservedClosing(ParameterModel dependency, ITypeSymbol handle, ImplInfo info, Dictionary<string, string> faults)
 	{
 		(string definition, string closing) = ClosingHandleOf(handle)!.Value;
 		string module = Display(handle.ContainingType!.ContainingType!.ToDisplayString(FullyQualified));
-		string reason = dependency.Key is null && faults.TryGetValue(dependency.ServiceType, out string? fault)
-			? fault
+		string reason = dependency.Key is not null ? $"the container builds such a closing only from the module's unkeyed open registration of '{Display(definition)}', so it serves a keyed one only from its host; import '{Display(definition)}' from the host with [ImportService(typeof({Display(definition)}))]"
+			: faults.TryGetValue(dependency.ServiceType, out string? fault) ? fault
 			: $"neither the container nor an imported module registers or imports '{Display(definition)}'; import it from the host with [ImportService(typeof({Display(definition)}))], or register it in the module '{module}'";
 		return new DiagnosticInfo(
 			Diagnostics.UnservedClosingOverInternalType,

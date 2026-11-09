@@ -112,7 +112,7 @@ public partial class DiagnosticTests
 				Consumer());
 
 			await That(result.Diagnostics).HasSingle().Which.Contains(
-				"*error AWT253: 'Lib.IBrew' cannot be resolved: 'Lib.Brew' requires 'Lib.ILog<Lib.Brew> (key: audit)', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and neither the container nor an imported module registers or imports 'Lib.ILog<>';*").AsWildcard()
+				"*error AWT253: 'Lib.IBrew' cannot be resolved: 'Lib.Brew' requires 'Lib.ILog<Lib.Brew> (key: audit)', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and the container builds such a closing only from the module's unkeyed open registration of 'Lib.ILog<>', so it serves a keyed one only from its host; import 'Lib.ILog<>' from the host with [ImportService(typeof(Lib.ILog<>))]" + Suffix).AsWildcard()
 				.Because("the module's unkeyed registration does not serve a keyed closing");
 		}
 
