@@ -1168,16 +1168,29 @@ partial class AwaitenGenerator
 
 		string typeName = Display(type.OriginalDefinition.ToDisplayString(FullyQualified));
 		diagnostics.Add(ModuleShapeReason(module) is { } reason
-			? new DiagnosticInfo(
-				Diagnostics.ModuleRegistrationNotSelfCompiled,
-				LocationInfo.From(location),
-				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), typeName, "factory", reason, $"make '{typeName}', its constructor and the constructor's parameter types public",]))
+			? ContributionNotSelfCompiled(module, kind, typeName, reason, location)
 			: new DiagnosticInfo(
 				Diagnostics.ModuleContributionNotSelfCompiled,
 				LocationInfo.From(location),
 				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), kind, typeName,])));
 		return true;
 	}
+
+	/// <summary>
+	///     AWT231 for a decorator, composite or open generic registration of <paramref name="module" />, named
+	///     <paramref name="kind" /> as AWT230 names it, for which the module generated no factory because of
+	///     <paramref name="reason" />: a module declares a decorator or composite, but registers a type.
+	/// </summary>
+	private static DiagnosticInfo ContributionNotSelfCompiled(INamedTypeSymbol module, string kind, string type, string reason, Location? location)
+		=> kind == OpenRegistrationKind
+			? new DiagnosticInfo(
+				Diagnostics.ModuleRegistrationNotSelfCompiled,
+				LocationInfo.From(location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), type, "factory", reason, $"make '{type}', its constructor and the constructor's parameter types public",]))
+			: new DiagnosticInfo(
+				Diagnostics.ModuleContributionFactorySkipped,
+				LocationInfo.From(location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), kind, type, reason,]));
 
 	/// <summary>
 	///     Where a <c>[Decorate]</c> or <c>[Composite]</c> comes from while the container reads it: the module or base
@@ -1199,10 +1212,10 @@ partial class AwaitenGenerator
 	///     module generates for it (see <see cref="CollectModuleContributionFactories" />): from metadata in another
 	///     assembly, or by its deterministic name in the module's own assembly when the type is private to the module,
 	///     preferring the internal factory that takes the internal services instead of their handles where the container
-	///     can see it. Without a factory, one whose skip the module recorded and whose <c>[Inject]</c> property this
-	///     container does not see is AWT231, one inherited through <c>Extends</c> is AWT226, one whose module recorded what
-	///     a container in its own assembly reports is that diagnostic (see <see cref="RecordedContributionFault" />), and
-	///     any other is AWT230.
+	///     can see it. Without a factory, one whose skip the module recorded is AWT231, which for a type this container
+	///     can construct names the <c>[Inject]</c> property it does not see, one inherited through <c>Extends</c> is
+	///     AWT226, one whose module recorded what a container in its own assembly reports is that diagnostic (see
+	///     <see cref="RecordedContributionFault" />), and any other is AWT230.
 	/// </summary>
 	private static bool UnavailableContribution(ContributionContext context, AttributeData attribute, INamedTypeSymbol attributeClass, out OwnerFactoryCall? via)
 	{
@@ -1257,10 +1270,12 @@ partial class AwaitenGenerator
 
 		if (hiddenMembers && skipReason is not null)
 		{
-			DiagnosticInfo diagnostic = new(
-				Diagnostics.ModuleRegistrationPropertyNotSet,
-				LocationInfo.From(context.Location),
-				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,]));
+			DiagnosticInfo diagnostic = CanConstruct(type.OriginalDefinition, compilation)
+				? new DiagnosticInfo(
+					Diagnostics.ModuleRegistrationPropertyNotSet,
+					LocationInfo.From(context.Location),
+					new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,]))
+				: ContributionNotSelfCompiled(module, attributeClass.Name == "CompositeAttribute" ? "the composite" : "the decorator", Display(type.ToDisplayString(FullyQualified)), skipReason, context.Location);
 			if (!diagnostics.Contains(diagnostic))
 			{
 				diagnostics.Add(diagnostic);

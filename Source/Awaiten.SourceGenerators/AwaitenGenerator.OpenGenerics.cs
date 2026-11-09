@@ -22,6 +22,9 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const int MaxExpansionCount = 10_000;
 
+	/// <summary>How a diagnostic about a module's open generic registration names it, before its type.</summary>
+	private const string OpenRegistrationKind = "the open generic registration of";
+
 	/// <summary>
 	///     Reads the <c>typeof</c> arguments of a non-generic lifetime attribute: the implementation and the service,
 	///     which defaults to the implementation. Returns <see langword="false" /> when an argument is missing or does
@@ -134,7 +137,7 @@ partial class AwaitenGenerator
 		{
 			INamedTypeSymbol definition = pair.Mapped.OriginalDefinition;
 			via = ResolveOpenVia(new OpenViaRequest(
-				owner, definition, pair.Service.OriginalDefinition.Construct(definition.TypeParameters.Cast<ITypeSymbol>().ToArray()), RegistrationFactoryName(definition), "the open generic registration of", liveLocation, context.FallbackLocation,
+				owner, definition, pair.Service.OriginalDefinition.Construct(definition.TypeParameters.Cast<ITypeSymbol>().ToArray()), RegistrationFactoryName(definition), OpenRegistrationKind, liveLocation, context.FallbackLocation,
 				context.Compilation, context.Modules, context.Inheritance, context.Inherited, diagnostics));
 			if (via.Dropped)
 			{

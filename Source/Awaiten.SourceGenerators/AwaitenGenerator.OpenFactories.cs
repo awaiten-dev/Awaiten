@@ -754,10 +754,7 @@ partial class AwaitenGenerator
 
 		string type = Display(definition.ToDisplayString(FullyQualified));
 		DiagnosticInfo diagnostic = SkippedOpenReason(owner, request.FactoryName) is { } reason
-			? new DiagnosticInfo(
-				Diagnostics.ModuleRegistrationNotSelfCompiled,
-				LocationInfo.From(request.ImportLocation ?? request.Location),
-				new EquatableArray<string>([Display(owner.ToDisplayString(FullyQualified)), type, "factory", reason, $"make '{type}', its constructor and the constructor's parameter types public",]))
+			? ContributionNotSelfCompiled(owner, request.Kind, type, reason, request.ImportLocation ?? request.Location)
 			: new DiagnosticInfo(
 				Diagnostics.ModuleContributionNotSelfCompiled,
 				LocationInfo.From(request.Location),

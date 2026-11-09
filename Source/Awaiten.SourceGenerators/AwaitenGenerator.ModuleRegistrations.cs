@@ -1053,7 +1053,7 @@ partial class AwaitenGenerator
 			{
 				built = ContributionFactory(type, service, name, context);
 				if (built is null && skipped is not null && !ConstructibleEverywhere(type)
-				    && ContributionFault(type, service, name, attributeClass.Name == "CompositeAttribute", context) is { } fault)
+				    && (ContributionFault(type, service, name, attributeClass.Name == "CompositeAttribute", context) ?? UnbuildableContributionNeed(type, service, name, context)) is { } fault)
 				{
 					skipped.Add(fault);
 				}
@@ -1149,6 +1149,25 @@ partial class AwaitenGenerator
 		       && TryMirrorInjectedProperties(type, context, location, subject, ref parameters, out MirroredMembers members)
 			? new RegistrationFactory(name, returnType.ToDisplayString(FullyQualified), type.ToDisplayString(FullyQualified), parameters, default, members.Required, OptionalMembers: members.Optional, DeferredMembers: members.Deferred, InitOnlyMembers: members.InitOnly, OptionalDeferredMembers: members.OptionalDeferred)
 			: null;
+	}
+
+	/// <summary>
+	///     Why the module generates no factory for a decorator or composite that only an internal service keeps from
+	///     building, which the module or only another module of the assembly registers but cannot build (see
+	///     <see cref="UnbuildableNeedsOnly" /> and <see cref="ServiceRejectedElsewhere" />), recorded so a container in
+	///     another assembly names that service (AWT231) as it does for a registration, or <see langword="null" />.
+	/// </summary>
+	private static SkippedRegistration? UnbuildableContributionNeed(INamedTypeSymbol type, INamedTypeSymbol service, string name, ModuleScanContext context)
+	{
+		List<DiagnosticInfo> rejections = new();
+		if (context.Hidden is null || ContributionFactory(type, service, name, context with { Diagnostics = rejections, }) is not null)
+		{
+			return null;
+		}
+
+		string? reason = UnbuildableNeedsOnly(type, rejections, context)
+		                 ?? (rejections.Count == 1 && rejections[0].Descriptor == Diagnostics.ModuleParameterNeedsUnbuildableService ? rejections[0].MessageArgs.AsArray()[1] : null);
+		return reason is null ? null : new SkippedRegistration(ContributionSkippedName(name), reason);
 	}
 
 	/// <summary>
@@ -1580,7 +1599,7 @@ partial class AwaitenGenerator
 			}
 			else if (InternalServiceOfAnotherModule(property.Type, context) is { } otherModule)
 			{
-				context.Diagnostics.Add(otherModule.WithLocation(location, subject, $"its property '{property.Name}'"));
+				context.Diagnostics.Add(TakingUnbuildable(otherModule.WithLocation(location, subject, $"its property '{property.Name}'"), property.Type, context));
 				return false;
 			}
 			else if (!FitsFactorySignature(property.Type, context) || TypeHiddenInModule(property.Type, context.Module, context.Compilation) is not null)
@@ -1597,6 +1616,7 @@ partial class AwaitenGenerator
 				if (unbuildable is not null && context.Hidden is { } hidden)
 				{
 					hidden.UnbuildableNeeds[rejection] = UnbuildableNeed($"its property '{property.Name}'", unbuildable);
+					hidden.Takes[rejection] = unbuildable;
 				}
 
 				context.Diagnostics.Add(rejection);

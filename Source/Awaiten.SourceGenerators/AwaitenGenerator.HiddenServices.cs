@@ -87,15 +87,32 @@ partial class AwaitenGenerator
 			                                    && services.Contains(service));
 
 		/// <summary>
-		///     Why the module cannot build <paramref name="service" />: the first rejection of an implementation registered
-		///     under it, or <see langword="null" /> when it can or does not register it.
+		///     Why the module cannot build <paramref name="service" />, or <see langword="null" /> when it can or does not
+		///     register it: the first rejection of an implementation registered under it, or, when that rejection only takes
+		///     another internal service the module or another module cannot build (see <see cref="Takes" />), what keeps
+		///     that one from being built, so a chain of such services, even one through a cycle, is named by its root once.
+		///     Following the chain into another module judges that module anew, so it waits until the module's own services
+		///     are judged (see <see cref="Tracking" />), which keeps it from recursing. <paramref name="followed" /> holds the
+		///     services of each module the chain went through, so a cycle ends.
 		/// </summary>
-		public DiagnosticInfo? Rejection(INamedTypeSymbol service)
-			=> NonViable.Contains(service)
-			   && Services.TryGetValue(service, out List<HiddenImplementation>? implementations)
-			   && implementations.Find(implementation => implementation.Rejections.Count > 0) is { } rejected
-				? rejected.Rejections[0]
-				: null;
+		public DiagnosticInfo? Rejection(INamedTypeSymbol service, HashSet<string>? followed = null)
+		{
+			if (!NonViable.Contains(service)
+			    || !Services.TryGetValue(service, out List<HiddenImplementation>? implementations)
+			    || implementations.Find(implementation => implementation.Rejections.Count > 0) is not { } rejected)
+			{
+				return null;
+			}
+
+			DiagnosticInfo rejection = rejected.Rejections[0];
+			followed ??= new HashSet<string>(StringComparer.Ordinal);
+			if (!Tracking || !followed.Add($"{Module.ToDisplayString(FullyQualified)}\0{service.ToDisplayString(FullyQualified)}") || !Takes.TryGetValue(rejection, out INamedTypeSymbol? taken))
+			{
+				return rejection;
+			}
+
+			return (Services.ContainsKey(taken) ? Rejection(taken, followed) : RejectedElsewhere(taken, followed)?.Rejection) ?? rejection;
+		}
 
 		/// <summary>
 		///     The first other module of the assembly that registers <paramref name="service" /> but cannot build it, with
@@ -103,15 +120,15 @@ partial class AwaitenGenerator
 		///     it emits needs the service, so a member of this module that takes the service names it. Judging another module
 		///     collects its services anew, so this is only asked once a member failed. A judgement of
 		///     <see cref="AssemblyModuleIndex.Buildable" /> judges the other module against the same services, since asking
-		///     for them again would start that judgement over.
+		///     for them again would start that judgement over. <paramref name="followed" /> is as for <see cref="Rejection" />.
 		/// </summary>
-		public (INamedTypeSymbol Module, DiagnosticInfo Rejection)? RejectedElsewhere(INamedTypeSymbol service)
+		public (INamedTypeSymbol Module, DiagnosticInfo Rejection)? RejectedElsewhere(INamedTypeSymbol service, HashSet<string>? followed = null)
 		{
 			foreach (INamedTypeSymbol other in Assembly.Modules)
 			{
 				if (!SymbolEqualityComparer.Default.Equals(other, Module)
 				    && Assembly.RegistrationsOf(other).Exists(registration => SymbolEqualityComparer.Default.Equals(registration.Service, service))
-				    && CollectHiddenServices(other, Compilation, _cancellationToken, _buildable)?.Rejection(service) is { } rejection)
+				    && CollectHiddenServices(other, Compilation, _cancellationToken, _buildable)?.Rejection(service, followed) is { } rejection)
 				{
 					return (other, rejection);
 				}
@@ -160,6 +177,13 @@ partial class AwaitenGenerator
 		///     cause the module reports instead, each with the reason a consumer reports for what takes it.
 		/// </summary>
 		public Dictionary<DiagnosticInfo, string> UnbuildableNeeds { get; } = new();
+
+		/// <summary>
+		///     The internal service each rejection of a parameter or injected property takes that the module, or a module
+		///     that could share its handle, registers but cannot build, so the rejection is explained by that service's own
+		///     (see <see cref="Rejection" />).
+		/// </summary>
+		public Dictionary<DiagnosticInfo, INamedTypeSymbol> Takes { get; } = new();
 
 		/// <summary>The internal services a factory being built for viability takes, or <see langword="null" /> when none is.</summary>
 		public HashSet<INamedTypeSymbol>? Referenced { get; set; }
@@ -919,7 +943,8 @@ partial class AwaitenGenerator
 	///     module. Returns the factories, handles, aliases and initializer wrappers to emit. Reports why a needed service
 	///     cannot be built, unless an assembly granted <c>InternalsVisibleTo</c> builds what needs it instead, and in place of a
 	///     rejection that only takes another service the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />)
-	///     why that service cannot be built.
+	///     why that service cannot be built, and for one that only takes a service other modules cannot build, why they
+	///     cannot (see <see cref="ExplainedRejection" />).
 	/// </summary>
 	private static (List<RegistrationFactory> Factories, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers) CompleteHiddenServices(
 		HiddenServices hidden,
@@ -988,7 +1013,10 @@ partial class AwaitenGenerator
 		for (int index = 0; index < reported.Count; index++)
 		{
 			HiddenImplementation candidate = reported[index];
-			diagnostics.AddRange(candidate.Rejections.Where(rejection => !hidden.UnbuildableNeeds.ContainsKey(rejection) && !diagnostics.Contains(rejection)));
+			diagnostics.AddRange(candidate.Rejections
+				.Where(rejection => !hidden.UnbuildableNeeds.ContainsKey(rejection))
+				.Select(rejection => ExplainedRejection(rejection, hidden))
+				.Where(rejection => !diagnostics.Contains(rejection)));
 			if (candidate.Rejections.Any(hidden.UnbuildableNeeds.ContainsKey))
 			{
 				reported.AddRange(hidden.Implementations.Where(other => !other.Viable && !reported.Contains(other) && other.HiddenServices(module, compilation).Any(candidate.Needs.Contains)));
@@ -1888,6 +1916,42 @@ partial class AwaitenGenerator
 				LocationInfo.From(location),
 				new EquatableArray<string>([subject.Subject, UnbuildableNeed(member, service, builder, rejection),]))
 			: null;
+
+	/// <summary>
+	///     <paramref name="rejection" /> of a member that takes <paramref name="type" />, recorded as taking the internal
+	///     service when a module that could share its handle registers it (see <see cref="HiddenServices.Takes" />), so
+	///     only that module failing to build it keeps the member from taking it.
+	/// </summary>
+	private static DiagnosticInfo TakingUnbuildable(DiagnosticInfo rejection, ITypeSymbol type, ModuleScanContext context)
+	{
+		if (context.Hidden is { } hidden && HiddenShapeOf(type) is ({ }, INamedTypeSymbol service) && hidden.Provider(service) is not null)
+		{
+			hidden.Takes[rejection] = service;
+		}
+
+		return rejection;
+	}
+
+	/// <summary>
+	///     <paramref name="rejection" />, or in its place, when it is AWT236 for an internal service that the modules which
+	///     register it cannot build (see <see cref="HiddenServices.Takes" />), the AWT195 that names the first of them and
+	///     why, which <see cref="ServiceRejectedElsewhere" /> reports once the module's own services are judged.
+	/// </summary>
+	private static DiagnosticInfo ExplainedRejection(DiagnosticInfo rejection, HiddenServices hidden)
+	{
+		if (rejection.Descriptor != Diagnostics.ModuleHiddenServiceInOtherModule
+		    || !hidden.Takes.TryGetValue(rejection, out INamedTypeSymbol? service)
+		    || hidden.RejectedElsewhere(service) is not var (builder, cause))
+		{
+			return rejection;
+		}
+
+		string[] arguments = rejection.MessageArgs.AsArray();
+		return new DiagnosticInfo(
+			Diagnostics.ModuleParameterNeedsUnbuildableService,
+			rejection.Location,
+			new EquatableArray<string>([arguments[0], UnbuildableNeed(arguments[1], service, builder, cause),]));
+	}
 
 	/// <summary>The classes with the Awaiten attribute <paramref name="attribute" /> declared in <paramref name="ns" /> and its nested namespaces and types.</summary>
 	private static IEnumerable<INamedTypeSymbol> TypesWith(INamespaceOrTypeSymbol ns, string attribute)
