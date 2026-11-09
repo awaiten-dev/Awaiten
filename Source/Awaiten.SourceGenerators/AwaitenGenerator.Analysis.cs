@@ -1003,7 +1003,7 @@ partial class AwaitenGenerator
 		                                                      && serviceToImpl.TryGetValue(KeyOf(parameter), out string? implementation)
 		                                                      && implToIndex.TryGetValue(implementation, out int index)
 		                                                      && index == target)
-			? predicate.Member
+			? predicate.DeclaredMember
 			: null;
 
 	/// <summary>

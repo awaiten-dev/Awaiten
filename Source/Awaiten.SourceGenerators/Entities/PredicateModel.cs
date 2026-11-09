@@ -8,10 +8,14 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     classified like a lifecycle hook's and restricted to services the root shares. A predicate without parameters is
 ///     read once in the <c>Root</c> constructor; one with parameters is evaluated once, on first use, after its services.
 ///     <see cref="DeclaredTypes" /> are the parameters' types as the predicate declares them, which a diagnostic names
-///     where a variance redirect rewrote the service type.
+///     where a variance redirect rewrote the service type. <see cref="Declared" /> names the predicate the user declared
+///     when <see cref="Member" /> is the wrapper its owner generated for it.
 /// </summary>
-internal sealed record PredicateModel(string Member, bool Invoked, EquatableArray<ParameterModel> Parameters, EquatableArray<string> DeclaredTypes = default)
+internal sealed record PredicateModel(string Member, bool Invoked, EquatableArray<ParameterModel> Parameters, EquatableArray<string> DeclaredTypes = default, string? Declared = null)
 {
+	/// <summary>The predicate as the user declared it, which diagnostics and runtime messages name.</summary>
+	public string DeclaredMember => Declared ?? Member;
+
 	/// <summary>Whether the predicate takes services, so the root evaluates it lazily instead of in its constructor.</summary>
 	public bool IsLazy => Parameters.Count > 0;
 }

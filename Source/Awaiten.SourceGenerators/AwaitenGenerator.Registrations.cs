@@ -119,10 +119,11 @@ internal sealed record DecorateRegistration(
 /// <summary>
 ///     The <c>When</c> predicate of a <c>[Decorate]</c>: the fully qualified static <see cref="Member" /> the root reads,
 ///     the <see cref="Method" /> it calls when the member is a method (whose parameters the root resolves), and the
-///     attribute's location.
+///     attribute's location. <see cref="Declared" /> names the predicate the user declared when <see cref="Member" /> is
+///     the wrapper its owner generated for it.
 /// </summary>
 /// <remarks>An intermediate type carrying live Roslyn symbols; see <see cref="RawRegistration" />.</remarks>
-internal sealed record DecoratorPredicate(string Member, IMethodSymbol? Method, Location? Location);
+internal sealed record DecoratorPredicate(string Member, IMethodSymbol? Method, Location? Location, string? Declared = null);
 
 /// <summary>
 ///     The generated factory of a module or base container (<see cref="Owner" />) that builds a decorator or composite

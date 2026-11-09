@@ -852,6 +852,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		if (factories is not null)
 		{
 			RecordBaseOpenFactories(containerSymbol, compilation, factories);
+			RecordBasePredicateWrappers(containerSymbol, compilation, factories);
 		}
 
 		// [ImportServices]: any otherwise-unresolved direct dependency falls through to the external provider

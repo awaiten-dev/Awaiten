@@ -63,11 +63,12 @@ internal sealed record HiddenAlias(string Name, string ReturnType, string Handle
 internal sealed record HiddenInitializer(string Name, string HandleType, string ConventionType, string Method, string ReturnType, EquatableArray<FactoryParameter> Parameters);
 
 /// <summary>
-///     A generated member that forwards to a <c>Factory</c> or <c>Instance</c> member or a lifecycle hook of its owner
-///     (a module or a base container) that a container in another assembly cannot call: a method taking
+///     A generated member that forwards to a <c>Factory</c> or <c>Instance</c> member, a lifecycle hook or a decorator
+///     predicate of its owner (a module or a base container) that a container in another assembly cannot call: a method taking
 ///     <see cref="Parameters" /> and calling <see cref="Target" /> with them, or, for <see cref="IsProperty" />, a
 ///     property returning it. An <see cref="IsInternal" /> wrapper of a module forwards to a private member under an
-///     internal service, for the containers that build the service themselves instead of through its handle.
+///     internal service, for the containers that build the service themselves instead of through its handle; one of a
+///     base container forwards to a private member, for an extending container granted <c>InternalsVisibleTo</c>.
 ///     <see cref="Awaited" /> marks a wrapper that awaits the target, because its awaitable result converts to the
 ///     wrapper's only through the awaited value.
 /// </summary>
@@ -89,8 +90,9 @@ internal sealed record MemberWrapper(
 ///     marks a decorator or composite of an internal service the module cannot build, whose constant holds the type a
 ///     consumer reports instead. <see cref="Member" /> marks a <c>Factory</c> member the module neither wraps nor builds
 ///     through a handle, whose constant holds why, which a consumer that cannot call the member reports (AWT108).
+///     <see cref="Predicate" /> marks an internal decorator predicate the module generates no wrapper for (AWT247).
 /// </summary>
-internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false);
+internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false, bool Predicate = false);
 
 /// <summary>
 ///     The generated factory of an implementation that only its owner can construct: a self-compiled module

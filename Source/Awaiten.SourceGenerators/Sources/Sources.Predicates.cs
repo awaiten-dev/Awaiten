@@ -75,7 +75,7 @@ internal static partial class Sources
 			string arguments = string.Join(", ", predicate.Parameters.AsArray()
 				.Select(parameter => DependencyValue(parameter, context.Instances, context.Names, context.ServiceToIndex, asynchronous: false)));
 			Separate(builder);
-			AppendXmlSummary(builder, depth, $"Evaluates the decorator predicate <c>{AwaitenGenerator.Display(predicate.Member)}</c> once per root.");
+			AppendXmlSummary(builder, depth, $"Evaluates the decorator predicate <c>{AwaitenGenerator.Display(predicate.DeclaredMember)}</c> once per root.");
 			Indent(builder, depth).Append("internal static bool ").Append(PredicateMethod(p)).AppendLine("(Root __s)");
 			Indent(builder, depth).AppendLine("{");
 			Indent(builder, depth + 1).Append("int __state = ").Append(field).AppendLine(";");

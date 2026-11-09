@@ -23,7 +23,7 @@
 		<ProjectReference Include="..\Awaiten.Tests.Support\Awaiten.Tests.Support.csproj" />
 	</ItemGroup>
 
-	<!-- The decorator and composite shapes of internal services, the private member shapes and the runtime argument shapes that Awaiten.Tests.Support declares too, compiled here
+	<!-- The decorator and composite shapes of internal services, the private member shapes, the runtime argument shapes and the internal predicates that Awaiten.Tests.Support declares too, compiled here
 	     once more so a container in this assembly and one granted InternalsVisibleTo build exactly the shapes that a
 	     container in Awaiten.Tests builds without it. -->
 	<PropertyGroup>
@@ -34,6 +34,7 @@
 		<Compile Include="..\Awaiten.Tests.Support\CrossAssemblyHiddenDecoratorShapes.cs" Link="CrossAssemblyHiddenDecoratorShapes.cs" />
 		<Compile Include="..\Awaiten.Tests.Support\CrossAssemblyTuckedShapes.cs" Link="CrossAssemblyTuckedShapes.cs" />
 		<Compile Include="..\Awaiten.Tests.Support\CrossAssemblyRuntimeArgumentShapes.cs" Link="CrossAssemblyRuntimeArgumentShapes.cs" />
+		<Compile Include="..\Awaiten.Tests.Support\CrossAssemblyInternalPredicateShapes.cs" Link="CrossAssemblyInternalPredicateShapes.cs" />
 	</ItemGroup>
 
 	<!-- The init accessors of CrossAssemblyFriendInjectedShapesModule on net48. Awaiten.Tests, which this assembly

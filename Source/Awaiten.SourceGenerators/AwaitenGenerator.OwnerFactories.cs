@@ -358,7 +358,7 @@ partial class AwaitenGenerator
 			ITypeSymbol type = instance is IFieldSymbol field ? field.Type : ((IPropertySymbol)instance).Type;
 			if (TypeHiddenInModule(type, container, compilation) is null)
 			{
-				Add(new MemberWrapper(MemberWrapperName("Instance", instance.Name, info.Symbol), WrapperReturnType(type, instance), instance.Name, default, IsProperty: true));
+				Add(new MemberWrapper(MemberWrapperName("Instance", instance.Name, info.Symbol), WrapperReturnType(type, instance), instance.Name, default, IsProperty: true, IsInternal: true));
 			}
 		}
 
@@ -385,7 +385,38 @@ partial class AwaitenGenerator
 			=> method.Parameters.Any(parameter => TypeHiddenInModule(parameter.Type, container, compilation) is not null || UnmirroredAttribute(parameter.GetAttributes()) is not null)
 			   || TypeHiddenInModule(method.ReturnType, container, compilation) is not null
 				? null
-				: new MemberWrapper(wrapperName, method.ReturnsVoid ? "void" : WrapperReturnType(method.ReturnType, method), target, MirroredParameters(method.Parameters));
+				: new MemberWrapper(wrapperName, method.ReturnsVoid ? "void" : WrapperReturnType(method.ReturnType, method), target, MirroredParameters(method.Parameters), IsInternal: true);
+	}
+
+	/// <summary>
+	///     Records a public wrapper for each internal decorator predicate (see <see cref="InternalPredicate" />) of a public
+	///     container without <c>Extends</c>, so a container that extends it in another assembly calls the predicate without
+	///     <c>InternalsVisibleTo</c>. A predicate that takes a type other assemblies cannot name gets none.
+	/// </summary>
+	private static void RecordBasePredicateWrappers(INamedTypeSymbol container, Compilation compilation, BaseFactories factories)
+	{
+		if (!IsExternallyAccessible(container))
+		{
+			return;
+		}
+
+		foreach (AttributeData attribute in container.GetAttributes())
+		{
+			if (InternalPredicate(attribute, container, compilation) is not { } predicate
+			    || factories.Wrappers.Exists(existing => existing.Name == PredicateWrapperName(predicate.Name)))
+			{
+				continue;
+			}
+
+			if (predicate is not IMethodSymbol method)
+			{
+				factories.Wrappers.Add(new MemberWrapper(PredicateWrapperName(predicate.Name), "bool", predicate.Name, default, IsProperty: true));
+			}
+			else if (method.Parameters.All(parameter => IsExternallyAccessible(parameter.Type) && parameter.RefKind == RefKind.None && UnmirroredAttribute(parameter.GetAttributes()) is null))
+			{
+				factories.Wrappers.Add(new MemberWrapper(PredicateWrapperName(predicate.Name), "bool", predicate.Name, MirroredParameters(method.Parameters)));
+			}
+		}
 	}
 
 	/// <summary>
