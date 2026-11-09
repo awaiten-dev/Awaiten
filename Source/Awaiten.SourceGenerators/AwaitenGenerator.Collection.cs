@@ -1838,7 +1838,8 @@ partial class AwaitenGenerator
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
 	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
 	///     instance handle is AWT178 instead, since the handle builds it where no container-side entry reaches, with the
-	///     reason the module handles it (see <see cref="InstanceHandleReason" />). An alias that serves the handle's instance
+	///     reason the module handles it (see <see cref="InstanceHandleReason" />), and so is an entry for its generic
+	///     definition that no constructed closing matches, which then names the closing the handle builds. An alias that serves the handle's instance
 	///     (see <see cref="ThroughAlias" />) registers nothing here, although it may return the implementation itself.
 	/// </summary>
 	private static void ReportUnmatchedInjectProperties(
@@ -1862,6 +1863,10 @@ partial class AwaitenGenerator
 			if (info.Origin is { } module && info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal) is var marker and > 0)
 			{
 				handled[info.ImplementationType.Substring(0, marker)] = (module, info.Hidden);
+				if (info.Hidden is { IsGenericType: true, } closed)
+				{
+					handled[TypeIdentity(closed.OriginalDefinition, compilation)] = (module, closed);
+				}
 			}
 		}
 
@@ -1879,7 +1884,11 @@ partial class AwaitenGenerator
 						Diagnostics.InjectPropertyOnOwnerFactory,
 						entry.Location,
 						new EquatableArray<string>([
-							entry.PropertyName, DisplayInstance(implementation.Key), Display(owner.Module.ToDisplayString(FullyQualified)),
+							entry.PropertyName,
+							owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
+								? Display(closed.ToDisplayString(FullyQualified))
+								: DisplayInstance(implementation.Key),
+							Display(owner.Module.ToDisplayString(FullyQualified)),
 							InstanceHandleReason(owner.Module, owner.Implementation, compilation),
 						]))
 					: new DiagnosticInfo(
