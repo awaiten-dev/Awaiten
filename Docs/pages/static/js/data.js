@@ -1632,6 +1632,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:20:26 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type when a module of another assembly builds an internal implementation, decorator or scan match (#372)"
+      },
+      {
+        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
+        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
       }
     ],
     "labels": [
@@ -1906,7 +1912,8 @@ window.BENCHMARK_DATA = {
       "464cf015",
       "a8dc6378",
       "af6814f5",
-      "473c4389"
+      "473c4389",
+      "5485cfa1"
     ],
     "datasets": [
       {
@@ -2184,7 +2191,8 @@ window.BENCHMARK_DATA = {
           5.146448550316004,
           5.437558035765376,
           6.527111094731551,
-          3.148773940404256
+          3.148773940404256,
+          4.896269593387842
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2196,6 +2204,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2753,7 +2762,8 @@ window.BENCHMARK_DATA = {
           6.70151378462712,
           7.297164591153463,
           7.325951104362805,
-          4.803037607669831
+          4.803037607669831,
+          7.00768257783992
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2765,6 +2775,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3322,7 +3333,8 @@ window.BENCHMARK_DATA = {
           84.84291051115308,
           125.2359938621521,
           135.20926240285237,
-          63.79545038087027
+          63.79545038087027,
+          82.91607408523559
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3334,6 +3346,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3887,7 +3900,8 @@ window.BENCHMARK_DATA = {
           6.779460614919662,
           7.377478778362274,
           9.093067325651646,
-          5.434546659390132
+          5.434546659390132,
+          6.5198511297504105
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3899,6 +3913,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4448,7 +4463,8 @@ window.BENCHMARK_DATA = {
           8.868350263436636,
           9.617391478802476,
           10.989498717280535,
-          6.6236268281936646
+          6.6236268281936646,
+          8.446163219213485
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4460,6 +4476,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6373,6 +6390,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:20:26 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type when a module of another assembly builds an internal implementation, decorator or scan match (#372)"
+      },
+      {
+        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
+        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
       }
     ],
     "labels": [
@@ -6647,7 +6670,8 @@ window.BENCHMARK_DATA = {
       "464cf015",
       "a8dc6378",
       "af6814f5",
-      "473c4389"
+      "473c4389",
+      "5485cfa1"
     ],
     "datasets": [
       {
@@ -6925,7 +6949,8 @@ window.BENCHMARK_DATA = {
           5.117693428809826,
           5.635203438145774,
           7.132826404912131,
-          3.3147520955119814
+          3.3147520955119814,
+          5.4766526935356
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6937,6 +6962,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7494,7 +7520,8 @@ window.BENCHMARK_DATA = {
           6.513590522110462,
           7.117961529890696,
           7.305907238806997,
-          4.194749943912029
+          4.194749943912029,
+          6.489185622582833
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7506,6 +7533,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8063,7 +8091,8 @@ window.BENCHMARK_DATA = {
           88.8390486796697,
           96.24784821271896,
           126.19988008907863,
-          63.84873849550883
+          63.84873849550883,
+          83.76261964241664
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8075,6 +8104,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8628,7 +8658,8 @@ window.BENCHMARK_DATA = {
           6.844925430204187,
           7.1904394168938905,
           9.09549425223044,
-          5.410570149975164
+          5.410570149975164,
+          6.535289174566667
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8640,6 +8671,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9189,7 +9221,8 @@ window.BENCHMARK_DATA = {
           11.69243601922478,
           12.992012273271879,
           14.351332194530046,
-          8.152687722444535
+          8.152687722444535,
+          8.209044939050308
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9201,6 +9234,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11114,6 +11148,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:20:26 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type when a module of another assembly builds an internal implementation, decorator or scan match (#372)"
+      },
+      {
+        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
+        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
       }
     ],
     "labels": [
@@ -11388,7 +11428,8 @@ window.BENCHMARK_DATA = {
       "464cf015",
       "a8dc6378",
       "af6814f5",
-      "473c4389"
+      "473c4389",
+      "5485cfa1"
     ],
     "datasets": [
       {
@@ -11666,7 +11707,8 @@ window.BENCHMARK_DATA = {
           19.8530861054148,
           20.21032026410103,
           28.363061809539794,
-          15.418597850203515
+          15.418597850203515,
+          21.678517945607503
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11938,6 +11980,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12235,7 +12278,8 @@ window.BENCHMARK_DATA = {
           1412.088979427631,
           1466.0034839630127,
           1776.1530934651694,
-          1116.7360412052699
+          1116.7360412052699,
+          1564.2815734863282
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12247,6 +12291,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12804,7 +12849,8 @@ window.BENCHMARK_DATA = {
           28664.417978140023,
           29745.690598707934,
           31426.48087855748,
-          25498.066239420572
+          25498.066239420572,
+          29503.812377929688
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13087,7 +13133,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32482,
-          32478
+          32478,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13369,7 +13416,8 @@ window.BENCHMARK_DATA = {
           785.4260772069296,
           713.8057792027791,
           785.2916119893392,
-          610.1480487823486
+          610.1480487823486,
+          756.1623973210652
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13399,6 +13447,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13930,7 +13979,8 @@ window.BENCHMARK_DATA = {
           11746.541063748873,
           11618.4874613444,
           13099.605563572475,
-          9665.884779866536
+          9665.884779866536,
+          11892.856968180338
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14209,6 +14259,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -15855,6 +15906,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:20:26 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type when a module of another assembly builds an internal implementation, decorator or scan match (#372)"
+      },
+      {
+        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
+        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
       }
     ],
     "labels": [
@@ -16129,7 +16186,8 @@ window.BENCHMARK_DATA = {
       "464cf015",
       "a8dc6378",
       "af6814f5",
-      "473c4389"
+      "473c4389",
+      "5485cfa1"
     ],
     "datasets": [
       {
@@ -16407,7 +16465,8 @@ window.BENCHMARK_DATA = {
           203.4926332950592,
           186.69636693000794,
           270.7339647928874,
-          115.3314334494727
+          115.3314334494727,
+          179.0664984067281
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16679,6 +16738,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -16976,7 +17036,8 @@ window.BENCHMARK_DATA = {
           14404.613651529948,
           14457.201711382184,
           16981.940146891277,
-          10970.022185262043
+          10970.022185262043,
+          14621.209573599008
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16988,6 +17049,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17545,7 +17607,8 @@ window.BENCHMARK_DATA = {
           710195.1243024553,
           724859.0543387277,
           803447.8815755208,
-          638163.0103236607
+          638163.0103236607,
+          736627.300920759
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17828,7 +17891,8 @@ window.BENCHMARK_DATA = {
           738521,
           740462,
           740994,
-          740793
+          740793,
+          740993
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18110,7 +18174,8 @@ window.BENCHMARK_DATA = {
           44030.050986153736,
           44145.53891194661,
           47610.412418619795,
-          34547.60314941406
+          34547.60314941406,
+          45812.34584263393
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18389,7 +18454,8 @@ window.BENCHMARK_DATA = {
           80082,
           80012,
           80779,
-          80301
+          80301,
+          80777
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18671,7 +18737,8 @@ window.BENCHMARK_DATA = {
           340804.2206655649,
           375849.54791666666,
           407757.76712239586,
-          270240.18701171875
+          270240.18701171875,
+          351594.51224190847
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18950,7 +19017,8 @@ window.BENCHMARK_DATA = {
           573089,
           573027,
           573056,
-          573057
+          573057,
+          573073
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20572,6 +20640,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:20:26 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type when a module of another assembly builds an internal implementation, decorator or scan match (#372)"
+      },
+      {
+        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
+        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
       }
     ],
     "labels": [
@@ -20842,7 +20916,8 @@ window.BENCHMARK_DATA = {
       "464cf015",
       "a8dc6378",
       "af6814f5",
-      "473c4389"
+      "473c4389",
+      "5485cfa1"
     ],
     "datasets": [
       {
@@ -21116,7 +21191,8 @@ window.BENCHMARK_DATA = {
           166.4517787013735,
           220.17193072182792,
           172.43724274635315,
-          178.65012346781216
+          178.65012346781216,
+          210.12603061993917
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -21151,6 +21227,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -21677,7 +21754,8 @@ window.BENCHMARK_DATA = {
           387.6872832775116,
           455.777627547582,
           401.53917558376605,
-          419.1342578274863
+          419.1342578274863,
+          455.3992163658142
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -21689,6 +21767,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -22238,7 +22317,8 @@ window.BENCHMARK_DATA = {
           3444.4407035827635,
           4793.718191000132,
           3467.2230824061803,
-          3658.3186314900718
+          3658.3186314900718,
+          4815.49405670166
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22322,6 +22402,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -22799,7 +22880,8 @@ window.BENCHMARK_DATA = {
           253.91504907608032,
           347.7106599966685,
           242.49249636332195,
-          273.0929437050453
+          273.0929437050453,
+          333.94251006444296
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22811,6 +22893,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -23360,7 +23443,8 @@ window.BENCHMARK_DATA = {
           390.3306481043498,
           568.0868235270183,
           396.41191104253136,
-          419.50258417129515
+          419.50258417129515,
+          530.1281888144357
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23372,6 +23456,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
