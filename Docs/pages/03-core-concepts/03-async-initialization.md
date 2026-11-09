@@ -123,7 +123,7 @@ public static partial class BarModule;
 public static partial class CoffeeShop;
 ```
 
-When the module lives in another assembly, the container calls the convention itself. So the convention type and its method must be public, unless the module's assembly grants the container's assembly `InternalsVisibleTo` ([AWT234](../09-diagnostics.md#awt234)).
+When the module lives in another assembly, the container calls a public convention itself. A convention whose type or method is `internal` runs through a public wrapper the module generates, so its method's parameter types must be public, unless the module's assembly grants the container's assembly `InternalsVisibleTo` ([AWT234](../09-diagnostics.md#awt234)).
 
 ## Resolve it asynchronously
 

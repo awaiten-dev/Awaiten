@@ -934,7 +934,7 @@ partial class AwaitenGenerator
 					new EquatableArray<string>([
 						$"'{Display(declared.ToDisplayString(FullyQualified))}', which the module's factory '{member}' returns,",
 						Display(convention.Type.ToDisplayString(FullyQualified)),
-						convention.Method.Name,
+						convention.Name,
 						$"the type is private to the module, so every container sees the factory return the registered type '{typeName}' instead, which the convention does not initialize",
 						$"declare the factory to return '{typeName}' and initialize the instance inside an async factory, or make '{Display(declared.ToDisplayString(FullyQualified))}' internal",
 					])));
@@ -1941,9 +1941,8 @@ partial class AwaitenGenerator
 			? new SelfCompiledSubject(
 				typeName,
 				$"'{Display(typeName)}' is self-compiled from a module registration because its [Inject] property '{property}' is not public",
-				$"make the [Inject] property '{property}', its setter and its type public",
-				"self-compiled from a module registration")
-			: new SelfCompiledSubject(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public", "self-compiled from a module registration");
+				$"make the [Inject] property '{property}', its setter and its type public")
+			: new SelfCompiledSubject(typeName, $"'{Display(typeName)}' is self-compiled from a module registration", "make the implementation and its constructor public");
 	}
 
 	/// <summary>

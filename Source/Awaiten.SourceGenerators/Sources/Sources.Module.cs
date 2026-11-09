@@ -75,7 +75,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 
 		bool hasMembers = model.Factories.Count > 0 || model.Registrations.Count > 0 || model.Wrappers.Count > 0 || model.Skipped.Count > 0
-		                  || model.Handles.Count > 0;
+		                  || model.Handles.Count > 0 || model.ConventionWrappers.Count > 0;
 		if (hasMembers)
 		{
 			OpenInternals(builder, depth + 1, "public",
@@ -152,6 +152,16 @@ internal static partial class Sources
 
 		EmitAliases(builder, depth + 2, model.Aliases.AsArray());
 		EmitInitializers(builder, depth + 2, model.Initializers.AsArray());
+		foreach (ConventionWrapper wrapper in model.ConventionWrappers.AsArray())
+		{
+			if (!first)
+			{
+				builder.AppendLine();
+			}
+
+			first = false;
+			EmitConventionWrapper(builder, depth + 2, wrapper);
+		}
 
 		foreach (MemberWrapper wrapper in model.Wrappers.AsArray())
 		{
@@ -296,6 +306,31 @@ internal static partial class Sources
 				.Append(") => ((").Append(initializer.ConventionType).Append(")@awaiten__instance.Value).").Append(initializer.Method).Append('(')
 				.Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).AppendLine(");");
 		}
+	}
+
+	/// <summary>
+	///     Emits the wrapper that runs a convention of the module another assembly cannot call on any instance, or the
+	///     constant that records why the module generates none.
+	/// </summary>
+	private static void EmitConventionWrapper(StringBuilder builder, int depth, ConventionWrapper wrapper)
+	{
+		if (wrapper.SkipReason is { } reason)
+		{
+			EmitSkipReason(builder, depth, wrapper.Name, reason,
+				"Generated from a module [AsyncInitializer]: why no wrapper runs this convention. An assembly granted",
+				"InternalsVisibleTo calls it itself; a consuming container that cannot reports this reason.");
+			return;
+		}
+
+		AppendXmlSummary(builder, depth,
+			"Generated from a module [AsyncInitializer]: runs the convention on an instance the module registers, so a consuming",
+			"container in another assembly initializes it without naming the convention.");
+		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
+		string instance = UnusedName("awaiten__instance", parameters);
+		Indent(builder, depth).Append("public static ").Append(wrapper.ReturnType).Append(' ').Append(wrapper.Name).Append("(object @").Append(instance)
+			.Append(string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}")))
+			.Append(") => ((").Append(wrapper.ConventionType).Append(")@").Append(instance).Append(").").Append(wrapper.Method).Append('(')
+			.Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).AppendLine(");");
 	}
 
 	/// <summary>

@@ -645,17 +645,17 @@ public class RegistrationFactoryShapeTests
 
 				await That(ContainerSource(Generator.Run(library + GrinderConsumer.Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace App;", "")))).Contains("WarmUpAsync(");
 				await That(ContainerSource(Generator.RunWithGeneratedReferencedAssembly(Granted(library), GrinderConsumer))).Contains("WarmUpAsync(");
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer);
+				await That(result.Diagnostics).IsEmpty();
 				if (accessibility == "public")
 				{
-					GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer);
-					await That(result.Diagnostics).IsEmpty();
 					await That(ContainerSource(result)).Contains("WarmUpAsync(")
 						.Because("the module's convention matches the internal implementation the wrapper produces, not the public service it returns it as");
 				}
 				else
 				{
-					await That(Generator.RunWithGeneratedReferencedAssembly(library, GrinderConsumer).Diagnostics).HasCount(1).And.Contains("*AWT234*WarmUpAsync*").AsWildcard()
-						.Because("a container that cannot call the convention reports it instead of silently leaving the implementation uninitialized");
+					await That(ContainerSource(result)).Contains("await global::Lib.GreetingModule.Internals.Initializer_IWarmUp_").Exactly(1)
+						.Because("a container that cannot call the internal convention runs it through the module's wrapper");
 				}
 			}
 
@@ -1628,17 +1628,21 @@ public class RegistrationFactoryShapeTests
 		}
 
 		[Test]
-		public async Task AnInternalConventionOfAFactoryRegistrationWithAWrappedHook_ReportsAwt234AtTheContainer()
+		public async Task AnInternalConventionOfAFactoryRegistrationWithAWrappedHook_RunsThroughItsWrapperAfterTheHook()
 		{
 			string library = ConventionFactoryModule.Replace("public virtual Task StartAsync", "internal virtual Task StartAsync");
 			GeneratorResult own = Generator.Run(library);
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, ClockConsumer);
 
-			await That(own.Diagnostics).IsEmpty()
-				.Because("the container constructs a Factory registration itself, so the container judges the convention, as for any registration it builds");
-			await That(ModuleSource(own)).Contains("Hook_OnActivated_Kettle_");
-			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT234") && diagnostic.Contains("not accessible from the container"))
-				.Because("the hook wrapper makes the hook callable, but the container still cannot call the internal convention");
+			await That(own.Diagnostics).IsEmpty();
+			await That(ModuleSource(own)).Contains("Hook_OnActivated_Kettle_").And.Contains("Initializer_Appliance_");
+			await That(result.Diagnostics).IsEmpty();
+			string source = result.Sources.Single(source => source.Key.Contains("AppContainer")).Value;
+			int hook = source.IndexOf("global::Lib.GreetingModule.Internals.Hook_OnActivated_Kettle_", StringComparison.Ordinal);
+			int convention = source.IndexOf("await global::Lib.GreetingModule.Internals.Initializer_Appliance_", StringComparison.Ordinal);
+			await That(hook).IsGreaterThan(-1);
+			await That(convention).IsGreaterThan(hook)
+				.Because("the container runs the internal convention through the module's wrapper, after the wrapped hook");
 		}
 
 		private const string SkippedHookConventionModule = """

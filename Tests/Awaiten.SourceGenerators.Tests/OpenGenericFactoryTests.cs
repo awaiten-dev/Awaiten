@@ -775,11 +775,12 @@ public class OpenGenericFactoryTests
 
 				namespace Lib;
 
-				internal interface IWarmup { Task WarmUpAsync(); }
+				internal sealed class Settings { }
+				internal interface IWarmup { Task WarmUpAsync(Settings settings); }
 				public interface IRepository<T> { }
 				internal sealed class Repository<T> : IRepository<T>, IWarmup
 				{
-				    public Task WarmUpAsync() => Task.CompletedTask;
+				    public Task WarmUpAsync(Settings settings) => Task.CompletedTask;
 				}
 
 				[Module]
@@ -788,8 +789,8 @@ public class OpenGenericFactoryTests
 				public static partial class DataModule { }
 				""", Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT231*DataModule*initialized by the async initializer 'Lib.IWarmup.WarmUpAsync'*").AsWildcard()
-				.Because("the consumer could not run the convention, so the closing is not built without it");
+			await That(result.Diagnostics).Contains("*AWT231*DataModule*initialized by the async initializer 'Lib.IWarmup.WarmUpAsync', but its parameter 'settings' has the type 'Lib.Settings', which is not public*").AsWildcard()
+				.Because("no wrapper can run the convention, so the closing is not built without it");
 		}
 	}
 

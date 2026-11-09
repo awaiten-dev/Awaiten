@@ -8,12 +8,15 @@ partial class AwaitenGenerator
 {
 	/// <summary>
 	///     One usable <c>[AsyncInitializer&lt;T&gt;(method)]</c> of a container or module: the convention
-	///     <see cref="Type" /> and the instance <see cref="Method" /> of it that initializes an implementation.
+	///     <see cref="Type" /> and the instance <see cref="Method" /> of it named <see cref="Name" /> that initializes an
+	///     implementation. <see cref="Method" /> is <see langword="null" /> for a convention of another assembly whose
+	///     method this compilation does not see because it is not public, which a container runs only through the
+	///     wrapper the module generates for it (see <see cref="ConventionWrapperName" />).
 	/// </summary>
-	private sealed record AsyncInitializerConvention(INamedTypeSymbol Type, IMethodSymbol Method)
+	private sealed record AsyncInitializerConvention(INamedTypeSymbol Type, IMethodSymbol? Method, string Name)
 	{
 		/// <summary>The convention as a diagnostic names it, <c>Type.Method</c>.</summary>
-		public string Display => $"{AwaitenGenerator.Display(Type.ToDisplayString(FullyQualified))}.{Method.Name}";
+		public string Display => $"{AwaitenGenerator.Display(Type.ToDisplayString(FullyQualified))}.{Name}";
 	}
 
 	/// <summary>
@@ -56,7 +59,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The usable <c>[AsyncInitializer&lt;T&gt;(method)]</c> conventions declared directly on <paramref name="owner" />,
 	///     in declaration order, reporting each unusable one as <see cref="Diagnostics.InvalidAsyncInitializer">AWT233</see>
-	///     when <paramref name="diagnostics" /> is given.
+	///     when <paramref name="diagnostics" /> is given. The build of an owner in another assembly reported its unusable
+	///     conventions already, so one whose method this compilation does not see at all is kept without it: its method
+	///     is not public, and metadata leaves such members out.
 	/// </summary>
 	private static List<AsyncInitializerConvention> DeclaredAsyncInitializers(INamedTypeSymbol owner, Compilation compilation, List<DiagnosticInfo>? diagnostics)
 	{
@@ -72,6 +77,13 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
+			    && !ConventionTypeAndBases(type).Any(declaring => declaring.GetMembers(name).OfType<IMethodSymbol>().Any()))
+			{
+				conventions.Add(new AsyncInitializerConvention(type, null, name));
+				continue;
+			}
+
 			if (AsyncInitializerFault(type, name, owner, compilation, out IMethodSymbol? method) is { } reason)
 			{
 				diagnostics?.Add(new DiagnosticInfo(
@@ -81,7 +93,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			conventions.Add(new AsyncInitializerConvention(type, method!));
+			conventions.Add(new AsyncInitializerConvention(type, method!, name));
 		}
 
 		return conventions;
@@ -221,6 +233,9 @@ partial class AwaitenGenerator
 	///     The conventions that run on an implementation, in declaration order: those <paramref name="matches" /> selects,
 	///     each method of <paramref name="implementation" /> once even when several conventions reach it, at the position of
 	///     the first. Without the implementation (one hidden behind a generated factory) each convention method runs once.
+	///     A method this compilation does not see is the one of an earlier convention of the same name on the same type
+	///     or on a class in the same class hierarchy, since the owner's build rejects a name that resolves to more than
+	///     one method there (AWT233).
 	/// </summary>
 	private static List<AsyncInitializerConvention> MatchingAsyncInitializers(IEnumerable<AsyncInitializerConvention> conventions, ITypeSymbol? implementation, Func<AsyncInitializerConvention, bool> matches)
 	{
@@ -228,13 +243,20 @@ partial class AwaitenGenerator
 		HashSet<IMethodSymbol> methods = new(SymbolEqualityComparer.Default);
 		foreach (AsyncInitializerConvention convention in conventions)
 		{
-			if (matches(convention) && methods.Add(ImplementingMethod(convention.Method, implementation).OriginalDefinition))
+			if (matches(convention)
+			    && (convention.Method is { } method
+				    ? methods.Add(ImplementingMethod(method, implementation).OriginalDefinition)
+				    : !matched.Exists(known => known.Name == convention.Name && SameClassHierarchy(known.Type, convention.Type))))
 			{
 				matched.Add(convention);
 			}
 		}
 
 		return matched;
+
+		static bool SameClassHierarchy(INamedTypeSymbol first, INamedTypeSymbol second)
+			=> SymbolEqualityComparer.Default.Equals(first, second)
+			   || (first.TypeKind == TypeKind.Class && second.TypeKind == TypeKind.Class && (IsOfConventionType(first, second) || IsOfConventionType(second, first)));
 	}
 
 	/// <summary>
@@ -277,7 +299,9 @@ partial class AwaitenGenerator
 	///     type, or, for a self-compiled
 	///     implementation behind a generated factory, the conventions its owner recorded. Their parameters are classified
 	///     like those of an asynchronous <c>OnActivated</c> hook, so they take part in every graph check. A convention the
-	///     container cannot call is reported as <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> and left out.
+	///     container cannot call runs through the wrapper its module in another assembly generates for it (see
+	///     <see cref="CollectConventionWrappers" />); without one it is reported as
+	///     <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> and left out.
 	/// </summary>
 	private static EquatableArray<AsyncInitializerModel> BuildAsyncInitializers(ImplInfo info, ITypeSymbol ownedType, BuildContext context)
 	{
@@ -286,7 +310,8 @@ partial class AwaitenGenerator
 			return HiddenAsyncInitializers(info, hidden, module, context);
 		}
 
-		List<AsyncInitializerConvention> conventions = context.AsyncInitializers.Of(info.ConventionScope(context.ContainerSymbol));
+		INamedTypeSymbol scope = info.ConventionScope(context.ContainerSymbol);
+		List<AsyncInitializerConvention> conventions = context.AsyncInitializers.Of(scope);
 		if (conventions.Count == 0)
 		{
 			return default;
@@ -295,18 +320,36 @@ partial class AwaitenGenerator
 		ImplementationTraits? traits = info.Traits;
 		List<AsyncInitializerModel> models = new();
 		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(conventions, traits is null ? ownedType : null, convention => traits is { } known
-			         ? known.Runs(convention.Type.ToDisplayString(FullyQualified), convention.Method.Name)
+			         ? known.Runs(convention.Type.ToDisplayString(FullyQualified), convention.Name)
 			         : IsOfConventionType(ownedType, convention.Type)))
 		{
 			if (InaccessibleAsyncInitializerPart(convention, context.ContainerSymbol, context.Compilation) is { } reason)
 			{
+				if (InternalsMembers(scope, ConventionWrapperName(convention)).OfType<IMethodSymbol>()
+					    .FirstOrDefault(method => method.Parameters.Length > 0 && context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly)) is { } wrapper)
+				{
+					models.Add(new AsyncInitializerModel(
+						$"{scope.ToDisplayString(FullyQualified)}.{InternalsClass}",
+						wrapper.Name,
+						ClassifyHookParameterSymbols(wrapper.Parameters.Skip(1), asynchronous: true, release: false, info, context),
+						Wrapper: true));
+					continue;
+				}
+
+				if (!SymbolEqualityComparer.Default.Equals(scope.ContainingAssembly, context.Compilation.Assembly) && HasAwaitenAttribute(scope.GetAttributes(), "ModuleAttribute"))
+				{
+					string? cause = InternalsMembers(scope, ConventionSkippedName(convention)).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(skipped => skipped is not null)
+					                ?? ModuleShapeReason(scope);
+					reason += $", and the module '{Display(scope.ToDisplayString(FullyQualified))}' generated no wrapper for it" + (cause is null ? string.Empty : $" because {cause}");
+				}
+
 				context.Diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.InaccessibleAsyncInitializer,
 					info.Location,
 					new EquatableArray<string>([
 						$"'{DisplayInstance(info.ImplementationType)}'",
 						Display(convention.Type.ToDisplayString(FullyQualified)),
-						convention.Method.Name,
+						convention.Name,
 						reason,
 						"make it public, or grant this assembly InternalsVisibleTo in its assembly",
 					])));
@@ -315,8 +358,8 @@ partial class AwaitenGenerator
 
 			models.Add(new AsyncInitializerModel(
 				convention.Type.ToDisplayString(FullyQualified),
-				convention.Method.Name,
-				ClassifyHookParameterSymbols(convention.Method.Parameters, asynchronous: true, release: false, info, context)));
+				convention.Name,
+				ClassifyHookParameterSymbols(convention.Method!.Parameters, asynchronous: true, release: false, info, context)));
 		}
 
 		return new EquatableArray<AsyncInitializerModel>(models.ToArray());
@@ -360,8 +403,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Why the generated <paramref name="container" /> cannot call <paramref name="convention" />, or
 	///     <see langword="null" />: its type or its method is not accessible from it, as with an internal convention of a
-	///     module in another assembly that does not grant this one <c>InternalsVisibleTo</c>. A parameter type is at least
-	///     as accessible as the method, so it needs no check of its own.
+	///     module in another assembly that does not grant this one <c>InternalsVisibleTo</c>, whose method this compilation
+	///     may not even see. A parameter type is at least as accessible as the method, so it needs no check of its own.
 	/// </summary>
 	private static string? InaccessibleAsyncInitializerPart(AsyncInitializerConvention convention, INamedTypeSymbol container, Compilation compilation)
 	{
@@ -371,49 +414,136 @@ partial class AwaitenGenerator
 			return $"'{Display(convention.Type.ToDisplayString(FullyQualified))}' {where}";
 		}
 
-		return compilation.IsSymbolAccessibleWithin(convention.Method, container) ? null : $"the method {where}";
+		return convention.Method is { } method && compilation.IsSymbolAccessibleWithin(method, container) ? null : $"the method {where}";
 	}
 
 	/// <summary>
-	///     <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> for a self-compiled implementation of the
-	///     module that one of the module's conventions initializes, when a consumer of the module could not call that
-	///     convention: its type or its method is not public, or, for an internal module, which only its own assembly and
-	///     the assemblies it grants <c>InternalsVisibleTo</c> import, not accessible in its assembly. An assembly granted
-	///     <c>InternalsVisibleTo</c> can, so like AWT195 the failure may be left to such an assembly (see
-	///     <see cref="SkipReason" />).
+	///     <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> for an implementation the module builds for
+	///     its consumers that one of the module's conventions initializes, when a consumer could not run that convention:
+	///     its type is private to the module, its method is not accessible in the module's assembly, or a consumer in
+	///     another assembly needs the convention's wrapper (see <see cref="CollectConventionWrappers" />), which the module
+	///     cannot generate. An assembly granted <c>InternalsVisibleTo</c> calls the convention itself, so like AWT195 the
+	///     failure may be left to such an assembly (see <see cref="SkipReason" />).
 	/// </summary>
 	private static DiagnosticInfo? ModuleAsyncInitializerFault(INamedTypeSymbol implementation, ModuleScanContext context, SelfCompiledSubject subject, Location? location)
 	{
 		List<AsyncInitializerConvention> conventions = DeclaredAsyncInitializers(context.Module, context.Compilation, null);
 		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(conventions, implementation, convention => IsOfConventionType(implementation, convention.Type)))
 		{
-			string? reason = null;
-			if (!FitsFactorySignature(convention.Type, context))
+			IMethodSymbol method = convention.Method!;
+			string conventionType = Display(convention.Type.ToDisplayString(FullyQualified));
+			(string Reason, string Remedy)? fault = null;
+			if (TypeHiddenInModule(convention.Type, context.Module, context.Compilation) is not null)
 			{
-				string where = IsHiddenInModule(convention.Type, context.Module, context.Compilation) ? "private to the module" : "not accessible outside the module's assembly";
-				reason = $"'{Display(convention.Type.ToDisplayString(FullyQualified))}' is {where}";
+				fault = ($"'{conventionType}' is private to the module, so no container can cast to it", $"make '{conventionType}' internal or public");
 			}
-			else if (convention.Method.DeclaredAccessibility != Accessibility.Public
-			         && (IsExternallyAccessible(context.Module) || !context.Compilation.IsSymbolAccessibleWithin(convention.Method, context.Module.ContainingAssembly)))
+			else if (!context.Compilation.IsSymbolAccessibleWithin(method, context.Module.ContainingAssembly))
 			{
-				reason = "the method is not accessible outside the module's assembly";
+				fault = ("the method is not accessible in the module's assembly, so no container can call it", "make the method internal or public");
+			}
+			else if (NeedsConventionWrapper(convention, context) && ConventionWrapperFault(method) is { } parameter)
+			{
+				fault = ($"{parameter}, so the module can generate no wrapper through which a container in another assembly runs it", "make the parameter type public");
 			}
 
-			if (reason is not null)
+			if (fault is { } found)
 			{
 				return new DiagnosticInfo(
 					Diagnostics.InaccessibleAsyncInitializer,
 					LocationInfo.From(location),
 					new EquatableArray<string>([
-						$"'{Display(subject.TypeName)}', {subject.Participle},",
-						Display(convention.Type.ToDisplayString(FullyQualified)),
-						convention.Method.Name,
-						$"{reason}, so a consumer in another assembly cannot call it",
-						$"make it public or {subject.Remedy}",
+						$"'{Display(subject.TypeName)}'",
+						conventionType,
+						convention.Name,
+						found.Reason,
+						found.Remedy,
 					]));
 			}
 		}
 
 		return null;
 	}
+
+	/// <summary>
+	///     Whether a container in another assembly runs <paramref name="convention" /> of a module it builds an
+	///     implementation for only through the module's wrapper: the module is public, the generated member is public
+	///     (not one of <see cref="ModuleScanContext.Internal" />), and the convention's type or method is not.
+	/// </summary>
+	private static bool NeedsConventionWrapper(AsyncInitializerConvention convention, ModuleScanContext context)
+		=> !context.Internal
+		   && IsExternallyAccessible(context.Module)
+		   && (!IsExternallyAccessible(convention.Type) || convention.Method!.DeclaredAccessibility != Accessibility.Public);
+
+	/// <summary>
+	///     Why the module cannot generate the public wrapper of a convention <paramref name="method" />, or
+	///     <see langword="null" />: a parameter type that is not public, which the wrapper would have to take.
+	/// </summary>
+	private static string? ConventionWrapperFault(IMethodSymbol method)
+		=> method.Parameters.FirstOrDefault(parameter => !IsExternallyAccessible(parameter.Type)) is { } parameter
+			? $"its parameter '{parameter.Name}' has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public"
+			: null;
+
+	/// <summary>
+	///     The public wrappers a module another assembly can name generates for its conventions that such an assembly
+	///     cannot call, because their type or method is not public: each takes the instance as <c>object</c>, casts it to
+	///     the convention's type and runs the method, so a container in another assembly initializes everything the
+	///     module registers, scans, decorates or builds through a generated factory without naming the convention. The
+	///     instance parameter takes any instance, so one wrapper serves every implementation the convention initializes.
+	///     A convention whose type is private to the module or that takes a parameter of a type that is not public gets
+	///     a record of why instead (see <see cref="ConventionSkippedName" />); the module reports it for what it builds
+	///     itself (see <see cref="ModuleAsyncInitializerFault" />), and a container in another assembly for what it
+	///     constructs, with that reason.
+	/// </summary>
+	private static List<ConventionWrapper> CollectConventionWrappers(INamedTypeSymbol module, Compilation compilation)
+	{
+		List<ConventionWrapper> wrappers = new();
+		ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal));
+		foreach (AsyncInitializerConvention convention in DeclaredAsyncInitializers(module, compilation, null))
+		{
+			string name = ConventionWrapperName(convention);
+			if (!NeedsConventionWrapper(convention, context) || wrappers.Exists(wrapper => wrapper.Name == name || wrapper.Name == ConventionSkippedName(convention)))
+			{
+				continue;
+			}
+
+			IMethodSymbol method = convention.Method!;
+			string? skipReason = TypeHiddenInModule(convention.Type, module, compilation) is not null
+				? $"'{Display(convention.Type.ToDisplayString(FullyQualified))}' is private to the module"
+				: ConventionWrapperFault(method);
+			wrappers.Add(skipReason is null
+				? new ConventionWrapper(
+					name,
+					convention.Type.ToDisplayString(FullyQualified),
+					convention.Name,
+					method.ReturnType.ToDisplayString(FullyQualified),
+					new EquatableArray<FactoryParameter>(method.Parameters.Select(parameter => new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name)).ToArray()))
+				: new ConventionWrapper(ConventionSkippedName(convention), string.Empty, convention.Name, string.Empty, default, skipReason));
+		}
+
+		return wrappers;
+	}
+
+	/// <summary>
+	///     Whether a convention of <paramref name="module" /> needs a wrapper (see <see cref="CollectConventionWrappers" />),
+	///     for a module that cannot receive generated members, which then records why it has none.
+	/// </summary>
+	private static bool HasConventionNeedingWrapper(INamedTypeSymbol module, Compilation compilation)
+	{
+		ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal));
+		return DeclaredAsyncInitializers(module, compilation, null).Exists(convention => NeedsConventionWrapper(convention, context));
+	}
+
+	/// <summary>
+	///     A deterministic name for the wrapper of a convention (see <see cref="CollectConventionWrappers" />), derived from
+	///     its type and method name only, so the module's build and a consuming container agree on it.
+	/// </summary>
+	private static string ConventionWrapperName(AsyncInitializerConvention convention)
+		=> $"Initializer_{convention.Type.Name}_{Fnv1a($"{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Name}"):x8}";
+
+	/// <summary>
+	///     A deterministic name for the constant that records why the module generates no wrapper for a convention,
+	///     derived like <see cref="ConventionWrapperName" />.
+	/// </summary>
+	private static string ConventionSkippedName(AsyncInitializerConvention convention)
+		=> "InitializerSkipped_" + ConventionWrapperName(convention).Substring("Initializer_".Length);
 }

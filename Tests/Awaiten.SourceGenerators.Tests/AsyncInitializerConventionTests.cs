@@ -843,7 +843,7 @@ public class AsyncInitializerConventionTests
 				""");
 
 			await That(module.Diagnostics).IsEmpty()
-				.Because("an assembly granted InternalsVisibleTo can call the internal convention, so the module skips the factory instead of failing");
+				.Because("an assembly granted InternalsVisibleTo calls the internal convention directly, and any other runs it through the module's wrapper");
 			await That(result.Diagnostics).IsEmpty();
 			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await ((global::Lib.IStartable)created).StartAsync().ConfigureAwait(false);")
 				.Because("the friend constructs the terminal itself and runs the internal convention");

@@ -310,12 +310,17 @@ public class ModuleScanInstanceHandleTests
 	}
 
 	[Test]
-	public async Task AnInternalConventionOfAMatchOfOneScanWithOneExposure_IsAwt234()
+	public async Task AnInternalConventionOfAMatchOfOneScanWithOneExposure_RunsThroughItsWrapper()
 	{
-		GeneratorResult result = Generator.Run(Library(scans: "[Scan<IPlugin>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]").Replace("public interface IWarmable", "internal interface IWarmable"));
+		string library = Library(scans: "[Scan<IPlugin>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]").Replace("public interface IWarmable", "internal interface IWarmable");
 
-		await That(result.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT234"))
-			.Because("a match with one exposure is returned as its interface, so a consumer would have to call the internal convention itself");
+		GeneratorResult result = Generator.Run(library);
+		GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a match with one exposure is returned as its interface, so the module generates a wrapper that runs the internal convention on it");
+		await That(external.Diagnostics).IsEmpty();
+		await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Initializer_IWarmable_");
 	}
 
 	[Test]

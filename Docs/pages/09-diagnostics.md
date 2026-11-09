@@ -2460,10 +2460,12 @@ A module generates a factory for each [internal implementation](./04-registratio
 ### AWT234
 
 :::danger[Error]
-An `[AsyncInitializer<T>]` convention initializes an implementation, but the code that calls it cannot reach `T` or its method.
+An `[AsyncInitializer<T>]` convention initializes an implementation, but the code that calls it cannot reach `T` or its method, and no generated wrapper runs it instead.
 :::
 
-A container calls a module's conventions itself. When the module lives in another assembly, `T` and its method must be public. The module's own build reports it for an implementation it [builds through a generated factory](./04-registration/07-modules.md#internal-implementations), and a container reports it for an implementation it constructs itself, such as one a module's `Factory` member returns. A module that builds an implementation through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), such as a scan match it exposes under [several interfaces](./04-registration/07-modules.md#several-interfaces), runs the convention through a generated wrapper instead, so the convention may stay internal.
+A container calls the conventions of a module in its own assembly directly. For a public, `partial` module, the library's build generates a public wrapper for each convention whose type or method is `internal`, and a container in another assembly runs the convention through it. This holds for an implementation the container constructs itself, such as a public one or one a module's `Factory` member returns, and for one the module builds through a [generated factory](./04-registration/07-modules.md#internal-implementations) or [handle](./04-registration/07-modules.md#services-only-the-module-uses). So the convention may stay internal. The wrapper takes the parameters of the convention's method, so their types must be public. The wrapper of a handle may also take an internal service the library registers, through its handle.
+
+The library's build reports a convention that no container in another assembly could run on an implementation the module builds for it: one whose method takes a parameter of an internal type, or whose type is nested privately in the module, which no container can cast to. A container in another assembly reports a convention it can call neither directly nor through a wrapper on an implementation it constructs itself, and names why the module generated no wrapper, for example because the module isn't `partial`. A module built without the Awaiten generator has no wrappers at all.
 
 An `internal` module is imported only by its own assembly and by the assemblies it grants `InternalsVisibleTo`. So for such a module, an internal convention is accessible too. A convention type nested privately in the module is not, and the message says it is private to the module.
 
@@ -2471,19 +2473,20 @@ A private `Factory` member of a module may return a type private to the module. 
 
 ```csharp no-compile
 // In a referenced library:
-internal interface IWarmUp { Task WarmUpAsync(CancellationToken ct); }
-internal sealed class EspressoMachine : IMachine, IWarmUp
+internal sealed class Boiler;
+internal sealed class EspressoMachine : IMachine
 {
-    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+    internal Task WarmUpAsync(Boiler boiler) => Task.CompletedTask;
 }
 
 [Module]
-[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]   // a container in another assembly cannot call it
+[AsyncInitializer<EspressoMachine>(nameof(EspressoMachine.WarmUpAsync))]   // no public wrapper can take the internal Boiler
+[Singleton<Boiler>]
 [Singleton<EspressoMachine, IMachine>]
 public static partial class EquipmentModule;
 ```
 
-**Fix:** Make the convention type and its method public. Or grant the container's assembly `InternalsVisibleTo` in the library: the module then builds no factory for the implementation, and that assembly constructs and initializes it itself.
+**Fix:** Make the parameter types of the convention's method public, and a convention type nested in the module `internal`. Or grant the container's assembly `InternalsVisibleTo` in the library: the module then builds no factory for the implementation, and that assembly constructs and initializes it itself.
 
 ### AWT235
 
