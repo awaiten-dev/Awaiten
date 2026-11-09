@@ -251,7 +251,7 @@ public sealed class DocsPagesTests
 	private static IEnumerable<string> ScaffoldFiles(string page)
 	{
 		yield return Path.Combine(ScaffoldDirectory, "Scaffold.cs");
-		yield return Path.GetFullPath(Path.Combine(ProjectDirectory, "..", "Awaiten.ExampleTests", "CoffeeShopDomain.cs"));
+		yield return Path.GetFullPath(Path.Combine(ProjectDirectory, "..", "CoffeeShop.Domain", "CoffeeShopDomain.cs"));
 		string pageScaffold = Path.Combine(ScaffoldDirectory, Path.ChangeExtension(page, ".cs"));
 		if (File.Exists(pageScaffold))
 		{

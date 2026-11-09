@@ -128,9 +128,37 @@ The few features that would otherwise put an Awaiten attribute on a domain class
 
 Prefer the container-side form every time. It leaves the domain class free of any reference to Awaiten, which is the whole point. The three consumer-side attributes (`[Arg]`, `[FromKey]`, `[Inject]`) are honest escape hatches for the rare shape the root cannot express, not defects, but each one couples the class that carries it to Awaiten.
 
-Awaiten guards part of this for you: applying a composition attribute (`[Singleton]`, `[Scan]`, and the like) in an assembly that declares no `[Container]` is the suppressible warning [AWT134](./09-diagnostics.md#awt134). That guard is best-effort, and it goes quiet in a single-project app that mixes the root with its domain. To enforce the full boundary, add an **architecture test** that asserts your domain and application assemblies carry no reference to Awaiten. That turns a convention into a red build the day someone crosses the line.
+### A module of your own
 
-[aweXpect.Reflection](https://docs.testably.org/aweXpect/extensions/aweXpect.Reflection/) expresses that rule directly. Point it at the assembly that holds your domain code and assert it depends on nothing in the `Awaiten` namespace:
+There is one place outside the composition root where a reference to Awaiten earns its keep: a [module](./04-registration/07-modules.md) that your domain assembly ships for its own implementations. Without it, the composition root can only build what it can name, so every implementation would have to be `public` just so the outermost layer can construct it. With it, the domain keeps its implementations `internal` and exposes only the abstractions:
+
+```csharp
+// in the domain assembly
+internal sealed class CardTerminal : IPaymentGateway   // stays internal
+{
+    public Receipt Charge(decimal amount) => new(amount);
+}
+
+[Module]
+[Singleton<CardTerminal, IPaymentGateway>]
+public static partial class PaymentModule;
+```
+
+```csharp
+// in the composition root
+[Container]
+[Import(typeof(PaymentModule))]
+[Transient<Barista>]
+public static partial class CoffeeShop;
+```
+
+The module is composition code, not domain code. `CardTerminal` and `Barista` stay plain classes, and the module only declares what the domain provides, while the container still decides how it is built, shared and disposed. Keep the module in a namespace of its own, such as `CoffeeShop.Composition`, so the rule stays easy to state and to test: nothing in the domain assembly references Awaiten, except that namespace.
+
+The price is that the domain assembly now references Awaiten, and a host on another container can't use the module. If other applications consume your library, offer them a plain public factory as well.
+
+Awaiten guards part of this for you: applying a composition attribute (`[Singleton]`, `[Scan]`, and the like) in an assembly that declares no `[Container]` is the suppressible warning [AWT134](./09-diagnostics.md#awt134). That guard is best-effort, and it goes quiet in a single-project app that mixes the root with its domain. To enforce the full boundary, add an **architecture test** that asserts your domain and application assemblies carry no reference to Awaiten outside their module's namespace. That turns a convention into a red build the day someone crosses the line.
+
+[aweXpect.Reflection](https://docs.testably.org/aweXpect/extensions/aweXpect.Reflection/) expresses that rule directly. Point it at the assembly that holds your domain code, leave out its module's namespace, and assert the rest depends on nothing in the `Awaiten` namespace:
 
 ```csharp
 using aweXpect;
@@ -141,14 +169,15 @@ using static aweXpect.Expect;
 [Test]
 public async Task Domain_ShouldNotReferenceAwaiten()
 {
-    // every type in the assembly that holds your domain and application code
-    Filtered.Types domain = In.AssemblyContaining<Barista>().Types();
+    // every type in the assembly that holds your domain and application code, except its module
+    Filtered.Types domain = In.AssemblyContaining<Barista>().Types()
+        .WhichAreNotWithinNamespace("CoffeeShop.Composition");
 
     await That(domain).DoNotDependOn(Types.InNamespace("Awaiten"));
 }
 ```
 
-Only the composition-root assembly (the one that declares your `[Container]`) should turn up a reference to Awaiten. The day a `[Singleton]` or an `[Inject]` sneaks into `Barista`'s assembly, this test goes red, whether or not AWT134 could see it.
+Only the composition-root assembly (the one that declares your `[Container]`) and the domain's module should turn up a reference to Awaiten. The day a `[Singleton]` or an `[Inject]` sneaks into `Barista`'s assembly outside the module, this test goes red, whether or not AWT134 could see it.
 
 ## When power becomes a smell
 
