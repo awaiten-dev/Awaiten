@@ -77,6 +77,17 @@ public partial class ReentrantResolveTests
 	}
 
 	[Test]
+	public async Task Dependency_ResolvingTheSingletonThatBuildsIt_Throws()
+	{
+		Reentry.Reset();
+		using DependencyShop.Root root = new();
+
+		await That(() => root.Resolve<Roaster>()).Throws<InvalidOperationException>()
+			.WithMessage("*'Awaiten.Tests.ReentrantResolveTests.Roaster' was resolved again while it was being built*").AsWildcard()
+			.Because("the grinder is built as a dependency of the roaster, before the roaster is cached");
+	}
+
+	[Test]
 	public async Task OnActivated_ResolvingTheActivatedSingleton_Throws()
 	{
 		Reentry.Reset();
@@ -113,6 +124,30 @@ public partial class ReentrantResolveTests
 
 		await That(await root.ResolveAsync<AsyncSelf>(Ct)).IsSameAs(self)
 			.Because("the faulted task is evicted and nothing stays marked as being built, so the next resolve builds the singleton");
+	}
+
+	[Test]
+	public async Task AsyncScoped_ResolvingItselfThroughAFuncInItsConstructor_Throws()
+	{
+		Reentry.Reset();
+		using AsyncScopedShop.Root root = new();
+		using AsyncScopedShop.Scope scope = root.CreateScope();
+
+		await That(async () => await scope.ResolveAsync<AsyncSelf>(Ct)).Throws<InvalidOperationException>()
+			.WithMessage("*AsyncSelf' was resolved again while it was being built*").AsWildcard()
+			.Because("the scoped task is not cached on its scope until the construction returns it at its first await");
+	}
+
+	[Test]
+	public async Task DeferredService_OnActivatedResolvingItself_ReturnsTheCachedInstance()
+	{
+		Reentry.Reset();
+		using DeferredActivationShop.Root root = new();
+
+		DeferredActivatedSelf self = root.Resolve<DeferredActivatedSelf>();
+
+		await That(DeferredActivationShop.Activated).IsSameAs(self)
+			.Because("a service with a deferred member is cached before its deferred members are wired and its OnActivated hook runs");
 	}
 
 	[Test]
@@ -217,6 +252,24 @@ public partial class ReentrantResolveTests
 		public LaterSelf? Later { get; set; }
 	}
 
+	public sealed class Roaster(Grinder grinder)
+	{
+		public Grinder Grinder { get; } = grinder;
+	}
+
+	public sealed class Grinder
+	{
+		public Grinder(Func<Roaster> roaster) => Reentry.Enter(() => roaster());
+	}
+
+	public sealed class DeferredActivatedSelf(Func<DeferredActivatedSelf> self)
+	{
+		[Inject(Deferred = true)]
+		public LaterSelf? Later { get; set; }
+
+		public DeferredActivatedSelf Again() => self();
+	}
+
 	public sealed class DeferredSelf
 	{
 		[Inject(Deferred = true)]
@@ -270,4 +323,24 @@ public partial class ReentrantResolveTests
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 	[Singleton<AsyncSelf>]
 	public static partial class AsyncShop;
+
+	[Container]
+	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+	[Scoped<AsyncSelf>]
+	public static partial class AsyncScopedShop;
+
+	[Container]
+	[Singleton<Roaster>]
+	[Singleton<Grinder>]
+	public static partial class DependencyShop;
+
+	[Container]
+	[Singleton<DeferredActivatedSelf>(OnActivated = nameof(Activate))]
+	[Singleton<LaterSelf>]
+	public static partial class DeferredActivationShop
+	{
+		public static DeferredActivatedSelf? Activated { get; private set; }
+
+		private static void Activate(DeferredActivatedSelf instance) => Reentry.Enter(() => Activated = instance.Again());
+	}
 }
