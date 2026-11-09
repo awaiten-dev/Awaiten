@@ -256,10 +256,10 @@ function Scoreboard({rows, baseline}: {rows: Row[]; baseline: Sample}): ReactEle
           <tr>
             <th>Container</th>
             <th className={styles.number}>Time</th>
+            <th className={styles.trend}>recent runs</th>
             <th>vs Awaiten</th>
             {hasMemory && <th className={styles.number}>Memory</th>}
             {hasMemory && <th>vs Awaiten</th>}
-            <th>Time vs Awaiten, recent runs</th>
           </tr>
         </thead>
         <tbody>
@@ -278,6 +278,11 @@ function Scoreboard({rows, baseline}: {rows: Row[]; baseline: Sample}): ReactEle
                   {row.version && <span className={styles.version}>{row.version}</span>}
                 </td>
                 <td className={styles.number}>{formatNs(row.sample.timeNs)}</td>
+                <td className={styles.trend}>
+                  {!isBaseline && (
+                    <Sparkline values={ratios} title={`${row.name} compared to Awaiten over the last ${ratios.length} runs; the dashed line marks equal time`} />
+                  )}
+                </td>
                 <td title={isBaseline ? undefined : time.title}>{isBaseline ? <span className={styles.baselineTag}>baseline</span> : time.text}</td>
                 {hasMemory && (
                   <td className={styles.number}>
@@ -289,11 +294,6 @@ function Scoreboard({rows, baseline}: {rows: Row[]; baseline: Sample}): ReactEle
                     {isBaseline ? <span className={styles.baselineTag}>baseline</span> : (memory?.text ?? '—')}
                   </td>
                 )}
-                <td>
-                  {!isBaseline && (
-                    <Sparkline values={ratios} title={`${row.name} compared to Awaiten over the last ${ratios.length} runs; the dashed line marks equal time`} />
-                  )}
-                </td>
               </tr>
             );
           })}
