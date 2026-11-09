@@ -600,7 +600,7 @@ partial class AwaitenGenerator
 			if (registration.Weak && alreadyChosen)
 			{
 				if (registration.IsDefault && winner!.IsDefault
-				    && winner.ImplementationType != registration.ImplementationType)
+				    && !ServeOneInstance(winner.ImplementationType, registration.ImplementationType))
 				{
 					diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.AmbiguousDefault,
@@ -1127,7 +1127,8 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Records a registration's implementation as a member of the collection for its (service type, key), in
-	///     registration order and deduped by implementation. <c>serviceMemberOrder</c> preserves first-seen (type, key) order.
+	///     registration order and deduped by the instance it serves (see <see cref="ServeOneInstance" />).
+	///     <c>serviceMemberOrder</c> preserves first-seen (type, key) order.
 	/// </summary>
 	private static void AddCollectionMember(
 		Dictionary<ServiceKey, List<string>> serviceMembers,
@@ -1142,7 +1143,7 @@ partial class AwaitenGenerator
 			serviceMemberOrder.Add(serviceKey);
 		}
 
-		if (!members.Contains(implementationType))
+		if (!members.Exists(member => ServeOneInstance(member, implementationType)))
 		{
 			members.Add(implementationType);
 		}
@@ -1274,7 +1275,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void ReportDuplicateKey(RawRegistration registration, string existingImpl, List<DiagnosticInfo> diagnostics)
 	{
-		if (registration.Key is null || existingImpl == registration.ImplementationType)
+		if (registration.Key is null || ServeOneInstance(existingImpl, registration.ImplementationType))
 		{
 			return;
 		}
@@ -1292,7 +1293,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void ReportDuplicateContextualBinding(RawRegistration registration, RawRegistration winner, List<DiagnosticInfo> diagnostics)
 	{
-		if (registration.WhenInjectedInto is not { } consumer || winner.ImplementationType == registration.ImplementationType)
+		if (registration.WhenInjectedInto is not { } consumer || ServeOneInstance(winner.ImplementationType, registration.ImplementationType))
 		{
 			return;
 		}

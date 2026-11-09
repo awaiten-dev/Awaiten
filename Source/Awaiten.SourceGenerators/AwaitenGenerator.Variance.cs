@@ -80,7 +80,7 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Unions every variance-compatible registration's members into each requested closed-generic collection's
 	///     membership (Part C): the exact and open-expanded members keep their order and lead, and variance members
-	///     follow in candidate registration order, deduped by implementation. A collection with only a variance
+	///     follow in candidate registration order, deduped by the instance they serve. A collection with only a variance
 	///     match (no exact member) gains a fresh membership entry. Run after the instance loop and before the
 	///     parameterized prune and edge building, so the unioned members drive analysis and emission.
 	/// </summary>
@@ -111,8 +111,9 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Appends each matched candidate's members to <paramref name="members" /> in candidate order, deduped by
-	///     implementation (a candidate whose members were all pruned, or that failed to build, contributes none).
+	///     Appends each matched candidate's members to <paramref name="members" /> in candidate order, deduped by the
+	///     instance they serve (see <see cref="ServeOneInstance" />). A candidate whose members were all pruned, or that
+	///     failed to build, contributes none.
 	/// </summary>
 	private static void UnionMatchedMembers(
 		List<string> members,
@@ -126,7 +127,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			foreach (string member in candidateMembers.Where(member => !members.Contains(member)))
+			foreach (string member in candidateMembers.Where(member => !members.Exists(existing => ServeOneInstance(existing, member))))
 			{
 				members.Add(member);
 			}
