@@ -160,7 +160,7 @@ public sealed class AuditedGateway(IPaymentGateway inner) : IPaymentGateway
 }
 ```
 
-The decorator chain is transient and belongs to the container: it is built on each resolve, which asks the host again, and is disposed with the scope that built it. The instance the host hands in stays the host's. Under the [MS.DI bridge](./01-msdi-bridge.md), the container leaves the service's registration in the host alone, so a host consumer of `IPaymentGateway` gets the host's instance, and the services the container projects get the decorator.
+The decorator chain is transient and belongs to the container: it is built on each resolve, which asks the host again, and is disposed with the scope that built it. The instance the host hands in stays the host's. A collection of the service stays empty, as for an undecorated import. Under the [MS.DI bridge](./01-msdi-bridge.md), the container leaves the service's registration in the host alone, so a host consumer of `IPaymentGateway` gets the host's instance, and the services the container projects get the decorator.
 
 ## Providing the external resolver
 
