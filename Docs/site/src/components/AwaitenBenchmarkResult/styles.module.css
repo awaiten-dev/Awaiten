@@ -220,6 +220,7 @@
 }
 
 .tableWrapper {
+  container-type: inline-size;
   overflow-x: auto;
   border: 1px solid var(--ifm-color-emphasis-200);
   border-radius: 12px;
@@ -296,6 +297,21 @@
 .sparkline {
   display: block;
   color: var(--ifm-color-emphasis-700);
+}
+
+.table .trend {
+  width: 1%;
+  text-align: center;
+}
+
+.trend .sparkline {
+  margin: 0 auto;
+}
+
+@container (max-width: 720px) {
+  .trend {
+    display: none;
+  }
 }
 
 .caption {
