@@ -1230,7 +1230,7 @@ public class OpenGenericFactoryTests
 
 				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Activate'*").AsWildcard();
 				await That(friend.Diagnostics).HasSingle().Which
-					.IsEqualTo("*AWT231*'Lib.DataModule.Repository<Lib.Ledger>'*OnActivated hook wrapper*taking 'Lib.DataModule.Repository<Lib.Ledger>'*").AsWildcard()
+					.IsEqualTo("*AWT231*'Lib.DataModule.Repository<Lib.Ledger>' with the OnActivated hook 'Activate', which this container does not run, because*taking 'Lib.DataModule.Repository<Lib.Ledger>'*give the hook methods distinct names").AsWildcard()
 					.Because("a friend does not see the private overload either, so it cannot tell whether it accepts the closing");
 			}
 
@@ -1412,6 +1412,90 @@ public class OpenGenericFactoryTests
 			}
 
 			[Test]
+			public async Task AGenericOverloadOnlyAVariantBaseTypeOfAClosingBinds_IsRecorded()
+			{
+				const string library = """
+				                       using System.Collections;
+				                       using System.Collections.Generic;
+				                       using Awaiten;
+
+				                       namespace Lib;
+
+				                       public interface IRepository<T> { }
+				                       internal sealed class Repository<T> : IRepository<T>, IEnumerable<T[]>
+				                       {
+				                           public IEnumerator<T[]> GetEnumerator() => throw new System.NotSupportedException();
+
+				                           IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+				                       }
+
+				                       [Module]
+				                       [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Ready))]
+				                       public static partial class DataModule
+				                       {
+				                           internal static void Ready<T>(Repository<T> repository) { }
+
+				                           internal static void Ready<T>(IEnumerable<T> items) { }
+				                       }
+				                       """;
+				const string consumer = """
+				                        using Awaiten;
+				                        using Lib;
+
+				                        namespace App;
+
+				                        public sealed class Checkout
+				                        {
+				                            public Checkout(IRepository<object> items) { }
+				                        }
+
+				                        [Container]
+				                        [Import(typeof(DataModule))]
+				                        [Transient<Checkout>]
+				                        public static partial class AppContainer
+				                        {
+				                        }
+				                        """;
+
+				GeneratorResult same = Generator.Run(library + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace App;", string.Empty));
+				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Lib.IRepository<object>'*'Ready'*").AsWildcard()
+					.Because("the repository of objects is a sequence of object arrays, which covariance makes a sequence of objects");
+				await That(external.Diagnostics).HasSingle().Which
+					.IsEqualTo("*AWT231*taking 'System.Collections.Generic.IEnumerable<T>', that accepts 'Lib.Repository<System.Array>' too*").AsWildcard()
+					.Because("the repository of arrays is a sequence of arrays too, and the module names the first closing it finds");
+			}
+
+			[Test]
+			public async Task AGenericOverloadWhoseConstraintsNoClosingMeets_IsNotRecorded()
+			{
+				const string library = """
+				                       using Awaiten;
+
+				                       namespace Lib;
+
+				                       public interface IRepository<T> { }
+				                       internal sealed class Repository<T> : IRepository<T> where T : struct { }
+
+				                       [Module]
+				                       [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Ready))]
+				                       public static partial class DataModule
+				                       {
+				                           internal static void Ready<T>(Repository<T> repository) where T : struct { }
+
+				                           internal static void Ready<T>(IRepository<T> repository) where T : class { }
+				                       }
+				                       """;
+
+				GeneratorResult result = Generator.Run(library);
+
+				await That(ModuleSource(result)).Contains("public static global::Lib.IRepository<T> Registration_Repository_").And
+					.DoesNotContain("RegistrationSkipped_Repository_")
+					.Because("no closing of a repository of value types is a reference type, so the overload never competes");
+			}
+
+			[Test]
 			public async Task AModuleOfAnOlderGenerator_IsReportedWhereTheConsumerSeesAnOverloadForTheClosing()
 			{
 				const string without = """
@@ -1525,7 +1609,9 @@ public class OpenGenericFactoryTests
 				await That(own.Diagnostics).IsEmpty();
 				await That(ModuleSource(own)).DoesNotContain("Hook_OnActivated_Repository_")
 					.Because("the wrapper would run the generic overload for the closing of strings, where a container in the module's assembly reports AWT190");
-				await That(external.Diagnostics).HasSingle().Which.IsEqualTo("*AWT164*'Lib.IRepository<App.Order>'*'Activate'*").AsWildcard();
+				await That(external.Diagnostics).HasSingle().Which
+					.IsEqualTo("*AWT231*'Lib.Repository<T>' with the OnActivated hook 'Activate', which this container does not run, because*taking 'Lib.Repository<string>', that accepts 'Lib.Repository<string>' too*").AsWildcard()
+					.Because("the module records why it generated no wrapper, so the consumer names the overload instead of reporting the hook as unusable");
 			}
 		}
 	}
