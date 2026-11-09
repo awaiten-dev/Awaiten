@@ -19,7 +19,7 @@
 	<ItemGroup>
 		<Compile Remove="Scaffold/**"/>
 		<None Include="Scaffold/**"/>
-		<None Include="..\Awaiten.ExampleTests\CoffeeShopDomain.cs" Link="Scaffold\CoffeeShopDomain.cs"/>
+		<None Include="..\CoffeeShop.Domain\CoffeeShopDomain.cs" Link="Scaffold\CoffeeShopDomain.cs"/>
 	</ItemGroup>
 
 </Project>
