@@ -256,6 +256,39 @@ public class ModuleInternalMemberTests
 				.Because("the wrapper would take the internal service through the handle of the module that registers it, so the cause is what keeps that module from building it");
 			await That(Generator.RunWithGeneratedReferenceAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.Contains(expected);
 		}
+
+		[Test]
+		public async Task ScanHookTakingOneThatTheOtherModuleCannotBuild_WhileTheModulesAreJudged_IsReported()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IPlugin { }
+				public interface IRoaster { }
+				internal sealed class Roaster : IPlugin, IRoaster { }
+				internal sealed class Beans { }
+				internal sealed class Settings { }
+				internal sealed class Secret { }
+				internal sealed class BeanStore(Settings settings, Secret secret) { public Settings Settings { get; } = settings; public Secret Secret { get; } = secret; }
+
+				[Module]
+				[Singleton<Beans>]
+				[Scan<IPlugin>(As = ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
+				public static partial class PluginModule
+				{
+					internal static void Wire(Roaster roaster, BeanStore store) { }
+				}
+
+				[Module][Singleton<BeanStore>] public static partial class StoreModule;
+				[Module][Singleton<Settings>] public static partial class SettingsModule;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT203: 'Lib.Roaster' matched the module scan, but its OnActivated hook parameter of type 'Lib.BeanStore' is not accessible outside the module's assembly, so the generated hook wrapper cannot expose it; widen the parameter type's accessibility, resolve a different dependency, or drop the hook")
+				.Because("judging which internal services the modules can build mirrors the scan hook, whose cause, judged from the other module, must not ask for that judgement again");
+		}
 	}
 
 	public class NonPartialModule

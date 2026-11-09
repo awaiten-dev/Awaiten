@@ -101,7 +101,9 @@ partial class AwaitenGenerator
 		///     The first other module of the assembly that registers <paramref name="service" /> but cannot build it, with
 		///     why (see <see cref="Rejection" />), or <see langword="null" />. Its own build reports that only once something
 		///     it emits needs the service, so a member of this module that takes the service names it. Judging another module
-		///     collects its services anew, so this is only asked once a member failed.
+		///     collects its services anew, so this is only asked once a member failed. A judgement of
+		///     <see cref="AssemblyModuleIndex.Buildable" /> judges the other module against the same services, since asking
+		///     for them again would start that judgement over.
 		/// </summary>
 		public (INamedTypeSymbol Module, DiagnosticInfo Rejection)? RejectedElsewhere(INamedTypeSymbol service)
 		{
@@ -109,7 +111,7 @@ partial class AwaitenGenerator
 			{
 				if (!SymbolEqualityComparer.Default.Equals(other, Module)
 				    && Assembly.RegistrationsOf(other).Exists(registration => SymbolEqualityComparer.Default.Equals(registration.Service, service))
-				    && CollectHiddenServices(other, Compilation, _cancellationToken)?.Rejection(service) is { } rejection)
+				    && CollectHiddenServices(other, Compilation, _cancellationToken, _buildable)?.Rejection(service) is { } rejection)
 				{
 					return (other, rejection);
 				}
