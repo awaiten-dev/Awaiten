@@ -387,6 +387,8 @@ partial class AwaitenGenerator
 	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166).
 	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
 	///     which therefore comes first. A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
+	///     The handle of one of several producers of a service (see <see cref="ThroughHandle" />) has an alias named after
+	///     its member, which only its own module declares.
 	///     A <c>Factory</c> or <c>Instance</c> registration that names only its service shares the handle only when a
 	///     registration names that type as its implementation, since <see cref="AssignMemberIdentities" /> otherwise
 	///     identifies both by their members, so precedence decides between them as between any two producers of a service.
@@ -444,15 +446,17 @@ partial class AwaitenGenerator
 				}
 			}
 
-			if (handles.Select(entry => entry.Handle.Origin).OfType<INamedTypeSymbol>()
-				    .Select(module => (Module: module, Alias: GeneratedFactoryNamed(module, HiddenAliasName(implementation, implementation), compilation)))
+			string handled = HandledIdentity(handle);
+			string? producer = handled.Contains(MemberKeyMarker) ? handled.Substring(handled.LastIndexOf('.') + 1) : null;
+			if ((producer is null ? handles.Select(entry => entry.Handle.Origin) : [handle.Origin,]).OfType<INamedTypeSymbol>()
+				    .Select(module => (Module: module, Alias: GeneratedFactoryNamed(module, HiddenAliasName(implementation, implementation, producer), compilation)))
 				    .FirstOrDefault(candidate => candidate.Alias is not null) is not ({ } owner, { } alias))
 			{
 				Report("the module generated no member that returns the implementation from its handle", "remove the registration, or grant this assembly InternalsVisibleTo in the module's assembly");
 				continue;
 			}
 
-			raw[index] = ThroughAlias(registration with { Lifetime = handle.Lifetime, }, owner, implementation, alias, compilation) with { Eager = registration.Eager, };
+			raw[index] = ThroughAlias(registration with { Lifetime = handle.Lifetime, }, owner, implementation, alias, compilation, producer is null ? null : handled) with { Eager = registration.Eager, };
 
 			void Report(string reason, string remedy)
 				=> diagnostics.Add(new DiagnosticInfo(

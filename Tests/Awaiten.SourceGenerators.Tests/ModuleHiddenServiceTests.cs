@@ -1629,6 +1629,43 @@ public class ModuleHiddenServiceTests
 				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("a constructor"))
 					.Because("the module constructs the implementation, even through its generated factory, so the container's factory of it is a second production of the one instance");
 			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ClassProducedByTwoFactories_ConflictsWithAConstructorOfTheContainer(string consumer)
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					internal sealed class TimeSource { }
+					public sealed class Clock { public Clock() { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					[Singleton<Clock>(Factory = nameof(CreateB))]
+					public static partial class ClockModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new();
+					    internal static Clock CreateB(TimeSource source) => new();
+					}
+					""";
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<Clock>]
+					public static partial class {0};
+					""";
+				GeneratorResult result = Run(library, container, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("a constructor and factory 'Lib.ClockModule.CreateA'"))
+					.Because("the container's constructor names the class as its implementation, so the module's factories of it are further productions of the one instance, as in the module's own assembly");
+			}
 		}
 
 		[Test]
