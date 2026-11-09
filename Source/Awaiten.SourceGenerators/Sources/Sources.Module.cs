@@ -293,8 +293,8 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits the internal type that records a module the generator left to the assemblies granted
-	///     <c>InternalsVisibleTo</c> because it is not partial. A consumer finds it in the module's namespace, since
+	///     Emits the internal type that records a module that is not partial and so carries no generated factory or
+	///     wrapper. A consumer finds it in the module's namespace, since
 	///     metadata carries the internal types of another assembly but not its internal members.
 	/// </summary>
 	public static string EmitModuleNotPartialMarker(ModuleScanModel model)
@@ -313,8 +313,8 @@ internal static partial class Sources
 		}
 
 		AppendXmlSummary(builder, depth,
-			$"Generated for the module {model.TypeName}, which is not partial and so carries no factory: an assembly granted",
-			"InternalsVisibleTo constructs its implementations itself, and a consuming container that cannot reports why.");
+			$"Generated for the module {model.TypeName}, which is not partial and so carries no factory or wrapper: an assembly",
+			"granted InternalsVisibleTo constructs its implementations and calls its members itself, and a consuming container that cannot reports why.");
 		Indent(builder, depth).Append("internal static class ").AppendLine(model.NotPartialMarker);
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth).AppendLine("}");

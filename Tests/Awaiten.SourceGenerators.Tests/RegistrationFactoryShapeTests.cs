@@ -716,7 +716,8 @@ public class RegistrationFactoryShapeTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("a module that cannot receive generated members built before wrappers existed and must keep building");
-			await That(result.Sources).IsEmpty();
+			await That(result.Sources).HasSingle().Which.Satisfies(source => source.Key == "Awaiten.ModuleScan.Lib.GreetingModule.g.cs" && source.Value.Contains("internal static class Awaiten__ModuleNotPartial_GreetingModule_"))
+				.Because("the module only records that it is not partial, so a container in another assembly names why it finds no wrapper");
 		}
 
 		private const string PrivateMembersBase = """

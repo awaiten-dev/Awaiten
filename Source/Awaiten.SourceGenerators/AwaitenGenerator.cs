@@ -130,7 +130,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     expanded into factories in its own build (see <see cref="CollectModuleScanFactories" /> and
 	///     <see cref="CollectModuleRegistrationFactories" />). A module that self-compiles nothing still gets a model
 	///     when one of its <c>[AsyncInitializer&lt;T&gt;]</c> conventions is unusable (AWT233) or a hook gets no wrapper
-	///     (AWT164, AWT190, AWT203, AWT204), which carries only those diagnostics.
+	///     (AWT164, AWT190, AWT203, AWT204), which carries only those diagnostics. A public module that is not
+	///     <c>partial</c> but names a member only a wrapper would serve (see <see cref="HasMemberNeedingWrapper" />) gets a
+	///     model that emits just the marker of <see cref="ModuleNotPartialName" />.
 	/// </summary>
 	private static ModuleScanModel? BuildModuleModel(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
 		=> context.TargetSymbol is INamedTypeSymbol moduleSymbol
@@ -189,7 +191,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
-		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0
+
+		// A container in another assembly that misses a wrapper cannot see that the module is not partial, so the module records it (AWT108, AWT164).
+		bool recordsNotPartial = !receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && IsExternallyAccessible(moduleSymbol) && HasMemberNeedingWrapper(moduleSymbol, compilation);
+		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0 && !recordsNotPartial
 		    && !(hidden is { SeveralModules: true, } && hidden.Demanded.Emitting.Contains(moduleSymbol))
 		    && hidden?.Implementations.Any(candidate => candidate.Viable && (candidate.Shared || IsExternallyAccessible(candidate.Implementation))) != true)
 		{
@@ -250,6 +255,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				Diagnostics.NonStaticModule,
 				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),
 				new EquatableArray<string>([Display(moduleSymbol.ToDisplayString(FullyQualified)),])));
+		}
+		else if (recordsNotPartial && !declaresScan && selfCompiled is null && started is null)
+		{
+			notPartialMarker = ModuleNotPartialName(moduleSymbol);
 		}
 		else if (!isPartial)
 		{
