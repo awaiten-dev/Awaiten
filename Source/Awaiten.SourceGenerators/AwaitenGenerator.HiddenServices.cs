@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Awaiten.SourceGenerators.Entities;
@@ -84,6 +85,38 @@ partial class AwaitenGenerator
 			   && Assembly.Modules.Any(other => !SymbolEqualityComparer.Default.Equals(other, Module)
 			                                    && (_buildable ?? Assembly.Buildable(_cancellationToken)).TryGetValue(other, out HashSet<INamedTypeSymbol>? services)
 			                                    && services.Contains(service));
+
+		/// <summary>
+		///     Why the module cannot build <paramref name="service" />: the first rejection of an implementation registered
+		///     under it, or <see langword="null" /> when it can or does not register it.
+		/// </summary>
+		public DiagnosticInfo? Rejection(INamedTypeSymbol service)
+			=> NonViable.Contains(service)
+			   && Services.TryGetValue(service, out List<HiddenImplementation>? implementations)
+			   && implementations.Find(implementation => implementation.Rejections.Count > 0) is { } rejected
+				? rejected.Rejections[0]
+				: null;
+
+		/// <summary>
+		///     The first other module of the assembly that registers <paramref name="service" /> but cannot build it, with
+		///     why (see <see cref="Rejection" />), or <see langword="null" />. Its own build reports that only once something
+		///     it emits needs the service, so a member of this module that takes the service names it. Judging another module
+		///     collects its services anew, so this is only asked once a member failed.
+		/// </summary>
+		public (INamedTypeSymbol Module, DiagnosticInfo Rejection)? RejectedElsewhere(INamedTypeSymbol service)
+		{
+			foreach (INamedTypeSymbol other in Assembly.Modules)
+			{
+				if (!SymbolEqualityComparer.Default.Equals(other, Module)
+				    && Assembly.RegistrationsOf(other).Exists(registration => SymbolEqualityComparer.Default.Equals(registration.Service, service))
+				    && CollectHiddenServices(other, Compilation, _cancellationToken)?.Rejection(service) is { } rejection)
+				{
+					return (other, rejection);
+				}
+			}
+
+			return null;
+		}
 
 		/// <summary>
 		///     Whether another module of the assembly that another assembly can import registers <paramref name="service" />
@@ -1678,6 +1711,18 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string UnbuildableNeed(string member, INamedTypeSymbol service)
 		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
+
+	/// <summary>
+	///     Like <see cref="UnbuildableNeed(string, INamedTypeSymbol)" />, for an internal service only
+	///     <paramref name="builder" />, another module of the assembly, registers, named with its
+	///     <paramref name="rejection" />, which neither module reports (see <see cref="HiddenServices.RejectedElsewhere" />).
+	/// </summary>
+	private static string UnbuildableNeed(string member, INamedTypeSymbol service, INamedTypeSymbol builder, DiagnosticInfo rejection)
+		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', {CannotBuild($"the module '{Display(builder.ToDisplayString(FullyQualified))}'", rejection)}";
+
+	/// <summary>Why <paramref name="builder" /> cannot build an internal service, as a clause naming its <paramref name="rejection" />.</summary>
+	private static string CannotBuild(string builder, DiagnosticInfo rejection)
+		=> $"which {builder} cannot build ({rejection.Descriptor.Id}: {rejection.ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)})";
 
 	/// <summary>
 	///     The shape in which <paramref name="type" /> takes a service and that service, or a <see langword="null" />

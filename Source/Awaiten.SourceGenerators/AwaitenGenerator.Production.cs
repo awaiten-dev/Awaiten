@@ -1020,16 +1020,30 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Why this compilation calls no internal <c>Factory</c> member of <paramref name="module" />, a module in another
-	///     assembly that does not grant it access, when the module can carry no wrapper for one (see
-	///     <see cref="ModuleShapeReason" />), or <see langword="null" />.
+	///     Why this compilation calls no internal <c>Factory</c> or <c>Instance</c> member of the module of
+	///     <paramref name="info" />: the reason the module recorded for the member (see <see cref="SkippedMemberReason" />),
+	///     or, for a module in another assembly that does not grant this one access, why it can carry no wrapper at all
+	///     (see <see cref="ModuleShapeReason" />), else <see langword="null" />. With <paramref name="seen" />, this
+	///     compilation sees the internal member, as an IDE sees a project reference, but cannot call it.
 	/// </summary>
-	private static string? UnwrappableModuleCause(INamedTypeSymbol module, Compilation compilation)
-		=> !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
-		   && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
-		   && ModuleShapeReason(module) is { } shape
-			? $"this assembly does not see a method internal to the module's assembly, and the module generated no public wrapper for one, because {shape}"
-			: null;
+	private static string? UnwrappedMemberReason(ImplInfo info, Compilation compilation, bool seen)
+	{
+		if (info.Origin is not { } module)
+		{
+			return null;
+		}
+
+		bool factory = info.Production == ProductionKind.Factory;
+		return SkippedMemberReason(module, factory ? "Factory" : "Instance", info.ProductionMember!, info.Symbol)
+		       ?? (IsModuleOrigin(info)
+		           && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		           && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
+		           && ModuleShapeReason(module) is { } shape
+			           ? seen
+				           ? $"the module generated no public wrapper for it, because {shape}"
+				           : $"this assembly does not see a {(factory ? "method" : "field or property")} internal to the module's assembly, and the module generated no public wrapper for one, because {shape}"
+			           : null);
+	}
 
 	/// <summary>
 	///     Collects the usable overloads of <paramref name="hookName" /> for <see cref="ResolveHook" />: the
@@ -1549,7 +1563,7 @@ partial class AwaitenGenerator
 				      && HiddenParameter(candidates[0], owner, compilation) is not null)
 				    && !ReportedByModule(info, compilation))
 				{
-					ReportInaccessibleModuleMember(info, diagnostics);
+					ReportInaccessibleModuleMember(info, compilation, diagnostics);
 				}
 
 				return null;
@@ -1578,9 +1592,8 @@ partial class AwaitenGenerator
 		}
 
 		if (candidates.Count == 0
-		    && info.Origin is { } module
 		    && !info.GenericFactory
-		    && (SkippedFactoryReason(module, info.ProductionMember!, info.Symbol) ?? (IsModuleOrigin(info) ? UnwrappableModuleCause(module, compilation) : null)) is { } reason)
+		    && UnwrappedMemberReason(info, compilation, seen: false) is { } reason)
 		{
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.UnwrappedModuleFactory,
@@ -1636,33 +1649,40 @@ partial class AwaitenGenerator
 		{
 			if (!ReportedByModule(info, compilation))
 			{
-				ReportInaccessibleModuleMember(info, diagnostics);
+				ReportInaccessibleModuleMember(info, compilation, diagnostics);
 			}
 
 			return null;
 		}
 
-		diagnostics.Add(new DiagnosticInfo(
-			Diagnostics.InvalidInstance,
-			info.Location,
-			new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info),])));
+		diagnostics.Add(UnwrappedMemberReason(info, compilation, seen: false) is { } reason
+			? new DiagnosticInfo(
+				Diagnostics.UnwrappedModuleInstance,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info), reason,]))
+			: new DiagnosticInfo(
+				Diagnostics.InvalidInstance,
+				info.Location,
+				new EquatableArray<string>([Display(info.OwningServiceOrImpl), UserMemberName(info.ProductionMember)!, DescribeOwner(info),])));
 		return null;
 	}
 
 	/// <summary>
 	///     AWT153: the module declares a member matching the Factory/Instance registration, but the generated
-	///     container cannot access it (e.g. a private member of a source module). A cross-assembly internal member
-	///     without InternalsVisibleTo is not imported into the symbol tables at all and surfaces as AWT108/AWT109.
+	///     container cannot access it (e.g. a private member of a source module), with the reason the module generated no
+	///     wrapper for it when this compilation sees an internal member of another assembly (see
+	///     <see cref="UnwrappedMemberReason" />). A cross-assembly internal member without InternalsVisibleTo is not
+	///     imported from metadata into the symbol tables at all and surfaces as AWT108/AWT109.
 	/// </summary>
-	private static void ReportInaccessibleModuleMember(ImplInfo info, List<DiagnosticInfo> diagnostics)
-		=> diagnostics.Add(new DiagnosticInfo(
-			Diagnostics.InaccessibleModuleMember,
-			info.Location,
-			new EquatableArray<string>([
-				Display(info.OwningServiceOrImpl),
-				Display(info.Origin!.ToDisplayString(FullyQualified)),
-				UserMemberName(info.ProductionMember)!,
-			])));
+	private static void ReportInaccessibleModuleMember(ImplInfo info, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		string service = Display(info.OwningServiceOrImpl);
+		string module = Display(info.Origin!.ToDisplayString(FullyQualified));
+		string member = UserMemberName(info.ProductionMember)!;
+		diagnostics.Add(!info.GenericFactory && UnwrappedMemberReason(info, compilation, seen: true) is { } reason
+			? new DiagnosticInfo(Diagnostics.UnwrappedModuleMember, info.Location, new EquatableArray<string>([service, module, member, reason,]))
+			: new DiagnosticInfo(Diagnostics.InaccessibleModuleMember, info.Location, new EquatableArray<string>([service, module, member,])));
+	}
 
 	/// <summary>
 	///     Names the owner of a Factory/Instance member in a diagnostic: the module that declared the

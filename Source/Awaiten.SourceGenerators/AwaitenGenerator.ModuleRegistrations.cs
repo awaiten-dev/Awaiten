@@ -367,13 +367,13 @@ partial class AwaitenGenerator
 						? FactoryWrapper(member, produced, wrappable)
 						: InstanceWrapper(member, produced, wrappable);
 					Add(wrapper);
+					bool factory = production.Production == ProductionKind.Factory;
 					if (wrapper is null
-					    && production.Production == ProductionKind.Factory
 					    && IsExternallyAccessible(registered)
 					    && hidden?.Handles(produced) != true
-					    && UnwrappedFactoryReason(member, produced) is { } reason)
+					    && (factory ? UnwrappedFactoryReason(member, produced) : UnwrappedInstanceReason(member, produced)) is { } reason)
 					{
-						string marker = FactorySkippedName(member, produced);
+						string marker = MemberSkippedName(factory ? "Factory" : "Instance", member, produced);
 						if (skipped.TrueForAll(existing => existing.MarkerName != marker))
 						{
 							skipped.Add(new SkippedRegistration(marker, reason, Member: true));
@@ -514,8 +514,30 @@ partial class AwaitenGenerator
 
 			return !IsExternallyAccessible(method.ReturnType)
 				? $"{declared} and returns '{Display(method.ReturnType.ToDisplayString(FullyQualified))}', which is not public, and the module has no single public service to expose it as that every registration and hook of the member accepts, so it generated no public wrapper for it"
-				: null;
+				: HandleRejection(declared, produced);
 		}
+
+		// Why no public wrapper reads an Instance member another assembly cannot reach, for the AWT109 a consumer reports instead.
+		string? UnwrappedInstanceReason(string member, INamedTypeSymbol produced)
+		{
+			if (IsHiddenInModule(produced, module, compilation)
+			    || AccessibleMembers(module, member, compilation).FirstOrDefault(candidate => candidate is IFieldSymbol { IsStatic: true, } or IPropertySymbol { IsStatic: true, GetMethod: not null, }
+			                                                                              && compilation.HasImplicitConversion(ProductOf(candidate, compilation), produced)) is not { } instance)
+			{
+				return null;
+			}
+
+			string declared = $"'{member}' is {SyntaxFacts.GetText(instance.DeclaredAccessibility)}";
+			return ProductOf(instance, compilation) is { } type && !IsExternallyAccessible(type)
+				? $"{declared} and has the type '{Display(type.ToDisplayString(FullyQualified))}', which is not public, and the module has no single public service to expose it as that every registration and hook of the member accepts, so it generated no public wrapper for it"
+				: HandleRejection(declared, produced);
+		}
+
+		// The module builds what the member produces through a handle unless that fails, which its own build does not report while a container of its assembly may still call the member.
+		string? HandleRejection(string declared, INamedTypeSymbol produced)
+			=> hidden?.Implementations.Find(candidate => !candidate.Viable && candidate.Rejections.Count > 0 && SymbolEqualityComparer.Default.Equals(candidate.Implementation, produced)) is { } rejected
+				? $"{declared} and the module cannot build what it produces through a handle ({rejected.Rejections[0].Descriptor.Id}: {rejected.Rejections[0].ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}), so it generated neither a public wrapper nor a handle for it"
+				: null;
 
 		// The instance handle of the factory takes such a parameter through the handle of its internal service (see MirrorHiddenService), so it does not keep the module from serving the factory.
 		bool ServedByHandle(IParameterSymbol parameter)
@@ -538,7 +560,7 @@ partial class AwaitenGenerator
 
 			if (hidden.Services.ContainsKey(service))
 			{
-				return Rejection(hidden, service) is { } own ? Cause(own, "the module") : null;
+				return hidden.Rejection(service) is { } own ? Cause(CannotBuild("the module", own)) : null;
 			}
 
 			// A handle serves the service when any other module that registers it can build it.
@@ -547,29 +569,13 @@ partial class AwaitenGenerator
 				return null;
 			}
 
-			foreach (INamedTypeSymbol other in hidden.Assembly.Modules)
-			{
-				if (!SymbolEqualityComparer.Default.Equals(other, module)
-				    && hidden.Assembly.RegistrationsOf(other).Exists(registration => SymbolEqualityComparer.Default.Equals(registration.Service, service))
-				    && CollectHiddenServices(other, compilation, hidden.CancellationToken) is { } judged
-				    && Rejection(judged, service) is { } rejection)
-				{
-					return Cause(rejection, $"the module '{Display(other.ToDisplayString(FullyQualified))}'");
-				}
-			}
-
-			return null;
-
-			string Cause(DiagnosticInfo rejection, string builder)
-				=> $"takes the internal service '{Display(service.ToDisplayString(FullyQualified))}', which {builder} cannot build ({rejection.Descriptor.Id}: {rejection.ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)})";
-		}
-
-		static DiagnosticInfo? Rejection(HiddenServices judged, INamedTypeSymbol service)
-			=> judged.NonViable.Contains(service)
-			   && judged.Services.TryGetValue(service, out List<HiddenImplementation>? implementations)
-			   && implementations.Find(implementation => implementation.Rejections.Count > 0) is { } rejected
-				? rejected.Rejections[0]
+			return hidden.RejectedElsewhere(service) is var (other, rejection)
+				? Cause(CannotBuild($"the module '{Display(other.ToDisplayString(FullyQualified))}'", rejection))
 				: null;
+
+			string Cause(string cannotBuild)
+				=> $"takes the internal service '{Display(service.ToDisplayString(FullyQualified))}', {cannotBuild}";
+		}
 
 		void Add(MemberWrapper? wrapper)
 		{
@@ -1699,9 +1705,9 @@ partial class AwaitenGenerator
 			   && (TypeHiddenInModule(registration.Implementation, module, compilation) is not null || ConstructibleEverywhere(registration.Implementation)));
 
 	/// <summary>
-	///     Whether a closed registration of <paramref name="module" /> names a <c>Factory</c> member or a lifecycle hook
-	///     that exists but has no public overload, which a container in another assembly calls only through a generated
-	///     wrapper.
+	///     Whether a closed registration of <paramref name="module" /> names a <c>Factory</c> or <c>Instance</c> member or
+	///     a lifecycle hook that exists but has no public overload, which a container in another assembly calls only
+	///     through a generated wrapper.
 	/// </summary>
 	private static bool HasMemberNeedingWrapper(INamedTypeSymbol module, Compilation compilation)
 	{
@@ -1714,7 +1720,8 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if ((ReadProduction(attribute) is { Production: ProductionKind.Factory, Member: { } member, Conflicting: false, } && NonePublic(FindFactoryCandidates(module, member, produced, compilation)))
+			if ((ReadProduction(attribute) is { Production: ProductionKind.Factory or ProductionKind.Instance, Member: { } member, Conflicting: false, } production
+			     && NonePublic(ProductionMemberCandidates(module, production.Production, member, produced, compilation).ToList()))
 			    || new[] { "OnActivated", "OnRelease", }.Any(slot => NamedArgument(attribute, slot) is { } hook && NonePublic(HookCandidates(module, hook, produced, compilation).ToList())))
 			{
 				return true;
@@ -1723,16 +1730,18 @@ partial class AwaitenGenerator
 
 		return false;
 
-		static bool NonePublic(List<IMethodSymbol> candidates)
+		static bool NonePublic<T>(List<T> candidates)
+			where T : ISymbol
 			=> candidates.Count > 0 && candidates.TrueForAll(candidate => candidate.DeclaredAccessibility != Accessibility.Public);
 	}
 
 	/// <summary>
 	///     A deterministic name for the internal type, in the module's namespace, that records a module that is not
 	///     partial and so carries no generated factory or wrapper: one the generator left to the assemblies granted
-	///     <c>InternalsVisibleTo</c>, or one with a member that needs a wrapper (see <see cref="HasMemberNeedingWrapper" />).
-	///     Its presence tells a consumer that the module skipped them on purpose (AWT231, AWT108, AWT164), not built
-	///     without the generator (AWT154).
+	///     <c>InternalsVisibleTo</c>, or one with a member that needs a wrapper (see <see cref="HasMemberNeedingWrapper" />)
+	///     or an open generic contribution that needs a factory. Its presence tells a consumer that the module skipped them
+	///     on purpose (AWT231, AWT108, AWT109, AWT153, AWT164), not built without the generator (AWT154). It records the
+	///     module, not a member, so a consumer that cannot see internal members gives a misspelled member the same reason.
 	/// </summary>
 	private static string ModuleNotPartialName(INamedTypeSymbol module)
 		=> $"Awaiten__ModuleNotPartial_{module.Name}_{Fnv1a(module.ToDisplayString(FullyQualified)):x8}";
@@ -1875,17 +1884,19 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     A deterministic name for the constant that records why the module generates no wrapper for its <c>Factory</c>
-	///     member <paramref name="member" /> producing <paramref name="produced" />, derived like <see cref="MemberWrapperName" />.
+	///     or <c>Instance</c> (<paramref name="kind" />) member <paramref name="member" /> producing
+	///     <paramref name="produced" />, derived like <see cref="MemberWrapperName" />.
 	/// </summary>
-	private static string FactorySkippedName(string member, INamedTypeSymbol produced)
-		=> "FactorySkipped_" + MemberWrapperName("Factory", member, produced).Substring("Factory_".Length);
+	private static string MemberSkippedName(string kind, string member, INamedTypeSymbol produced)
+		=> kind + "Skipped_" + MemberWrapperName(kind, member, produced).Substring(kind.Length + 1);
 
 	/// <summary>
-	///     Why the imported module of another assembly generated no wrapper for its <c>Factory</c> member
-	///     <paramref name="member" /> producing <paramref name="produced" />, or <see langword="null" /> when it records no such skip.
+	///     Why the imported module of another assembly generated no wrapper for its <c>Factory</c> or <c>Instance</c>
+	///     (<paramref name="kind" />) member <paramref name="member" /> producing <paramref name="produced" />, or
+	///     <see langword="null" /> when it records no such skip.
 	/// </summary>
-	private static string? SkippedFactoryReason(INamedTypeSymbol module, string member, INamedTypeSymbol produced)
-		=> InternalsMembers(module, FactorySkippedName(member, produced))
+	private static string? SkippedMemberReason(INamedTypeSymbol module, string kind, string member, INamedTypeSymbol produced)
+		=> InternalsMembers(module, MemberSkippedName(kind, member, produced))
 			.OfType<IFieldSymbol>()
 			.Select(field => field.ConstantValue as string)
 			.FirstOrDefault(reason => reason is not null);

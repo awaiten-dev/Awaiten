@@ -166,6 +166,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="InvalidInstance">AWT109</see> for an <c>Instance</c> member of an imported module of
+	///     another assembly that this container cannot read, when the module's build recorded why it generated no public
+	///     wrapper for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnwrappedModuleInstance = new(
+		"AWT109",
+		InvalidInstance.Title,
+		"'{0}' cannot be exposed: {2} has no accessible field or property '{1}' of type '{0}': {3}; make the member and its type public, or grant this assembly InternalsVisibleTo in the module's assembly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A single registration sets both <c>Factory</c> and <c>Instance</c>; the two directives are
 	///     mutually exclusive and the generator cannot tell which production to use.
 	/// </summary>
@@ -831,6 +844,19 @@ internal static class Diagnostics
 		"AWT153",
 		"Module production member not accessible",
 		"'{0}' cannot be produced: the member '{2}' exists on the module '{1}' but is not accessible from the generated container; make it public, or internal within a visible assembly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="InaccessibleModuleMember">AWT153</see> for an internal member of an imported module of
+	///     another assembly that this compilation sees but cannot call, as an IDE sees a project reference, when the
+	///     module's build recorded why it generated no public wrapper for it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnwrappedModuleMember = new(
+		"AWT153",
+		InaccessibleModuleMember.Title,
+		"'{0}' cannot be produced: the member '{2}' exists on the module '{1}' but is not accessible from the generated container: {3}; make it public, or internal within a visible assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
