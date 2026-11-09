@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "370b625ea57213ef37c09f678a61c4bcc76b50b7",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 20:03:17 2026 \u002B0100",
-        "message": "feat!: let a container in another assembly use services a module registers under internal types (#293)"
-      },
-      {
         "sha": "68538ab51cff03603edcf4b239f249923b552d41",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 20:08:44 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
         "message": "fix: share the instance a factory of a class produces with a module scan that matches the class in another assembly (#374)"
+      },
+      {
+        "sha": "76006f25c43ec871d27665322fe94094cdc2cb74",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
+        "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
       }
     ],
     "labels": [
-      "370b625e",
       "68538ab5",
       "87c4b754",
       "ee4aac92",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "af6814f5",
       "473c4389",
       "5485cfa1",
-      "8e63f80d"
+      "8e63f80d",
+      "76006f25"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.796339565267165,
           5.709839089558675,
           7.140513130596706,
           7.137726827309682,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.527111094731551,
           3.148773940404256,
           4.896269593387842,
-          3.4167489100779806
+          3.4167489100779806,
+          6.249826745263168
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.697762619990568,
           7.579793007246086,
           7.3652431679268675,
           7.541519619524479,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.325951104362805,
           4.803037607669831,
           7.00768257783992,
-          4.8532523065805435
+          4.8532523065805435,
+          7.324308746627399
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          111.14538760185242,
           86.58120951482228,
           102.85433978693825,
           107.24515820466556,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           135.20926240285237,
           63.79545038087027,
           82.91607408523559,
-          61.11257263819377
+          61.11257263819377,
+          134.482116206487
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.030579051146141,
           6.970456128319104,
           9.72702587715217,
           9.464410988489787,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           9.093067325651646,
           5.434546659390132,
           6.5198511297504105,
-          4.668275877833366
+          4.668275877833366,
+          9.093503376202923
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.213501382332582,
           8.492893776545921,
           10.793853773425022,
           11.374709489090103,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.989498717280535,
           6.6236268281936646,
           8.446163219213485,
-          6.74826913114105
+          6.74826913114105,
+          10.792313404954397
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "370b625ea57213ef37c09f678a61c4bcc76b50b7",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 20:03:17 2026 \u002B0100",
-        "message": "feat!: let a container in another assembly use services a module registers under internal types (#293)"
-      },
-      {
         "sha": "68538ab51cff03603edcf4b239f249923b552d41",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 20:08:44 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
         "message": "fix: share the instance a factory of a class produces with a module scan that matches the class in another assembly (#374)"
+      },
+      {
+        "sha": "76006f25c43ec871d27665322fe94094cdc2cb74",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
+        "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
       }
     ],
     "labels": [
-      "370b625e",
       "68538ab5",
       "87c4b754",
       "ee4aac92",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "af6814f5",
       "473c4389",
       "5485cfa1",
-      "8e63f80d"
+      "8e63f80d",
+      "76006f25"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.386247757290091,
           6.583230157693227,
           8.223813093134336,
           8.211599350968998,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.132826404912131,
           3.3147520955119814,
           5.4766526935356,
-          3.381543810878481
+          3.381543810878481,
+          6.78914178105501
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.240685649789297,
           6.743554876319,
           7.299930501197066,
           7.333008206884066,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.305907238806997,
           4.194749943912029,
           6.489185622582833,
-          4.275754204736306
+          4.275754204736306,
+          7.306218456228574
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          107.40489029884338,
           90.39498796860377,
           103.68475595542363,
           106.75491886933645,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           126.19988008907863,
           63.84873849550883,
           83.76261964241664,
-          61.596589235159065
+          61.596589235159065,
+          143.6905117670695
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.225028793017069,
           6.944638299942016,
           9.703860342502594,
           9.451715378959973,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           9.09549425223044,
           5.410570149975164,
           6.535289174566667,
-          4.8110642244418464
+          4.8110642244418464,
+          9.118893916790302
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          15.215904714663823,
           11.716142004089695,
           14.133045094353813,
           14.916898899844714,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.351332194530046,
           8.152687722444535,
           8.209044939050308,
-          6.468176345412548
+          6.468176345412548,
+          14.045695827557491
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "370b625ea57213ef37c09f678a61c4bcc76b50b7",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 20:03:17 2026 \u002B0100",
-        "message": "feat!: let a container in another assembly use services a module registers under internal types (#293)"
-      },
-      {
         "sha": "68538ab51cff03603edcf4b239f249923b552d41",
         "author": "Valentin Breu\u00DF",
         "date": "Sat Nov 7 20:08:44 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
         "message": "fix: share the instance a factory of a class produces with a module scan that matches the class in another assembly (#374)"
+      },
+      {
+        "sha": "76006f25c43ec871d27665322fe94094cdc2cb74",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
+        "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
       }
     ],
     "labels": [
-      "370b625e",
       "68538ab5",
       "87c4b754",
       "ee4aac92",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "af6814f5",
       "473c4389",
       "5485cfa1",
-      "8e63f80d"
+      "8e63f80d",
+      "76006f25"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          17.331699498494466,
           23.5335695485274,
           15.214888906478881,
           10.9978564328381,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           28.363061809539794,
           15.418597850203515,
           21.678517945607503,
-          23.09026456773281
+          23.09026456773281,
+          20.288839073975883
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2421,7 +2421,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
-          208,
+          216,
           216,
           216,
           216,
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1238.0439668382917,
           1585.815363820394,
           1267.269728733943,
           812.5211121695382,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1776.1530934651694,
           1116.7360412052699,
           1564.2815734863282,
-          1717.0647830963135
+          1717.0647830963135,
+          1503.264043535505
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          20687.157112630208,
           24741.24442138672,
           25451.768205915178,
           17868.11732381185,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           31426.48087855748,
           25498.066239420572,
           29503.812377929688,
-          33606.24806565505
+          33606.24806565505,
+          29710.02604980469
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32476,
           32474,
           32478,
           32477,
@@ -2684,6 +2683,7 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32478,
+          32482,
           32482,
           32482
         ],
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          568.2726034751305,
           708.7239242281232,
           590.1690015157063,
           411.528767935435,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           785.2916119893392,
           610.1480487823486,
           756.1623973210652,
-          799.5065917332967
+          799.5065917332967,
+          728.503289159139
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          9533.815707906087,
           11830.486079915365,
           8814.775025431316,
           6293.872926984514,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           13099.605563572475,
           9665.884779866536,
           11892.856968180338,
-          12014.39510498047
+          12014.39510498047,
+          11989.777310180663
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2888,7 +2888,6 @@ window.BENCHMARK_DATA = {
         "data": [
           24760,
           24760,
-          24760,
           24761,
           24760,
           24761,
@@ -2933,6 +2932,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "370b625ea57213ef37c09f678a61c4bcc76b50b7",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 20:03:17 2026 \u002B0100",
-        "message": "feat!: let a container in another assembly use services a module registers under internal types (#293)"
-      },
       {
         "sha": "68538ab51cff03603edcf4b239f249923b552d41",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
         "message": "fix: share the instance a factory of a class produces with a module scan that matches the class in another assembly (#374)"
+      },
+      {
+        "sha": "76006f25c43ec871d27665322fe94094cdc2cb74",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
+        "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
       }
     ],
     "labels": [
-      "370b625e",
       "68538ab5",
       "87c4b754",
       "ee4aac92",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "af6814f5",
       "473c4389",
       "5485cfa1",
-      "8e63f80d"
+      "8e63f80d",
+      "76006f25"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          175.78983709017436,
           266.31331024169924,
           112.01884396076203,
           75.26445881525676,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           270.7339647928874,
           115.3314334494727,
           179.0664984067281,
-          152.78836731910707
+          152.78836731910707,
+          186.2293701355274
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3404,7 +3404,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
-          4176,
+          4432,
           4432,
           4432,
           4432,
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          10740.553206380207,
           14060.486604817708,
           10647.108286539713,
           7191.601908002581,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           16981.940146891277,
           10970.022185262043,
           14621.209573599008,
-          14285.607628377278
+          14285.607628377278,
+          14408.019775390625
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          520693.158984375,
           582953.9108537947,
           635929.2818777902,
           418225.4836425781,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           803447.8815755208,
           638163.0103236607,
           736627.300920759,
-          825275.097516741
+          825275.097516741,
+          730789.8916341146
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740392,
           721116,
           736857,
           720482,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740994,
           740793,
           740993,
-          741735
+          741735,
+          741602
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          34152.92017211914,
           41137.15752360026,
           35138.31044514974,
           22835.706540788924,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           47610.412418619795,
           34547.60314941406,
           45812.34584263393,
-          48035.01153564453
+          48035.01153564453,
+          43463.78264567057
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          79997,
           80958,
           80965,
           80971,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80779,
           80301,
           80777,
-          80305
+          80305,
+          80301
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          303288.9976074219,
           341307.4998046875,
           265616.620703125,
           194067.91495768228,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           407757.76712239586,
           270240.18701171875,
           351594.51224190847,
-          380544.5333007813
+          380544.5333007813,
+          367392.1435546875
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          571193,
           571183,
           573091,
           573043,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573056,
           573057,
           573073,
-          573123
+          573123,
+          572995
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "370b625ea57213ef37c09f678a61c4bcc76b50b7",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sat Nov 7 20:03:17 2026 \u002B0100",
-        "message": "feat!: let a container in another assembly use services a module registers under internal types (#293)"
-      },
       {
         "sha": "68538ab51cff03603edcf4b239f249923b552d41",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
         "message": "fix: share the instance a factory of a class produces with a module scan that matches the class in another assembly (#374)"
+      },
+      {
+        "sha": "76006f25c43ec871d27665322fe94094cdc2cb74",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
+        "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
       }
     ],
     "labels": [
-      "370b625e",
       "68538ab5",
       "87c4b754",
       "ee4aac92",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "af6814f5",
       "473c4389",
       "5485cfa1",
-      "8e63f80d"
+      "8e63f80d",
+      "76006f25"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          250.3774986607688,
           285.6545634587606,
           150.35121334393818,
           265.1199523485624,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           172.43724274635315,
           178.65012346781216,
           210.12603061993917,
-          272.4645924886068
+          272.4645924886068,
+          454.5157265663147
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          590.6739802360535,
           638.0361083348593,
           374.8488972737239,
           633.747166633606,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           401.53917558376605,
           419.1342578274863,
           455.3992163658142,
-          596.5880759102957
+          596.5880759102957,
+          642.1969882965088
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6347.971502176921,
           6964.38586324056,
           3250.3623600006104,
           6724.872053879958,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           3467.2230824061803,
           3658.3186314900718,
           4815.49405670166,
-          6801.019601004465
+          6801.019601004465,
+          6796.294970376151
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          401.7365409533183,
           440.84378954569496,
           235.11512303352356,
           395.68062025705973,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           242.49249636332195,
           273.0929437050453,
           333.94251006444296,
-          404.67264928817747
+          404.67264928817747,
+          431.0686794598897
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          700.3314395904541,
           806.4628507614136,
           371.7144867011479,
           739.9534690221151,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           396.41191104253136,
           419.50258417129515,
           530.1281888144357,
-          774.9686605135599
+          774.9686605135599,
+          804.8887557347615
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
