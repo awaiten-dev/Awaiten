@@ -67,6 +67,14 @@ internal static partial class Sources
 	}
 
 	/// <summary>
+	///     The guidance (a quoted string literal) a cached service throws when it is resolved again on the same thread
+	///     while it is being built: something that builds it resolves it through a <c>Func</c> or <c>Lazy</c> before it
+	///     is cached, which would otherwise build it again until the stack overflows.
+	/// </summary>
+	private static string ReentrantResolveMessage(InstanceModel instance)
+		=> $"\"Awaiten: '{AwaitenGenerator.DisplayInstance(instance.ImplementationType)}' was resolved again while it was being built, because its constructor, a dependency or an OnActivated hook resolves it through a Func or Lazy before it is cached; call that Func or Lazy only after the constructor returns, or take it through an [Inject(Deferred = true)] property.\"";
+
+	/// <summary>
 	///     The guidance message (a quoted string literal) thrown by Resolve(Type) on the Root when a service
 	///     withheld there under strict lifetime safety is requested by its bare type: it is itself a disposable
 	///     build-on-demand service, reachable from the Root only by injection or through an <c>Owned&lt;T&gt;</c>

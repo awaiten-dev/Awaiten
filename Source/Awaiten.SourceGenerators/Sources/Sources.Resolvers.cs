@@ -100,7 +100,7 @@ internal static partial class Sources
 		string scopedSummary = $"Resolves the scoped {XmlTypeRef(type)} (one instance per scope).";
 		string scopedWiredFlag = HasDeferredMembers(instance) ? names.WiredField(index) : string.Empty;
 		// The deferred members are wired onto the cached field on the owner (__s.<field>), inside the static resolver.
-		EmitCachingResolver(builder, depth, new CachingResolver("Scope", type, resolver, (names.Field(index), scopedWiredFlag), construction, DisposalOf(instance), scopedSummary), instance, asyncDisposal, context, DeferredEmitter(builder, instance, "__s." + names.Field(index), context, asynchronous: false));
+		EmitCachingResolver(builder, depth, new CachingResolver("Scope", type, resolver, (names.Field(index), scopedWiredFlag, names.BuildingField(index)), construction, DisposalOf(instance), scopedSummary), instance, asyncDisposal, context, DeferredEmitter(builder, instance, "__s." + names.Field(index), context, asynchronous: false));
 	}
 
 	/// <summary>
@@ -225,7 +225,7 @@ internal static partial class Sources
 		string singletonSummary = $"Resolves the singleton {XmlTypeRef(type)} (one instance per container).";
 		string singletonWiredFlag = HasDeferredMembers(instance) ? names.WiredField(index) : string.Empty;
 		// The deferred members are wired onto the cached field on the owner (__s.<field>), inside the static resolver.
-		EmitCachingResolver(builder, depth, new CachingResolver("Root", type, resolver, (names.Field(index), singletonWiredFlag), construction, DisposalOf(instance), singletonSummary), instance, context.AsyncDisposal, context, DeferredEmitter(builder, instance, "__s." + names.Field(index), context, asynchronous: false));
+		EmitCachingResolver(builder, depth, new CachingResolver("Root", type, resolver, (names.Field(index), singletonWiredFlag, names.BuildingField(index)), construction, DisposalOf(instance), singletonSummary), instance, context.AsyncDisposal, context, DeferredEmitter(builder, instance, "__s." + names.Field(index), context, asynchronous: false));
 	}
 
 	/// <summary>
@@ -576,7 +576,8 @@ internal static partial class Sources
 		Indent(builder, depth + 2).Append(task).Append('<').Append(type).Append(">? __pending = __s.").Append(asyncField).AppendLine(";");
 		Indent(builder, depth + 2).AppendLine("if (__pending is null || __pending.IsFaulted || __pending.IsCanceled)");
 		Indent(builder, depth + 2).AppendLine("{");
-		Indent(builder, depth + 3).Append("__pending = ").Append(creator).AppendLine("();");
+		EmitBuildingGuard(builder, depth + 3, instance, names.BuildingField(index),
+			d => Indent(builder, d).Append("__pending = ").Append(creator).AppendLine("();"));
 		Indent(builder, depth + 3).Append("__s.").Append(asyncField).AppendLine(" = __pending;");
 		Indent(builder, depth + 2).AppendLine("}");
 		builder.AppendLine();
@@ -913,18 +914,22 @@ internal static partial class Sources
 				// throwing activation still tears the constructed instance down - the field stays null, so a later
 				// resolve rebuilds - with no unpublish/rethrow needed. OnRelease is queued after activation (only a
 				// successfully-activated instance is released), capturing the local by value.
-				Indent(builder, depth + 3).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
-				EmitCachedDisposalRegistration(builder, depth + 3, instance, "created", disposal, asyncDisposal);
-				EmitActivation(builder, depth + 3, instance, "created", context, asynchronous: false);
-				EmitReleaseRegistration(builder, depth + 3, instance, "created", context, asynchronous: false);
-				Indent(builder, depth + 3).Append("__s.").Append(field).AppendLine(" = created;");
+				EmitBuildingGuard(builder, depth + 3, instance, resolver.BuildingFlag, d =>
+				{
+					Indent(builder, d).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
+					EmitCachedDisposalRegistration(builder, d, instance, "created", disposal, asyncDisposal);
+					EmitActivation(builder, d, instance, "created", context, asynchronous: false);
+					EmitReleaseRegistration(builder, d, instance, "created", context, asynchronous: false);
+					Indent(builder, d).Append("__s.").Append(field).AppendLine(" = created;");
+				});
 			}
 			else
 			{
 				// No activation hook, so nothing must happen between publishing the field and returning it: publish
 				// directly and register disposal/release against the field, all under the lock that guards this
 				// cache-miss (the owner is known not disposed here, so no separate raced check is needed).
-				Indent(builder, depth + 3).Append("__s.").Append(field).Append(" = ").Append(construction).AppendLine(";");
+				EmitBuildingGuard(builder, depth + 3, instance, resolver.BuildingFlag,
+					d => Indent(builder, d).Append("__s.").Append(field).Append(" = ").Append(construction).AppendLine(";"));
 				EmitCachedDisposalRegistration(builder, depth + 3, instance, "__s." + field, disposal, asyncDisposal);
 				EmitCachedReleaseRegistration(builder, depth + 3, instance, field, instance.ConstructedType, context, asynchronous: false);
 			}
@@ -939,7 +944,9 @@ internal static partial class Sources
 			Indent(builder, depth + 3).AppendLine("__s.__wiring++;");
 			Indent(builder, depth + 3).AppendLine("try");
 			Indent(builder, depth + 3).AppendLine("{");
-			Indent(builder, depth + 4).Append("__s.").Append(field).Append(" = ").Append(construction).AppendLine(";");
+			// Guards the construction only: once the field is published, a re-entrant resolve during wiring returns it.
+			EmitBuildingGuard(builder, depth + 4, instance, resolver.BuildingFlag,
+				d => Indent(builder, d).Append("__s.").Append(field).Append(" = ").Append(construction).AppendLine(";"));
 			emitDeferred?.Invoke(depth + 4);
 			EmitCachedDisposalRegistration(builder, depth + 4, instance, "__s." + field, disposal, asyncDisposal);
 			// Run OnActivated then queue OnRelease inside the wiring episode's try: a throwing hook rolls the
@@ -1006,6 +1013,32 @@ internal static partial class Sources
 	}
 
 	/// <summary>
+	///     Emits the build of a cached instance, inside its cache-miss block under <c>__gate</c>, wrapped in its "being
+	///     built" <paramref name="flag" />. The instance is cached only once the build returns, and the gate is
+	///     reentrant, so a <c>Func</c> or <c>Lazy</c> of the instance called while it is built would otherwise build it
+	///     again until the stack overflows. Only the building thread can see the flag set under the gate, so that
+	///     throws; another thread waits for the gate. The flag is cleared in a <c>finally</c>, so a failed build is
+	///     retried by the next resolve.
+	/// </summary>
+	private static void EmitBuildingGuard(StringBuilder builder, int depth, InstanceModel instance, string flag, Action<int> emitBuild)
+	{
+		Indent(builder, depth).Append("if (__s.").Append(flag).AppendLine(")");
+		Indent(builder, depth).AppendLine("{");
+		Indent(builder, depth + 1).Append("throw new global::System.InvalidOperationException(").Append(ReentrantResolveMessage(instance)).AppendLine(");");
+		Indent(builder, depth).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth).Append("__s.").Append(flag).AppendLine(" = true;");
+		Indent(builder, depth).AppendLine("try");
+		Indent(builder, depth).AppendLine("{");
+		emitBuild(depth + 1);
+		Indent(builder, depth).AppendLine("}");
+		Indent(builder, depth).AppendLine("finally");
+		Indent(builder, depth).AppendLine("{");
+		Indent(builder, depth + 1).Append("__s.").Append(flag).AppendLine(" = false;");
+		Indent(builder, depth).AppendLine("}");
+	}
+
+	/// <summary>
 	///     Emits the disposal registration of a freshly cached instance, inside the cache-miss block (under the
 	///     lock that guards the field assignment). <paramref name="target" /> is the expression naming the instance
 	///     to track - the published field (<c>__s.&lt;field&gt;</c>), or a not-yet-published local when the field
@@ -1039,8 +1072,9 @@ internal static partial class Sources
 	///     output), and the XML doc <see cref="Summary" /> emitted over the resolver. <see cref="WiredFlag" /> is
 	///     the volatile "wiring complete" flag guarding the fast path of an instance with deferred members (empty
 	///     when the instance has none, so the plain fast path on <see cref="Field" /> alone is emitted).
+	///     <see cref="BuildingFlag" /> marks the instance as being built (see <see cref="EmitBuildingGuard" />).
 	/// </summary>
-	private readonly struct CachingResolver(string owner, string type, string method, (string Field, string WiredFlag) cache, string construction, DisposalTracking disposal, string summary)
+	private readonly struct CachingResolver(string owner, string type, string method, (string Field, string WiredFlag, string BuildingFlag) cache, string construction, DisposalTracking disposal, string summary)
 	{
 		// The declaring/owner type of the static resolver's `__s` parameter: <c>Scope</c> for a scoped resolver,
 		// <c>Root</c> for a singleton one. It is always emitted on that type and caches on that owner.
@@ -1059,6 +1093,8 @@ internal static partial class Sources
 		public string Summary { get; } = summary;
 
 		public string WiredFlag { get; } = cache.WiredFlag;
+
+		public string BuildingFlag { get; } = cache.BuildingFlag;
 	}
 
 	/// <summary>

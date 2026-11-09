@@ -51,6 +51,14 @@ Relationships are the clean way for a long-lived service to reach a shorter-live
 In the strict default, a root-owned `Func<T>` over a disposable transient is withheld, because it would pile up undisposed instances on the root. Use [Owned](../06-lifetime/01-owned.md) instead, or switch to [Loose lifetime safety](../06-lifetime/02-lifetime-safety.md).
 :::
 
+## Calling a relationship while the service is built
+
+A `Func<T>` or `Lazy<T>` of a singleton or scoped service returns the one instance the container caches, and the container caches it only once its constructor and its `OnActivated` hook have returned. Calling it before then, from the service's own constructor, a decorator of it, a dependency it builds or its `OnActivated` hook, throws an `InvalidOperationException` instead of building a second instance. Call the `Func` or `Lazy` after the constructor returns, or take the service through a [deferred property](./05-property-injection.md#break-a-cycle-with-deferred), which the container wires once it has cached the owner.
+
+:::warning
+Some loops the container cannot stop. A transient that resolves itself is plain recursion: every call builds a new instance, so it runs until the stack overflows. The same holds for a scoped service that resolves an `Owned<T>` of itself, since each handle builds it in a new scope. An async service that awaits a `Task<T>` of itself after its first `await` waits for itself and never completes. A constructor that resolves its own service on another thread and waits for the result deadlocks, because that thread waits for the build in progress.
+:::
+
 ## Where to go next
 
 - [Runtime arguments](./06-runtime-arguments.md) for `Func<TArg, T>` with values you pass in.
