@@ -1145,7 +1145,8 @@ partial class AwaitenGenerator
 	///     Reports <see cref="Diagnostics.ModuleContributionNotSelfCompiled">AWT230</see> and returns
 	///     <see langword="true" /> when a decorator, composite or open generic registration of an imported module of
 	///     another assembly names a type this container cannot construct and for which the module generated no factory,
-	///     so the contribution is skipped rather than failing as a misleading constructor diagnostic.
+	///     so the contribution is skipped rather than failing as a misleading constructor diagnostic. A module that can carry
+	///     no factory at all (see <see cref="ModuleShapeReason" />) is AWT231 with that reason instead.
 	/// </summary>
 	private static bool IsUnconstructibleModuleContribution(
 		INamedTypeSymbol? module,
@@ -1163,14 +1164,16 @@ partial class AwaitenGenerator
 			return false;
 		}
 
-		diagnostics.Add(new DiagnosticInfo(
-			Diagnostics.ModuleContributionNotSelfCompiled,
-			LocationInfo.From(location),
-			new EquatableArray<string>([
-				Display(module.ToDisplayString(FullyQualified)),
-				kind,
-				Display(type.OriginalDefinition.ToDisplayString(FullyQualified)),
-			])));
+		string typeName = Display(type.OriginalDefinition.ToDisplayString(FullyQualified));
+		diagnostics.Add(ModuleShapeReason(module) is { } reason
+			? new DiagnosticInfo(
+				Diagnostics.ModuleRegistrationNotSelfCompiled,
+				LocationInfo.From(location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), typeName, "factory", reason, $"make '{typeName}', its constructor and the constructor's parameter types public",]))
+			: new DiagnosticInfo(
+				Diagnostics.ModuleContributionNotSelfCompiled,
+				LocationInfo.From(location),
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), kind, typeName,])));
 		return true;
 	}
 

@@ -132,8 +132,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     when one of its <c>[AsyncInitializer&lt;T&gt;]</c> conventions is unusable (AWT233) or a hook gets no wrapper
 	///     (AWT164, AWT190, AWT203, AWT204), which carries only those diagnostics. A public module that is not
 	///     <c>partial</c> but names a member only a wrapper would serve (see <see cref="HasMemberNeedingWrapper" />), or has
-	///     an open generic contribution another assembly cannot construct, gets a model that emits just the marker of
-	///     <see cref="ModuleNotPartialName" />.
+	///     a contribution only a generated factory would build (see <see cref="HasContributionNeedingFactory" />), gets a
+	///     model that emits just the marker of <see cref="ModuleNotPartialName" />.
 	/// </summary>
 	private static ModuleScanModel? BuildModuleModel(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
 		=> context.TargetSymbol is INamedTypeSymbol moduleSymbol
@@ -193,10 +193,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
 
-		// A container in another assembly that misses a wrapper or an open generic factory cannot see that the module is not partial, so the module records it (AWT108, AWT109, AWT164, AWT231).
+		// A container in another assembly that misses a wrapper or a factory cannot see that the module is not partial, so the module records it (AWT108, AWT109, AWT164, AWT231).
 		bool recordsNotPartial = !receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && IsExternallyAccessible(moduleSymbol)
-		                         && (HasMemberNeedingWrapper(moduleSymbol, compilation)
-		                             || OpenContributions(moduleSymbol).Any(contribution => SelfCompilesRegistration(moduleSymbol, contribution.Definition, contribution.Service, compilation)));
+		                         && (HasMemberNeedingWrapper(moduleSymbol, compilation) || HasContributionNeedingFactory(moduleSymbol, compilation));
 		if (!declaresScan && selfCompiled is null && started is null && wrappers.Count == 0 && contributions.Count == 0 && skipped.Count == 0 && !recordsNotPartial
 		    && !(hidden is { SeveralModules: true, } && hidden.Demanded.Emitting.Contains(moduleSymbol))
 		    && hidden?.Implementations.Any(candidate => candidate.Viable && (candidate.Shared || IsExternallyAccessible(candidate.Implementation))) != true)

@@ -40,7 +40,7 @@ public static partial class CoffeeShop
 }
 ```
 
-Use this for configuration objects or anything with a lifetime you manage yourself.
+Use this for configuration objects or anything with a lifetime you manage yourself. For the same reason, no [async initializer convention](../03-core-concepts/03-async-initialization.md#which-conventions-apply) runs on it: initialize it before you hand it over.
 
 ## Several producers of one service
 

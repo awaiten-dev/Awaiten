@@ -243,6 +243,7 @@ public class ModuleInternalMemberTests
 		[Test]
 		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store) { }", "registers 'Lib.Plugin' with the OnActivated hook 'Ready', which this container cannot call, and the module's assembly generated no wrapper for it")]
 		[Arguments("[Singleton<InternalPlugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(InternalPlugin plugin, BeanStore store) { }", "registers 'Lib.InternalPlugin', which this container cannot construct, and the module's assembly generated no OnActivated hook wrapper for it")]
+		[Arguments("[Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Ready))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore(new Settings())); internal static void Ready(IGrinder grinder, BeanStore store) { }", "registers 'Lib.IGrinder' with the OnActivated hook 'Ready', which this container cannot call, and the module's assembly generated no wrapper for it")]
 		public async Task HookTakingOneThatTheOtherModuleCannotBuild_ExternalAwt231NamesTheServiceAndTheModule(string registration, string member, string subject)
 		{
 			string library = TwoModules(registration, member)
@@ -257,10 +258,58 @@ public class ModuleInternalMemberTests
 			await That(Generator.RunWithGeneratedReferenceAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.Contains(expected);
 		}
 
+		private const string StoreRejection = "(AWT195: 'Lib.BeanStore' is registered under the internal service 'Lib.BeanStore', which a consuming container reaches through a generated handle, but its constructor parameter 'settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module)";
+
 		[Test]
-		public async Task ScanHookTakingOneThatTheOtherModuleCannotBuild_WhileTheModulesAreJudged_IsReported()
+		[Arguments("internal sealed class Grinder(BeanStore store) : IGrinder { public BeanStore Store { get; } = store; }", "its constructor parameter 'store'")]
+		[Arguments("internal sealed class Grinder : IGrinder { [Inject] public BeanStore Store { get; set; } = null!; }", "its property 'Store'")]
+		public async Task RegistrationTakingOneThatTheOtherModuleCannotBuild_NamesTheServiceAndTheModule(string grinder, string member)
+		{
+			string library = TwoModules("[Singleton<Grinder, IGrinder>]", "")
+				.Replace("internal sealed class BeanStore { }", "internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }")
+				.Replace("internal sealed class Grinder(BeanStore store) : IGrinder { public BeanStore Store { get; } = store; }", grinder);
+			string friendLibrary = library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Other\")]\nnamespace Lib;");
+			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Grinder', which this container cannot construct, and the module's assembly generated no factory for it because {member} needs the internal service 'Lib.BeanStore', which the module 'Lib.StoreModule' cannot build {StoreRejection}; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.Grinder', its constructor and the constructor's parameter types public";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					$"error AWT195: 'Lib.Grinder' is self-compiled from a module registration, but {member} needs the internal service 'Lib.BeanStore', which the module 'Lib.StoreModule' cannot build {StoreRejection}, so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("the module that registers the internal service could share its handle but cannot build it, which nothing else reports, so the registration that needs it names why");
+			await That(Generator.Run(friendLibrary).Diagnostics).IsEmpty()
+				.Because("an assembly granted InternalsVisibleTo constructs the implementation itself");
+			await That(Generator.RunWithGeneratedReferencedAssembly(friendLibrary, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module records the same cause for a container that cannot construct the implementation");
+			await That(Generator.RunWithGeneratedReferenceAssembly(friendLibrary, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		public async Task RegistrationsOfModulesTakingEachOthersUnbuildableServices_AreJudgedWithoutRecursing()
 		{
 			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Settings { }
+				internal sealed class Kettle(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Silo(Kettle kettle, Settings settings) { public Kettle Kettle { get; } = kettle; public Settings Settings { get; } = settings; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>] public static partial class StoreModule;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT236: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which is registered only by the module 'Lib.StoreModule', so a container in another assembly cannot provide it to 'Lib.CoffeeModule'; register 'Lib.Silo' in 'Lib.CoffeeModule' too, or move both registrations into one module")
+				.Because("while the modules are judged, asking the other module why it cannot build its service would judge it anew, which asks this module back, so the judgement keeps the plain cause");
+		}
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task ScanHookTakingOneThatAModuleCannotBuild_IsLeftToTheContainers(bool sameModule)
+		{
+			string library = $$"""
 				using Awaiten;
 
 				namespace Lib;
@@ -268,26 +317,68 @@ public class ModuleInternalMemberTests
 				public interface IPlugin { }
 				public interface IRoaster { }
 				internal sealed class Roaster : IPlugin, IRoaster { }
+				public sealed class Cup { }
 				internal sealed class Beans { }
 				internal sealed class Settings { }
-				internal sealed class Secret { }
-				internal sealed class BeanStore(Settings settings, Secret secret) { public Settings Settings { get; } = settings; public Secret Secret { get; } = secret; }
+				internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }
 
 				[Module]
 				[Singleton<Beans>]
+				{{(sameModule ? "[Singleton<BeanStore>]" : "")}}
 				[Scan<IPlugin>(As = ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
 				public static partial class PluginModule
 				{
 					internal static void Wire(Roaster roaster, BeanStore store) { }
 				}
 
-				[Module][Singleton<BeanStore>] public static partial class StoreModule;
-				[Module][Singleton<Settings>] public static partial class SettingsModule;
-				""");
+				[Module]
+				[Singleton<Cup>]
+				{{(sameModule ? "" : "[Singleton<BeanStore>]")}}
+				public static partial class StoreModule;
+				""";
+			const string container = """
+				using Awaiten;
+				using Lib;
 
-			await That(result.Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT203: 'Lib.Roaster' matched the module scan, but its OnActivated hook parameter of type 'Lib.BeanStore' is not accessible outside the module's assembly, so the generated hook wrapper cannot expose it; widen the parameter type's accessibility, resolve a different dependency, or drop the hook")
-				.Because("judging which internal services the modules can build mirrors the scan hook, whose cause, judged from the other module, must not ask for that judgement again");
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(PluginModule))]
+				[Import(typeof(StoreModule))]
+				public static partial class MyContainer;
+				""";
+			string builder = sameModule ? "the module" : "the module 'Lib.StoreModule'";
+			string expected = $"error AWT231: The imported module 'Lib.PluginModule' registers 'Lib.Roaster', which this container cannot construct, and the module's assembly generated no factory for it because the parameter 'store' of its OnActivated hook needs the internal service 'Lib.BeanStore', which {builder} cannot build {StoreRejection}; grant this assembly InternalsVisibleTo in the module's assembly, or change the module so its [Scan] can generate a factory for 'Lib.Roaster'";
+
+			GeneratorResult result = Generator.Run(library);
+			if (sameModule)
+			{
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT195: 'Lib.BeanStore' is registered under the internal service 'Lib.BeanStore', which a consuming container reaches through a generated handle, but its constructor parameter 'settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module")
+					.Because("the module reports why it cannot build its own service, which the hook needs, instead of the accessibility of the hook's parameter");
+			}
+			else
+			{
+				await That(result.Diagnostics).IsEmpty()
+					.Because("a container of the module's assembly calls the hook directly, and judging the other module from the hook while the modules are judged must not ask for that judgement again");
+			}
+
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module skips the match whose hook it cannot wrap and records why, as for the hook of a registration");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		public async Task FactoryHookTakingOneThatTheModuleCannotBuild_ExternalAwt231NamesTheServiceAndWhy()
+		{
+			string library = Library("[Singleton<BeanStore>][Singleton<IGrinder>(Factory = nameof(CreateGrinder), OnActivated = nameof(Ready))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore(new Settings())); internal static void Ready(IGrinder grinder, BeanStore store) { }")
+				.Replace("internal sealed class BeanStore { }", "internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }");
+			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.IGrinder' with the OnActivated hook 'Ready', which this container cannot call, and the module's assembly generated no wrapper for it because the parameter 'store' of its OnActivated hook needs the internal service 'Lib.BeanStore', which the module cannot build {StoreRejection}; grant this assembly InternalsVisibleTo in the module's assembly, or make the hook and its parameter types public";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("a container of the module's assembly calls the hook of the factory directly and may register what the internal service needs, as for the hook of a constructed registration");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module's build does not report why it cannot build the service, so the consumer names it");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
 		}
 	}
 
@@ -386,6 +477,22 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
+		[Arguments("[Decorate<LoggingGrinder, IGrinder>]", "Lib.LoggingGrinder")]
+		[Arguments("[Composite<AllGrinders, IGrinder>]", "Lib.AllGrinders")]
+		public async Task WithAnInternalDecoratorOrComposite_ExternalAwt231NamesTheMissingPartial(string contribution, string type)
+		{
+			string library = NonPartial("[Singleton<PublicGrinder, IGrinder>]" + contribution, "")
+				.Replace("public interface IGrinder { }", "public interface IGrinder { }\npublic sealed class PublicGrinder : IGrinder { }\ninternal sealed class LoggingGrinder(IGrinder inner) : IGrinder { public IGrinder Inner { get; } = inner; }\ninternal sealed class AllGrinders(System.Collections.Generic.IEnumerable<IGrinder> all) : IGrinder { public System.Collections.Generic.IEnumerable<IGrinder> All { get; } = all; }");
+			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' registers '{type}', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make '{type}', its constructor and the constructor's parameter types public";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("a container of the module's assembly constructs the internal type itself");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module records that it is not partial, so a container in another assembly names why it carries no factory for the contribution");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
 		public async Task WithOnlyPublicMembers_EmitsNoMarker()
 		{
 			GeneratorResult library = Generator.Run(NonPartial("[Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "public static IGrinder CreateGrinder() => new Grinder(new BeanStore());"));
@@ -408,6 +515,21 @@ public class ModuleInternalMemberTests
 				.And.Contains("(7,2): error AWT109: 'Lib.IGrinder' cannot be exposed: the module 'Lib.CoffeeModule' has no accessible field or property 'Shared' of type 'Lib.IGrinder': 'Shared' is internal and has the type 'Lib.Grinder', which is not public, and the module has no single public service to expose it as that every registration and hook of the member accepts, so it generated no public wrapper for it; make the member and its type public, or grant this assembly InternalsVisibleTo in the module's assembly")
 				.And.Contains("*error AWT165: *").AsWildcard()
 				.Because("an internal hook keeps the module from exposing the internal type as the service, which it records for the container that reports the hook on an instance as well");
+		}
+
+		[Test]
+		public async Task UnderSeveralServices_IsNotInitializedByAConventionOfTheModule()
+		{
+			string library = Library("[Singleton<Grinder, IGrinder>(Instance = nameof(Shared))][Singleton<Grinder, IMill>(Instance = nameof(Shared))][AsyncInitializer<Grinder>(nameof(Grinder.InitAsync))]", "internal static Grinder Shared = new(new BeanStore());")
+				.Replace("public interface IGrinder { }", "public interface IGrinder { }\npublic interface IMill { }")
+				.Replace("internal sealed class Grinder(BeanStore store) : IGrinder { public BeanStore Store { get; } = store; }", "internal sealed class Grinder(BeanStore store) : IGrinder, IMill { public BeanStore Store { get; } = store; internal Task InitAsync(Settings settings) => Task.CompletedTask; }");
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("no container initializes an instance it does not own, so the convention that takes an internal type never needs a wrapper");
+			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).IsEmpty()
+				.Because("a container in another assembly serves the instance from its handle without initializing it, as a container in the module's assembly does");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer).Diagnostics).IsEmpty();
 		}
 	}
 

@@ -110,6 +110,7 @@ A registration is judged by the conventions of the container or module that decl
 - A container's conventions apply to its own registrations.
 - A module's conventions apply to the module's registrations. A container's conventions do not reach into an imported module.
 - A container that [extends](../04-registration/08-extending-containers.md) a base inherits the base's conventions. They run before the container's own.
+- No convention applies to an [`Instance`](../04-registration/01-factories-and-instances.md#instance) registration. The container doesn't own a pre-built instance, so it never initializes it, also not one a module of another assembly hands out.
 
 ```csharp
 [Module]

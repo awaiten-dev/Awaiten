@@ -20,7 +20,7 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task ReportsAnInternalDecorator()
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			GeneratorResult result = Generator.RunWithReferencedAssembly("""
 				using Awaiten;
 
 				namespace Lib;
@@ -39,13 +39,13 @@ public partial class DiagnosticTests
 				""", Consumer);
 
 			await That(result.Diagnostics).Contains("*AWT230*GreetingModule*the decorator 'Lib.LoudGreeter'*").AsWildcard()
-				.Because("a module that is not partial carries no factory for its internal decorator, so the consumer cannot construct it");
+				.Because("a module built without the generator carries no factory for its internal decorator and records no reason, so the consumer cannot construct it");
 		}
 
 		[Test]
 		public async Task ReportsAnInternalComposite()
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			GeneratorResult result = Generator.RunWithReferencedAssembly("""
 				using System.Collections.Generic;
 				using Awaiten;
 
@@ -65,7 +65,7 @@ public partial class DiagnosticTests
 				""", Consumer);
 
 			await That(result.Diagnostics).Contains("*AWT230*GreetingModule*the composite 'Lib.AllGreeters'*").AsWildcard()
-				.Because("a module that is not partial carries no factory for its internal composite");
+				.Because("a module built without the generator carries no factory for its internal composite and records no reason");
 		}
 
 		[Test]

@@ -1615,7 +1615,9 @@ internal static class Diagnostics
 	///     The form of <see cref="ModuleScanParameterInaccessible">AWT195</see> for a type private to the module whose
 	///     constructor or factory member parameter, named with the internal service by the second argument, needs a
 	///     service the module registers but cannot build. The module reports why it cannot build the service; once that is
-	///     fixed, the factory takes it.
+	///     fixed, the factory takes it. Also the form for any self-compiled implementation whose parameter or property needs
+	///     an internal service only another module of the assembly registers and cannot build, which nothing else reports,
+	///     so the second argument names that module and why.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleParameterNeedsUnbuildableService = new(
 		"AWT195",
