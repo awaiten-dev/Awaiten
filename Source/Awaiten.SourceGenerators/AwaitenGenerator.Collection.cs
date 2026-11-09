@@ -1838,7 +1838,8 @@ partial class AwaitenGenerator
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
 	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
 	///     instance handle is AWT178 instead, since the handle builds it where no container-side entry reaches, with the
-	///     reason the module handles it (see <see cref="InstanceHandleReason" />).
+	///     reason the module handles it (see <see cref="InstanceHandleReason" />). An alias that serves the handle's instance
+	///     (see <see cref="ThroughAlias" />) registers nothing here, although it may return the implementation itself.
 	/// </summary>
 	private static void ReportUnmatchedInjectProperties(
 		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
@@ -1853,7 +1854,7 @@ partial class AwaitenGenerator
 
 		HashSet<string> registered = new(StringComparer.Ordinal);
 		Dictionary<string, (INamedTypeSymbol Module, INamedTypeSymbol? Implementation)> handled = new(StringComparer.Ordinal);
-		foreach (ImplInfo info in implOrder)
+		foreach (ImplInfo info in implOrder.Where(info => !info.ImplementationType.Contains(AliasKeyMarker)))
 		{
 			registered.Add(info.ImplementationType);
 			registered.Add(TypeIdentity(info.Symbol, compilation));
