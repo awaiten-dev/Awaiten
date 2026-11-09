@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -50,5 +51,31 @@ public sealed partial class TaskOfServiceBridgeTests
 		await That(await consumer.Factory()).IsSameAs(store);
 		await That(await scope.ServiceProvider.GetRequiredService<Task<IStore>>()).IsSameAs(store)
 			.Because("the host's projection of the service task resolves the same scoped instance");
+	}
+
+	public sealed class Bean;
+
+	[Container]
+	[Singleton<IReadOnlyList<Bean>>(Factory = nameof(CreateBeansAsync))]
+	public static partial class Pantry
+	{
+		private static async Task<IReadOnlyList<Bean>> CreateBeansAsync()
+		{
+			await Task.Yield();
+			return [new Bean()];
+		}
+	}
+
+	[Test]
+	public async Task AwaitenServiceProvider_ServesTheTaskOfAnAsyncServiceRegisteredAsACollection()
+	{
+		await using Pantry.Root pantry = new();
+		using AwaitenServiceProvider provider = new(pantry);
+
+		IReadOnlyList<Bean> beans = await (Task<IReadOnlyList<Bean>>)provider.GetService(typeof(Task<IReadOnlyList<Bean>>))!;
+
+		await That(beans).IsSameAs(await pantry.ResolveAsync<IReadOnlyList<Bean>>())
+			.Because("the task is over the registered service, whose type happens to be a collection");
+		await That(provider.IsService(typeof(Task<IReadOnlyList<Bean>>))).IsTrue();
 	}
 }

@@ -244,6 +244,27 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsANestedTaskShapeWithoutTheTaskShapeRemedy()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static void Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		root.Resolve<Task<Task<IGen<int>>>>();
+			                                 		root.Resolve<Func<Func<Task<IGen<int>>>>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasCount(2);
+			await That(reports.Any(report => report.Contains("needs neither"))).IsFalse()
+				.Because("an async-initialized service would not get these shapes either, so needing no initialization is not why they are missing");
+		}
+
+		[Test]
 		public async Task DoesNotReportAnUntypedReceiver()
 		{
 			string[] diagnostics = await Run("""

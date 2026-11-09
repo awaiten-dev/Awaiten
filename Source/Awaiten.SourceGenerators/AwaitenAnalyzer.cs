@@ -771,28 +771,38 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		return $"register this closing explicitly next to the open generic registration, such as {registration}, {reason}";
 	}
 
-	// The service a Task shape (Task<T>, also inside Func or Lazy or around Owned) is over, or null for any other type;
-	// the generated __TaskShapeTarget peels the same way at run time.
+	// The service of a Task shape the container serves over an async-initialized service (Task<T>, Func<Task<T>>,
+	// Lazy<Task<T>>, Task<Owned<T>> or Func<Task<Owned<T>>>), or null for any other type; the generated
+	// __TaskShapeTarget maps the same shapes at run time.
 	private static ITypeSymbol? TaskShapeTarget(ITypeSymbol service)
 	{
-		bool task = false;
 		ITypeSymbol type = service;
-		while (type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named)
+		bool lazy = IsClosing(type, "System.Lazy<T>", out ITypeSymbol? inner);
+		if (lazy || IsClosing(type, "System.Func<TResult>", out inner))
 		{
-			string definition = named.ConstructedFrom.ToDisplayString();
-			if (definition == "System.Threading.Tasks.Task<TResult>")
-			{
-				task = true;
-			}
-			else if (definition is not ("System.Func<TResult>" or "System.Lazy<T>" or "Awaiten.Owned<T>"))
-			{
-				break;
-			}
-
-			type = named.TypeArguments[0];
+			type = inner!;
 		}
 
-		return task ? type : null;
+		if (!IsClosing(type, "System.Threading.Tasks.Task<TResult>", out inner))
+		{
+			return null;
+		}
+
+		if (!IsClosing(inner!, "Awaiten.Owned<T>", out ITypeSymbol? owned))
+		{
+			return inner;
+		}
+
+		return lazy ? null : owned;
+
+		static bool IsClosing(ITypeSymbol type, string definition, out ITypeSymbol? argument)
+		{
+			argument = type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named
+			           && named.ConstructedFrom.ToDisplayString() == definition
+				? named.TypeArguments[0]
+				: null;
+			return argument is not null;
+		}
 	}
 
 	// A container with errors emits a shell that throws on every call, and its build fails anyway, so it is not checked.

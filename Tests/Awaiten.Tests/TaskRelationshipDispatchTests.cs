@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Awaiten.Tests;
@@ -163,6 +164,35 @@ public sealed partial class TaskRelationshipDispatchTests
 			await That(() => shop.Resolve(typeof(Func<Owned<IStore>>))).Throws<InvalidOperationException>()
 				.WithMessage("*Func<System.Threading.Tasks.Task<Awaiten.Owned<*IStore>>>*").AsWildcard();
 		}
+
+		[Test]
+		[Arguments(typeof(Lazy<Task<Owned<IStore>>>))]
+		[Arguments(typeof(Func<Func<Task<IStore>>>))]
+		[Arguments(typeof(Task<Owned<ILabel>>))]
+		public async Task ResolveOfAnUnservedShape_DoesNotClaimTheServiceNeedsNoAsyncInitialization(Type shape)
+		{
+			await using Shop.Root shop = new();
+
+			await That(() => shop.Resolve(shape)).Throws<InvalidOperationException>()
+				.WithMessage("No registration for type*on this container.").AsWildcard()
+				.Because("the service needs asynchronous initialization, so the shape is missing for another reason");
+		}
+
+		[Test]
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task TaskOfAServiceRegisteredAsACollection_HandsOutTheRegisteredService(bool fromScope)
+		{
+			await using Pantry.Root pantry = new();
+			await using Pantry.Scope scope = pantry.CreateScope();
+			IAwaitenScope resolver = fromScope ? scope : pantry;
+
+			IReadOnlyList<Plain> beans = await (Task<IReadOnlyList<Plain>>)resolver.Resolve(typeof(Task<IReadOnlyList<Plain>>));
+
+			await That(beans).IsSameAs(await pantry.ResolveAsync<IReadOnlyList<Plain>>())
+				.Because("the registration suppresses the synthesized collection, so the task is over the registered service");
+			await That(pantry.GetResolvability(typeof(Task<IReadOnlyList<Plain>>), null).Status).IsEqualTo(AwaitenResolvabilityStatus.Resolvable);
+		}
 	}
 
 	public sealed class SynchronousService
@@ -185,6 +215,19 @@ public sealed partial class TaskRelationshipDispatchTests
 				.Because("the service is registered, so the miss names it as what to resolve");
 			await That(() => shop.ResolveAsync(shape)).Throws<InvalidOperationException>()
 				.WithMessage("*resolve '*Plain' directly*").AsWildcard();
+		}
+
+		[Test]
+		[Arguments(typeof(Task<Task<Plain>>))]
+		[Arguments(typeof(Func<Func<Task<Plain>>>))]
+		[Arguments(typeof(Lazy<Task<Owned<Plain>>>))]
+		public async Task ShapeNotServedOverAnyService_ReportsTheMissingRegistration(Type shape)
+		{
+			await using Shop.Root shop = new();
+
+			await That(() => shop.Resolve(shape)).Throws<InvalidOperationException>()
+				.WithMessage("No registration for type*on this container.").AsWildcard()
+				.Because("an async-initialized service would not get this shape either, so needing no initialization is not why it is missing");
 		}
 
 		[Test]
@@ -424,6 +467,17 @@ public sealed partial class TaskRelationshipDispatchTests
 		{
 			await Task.Yield();
 			return new Label(requestingType);
+		}
+	}
+
+	[Container]
+	[Singleton<IReadOnlyList<Plain>>(Factory = nameof(CreatePlainsAsync))]
+	public static partial class Pantry
+	{
+		private static async Task<IReadOnlyList<Plain>> CreatePlainsAsync()
+		{
+			await Task.Yield();
+			return [new Plain()];
 		}
 	}
 

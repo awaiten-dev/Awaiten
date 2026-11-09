@@ -277,7 +277,7 @@ internal static partial class Sources
 	///     <c>Awaiten.Extensions.DependencyInjection</c> companion projects into a service collection. Parameterized
 	///     services are omitted (not resolvable by service type alone); a user-keyed registration is advertised with
 	///     its <c>Key</c>, while the synthetic decorator/contextual keys stay internal. An async-tainted service is
-	///     flagged <c>requiresAsync</c> so the bridge projects it as a <c>Task&lt;T&gt;</c>, unless
+	///     flagged <c>requiresAsync</c> so the bridge projects a keyed one as a <c>Task&lt;T&gt;</c>, unless
 	///     <paramref name="syncAfterInit" /> makes it synchronously resolvable after warm-up.
 	/// </summary>
 	private static void EmitRegistrations(StringBuilder fields, StringBuilder members, int depth, InstanceModel[] instances, bool syncAfterInit)
@@ -469,8 +469,9 @@ internal static partial class Sources
 		{
 			// The Task shapes over a synchronous, non-parameterized service are not dispatched, so the miss names the
 			// service to resolve instead. It stays a "No registration" miss without a resolvability reason, so the MS.DI
-			// bridge still answers null for it. The probe exists whenever the dispatch table does.
-			Indent(builder, depth + 1).AppendLine("if (__TaskShapeTarget(serviceType) is global::System.Type __target && __GetResolvability(__target, null).Status != global::Awaiten.AwaitenResolvabilityStatus.NotRegistered)");
+			// bridge still answers null for it. An async-only service would have the shape, so its miss has another
+			// cause and keeps the plain message. The probe exists whenever the dispatch table does.
+			Indent(builder, depth + 1).AppendLine("if (__TaskShapeTarget(serviceType) is global::System.Type __target && __GetResolvability(__target, null).Status is not (global::Awaiten.AwaitenResolvabilityStatus.NotRegistered or global::Awaiten.AwaitenResolvabilityStatus.AsyncOnly))");
 			Indent(builder, depth + 1).AppendLine("{");
 			Indent(builder, depth + 2).AppendLine(
 				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: the Task shapes are served only over a service that needs asynchronous initialization or runtime arguments, and '{__target}' needs neither; resolve '{__target}' directly, or through ResolveAsync to get it as a task.\");");
@@ -556,33 +557,39 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits <c>__TaskShapeTarget</c>, which peels a requested <c>Task</c> shape (<c>Task&lt;T&gt;</c>, also inside
-	///     <c>Func</c>, <c>Lazy</c> or around <c>Owned</c>) down to its service <c>T</c>, or returns null for any other
-	///     type. Only a failed <c>Resolve</c> calls it, so the runtime type inspection stays off the hot path.
+	///     Emits <c>__TaskShapeTarget</c>, which maps a requested Task shape the container serves over an async-initialized
+	///     service (<c>Task&lt;T&gt;</c>, <c>Func&lt;Task&lt;T&gt;&gt;</c>, <c>Lazy&lt;Task&lt;T&gt;&gt;</c>,
+	///     <c>Task&lt;Owned&lt;T&gt;&gt;</c> or <c>Func&lt;Task&lt;Owned&lt;T&gt;&gt;&gt;</c>) to its service <c>T</c>, or
+	///     returns null for any other type. Only a failed <c>Resolve</c> calls it, so the runtime type inspection stays
+	///     off the hot path.
 	/// </summary>
 	private static void EmitTaskShapeTarget(StringBuilder helpers, int depth)
 	{
 		Separate(helpers);
 		Indent(helpers, depth).AppendLine("private static global::System.Type? __TaskShapeTarget(global::System.Type serviceType)");
 		Indent(helpers, depth).AppendLine("{");
-		Indent(helpers, depth + 1).AppendLine("bool __task = false;");
 		Indent(helpers, depth + 1).AppendLine("global::System.Type __type = serviceType;");
-		Indent(helpers, depth + 1).AppendLine("while (__type.IsConstructedGenericType && __type.GenericTypeArguments.Length == 1)");
+		Indent(helpers, depth + 1).AppendLine("bool __lazy = __IsClosing(__type, typeof(global::System.Lazy<>));");
+		Indent(helpers, depth + 1).AppendLine("if (__lazy || __IsClosing(__type, typeof(global::System.Func<>)))");
 		Indent(helpers, depth + 1).AppendLine("{");
-		Indent(helpers, depth + 2).AppendLine("global::System.Type __definition = __type.GetGenericTypeDefinition();");
-		Indent(helpers, depth + 2).AppendLine("if (__definition == typeof(global::System.Threading.Tasks.Task<>))");
-		Indent(helpers, depth + 2).AppendLine("{");
-		Indent(helpers, depth + 3).AppendLine("__task = true;");
-		Indent(helpers, depth + 2).AppendLine("}");
-		Indent(helpers, depth + 2).AppendLine("else if (__definition != typeof(global::System.Func<>) && __definition != typeof(global::System.Lazy<>) && __definition != typeof(global::Awaiten.Owned<>))");
-		Indent(helpers, depth + 2).AppendLine("{");
-		Indent(helpers, depth + 3).AppendLine("break;");
-		Indent(helpers, depth + 2).AppendLine("}");
-		helpers.AppendLine();
 		Indent(helpers, depth + 2).AppendLine("__type = __type.GenericTypeArguments[0];");
 		Indent(helpers, depth + 1).AppendLine("}");
 		helpers.AppendLine();
-		Indent(helpers, depth + 1).AppendLine("return __task ? __type : null;");
+		Indent(helpers, depth + 1).AppendLine("if (!__IsClosing(__type, typeof(global::System.Threading.Tasks.Task<>)))");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("return null;");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("__type = __type.GenericTypeArguments[0];");
+		Indent(helpers, depth + 1).AppendLine("if (!__IsClosing(__type, typeof(global::Awaiten.Owned<>)))");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("return __type;");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("return __lazy ? null : __type.GenericTypeArguments[0];");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("static bool __IsClosing(global::System.Type type, global::System.Type definition)");
+		Indent(helpers, depth + 2).AppendLine("=> type.IsConstructedGenericType && type.GetGenericTypeDefinition() == definition;");
 		Indent(helpers, depth).AppendLine("}");
 	}
 
@@ -1374,13 +1381,10 @@ internal static partial class Sources
 			string task = $"global::System.Threading.Tasks.Task<{service}>";
 			string ownedTask = $"global::System.Threading.Tasks.Task<global::Awaiten.Owned<{service}>>";
 			string withheld = TaskWithheldMessage(service);
-			// A Task of a registered collection or dictionary is its awaited view, which the awaited entries below govern
-			// (all-or-nothing, as injection classifies it), not a Task relationship over the registration.
-			bool awaitedView = IsAwaitedViewShape(service);
 			if (instance.IsRequestingTypeFactory)
 			{
 				string requested = AsServiceTask(service, instance, $"{names.AsyncResolver(index)}(__s, null, default)");
-				Add(task, awaitedView ? null : requested, null);
+				Add(task, requested, null);
 				Add($"global::System.Func<{task}>", $"new global::System.Func<{task}>(() => {requested})", null);
 				Add($"global::System.Lazy<{task}>", $"new global::System.Lazy<{task}>(() => {requested})", null);
 				continue;
@@ -1395,30 +1399,21 @@ internal static partial class Sources
 				continue;
 			}
 
-			Add(task, awaitedView ? null : value, bareWithheld ? withheld : null);
+			Add(task, value, bareWithheld ? withheld : null);
 			Add($"global::System.Func<{task}>", AsyncFuncFactory([], service, value), funcWithheld ? withheld : null);
 			Add($"global::System.Lazy<{task}>", $"new global::System.Lazy<{task}>(() => {value})", null);
 			Add(ownedTask, owned, null);
 			Add($"global::System.Func<{ownedTask}>", AsyncOwnedFuncFactory([], service, owned), null);
 		}
 
-		void Add(string type, string? value, string? guidance)
+		void Add(string type, string value, string? guidance)
 		{
-			if (value is not null && !serviceToIndex.ContainsKey(new ServiceKey(type, null)) && seen.Add(type))
+			if (!serviceToIndex.ContainsKey(new ServiceKey(type, null)) && seen.Add(type))
 			{
 				entries.Add(new DispatchEntry(type, value, guidance));
 			}
 		}
 	}
-
-	/// <summary>
-	///     Whether <c>Task&lt;</c><paramref name="service" /><c>&gt;</c> is an awaited collection or keyed-dictionary
-	///     view: <paramref name="service" /> is one of the collection shapes or an <c>IReadOnlyDictionary&lt;TKey, T&gt;</c>.
-	/// </summary>
-	private static bool IsAwaitedViewShape(string service)
-		=> service.EndsWith("[]", StringComparison.Ordinal)
-		   || new[] { "IEnumerable<", "IReadOnlyList<", "IReadOnlyCollection<", "IList<", "ICollection<", "IReadOnlyDictionary<" }
-			   .Any(shape => service.StartsWith("global::System.Collections.Generic." + shape, StringComparison.Ordinal));
 
 	/// <summary>
 	///     Emits the data-driven by-type dispatch: a nested <c>__Bucket</c> slot type, the static
