@@ -541,7 +541,8 @@ partial class AwaitenGenerator
 				return Rejection(hidden, service) is { } own ? Cause(own, "the module") : null;
 			}
 
-			if (!IsHiddenService(service, module, compilation))
+			// A handle serves the service when any other module that registers it can build it.
+			if (!IsHiddenService(service, module, compilation) || hidden.ProvidedElsewhere(service))
 			{
 				return null;
 			}

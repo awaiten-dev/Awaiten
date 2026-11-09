@@ -186,6 +186,46 @@ public class ModuleInternalMemberTests
 					"error AWT108: 'Lib.IGrinder' cannot be produced: the module 'Lib.CoffeeModule' has no accessible method 'CreateGrinder' returning 'Lib.IGrinder': 'CreateGrinder' is internal and its parameter 'store' takes the internal service 'Lib.BeanStore', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.BeanStore' is registered under the internal service 'Lib.BeanStore', which a consuming container reaches through a generated handle, but its constructor parameter 'settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the module generated neither a public wrapper nor a handle for it; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly")
 				.Because("the factory would take the internal service through the handle of the module that registers it, so the cause is what keeps that module from building it");
 		}
+
+		[Test]
+		public async Task ThatOnlyOneOfTwoOtherModulesCanBuild_ExternalAwt108NamesTheBlockingParameter()
+		{
+			string library = (Library("[Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "internal static IGrinder CreateGrinder(BeanStore store, ILog<Grinder> log) => new Grinder(store);") + """
+
+					[Module]
+					[Singleton<BeanStore>]
+					public static partial class AStoreModule;
+
+					[Module]
+					[Singleton<BeanStore>(Factory = nameof(Create))]
+					public static partial class BStoreModule
+					{
+						internal static BeanStore Create() => new BeanStore(new Settings());
+					}
+					""")
+				.Replace("internal sealed class BeanStore { }", "internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }")
+				.Replace("public interface IGrinder { }", "public interface IGrinder { }\npublic interface ILog<T> { }")
+				.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Other\")]\nnamespace Lib;");
+			const string container = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Import(typeof(AStoreModule))]
+				[Import(typeof(BStoreModule))]
+				public static partial class MyContainer;
+				""";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(library.Replace(", ILog<Grinder> log", ""), container).Diagnostics).IsEmpty()
+				.Because("the factory takes the internal service through the handle that 'Lib.BStoreModule' can build");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT108: 'Lib.IGrinder' cannot be produced: the module 'Lib.CoffeeModule' has no accessible method 'CreateGrinder' returning 'Lib.IGrinder': 'CreateGrinder' is internal and its parameter 'log' has the type 'Lib.ILog<Lib.Grinder>', which is not public, so the module generated no public wrapper for it; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly")
+				.Because("another module that registers the internal service can build it, so its handle serves 'store' and the parameter that blocks the wrapper is 'log'");
+		}
 	}
 
 	public class NonPartialModule
@@ -227,6 +267,18 @@ public class ModuleInternalMemberTests
 
 			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT108") && diagnostic.Contains("because the module, or a class that contains it, is not partial"))
 				.Because("a reference assembly drops internal members but keeps the internal marker type");
+		}
+
+		[Test]
+		public async Task WithAnInternalFactoryAndAnInternalOpenGeneric_ExternalAwt231NamesTheMissingPartial()
+		{
+			string library = NonPartial("[Singleton<IGrinder>(Factory = nameof(CreateGrinder))][Singleton(typeof(Repo<>), typeof(IRepo<>))]", "internal static IGrinder CreateGrinder() => new Grinder(new BeanStore());")
+				.Replace("public interface IGrinder { }", "public interface IGrinder { }\npublic interface IRepo<T> { }\ninternal sealed class Repo<T> : IRepo<T> { }");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer);
+
+			await That(external.Diagnostics).Contains(diagnostic => diagnostic.Contains("error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Repo<T>', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial"))
+				.Because("the marker the module records for its internal factory names why it carries no factory for the open generic either");
 		}
 
 		[Test]
