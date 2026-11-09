@@ -677,7 +677,7 @@ internal static partial class Sources
 		}
 
 		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
-		builder.Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(") => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
+		builder.Append(wrapper.TypeParameters).Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(')').Append(wrapper.Constraints).Append(" => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
 			.Append('(').Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
 

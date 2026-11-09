@@ -109,7 +109,11 @@ partial class AwaitenGenerator
 	///     construct (see <see cref="SelfCompilesRegistration" />, asked of the open definition), and a skip record with
 	///     the reason for each it cannot generate, which a consumer that cannot construct the type reports (AWT231). The
 	///     module's own build reports nothing for them: before modules generated these factories the module built and
-	///     a consumer reported AWT230, so a library whose containers all live in its own assembly keeps building.
+	///     a consumer reported AWT230, so a library whose containers all live in its own assembly keeps building. A
+	///     factory whose hook wrapper only a container in the module's assembly may run (see
+	///     <see cref="OpenFactory.ForeignReason" />) is internal and kept only for a type private to the module, whose
+	///     closings that container builds through it, and carries the skip record too, which a container in another
+	///     assembly reports, a friend only for a hook it records a skip of its own for.
 	/// </summary>
 	private static (List<RegistrationFactory> Factories, List<SkippedRegistration> Skipped) CollectModuleOpenFactories(INamedTypeSymbol module, Compilation compilation)
 	{
@@ -132,7 +136,17 @@ partial class AwaitenGenerator
 				built = new OpenFactory(null, $"its factory would have to return '{Display(built.Factory.ReturnType)}', which is not accessible outside the module's assembly");
 			}
 
-			if (built.Factory is { } factory)
+			if (built is { Factory: { } assemblyOnly, ForeignReason: { } foreign, })
+			{
+				if (IsHiddenInModule(contribution.Definition, module, compilation))
+				{
+					factories.Add(assemblyOnly with { IsInternal = true, });
+					skipped.AddRange(built.HookSkips!);
+				}
+
+				skipped.Add(new SkippedRegistration(contribution.SkippedName, $"{foreign}; give the overloads distinct names", Open: true));
+			}
+			else if (built.Factory is { } factory)
 			{
 				factories.Add(factory);
 			}
@@ -189,8 +203,12 @@ partial class AwaitenGenerator
 				.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
 				.ToList();
 
-	/// <summary>The generic factory of an open contribution, or the reason the owner cannot generate one.</summary>
-	private readonly record struct OpenFactory(RegistrationFactory? Factory, string? Reason);
+	/// <summary>
+	///     The generic factory of an open contribution, or the reason the owner cannot generate one. A
+	///     <see cref="ForeignReason" /> tells why only a container in the owner's assembly may run a hook wrapper of the
+	///     factory, and <see cref="HookSkips" /> record that for the hooks a friend cannot judge either.
+	/// </summary>
+	private readonly record struct OpenFactory(RegistrationFactory? Factory, string? Reason, string? ForeignReason = null, List<SkippedRegistration>? HookSkips = null);
 
 	/// <summary>
 	///     Builds the generic factory of an open contribution: a method with the definition's type parameters and their
@@ -259,7 +277,8 @@ partial class AwaitenGenerator
 
 		string typeParameterList = $"<{string.Join(", ", definition.TypeParameters.Select(parameter => EscapedName(parameter.Name)))}>";
 		string constraints = TypeParameterConstraints(definition);
-		if (OpenHookWrappers(contribution, subject, signature, typeParameters, typeParameterList, constraints, out string? hookReason) is not { } hooks)
+		List<SkippedRegistration> hookSkips = new();
+		if (OpenHookWrappers(contribution, subject, signature, typeParameters, typeParameterList, constraints, out string? hookReason, out string? foreignReason, hookSkips) is not { } hooks)
 		{
 			return new OpenFactory(null, hookReason);
 		}
@@ -279,7 +298,9 @@ partial class AwaitenGenerator
 				OptionalDeferredMembers: members.OptionalDeferred,
 				TypeParameters: typeParameterList,
 				Constraints: constraints),
-			null);
+			null,
+			foreignReason,
+			hookSkips);
 
 		bool Fits(ITypeSymbol type, ModuleScanContext scope)
 			=> FitsFactorySignature(type, scope) && TypeHiddenInModule(type, scope.Module, scope.Compilation) is null;
@@ -292,7 +313,11 @@ partial class AwaitenGenerator
 	///     with those type parameters and a parameter after the instance may use them. Returns <see langword="null" /> and
 	///     the <paramref name="reason" /> when a hook cannot be wrapped (unusable, ambiguous, a parameter another assembly
 	///     cannot name or carrying <c>[Arg]</c>, <c>[FromKey]</c> or <c>[Inject]</c>, constraints the definition's type
-	///     parameters do not satisfy, or a parameter named like one of them).
+	///     parameters do not satisfy, or a parameter named like one of them). A wrapper runs its hook for every closing,
+	///     so when another overload accepts some closing too (see <see cref="ClosingOnlyHookOverload" />), for which a
+	///     container in the owner's assembly reports AWT190, the <paramref name="foreignReason" /> tells why a container
+	///     in another assembly, which does not see that overload when it is not public, may not run the wrapper, and a
+	///     private one, which a friend does not see either, is recorded in <paramref name="hookSkips" />.
 	/// </summary>
 	private static List<RegistrationHook>? OpenHookWrappers(
 		OpenContribution contribution,
@@ -301,9 +326,12 @@ partial class AwaitenGenerator
 		HashSet<string> typeParameters,
 		string typeParameterList,
 		string constraints,
-		out string? reason)
+		out string? reason,
+		out string? foreignReason,
+		List<SkippedRegistration> hookSkips)
 	{
 		reason = null;
+		foreignReason = null;
 		List<RegistrationHook> hooks = new();
 		HashSet<string> seen = new(StringComparer.Ordinal);
 		foreach (OpenContribution registration in OpenContributions(context.Module).Where(other => other.FactoryName == contribution.FactoryName))
@@ -334,6 +362,17 @@ partial class AwaitenGenerator
 				{
 					reason = $"{prefix}, because its parameter '{clash}' has the name of a type parameter";
 					return null;
+				}
+
+				IMethodSymbol bound = CollectModuleHookOverloads(registration.Definition, hookName, [registration.Service,], context).Matches[0];
+				if (ClosingOnlyHookOverload(registration.Definition, hookName, bound, context) is ({ } overload, { } closings))
+				{
+					string foreign = $"its {slot} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so a generated wrapper would run the wrong overload where a container in the module's assembly reports AWT190";
+					foreignReason ??= foreign;
+					if (overload.DeclaredAccessibility == Accessibility.Private)
+					{
+						hookSkips.Add(new SkippedRegistration(RegistrationHookSkippedName(registration.Definition, release, hookName), foreign, Hook: true));
+					}
 				}
 
 				hooks.Add(new RegistrationHook(resolved.Wrapper with { TypeParameters = typeParameterList, Constraints = constraints, }, release));
@@ -377,6 +416,135 @@ partial class AwaitenGenerator
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     An overload of the hook other than <paramref name="bound" />, the one bound for the open
+	///     <paramref name="definition" />, that a container in the module's assembly also finds for some closing of it, with
+	///     a description of those closings, or <see langword="null" />: an overload whose instance parameter, for a generic
+	///     one closed with the closing's type arguments, a closing converts to, or a generic one whose constraints keep it
+	///     from binding for the definition's own type parameters but not for every closing.
+	/// </summary>
+	private static (IMethodSymbol Overload, string Closings)? ClosingOnlyHookOverload(INamedTypeSymbol definition, string hookName, IMethodSymbol bound, ModuleScanContext context)
+	{
+		Compilation compilation = context.Compilation;
+		bool wrappedEverywhere = IsHiddenInModule(definition, context.Module, compilation);
+		ITypeSymbol[] typeParameters = definition.TypeParameters.Cast<ITypeSymbol>().ToArray();
+		foreach (ISymbol member in AccessibleMembers(context.Module, hookName, compilation))
+		{
+			if (!IsModuleHookCandidate(member, wrappedEverywhere, context, out IMethodSymbol method)
+			    || SymbolEqualityComparer.Default.Equals(method, bound.OriginalDefinition))
+			{
+				continue;
+			}
+
+			if (method.Arity > 0 && method.Arity != typeParameters.Length)
+			{
+				continue;
+			}
+
+			// A container closes a generic overload with the closing's type arguments, so it is unified closed with the
+			// definition's own type parameters, which then may stand on either side.
+			ITypeSymbol instance = method.Arity > 0 ? method.Construct(typeParameters).Parameters[0].Type : method.Parameters[0].Type;
+			if (method.Arity > 0 && compilation.HasImplicitConversion(definition, instance))
+			{
+				return (method, $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' its constraints admit");
+			}
+
+			foreach (INamedTypeSymbol shape in new[] { definition, }.Concat(BaseTypes(definition)).Concat(definition.AllInterfaces))
+			{
+				Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings = new(SymbolEqualityComparer.Default);
+				if (!Unifies(shape, instance, bindings))
+				{
+					continue;
+				}
+
+				ITypeSymbol[] arguments = definition.TypeParameters.Select(parameter => bindings.TryGetValue(parameter, out ITypeSymbol? argument) ? argument : parameter).ToArray();
+				INamedTypeSymbol closing = definition.Construct(arguments);
+				bool accepts = method.Arity > 0
+					? SatisfiesConstraints(method, arguments.ToImmutableArray(), compilation) && compilation.HasImplicitConversion(closing, method.Construct(arguments).Parameters[0].Type)
+					: compilation.HasImplicitConversion(closing, instance);
+				if (accepts && ConstraintsSatisfied(definition, arguments, compilation))
+				{
+					return (method, $"'{Display(closing.ToDisplayString(FullyQualified))}'");
+				}
+			}
+		}
+
+		return null;
+
+		// Binds the definition's type parameters in a type it converts to so that it becomes the instance parameter's type,
+		// trying a supertype of a variant type argument where the plain one does not fit.
+		bool Unifies(ITypeSymbol pattern, ITypeSymbol target, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
+		{
+			if (pattern is ITypeParameterSymbol parameter && definition.TypeParameters.Contains(parameter, SymbolEqualityComparer.Default))
+			{
+				if (bindings.TryGetValue(parameter, out ITypeSymbol? known))
+				{
+					return SymbolEqualityComparer.Default.Equals(known, target);
+				}
+
+				bindings[parameter] = target;
+				return true;
+			}
+
+			if (target is ITypeParameterSymbol targetParameter && definition.TypeParameters.Contains(targetParameter, SymbolEqualityComparer.Default))
+			{
+				if (bindings.TryGetValue(targetParameter, out ITypeSymbol? known))
+				{
+					return SymbolEqualityComparer.Default.Equals(known, pattern);
+				}
+
+				bindings[targetParameter] = pattern;
+				return true;
+			}
+
+			if (pattern is IArrayTypeSymbol patternArray && target is IArrayTypeSymbol targetArray)
+			{
+				return patternArray.Rank == targetArray.Rank && Unifies(patternArray.ElementType, targetArray.ElementType, bindings);
+			}
+
+			if (pattern is not INamedTypeSymbol { IsGenericType: true, } named
+			    || target is not INamedTypeSymbol targetNamed
+			    || !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, targetNamed.OriginalDefinition))
+			{
+				return SymbolEqualityComparer.Default.Equals(pattern, target);
+			}
+
+			for (int index = 0; index < named.TypeArguments.Length; index++)
+			{
+				ITypeSymbol argument = named.TypeArguments[index];
+				ITypeSymbol targetArgument = targetNamed.TypeArguments[index];
+				IEnumerable<(ITypeSymbol Pattern, ITypeSymbol Target)> attempts = named.OriginalDefinition.TypeParameters[index].Variance switch
+				{
+					VarianceKind.Out => new[] { (argument, targetArgument), }.Concat(BaseTypes(argument).Concat(argument.AllInterfaces).Select(supertype => ((ITypeSymbol)supertype, targetArgument))),
+					VarianceKind.In => new[] { (argument, targetArgument), }.Concat(BaseTypes(targetArgument).Concat(targetArgument.AllInterfaces).Select(supertype => (argument, (ITypeSymbol)supertype))),
+					_ => new[] { (argument, targetArgument), },
+				};
+				if (!attempts.Any(attempt => TryUnify(attempt.Pattern, attempt.Target, bindings)))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool TryUnify(ITypeSymbol pattern, ITypeSymbol target, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
+		{
+			Dictionary<ITypeParameterSymbol, ITypeSymbol> attempt = new(bindings, SymbolEqualityComparer.Default);
+			if (!Unifies(pattern, target, attempt))
+			{
+				return false;
+			}
+
+			foreach (KeyValuePair<ITypeParameterSymbol, ITypeSymbol> binding in attempt)
+			{
+				bindings[binding.Key] = binding.Value;
+			}
+
+			return true;
+		}
 	}
 
 	/// <summary>

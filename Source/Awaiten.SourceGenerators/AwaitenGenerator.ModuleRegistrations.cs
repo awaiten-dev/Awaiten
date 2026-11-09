@@ -411,6 +411,24 @@ partial class AwaitenGenerator
 			}
 		}
 
+		foreach (OpenContribution contribution in external ? OpenContributions(module) : [])
+		{
+			if (contribution.AttributeName is "DecorateAttribute" or "CompositeAttribute"
+			    || !IsExternallyAccessible(contribution.Service.OriginalDefinition)
+			    || SelfCompilesRegistration(module, contribution.Definition, contribution.Service, compilation))
+			{
+				continue;
+			}
+
+			foreach (bool release in new[] { false, true, })
+			{
+				if (NamedArgument(contribution.Attribute, release ? "OnRelease" : "OnActivated") is { } hookName)
+				{
+					Add(OpenHookWrapper(contribution, hookName, release));
+				}
+			}
+		}
+
 		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
 		{
 			if (registration.Member is { } member && InternalWrapper(registration.Production, member, registration.Implementation) is { } wrapper)
@@ -704,6 +722,46 @@ partial class AwaitenGenerator
 				hook.ReturnType,
 				hook.Target,
 				new EquatableArray<FactoryParameter>([new FactoryParameter(produced.ToDisplayString(FullyQualifiedWithNullability), instance), ..parameters,]));
+		}
+
+		// A public open definition another assembly constructs runs a hook it cannot call through a generic wrapper the
+		// consumer closes per closing, bound like the wrapper of a generic factory. The module reports nothing, as before it
+		// generated the wrapper, and generates none when another overload accepts some closing, which the consumer could not
+		// tell apart.
+		MemberWrapper? OpenHookWrapper(OpenContribution contribution, string hookName, bool release)
+		{
+			INamedTypeSymbol definition = contribution.Definition;
+			ModuleScanContext scope = context with { Diagnostics = new List<DiagnosticInfo>(), Hidden = null, };
+			string name = RegistrationHookWrapperName(definition, release, hookName);
+			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(definition, hookName, [contribution.Service,], scope);
+			if (matches.Count != 1
+			    || ambiguous.Count > 0
+			    || matches[0].DeclaredAccessibility == Accessibility.Public
+			    || ClosingOnlyHookOverload(definition, hookName, matches[0], scope) is not null
+			    || ResolveModuleHookCore(new ModuleHookRequest(definition, hookName, contribution.Location, release, name, RegistrationSubject(definition)), [contribution.Service,], scope) is not { Wrapper: { SkipReason: null, } hook, })
+			{
+				return null;
+			}
+
+			FactoryParameter[] parameters = hook.Parameters.AsArray();
+			if (parameters.Any(parameter => definition.TypeParameters.Any(typeParameter => typeParameter.Name == parameter.Name)))
+			{
+				return null;
+			}
+
+			string instance = "awaiten__instance";
+			while (parameters.Any(parameter => parameter.Name == instance))
+			{
+				instance += "_";
+			}
+
+			return new MemberWrapper(
+				name,
+				hook.ReturnType,
+				hook.Target,
+				new EquatableArray<FactoryParameter>([new FactoryParameter(definition.ToDisplayString(FullyQualifiedWithNullability), instance), ..parameters,]),
+				TypeParameters: $"<{string.Join(", ", definition.TypeParameters.Select(parameter => EscapedName(parameter.Name)))}>",
+				Constraints: TypeParameterConstraints(definition));
 		}
 
 		MemberWrapper? FactoryWrapper(string member, INamedTypeSymbol produced, ISymbol wrappable)

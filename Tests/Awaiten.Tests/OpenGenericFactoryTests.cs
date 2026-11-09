@@ -312,6 +312,15 @@ public sealed partial class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task AModuleInAnotherAssembly_RunsTheInternalHooksOfAPublicTypeThroughTheGenericWrappers()
+		{
+			await using PublicHookedCacheContainer.Root container = new();
+
+			await That(await ResolveInScope(container)).IsEqualTo(PrivateHookCalls).InAnyOrder()
+				.Because("the container constructs each closing itself and runs the internal hooks it cannot call through the module's generic wrappers");
+		}
+
+		[Test]
 		public async Task AModuleInAnotherAssembly_AwaitsTheAsynchronousHooksOfEachClosing()
 		{
 			await using AsyncHookedCacheContainer.Root container = new();
@@ -362,6 +371,11 @@ public sealed partial class OpenGenericFactoryTests
 	[Import(typeof(HookedOpenGenericModule))]
 	[Scoped<CacheConsumer>]
 	public static partial class HookedCacheContainer;
+
+	[Container]
+	[Import(typeof(PublicHookedOpenGenericModule))]
+	[Scoped<CacheConsumer>]
+	public static partial class PublicHookedCacheContainer;
 
 	[Container]
 	[Import(typeof(FriendHookedOpenGenericModule))]

@@ -185,6 +185,29 @@ public static partial class HookedOpenGenericModule
 		=> log.Entries.Add("released");
 }
 
+/// <summary>A public cache per entry type, which a container in another assembly constructs itself.</summary>
+public sealed class PublicHookedOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose public open generic registration names an internal generic activation hook and an internal
+///     release hook, which a container in another assembly without <c>InternalsVisibleTo</c> runs through the generic
+///     wrappers the module generates, since it cannot call them.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(PublicHookedOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class PublicHookedOpenGenericModule
+{
+	internal static void Activate<T>(PublicHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Release<T>(PublicHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"released {typeof(T).Name}");
+}
+
 internal sealed class AsyncHookedOpenCache<T> : IHookedOpenCache<T>
 	where T : class;
 
