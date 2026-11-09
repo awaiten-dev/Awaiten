@@ -36,6 +36,8 @@ ILogger logger = shop.Resolve<ILogger>();   // requestingType is null here
 
 The other factory parameters resolve from the graph as usual. `[RequestingType]` flows through `Func<T>` and through async factories too.
 
+The requesting type is the implementation even when a [module](../04-registration/07-modules.md) in another assembly builds an internal implementation, decorator or scan match that your container cannot name, so a logger gets the same name wherever the module is imported.
+
 :::note
 The parameter must be `System.Type` ([AWT162](../09-diagnostics.md#awt162)), and a factory cannot mix `[RequestingType]` with an `[Arg]` runtime argument ([AWT163](../09-diagnostics.md#awt163)).
 :::

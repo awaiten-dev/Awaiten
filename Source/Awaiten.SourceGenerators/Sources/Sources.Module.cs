@@ -489,6 +489,11 @@ internal static partial class Sources
 	/// </summary>
 	private static void EmitRegistrationFactory(StringBuilder builder, int depth, RegistrationFactory factory, string accessibility, params string[] summary)
 	{
+		if (!factory.IsProperty)
+		{
+			EmitRequestingType(builder, depth, accessibility, factory.FactoryName, factory.ImplementationType, factory.TypeParameters, factory.Constraints);
+		}
+
 		AppendXmlSummary(builder, depth, summary);
 
 		FactoryParameter[] parameters = factory.Parameters.AsArray();
@@ -548,6 +553,21 @@ internal static partial class Sources
 		}
 
 		builder.AppendLine(factory.Handle is null ? ";" : ");");
+	}
+
+	/// <summary>
+	///     Emits the method that returns the type a generated factory builds (see
+	///     <see cref="AwaitenGenerator.RequestingTypeName" />), which the factory's return type hides from a consumer, so
+	///     a <c>[RequestingType]</c> parameter receives the same type wherever the factory's dependencies are resolved.
+	/// </summary>
+	private static void EmitRequestingType(StringBuilder builder, int depth, string accessibility, string factoryName, string implementationType, string? typeParameters, string? constraints)
+	{
+		AppendXmlSummary(builder, depth,
+			"Generated for a consuming container: the type the factory below builds, which a [RequestingType] parameter of",
+			"a factory its dependencies reach receives, as in a container that constructs the type itself.");
+		Indent(builder, depth).Append(accessibility).Append(" static global::System.Type ").Append(AwaitenGenerator.RequestingTypeName(factoryName)).Append(typeParameters)
+			.Append("()").Append(constraints).Append(" => typeof(").Append(implementationType).AppendLine(");");
+		builder.AppendLine();
 	}
 
 	/// <summary>
@@ -681,6 +701,7 @@ internal static partial class Sources
 
 	private static void EmitModuleFactory(StringBuilder builder, int depth, ModuleFactory factory)
 	{
+		EmitRequestingType(builder, depth, "public", factory.FactoryName, factory.ImplementationType, null, null);
 		if (factory.Shared is null)
 		{
 			AppendXmlSummary(builder, depth,

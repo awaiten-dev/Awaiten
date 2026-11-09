@@ -12,10 +12,11 @@ internal static partial class Sources
 	private const string RequestingTypeParameterName = "__requestingType";
 
 	/// <summary>
-	///     The <c>typeof(…)</c> literal an instance presents as the requesting type to any requesting-type
-	///     factory it consumes: its own constructed type (the declaring type of the member being satisfied).
+	///     The expression an instance presents as the requesting type to any requesting-type factory it consumes: the
+	///     <c>typeof(…)</c> of its own constructed type (the declaring type of the member being satisfied), or for an
+	///     instance a generated factory builds, the call that returns the type the factory builds (see <see cref="InstanceModel.RequestingType" />).
 	/// </summary>
-	private static string RequestingTypeOf(InstanceModel instance) => $"typeof({instance.ConstructedType})";
+	private static string RequestingTypeOf(InstanceModel instance) => instance.RequestingType ?? $"typeof({instance.ConstructedType})";
 
 	/// <summary>
 	///     Whether the <c>__AsyncArray&lt;T&gt;</c> helper is used: some instance injects an

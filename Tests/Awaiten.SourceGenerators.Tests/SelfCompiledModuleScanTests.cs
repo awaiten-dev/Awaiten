@@ -443,7 +443,7 @@ public class SelfCompiledModuleScanTests
 
 		await That(module).Contains(FactoryName("global::Lib.Roaster"))
 			.Because("the first scan's match is emitted");
-		await That(module.Split("public static global::").Length - 1).IsEqualTo(1)
+		await That(module.Split("public static global::Lib.").Length - 1).IsEqualTo(1)
 			.Because("the second scan matched the same type under the same exposure, which a container would dedup to one collection member, so only one factory is emitted");
 	}
 
