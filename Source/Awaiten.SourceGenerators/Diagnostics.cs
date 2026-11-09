@@ -2154,6 +2154,18 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a decorator or composite, which the
+	///     module declares rather than registers, named by the second argument (<c>the decorator</c> or <c>the composite</c>).
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleContributionFactorySkipped = new(
+		"AWT231",
+		ModuleRegistrationNotSelfCompiled.Title,
+		"The imported module '{0}' declares {1} '{2}', which this container cannot construct, and the module's assembly generated no factory for it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make '{2}', its constructor and the constructor's parameter types public",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a public type the container could
 	///     construct, but whose <c>[Inject]</c> property it does not see: only the module's factory could set it, and the
 	///     module's build generated none for it.

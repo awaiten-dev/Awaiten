@@ -282,9 +282,61 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
+		[Arguments("[Decorate<LoggingGrinder, IGrinder>]", "decorator", "Lib.LoggingGrinder", false)]
+		[Arguments("[Composite<AllGrinders, IGrinder>]", "composite", "Lib.AllGrinders", false)]
+		[Arguments("[Decorate<LoggingGrinder, IGrinder>]", "decorator", "Lib.LoggingGrinder", true)]
+		[Arguments("[Composite<AllGrinders, IGrinder>]", "composite", "Lib.AllGrinders", true)]
+		public async Task DecoratorOrCompositeTakingOneThatAModuleCannotBuild_ExternalAwt231NamesTheService(string contribution, string kind, string type, bool sameModule)
+		{
+			string library = $$"""
+				using Awaiten;
+				using System.Collections.Generic;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				public sealed class PublicGrinder : IGrinder { }
+				public sealed class Cup { }
+				internal sealed class Settings { }
+				internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }
+				internal sealed class LoggingGrinder(IGrinder inner, BeanStore store) : IGrinder { public IGrinder Inner { get; } = inner; public BeanStore Store { get; } = store; }
+				internal sealed class AllGrinders(IEnumerable<IGrinder> all, BeanStore store) : IGrinder { public IEnumerable<IGrinder> All { get; } = all; public BeanStore Store { get; } = store; }
+
+				[Module]
+				[Singleton<PublicGrinder, IGrinder>]
+				{{(sameModule ? "[Singleton<BeanStore>]" : "")}}
+				{{contribution}}
+				public static partial class CoffeeModule;
+
+				[Module]
+				[Singleton<Cup>]
+				{{(sameModule ? "" : "[Singleton<BeanStore>]")}}
+				public static partial class StoreModule;
+				""";
+			string cause = sameModule ? "the module cannot build" : $"the module 'Lib.StoreModule' cannot build {StoreRejection}";
+			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' declares the {kind} '{type}', which this container cannot construct, and the module's assembly generated no factory for it because its constructor parameter 'store' needs the internal service 'Lib.BeanStore', which {cause}; grant this assembly InternalsVisibleTo in the module's assembly, or make '{type}', its constructor and the constructor's parameter types public";
+
+			GeneratorResult result = Generator.Run(library);
+			if (sameModule)
+			{
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT195: 'Lib.BeanStore' is registered under the internal service 'Lib.BeanStore', which a consuming container reaches through a generated handle, but its constructor parameter 'settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module")
+					.Because("the module reports why it cannot build its own service, which the factory of the contribution needs, as for a registration");
+			}
+			else
+			{
+				await That(result.Diagnostics).IsEmpty()
+					.Because("a container of the module's assembly constructs the contribution itself and may register what the internal service needs");
+			}
+
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module records why it generated no factory for the contribution, so a container in another assembly names the service instead of AWT230");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
 		public async Task RegistrationsOfModulesTakingEachOthersUnbuildableServices_AreJudgedWithoutRecursing()
 		{
-			GeneratorResult result = Generator.Run("""
+			const string library = """
 				using Awaiten;
 
 				namespace Lib;
@@ -297,11 +349,150 @@ public class ModuleInternalMemberTests
 
 				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
 				[Module][Singleton<Silo>] public static partial class StoreModule;
-				""");
+				""";
+			const string expected = "error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Grinder', which this container cannot construct, and the module's assembly generated no factory for it because its constructor parameter 'kettle' needs the internal service 'Lib.Kettle', which the module cannot build; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.Grinder', its constructor and the constructor's parameter types public";
 
-			await That(result.Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT236: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which is registered only by the module 'Lib.StoreModule', so a container in another assembly cannot provide it to 'Lib.CoffeeModule'; register 'Lib.Silo' in 'Lib.CoffeeModule' too, or move both registrations into one module")
-				.Because("while the modules are judged, asking the other module why it cannot build its service would judge it anew, which asks this module back, so the judgement keeps the plain cause");
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Silo' is registered under the internal service 'Lib.Silo', which a consuming container reaches through a generated handle, but its constructor parameter 'settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("the silo fails on the settings whatever the kettle it takes back, so the cycle is named by that cause once, and judging the modules must not ask the other module back while they are judged");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module's build names why it cannot build the kettle");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		[Arguments("[Singleton<Bean>]", "")]
+		[Arguments("", "[Module][Singleton<Bean>] public static partial class BeanModule;")]
+		public async Task ModulesTakingEachOthersServices_WhereALaterParameterTakesOneThatCannotBeBuilt_NameItsCause(string storeRegistration, string beanModule)
+		{
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Secret { }
+				internal sealed class Kettle(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Silo(Kettle kettle, Bean bean) { public Kettle Kettle { get; } = kettle; public Bean Bean { get; } = bean; }
+				internal sealed class Bean(Secret secret) { public Secret Secret { get; } = secret; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>]{{storeRegistration}} public static partial class StoreModule;
+				{{beanModule}}
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Bean' is registered under the internal service 'Lib.Bean', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("the kettle the silo takes back only leads to the silo again, while the bean it takes fails on the secret, which is the cause to fix");
+		}
+
+		[Test]
+		public async Task ParameterTakingOneOfAnotherModuleThatOnlyTakesItBack_NamesTheCauseOfALaterParameter()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Secret { }
+				internal sealed class Kettle(Silo silo, Bean bean) { public Silo Silo { get; } = silo; public Bean Bean { get; } = bean; }
+				internal sealed class Bean(Secret secret) { public Secret Secret { get; } = secret; }
+				internal sealed class Silo(Kettle kettle) { public Kettle Kettle { get; } = kettle; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Bean>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>] public static partial class StoreModule;
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Bean' is registered under the internal service 'Lib.Bean', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("registering the silo in this module too would not help, since the silo only takes the kettle back, which the bean keeps from being built, so the message names why the bean cannot be built");
+		}
+
+		[Test]
+		public async Task ModulesTakingEachOthersServices_WhereAPropertyCannotBeSet_NameThatProperty()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Settings { }
+				internal sealed class Kettle(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Silo(Kettle kettle) { public Kettle Kettle { get; } = kettle; [Inject] public Settings Settings { get; set; } = null!; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>] public static partial class StoreModule;
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT200: 'Lib.Silo' is registered under the internal service 'Lib.Silo', which a consuming container reaches through a generated handle, but its property 'Settings' has the type 'Lib.Settings', which is not accessible outside the module's assembly, which the generated factory cannot mirror and would silently drop; remove the attribute, register it in the module, or register it through a hand-written module factory), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("the silo fails on the property it cannot set whatever the kettle its constructor takes back");
+		}
+
+		[Test]
+		public async Task PropertyTakingOneThatTakesAServiceTheOtherModuleCannotBuild_NamesTheRootCause()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Secret { }
+				internal sealed class Kettle(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Silo(Secret secret) { public Secret Secret { get; } = secret; }
+				internal sealed class Grinder : IGrinder { [Inject] public Kettle K { get; set; } = null!; }
+
+				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>] public static partial class StoreModule;
+				""";
+			const string expected = "error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Grinder', which this container cannot construct, and the module's assembly generated no factory for it because its property 'K' needs the internal service 'Lib.Kettle', which the module cannot build; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.Grinder', its constructor and the constructor's parameter types public";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Silo' is registered under the internal service 'Lib.Silo', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("registering the silo in this module too would not help, so the message names why the other module cannot build it instead of asking to move it");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, TwoModuleContainer).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		public async Task HooksOfModulesTakingEachOthersUnbuildableServices_AreJudgedWithoutRecursing()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				internal sealed class Secret { }
+				internal sealed class Kettle { }
+				internal sealed class Beans(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Grain(Beans beans) { public Beans Beans { get; } = beans; }
+				internal sealed class Silo(Grain grain) { public Grain Grain { get; } = grain; }
+
+				[Module]
+				[Singleton<Kettle>(OnActivated = nameof(Warm))]
+				[Singleton<Beans>]
+				public static partial class CoffeeModule
+				{
+					internal static void Warm(Kettle kettle, Beans beans) { }
+				}
+
+				[Module]
+				[Singleton<Grain>]
+				[Singleton<Silo>(OnActivated = nameof(Fill))]
+				public static partial class StoreModule
+				{
+					internal static void Fill(Silo silo, Secret secret) { }
+				}
+				""";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("while the modules are judged, the hook asks why its module cannot build the beans, which must not follow the chain through the silo and the grain back into this module");
 		}
 
 		[Test]
@@ -534,13 +725,13 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
-		[Arguments("[Decorate<LoggingGrinder, IGrinder>]", "Lib.LoggingGrinder")]
-		[Arguments("[Composite<AllGrinders, IGrinder>]", "Lib.AllGrinders")]
-		public async Task WithAnInternalDecoratorOrComposite_ExternalAwt231NamesTheMissingPartial(string contribution, string type)
+		[Arguments("[Decorate<LoggingGrinder, IGrinder>]", "decorator", "Lib.LoggingGrinder")]
+		[Arguments("[Composite<AllGrinders, IGrinder>]", "composite", "Lib.AllGrinders")]
+		public async Task WithAnInternalDecoratorOrComposite_ExternalAwt231NamesTheMissingPartial(string contribution, string kind, string type)
 		{
 			string library = NonPartial("[Singleton<PublicGrinder, IGrinder>]" + contribution, "")
 				.Replace("public interface IGrinder { }", "public interface IGrinder { }\npublic sealed class PublicGrinder : IGrinder { }\ninternal sealed class LoggingGrinder(IGrinder inner) : IGrinder { public IGrinder Inner { get; } = inner; }\ninternal sealed class AllGrinders(System.Collections.Generic.IEnumerable<IGrinder> all) : IGrinder { public System.Collections.Generic.IEnumerable<IGrinder> All { get; } = all; }");
-			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' registers '{type}', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make '{type}', its constructor and the constructor's parameter types public";
+			string expected = $"error AWT231: The imported module 'Lib.CoffeeModule' declares the {kind} '{type}', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make '{type}', its constructor and the constructor's parameter types public";
 
 			await That(Generator.Run(library).Diagnostics).IsEmpty()
 				.Because("a container of the module's assembly constructs the internal type itself");

@@ -843,6 +843,7 @@ partial class AwaitenGenerator
 					if (unbuildable is not null)
 					{
 						services.UnbuildableNeeds[error] = UnbuildableNeed(member, unbuildable, services.Rejection(unbuildable));
+						services.Takes[error] = (unbuildable, member);
 					}
 
 					// Judging another module judges its services anew, so it waits until the module's own are judged, which keeps that from recursing.
@@ -1260,8 +1261,9 @@ partial class AwaitenGenerator
 
 		IParameterSymbol? inner = decorated is not null && context.Hidden is not null ? InnerParameter(constructor, decorated, context.Compilation) : null;
 		List<FactoryParameter> mirrored = new();
-		foreach (IParameterSymbol parameter in constructor.Parameters)
+		for (int index = 0; index < constructor.Parameters.Length; index++)
 		{
+			IParameterSymbol parameter = constructor.Parameters[index];
 			if (inner is not null
 			    && SymbolEqualityComparer.Default.Equals(parameter, inner)
 			    && !SymbolEqualityComparer.Default.Equals(parameter.Type, decorated)
@@ -1279,6 +1281,7 @@ partial class AwaitenGenerator
 
 			if (!TryMirrorParameter(parameter, context, location, subject, $"its constructor parameter '{parameter.Name}'", out FactoryParameter mirror))
 			{
+				PreferOwnCause(constructor, index, mirrorProperties, context, location, subject);
 				return false;
 			}
 
@@ -1287,6 +1290,65 @@ partial class AwaitenGenerator
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
 		return true;
+	}
+
+	/// <summary>
+	///     While the module's internal services are judged (see <see cref="HiddenServices.Tracking" />), replaces the
+	///     rejection of the constructor parameter at <paramref name="failed" />, when it only takes a service that cannot be
+	///     built (see <see cref="HiddenServices.Takes" />), with the rejection of the first later parameter, or else of the
+	///     first injected property when <paramref name="mirrorProperties" />, that fails for a reason of its own. Services
+	///     of modules that take each other's services would otherwise each be rejected for the other only, which hides the
+	///     one cause that keeps all of them from being built. When none does, the later rejections that take a service that
+	///     cannot be built too are kept as alternatives (see <see cref="HiddenServices.Alternatives" />), since the chain of
+	///     the first may only lead back while one of theirs leads to the cause.
+	/// </summary>
+	private static void PreferOwnCause(IMethodSymbol constructor, int failed, bool mirrorProperties, ModuleScanContext context, Location? location, SelfCompiledSubject subject)
+	{
+		List<DiagnosticInfo> diagnostics = context.Diagnostics;
+		if (context.Hidden is not { Tracking: false, } hidden || diagnostics.Count == 0 || !hidden.Takes.ContainsKey(diagnostics[diagnostics.Count - 1]))
+		{
+			return;
+		}
+
+		List<DiagnosticInfo> alternatives = new();
+		for (int index = failed + 1; index < constructor.Parameters.Length; index++)
+		{
+			IParameterSymbol parameter = constructor.Parameters[index];
+			List<DiagnosticInfo> rejections = new();
+			if (TryMirrorParameter(parameter, context with { Diagnostics = rejections, }, location, subject, $"its constructor parameter '{parameter.Name}'", out _)
+			    || rejections.FirstOrDefault() is not { } rejection)
+			{
+				continue;
+			}
+
+			if (!hidden.Takes.ContainsKey(rejection))
+			{
+				diagnostics[diagnostics.Count - 1] = rejection;
+				return;
+			}
+
+			alternatives.Add(rejection);
+		}
+
+		List<DiagnosticInfo> propertyRejections = new();
+		EquatableArray<FactoryParameter> none = new EquatableArray<FactoryParameter>([]);
+		if (mirrorProperties
+		    && !TryMirrorInjectedProperties(constructor.ContainingType, context with { Diagnostics = propertyRejections, }, location, subject, ref none, out _)
+		    && propertyRejections.FirstOrDefault() is { } propertyRejection)
+		{
+			if (!hidden.Takes.ContainsKey(propertyRejection))
+			{
+				diagnostics[diagnostics.Count - 1] = propertyRejection;
+				return;
+			}
+
+			alternatives.Add(propertyRejection);
+		}
+
+		if (alternatives.Count > 0)
+		{
+			hidden.Alternatives[diagnostics[diagnostics.Count - 1]] = alternatives;
+		}
 	}
 
 	/// <summary>
@@ -1352,7 +1414,7 @@ partial class AwaitenGenerator
 
 		if (!argument && InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
 		{
-			diagnostics.Add(otherModule.WithLocation(location, subject, label));
+			diagnostics.Add(TakingUnbuildable(otherModule, location, subject, label, parameter.Type, context));
 			return false;
 		}
 
@@ -1374,6 +1436,7 @@ partial class AwaitenGenerator
 			if (unbuildable is not null && context.Hidden is { } services)
 			{
 				services.UnbuildableNeeds[rejection] = UnbuildableNeed(label, unbuildable);
+				services.Takes[rejection] = (unbuildable, label);
 			}
 
 			diagnostics.Add(rejection);

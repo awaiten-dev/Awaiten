@@ -1553,6 +1553,33 @@ public class OpenGenericFactoryTests
 		}
 
 		[Test]
+		[Arguments("[Decorate(typeof(CachedRepository<>), typeof(IRepository<>))]", "decorator", "Lib.CachedRepository<T>")]
+		[Arguments("[Composite(typeof(AllRepositories<>), typeof(IRepository<>))]", "composite", "Lib.AllRepositories<T>")]
+		public async Task AnOpenDecoratorOrCompositeOfAModuleThatIsNotPartial_IsReportedAsDeclared(string contribution, string kind, string type)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+				using System.Collections.Generic;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IRepository<T> { }
+				public sealed class Repository<T> : IRepository<T> { }
+				internal sealed class CachedRepository<T>(IRepository<T> inner) : IRepository<T> { public IRepository<T> Inner { get; } = inner; }
+				internal sealed class AllRepositories<T>(IEnumerable<IRepository<T>> all) : IRepository<T> { public IEnumerable<IRepository<T>> All { get; } = all; }
+
+				[Module]
+				[Singleton(typeof(Repository<>), typeof(IRepository<>))]
+				{{contribution}}
+				public static class DataModule { }
+				""", Consumer);
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					$"error AWT231: The imported module 'Lib.DataModule' declares the {kind} '{type}', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make '{type}', its constructor and the constructor's parameter types public")
+				.Because("a module declares a decorator or composite rather than registers it");
+		}
+
+		[Test]
 		public async Task ATypeNestedInAGenericType_IsReportedWithTheReasonAndDoesNotFailTheLibrary()
 		{
 			const string library = """
