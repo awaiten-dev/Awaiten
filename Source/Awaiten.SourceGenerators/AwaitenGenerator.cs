@@ -54,16 +54,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		context.RegisterSourceOutput(models, static (spc, model) =>
 		{
-			foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray())
-			{
-				spc.ReportDiagnostic(diagnostic.ToDiagnostic());
-			}
-
 			if (!model.SkipsGeneration)
 			{
 				spc.AddSource(model.HintName, SourceText.From(Sources.Emit(model), Encoding.UTF8));
 			}
 		});
+		ReportDiagnostics(context, models.Select(static (model, _) => model.Diagnostics));
 
 		// A second root: a [Module] that declares a [Scan] self-compiles it, emitting a factory + registration per
 		// match into its own partial, and a factory per registration another assembly cannot construct
@@ -78,12 +74,6 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		context.RegisterSourceOutput(moduleModels, static (spc, model) =>
 		{
-			// AWT245 is reported by AwaitenAnalyzer from its own module build, so that it can be suppressed in source.
-			foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray().Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)))
-			{
-				spc.ReportDiagnostic(diagnostic.ToDiagnostic());
-			}
-
 			// An expanded module always emits, even with zero factories: the partial then carries just the
 			// [GeneratedScanExpansion] marker, which a consuming container needs to tell "the scan matched
 			// nothing" from "the scan was never expanded" (AWT154). A module rejected before expansion
@@ -97,6 +87,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				spc.AddSource(model.HintName, SourceText.From(Sources.EmitModuleNotPartialMarker(model), Encoding.UTF8));
 			}
 		});
+		// AWT245 is reported by AwaitenAnalyzer from its own module build.
+		ReportDiagnostics(context, moduleModels.Select(static (model, _) => new EquatableArray<DiagnosticInfo>(
+			model.Diagnostics.AsArray().Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)).ToArray())));
 
 		// A third root: the [Inject] properties another assembly cannot see, which a container there reads to report them (AWT244, AWT136).
 		IncrementalValueProvider<ImmutableArray<(string Type, string Property, bool Assignable)>> hiddenInjectedProperties = context.SyntaxProvider
@@ -118,6 +111,22 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			}
 		});
 	}
+
+	/// <summary>
+	///     Reports <paramref name="diagnostics" /> located in the syntax trees of the current compilation, where the
+	///     <c>.editorconfig</c> severities and <c>#pragma warning</c> directives apply. This output reruns whenever the compilation changes,
+	///     so it is kept apart from the emitted sources, which stay cached while their model is unchanged.
+	/// </summary>
+	private static void ReportDiagnostics(IncrementalGeneratorInitializationContext context, IncrementalValuesProvider<EquatableArray<DiagnosticInfo>> diagnostics)
+		=> context.RegisterSourceOutput(
+			diagnostics.Where(static reported => reported.Count > 0).Combine(context.CompilationProvider),
+			static (spc, input) =>
+			{
+				foreach (DiagnosticInfo diagnostic in input.Left.AsArray())
+				{
+					spc.ReportDiagnostic(diagnostic.ToDiagnostic(input.Right, spc.CancellationToken));
+				}
+			});
 
 	/// <summary>
 	///     Builds the <see cref="ModuleScanModel" /> for a <c>[Module]</c> that declares a <c>[Scan]</c>, a
@@ -644,8 +653,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		GraphModel graph = BuildGraph(containerSymbol, compilation, diagnostics, cancellationToken);
 
-		// AWT179, AWT158, AWT245 and AWT249 are reported by AwaitenAnalyzer from its own graph build: a generator diagnostic is not
-		// tied to a syntax tree, so it could not be suppressed in source.
+		// AWT179, AWT158, AWT245 and AWT249 are reported by AwaitenAnalyzer from its own graph build.
 		diagnostics.RemoveAll(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty)
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
 		                                    || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)

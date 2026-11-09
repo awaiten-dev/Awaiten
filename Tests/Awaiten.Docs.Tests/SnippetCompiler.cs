@@ -141,24 +141,14 @@ internal static partial class SnippetCompiler
 			.Concat(analyzerDiagnostics)
 			.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error ||
 			                     (diagnostic.Id.StartsWith("AWT") && diagnostic.Severity != DiagnosticSeverity.Hidden))
-			.Select(diagnostic => Format(diagnostic, output))
+			.Select(Format)
 			.Distinct()
 			.ToList();
 	}
 
-	/// <summary>
-	///     A generator reports its diagnostics with the unmapped position in the source tree, so the <c>#line</c>
-	///     directives are applied through the tree here.
-	/// </summary>
-	private static Reported Format(Diagnostic diagnostic, Compilation compilation)
+	private static Reported Format(Diagnostic diagnostic)
 	{
 		FileLinePositionSpan span = diagnostic.Location.GetMappedLineSpan();
-		if (diagnostic.Location.SourceTree is null &&
-		    compilation.SyntaxTrees.FirstOrDefault(tree => tree.FilePath == span.Path) is { } tree)
-		{
-			span = tree.GetMappedLineSpan(diagnostic.Location.SourceSpan);
-		}
-
 		int line = span.StartLinePosition.Line + 1;
 		return new Reported(span.Path, line, diagnostic.Id,
 			$"{span.Path}({line},{span.StartLinePosition.Character + 1}): " +

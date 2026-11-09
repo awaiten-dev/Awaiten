@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
@@ -44,6 +45,26 @@ public static class Generator
 	/// </summary>
 	public static GeneratorResult Run([StringSyntax("c#-test")] string source, IReadOnlyDictionary<string, ReportDiagnostic> diagnosticOptions)
 		=> Collect(RunGenerator(source, [], [], diagnosticOptions: diagnosticOptions));
+
+	/// <summary>
+	///     Like <see cref="Run(string, Type[])" />, but compiles each of <paramref name="files" /> as a file under <c>/src</c>
+	///     with the severities of <paramref name="editorConfig" />, the text of the <c>/src/.editorconfig</c>, applied per file as the
+	///     compiler applies them.
+	/// </summary>
+	public static GeneratorResult Run(IReadOnlyDictionary<string, string> files, [StringSyntax("ini")] string editorConfig)
+	{
+		CSharpParseOptions parseOptions = new(LanguageVersion.Latest);
+		AnalyzerConfigSet configs = AnalyzerConfigSet.Create(ImmutableArray.Create(AnalyzerConfig.Parse(editorConfig, "/src/.editorconfig")));
+		CSharpCompilation compilation = CSharpCompilation.Create(
+			"TestAssembly",
+			files.Select(file => CSharpSyntaxTree.ParseText(file.Value, parseOptions, $"/src/{file.Key}")),
+			References.For([]),
+			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithSyntaxTreeOptionsProvider(new EditorConfigOptions(configs)));
+
+		GeneratorDriver driver = CSharpGeneratorDriver.Create([new AwaitenGenerator().AsSourceGenerator(),], [], parseOptions, null);
+		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation, out _);
+		return Collect((outputCompilation, driver.GetRunResult()));
+	}
 
 	/// <summary>
 	///     Compiles <paramref name="referencedSource" /> into a separate referenced assembly first, then runs the
@@ -202,7 +223,7 @@ public static class Generator
 		string[] diagnosticMessages =
 		[
 			..compilationDiagnostics.Where(x => !NoWarn.Contains(x.Id)).Select(x => x.ToString()),
-			..runResult.Diagnostics.Where(x => !NoWarn.Contains(x.Id)).Select(x => x.ToString()),
+			..runResult.Diagnostics.Where(x => !NoWarn.Contains(x.Id) && !x.IsSuppressed).Select(x => x.ToString()),
 		];
 		return new GeneratorResult(generatedSources, diagnosticMessages);
 	}
@@ -256,5 +277,17 @@ public static class Generator
 		}
 
 		return MetadataReference.CreateFromImage(stream.ToArray());
+	}
+
+	/// <summary>The severities of an <c>.editorconfig</c>, which the compiler reads per syntax tree.</summary>
+	private sealed class EditorConfigOptions(AnalyzerConfigSet configs) : SyntaxTreeOptionsProvider
+	{
+		public override GeneratedKind IsGenerated(SyntaxTree tree, CancellationToken cancellationToken) => GeneratedKind.Unknown;
+
+		public override bool TryGetDiagnosticValue(SyntaxTree tree, string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity)
+			=> configs.GetOptionsForSourcePath(tree.FilePath).TreeOptions.TryGetValue(diagnosticId, out severity);
+
+		public override bool TryGetGlobalDiagnosticValue(string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity)
+			=> configs.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
 	}
 }
