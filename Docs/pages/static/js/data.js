@@ -1650,6 +1650,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
         "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
+      },
+      {
+        "sha": "4acf0df503672acbeea4b896cc56fc0a90e64a62",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:56 2026 \u002B0100",
+        "message": "fix: keep two aliases of one handle\u0027s instance as one collection member and one registration in another assembly (#369)"
       }
     ],
     "labels": [
@@ -1927,7 +1933,8 @@ window.BENCHMARK_DATA = {
       "473c4389",
       "5485cfa1",
       "8e63f80d",
-      "76006f25"
+      "76006f25",
+      "4acf0df5"
     ],
     "datasets": [
       {
@@ -2208,7 +2215,8 @@ window.BENCHMARK_DATA = {
           3.148773940404256,
           4.896269593387842,
           3.4167489100779806,
-          6.249826745263168
+          6.249826745263168,
+          2.9741418694456416
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2220,6 +2228,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2783,7 +2792,8 @@ window.BENCHMARK_DATA = {
           4.803037607669831,
           7.00768257783992,
           4.8532523065805435,
-          7.324308746627399
+          7.324308746627399,
+          3.8766041954358417
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2795,6 +2805,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3358,7 +3369,8 @@ window.BENCHMARK_DATA = {
           63.79545038087027,
           82.91607408523559,
           61.11257263819377,
-          134.482116206487
+          134.482116206487,
+          64.54421005249023
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3370,6 +3382,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3929,7 +3942,8 @@ window.BENCHMARK_DATA = {
           5.434546659390132,
           6.5198511297504105,
           4.668275877833366,
-          9.093503376202923
+          9.093503376202923,
+          4.708898781133549
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3941,6 +3955,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4496,7 +4511,8 @@ window.BENCHMARK_DATA = {
           6.6236268281936646,
           8.446163219213485,
           6.74826913114105,
-          10.792313404954397
+          10.792313404954397,
+          6.408759246979441
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4508,6 +4524,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6442,6 +6459,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
         "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
+      },
+      {
+        "sha": "4acf0df503672acbeea4b896cc56fc0a90e64a62",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:56 2026 \u002B0100",
+        "message": "fix: keep two aliases of one handle\u0027s instance as one collection member and one registration in another assembly (#369)"
       }
     ],
     "labels": [
@@ -6719,7 +6742,8 @@ window.BENCHMARK_DATA = {
       "473c4389",
       "5485cfa1",
       "8e63f80d",
-      "76006f25"
+      "76006f25",
+      "4acf0df5"
     ],
     "datasets": [
       {
@@ -7000,7 +7024,8 @@ window.BENCHMARK_DATA = {
           3.3147520955119814,
           5.4766526935356,
           3.381543810878481,
-          6.78914178105501
+          6.78914178105501,
+          3.527899812374796
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7012,6 +7037,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7575,7 +7601,8 @@ window.BENCHMARK_DATA = {
           4.194749943912029,
           6.489185622582833,
           4.275754204736306,
-          7.306218456228574
+          7.306218456228574,
+          3.9024764860669774
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7587,6 +7614,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8150,7 +8178,8 @@ window.BENCHMARK_DATA = {
           63.84873849550883,
           83.76261964241664,
           61.596589235159065,
-          143.6905117670695
+          143.6905117670695,
+          60.15581340789795
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8162,6 +8191,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8721,7 +8751,8 @@ window.BENCHMARK_DATA = {
           5.410570149975164,
           6.535289174566667,
           4.8110642244418464,
-          9.118893916790302
+          9.118893916790302,
+          4.700313194096088
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8733,6 +8764,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9288,7 +9320,8 @@ window.BENCHMARK_DATA = {
           8.152687722444535,
           8.209044939050308,
           6.468176345412548,
-          14.045695827557491
+          14.045695827557491,
+          8.03954952955246
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9300,6 +9333,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11234,6 +11268,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
         "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
+      },
+      {
+        "sha": "4acf0df503672acbeea4b896cc56fc0a90e64a62",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:56 2026 \u002B0100",
+        "message": "fix: keep two aliases of one handle\u0027s instance as one collection member and one registration in another assembly (#369)"
       }
     ],
     "labels": [
@@ -11511,7 +11551,8 @@ window.BENCHMARK_DATA = {
       "473c4389",
       "5485cfa1",
       "8e63f80d",
-      "76006f25"
+      "76006f25",
+      "4acf0df5"
     ],
     "datasets": [
       {
@@ -11792,7 +11833,8 @@ window.BENCHMARK_DATA = {
           15.418597850203515,
           21.678517945607503,
           23.09026456773281,
-          20.288839073975883
+          20.288839073975883,
+          24.213826326529183
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12064,6 +12106,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12367,7 +12410,8 @@ window.BENCHMARK_DATA = {
           1116.7360412052699,
           1564.2815734863282,
           1717.0647830963135,
-          1503.264043535505
+          1503.264043535505,
+          1552.0894171396892
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12379,6 +12423,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12942,7 +12987,8 @@ window.BENCHMARK_DATA = {
           25498.066239420572,
           29503.812377929688,
           33606.24806565505,
-          29710.02604980469
+          29710.02604980469,
+          30476.969661458334
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13226,6 +13272,7 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32478,
+          32482,
           32482,
           32482,
           32482
@@ -13513,7 +13560,8 @@ window.BENCHMARK_DATA = {
           610.1480487823486,
           756.1623973210652,
           799.5065917332967,
-          728.503289159139
+          728.503289159139,
+          744.338254737854
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13543,6 +13591,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14080,7 +14129,8 @@ window.BENCHMARK_DATA = {
           9665.884779866536,
           11892.856968180338,
           12014.39510498047,
-          11989.777310180663
+          11989.777310180663,
+          12320.058410644531
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14362,7 +14412,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16026,6 +16077,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
         "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
+      },
+      {
+        "sha": "4acf0df503672acbeea4b896cc56fc0a90e64a62",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:56 2026 \u002B0100",
+        "message": "fix: keep two aliases of one handle\u0027s instance as one collection member and one registration in another assembly (#369)"
       }
     ],
     "labels": [
@@ -16303,7 +16360,8 @@ window.BENCHMARK_DATA = {
       "473c4389",
       "5485cfa1",
       "8e63f80d",
-      "76006f25"
+      "76006f25",
+      "4acf0df5"
     ],
     "datasets": [
       {
@@ -16584,7 +16642,8 @@ window.BENCHMARK_DATA = {
           115.3314334494727,
           179.0664984067281,
           152.78836731910707,
-          186.2293701355274
+          186.2293701355274,
+          208.71895079612733
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16856,6 +16915,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -17159,7 +17219,8 @@ window.BENCHMARK_DATA = {
           10970.022185262043,
           14621.209573599008,
           14285.607628377278,
-          14408.019775390625
+          14408.019775390625,
+          14554.053484990047
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -17171,6 +17232,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17734,7 +17796,8 @@ window.BENCHMARK_DATA = {
           638163.0103236607,
           736627.300920759,
           825275.097516741,
-          730789.8916341146
+          730789.8916341146,
+          769525.330501302
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18020,7 +18083,8 @@ window.BENCHMARK_DATA = {
           740793,
           740993,
           741735,
-          741602
+          741602,
+          739195
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18305,7 +18369,8 @@ window.BENCHMARK_DATA = {
           34547.60314941406,
           45812.34584263393,
           48035.01153564453,
-          43463.78264567057
+          43463.78264567057,
+          45717.060119628906
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18587,7 +18652,8 @@ window.BENCHMARK_DATA = {
           80301,
           80777,
           80305,
-          80301
+          80301,
+          80858
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18872,7 +18938,8 @@ window.BENCHMARK_DATA = {
           270240.18701171875,
           351594.51224190847,
           380544.5333007813,
-          367392.1435546875
+          367392.1435546875,
+          370989.2241861979
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19154,7 +19221,8 @@ window.BENCHMARK_DATA = {
           573057,
           573073,
           573123,
-          572995
+          572995,
+          573139
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20794,6 +20862,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:42:22 2026 \u002B0100",
         "message": "fix: let a container\u0027s own scan and another module\u0027s scan share a module scan handle with the lifetime and hooks of the module\u0027s own assembly (#373)"
+      },
+      {
+        "sha": "4acf0df503672acbeea4b896cc56fc0a90e64a62",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:42:56 2026 \u002B0100",
+        "message": "fix: keep two aliases of one handle\u0027s instance as one collection member and one registration in another assembly (#369)"
       }
     ],
     "labels": [
@@ -21067,7 +21141,8 @@ window.BENCHMARK_DATA = {
       "473c4389",
       "5485cfa1",
       "8e63f80d",
-      "76006f25"
+      "76006f25",
+      "4acf0df5"
     ],
     "datasets": [
       {
@@ -21344,7 +21419,8 @@ window.BENCHMARK_DATA = {
           178.65012346781216,
           210.12603061993917,
           272.4645924886068,
-          454.5157265663147
+          454.5157265663147,
+          290.82627436092923
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -21379,6 +21455,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -21911,7 +21988,8 @@ window.BENCHMARK_DATA = {
           419.1342578274863,
           455.3992163658142,
           596.5880759102957,
-          642.1969882965088
+          642.1969882965088,
+          455.7620379447937
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -21923,6 +22001,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -22478,7 +22557,8 @@ window.BENCHMARK_DATA = {
           3658.3186314900718,
           4815.49405670166,
           6801.019601004465,
-          6796.294970376151
+          6796.294970376151,
+          4808.518183898926
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22562,6 +22642,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -23045,7 +23126,8 @@ window.BENCHMARK_DATA = {
           273.0929437050453,
           333.94251006444296,
           404.67264928817747,
-          431.0686794598897
+          431.0686794598897,
+          326.80019071896874
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23057,6 +23139,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -23612,7 +23695,8 @@ window.BENCHMARK_DATA = {
           419.50258417129515,
           530.1281888144357,
           774.9686605135599,
-          804.8887557347615
+          804.8887557347615,
+          539.8476467768352
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23624,6 +23708,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
