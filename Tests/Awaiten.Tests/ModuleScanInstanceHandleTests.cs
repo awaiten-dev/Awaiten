@@ -248,6 +248,46 @@ public partial class ModuleScanInstanceHandleTests
 		}
 
 		[Test]
+		public async Task AContainerScanOfAPublicMatchUnderItsMarker_IsOneCollectionMember()
+		{
+			IPublicMultiPlugin plugin;
+			await using (MarkerScannedPublicMatchContainer.Root container = new())
+			{
+				await container.InitializeAsync();
+				IPublicMultiPlugin[] plugins = container.Resolve<IEnumerable<IPublicMultiPlugin>>().ToArray();
+
+				await That(plugins).HasSingle().Which.IsSameAs(container.Resolve<IPublicMultiPlugin>())
+					.Because("the container's scan and the module's scan share one instance, which the collection holds once, as in the module's assembly");
+				plugin = plugins[0];
+				await That((object)container.Resolve<IPublicMultiRoaster>()).IsSameAs(plugin);
+				await That(((IPublicMultiRoaster)plugin).Activations).IsEqualTo(1)
+					.Because("the module's hook runs once on the shared instance");
+			}
+
+			await That(((IPublicMultiRoaster)plugin).Disposals).IsEqualTo(1)
+				.Because("the container disposes the shared instance once");
+		}
+
+		[Test]
+		public async Task ARegistrationOfAPublicMatchUnderItsMarker_IsOneCollectionMember()
+		{
+			IPublicMultiPlugin plugin;
+			await using (MarkerRegisteredPublicMatchContainer.Root container = new())
+			{
+				await container.InitializeAsync();
+				IPublicMultiPlugin[] plugins = container.Resolve<IEnumerable<IPublicMultiPlugin>>().ToArray();
+
+				await That(plugins).HasSingle().Which.IsSameAs(container.Resolve<IPublicMultiPlugin>())
+					.Because("the explicit registration and the module's scan share one instance, which the collection holds once, as in the module's assembly");
+				plugin = plugins[0];
+				await That((object)container.Resolve<IPublicMultiRoaster>()).IsSameAs(plugin);
+			}
+
+			await That(((IPublicMultiRoaster)plugin).Disposals).IsEqualTo(1)
+				.Because("the container disposes the shared instance once");
+		}
+
+		[Test]
 		public async Task AMatchBuiltFromARuntimeArgument_IsBuiltFromTheArgumentOfEitherFactory()
 		{
 			await using ArgumentMultiExposureContainer.Root container = new();
@@ -302,6 +342,16 @@ public partial class ModuleScanInstanceHandleTests
 		[Import(typeof(PublicMultiExposureScanModule))]
 		[Scan<IPublicMultiPlugin>(InAssembliesOf = new[] { typeof(IPublicMultiPlugin) }, Lifetime = Lifetime.Scoped)]
 		public static partial class ScannedPublicMatchContainer;
+
+		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
+		[Import(typeof(PublicMultiExposureScanModule))]
+		[Scan<IPublicMultiPlugin>(InAssembliesOf = new[] { typeof(IPublicMultiPlugin) }, As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+		public static partial class MarkerScannedPublicMatchContainer;
+
+		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
+		[Import(typeof(PublicMultiExposureScanModule))]
+		[Singleton<PublicMultiRoaster, IPublicMultiPlugin>]
+		public static partial class MarkerRegisteredPublicMatchContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(MultiExposureScanModule))]
@@ -371,9 +421,37 @@ public partial class ModuleScanInstanceHandleTests
 			}
 		}
 
+		[Test]
+		public async Task AContainerScanOfTheMatchUnderItsMarker_IsOneCollectionMember()
+		{
+			await using MarkerScannedLocalMatchContainer.Root container = new();
+
+			await That(container.Resolve<IEnumerable<ILocalPlugin>>().ToArray()).HasSingle().Which.IsSameAs(container.Resolve<ILocalPlugin>())
+				.Because("the container's scan and the module's scan coalesce into one instance of the match");
+		}
+
+		[Test]
+		public async Task ARegistrationOfTheMatchUnderItsMarker_IsOneCollectionMember()
+		{
+			await using MarkerRegisteredLocalMatchContainer.Root container = new();
+
+			await That(container.Resolve<IEnumerable<ILocalPlugin>>().ToArray()).HasSingle().Which.IsSameAs(container.Resolve<ILocalPlugin>())
+				.Because("the explicit registration and the module's scan coalesce into one instance of the match");
+		}
+
 		[Container]
 		[Import(typeof(LocalMultiExposureScanModule))]
 		public static partial class LocalMultiExposureContainer;
+
+		[Container]
+		[Import(typeof(LocalMultiExposureScanModule))]
+		[Scan<ILocalPlugin>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+		internal static partial class MarkerScannedLocalMatchContainer;
+
+		[Container]
+		[Import(typeof(LocalMultiExposureScanModule))]
+		[Singleton<LocalRoaster, ILocalPlugin>]
+		internal static partial class MarkerRegisteredLocalMatchContainer;
 
 		[Container]
 		[Import(typeof(LocalMultiExposureScanModule))]

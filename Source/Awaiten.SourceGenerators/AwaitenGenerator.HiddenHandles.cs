@@ -396,6 +396,22 @@ partial class AwaitenGenerator
 		=> handle.ImplementationType.Substring(0, handle.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal));
 
 	/// <summary>
+	///     Whether the implementation identities <paramref name="first" /> and <paramref name="second" /> serve one
+	///     instance: they are equal, or both are aliases (see <see cref="ThroughAlias" />) of the instance of one handle,
+	///     such as a module's alias under its service and a container's alias under the implementation, which a container
+	///     of the module's own assembly coalesces into one registration of the implementation.
+	/// </summary>
+	private static bool ServeOneInstance(string first, string second)
+		=> first == second || (AliasedIdentity(first) is { } aliased && aliased == AliasedIdentity(second));
+
+	/// <summary>The identity of what the alias <paramref name="identity" /> serves (see <see cref="ThroughAlias" />), or <see langword="null" /> for any other identity.</summary>
+	private static string? AliasedIdentity(string identity)
+	{
+		int marker = identity.IndexOf(AliasKeyMarker, StringComparison.Ordinal);
+		return marker < 0 ? null : identity.Substring(marker + AliasKeyMarker.Length);
+	}
+
+	/// <summary>
 	///     <paramref name="registration" /> served through <paramref name="alias" />, the generated member of
 	///     <paramref name="module" /> that returns the instance of <paramref name="implementation" /> from its instance
 	///     handle. Its identity names the alias's type and the implementation, or the <paramref name="handled" /> identity
