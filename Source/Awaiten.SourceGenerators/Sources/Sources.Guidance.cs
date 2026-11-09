@@ -187,6 +187,30 @@ internal static partial class Sources
 	}
 
 	/// <summary>
+	///     The guidance message (a quoted string literal) thrown by Resolve(Type) on the Root for a <c>Task&lt;T&gt;</c>, or
+	///     a plain <c>Func</c> of one, over a service built on demand: each resolution or call builds a disposable that the
+	///     root tracks for the container's lifetime, so the leak-free <c>Task&lt;Owned&lt;T&gt;&gt;</c> forms are offered
+	///     instead. A child scope still resolves it, since its disposal bounds what it builds.
+	/// </summary>
+	private static string TaskWithheldMessage(string service)
+	{
+		string display = service.Replace("global::", string.Empty);
+		return $"\"Awaiten: a Task over '{display}' is withheld from by-type resolution on the container root under strict lifetime safety because building '{display}' on demand accumulates disposables on the container root; resolve it as Task<Owned<{display}>> or Func<…, Task<Owned<{display}>>> for per-use disposal, resolve it from a child scope, or set LifetimeSafety.Loose on the [Container].\"";
+	}
+
+	/// <summary>
+	///     The guidance message (a quoted string literal) thrown by Resolve(Type) for a synchronous relationship shape
+	///     (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>, <c>Owned&lt;T&gt;</c> and their factories) over an async-tainted
+	///     service in the strict default, which injection rejects as AWT119: the shape cannot await the initialization, so
+	///     the guidance names the <paramref name="asyncShape" /> that can.
+	/// </summary>
+	private static string AsyncRelationshipMessage(string shape, string service, string asyncShape)
+	{
+		string display = service.Replace("global::", string.Empty);
+		return $"\"Awaiten: '{shape.Replace("global::", string.Empty)}' would resolve '{display}' synchronously, but '{display}' requires asynchronous initialization; resolve '{asyncShape.Replace("global::", string.Empty)}' instead, or set AsyncSafety.SyncAfterInit on the [Container].\"";
+	}
+
+	/// <summary>
 	///     The guidance message (a quoted string literal) thrown by Resolve(Type) when an async-tainted service is
 	///     requested by type: it is async-initialized. An async initializer or an asynchronous OnActivated hook
 	///     initializes it, it is produced by an asynchronous Task&lt;T&gt; / ValueTask&lt;T&gt; factory, or it reaches
@@ -245,8 +269,8 @@ internal static partial class Sources
 	///     The (service type, guidance) pairs that populate the static <c>__withheld</c> table: the
 	///     dispatchable root-withheld disposable services (<paramref name="rootWithheld" />), plus the
 	///     async-tainted services excluded from synchronous resolution entirely. Deduplicated by service type
-	///     (the two sources are disjoint, since an async-tainted service emits no dispatch entry, but a
-	///     belt-and-braces dedup keeps the emitted dictionary initializer free of a duplicate-key throw).
+	///     (the two sources are disjoint, since an async-tainted service emits no dispatch entry for the types
+	///     withheld here, but a belt-and-braces dedup keeps the emitted dictionary initializer free of a duplicate-key throw).
 	/// </summary>
 	private static List<(string Type, string Guidance)> WithheldTypes(
 		List<DispatchEntry> rootWithheld, InstanceModel[] instances, Names names, Dictionary<ServiceKey, int> serviceToIndex, bool syncAfterInit)
@@ -258,7 +282,7 @@ internal static partial class Sources
 			result.Add((entry.Type, entry.Guidance!));
 		}
 
-		foreach ((string service, string guidance) in AsyncWithheldServices(instances, syncAfterInit))
+		foreach ((string service, string guidance) in AsyncWithheldServices(instances, serviceToIndex, syncAfterInit))
 		{
 			if (seen.Add(service))
 			{
@@ -321,15 +345,15 @@ internal static partial class Sources
 
 	/// <summary>
 	///     The service types that are reachable only asynchronously, paired with their guidance: each
-	///     async-tainted, non-parameterized service's (non-keyed) service types, when the container is not in
-	///     pragmatic mode (where the same services are synchronously resolvable after warm-up). They have no
-	///     synchronous dispatch entry, so without this they would surface as a generic "no registration".
-	///     A parameterized service is excluded: it is never resolvable by its bare type (it needs its runtime
-	///     arguments through a <c>Func&lt;TArg…, …&gt;</c>), so the "resolve through ResolveAsync" guidance would
-	///     not fit; its bare-type unavailability is governed by parameterization, not asynchronous initialization.
+	///     async-tainted service's (non-keyed) service types and the synchronous relationship shapes over them, when
+	///     the container is not in pragmatic mode (where the same services are synchronously resolvable after
+	///     warm-up). They have no synchronous dispatch entry, so without this they would surface as a generic
+	///     "no registration". The bare type of a parameterized service is excluded: it is never resolvable by type
+	///     (it needs its runtime arguments through a <c>Func&lt;TArg…, …&gt;</c>), so the "resolve through
+	///     ResolveAsync" guidance would not fit. A shape registered as a service of its own keeps its registration.
 	/// </summary>
 	private static IEnumerable<(string Service, string Guidance)> AsyncWithheldServices(
-		InstanceModel[] instances, bool syncAfterInit)
+		InstanceModel[] instances, Dictionary<ServiceKey, int> serviceToIndex, bool syncAfterInit)
 	{
 		if (syncAfterInit)
 		{
@@ -339,20 +363,55 @@ internal static partial class Sources
 		HashSet<string> seen = new(StringComparer.Ordinal);
 		for (int i = 0; i < instances.Length; i++)
 		{
-			if (!instances[i].IsAsyncTainted || instances[i].IsParameterized)
+			InstanceModel instance = instances[i];
+			if (!instance.IsAsyncTainted)
 			{
 				continue;
 			}
 
-			foreach (ServiceKey service in instances[i].ListedServices)
+			string[] argTypes = instance.ArgTypes();
+			string args = argTypes.Length == 0 ? string.Empty : string.Join(", ", argTypes) + ", ";
+			foreach (ServiceKey serviceKey in instance.ListedServices)
 			{
 				// Keyed registrations are reached only by [FromKey] injection, never by-type resolution.
-				if (service.Key is not null || !seen.Add(service.Service))
+				if (serviceKey.Key is not null)
 				{
 					continue;
 				}
 
-				yield return (service.Service, AsyncWithheldMessage(service.Service));
+				string service = serviceKey.Service;
+				string task = $"global::System.Threading.Tasks.Task<{service}>";
+				string owned = $"global::Awaiten.Owned<{service}>";
+				if (argTypes.Length == 0 && seen.Add(service))
+				{
+					yield return (service, AsyncWithheldMessage(service));
+				}
+
+				// Each synchronous shape injection serves, paired with its async counterpart; a requesting-type factory
+				// has no Owned<T> form, and a parameterized service only its factories.
+				List<(string Shape, string AsyncShape)> shapes = [($"global::System.Func<{args}{service}>", $"global::System.Func<{args}{task}>")];
+				if (!instance.IsRequestingTypeFactory)
+				{
+					shapes.Add(($"global::System.Func<{args}{owned}>", $"global::System.Func<{args}global::System.Threading.Tasks.Task<{owned}>>"));
+				}
+
+				if (argTypes.Length == 0)
+				{
+					shapes.Add(($"global::System.Lazy<{service}>", $"global::System.Lazy<{task}>"));
+				}
+
+				if (argTypes.Length == 0 && !instance.IsRequestingTypeFactory)
+				{
+					shapes.Add((owned, $"global::System.Threading.Tasks.Task<{owned}>"));
+				}
+
+				foreach ((string shape, string asyncShape) in shapes)
+				{
+					if (!serviceToIndex.ContainsKey(new ServiceKey(shape, null)) && seen.Add(shape))
+					{
+						yield return (shape, AsyncRelationshipMessage(shape, service, asyncShape));
+					}
+				}
 			}
 		}
 	}

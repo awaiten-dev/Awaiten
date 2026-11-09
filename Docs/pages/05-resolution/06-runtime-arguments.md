@@ -80,9 +80,18 @@ public sealed class Receipt(Store store, [Arg] string customer, [Arg] int number
 // Resolve<Func<string, int, Receipt>>()
 ```
 
+## Async initialization
+
+When the service is initialized asynchronously, ask for `Func<TArg..., Task<T>>` instead. Each call builds the service from your arguments, and the task completes once it is initialized. The async factory works for a service without async initialization too, and then hands back a completed task.
+
+```csharp
+Func<string, Task<Cup>> brewCup = shop.Resolve<Func<string, Task<Cup>>>();
+Cup medium = await brewCup("Medium");
+```
+
 ## Rules
 
-A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments. It is reachable only through a `Func<TArg..., T>`, not as a plain, `Lazy<T>`, or `Task<T>` dependency ([AWT115](../09-diagnostics.md#awt115)). If the argument shape does not match the `[Arg]` parameters, that is a build error too ([AWT113](../09-diagnostics.md#awt113)).
+A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments. It is reachable only through a `Func<TArg..., T>` or `Func<TArg..., Task<T>>`, not as a plain, `Lazy<T>`, or `Task<T>` dependency ([AWT115](../09-diagnostics.md#awt115)). If the argument shape does not match the `[Arg]` parameters, that is a build error too ([AWT113](../09-diagnostics.md#awt113)).
 
 The argument wins even when its type is itself registered. A `[Arg] string` always comes from your call, never from the graph.
 

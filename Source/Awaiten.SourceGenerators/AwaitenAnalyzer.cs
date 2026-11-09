@@ -607,7 +607,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			context.ReportDiagnostic(Diagnostic.Create(
 				Diagnostics.TypedResolveOfUnprovidedService, invocation.Syntax.GetLocation(), AwaitenGenerator.Display(display),
 				key is null ? "unkeyed registration" : $"registration under the key {AwaitenGenerator.KeyArgumentDisplay(key)}",
-				container.ToDisplayString(), call, UnprovidedRemedy(service, display, key, graph)));
+				container.ToDisplayString(), call, UnprovidedRemedy(service, display, key, graph, surface)));
 		}
 	}
 
@@ -728,11 +728,28 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	// A closing of an open generic registration gets the explicit closed registration it needs, with the open
 	// registration's lifetime and its implementation closed over the same type arguments, which AWT128 keeps in
 	// declaration order.
-	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph)
+	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph, Sources.ByTypeSurface surface)
 	{
 		if (key is not null)
 		{
 			return "register it under that key on the [Container], or call TryResolve if it is optional";
+		}
+
+		// The container serves no Lazy over an Owned<T> handle, whatever it registers (AWT121 for injection).
+		if (display.StartsWith("global::System.Lazy<global::Awaiten.Owned<", StringComparison.Ordinal)
+		    || display.StartsWith("global::System.Lazy<global::System.Threading.Tasks.Task<global::Awaiten.Owned<", StringComparison.Ordinal))
+		{
+			return "an Owned<T> disposal handle cannot be produced through Lazy<…>; resolve Owned<T>, Func<…, Owned<T>>, Task<Owned<T>> or Func<…, Task<Owned<T>>> instead";
+		}
+
+		// The container serves the Task shapes only over a service that needs asynchronous initialization or runtime
+		// arguments, so a Task shape over a synchronous one it provides is missing for that reason, not a registration.
+		if (TaskShapeTarget(service) is { } target
+		    && target.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is var targetDisplay
+		    && !surface.Fails(targetDisplay, onRoot: false, asynchronous: false, mayBeVariant: false, out _))
+		{
+			string shown = AwaitenGenerator.Display(targetDisplay);
+			return $"the container serves the Task shapes only over a service that needs asynchronous initialization or runtime arguments, and '{shown}' needs neither; resolve '{shown}' directly, or through ResolveAsync to get it as a task";
 		}
 
 		if (service is not INamedTypeSymbol { IsGenericType: true, } named
@@ -752,6 +769,40 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		string serviceDisplay = AwaitenGenerator.Display(display);
 		string registration = closed == serviceDisplay ? $"[{open.Lifetime}<{closed}>]" : $"[{open.Lifetime}<{closed}, {serviceDisplay}>]";
 		return $"register this closing explicitly next to the open generic registration, such as {registration}, {reason}";
+	}
+
+	// The service of a Task shape the container serves over an async-initialized service (Task<T>, Func<Task<T>>,
+	// Lazy<Task<T>>, Task<Owned<T>> or Func<Task<Owned<T>>>), or null for any other type; the generated
+	// __TaskShapeTarget maps the same shapes at run time.
+	private static ITypeSymbol? TaskShapeTarget(ITypeSymbol service)
+	{
+		ITypeSymbol type = service;
+		bool lazy = IsClosing(type, "System.Lazy<T>", out ITypeSymbol? inner);
+		if (lazy || IsClosing(type, "System.Func<TResult>", out inner))
+		{
+			type = inner!;
+		}
+
+		if (!IsClosing(type, "System.Threading.Tasks.Task<TResult>", out inner))
+		{
+			return null;
+		}
+
+		if (!IsClosing(inner!, "Awaiten.Owned<T>", out ITypeSymbol? owned))
+		{
+			return inner;
+		}
+
+		return lazy ? null : owned;
+
+		static bool IsClosing(ITypeSymbol type, string definition, out ITypeSymbol? argument)
+		{
+			argument = type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named
+			           && named.ConstructedFrom.ToDisplayString() == definition
+				? named.TypeArguments[0]
+				: null;
+			return argument is not null;
+		}
 	}
 
 	// A container with errors emits a shell that throws on every call, and its build fails anyway, so it is not checked.

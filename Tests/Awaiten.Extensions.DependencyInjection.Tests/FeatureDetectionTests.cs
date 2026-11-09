@@ -203,8 +203,8 @@ public sealed partial class FeatureDetectionTests
 
 		/// <summary>
 		///     <c>AsyncSafety.SyncAfterInit</c> makes a warmed async-tainted service synchronously resolvable, and the
-		///     metadata advertises it as synchronous — the one input <c>HasSyncRegistration</c> and the
-		///     <c>Task&lt;T&gt;</c> projection read, so the reported shapes swap over with it.
+		///     metadata advertises it as synchronous — the one input <c>HasSyncRegistration</c> reads, so
+		///     the bare type is reported with it.
 		/// </summary>
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
@@ -338,8 +338,8 @@ public sealed partial class FeatureDetectionTests
 			await That(ProbeAgreement.Disagreements(provider, shapes)).IsEqualTo(string.Empty);
 			await That(provider.IsService(typeof(AsyncOnly))).IsTrue()
 				.Because("the metadata advertises the warmed service as synchronous, and it is one");
-			await That(provider.IsService(typeof(Task<AsyncOnly>))).IsFalse()
-				.Because("there is no async registration left to project, so the Task<T> shape is not a service");
+			await That(provider.IsService(typeof(Task<AsyncOnly>))).IsTrue()
+				.Because("the service is still initialized asynchronously, so the container serves Task<T> of it next to the bare type");
 		}
 	}
 
