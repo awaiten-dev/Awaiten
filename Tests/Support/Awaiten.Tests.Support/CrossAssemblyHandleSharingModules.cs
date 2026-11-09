@@ -345,3 +345,38 @@ public static partial class CrossAssemblyImportedProducerBModule
 [Module]
 [Singleton<ImportedProducerClock>]
 public static partial class CrossAssemblyImportedProducerCModule;
+
+/// <summary>The marker <see cref="CrossAssemblyScannedProducerScanModule" /> scans for.</summary>
+public interface IScannedProducerAppliance;
+
+/// <summary>A clock that <see cref="CrossAssemblyScannedProducerAModule" /> and <see cref="CrossAssemblyScannedProducerBModule" /> produce through factories that take an internal service, and that <see cref="CrossAssemblyScannedProducerScanModule" /> scans.</summary>
+public sealed class ScannedProducerClock : IScannedProducerAppliance
+{
+	internal ScannedProducerClock(ScannedProducerTimeSource source) => Source = source;
+
+	internal ScannedProducerTimeSource Source { get; }
+}
+
+internal sealed class ScannedProducerTimeSource;
+
+/// <summary>A <c>[Module]</c> with a factory of the scanned clock that takes an internal service.</summary>
+[Module]
+[Singleton<ScannedProducerTimeSource>]
+[Singleton<ScannedProducerClock>(Factory = nameof(CreateA))]
+public static partial class CrossAssemblyScannedProducerAModule
+{
+	internal static ScannedProducerClock CreateA(ScannedProducerTimeSource source) => new(source);
+}
+
+/// <summary>A <c>[Module]</c> with another factory of the scanned clock, so the clock has several producers.</summary>
+[Module]
+[Singleton<ScannedProducerClock>(Factory = nameof(CreateB))]
+public static partial class CrossAssemblyScannedProducerBModule
+{
+	internal static ScannedProducerClock CreateB(ScannedProducerTimeSource source) => new(source);
+}
+
+/// <summary>A <c>[Module]</c> whose scan matches the clock, so a container importing it keeps one instance of the clock.</summary>
+[Module]
+[Scan<IScannedProducerAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+public static partial class CrossAssemblyScannedProducerScanModule;

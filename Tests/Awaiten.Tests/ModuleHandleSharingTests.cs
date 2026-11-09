@@ -158,7 +158,22 @@ public class ModuleHandleSharingTests
 		await That(container.Resolve<ImportedProducerClock>()).IsSameAs(clocks[0])
 			.Because("the first producer wins the single resolution");
 	}
+
+	[Test]
+	public async Task FactoryOfAClassAnotherModuleScans_IsOneInstance()
+	{
+		using ScannedProducerContainer.Root container = new();
+
+		await That(container.Resolve<IScannedProducerAppliance>()).IsSameAs(container.Resolve<ScannedProducerClock>())
+			.Because("the scan names the class, so the factory produces its one instance and the scan match shares it, as in a container of the modules' own assembly that imports the same modules");
+		await That(container.Resolve<IEnumerable<IScannedProducerAppliance>>()).HasSingle();
+	}
 }
+
+[Container]
+[Import(typeof(CrossAssemblyScannedProducerAModule))]
+[Import(typeof(CrossAssemblyScannedProducerScanModule))]
+public static partial class ScannedProducerContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyImportedProducerAModule))]
