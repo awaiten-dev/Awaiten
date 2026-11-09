@@ -356,7 +356,8 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     The services that several <c>Factory</c> or <c>Instance</c> members of the assembly's modules produce, where
-		///     every registration of the type names only its service (see <see cref="NamesOnlyItsService(ModuleRegistration)" />).
+		///     every registration of the type names only its service (see <see cref="NamesOnlyItsService(ModuleRegistration)" />)
+		///     and no module's scan may match it (see <see cref="ScannedByModule" />).
 		///     A container in the modules' own assembly keeps each member as an implementation of its own, so each member a
 		///     module builds through a handle gets handles of its own, named after it (see <see cref="HiddenImplementation.Producer" />),
 		///     which no other module shares.
