@@ -266,6 +266,57 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports the conflicts a container in the modules' own assembly reports between the producers of one
+	///     implementation when a module of another assembly builds its members that name only their service through
+	///     handles of their own (see <see cref="ThroughHandle" />) beside the shared handle of the implementation: an
+	///     imported module that names the implementation makes every producer of it one instance there (AWT107, AWT111,
+	///     AWT166), but a module with several such members has no shared handle to build them into, so the handles do
+	///     not coalesce. Each conflict is reported once per implementation, against its first handle in precedence order.
+	/// </summary>
+	private static void ReportProducersBesideSharedHandles(List<RawRegistration> raw, INamedTypeSymbol container, List<DiagnosticInfo> diagnostics)
+	{
+		foreach (List<RawRegistration> handles in InPrecedenceOrder(raw)
+			         .Select(entry => entry.Registration)
+			         .Where(registration => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker) && !IsScanHandle(registration))
+			         .GroupBy<RawRegistration, INamedTypeSymbol>(registration => registration.Hidden!, SymbolEqualityComparer.Default)
+			         .Select(group => group.ToList())
+			         .Where(handles => handles.Exists(IsProducerHandle) && !handles.TrueForAll(IsProducerHandle)))
+		{
+			string shared = handles.First(handle => !IsProducerHandle(handle)).ImplementationType;
+			HashSet<string> lifetimes = new(StringComparer.Ordinal);
+			HashSet<string> productions = new(StringComparer.Ordinal);
+			HashSet<string> directives = new(StringComparer.Ordinal);
+			// Coalescing reports the conflicts between the shared handles, and sharing a registration with a handle reported its own already.
+			List<RawRegistration> coalesced = handles.FindAll(handle => handle.ImplementationType == shared);
+			foreach (RawRegistration later in coalesced.Skip(1))
+			{
+				ReportCoalescingConflicts(NewImplInfo(coalesced[0]), later, container, lifetimes, productions, directives, new List<DiagnosticInfo>());
+			}
+
+			if (Reported(Diagnostics.ConflictingLifetime))
+			{
+				lifetimes.Add(shared);
+			}
+
+			if (Reported(Diagnostics.ConflictingProduction))
+			{
+				productions.Add(shared);
+			}
+
+			foreach (RawRegistration later in handles.Skip(1).Where(later => later.ImplementationType != handles[0].ImplementationType))
+			{
+				ReportCoalescingConflicts(NewImplInfo(handles[0]), later with { ImplementationType = shared, }, container, lifetimes, productions, directives, diagnostics);
+			}
+
+			bool Reported(DiagnosticDescriptor descriptor)
+				=> diagnostics.Exists(diagnostic => diagnostic.Descriptor == descriptor && diagnostic.MessageArgs.AsArray()[0] == DisplayInstance(shared));
+		}
+
+		static bool IsProducerHandle(RawRegistration handle)
+			=> HandledIdentity(handle).Contains(MemberKeyMarker);
+	}
+
+	/// <summary>
 	///     Marks each alias (see <see cref="ThroughAlias" />) that takes a transient instance handle the container tracks
 	///     for teardown, or a factory of one for an implementation with <c>[Arg]</c> parameters
 	///     (<see cref="InstanceModel.TracksHandleDisposal" />): building the alias builds and tracks the implementation, so
@@ -496,13 +547,18 @@ partial class AwaitenGenerator
 	///     module of that assembly coalesce into one instance. Every service of the implementation is an alias that
 	///     returns the instance from the handle and owns nothing, with an identity of its service and implementation;
 	///     one under an internal service is dependency-only too.
+	///     A member that names only its service and has handles of its own (see <c>AssemblyModuleIndex.Producers</c>) is
+	///     built through them, unless the module also has the shared handle of the implementation and an imported module of
+	///     its assembly names the implementation (see <see cref="ImplementedByImport" />), as a container of that assembly
+	///     then keeps one instance.
 	/// </summary>
-	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<string> implicitHandles)
+	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<string> implicitHandles, IEnumerable<ImportedModule> imports)
 	{
 		INamedTypeSymbol module = registration.Origin!;
 		INamedTypeSymbol implementation = registration.Implementation;
 		string? producer = registration is { Production: not ProductionKind.Constructor, ProductionMember: { } member, }
 		                   && HiddenProducer(module, HiddenFactoryName(implementation, member), compilation) is not null
+		                   && !(HiddenProducer(module, HiddenFactoryName(implementation), compilation) is not null && ImplementedByImport(implementation, module, imports, compilation))
 			? member
 			: null;
 		if (registration.ServiceSymbol is not { } service
@@ -582,4 +638,14 @@ partial class AwaitenGenerator
 				? InInternals(wrapper)
 				: null;
 	}
+
+	/// <summary>
+	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers
+	///     <paramref name="implementation" /> other than through a member that names only its service, so a container of
+	///     that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).
+	/// </summary>
+	private static bool ImplementedByImport(INamedTypeSymbol implementation, INamedTypeSymbol module, IEnumerable<ImportedModule> imports, Compilation compilation)
+		=> imports.Any(import => SymbolEqualityComparer.Default.Equals(import.Symbol.ContainingAssembly, module.ContainingAssembly)
+		                         && ConstructedModuleRegistrations(import.Symbol, compilation, members: true)
+			                         .Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && !NamesOnlyItsService(registration)));
 }

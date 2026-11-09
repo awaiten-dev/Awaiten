@@ -301,3 +301,47 @@ public static partial class CrossAssemblyThirdClockModule
 {
 	internal static IProducedClock CreateThird(ProducedTimeSource source) => new ProducedClock("third", source);
 }
+
+/// <summary>A clock that <see cref="CrossAssemblyImportedProducerAModule" /> and <see cref="CrossAssemblyImportedProducerBModule" /> produce through factories that take an internal service, and that <see cref="CrossAssemblyImportedProducerCModule" /> constructs.</summary>
+public sealed class ImportedProducerClock : System.IDisposable
+{
+	internal ImportedProducerClock(string name, ImportedProducerTimeSource source)
+	{
+		Name = name;
+		Source = source;
+	}
+
+	/// <summary>The name of the module that produced the clock.</summary>
+	public string Name { get; }
+
+	internal ImportedProducerTimeSource Source { get; }
+
+	/// <inheritdoc />
+	public void Dispose()
+	{
+	}
+}
+
+internal sealed class ImportedProducerTimeSource;
+
+/// <summary>A <c>[Module]</c> with a factory of the clock that takes an internal service.</summary>
+[Module]
+[Singleton<ImportedProducerTimeSource>]
+[Singleton<ImportedProducerClock>(Factory = nameof(CreateA))]
+public static partial class CrossAssemblyImportedProducerAModule
+{
+	internal static ImportedProducerClock CreateA(ImportedProducerTimeSource source) => new("a", source);
+}
+
+/// <summary>A <c>[Module]</c> with another factory of the clock, which takes the internal service <see cref="CrossAssemblyImportedProducerAModule" /> registers.</summary>
+[Module]
+[Singleton<ImportedProducerClock>(Factory = nameof(CreateB))]
+public static partial class CrossAssemblyImportedProducerBModule
+{
+	internal static ImportedProducerClock CreateB(ImportedProducerTimeSource source) => new("b", source);
+}
+
+/// <summary>A <c>[Module]</c> that constructs the clock, so a container importing it keeps one instance of the clock.</summary>
+[Module]
+[Singleton<ImportedProducerClock>]
+public static partial class CrossAssemblyImportedProducerCModule;
