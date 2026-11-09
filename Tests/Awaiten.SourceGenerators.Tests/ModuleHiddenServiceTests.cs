@@ -1791,6 +1791,58 @@ public class ModuleHiddenServiceTests
 					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.ClockModule.CreateA'"))
 						.Because("the module calls each factory through a handle of its own, so no factory falls back to a call of its internal method (AWT108) and only the conflict of the one instance remains");
 				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task TwoFactoriesOfOneModule_BesideAModuleThatBuildsTheClassThroughItsHandle_Conflict(string consumer)
+				{
+					const string library = """
+						using Awaiten;
+
+						namespace Lib;
+
+						internal sealed class TimeSource { }
+						public sealed class Clock { internal Clock(TimeSource source) { } }
+
+						[Module]
+						[Singleton<TimeSource>]
+						[Singleton<Clock>(Factory = nameof(CreateA))]
+						[Singleton<Clock>(Factory = nameof(CreateB))]
+						public static partial class ClockModule
+						{
+						    internal static Clock CreateA(TimeSource source) => new(source);
+						    internal static Clock CreateB(TimeSource source) => new(source);
+						}
+
+						[Module]
+						[Singleton<Clock>]
+						public static partial class OtherModule;
+
+						[Module]
+						[Singleton<Clock>(Factory = nameof(CreateC))]
+						public static partial class ThirdModule
+						{
+						    internal static Clock CreateC(TimeSource source) => new(source);
+						}
+						""";
+					const string container = """
+						[Container]
+						[Import(typeof(ClockModule))]
+						[Import(typeof(OtherModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(library, container, consumer);
+					string expected = Run(library, container, "same").Diagnostics.Single();
+
+					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && Message(diagnostic) == Message(expected))
+						.Because("the other module constructs the class, through its handle as a third module builds the class through one, so the factories are productions of its one instance, as in the modules' own assembly, though the module has no handle the other module's could coalesce with");
+
+					static string Message(string diagnostic)
+						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
+				}
 			}
 		}
 

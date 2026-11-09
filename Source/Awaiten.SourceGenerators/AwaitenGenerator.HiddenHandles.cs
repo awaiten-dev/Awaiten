@@ -266,6 +266,57 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports the conflicts a container in the modules' own assembly reports between the producers of one
+	///     implementation when a module of another assembly builds its members that name only their service through
+	///     handles of their own (see <see cref="ThroughHandle" />) beside the shared handle of the implementation: an
+	///     imported module that names the implementation makes every producer of it one instance there (AWT107, AWT111,
+	///     AWT166), but a module with several such members has no shared handle to build them into, so the handles do
+	///     not coalesce. Each conflict is reported once per implementation, against its first handle in precedence order.
+	/// </summary>
+	private static void ReportProducersBesideSharedHandles(List<RawRegistration> raw, INamedTypeSymbol container, List<DiagnosticInfo> diagnostics)
+	{
+		foreach (List<RawRegistration> handles in InPrecedenceOrder(raw)
+			         .Select(entry => entry.Registration)
+			         .Where(registration => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker) && !IsScanHandle(registration))
+			         .GroupBy<RawRegistration, INamedTypeSymbol>(registration => registration.Hidden!, SymbolEqualityComparer.Default)
+			         .Select(group => group.ToList())
+			         .Where(handles => handles.Exists(IsProducerHandle) && !handles.TrueForAll(IsProducerHandle)))
+		{
+			string shared = handles.First(handle => !IsProducerHandle(handle)).ImplementationType;
+			HashSet<string> lifetimes = new(StringComparer.Ordinal);
+			HashSet<string> productions = new(StringComparer.Ordinal);
+			HashSet<string> directives = new(StringComparer.Ordinal);
+			// Coalescing reports the conflicts between the shared handles, and sharing a registration with a handle reported its own already.
+			List<RawRegistration> coalesced = handles.FindAll(handle => handle.ImplementationType == shared);
+			foreach (RawRegistration later in coalesced.Skip(1))
+			{
+				ReportCoalescingConflicts(NewImplInfo(coalesced[0]), later, container, lifetimes, productions, directives, new List<DiagnosticInfo>());
+			}
+
+			if (Reported(Diagnostics.ConflictingLifetime))
+			{
+				lifetimes.Add(shared);
+			}
+
+			if (Reported(Diagnostics.ConflictingProduction))
+			{
+				productions.Add(shared);
+			}
+
+			foreach (RawRegistration later in handles.Skip(1).Where(later => later.ImplementationType != handles[0].ImplementationType))
+			{
+				ReportCoalescingConflicts(NewImplInfo(handles[0]), later with { ImplementationType = shared, }, container, lifetimes, productions, directives, diagnostics);
+			}
+
+			bool Reported(DiagnosticDescriptor descriptor)
+				=> diagnostics.Exists(diagnostic => diagnostic.Descriptor == descriptor && diagnostic.MessageArgs.AsArray()[0] == DisplayInstance(shared));
+		}
+
+		static bool IsProducerHandle(RawRegistration handle)
+			=> HandledIdentity(handle).Contains(MemberKeyMarker);
+	}
+
+	/// <summary>
 	///     Marks each alias (see <see cref="ThroughAlias" />) that takes a transient instance handle the container tracks
 	///     for teardown, or a factory of one for an implementation with <c>[Arg]</c> parameters
 	///     (<see cref="InstanceModel.TracksHandleDisposal" />): building the alias builds and tracks the implementation, so
