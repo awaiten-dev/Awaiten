@@ -1554,6 +1554,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 11:10:25 2026 \u002B0100",
         "message": "chore: group the test support assemblies under Tests/Support and fold the samples into the tests (#356)"
+      },
+      {
+        "sha": "f379f8d74a760ac8ba8c09dd91aadda33a4a5830",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 15:59:54 2026 \u002B0100",
+        "message": "fix: name the parameter and the module that keep an internal module factory or hook from a wrapper (#357)"
       }
     ],
     "labels": [
@@ -1815,7 +1821,8 @@ window.BENCHMARK_DATA = {
       "9ec72a90",
       "550fe022",
       "4792177d",
-      "de96b6de"
+      "de96b6de",
+      "f379f8d7"
     ],
     "datasets": [
       {
@@ -2080,7 +2087,8 @@ window.BENCHMARK_DATA = {
           6.678210540459706,
           5.549266203244527,
           6.899865116064365,
-          7.776726760466894
+          7.776726760466894,
+          7.149903906079439
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2092,6 +2100,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2623,7 +2632,8 @@ window.BENCHMARK_DATA = {
           5.867146718714919,
           8.205583967268467,
           5.892761447599956,
-          8.558466980499881
+          8.558466980499881,
+          7.38249815083467
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2635,6 +2645,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3166,7 +3177,8 @@ window.BENCHMARK_DATA = {
           136.728231493632,
           87.43353717327118,
           136.75030146326338,
-          154.46070103645326
+          154.46070103645326,
+          126.70430167516072
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3178,6 +3190,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3705,7 +3718,8 @@ window.BENCHMARK_DATA = {
           8.621972555915514,
           6.314761262673598,
           8.540617718228273,
-          8.788059824456772
+          8.788059824456772,
+          9.430027000032938
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3717,6 +3731,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4240,7 +4255,8 @@ window.BENCHMARK_DATA = {
           10.47067702015241,
           8.635641930003962,
           11.740022263924281,
-          11.031720500725966
+          11.031720500725966,
+          10.854860769708951
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4252,6 +4268,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6074,6 +6091,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 11:10:25 2026 \u002B0100",
         "message": "chore: group the test support assemblies under Tests/Support and fold the samples into the tests (#356)"
+      },
+      {
+        "sha": "f379f8d74a760ac8ba8c09dd91aadda33a4a5830",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 15:59:54 2026 \u002B0100",
+        "message": "fix: name the parameter and the module that keep an internal module factory or hook from a wrapper (#357)"
       }
     ],
     "labels": [
@@ -6335,7 +6358,8 @@ window.BENCHMARK_DATA = {
       "9ec72a90",
       "550fe022",
       "4792177d",
-      "de96b6de"
+      "de96b6de",
+      "f379f8d7"
     ],
     "datasets": [
       {
@@ -6600,7 +6624,8 @@ window.BENCHMARK_DATA = {
           7.812836615102632,
           6.036782317927906,
           8.917366255323092,
-          8.47184823338802
+          8.47184823338802,
+          8.23509739020041
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6612,6 +6637,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7143,7 +7169,8 @@ window.BENCHMARK_DATA = {
           5.956316468971116,
           6.761738719684737,
           6.015865101416906,
-          7.324089056501786
+          7.324089056501786,
+          7.380321126182874
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7155,6 +7182,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7686,7 +7714,8 @@ window.BENCHMARK_DATA = {
           136.64759742296658,
           84.15931063038963,
           136.7502739270528,
-          126.78299527168274
+          126.78299527168274,
+          120.76294655799866
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7698,6 +7727,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8225,7 +8255,8 @@ window.BENCHMARK_DATA = {
           8.695648869872093,
           6.18031125664711,
           8.634743743141492,
-          8.78349883052019
+          8.78349883052019,
+          9.429755300283432
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8237,6 +8268,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8760,7 +8792,8 @@ window.BENCHMARK_DATA = {
           10.89857622385025,
           11.768637375036876,
           11.476824291547139,
-          14.496232369542122
+          14.496232369542122,
+          14.17709597142843
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8772,6 +8805,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10594,6 +10628,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 11:10:25 2026 \u002B0100",
         "message": "chore: group the test support assemblies under Tests/Support and fold the samples into the tests (#356)"
+      },
+      {
+        "sha": "f379f8d74a760ac8ba8c09dd91aadda33a4a5830",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 15:59:54 2026 \u002B0100",
+        "message": "fix: name the parameter and the module that keep an internal module factory or hook from a wrapper (#357)"
       }
     ],
     "labels": [
@@ -10855,7 +10895,8 @@ window.BENCHMARK_DATA = {
       "9ec72a90",
       "550fe022",
       "4792177d",
-      "de96b6de"
+      "de96b6de",
+      "f379f8d7"
     ],
     "datasets": [
       {
@@ -11120,7 +11161,8 @@ window.BENCHMARK_DATA = {
           18.83032664656639,
           15.815644014875094,
           10.880171182751656,
-          17.79494422674179
+          17.79494422674179,
+          16.653887857993443
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11282,6 +11324,7 @@ window.BENCHMARK_DATA = {
           144,
           144,
           144,
+          208,
           208,
           208,
           208,
@@ -11663,7 +11706,8 @@ window.BENCHMARK_DATA = {
           1421.0019565309797,
           1335.5768056597028,
           757.6677000363668,
-          1266.9949095408122
+          1266.9949095408122,
+          1344.510694885254
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11675,6 +11719,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12206,7 +12251,8 @@ window.BENCHMARK_DATA = {
           29912.833127702987,
           25963.97541097005,
           17312.165673828124,
-          18888.588522774833
+          18888.588522774833,
+          26565.093375651042
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12476,7 +12522,8 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32478,
-          32474
+          32474,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12745,7 +12792,8 @@ window.BENCHMARK_DATA = {
           669.6020581381662,
           552.7619277318319,
           382.6635476521083,
-          525.4180841445923
+          525.4180841445923,
+          614.0228361765544
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12775,6 +12823,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13280,7 +13329,8 @@ window.BENCHMARK_DATA = {
           11882.509128277119,
           9681.394347635905,
           6269.9820474897115,
-          9181.85485135592
+          9181.85485135592,
+          10497.938401285808
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13546,7 +13596,8 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15114,6 +15165,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 11:10:25 2026 \u002B0100",
         "message": "chore: group the test support assemblies under Tests/Support and fold the samples into the tests (#356)"
+      },
+      {
+        "sha": "f379f8d74a760ac8ba8c09dd91aadda33a4a5830",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 15:59:54 2026 \u002B0100",
+        "message": "fix: name the parameter and the module that keep an internal module factory or hook from a wrapper (#357)"
       }
     ],
     "labels": [
@@ -15375,7 +15432,8 @@ window.BENCHMARK_DATA = {
       "9ec72a90",
       "550fe022",
       "4792177d",
-      "de96b6de"
+      "de96b6de",
+      "f379f8d7"
     ],
     "datasets": [
       {
@@ -15640,7 +15698,8 @@ window.BENCHMARK_DATA = {
           160.3895860830943,
           112.33386589930608,
           76.83804666996002,
-          214.7912073135376
+          214.7912073135376,
+          118.20292917092641
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15802,6 +15861,7 @@ window.BENCHMARK_DATA = {
           2128,
           2128,
           2128,
+          4176,
           4176,
           4176,
           4176,
@@ -16183,7 +16243,8 @@ window.BENCHMARK_DATA = {
           14132.133163960774,
           10568.865990193684,
           7141.932856877645,
-          13110.022040303547
+          13110.022040303547,
+          12021.685920715332
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16195,6 +16256,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -16726,7 +16788,8 @@ window.BENCHMARK_DATA = {
           716147.9576171875,
           652642.1979166666,
           414037.19619516225,
-          475883.223563058
+          475883.223563058,
+          649004.415876116
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16996,7 +17059,8 @@ window.BENCHMARK_DATA = {
           721215,
           741801,
           740300,
-          740873
+          740873,
+          740074
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17265,7 +17329,8 @@ window.BENCHMARK_DATA = {
           41971.86191813151,
           35802.60380045573,
           23131.308079310827,
-          30938.507843017578
+          30938.507843017578,
+          38255.352693684894
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17531,7 +17596,8 @@ window.BENCHMARK_DATA = {
           80968,
           80300,
           80304,
-          80297
+          80297,
+          80006
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17800,7 +17866,8 @@ window.BENCHMARK_DATA = {
           364587.8162760417,
           279149.9018930289,
           187340.04161783855,
-          256777.68185221354
+          256777.68185221354,
+          322033.45439453126
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18066,7 +18133,8 @@ window.BENCHMARK_DATA = {
           573092,
           573058,
           573038,
-          571193
+          571193,
+          573058
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19610,6 +19678,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 11:10:25 2026 \u002B0100",
         "message": "chore: group the test support assemblies under Tests/Support and fold the samples into the tests (#356)"
+      },
+      {
+        "sha": "f379f8d74a760ac8ba8c09dd91aadda33a4a5830",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 15:59:54 2026 \u002B0100",
+        "message": "fix: name the parameter and the module that keep an internal module factory or hook from a wrapper (#357)"
       }
     ],
     "labels": [
@@ -19867,7 +19941,8 @@ window.BENCHMARK_DATA = {
       "9ec72a90",
       "550fe022",
       "4792177d",
-      "de96b6de"
+      "de96b6de",
+      "f379f8d7"
     ],
     "datasets": [
       {
@@ -20128,7 +20203,8 @@ window.BENCHMARK_DATA = {
           205.63182820592607,
           150.73938072644748,
           155.58806353348953,
-          203.35485884348552
+          203.35485884348552,
+          206.36169155438742
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -20163,6 +20239,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -20663,7 +20740,8 @@ window.BENCHMARK_DATA = {
           476.11052789006914,
           368.95197057724,
           397.27538010279335,
-          481.4657674153646
+          481.4657674153646,
+          474.6827694892883
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -20675,6 +20753,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -21198,7 +21277,8 @@ window.BENCHMARK_DATA = {
           5085.062318361723,
           3219.232121394231,
           3460.933431352888,
-          5259.893307277134
+          5259.893307277134,
+          4913.920828501384
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21282,6 +21362,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -21733,7 +21814,8 @@ window.BENCHMARK_DATA = {
           358.3014275868734,
           241.87429658571878,
           243.3989061968667,
-          346.84544906616213
+          346.84544906616213,
+          346.30119609832764
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21745,6 +21827,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -22268,7 +22351,8 @@ window.BENCHMARK_DATA = {
           566.4528698921204,
           384.6678688367208,
           374.6583217212132,
-          552.4876335144043
+          552.4876335144043,
+          554.2914553324382
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22280,6 +22364,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
