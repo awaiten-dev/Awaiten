@@ -580,7 +580,7 @@ partial class AwaitenGenerator
 		}
 
 		ResolvedModuleHook? resolved = ResolveModuleHookCore(
-			new ModuleHookRequest(matchType, hookName, match.Location, release, ModuleHookWrapperName(matchType, release), ScanSubject(matchType.ToDisplayString(FullyQualified)), FriendsCanConstruct(matchType, context)),
+			new ModuleHookRequest(matchType, hookName, match.Location, release, ModuleHookWrapperName(matchType, release), ScanSubject(matchType.ToDisplayString(FullyQualified)), FriendsCanConstruct(matchType, context), SkipsUnbuildableNeeds: true),
 			closedMarkers,
 			context.FailedHooks.Contains(attempt) ? context with { Diagnostics = new List<DiagnosticInfo>(), } : context);
 		if (resolved is null)
@@ -830,7 +830,7 @@ partial class AwaitenGenerator
 					string member = $"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook";
 					if (unbuildable is not null)
 					{
-						services.UnbuildableNeeds[error] = UnbuildableNeed(member, unbuildable);
+						services.UnbuildableNeeds[error] = UnbuildableNeed(member, unbuildable, services.Rejection(unbuildable));
 					}
 
 					// Judging another module judges its services anew, so it waits until the module's own are judged, which keeps that from recursing.
@@ -1330,7 +1330,15 @@ partial class AwaitenGenerator
 			return true;
 		}
 
-		if (InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
+		// The caller passes an [Arg] to the factory, so no other module's handle could serve it and its type has to be accessible.
+		bool argument = HasArgAttribute(parameterAttributes);
+		if (!argument && ServiceRejectedElsewhere(parameter.Type, context, location, subject, label) is { } rejectedElsewhere)
+		{
+			diagnostics.Add(rejectedElsewhere);
+			return false;
+		}
+
+		if (!argument && InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
 		{
 			diagnostics.Add(otherModule.WithLocation(location, subject, label));
 			return false;

@@ -601,9 +601,11 @@ partial class AwaitenGenerator
 
 			// A container in the module's assembly constructs the implementation and resolves the hook itself, so a hook of a
 			// constructed registration that no wrapper can expose is left to that container, which also reports its faults.
+			// It calls the hook of a Factory registration directly too, so a hook that only needs an internal service a module
+			// cannot build is left to it either way, and a container in another assembly names that service.
 			ModuleHookRequest request = new(
 				produced, hookName, location, release, name, new SelfCompiledSubject(produced.ToDisplayString(FullyQualified), subject, "make the hook public"),
-				constructed || GrantsInternalsVisibleTo(compilation.Assembly), constructed);
+				constructed || GrantsInternalsVisibleTo(compilation.Assembly), SkipsUnbuildableNeeds: true);
 			int reported = diagnostics.Count;
 			(int, INamedTypeSymbol[])? demanded = hidden?.Snapshot();
 			ResolvedModuleHook? resolved = ResolveRegistrationHook(request, context);
@@ -1453,6 +1455,11 @@ partial class AwaitenGenerator
 				Add(handle.Parameter);
 				continue;
 			}
+			else if (ServiceRejectedElsewhere(property.Type, context, location, subject, $"its property '{property.Name}'") is { } rejectedElsewhere)
+			{
+				context.Diagnostics.Add(rejectedElsewhere);
+				return false;
+			}
 			else if (InternalServiceOfAnotherModule(property.Type, context) is { } otherModule)
 			{
 				context.Diagnostics.Add(otherModule.WithLocation(location, subject, $"its property '{property.Name}'"));
@@ -1667,6 +1674,11 @@ partial class AwaitenGenerator
 			return reason.EndsWith(NoReachableSetter, StringComparison.Ordinal) ? null : reason;
 		}
 
+		if (rejection.Descriptor == Diagnostics.ModuleParameterNeedsUnbuildableService)
+		{
+			return rejection.MessageArgs.AsArray()[1];
+		}
+
 		if (rejection.Descriptor == Diagnostics.ModuleHiddenServiceInOtherModule)
 		{
 			string[] arguments = rejection.MessageArgs.AsArray();
@@ -1736,12 +1748,25 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Whether <paramref name="module" /> has a decorator or composite, closed or open, or an open generic registration
+	///     that a container in another assembly builds only through a factory the module generates (see
+	///     <see cref="SelfCompilesRegistration" />).
+	/// </summary>
+	private static bool HasContributionNeedingFactory(INamedTypeSymbol module, Compilation compilation)
+		=> OpenContributions(module).Any(contribution => SelfCompilesRegistration(module, contribution.Definition, contribution.Service, compilation))
+		   || module.GetAttributes().Any(attribute => attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
+		                                              && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+		                                              && ContributedPair(attribute, attributeClass) is ({ } type, { } service)
+		                                              && SelfCompilesRegistration(module, type, service, compilation));
+
+	/// <summary>
 	///     A deterministic name for the internal type, in the module's namespace, that records a module that is not
 	///     partial and so carries no generated factory or wrapper: one the generator left to the assemblies granted
 	///     <c>InternalsVisibleTo</c>, or one with a member that needs a wrapper (see <see cref="HasMemberNeedingWrapper" />)
-	///     or an open generic contribution that needs a factory. Its presence tells a consumer that the module skipped them
-	///     on purpose (AWT231, AWT108, AWT109, AWT153, AWT164), not built without the generator (AWT154). It records the
-	///     module, not a member, so a consumer that cannot see internal members gives a misspelled member the same reason.
+	///     or a contribution that needs a factory (see <see cref="HasContributionNeedingFactory" />). Its presence tells a
+	///     consumer that the module skipped them on purpose (AWT231, AWT108, AWT109, AWT153, AWT164), not built without the
+	///     generator (AWT154). It records the module, not a member, so a consumer that cannot see internal members gives a
+	///     misspelled member the same reason.
 	/// </summary>
 	private static string ModuleNotPartialName(INamedTypeSymbol module)
 		=> $"Awaiten__ModuleNotPartial_{module.Name}_{Fnv1a(module.ToDisplayString(FullyQualified)):x8}";

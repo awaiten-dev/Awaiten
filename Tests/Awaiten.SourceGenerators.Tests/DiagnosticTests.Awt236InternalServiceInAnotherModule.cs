@@ -239,34 +239,34 @@ public partial class DiagnosticTests
 			private static string Consumer(bool fourth) => "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container(fourth);
 
 			[Test]
-			public async Task TheLibrary_ReportsAwt236AsWithoutTheCycle()
+			public async Task TheLibrary_ReportsTheModuleThatCannotBuildTheKettle_AsWithoutTheCycle()
 			{
 				GeneratorResult acyclic = Generator.Run(Library(buildable: false, cycle: false));
 				GeneratorResult cyclic = Generator.Run(Library(buildable: false));
 
-				await That(acyclic.Diagnostics).Contains("*AWT236*'Lib.User'*'Lib.IKettle'*registered only by the module 'Lib.DModule'*").AsWildcard();
-				await That(cyclic.Diagnostics).Contains("*AWT236*'Lib.User'*'Lib.IKettle'*registered only by the module 'Lib.AModule'*").AsWildcard()
+				await That(acyclic.Diagnostics).HasSingle().Which.EndsWith("error AWT195: 'Lib.User' is self-compiled from a module registration, but its constructor parameter 'kettle' needs the internal service 'Lib.IKettle', which the module 'Lib.DModule' cannot build (AWT236: 'Lib.Kettle' is registered under the internal service 'Lib.IKettle', which a consuming container reaches through a generated handle, but its constructor parameter 'bean' needs the internal service 'Lib.IBean', which is registered only by the module 'Lib.BModule', so a container in another assembly cannot provide it to 'Lib.DModule'; register 'Lib.IBean' in 'Lib.DModule' too, or move both registrations into one module), so the generated factory cannot take it; fix what keeps the module from building that service");
+				await That(cyclic.Diagnostics).HasSingle().Which.EndsWith("error AWT195: 'Lib.User' is self-compiled from a module registration, but its constructor parameter 'kettle' needs the internal service 'Lib.IKettle', which the module 'Lib.AModule' cannot build (AWT236: 'Lib.Kettle' is registered under the internal service 'Lib.IKettle', which a consuming container reaches through a generated handle, but its constructor parameter 'bean' needs the internal service 'Lib.IBean', which is registered only by the module 'Lib.BModule', so a container in another assembly cannot provide it to 'Lib.AModule'; register 'Lib.IBean' in 'Lib.AModule' too, or move both registrations into one module), so the generated factory cannot take it; fix what keeps the module from building that service")
 					.Because("the module that registers the kettle cannot build it once the silo it needs through the bean of another module cannot be built, whether the modules form a cycle or not");
 			}
 
 			[Test]
-			public async Task TheLibraryWithACycleThroughFourModules_ReportsAwt236()
+			public async Task TheLibraryWithACycleThroughFourModules_ReportsTheModuleThatCannotBuildTheKettle()
 			{
 				GeneratorResult result = Generator.Run(Library(buildable: false, fourth: true));
 
-				await That(result.Diagnostics).Contains("*AWT236*'Lib.User'*'Lib.IKettle'*registered only by the module 'Lib.AModule'*").AsWildcard()
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT195: 'Lib.User' is self-compiled from a module registration, but its constructor parameter 'kettle' needs the internal service 'Lib.IKettle', which the module 'Lib.AModule' cannot build (AWT236: 'Lib.Kettle' is registered under the internal service 'Lib.IKettle', which a consuming container reaches through a generated handle, but its constructor parameter 'bean' needs the internal service 'Lib.IBean', which is registered only by the module 'Lib.BModule', so a container in another assembly cannot provide it to 'Lib.AModule'; register 'Lib.IBean' in 'Lib.AModule' too, or move both registrations into one module), so the generated factory cannot take it; fix what keeps the module from building that service")
 					.Because("the cycle from the kettle through the bean and the grain back to the silo of the same module cannot be built either");
 			}
 
 			[Test]
 			[Arguments(false)]
 			[Arguments(true)]
-			public async Task ContainerInTheModulesAssembly_ReportsTheMissingDependencyAndAwt236(bool fourth)
+			public async Task ContainerInTheModulesAssembly_ReportsTheMissingDependencyAndTheModuleThatCannotBuildTheKettle(bool fourth)
 			{
 				GeneratorResult result = Generator.Run(Library(buildable: false, fourth: fourth) + Container(fourth));
 
 				await That(result.Diagnostics).Contains("*AWT101*'Lib.ISilo'*'Lib.Missing'*").AsWildcard()
-					.And.Contains("*AWT236*'Lib.IKettle'*").AsWildcard()
+					.And.Contains("*AWT195: 'Lib.User'*'Lib.IKettle', which the module 'Lib.AModule' cannot build*").AsWildcard()
 					.Because("the container reports the dependency the silo misses and the module still reports why a container in another assembly could not use it");
 			}
 
@@ -359,12 +359,13 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			public async Task NoneThatCanBuildTheService_NamesEveryRegisteringModule()
+			public async Task NoneThatCanBuildTheService_ReportsAwt195NamingTheFirstAndWhy()
 			{
 				GeneratorResult result = Generator.Run(Library("Store1").Replace("[Singleton<Store2, IStore>]", "[Singleton<Store1, IStore>]"));
 
-				await That(result.Diagnostics).Contains("*AWT236*'Lib.IStore'*registered only by the modules 'Lib.AModule', 'Lib.BModule'*").AsWildcard()
-					.Because("no module that registers the service can build it, so the message names each of them");
+				await That(result.Diagnostics).HasSingle().Which.EndsWith(
+						"error AWT195: 'Lib.Chef' is self-compiled from a module registration, but its constructor parameter 'store' needs the internal service 'Lib.IStore', which the module 'Lib.AModule' cannot build (AWT195: 'Lib.Store1' is registered under the internal service 'Lib.IStore', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' has the type 'Lib.Silo', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+					.Because("each module that registers the service could share its handle but cannot build it, so the message names the cause, which nothing else reports, instead of asking to move the registrations");
 			}
 		}
 	}

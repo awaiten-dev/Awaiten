@@ -1753,13 +1753,15 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The reason a consumer reports for an implementation whose <paramref name="member" /> takes the internal
-	///     <paramref name="service" /> the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />).
+	///     <paramref name="service" /> the module cannot build (see <see cref="HiddenServices.UnbuildableNeeds" />), with
+	///     the module's <paramref name="rejection" /> of it when given, for a member whose cause the module's build may not
+	///     report.
 	/// </summary>
-	private static string UnbuildableNeed(string member, INamedTypeSymbol service)
-		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', which the module cannot build";
+	private static string UnbuildableNeed(string member, INamedTypeSymbol service, DiagnosticInfo? rejection = null)
+		=> $"{member} needs the internal service '{Display(service.ToDisplayString(FullyQualified))}', {(rejection is null ? "which the module cannot build" : CannotBuild("the module", rejection))}";
 
 	/// <summary>
-	///     Like <see cref="UnbuildableNeed(string, INamedTypeSymbol)" />, for an internal service only
+	///     Like the overload without <paramref name="builder" />, for an internal service only
 	///     <paramref name="builder" />, another module of the assembly, registers, named with its
 	///     <paramref name="rejection" />, which neither module reports (see <see cref="HiddenServices.RejectedElsewhere" />).
 	/// </summary>
@@ -1847,6 +1849,25 @@ partial class AwaitenGenerator
 				Display(context.Module.ToDisplayString(FullyQualified)),
 			]);
 	}
+
+	/// <summary>
+	///     AWT195 when a member of the module takes an internal service that the module does not register and that only
+	///     other modules of its assembly register, the first of which cannot build it (see
+	///     <see cref="HiddenServices.RejectedElsewhere" />), naming that module and why, or <see langword="null" />. Judging
+	///     another module judges its services anew, so this waits until the module's own are judged (see
+	///     <see cref="HiddenServices.Tracking" />), which keeps that from recursing. Only in the module's own build.
+	/// </summary>
+	private static DiagnosticInfo? ServiceRejectedElsewhere(ITypeSymbol type, ModuleScanContext context, Location? location, SelfCompiledSubject subject, string member)
+		=> context.Hidden is { Tracking: true, } hidden
+		   && HiddenShapeOf(type) is ({ }, INamedTypeSymbol service)
+		   && !hidden.Services.ContainsKey(service)
+		   && IsHiddenService(service, context.Module, context.Compilation)
+		   && hidden.RejectedElsewhere(service) is var (builder, rejection)
+			? new DiagnosticInfo(
+				Diagnostics.ModuleParameterNeedsUnbuildableService,
+				LocationInfo.From(location),
+				new EquatableArray<string>([subject.Subject, UnbuildableNeed(member, service, builder, rejection),]))
+			: null;
 
 	/// <summary>The classes with the Awaiten attribute <paramref name="attribute" /> declared in <paramref name="ns" /> and its nested namespaces and types.</summary>
 	private static IEnumerable<INamedTypeSymbol> TypesWith(INamespaceOrTypeSymbol ns, string attribute)

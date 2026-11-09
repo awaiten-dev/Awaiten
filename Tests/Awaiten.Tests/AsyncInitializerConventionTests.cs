@@ -202,6 +202,21 @@ public sealed partial class AsyncInitializerConventionTests
 	}
 
 	[Test]
+	public async Task AnInstance_IsNotInitializedByAConvention()
+	{
+		using InstanceShop.Root shop = new();
+		Journal journal = shop.Resolve<Journal>();
+
+		Kettle kettle = shop.Resolve<Kettle>();
+		await shop.InitializeAsync();
+
+		await That(kettle).IsSameAs(InstanceShop.Prebuilt)
+			.Because("a pre-built instance is not async-initialized, so it resolves synchronously");
+		await That(journal.Events).IsEmpty()
+			.Because("the container does not own a pre-built instance, so no convention runs on it");
+	}
+
+	[Test]
 	public async Task AnExtendingContainer_InheritsTheBaseConventions()
 	{
 		using ExtendingShop.Root shop = new();
@@ -403,6 +418,15 @@ public sealed partial class AsyncInitializerConventionTests
 	[Singleton<Journal>]
 	[Singleton<Scale>]
 	public static partial class ModuleShop;
+
+	[Container]
+	[AsyncInitializer<Appliance>(nameof(Appliance.WarmUpAsync))]
+	[Singleton<Journal>]
+	[Singleton<Kettle>(Instance = nameof(Prebuilt))]
+	public static partial class InstanceShop
+	{
+		public static Kettle Prebuilt { get; } = new();
+	}
 
 	[Container]
 	[AsyncInitializer<IConnectable>(nameof(IConnectable.ConnectAsync))]

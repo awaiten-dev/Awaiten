@@ -418,7 +418,7 @@ public class SelfCompiledModuleRegistrationTests
 		}
 
 		[Test]
-		public async Task InternalDecorator_ReportsAwt230AtTheConsumer()
+		public async Task InternalDecorator_OfAModuleThatIsNotPartial_ReportsAwt231AtTheConsumer()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 				using Awaiten;
@@ -449,14 +449,13 @@ public class SelfCompiledModuleRegistrationTests
 				}
 				""");
 
-			await That(result.Diagnostics).Contains("*AWT230*").AsWildcard()
-				.Because("an internal decorator is not self-compiled in v1, so the consumer reports the decorator it cannot construct");
-			await That(result.Diagnostics).HasCount(1)
-				.Because("the clear diagnostic replaces a misleading constructor error and generated code that would not compile");
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT231: The imported module 'Lib.GreetingModule' registers 'Lib.LoudGreeter', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.LoudGreeter', its constructor and the constructor's parameter types public")
+				.Because("a module that is not partial carries no factory for its internal decorator and records why, which replaces a misleading constructor error and generated code that would not compile");
 		}
 
 		[Test]
-		public async Task InternalComposite_ReportsAwt230AtTheConsumer()
+		public async Task InternalComposite_OfAModuleThatIsNotPartial_ReportsAwt231AtTheConsumer()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 				using System.Collections.Generic;
@@ -488,10 +487,9 @@ public class SelfCompiledModuleRegistrationTests
 				}
 				""");
 
-			await That(result.Diagnostics).Contains("*AWT230*").AsWildcard()
-				.Because("an internal composite is not self-compiled in v1, so the consumer reports the composite it cannot construct");
-			await That(result.Diagnostics).HasCount(1)
-				.Because("the clear diagnostic replaces a misleading constructor error and generated code that would not compile");
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT231: The imported module 'Lib.GreetingModule' registers 'Lib.AllGreeters', which this container cannot construct, and the module's assembly generated no factory for it because the module, or a class that contains it, is not partial; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.AllGreeters', its constructor and the constructor's parameter types public")
+				.Because("a module that is not partial carries no factory for its internal composite and records why");
 		}
 
 		[Test]
