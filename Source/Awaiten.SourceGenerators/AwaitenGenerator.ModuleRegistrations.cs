@@ -1599,7 +1599,7 @@ partial class AwaitenGenerator
 			}
 			else if (InternalServiceOfAnotherModule(property.Type, context) is { } otherModule)
 			{
-				context.Diagnostics.Add(TakingUnbuildable(otherModule.WithLocation(location, subject, $"its property '{property.Name}'"), property.Type, context));
+				context.Diagnostics.Add(TakingUnbuildable(otherModule, location, subject, $"its property '{property.Name}'", property.Type, context));
 				return false;
 			}
 			else if (!FitsFactorySignature(property.Type, context) || TypeHiddenInModule(property.Type, context.Module, context.Compilation) is not null)
@@ -1616,7 +1616,7 @@ partial class AwaitenGenerator
 				if (unbuildable is not null && context.Hidden is { } hidden)
 				{
 					hidden.UnbuildableNeeds[rejection] = UnbuildableNeed($"its property '{property.Name}'", unbuildable);
-					hidden.Takes[rejection] = unbuildable;
+					hidden.Takes[rejection] = (unbuildable, $"its property '{property.Name}'");
 				}
 
 				context.Diagnostics.Add(rejection);

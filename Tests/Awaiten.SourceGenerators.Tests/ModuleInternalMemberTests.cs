@@ -361,6 +361,57 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
+		[Arguments("[Singleton<Bean>]", "")]
+		[Arguments("", "[Module][Singleton<Bean>] public static partial class BeanModule;")]
+		public async Task ModulesTakingEachOthersServices_WhereALaterParameterTakesOneThatCannotBeBuilt_NameItsCause(string storeRegistration, string beanModule)
+		{
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Secret { }
+				internal sealed class Kettle(Silo silo) { public Silo Silo { get; } = silo; }
+				internal sealed class Silo(Kettle kettle, Bean bean) { public Kettle Kettle { get; } = kettle; public Bean Bean { get; } = bean; }
+				internal sealed class Bean(Secret secret) { public Secret Secret { get; } = secret; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>]{{storeRegistration}} public static partial class StoreModule;
+				{{beanModule}}
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Bean' is registered under the internal service 'Lib.Bean', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("the kettle the silo takes back only leads to the silo again, while the bean it takes fails on the secret, which is the cause to fix");
+		}
+
+		[Test]
+		public async Task ParameterTakingOneOfAnotherModuleThatOnlyTakesItBack_NamesTheCauseOfALaterParameter()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class Secret { }
+				internal sealed class Kettle(Silo silo, Bean bean) { public Silo Silo { get; } = silo; public Bean Bean { get; } = bean; }
+				internal sealed class Bean(Secret secret) { public Secret Secret { get; } = secret; }
+				internal sealed class Silo(Kettle kettle) { public Kettle Kettle { get; } = kettle; }
+				internal sealed class Grinder(Kettle kettle) : IGrinder { public Kettle Kettle { get; } = kettle; }
+
+				[Module][Singleton<Kettle>][Singleton<Bean>][Singleton<Grinder, IGrinder>] public static partial class CoffeeModule;
+				[Module][Singleton<Silo>] public static partial class StoreModule;
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT195: 'Lib.Kettle' is registered under the internal service 'Lib.Kettle', which a consuming container reaches through a generated handle, but its constructor parameter 'silo' needs the internal service 'Lib.Silo', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.Bean' is registered under the internal service 'Lib.Bean', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module), so the generated factory cannot take it; fix what keeps the module from building that service")
+				.Because("registering the silo in this module too would not help, since the silo only takes the kettle back, which the bean keeps from being built, so the message names why the bean cannot be built");
+		}
+
+		[Test]
 		public async Task ModulesTakingEachOthersServices_WhereAPropertyCannotBeSet_NameThatProperty()
 		{
 			const string library = """
