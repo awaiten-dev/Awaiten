@@ -1,4 +1,4 @@
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 /// <summary>
 ///     A host-owned (external) service, registered directly in the service collection.

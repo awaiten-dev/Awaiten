@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 public interface IMessageHandler
 {

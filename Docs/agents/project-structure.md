@@ -1,6 +1,6 @@
 # Architecture and source locations
 
-Product code is in `Source/`, tests in `Tests/`, benchmarks in `Benchmarks/`, runnable samples in `Samples/`, the Fallout build in `Pipeline/`, the user documentation in `Docs/pages/` and the Docusaurus site that publishes it in `Docs/site/`. `Awaiten.slnx` contains all of them.
+Product code is in `Source/`, tests in `Tests/`, benchmarks in `Benchmarks/`, the Fallout build in `Pipeline/`, the user documentation in `Docs/pages/` and the Docusaurus site that publishes it in `Docs/site/`. `Awaiten.slnx` contains all of them.
 
 ## Projects (`Source/`)
 
@@ -28,14 +28,19 @@ Containers and modules must be `static partial` classes; a non-static one is a d
 
 ## Tests and samples
 
+The test projects sit directly under `Tests/`. The assemblies they reference but that hold no tests sit under `Tests/Support/`: each exists because a test needs a separate assembly, so do not fold one into a test project.
+
 - `Tests/Awaiten.Tests`: compiles real containers with the generator and exercises them at runtime on net10.0, net8.0 and net48. Uses `Awaiten.Tests.Support` as a referenced assembly for cross-assembly scans and modules.
 - `Tests/Awaiten.SourceGenerators.Tests`: generator output and diagnostics over in-memory compilations (`TestHelpers/`), including cross-assembly cases via `RunWithReferencedAssembly` and `RunWithGeneratedReferencedAssembly`.
 - `Tests/Awaiten.Extensions.DependencyInjection.Tests`: bridge behaviour, disposal, keyed services and MS.DI conformance.
-- `Tests/Awaiten.ExampleTests`: the coffee-shop examples from the docs. The generator's `launchSettings.json` debugs against this project.
-- `Tests/CoffeeShop.Domain`: the coffee-shop domain those examples compose, in an assembly of its own so the architecture test checks it whole. Only its `CoffeeShop.Composition` namespace, a `[Module]`, references Awaiten.
+- `Tests/Awaiten.ExampleTests`: the coffee-shop examples from the docs, including containers hosted in ASP.NET Core. The generator's `launchSettings.json` debugs against this project.
 - `Tests/Awaiten.Docs.Tests` (net10.0): compiles every `csharp` code block of `Docs/pages` with the generator and analyzers, against the placeholder types in `Scaffold/`.
 - `Tests/Awaiten.Api.Tests`: public API snapshots of both packages for each target framework.
-- `Samples/Awaiten.AotSample` and `Samples/Awaiten.WebSample`: native-AOT and ASP.NET Core proofs of the bridge.
+- `Tests/Support/Awaiten.Tests.Support`: a referenced assembly without `InternalsVisibleTo` for cross-assembly scans, modules and internal services.
+- `Tests/Support/Awaiten.Tests.ContainerSupport`: a referenced assembly that declares a `[Container]` to extend across the boundary and grants `Awaiten.Tests` `InternalsVisibleTo`.
+- `Tests/Support/Awaiten.Tests.PolyfillFreeSupport`: a net48 and netstandard2.0 consumer without the Nullable polyfills, whose generated container must compile without them.
+- `Tests/Support/CoffeeShop.Domain`: the coffee-shop domain the examples compose, in an assembly of its own so the architecture test checks it whole. Only its `CoffeeShop.Composition` namespace, a `[Module]`, references Awaiten.
+- `Tests/Awaiten.AotTests` (net10.0): a console app, not a TUnit project, that the `AotTests` target publishes with native AOT and runs; a non-zero exit code fails it. It proves the generated code, a module of another assembly and the MS.DI bridge reflection-free.
 
 ## Build settings
 

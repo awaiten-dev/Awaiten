@@ -1,4 +1,4 @@
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 public sealed class SystemClock : IClock
 {

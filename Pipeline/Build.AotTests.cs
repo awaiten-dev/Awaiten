@@ -11,13 +11,13 @@ namespace Build;
 
 partial class Build
 {
-	Target AotSample => _ => _
-		.Description("Publishes Samples/Awaiten.AotSample with native AOT and runs it, proving the generated " +
+	Target AotTests => _ => _
+		.Description("Publishes Tests/Awaiten.AotTests with native AOT and runs it, proving the generated " +
 		             "container and the MS.DI bridge are reflection-free and AOT-compatible. Requires a platform " +
 		             "linker (on Windows the 'Desktop development with C++' workload).")
 		.Executes(() =>
 		{
-			AbsolutePath sampleProject = RootDirectory / "Samples" / "Awaiten.AotSample" / "Awaiten.AotSample.csproj";
+			AbsolutePath sampleProject = RootDirectory / "Tests" / "Awaiten.AotTests" / "Awaiten.AotTests.csproj";
 			string architecture = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
 			string runtime = $"{(EnvironmentInfo.IsWin ? "win" : EnvironmentInfo.IsOsx ? "osx" : "linux")}-{architecture}";
 
@@ -28,7 +28,7 @@ partial class Build
 				.EnableNoLogo());
 
 			AbsolutePath executable = sampleProject.Parent / "bin" / "Release" / "net10.0" / runtime / "publish" /
-			                          ("Awaiten.AotSample" + (EnvironmentInfo.IsWin ? ".exe" : ""));
+			                          ("Awaiten.AotTests" + (EnvironmentInfo.IsWin ? ".exe" : ""));
 			ProcessTasks.StartProcess(executable).AssertZeroExitCode();
 		});
 }

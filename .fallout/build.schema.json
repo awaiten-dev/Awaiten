@@ -24,7 +24,7 @@
     "ExecutableTarget": {
       "type": "string",
       "enum": [
-        "AotSample",
+        "AotTests",
         "ApiChecks",
         "BenchmarkComment",
         "BenchmarkDotNet",
@@ -44,8 +44,7 @@
         "PublishBenchmarkReport",
         "Restore",
         "UnitTests",
-        "UpdateReadme",
-        "WebSample"
+        "UpdateReadme"
       ]
     },
     "Verbosity": {

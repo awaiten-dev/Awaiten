@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 /// <summary>A domain interface for services that warm up asynchronously before use.</summary>
 public interface IWarmUp

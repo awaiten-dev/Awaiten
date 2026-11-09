@@ -7,7 +7,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Source\Awaiten.SourceGenerators\Awaiten.SourceGenerators.csproj"/>
 		<ProjectReference Include="..\..\Source\Awaiten\Awaiten.csproj"/>
-		<ProjectReference Include="..\Awaiten.Tests.Support\Awaiten.Tests.Support.csproj"/>
+		<ProjectReference Include="..\Support\Awaiten.Tests.Support\Awaiten.Tests.Support.csproj"/>
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all"/>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
 	</ItemGroup>
@@ -15,11 +15,11 @@
 	<!-- The references of a net48 consumer without a nullable polyfill, for the in-memory compilations of PolyfillFreeConsumerTests.
 	     The project reference only makes the restore and the build order include the support project. -->
 	<ItemGroup>
-		<ProjectReference Include="..\Awaiten.Tests.PolyfillFreeSupport\Awaiten.Tests.PolyfillFreeSupport.csproj" ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\Support\Awaiten.Tests.PolyfillFreeSupport\Awaiten.Tests.PolyfillFreeSupport.csproj" ReferenceOutputAssembly="false"/>
 	</ItemGroup>
 
 	<Target Name="WritePolyfillFreeReferences" AfterTargets="Build" Condition="'$(TargetFramework)' != ''">
-		<MSBuild Projects="..\Awaiten.Tests.PolyfillFreeSupport\Awaiten.Tests.PolyfillFreeSupport.csproj" Targets="GetPolyfillFreeReferences" Properties="TargetFramework=net48">
+		<MSBuild Projects="..\Support\Awaiten.Tests.PolyfillFreeSupport\Awaiten.Tests.PolyfillFreeSupport.csproj" Targets="GetPolyfillFreeReferences" Properties="TargetFramework=net48">
 			<Output TaskParameter="TargetOutputs" ItemName="PolyfillFreeReference"/>
 		</MSBuild>
 		<WriteLinesToFile File="$(OutDir)polyfill-free.references" Lines="@(PolyfillFreeReference)" Overwrite="true" WriteOnlyWhenDifferent="true"/>

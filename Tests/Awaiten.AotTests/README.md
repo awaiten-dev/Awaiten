@@ -1,14 +1,16 @@
-# Awaiten.AotSample
+# Awaiten.AotTests
 
 A minimal console app that proves Awaiten's `Microsoft.Extensions.DependencyInjection` bridge is
 reflection-free and native-AOT compatible. It registers a generated `[Container]` into an
 `IServiceCollection` with `AddAwaitenContainer`, verifies its external dependencies with
 `VerifyAwaitenContainers`, and resolves a service (whose graph mixes an Awaiten-owned `IClock` with a
-host-owned `Banner` injected across the seam via `[ImportService<T>]`) from an MS.DI scope.
+host-owned `Banner` injected across the seam via `[ImportService<T>]`) from an MS.DI scope. It also imports the `PaymentModule` of `Tests/Support/CoffeeShop.Domain`, so the internal payment
+gateway a module of another assembly builds through its generated factory is published and run with native AOT too.
+It is not a TUnit project: `Main` returns a non-zero exit code when a check fails.
 
 The project is part of `Awaiten.slnx`, so it is compiled cross-platform alongside the unit tests. Because
 publishing it natively needs a platform linker, the native-AOT publish (and the run that follows) happens in
-a dedicated `AotSample` CI job on Windows rather than on every runner. `TreatWarningsAsErrors` is enabled, so
+a dedicated `AotTests` CI job on Windows rather than on every runner. `TreatWarningsAsErrors` is enabled, so
 any trim or AOT warning fails that job.
 
 ## Publish with native AOT
@@ -17,8 +19,8 @@ Requires the native AOT prerequisites (on Windows, the "Desktop development with
 <https://aka.ms/nativeaot-prerequisites>.
 
 ```sh
-dotnet publish Samples/Awaiten.AotSample -c Release -r win-x64 -p:GeneratePackageOnBuild=false
-./Samples/Awaiten.AotSample/bin/Release/net10.0/win-x64/publish/Awaiten.AotSample.exe
+dotnet publish Tests/Awaiten.AotTests -c Release -r win-x64 -p:GeneratePackageOnBuild=false
+./Tests/Awaiten.AotTests/bin/Release/net10.0/win-x64/publish/Awaiten.AotTests.exe
 # prints: Awaiten on AOT @ 2026-06-24   (exit code 0)
 ```
 
@@ -35,7 +37,7 @@ no trim/AOT suppressions. The `Mediator` dispatches a message by its runtime typ
 To verify behavior where the native linker is unavailable, run it on the JIT or publish it self-contained:
 
 ```sh
-dotnet run --project Samples/Awaiten.AotSample -c Release -p:GeneratePackageOnBuild=false
+dotnet run --project Tests/Awaiten.AotTests -c Release -p:GeneratePackageOnBuild=false
 # or
-dotnet publish Samples/Awaiten.AotSample -c Release -r win-x64 --self-contained true -p:PublishAot=false -p:GeneratePackageOnBuild=false
+dotnet publish Tests/Awaiten.AotTests -c Release -r win-x64 --self-contained true -p:PublishAot=false -p:GeneratePackageOnBuild=false
 ```

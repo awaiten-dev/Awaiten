@@ -12,10 +12,10 @@ Commands run from the repository root. On Linux and macOS use `./build.sh` inste
   - `Tests/Awaiten.Tests`: runtime behaviour of generated containers, declared as `[Container]` classes in the test files.
   - `Tests/Awaiten.SourceGenerators.Tests` (net10.0 only): runs the generator over in-memory sources with `TestHelpers/Generator.cs` and analyzers with `TestHelpers/Analyzer.cs`; one `DiagnosticTests.AwtNNN*.cs` file per diagnostic.
   - `Tests/Awaiten.Extensions.DependencyInjection.Tests`: the MS.DI bridge, including MS.DI conformance and host initialization.
-  - `Tests/Awaiten.ExampleTests`: the documented examples, an ASP.NET Core example (not on net48) and the architecture test from the design principles page.
+  - `Tests/Awaiten.ExampleTests`: the documented examples, containers hosted in ASP.NET Core (not on net48) and the architecture test from the design principles page.
   - `Tests/Awaiten.Docs.Tests` (net10.0 only): compiles the code blocks of `Docs/pages`, see [Documentation](#documentation).
   - `Tests/Awaiten.Api.Tests` (net10.0 only): public API snapshots.
-  - `Tests/Awaiten.Tests.Support`: a plain library, not a test project, that gives `Awaiten.Tests` a referenced assembly for cross-assembly `[Scan]` and `[Module]` scenarios.
+  - `Tests/Support/Awaiten.Tests.Support`: a plain library, not a test project, that gives `Awaiten.Tests` a referenced assembly for cross-assembly `[Scan]` and `[Module]` scenarios.
 - Tests assert with aweXpect (`await That(...)`), put the reason in `.Because(...)` instead of a comment and group related cases in a (often nested or partial) class per feature. The test rules are in [design-goals.md](design-goals.md#tests).
 
 ## Public API snapshots
@@ -24,10 +24,9 @@ Commands run from the repository root. On Linux and macOS use `./build.sh` inste
 
 To accept an intentional change, run the tests with the environment variable `AWEXPECT_ACCEPT_SNAPSHOTS` set to `all` (PowerShell: `$env:AWEXPECT_ACCEPT_SNAPSHOTS = 'all'; dotnet test --project Tests/Awaiten.Api.Tests`), or run the explicit `AcceptApiChanges` test (`--treenode-filter "/*/*/*/AcceptApiChanges"` or from the IDE), then review and commit the snapshot diff.
 
-## Samples
+## Native AOT
 
-- `Samples/Awaiten.AotSample`: published with native AOT and run. `./build.ps1 AotSample` (needs a platform linker; on Windows the "Desktop development with C++" workload). Manual steps are in its `README.md`.
-- `Samples/Awaiten.WebSample`: an ASP.NET Core app using the MS.DI bridge. `./build.ps1 WebSample` builds it and runs `--smoke`, which drives every endpoint over HTTP.
+- `Tests/Awaiten.AotTests`: published with native AOT and run. `./build.ps1 AotTests` (needs a platform linker; on Windows the "Desktop development with C++" workload). Manual steps are in its `README.md`.
 
 ## Benchmarks
 
@@ -46,7 +45,7 @@ Always run in Release and compare before and after on the same machine.
 - The `README.md` is packed into the NuGet packages; `UpdateReadme` rewrites badges for a release.
 - Code fences in the docs are compiled by `Tests/Awaiten.Docs.Tests`, whose `CodeBlocks_ShouldCompile` test (one per page, in the explicit `Slow` category) runs the generator and the analyzers over every ```` ```csharp ```` block of a page: `dotnet test --project Tests/Awaiten.Docs.Tests -f net10.0 --treenode-filter "/*/*/*/*[Category=Slow]"`. Keep examples that matter at run time covered by `Tests/Awaiten.ExampleTests` too.
   - All blocks of a page compile together in the namespace `Snippets`. A type that only one block declares is shared by the page; a type that several blocks declare (variants of `CoffeeShop`, say) stays local to each block. A block that declares no variant of its own continues the block before it, so its statements see that block's container. Statements become the body of a method, and registration attributes shown without a class are checked on a placeholder class.
-  - `Scaffold/Scaffold.cs` holds the global usings, the coffee-shop types the pages take for granted and a prelude of variables such as `shop` (an `IAwaitenRoot`), `cancellationToken` and `ct`. A page-specific addition goes in `Scaffold/<page>.cs`, for example a container that a page uses without showing it. `Tests/CoffeeShop.Domain/CoffeeShopDomain.cs` is linked in, so its namespace `CoffeeShop` hides a page's `CoffeeShop.Root` when the page declares no container the block can see.
+  - `Scaffold/Scaffold.cs` holds the global usings, the coffee-shop types the pages take for granted and a prelude of variables such as `shop` (an `IAwaitenRoot`), `cancellationToken` and `ct`. A page-specific addition goes in `Scaffold/<page>.cs`, for example a container that a page uses without showing it. `Tests/Support/CoffeeShop.Domain/CoffeeShopDomain.cs` is linked in, so its namespace `CoffeeShop` hides a page's `CoffeeShop.Root` when the page declares no container the block can see.
   - ```` ```csharp no-compile ```` excludes a block. Keep it for fragments that cannot compile, like a list of parameter types, or a scenario that needs a second assembly; anything else should compile.
   - ```` ```csharp expect=AWT101 ```` (or `expect=AWT170,AWT101`) marks a block that shows a mistake: it compiles on its own with the page's unmarked blocks and must report exactly the listed ids, compiler errors included, and nothing else. Its types are never shared with the page.
   - An error points at `Docs/pages/<page>.md(line,column)`. Docusaurus ignores the extra words after the language, so the markers do not show on the site.
@@ -68,12 +67,12 @@ Always run in Release and compare before and after on the same machine.
 | `BenchmarkComment` | Downloads the `Benchmarks-*` artifacts and posts or updates the PR comment: changes in memory, in time and in the time relative to the other containers, compared to the latest run of `main` in the `limited-data.js` on the `benchmarks` branch, followed by the raw results. |
 | `PublishBenchmarkReport` | Appends the results to `data.js` on the `benchmarks` branch. |
 | `DocsData` | Writes the benchmark snapshot and the changelog that the docs site renders to `Docs/site/src/data`. |
-| `AotSample`, `WebSample` | See Samples. |
+| `AotTests` | See Native AOT. |
 
 ## CI workflows (`.github/workflows`)
 
-- `ci.yml` (pull requests to `main`): unit tests via `CodeCoverage` on Ubuntu, Windows and macOS, `ApiChecks` and `DocsTests`, the three benchmark classes, `AotSample` (Windows), `WebSample`, a build of the docs site in `Docs/site`, SonarCloud (not for Dependabot or forks) and published test results.
+- `ci.yml` (pull requests to `main`): unit tests via `CodeCoverage` on Ubuntu, Windows and macOS, `ApiChecks` and `DocsTests`, the three benchmark classes, `AotTests` (Windows), a build of the docs site in `Docs/site`, SonarCloud (not for Dependabot or forks) and published test results.
 - `ci-analysis.yml` (after `CI` completes): `BenchmarkComment` on the PR.
-- `build.yml` (push to `main`, `v*` tags, manual): the same jobs plus `Pack`, `PublishBenchmarkReport` on `main`, and on a tag `Push` to nuget.org (gated on the test, sample, analysis and pack jobs), a GitHub release for non-prerelease tags and release comments on the linked issues and PRs. Actions are pinned to commit SHAs here.
+- `build.yml` (push to `main`, `v*` tags, manual): the same jobs plus `Pack`, `PublishBenchmarkReport` on `main`, and on a tag `Push` to nuget.org (gated on the test, AOT, analysis and pack jobs), a GitHub release for non-prerelease tags and release comments on the linked issues and PRs. Actions are pinned to commit SHAs here.
 - `pages.yml` (after a successful `Build` on `main` or a `v*` tag, manual): `DocsData`, builds `Docs/site` and deploys it to GitHub Pages. After a tag it first waits until the release is listed on NuGet, because the install instructions show the latest version.
 - Dependabot updates NuGet packages, actions and the npm packages of `Docs/site` weekly (Thursday night) with a `chore` prefix and ignores `Microsoft.CodeAnalysis*`, which sets the oldest compiler that can load the generator; Mergify squash-merges Dependabot PRs once the unit tests, the API tests and the docs site build pass. Release notes are grouped by label (`.github/release.yml`).

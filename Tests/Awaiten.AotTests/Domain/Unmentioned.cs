@@ -1,4 +1,4 @@
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 /// <summary>
 ///     A type the container never mentions, used to check the bridge's empty-collection answer.
