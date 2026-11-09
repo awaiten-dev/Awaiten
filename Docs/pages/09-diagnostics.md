@@ -290,7 +290,7 @@ root.Resolve<IMilk>("Soy");   // nothing is registered under "Soy"
 
 **Fix:** Register the service under that key, such as `[Singleton<SoyMilk, IMilk>(Key = "Soy")]`, or pass a key a registration declares.
 
-A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task.
+A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task. The bare type of a service with [runtime arguments](./05-resolution/06-runtime-arguments.md) is reported with its factory, such as `Func<string, Cup>`, as the remedy, and an `Owned<T>` shape over a service whose async factory takes a `[RequestingType]` parameter with `Task<T>` or `Func<Task<T>>`, because such a factory has no `Owned<T>` form ([AWT186](#awt186)).
 
 Only a call on the generated `Root` or `Scope` that names a closed type in source is checked. These stay run-time checks:
 

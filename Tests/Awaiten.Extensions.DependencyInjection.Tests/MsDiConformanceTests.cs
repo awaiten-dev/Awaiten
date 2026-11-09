@@ -12,7 +12,7 @@ namespace Awaiten.Extensions.DependencyInjection.Tests;
 ///         The reference suite for a container's MS.DI compatibility is
 ///         <c>Microsoft.Extensions.DependencyInjection.Specification.Tests</c>. It cannot be inherited here for
 ///         two reasons: it is built against xunit v2 (<c>xunit.assert</c>, <c>xunit.extensibility.core</c>) while
-///         the tests of this repository run on TUnit, and — decisively — its contract is
+///         the tests of this repository run on TUnit, and, decisively, its contract is
 ///         <c>CreateServiceProvider(IServiceCollection)</c>, which hands the container the types to register at
 ///         run time. An Awaiten graph is fixed when the generator runs, so no implementation of that method can
 ///         exercise Awaiten.
@@ -168,7 +168,7 @@ public sealed partial class MsDiConformanceTests
 			object? resolved = scope.ServiceProvider.GetService(typeof(IServiceProvider));
 
 			await That(resolved).IsSameAs(scope.ServiceProvider)
-				.Because("a scope's IServiceProvider is the scope itself, not the root — resolving the root would leak scoped state");
+				.Because("a scope's IServiceProvider is the scope itself, not the root, since resolving the root would leak scoped state");
 		}
 	}
 

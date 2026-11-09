@@ -1993,7 +1993,7 @@ public class GeneralTests
 	}
 
 	[Test]
-	public async Task RegisteredSyncKeyedDictionary_SuppressesTheAwaitedViewOnInjection()
+	public async Task RegisteredSyncKeyedDictionary_ServesItsAwaitedViewOnInjection()
 	{
 		GeneratorResult result = Generator.Run("""
 			using Awaiten;
@@ -2016,13 +2016,11 @@ public class GeneralTests
 			}
 			""");
 
-		// A registered synchronous dictionary claims the awaited Task<…> view too (all-or-nothing), so the awaited sibling becomes a plain missing dependency on the unregistered Task<…> type.
-		await That(result.Diagnostics)
-			.Contains("*AWT101*requires 'System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string, MyCode.IChannel>>', which is not registered*").AsWildcard()
-			.Because("a registered synchronous keyed dictionary suppresses the awaited view, mirroring how a registered sync collection shape suppresses Task<C>");
-		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
-		await That(source).DoesNotContain("Task.FromResult<global::System.Collections.Generic.IReadOnlyDictionary<string, global::MyCode.IChannel>>")
-			.Because("no awaited keyed dictionary is synthesized behind the registered synchronous one");
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the awaited view of a registered dictionary is a Task relationship over the registration, as by-type resolution serves it");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+			.Contains("new global::MyCode.Router(global::System.Threading.Tasks.Task.FromResult<global::System.Collections.Generic.IReadOnlyDictionary<string, global::MyCode.IChannel>>(Root.ResolveChannelMap(__s.__root)))")
+			.Because("the task completes with the registered ChannelMap, not a synthesized dictionary of the keyed IChannel registrations");
 	}
 
 	[Test]

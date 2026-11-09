@@ -116,7 +116,7 @@ partial class AwaitenGenerator
 		}
 
 		// ...then moved back to the end: coalescing is first-wins per service, so the explicit registrations and
-		// the closed registrations expanded from them must precede the overridable scan ones — the container's own
+		// the closed registrations expanded from them must precede the overridable scan ones: the container's own
 		// [Scan] matches and a module's self-compiled [GeneratedScanRegistration] matches alike, both IsScan.
 		List<RawRegistration> scanMatches = result.FindAll(registration => registration.IsScan);
 		if (scanMatches.Count > 0)

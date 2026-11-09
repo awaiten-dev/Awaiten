@@ -168,7 +168,6 @@ public sealed partial class TaskRelationshipDispatchTests
 		[Test]
 		[Arguments(typeof(Lazy<Task<Owned<IStore>>>))]
 		[Arguments(typeof(Func<Func<Task<IStore>>>))]
-		[Arguments(typeof(Task<Owned<ILabel>>))]
 		public async Task ResolveOfAnUnservedShape_DoesNotClaimTheServiceNeedsNoAsyncInitialization(Type shape)
 		{
 			await using Shop.Root shop = new();
@@ -192,6 +191,19 @@ public sealed partial class TaskRelationshipDispatchTests
 			await That(beans).IsSameAs(await pantry.ResolveAsync<IReadOnlyList<Plain>>())
 				.Because("the registration suppresses the synthesized collection, so the task is over the registered service");
 			await That(pantry.GetResolvability(typeof(Task<IReadOnlyList<Plain>>), null).Status).IsEqualTo(AwaitenResolvabilityStatus.Resolvable);
+		}
+
+		[Test]
+		public async Task InjectedTaskOfAServiceRegisteredAsACollection_HandsOutTheRegisteredService()
+		{
+			await using Pantry.Root pantry = new();
+
+			Roaster roaster = pantry.Resolve<Roaster>();
+
+			await That(await roaster.Beans).IsSameAs(await pantry.ResolveAsync<IReadOnlyList<Plain>>())
+				.Because("injection serves the Task of the registration, as by-type resolution does");
+			await That(await roaster.Labels).IsSameAs(await pantry.ResolveAsync<IReadOnlyDictionary<string, Plain>>())
+				.Because("a registered dictionary owns its Task too");
 		}
 	}
 
@@ -256,6 +268,24 @@ public sealed partial class TaskRelationshipDispatchTests
 				.Because("a top-level resolve has no requesting consumer");
 			await That((await factory()).RequestingType).IsNull();
 			await That((await lazy.Value).RequestingType).IsNull();
+		}
+
+		[Test]
+		[Arguments(false, typeof(Task<Owned<ILabel>>))]
+		[Arguments(false, typeof(Func<Task<Owned<ILabel>>>))]
+		[Arguments(true, typeof(Task<Owned<ILabel>>))]
+		[Arguments(true, typeof(Func<Task<Owned<ILabel>>>))]
+		public async Task OwnedFormOfAnAsyncRequestingTypeFactory_ThrowsThatItHasNone(bool syncAfterInit, Type shape)
+		{
+			await using Shop.Root shop = new();
+			await using SyncShop.Root syncShop = new();
+			await syncShop.InitializeAsync();
+			IAwaitenRoot root = syncAfterInit ? syncShop : shop;
+
+			await That(root.GetResolvability(shape, null).Status).IsEqualTo(AwaitenResolvabilityStatus.NotRegistered);
+			await That(() => root.Resolve(shape)).Throws<InvalidOperationException>()
+				.WithMessage("No registration for type*'*ILabel' is built by a requesting-type factory, which has no Owned<T> form*Task<T>*").AsWildcard()
+				.Because("the service needs asynchronous initialization, even when SyncAfterInit resolves it synchronously, so the missing Owned form is why the shape is missing");
 		}
 	}
 
@@ -470,14 +500,40 @@ public sealed partial class TaskRelationshipDispatchTests
 		}
 	}
 
+	public sealed class Roaster(Task<IReadOnlyList<Plain>> beans, Task<IReadOnlyDictionary<string, Plain>> labels)
+	{
+		public Task<IReadOnlyList<Plain>> Beans => beans;
+
+		public Task<IReadOnlyDictionary<string, Plain>> Labels => labels;
+	}
+
 	[Container]
 	[Singleton<IReadOnlyList<Plain>>(Factory = nameof(CreatePlainsAsync))]
+	[Singleton<IReadOnlyDictionary<string, Plain>>(Factory = nameof(CreateLabelledPlainsAsync))]
+	[Transient<Roaster>]
 	public static partial class Pantry
 	{
 		private static async Task<IReadOnlyList<Plain>> CreatePlainsAsync()
 		{
 			await Task.Yield();
 			return [new Plain()];
+		}
+
+		private static async Task<IReadOnlyDictionary<string, Plain>> CreateLabelledPlainsAsync()
+		{
+			await Task.Yield();
+			return new Dictionary<string, Plain> { ["house"] = new(), };
+		}
+	}
+
+	[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
+	[Transient<ILabel>(Factory = nameof(CreateLabelAsync))]
+	public static partial class SyncShop
+	{
+		private static async Task<Label> CreateLabelAsync([RequestingType] Type? requestingType)
+		{
+			await Task.Yield();
+			return new Label(requestingType);
 		}
 	}
 

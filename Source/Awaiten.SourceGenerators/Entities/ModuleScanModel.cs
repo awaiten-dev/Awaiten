@@ -7,7 +7,7 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     The equatable model of a <c>[Module]</c> that compiles its own <c>[Scan]</c> or its registrations of
 ///     implementations another assembly cannot construct: the partial class to re-open and the factories to emit
 ///     into it. The generator adds a partial declaration carrying a generated <c>public static</c> factory per scan
-///     match (which <c>new</c>s the — possibly <c>internal</c> — implementation and returns its accessible exposure
+///     match (which <c>new</c>s the possibly <c>internal</c> implementation and returns its accessible exposure
 ///     interface) plus a <c>[GeneratedScanRegistration]</c> referencing that factory. A consuming container reads
 ///     that attribute like a container <c>[Scan]</c> match, so the matches collect and are overridable, as close to
 ///     a container scan as the assembly boundary allows. Each self-compiled registration gets a factory of its own

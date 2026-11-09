@@ -265,6 +265,90 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsTheBareTypeOfAParameterizedServiceWithItsFactory()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+			                                                           using System.Threading;
+			                                                           using System.Threading.Tasks;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IInitializable { Task InitializeAsync(CancellationToken cancellationToken); }
+			                                                           public sealed class Mug { public Mug([Arg] int size, [Arg] string name) { } }
+			                                                           public sealed class Brew : IInitializable
+			                                                           {
+			                                                           	public Brew([Arg] int size) { }
+			                                                           	public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+			                                                           }
+
+			                                                           [Container]
+			                                                           [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+			                                                           [Transient<Mug>]
+			                                                           [Transient<Brew>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Usage
+			                                                           {
+			                                                           	public static void Use()
+			                                                           	{
+			                                                           		using MyContainer.Root root = new();
+			                                                           		root.Resolve<Mug>();
+			                                                           		root.Resolve<Task<Brew>>();
+			                                                           	}
+			                                                           }
+			                                                           """);
+
+			await That(diagnostics).HasCount(2);
+			await That(diagnostics[0]).Contains("*AWT218*'MyCode.Mug' is built from runtime arguments, so resolve its factory 'System.Func<int, string, MyCode.Mug>' instead*").AsWildcard()
+				.Because("the service is registered, but a by-type call cannot pass its runtime arguments");
+			await That(diagnostics[1]).Contains("*AWT218*'MyCode.Brew' is built from runtime arguments, so resolve its factory 'System.Func<int, System.Threading.Tasks.Task<MyCode.Brew>>' instead*").AsWildcard()
+				.Because("the factory of an async-initialized service hands out a task");
+		}
+
+		[Test]
+		[Arguments("")]
+		[Arguments("(AsyncSafety = AsyncSafety.SyncAfterInit)")]
+		public async Task ReportsAnOwnedTaskShapeOfAnAsyncRequestingTypeFactoryWithoutTheTaskShapeRemedy(string options)
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>($$"""
+			                                                             using Awaiten;
+			                                                             using System;
+			                                                             using System.Threading.Tasks;
+
+			                                                             namespace MyCode;
+
+			                                                             public interface ILabel;
+			                                                             public sealed class Label : ILabel;
+
+			                                                             [Container{{options}}]
+			                                                             [Transient<ILabel>(Factory = nameof(CreateLabelAsync))]
+			                                                             public static partial class MyContainer
+			                                                             {
+			                                                             	private static async Task<Label> CreateLabelAsync([RequestingType] Type? requestingType)
+			                                                             	{
+			                                                             		await Task.Yield();
+			                                                             		return new Label();
+			                                                             	}
+			                                                             }
+
+			                                                             public static class Usage
+			                                                             {
+			                                                             	public static void Use()
+			                                                             	{
+			                                                             		using MyContainer.Root root = new();
+			                                                             		root.Resolve<Task<Owned<ILabel>>>();
+			                                                             		root.Resolve<Func<Task<Owned<ILabel>>>>();
+			                                                             	}
+			                                                             }
+			                                                             """);
+
+			await That(diagnostics).HasCount(2);
+			await That(diagnostics.All(diagnostic => diagnostic.Contains("AWT218") && diagnostic.Contains("'MyCode.ILabel' is built by a requesting-type factory, which has no Owned<T> form; resolve it as Task<T> or Func<Task<T>> instead"))).IsTrue()
+				.Because("the service needs asynchronous initialization and has every other Task shape, so the Owned form is what is missing");
+		}
+
+		[Test]
 		public async Task DoesNotReportAnUntypedReceiver()
 		{
 			string[] diagnostics = await Run("""

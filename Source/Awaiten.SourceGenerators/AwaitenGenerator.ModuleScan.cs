@@ -1368,7 +1368,7 @@ partial class AwaitenGenerator
 	///     A deterministic factory method name for one match, stable across library versions: carrying the match's
 	///     simple name for readability, and suffixed with an FNV-1a hash of its fully-qualified name so two same-named
 	///     matches in different namespaces stay
-	///     distinct. The name depends only on the match's own full name — never on scan or discovery order — so
+	///     distinct. The name depends only on the match's own full name, never on scan or discovery order, so
 	///     adding or removing other matches in a later library version does not rename it, and a consumer compiled
 	///     against the older assembly still binds after a drop-in upgrade.
 	/// </summary>

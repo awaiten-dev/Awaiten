@@ -71,7 +71,7 @@ public sealed partial class FeatureDetectionTests
 	];
 
 	/// <summary>
-	///     Registered one implementation per member, all synchronous — the ordinary case, where every synthesized
+	///     Registered one implementation per member, all synchronous: the ordinary case, where every synthesized
 	///     collection shape is available.
 	/// </summary>
 	[Container]
@@ -81,8 +81,8 @@ public sealed partial class FeatureDetectionTests
 
 	/// <summary>
 	///     One synchronous member and one that needs asynchronous initialization. The container then synthesizes no
-	///     synchronous collection shape at all, which the metadata cannot show — see
-	///     <see cref="AcceptedDivergences" />.
+	///     synchronous collection shape at all, which the metadata cannot show (see
+	///     <see cref="AcceptedDivergences" />).
 	/// </summary>
 	[Container]
 	[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
@@ -203,7 +203,7 @@ public sealed partial class FeatureDetectionTests
 
 		/// <summary>
 		///     <c>AsyncSafety.SyncAfterInit</c> makes a warmed async-tainted service synchronously resolvable, and the
-		///     metadata advertises it as synchronous — the one input <c>HasSyncRegistration</c> reads, so
+		///     metadata advertises it as synchronous, the one input <c>HasSyncRegistration</c> reads, so
 		///     the bare type is reported with it.
 		/// </summary>
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
