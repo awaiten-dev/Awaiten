@@ -404,7 +404,7 @@ partial class AwaitenGenerator
 			{
 				if (NamedArgument(attribute, release ? "OnRelease" : "OnActivated") is { } hookName)
 				{
-					Add(HookWrapper(hookName, produced, release, subject, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(), production.Production == ProductionKind.Constructor));
+					Add(HookWrapper(hookName, produced, release, subject, attribute.ApplicationSyntaxReference?.GetSyntax(hidden?.CancellationToken ?? CancellationToken.None).GetLocation(), production.Production == ProductionKind.Constructor));
 				}
 			}
 		}
@@ -934,7 +934,7 @@ partial class AwaitenGenerator
 				else if (built is null && diagnostics is not null && ConstructibleEverywhere(type))
 				{
 					List<DiagnosticInfo> rejections = new();
-					ContributionFactory(type, service, name, context with { Diagnostics = rejections, }, attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+					ContributionFactory(type, service, name, context with { Diagnostics = rejections, }, attribute.ApplicationSyntaxReference?.GetSyntax(hidden?.CancellationToken ?? CancellationToken.None).GetLocation());
 					string?[] reasons = rejections.Select(rejection => SkipReason(rejection, [service.ToDisplayString(FullyQualified),])).ToArray();
 					if (skipped is not null && GrantsInternalsVisibleTo(compilation.Assembly) && reasons.Length > 0 && reasons.All(reason => reason is not null))
 					{
