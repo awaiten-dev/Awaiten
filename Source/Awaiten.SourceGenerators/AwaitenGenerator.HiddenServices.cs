@@ -187,9 +187,9 @@ partial class AwaitenGenerator
 		public bool Declares(INamedTypeSymbol service)
 			=> SymbolEqualityComparer.Default.Equals(Provider(service) ?? Module, Module);
 
-		/// <summary>The fully qualified name of the instance handle of <paramref name="implementation" />.</summary>
-		public string InstanceHandleType(INamedTypeSymbol implementation)
-			=> $"{(InstanceProvider(implementation) ?? Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenInstanceName(implementation)}";
+		/// <summary>The fully qualified name of the instance handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
+		public string InstanceHandleType(INamedTypeSymbol implementation, string? producer = null)
+			=> $"{(InstanceProvider(implementation) ?? Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenInstanceName(implementation, producer)}";
 
 		/// <summary>Whether this module declares the instance handle of <paramref name="implementation" /> (see <see cref="InstanceProvider" />).</summary>
 		public bool DeclaresInstance(INamedTypeSymbol implementation)
@@ -233,6 +233,17 @@ partial class AwaitenGenerator
 				Registrations[module] = ConstructedModuleRegistrations(module, compilation, members: true).ToList();
 			}
 
+			foreach (IGrouping<INamedTypeSymbol, (INamedTypeSymbol Module, ModuleRegistration Registration)> produced in Registrations
+				         .SelectMany(entry => entry.Value.Select(registration => (Module: entry.Key, Registration: registration)))
+				         .GroupBy<(INamedTypeSymbol Module, ModuleRegistration Registration), INamedTypeSymbol>(entry => entry.Registration.Implementation, SymbolEqualityComparer.Default))
+			{
+				if (produced.All(entry => NamesOnlyItsService(entry.Registration))
+				    && produced.Select(entry => $"{entry.Module.ToDisplayString(FullyQualified)}.{entry.Registration.Member}").Distinct(StringComparer.Ordinal).Skip(1).Any())
+				{
+					Producers.Add(produced.Key);
+				}
+			}
+
 			Modules = Registrations.Keys
 				.Where(module => IsExternallyAccessible(module) && ReceivesGeneratedMembers(module))
 				.OrderBy(module => module.ToDisplayString(FullyQualified), StringComparer.Ordinal)
@@ -246,7 +257,7 @@ partial class AwaitenGenerator
 						ServiceProviders[registration.Service] = module;
 					}
 
-					if (!InstanceProviders.ContainsKey(registration.Implementation))
+					if (!InstanceProviders.ContainsKey(registration.Implementation) && !Producers.Contains(registration.Implementation))
 					{
 						InstanceProviders[registration.Implementation] = module;
 					}
@@ -254,7 +265,7 @@ partial class AwaitenGenerator
 
 				foreach (IGrouping<INamedTypeSymbol, ModuleRegistration> group in Registrations[module].GroupBy<ModuleRegistration, INamedTypeSymbol>(registration => registration.Implementation, SymbolEqualityComparer.Default))
 				{
-					if (HandledShape(module, group.Key, HandledTogether(group), compilation))
+					if (!Producers.Contains(group.Key) && HandledShape(module, group.Key, HandledTogether(group), compilation))
 					{
 						if (!HandledBy.TryGetValue(group.Key, out List<INamedTypeSymbol>? handling))
 						{
@@ -307,6 +318,15 @@ partial class AwaitenGenerator
 
 		/// <summary>The modules that build each implementation through a handle on their own account (see <see cref="HandledShape" />).</summary>
 		public Dictionary<INamedTypeSymbol, List<INamedTypeSymbol>> HandledBy { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>
+		///     The services that several <c>Factory</c> or <c>Instance</c> members of the assembly's modules produce, where
+		///     every registration of the type names only its service (see <see cref="NamesOnlyItsService(ModuleRegistration)" />).
+		///     A container in the modules' own assembly keeps each member as an implementation of its own, so each member a
+		///     module builds through a handle gets handles of its own, named after it (see <see cref="HiddenImplementation.Producer" />),
+		///     which no other module shares.
+		/// </summary>
+		public HashSet<INamedTypeSymbol> Producers { get; } = new(SymbolEqualityComparer.Default);
 
 		public static AssemblyModuleIndex Of(Compilation compilation)
 			=> Cache.GetValue(compilation, static created => new AssemblyModuleIndex(created));
@@ -578,6 +598,13 @@ partial class AwaitenGenerator
 
 		public string? Member => Registrations[0].Member;
 
+		/// <summary>
+		///     The member when it is one of several producers of a service that names no implementation (see
+		///     <see cref="AssemblyModuleIndex.Producers" />), which then has a handle, an instance handle and aliases of its
+		///     own, named after it, or <see langword="null" />.
+		/// </summary>
+		public string? Producer { get; init; }
+
 		/// <summary>Whether the implementation is registered under accessible services only.</summary>
 		public bool Shared { get; init; }
 
@@ -633,6 +660,14 @@ partial class AwaitenGenerator
 			? all
 			: all.Where(registration => registration.Production == ProductionKind.Constructor).ToList();
 	}
+
+	/// <summary>
+	///     Whether <paramref name="registration" /> is a <c>Factory</c> or <c>Instance</c> registration that names only its
+	///     service, as a consuming container judges its own (see <see cref="NamesOnlyItsService(RawRegistration, Compilation)" />).
+	/// </summary>
+	private static bool NamesOnlyItsService(ModuleRegistration registration)
+		=> registration is { Production: not ProductionKind.Constructor, Member: not null, }
+		   && SymbolEqualityComparer.Default.Equals(registration.Implementation, registration.Service);
 
 	/// <summary>
 	///     Whether anything the module declares could be built through a handle, in its own module or another: a
@@ -753,18 +788,19 @@ partial class AwaitenGenerator
 
 		HiddenServices hidden = new(module, GrantsInternalsVisibleTo(compilation.Assembly), compilation, buildable, cancellationToken);
 		ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal), hidden);
-		foreach (IGrouping<INamedTypeSymbol, ModuleRegistration> group in hidden.Assembly.RegistrationsOf(module)
-			         .GroupBy<ModuleRegistration, INamedTypeSymbol>(registration => registration.Implementation, SymbolEqualityComparer.Default))
+		foreach ((INamedTypeSymbol implementation, List<ModuleRegistration> registrations, string? producer) in hidden.Assembly.RegistrationsOf(module)
+			         .GroupBy<ModuleRegistration, INamedTypeSymbol>(registration => registration.Implementation, SymbolEqualityComparer.Default)
+			         .SelectMany(group => hidden.Assembly.Producers.Contains(group.Key)
+				         ? group.GroupBy(registration => registration.Member, StringComparer.Ordinal).Select(produced => (group.Key, produced.ToList(), produced.Key))
+				         : [(group.Key, HandledTogether(group), null),]))
 		{
-			INamedTypeSymbol implementation = group.Key;
-			List<ModuleRegistration> registrations = HandledTogether(group);
 			if (!Buildable(module, implementation, registrations, compilation)
 			    || (!HandledShape(module, implementation, registrations, compilation) && !(hidden.SeveralModules && hidden.HandledElsewhere(implementation))))
 			{
 				continue;
 			}
 
-			HiddenImplementation candidate = new(implementation, registrations) { Shared = !registrations.Any(registration => IsHiddenService(registration.Service, module, compilation)), };
+			HiddenImplementation candidate = new(implementation, registrations) { Shared = !registrations.Any(registration => IsHiddenService(registration.Service, module, compilation)), Producer = producer, };
 			hidden.Implementations.Add(candidate);
 			foreach (INamedTypeSymbol service in registrations.Select(registration => registration.Service).Where(service => IsHiddenService(service, module, compilation)))
 			{
@@ -843,7 +879,7 @@ partial class AwaitenGenerator
 		INamedTypeSymbol module = hidden.Module;
 		foreach (HiddenImplementation candidate in hidden.Implementations)
 		{
-			ReportHandledConflicts(candidate.Implementation, module, compilation, diagnostics);
+			ReportHandledConflicts(candidate.Implementation, candidate.Producer, module, compilation, diagnostics);
 		}
 
 		List<AsyncInitializerConvention> conventions = DeclaredAsyncInitializers(module, compilation, null);
@@ -929,7 +965,7 @@ partial class AwaitenGenerator
 			})
 			.ToList();
 
-		IEnumerable<INamedTypeSymbol> instances = built.Select(candidate => candidate.Implementation)
+		IEnumerable<INamedTypeSymbol> instances = built.Where(candidate => candidate.Producer is null).Select(candidate => candidate.Implementation)
 			.Concat(Declared(demand.Built.Keys.Concat(demand.Scanned), hidden.InstanceProvider));
 		foreach (INamedTypeSymbol implementation in instances.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).Where(hidden.DeclaresInstance))
 		{
@@ -942,6 +978,12 @@ partial class AwaitenGenerator
 				wrap || (constructed && traits is { Disposable: false, AsyncDisposable: true, }),
 				wrap || (constructed && traits is { Disposable: true, AsyncDisposable: true, }),
 				wrap));
+		}
+
+		foreach (HiddenImplementation producer in built.Where(candidate => candidate.Producer is not null))
+		{
+			bool wrap = producer.Production == ProductionKind.Factory;
+			handles.Add(new HiddenHandle(HiddenInstanceName(producer.Implementation, producer.Producer), InstanceValueType(producer.Implementation, compilation), wrap, wrap, wrap, wrap));
 		}
 
 		return (factories, handles, aliases, initializers);
@@ -1010,12 +1052,13 @@ partial class AwaitenGenerator
 	///     assembly serves every registration from one instance handle with the lifetime and directives of the first one,
 	///     so it would silently differ instead. An overridable default is left out, since only the importing container
 	///     knows whether it yields. A container of the assembly that imports the module reports the same conflicts at
-	///     the same places, so the module leaves them to it.
+	///     the same places, so the module leaves them to it. Of one of several producers of a service, only the registrations
+	///     of the <paramref name="producer" /> are one instance.
 	/// </summary>
-	private static void ReportHandledConflicts(INamedTypeSymbol implementation, INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void ReportHandledConflicts(INamedTypeSymbol implementation, string? producer, INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		List<ModuleRegistration> registrations = AssemblyModuleIndex.Of(compilation).RegistrationsOf(module)
-			.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && NamedFallback(registration.Attribute) == 0)
+			.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && (producer is null || registration.Member == producer) && NamedFallback(registration.Attribute) == 0)
 			.ToList();
 		if (registrations.Count < 2 || AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
 		{
@@ -1115,7 +1158,7 @@ partial class AwaitenGenerator
 			return null;
 		}
 
-		string handle = hidden.InstanceHandleType(implementation);
+		string handle = hidden.InstanceHandleType(implementation, candidate.Producer);
 		List<RegistrationHook> hooks = new();
 		HashSet<string> seen = new(StringComparer.Ordinal);
 		foreach (ModuleRegistration registration in instance ? [] : candidate.Registrations)
@@ -1128,7 +1171,7 @@ partial class AwaitenGenerator
 					continue;
 				}
 
-				ModuleHookRequest request = new(implementation, hookName, registration.Location, release, HiddenHookName(implementation, release, hookName), subject);
+				ModuleHookRequest request = new(implementation, hookName, registration.Location, release, HiddenHookName(implementation, release, hookName, candidate.Producer), subject);
 				if (ResolveRegistrationHook(request, context) is not { } resolved)
 				{
 					return null;
@@ -1138,7 +1181,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		if (!instance && !TryAddHiddenInitializers(implementation, handle, context, location, subject, initializers, HiddenInitializedType(context.Module, candidate.Production, candidate.Member, implementation, context.Compilation)))
+		if (!instance && !TryAddHiddenInitializers(implementation, handle, context, location, subject, initializers, HiddenInitializedType(context.Module, candidate.Production, candidate.Member, implementation, context.Compilation), candidate.Producer))
 		{
 			return null;
 		}
@@ -1146,7 +1189,7 @@ partial class AwaitenGenerator
 		if (candidate.Production != ProductionKind.Constructor)
 		{
 			return new RegistrationFactory(
-				HiddenFactoryName(implementation),
+				HiddenFactoryName(implementation, candidate.Producer),
 				handle,
 				typeName,
 				parameters,
@@ -1246,7 +1289,8 @@ partial class AwaitenGenerator
 		Location? location,
 		SelfCompiledSubject subject,
 		List<HiddenInitializer> initializers,
-		ITypeSymbol? initialized = null)
+		ITypeSymbol? initialized = null,
+		string? producer = null)
 	{
 		initialized ??= implementation;
 		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(DeclaredAsyncInitializers(context.Module, context.Compilation, null), initialized, convention => IsOfConventionType(initialized, convention.Type)))
@@ -1285,7 +1329,7 @@ partial class AwaitenGenerator
 			}
 
 			initializers.Add(new HiddenInitializer(
-				HiddenInitializerName(implementation, convention),
+				HiddenInitializerName(implementation, convention, producer),
 				handle,
 				convention.Type.ToDisplayString(FullyQualified),
 				convention.Method.Name,
@@ -1550,7 +1594,7 @@ partial class AwaitenGenerator
 
 			string returnType = internalService ? hidden.HandleType(service) : service.ToDisplayString(FullyQualified);
 			string serviceType = service.ToDisplayString(FullyQualified);
-			yield return AliasOf(HiddenAliasName(implementation, service), returnType, hidden.InstanceHandleType(implementation), arguments, handle =>
+			yield return AliasOf(HiddenAliasName(implementation, service, candidate.Producer), returnType, hidden.InstanceHandleType(implementation, candidate.Producer), arguments, handle =>
 			{
 				string value = InstanceValue(implementation, serviceType, compilation, handle);
 				return internalService ? $"new {returnType}({value})" : value;
@@ -1793,28 +1837,35 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     A deterministic name for the instance handle of an implementation, derived from its fully-qualified name only,
-	///     so every module of its assembly and a consuming container agree on it.
+	///     so every module of its assembly and a consuming container agree on it, or for the instance handle of one of
+	///     several <paramref name="producer" /> members of a service (see <see cref="HiddenImplementation.Producer" />).
 	/// </summary>
-	private static string HiddenInstanceName(INamedTypeSymbol implementation)
-		=> $"HiddenInstance_{implementation.Name}_{Fnv1a(implementation.ToDisplayString(FullyQualified)):x8}";
+	private static string HiddenInstanceName(INamedTypeSymbol implementation, string? producer = null)
+		=> $"HiddenInstance_{implementation.Name}_{Fnv1a(HiddenKey(implementation, producer)):x8}";
 
-	/// <summary>A deterministic name for the factory that builds an implementation into its handle.</summary>
-	private static string HiddenFactoryName(INamedTypeSymbol implementation)
-		=> $"HiddenRegistration_{implementation.Name}_{Fnv1a(implementation.ToDisplayString(FullyQualified)):x8}";
+	/// <summary>A deterministic name for the factory that builds an implementation, or one of its <paramref name="producer" /> members, into its handle.</summary>
+	private static string HiddenFactoryName(INamedTypeSymbol implementation, string? producer = null)
+		=> $"HiddenRegistration_{implementation.Name}_{Fnv1a(HiddenKey(implementation, producer)):x8}";
 
-	/// <summary>A deterministic name for the alias that serves <paramref name="service" /> from the handle of <paramref name="implementation" />.</summary>
-	private static string HiddenAliasName(INamedTypeSymbol implementation, INamedTypeSymbol service)
-		=> HiddenAliasName(implementation, service.ToDisplayString(FullyQualified));
+	/// <summary>A deterministic name for the alias that serves <paramref name="service" /> from the handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
+	private static string HiddenAliasName(INamedTypeSymbol implementation, INamedTypeSymbol service, string? producer = null)
+		=> HiddenAliasName(implementation, service.ToDisplayString(FullyQualified), producer);
 
-	/// <inheritdoc cref="HiddenAliasName(INamedTypeSymbol, INamedTypeSymbol)" />
-	private static string HiddenAliasName(INamedTypeSymbol implementation, string service)
-		=> $"Alias_{implementation.Name}_{Fnv1a($"{implementation.ToDisplayString(FullyQualified)}\0{service}"):x8}";
+	/// <inheritdoc cref="HiddenAliasName(INamedTypeSymbol, INamedTypeSymbol, string?)" />
+	private static string HiddenAliasName(INamedTypeSymbol implementation, string service, string? producer = null)
+		=> $"Alias_{implementation.Name}_{Fnv1a($"{HiddenKey(implementation, producer)}\0{service}"):x8}";
 
-	/// <summary>A deterministic name for the wrapper of a hook that takes the handle of <paramref name="implementation" />.</summary>
-	private static string HiddenHookName(INamedTypeSymbol implementation, bool release, string hookName)
-		=> "Hidden" + RegistrationHookWrapperName(implementation, release, hookName);
+	/// <summary>A deterministic name for the wrapper of a hook that takes the handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
+	private static string HiddenHookName(INamedTypeSymbol implementation, bool release, string hookName, string? producer = null)
+		=> producer is null
+			? "Hidden" + RegistrationHookWrapperName(implementation, release, hookName)
+			: "Hidden" + RegistrationHookWrapperName(implementation, release, $"{producer}\0{hookName}");
 
-	/// <summary>A deterministic name for the wrapper that runs <paramref name="convention" /> on the handle of <paramref name="implementation" />.</summary>
-	private static string HiddenInitializerName(INamedTypeSymbol implementation, AsyncInitializerConvention convention)
-		=> $"HiddenInitializer_{implementation.Name}_{Fnv1a($"{implementation.ToDisplayString(FullyQualified)}\0{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Method.Name}"):x8}";
+	/// <summary>A deterministic name for the wrapper that runs <paramref name="convention" /> on the handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
+	private static string HiddenInitializerName(INamedTypeSymbol implementation, AsyncInitializerConvention convention, string? producer = null)
+		=> $"HiddenInitializer_{implementation.Name}_{Fnv1a($"{HiddenKey(implementation, producer)}\0{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Method.Name}"):x8}";
+
+	/// <summary>What the names of the handles of <paramref name="implementation" />, or of its <paramref name="producer" />, are derived from.</summary>
+	private static string HiddenKey(INamedTypeSymbol implementation, string? producer)
+		=> producer is null ? implementation.ToDisplayString(FullyQualified) : $"{implementation.ToDisplayString(FullyQualified)}\0{producer}";
 }

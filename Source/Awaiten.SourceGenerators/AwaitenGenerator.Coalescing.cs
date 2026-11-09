@@ -378,10 +378,12 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Whether <paramref name="registration" /> is a <c>Factory</c> or <c>Instance</c> registration that names only its
 	///     service, which <see cref="AssignMemberIdentities" /> identifies by its member unless another registration names
-	///     the type as its implementation.
+	///     the type as its implementation. A module's generated factory that constructs the implementation (its traits
+	///     are exact, see <see cref="ThroughGeneratedFactory" />) names it, as the constructor it calls does in the
+	///     module's own assembly.
 	/// </summary>
 	private static bool NamesOnlyItsService(RawRegistration registration, Compilation compilation)
-		=> registration is { Production: not ProductionKind.Constructor, IsScan: false, }
+		=> registration is { Production: not ProductionKind.Constructor, IsScan: false, TraitsExact: false, }
 		   && registration.ImplementationType == (registration.ServiceSymbol is { } service ? TypeIdentity(service, compilation) : registration.ServiceType);
 
 	/// <summary>
