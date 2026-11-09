@@ -32,7 +32,17 @@ internal sealed record ModuleScanModel(
 	EquatableArray<MemberWrapper> Wrappers = default,
 	EquatableArray<HiddenHandle> Handles = default,
 	EquatableArray<HiddenAlias> Aliases = default,
-	EquatableArray<HiddenInitializer> Initializers = default);
+	EquatableArray<HiddenInitializer> Initializers = default,
+	EquatableArray<ConventionWrapper> ConventionWrappers = default);
+
+/// <summary>
+///     A generated wrapper that runs one <c>[AsyncInitializer&lt;T&gt;]</c> convention of the module whose type or method
+///     another assembly cannot call: it takes the instance as <c>object</c> and the <see cref="Parameters" />, casts the
+///     instance to <see cref="ConventionType" /> and returns what its <see cref="Method" /> returns. With a
+///     <see cref="SkipReason" />, the module generates no wrapper but the constant <see cref="Name" /> that holds why,
+///     which a consumer that cannot call the convention reports.
+/// </summary>
+internal sealed record ConventionWrapper(string Name, string ConventionType, string Method, string ReturnType, EquatableArray<FactoryParameter> Parameters, string? SkipReason = null);
 
 /// <summary>
 ///     The generated public handle of a service the module registers under an internal type, or the instance handle of

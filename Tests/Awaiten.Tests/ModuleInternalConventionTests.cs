@@ -1,0 +1,73 @@
+using System.Threading;
+using Awaiten.Tests.Support;
+
+namespace Awaiten.Tests;
+
+/// <summary>
+///     Runtime behavior of the internal async initializer conventions of a public module in another assembly: a container
+///     without <c>InternalsVisibleTo</c> runs each of them exactly once per instance through what the module generates.
+/// </summary>
+public sealed partial class ModuleInternalConventionTests
+{
+	[Container]
+	[Import(typeof(InternalConventionModule))]
+	public static partial class ConventionShop;
+
+	[Test]
+	public async Task OnAPublicImplementation_TheConventionsRunOncePerInstanceAfterOnActivated()
+	{
+		using CancellationTokenSource cancellation = new();
+		await using ConventionShop.Root container = new();
+
+		InternalConventionBrewer first = await container.ResolveAsync<InternalConventionBrewer>(cancellation.Token);
+		InternalConventionBrewer second = await container.ResolveAsync<InternalConventionBrewer>(cancellation.Token);
+
+		await That(first.Steps).IsEqualTo(["activated", "warmed", "calibrated",])
+			.Because("the container runs the internal method and the internal interface through the module's wrappers, after the activation hook and in declaration order");
+		await That(second.Steps).IsEqualTo(["activated", "warmed", "calibrated",])
+			.Because("a transient is initialized once per instance");
+		await That(first.Token).IsEqualTo(cancellation.Token)
+			.Because("the wrapper forwards the resolve-time token to the convention");
+		await That(container.GetResolvability<InternalConventionBrewer>().Status).IsEqualTo(AwaitenResolvabilityStatus.AsyncOnly)
+			.Because("the conventions make the brewer async-initialized, though this container cannot see them");
+	}
+
+	[Test]
+	public async Task OnAnInternalImplementationUnderOneService_TheConventionRunsOncePerScope()
+	{
+		await using ConventionShop.Root container = new();
+		await using IAwaitenScope scope = await container.CreateScopeAsync();
+
+		IInternalConventionGrinder first = await scope.ResolveAsync<IInternalConventionGrinder>();
+		IInternalConventionGrinder second = await scope.ResolveAsync<IInternalConventionGrinder>();
+
+		await That(second).IsSameAs(first);
+		await That(first.Device.Steps).IsEqualTo(["warmed",])
+			.Because("the module's factory builds the internal grinder and the container runs the convention through the module's wrapper once");
+	}
+
+	[Test]
+	public async Task OnAnInternalImplementationUnderTwoServices_TheConventionRunsOnceOnTheSharedInstance()
+	{
+		await using ConventionShop.Root container = new();
+
+		IInternalConventionKettle kettle = await container.ResolveAsync<IInternalConventionKettle>();
+		IInternalConventionHeater heater = await container.ResolveAsync<IInternalConventionHeater>();
+
+		await That(heater.Device).IsSameAs(kettle.Device);
+		await That(kettle.Device.Steps).IsEqualTo(["warmed",])
+			.Because("the container runs the internal method through the wrapper of the kettle's handle once");
+	}
+
+	[Test]
+	public async Task OnAScanMatch_TheConventionRunsOnce()
+	{
+		await using ConventionShop.Root container = new();
+
+		await container.InitializeAsync();
+		IInternalConventionPlugin plugin = await container.ResolveAsync<IInternalConventionPlugin>();
+
+		await That(plugin.Device.Steps).IsEqualTo(["warmed",])
+			.Because("InitializeAsync initializes the async singleton once and a later resolve returns it as it is");
+	}
+}

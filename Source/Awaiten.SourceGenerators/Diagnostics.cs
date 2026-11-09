@@ -2195,8 +2195,9 @@ internal static class Diagnostics
 
 	/// <summary>
 	///     An <c>[AsyncInitializer&lt;T&gt;]</c> convention initializes an implementation, but the code that has to call it
-	///     cannot reach its type or its method: a container that runs a module's convention, or, in a
-	///     module's own build, a consumer in another assembly that runs it on a self-compiled implementation.
+	///     cannot reach its type or its method, and no wrapper the module generates runs it instead: a container that runs a
+	///     module's convention, or, in a module's own build, a consumer in another assembly that runs it on an
+	///     implementation the module builds for it.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InaccessibleAsyncInitializer = new(
 		"AWT234",

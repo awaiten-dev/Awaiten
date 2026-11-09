@@ -8,6 +8,7 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     method's <see cref="Parameters" />, classified like those of an asynchronous <c>OnActivated</c> hook (a
 ///     <c>CancellationToken</c> receives the resolve-time token, every other parameter is a graph dependency).
 ///     A <see cref="Wrapper" /> is instead a static method <see cref="Method" /> of <see cref="Type" /> that takes the
-///     instance first: the generated wrapper a module emits to run its convention on the handle of an internal service.
+///     instance first: the generated wrapper a module emits to run its convention on the handle of an internal service,
+///     or on an instance whose convention type or method a container in another assembly cannot call.
 /// </summary>
 internal sealed record AsyncInitializerModel(string Type, string Method, EquatableArray<ParameterModel> Parameters, bool Wrapper = false);

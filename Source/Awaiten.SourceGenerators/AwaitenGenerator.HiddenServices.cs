@@ -1366,8 +1366,9 @@ partial class AwaitenGenerator
 		initialized ??= implementation;
 		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(DeclaredAsyncInitializers(context.Module, context.Compilation, null), initialized, convention => IsOfConventionType(initialized, convention.Type)))
 		{
+			IMethodSymbol method = convention.Method!;
 			List<FactoryParameter> mirrored = new();
-			foreach (IParameterSymbol parameter in convention.Method.Parameters)
+			foreach (IParameterSymbol parameter in method.Parameters)
 			{
 				if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _) is { } mirror)
 				{
@@ -1385,11 +1386,11 @@ partial class AwaitenGenerator
 						Diagnostics.InaccessibleAsyncInitializer,
 						LocationInfo.From(location),
 						new EquatableArray<string>([
-							subject.Subject,
+							$"'{Display(subject.TypeName)}'",
 							Display(convention.Type.ToDisplayString(FullyQualified)),
-							convention.Method.Name,
-							$"its parameter of type '{Display(parameter.Type.ToDisplayString(FullyQualified))}' is not accessible outside the module's assembly, so a consumer in another assembly cannot resolve it",
-							"widen the parameter type's accessibility or register it in the module",
+							convention.Name,
+							$"its parameter '{parameter.Name}' has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public, so a container in another assembly cannot resolve it",
+							"make the parameter type public or register it in the module",
 						])));
 					return false;
 				}
@@ -1403,8 +1404,8 @@ partial class AwaitenGenerator
 				HiddenInitializerName(implementation, convention, producer),
 				handle,
 				convention.Type.ToDisplayString(FullyQualified),
-				convention.Method.Name,
-				convention.Method.ReturnType.ToDisplayString(FullyQualified),
+				convention.Name,
+				method.ReturnType.ToDisplayString(FullyQualified),
 				new EquatableArray<FactoryParameter>(mirrored.ToArray())));
 		}
 
@@ -1967,7 +1968,7 @@ partial class AwaitenGenerator
 
 	/// <summary>A deterministic name for the wrapper that runs <paramref name="convention" /> on the handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
 	private static string HiddenInitializerName(INamedTypeSymbol implementation, AsyncInitializerConvention convention, string? producer = null)
-		=> $"HiddenInitializer_{implementation.Name}_{Fnv1a($"{HiddenKey(implementation, producer)}\0{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Method.Name}"):x8}";
+		=> $"HiddenInitializer_{implementation.Name}_{Fnv1a($"{HiddenKey(implementation, producer)}\0{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Name}"):x8}";
 
 	/// <summary>What the names of the handles of <paramref name="implementation" />, or of its <paramref name="producer" />, are derived from.</summary>
 	private static string HiddenKey(INamedTypeSymbol implementation, string? producer)

@@ -1406,17 +1406,16 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     How a self-compilation diagnostic names the implementation it is about: its fully-qualified
 	///     <see cref="TypeName" />, the <see cref="Subject" /> phrase a message opens with, and the
-	///     <see cref="Remedy" /> that keeps the implementation out of self-compilation. <see cref="Participle" /> describes
-	///     the implementation in a clause after its name, for a message that goes on to say what it is.
+	///     <see cref="Remedy" /> that keeps the implementation out of self-compilation.
 	/// </summary>
-	private readonly record struct SelfCompiledSubject(string TypeName, string Subject, string Remedy, string? Participle = null);
+	private readonly record struct SelfCompiledSubject(string TypeName, string Subject, string Remedy);
 
 	/// <summary>The remedy of AWT197 for a scan match exposed under several interfaces.</summary>
 	private const string ScanSingleExposureRemedy = "narrow the As to one interface or exclude the type from the scan";
 
 	/// <summary>The subject of a self-compilation diagnostic about a module <c>[Scan]</c> match.</summary>
 	private static SelfCompiledSubject ScanSubject(string typeName)
-		=> new(typeName, $"'{Display(typeName)}' matched the module scan", "exclude the type from the scan", "matched by the module scan");
+		=> new(typeName, $"'{Display(typeName)}' matched the module scan", "exclude the type from the scan");
 
 	/// <summary>
 	///     The <c>[Inject]</c>, <c>[Arg]</c> or <c>[FromKey]</c> attribute on a constructor parameter that a
@@ -1449,7 +1448,7 @@ partial class AwaitenGenerator
 			new EquatableArray<string>(initializers.Select(convention => convention.Type.ToDisplayString(FullyQualified)).ToArray()),
 			Implements("global::System.IDisposable"),
 			Implements("global::System.IAsyncDisposable"),
-			new EquatableArray<string>(initializers.Select(convention => convention.Method.Name).ToArray()));
+			new EquatableArray<string>(initializers.Select(convention => convention.Name).ToArray()));
 	}
 
 	/// <summary>

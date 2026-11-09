@@ -5,7 +5,58 @@ public partial class DiagnosticTests
 	public class Awt234InaccessibleAsyncInitializer
 	{
 		[Test]
-		public async Task ReportsAnInternalConventionOfASelfCompiledRegistration()
+		public async Task ReportsAConventionParameterOfAnInternalTypeOnASelfCompiledRegistration()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Threading.Tasks;
+
+			                                       namespace Lib;
+
+			                                       internal sealed class Settings { }
+			                                       internal interface IStartable { Task StartAsync(Settings settings); }
+			                                       public interface ITerminal { }
+			                                       internal sealed class Terminal : ITerminal, IStartable { public Task StartAsync(Settings settings) => Task.CompletedTask; }
+
+			                                       [Module]
+			                                       [AsyncInitializer<IStartable>(nameof(IStartable.StartAsync))]
+			                                       [Singleton<Settings>]
+			                                       [Singleton<Terminal, ITerminal>]
+			                                       public static partial class TerminalModule;
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT234: 'Lib.Terminal' is initialized by the async initializer 'Lib.IStartable.StartAsync', but its parameter 'settings' has the type 'Lib.Settings', which is not public, so the module can generate no wrapper through which a container in another assembly runs it; make the parameter type public")
+				.Because("a consumer in another assembly runs the internal convention through the module's public wrapper, which cannot take the internal parameter");
+		}
+
+		[Test]
+		public async Task ReportsAConventionParameterOfAnInternalTypeOnAScanMatch()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Threading.Tasks;
+
+			                                       namespace Lib;
+
+			                                       internal sealed class Settings { }
+			                                       public abstract class Machine { internal virtual Task StartAsync(Settings settings) => Task.CompletedTask; }
+			                                       public interface IPlugin { }
+			                                       public interface IPrinter { }
+			                                       internal sealed class Printer : Machine, IPlugin, IPrinter { }
+
+			                                       [Module]
+			                                       [AsyncInitializer<Machine>(nameof(Machine.StartAsync))]
+			                                       [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+			                                       public static partial class PrinterModule;
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT234: 'Lib.Printer' is initialized by the async initializer 'Lib.Machine.StartAsync', but its parameter 'settings' has the type 'Lib.Settings', which is not public, so the module can generate no wrapper through which a container in another assembly runs it; make the parameter type public");
+		}
+
+		[Test]
+		public async Task DoesNotReportAnInternalConventionTheModuleWraps()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -23,32 +74,9 @@ public partial class DiagnosticTests
 			                                       public static partial class TerminalModule;
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT234: 'Lib.Terminal', self-compiled from a module registration, is initialized by the async initializer 'Lib.IStartable.StartAsync', but 'Lib.IStartable' is not accessible outside the module's assembly*").AsWildcard()
-				.Because("a consumer in another assembly runs the convention through its type, which it cannot name");
-		}
-
-		[Test]
-		public async Task ReportsAnInternalConventionMethodOfAScanMatch()
-		{
-			GeneratorResult result = Generator.Run("""
-			                                       using Awaiten;
-			                                       using System.Threading.Tasks;
-
-			                                       namespace Lib;
-
-			                                       public abstract class Machine { internal virtual Task StartAsync() => Task.CompletedTask; }
-			                                       public interface IPlugin { }
-			                                       public interface IPrinter { }
-			                                       internal sealed class Printer : Machine, IPlugin, IPrinter { }
-
-			                                       [Module]
-			                                       [AsyncInitializer<Machine>(nameof(Machine.StartAsync))]
-			                                       [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
-			                                       public static partial class PrinterModule;
-			                                       """);
-
-			await That(result.Diagnostics).Contains("*AWT234: 'Lib.Printer', matched by the module scan, is initialized by the async initializer 'Lib.Machine.StartAsync', but the method is not accessible outside the module's assembly*").AsWildcard()
-				.Because("a consumer in another assembly calls the convention's method itself, so it must be public");
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a consumer in another assembly runs the internal convention through the wrapper the module generates");
+			await That(result.Sources["Awaiten.ModuleScan.Lib.TerminalModule.g.cs"]).Contains("Initializer_IStartable_");
 		}
 
 		[Test]
@@ -131,15 +159,49 @@ public partial class DiagnosticTests
 				public static partial class MyContainer;
 				""");
 
-			await That(result.Diagnostics).Contains("*AWT234*Terminal*IStartable.StartAsync*not accessible from the container*").AsWildcard()
-				.Because("the container constructs the public terminal itself but cannot cast it to the internal convention type");
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT234: 'Lib.Terminal' is initialized by the async initializer 'Lib.IStartable.StartAsync', but 'Lib.IStartable' is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.TerminalModule' generated no wrapper for it; make it public, or grant this assembly InternalsVisibleTo in its assembly")
+				.Because("the container constructs the public terminal itself but cannot cast it to the internal convention type, and a module built without the generator carries no wrapper");
+		}
+
+		[Test]
+		public async Task ReportsAnInternalConventionMethodOfABaseContainerInAnotherAssembly()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using Awaiten;
+				using System.Threading.Tasks;
+
+				namespace Lib;
+
+				public sealed class Terminal { internal Task StartAsync() => Task.CompletedTask; }
+
+				[Container]
+				[AsyncInitializer<Terminal>(nameof(Terminal.StartAsync))]
+				[Singleton<Terminal>]
+				public static partial class Shop;
+				""", """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container(Extends = typeof(Lib.Shop))]
+				public static partial class TestShop;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT234: 'Lib.Terminal' is initialized by the async initializer 'Lib.Terminal.StartAsync', but the method is not accessible from the container 'MyCode.TestShop'; make it public, or grant this assembly InternalsVisibleTo in its assembly")
+				.Because("the extending container does not even see the internal method, but it must not leave the inherited convention out silently");
 		}
 
 		[Test]
 		public async Task ASkippedRegistrationNamesTheConventionInAwt231()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
-				AsyncInitializerConventionTests.CrossAssembly.FriendLibrary.Replace("\"TestAssembly\"", "\"SomeFriend\""), """
+				AsyncInitializerConventionTests.CrossAssembly.FriendLibrary
+					.Replace("\"TestAssembly\"", "\"SomeFriend\"")
+					.Replace("Task StartAsync()", "Task StartAsync(Settings settings)")
+					.Replace("public interface ITerminal { }", "public interface ITerminal { }\ninternal sealed class Settings { }")
+					.Replace("[Singleton<Terminal, ITerminal>]", "[Singleton<Settings>]\n[Singleton<Terminal, ITerminal>]"), """
 					using Awaiten;
 					using Lib;
 
