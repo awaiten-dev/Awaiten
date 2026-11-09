@@ -1668,6 +1668,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
         "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
+      },
+      {
+        "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
+        "message": "docs: move the benchmark trend next to the time and hide it on narrow tables (#378)"
       }
     ],
     "labels": [
@@ -1948,7 +1954,8 @@ window.BENCHMARK_DATA = {
       "76006f25",
       "4acf0df5",
       "71bb3c53",
-      "fd3bd790"
+      "fd3bd790",
+      "1ea8f53b"
     ],
     "datasets": [
       {
@@ -2232,7 +2239,8 @@ window.BENCHMARK_DATA = {
           6.249826745263168,
           2.9741418694456416,
           6.20700507114331,
-          5.894198450446129
+          5.894198450446129,
+          5.062600819269816
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2244,6 +2252,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2813,7 +2822,8 @@ window.BENCHMARK_DATA = {
           7.324308746627399,
           3.8766041954358417,
           7.818206855228969,
-          8.3878815472126
+          8.3878815472126,
+          6.987462297081947
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2825,6 +2835,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3394,7 +3405,8 @@ window.BENCHMARK_DATA = {
           134.482116206487,
           64.54421005249023,
           130.06250721613566,
-          107.67774178187052
+          107.67774178187052,
+          87.07520695527394
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3406,6 +3418,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3971,7 +3984,8 @@ window.BENCHMARK_DATA = {
           9.093503376202923,
           4.708898781133549,
           8.885457640886306,
-          8.275738577047983
+          8.275738577047983,
+          6.576782878488302
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3983,6 +3997,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4544,7 +4559,8 @@ window.BENCHMARK_DATA = {
           10.792313404954397,
           6.408759246979441,
           10.929198183119297,
-          11.224516476576145
+          11.224516476576145,
+          8.218172819568561
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4556,6 +4572,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6511,6 +6528,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
         "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
+      },
+      {
+        "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
+        "message": "docs: move the benchmark trend next to the time and hide it on narrow tables (#378)"
       }
     ],
     "labels": [
@@ -6791,7 +6814,8 @@ window.BENCHMARK_DATA = {
       "76006f25",
       "4acf0df5",
       "71bb3c53",
-      "fd3bd790"
+      "fd3bd790",
+      "1ea8f53b"
     ],
     "datasets": [
       {
@@ -7075,7 +7099,8 @@ window.BENCHMARK_DATA = {
           6.78914178105501,
           3.527899812374796,
           6.7333397177549505,
-          6.611179616588813
+          6.611179616588813,
+          5.449599730968475
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7087,6 +7112,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7656,7 +7682,8 @@ window.BENCHMARK_DATA = {
           7.306218456228574,
           3.9024764860669774,
           7.837269032640116,
-          8.377891616026561
+          8.377891616026561,
+          6.4948844359471245
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7668,6 +7695,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8237,7 +8265,8 @@ window.BENCHMARK_DATA = {
           143.6905117670695,
           60.15581340789795,
           114.6818845907847,
-          109.4550149679184
+          109.4550149679184,
+          86.37873775164286
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8249,6 +8278,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8814,7 +8844,8 @@ window.BENCHMARK_DATA = {
           9.118893916790302,
           4.700313194096088,
           8.928069384892781,
-          8.45606922677585
+          8.45606922677585,
+          6.525325658229681
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8826,6 +8857,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9387,7 +9419,8 @@ window.BENCHMARK_DATA = {
           14.045695827557491,
           8.03954952955246,
           14.923674263633215,
-          15.142993927001953
+          15.142993927001953,
+          11.400471327560288
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9399,6 +9432,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11354,6 +11388,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
         "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
+      },
+      {
+        "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
+        "message": "docs: move the benchmark trend next to the time and hide it on narrow tables (#378)"
       }
     ],
     "labels": [
@@ -11634,7 +11674,8 @@ window.BENCHMARK_DATA = {
       "76006f25",
       "4acf0df5",
       "71bb3c53",
-      "fd3bd790"
+      "fd3bd790",
+      "1ea8f53b"
     ],
     "datasets": [
       {
@@ -11918,7 +11959,8 @@ window.BENCHMARK_DATA = {
           20.288839073975883,
           24.213826326529183,
           20.204236698150634,
-          20.376885552491462
+          20.376885552491462,
+          15.453640865428108
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12190,6 +12232,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12499,7 +12542,8 @@ window.BENCHMARK_DATA = {
           1503.264043535505,
           1552.0894171396892,
           1455.3833206176757,
-          1544.639522298177
+          1544.639522298177,
+          1128.2967041560582
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12511,6 +12555,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13080,7 +13125,8 @@ window.BENCHMARK_DATA = {
           29710.02604980469,
           30476.969661458334,
           29481.247850690568,
-          29528.224931989396
+          29528.224931989396,
+          25647.628584798178
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13369,7 +13415,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32478,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13657,7 +13704,8 @@ window.BENCHMARK_DATA = {
           728.503289159139,
           744.338254737854,
           664.2232986858913,
-          732.9072152455648
+          732.9072152455648,
+          590.8100794474284
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13687,6 +13735,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14230,7 +14279,8 @@ window.BENCHMARK_DATA = {
           11989.777310180663,
           12320.058410644531,
           12194.46698325021,
-          11724.33779296875
+          11724.33779296875,
+          8552.611133030483
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14515,6 +14565,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -16197,6 +16248,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
         "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
+      },
+      {
+        "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
+        "message": "docs: move the benchmark trend next to the time and hide it on narrow tables (#378)"
       }
     ],
     "labels": [
@@ -16477,7 +16534,8 @@ window.BENCHMARK_DATA = {
       "76006f25",
       "4acf0df5",
       "71bb3c53",
-      "fd3bd790"
+      "fd3bd790",
+      "1ea8f53b"
     ],
     "datasets": [
       {
@@ -16761,7 +16819,8 @@ window.BENCHMARK_DATA = {
           186.2293701355274,
           208.71895079612733,
           170.43888958295187,
-          184.67231543858847
+          184.67231543858847,
+          116.61137425899506
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17033,6 +17092,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -17342,7 +17402,8 @@ window.BENCHMARK_DATA = {
           14408.019775390625,
           14554.053484990047,
           14274.05211522029,
-          14840.922075398763
+          14840.922075398763,
+          10641.770828833947
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -17354,6 +17415,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17923,7 +17985,8 @@ window.BENCHMARK_DATA = {
           730789.8916341146,
           769525.330501302,
           736359.8449358259,
-          740214.4744140625
+          740214.4744140625,
+          648489.83125
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18212,7 +18275,8 @@ window.BENCHMARK_DATA = {
           741602,
           739195,
           741797,
-          741804
+          741804,
+          742572
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18500,7 +18564,8 @@ window.BENCHMARK_DATA = {
           43463.78264567057,
           45717.060119628906,
           42147.18693190355,
-          43968.168973795575
+          43968.168973795575,
+          37666.859545898435
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18785,7 +18850,8 @@ window.BENCHMARK_DATA = {
           80301,
           80858,
           80303,
-          80305
+          80305,
+          80971
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19073,7 +19139,8 @@ window.BENCHMARK_DATA = {
           367392.1435546875,
           370989.2241861979,
           369640.3630183293,
-          354152.77034505206
+          354152.77034505206,
+          286337.12470703124
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19358,7 +19425,8 @@ window.BENCHMARK_DATA = {
           572995,
           573139,
           572976,
-          573125
+          573125,
+          573075
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21016,6 +21084,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
         "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
+      },
+      {
+        "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
+        "message": "docs: move the benchmark trend next to the time and hide it on narrow tables (#378)"
       }
     ],
     "labels": [
@@ -21292,7 +21366,8 @@ window.BENCHMARK_DATA = {
       "76006f25",
       "4acf0df5",
       "71bb3c53",
-      "fd3bd790"
+      "fd3bd790",
+      "1ea8f53b"
     ],
     "datasets": [
       {
@@ -21572,7 +21647,8 @@ window.BENCHMARK_DATA = {
           454.5157265663147,
           290.82627436092923,
           459.2598951339722,
-          303.7810037136078
+          303.7810037136078,
+          165.43737277984619
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -21607,6 +21683,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -22145,7 +22222,8 @@ window.BENCHMARK_DATA = {
           642.1969882965088,
           455.7620379447937,
           628.1517060597738,
-          661.4443685825055
+          661.4443685825055,
+          394.1065882047017
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -22157,6 +22235,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -22718,7 +22797,8 @@ window.BENCHMARK_DATA = {
           6796.294970376151,
           4808.518183898926,
           6790.755993143717,
-          5243.8683718363445
+          5243.8683718363445,
+          3553.927965927124
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22802,6 +22882,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -23291,7 +23372,8 @@ window.BENCHMARK_DATA = {
           431.0686794598897,
           326.80019071896874,
           403.155294640859,
-          440.30626249313354
+          440.30626249313354,
+          251.3947126865387
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23303,6 +23385,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -23864,7 +23947,8 @@ window.BENCHMARK_DATA = {
           804.8887557347615,
           539.8476467768352,
           738.6730663299561,
-          734.9259516852243
+          734.9259516852243,
+          409.6868533066341
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23876,6 +23960,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
