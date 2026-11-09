@@ -1596,6 +1596,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
         "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
+      },
+      {
+        "sha": "2a7e1b70af20b089668617ce033e0a0cea308c00",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:40:56 2026 \u002B0100",
+        "message": "fix: name why a module of another assembly carries no factory or wrapper for a decorator, an unbuildable dependency or a hook (#364)"
       }
     ],
     "labels": [
@@ -1864,7 +1870,8 @@ window.BENCHMARK_DATA = {
       "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
-      "b6fbf584"
+      "b6fbf584",
+      "2a7e1b70"
     ],
     "datasets": [
       {
@@ -2136,7 +2143,8 @@ window.BENCHMARK_DATA = {
           9.021765273596559,
           8.410147752080645,
           5.6252589122607155,
-          3.1781767984231313
+          3.1781767984231313,
+          2.9940283437569937
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2148,6 +2156,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2693,7 +2702,8 @@ window.BENCHMARK_DATA = {
           7.530216293839308,
           8.009043975671132,
           9.034505256666588,
-          4.165271706346955
+          4.165271706346955,
+          4.0607187430063885
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2705,6 +2715,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3250,7 +3261,8 @@ window.BENCHMARK_DATA = {
           123.99669589996338,
           121.55810548464457,
           105.8507758470682,
-          70.14324264866966
+          70.14324264866966,
+          59.38939729531606
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3262,6 +3274,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3803,7 +3816,8 @@ window.BENCHMARK_DATA = {
           9.537649073771068,
           9.286914279063543,
           9.308832441767057,
-          5.271602862079939
+          5.271602862079939,
+          4.399175313434431
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3815,6 +3829,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4352,7 +4367,8 @@ window.BENCHMARK_DATA = {
           10.928194963683685,
           11.194190442562103,
           10.898004936320442,
-          6.588703354554517
+          6.588703354554517,
+          6.084432356556257
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4364,6 +4380,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6235,6 +6252,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
         "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
+      },
+      {
+        "sha": "2a7e1b70af20b089668617ce033e0a0cea308c00",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:40:56 2026 \u002B0100",
+        "message": "fix: name why a module of another assembly carries no factory or wrapper for a decorator, an unbuildable dependency or a hook (#364)"
       }
     ],
     "labels": [
@@ -6503,7 +6526,8 @@ window.BENCHMARK_DATA = {
       "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
-      "b6fbf584"
+      "b6fbf584",
+      "2a7e1b70"
     ],
     "datasets": [
       {
@@ -6775,7 +6799,8 @@ window.BENCHMARK_DATA = {
           10.021910636470867,
           9.765964990854263,
           6.733922401299844,
-          3.2985996875379766
+          3.2985996875379766,
+          3.351104906698068
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6787,6 +6812,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7332,7 +7358,8 @@ window.BENCHMARK_DATA = {
           7.884757070740064,
           7.872277247054236,
           8.336239863719259,
-          4.218575139343739
+          4.218575139343739,
+          4.16335051965255
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7344,6 +7371,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7889,7 +7917,8 @@ window.BENCHMARK_DATA = {
           121.03836520512898,
           124.5044670899709,
           109.37445321877797,
-          68.02762233293973
+          68.02762233293973,
+          62.19555695851644
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7901,6 +7930,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8442,7 +8472,8 @@ window.BENCHMARK_DATA = {
           9.329074828823407,
           9.321945255994796,
           9.306884950399398,
-          5.146115201392344
+          5.146115201392344,
+          4.686877440661192
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8454,6 +8485,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8991,7 +9023,8 @@ window.BENCHMARK_DATA = {
           14.34063483402133,
           14.758640643954276,
           14.834315475076437,
-          6.530886283942631
+          6.530886283942631,
+          6.21930137849771
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9003,6 +9036,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10874,6 +10908,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
         "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
+      },
+      {
+        "sha": "2a7e1b70af20b089668617ce033e0a0cea308c00",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:40:56 2026 \u002B0100",
+        "message": "fix: name why a module of another assembly carries no factory or wrapper for a decorator, an unbuildable dependency or a hook (#364)"
       }
     ],
     "labels": [
@@ -11142,7 +11182,8 @@ window.BENCHMARK_DATA = {
       "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
-      "b6fbf584"
+      "b6fbf584",
+      "2a7e1b70"
     ],
     "datasets": [
       {
@@ -11414,7 +11455,8 @@ window.BENCHMARK_DATA = {
           24.43364462455114,
           25.794940121968587,
           31.3170676444258,
-          20.189720977629936
+          20.189720977629936,
+          11.18777190844218
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11686,6 +11728,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -11971,7 +12014,8 @@ window.BENCHMARK_DATA = {
           1693.190038172404,
           1698.0383867899577,
           1812.8252599080404,
-          1394.0626440684
+          1394.0626440684,
+          785.212169011434
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11983,6 +12027,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12528,7 +12573,8 @@ window.BENCHMARK_DATA = {
           31144.06512044271,
           31065.75565011161,
           25491.347737630207,
-          28924.994596354165
+          28924.994596354165,
+          17477.29008178711
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12805,7 +12851,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32476,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13081,7 +13128,8 @@ window.BENCHMARK_DATA = {
           786.7764767328898,
           777.4957644144694,
           706.8918061937604,
-          701.4829897085825
+          701.4829897085825,
+          410.3091636657715
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13111,6 +13159,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13630,7 +13679,8 @@ window.BENCHMARK_DATA = {
           12590.531173706055,
           12174.94017791748,
           12648.298657226562,
-          11658.820182213416
+          11658.820182213416,
+          6739.870621744792
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13901,6 +13951,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -15513,6 +15564,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
         "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
+      },
+      {
+        "sha": "2a7e1b70af20b089668617ce033e0a0cea308c00",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:40:56 2026 \u002B0100",
+        "message": "fix: name why a module of another assembly carries no factory or wrapper for a decorator, an unbuildable dependency or a hook (#364)"
       }
     ],
     "labels": [
@@ -15781,7 +15838,8 @@ window.BENCHMARK_DATA = {
       "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
-      "b6fbf584"
+      "b6fbf584",
+      "2a7e1b70"
     ],
     "datasets": [
       {
@@ -16053,7 +16111,8 @@ window.BENCHMARK_DATA = {
           218.12429305712382,
           177.5605443318685,
           406.5752867698669,
-          177.5243011542729
+          177.5243011542729,
+          81.86421142305646
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16325,6 +16384,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -16610,7 +16670,8 @@ window.BENCHMARK_DATA = {
           15574.256378173828,
           16093.015236409505,
           16044.088948567709,
-          14501.666290283203
+          14501.666290283203,
+          7452.948784964426
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16622,6 +16683,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17167,7 +17229,8 @@ window.BENCHMARK_DATA = {
           746658.2487444197,
           736809.2450474331,
           611951.3041666667,
-          709321.6667829241
+          709321.6667829241,
+          432106.91692708334
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17444,7 +17507,8 @@ window.BENCHMARK_DATA = {
           740010,
           736978,
           735938,
-          738518
+          738518,
+          718405
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17720,7 +17784,8 @@ window.BENCHMARK_DATA = {
           46491.65418419471,
           47028.901676432295,
           40833.57213541667,
-          44097.17397460937
+          44097.17397460937,
+          23484.690748948316
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17993,7 +18058,8 @@ window.BENCHMARK_DATA = {
           80640,
           81576,
           79663,
-          80085
+          80085,
+          80349
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18269,7 +18335,8 @@ window.BENCHMARK_DATA = {
           385005.5725911458,
           360908.5953776042,
           348269.4754464286,
-          350246.33283342636
+          350246.33283342636,
+          193755.47859700522
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18542,7 +18609,8 @@ window.BENCHMARK_DATA = {
           573072,
           573058,
           571202,
-          573025
+          573025,
+          573039
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20128,6 +20196,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
         "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
+      },
+      {
+        "sha": "2a7e1b70af20b089668617ce033e0a0cea308c00",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:40:56 2026 \u002B0100",
+        "message": "fix: name why a module of another assembly carries no factory or wrapper for a decorator, an unbuildable dependency or a hook (#364)"
       }
     ],
     "labels": [
@@ -20392,7 +20466,8 @@ window.BENCHMARK_DATA = {
       "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
-      "b6fbf584"
+      "b6fbf584",
+      "2a7e1b70"
     ],
     "datasets": [
       {
@@ -20660,7 +20735,8 @@ window.BENCHMARK_DATA = {
           260.2770937760671,
           217.89570474624634,
           465.88870385487877,
-          154.28339212735494
+          154.28339212735494,
+          270.82263746261594
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -20695,6 +20771,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -21209,7 +21286,8 @@ window.BENCHMARK_DATA = {
           614.2237078984579,
           477.1922259012858,
           618.9872041066487,
-          367.1279403613164
+          367.1279403613164,
+          607.2651880809238
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -21221,6 +21299,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -21758,7 +21837,8 @@ window.BENCHMARK_DATA = {
           6428.4692459106445,
           5226.451495107015,
           6544.357175445557,
-          3227.5620529174803
+          3227.5620529174803,
+          6643.22431400844
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21842,6 +21922,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -22307,7 +22388,8 @@ window.BENCHMARK_DATA = {
           402.44254802068076,
           353.10874707358226,
           415.9029161135356,
-          237.23565520559038
+          237.23565520559038,
+          407.77374127932956
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22319,6 +22401,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -22856,7 +22939,8 @@ window.BENCHMARK_DATA = {
           708.1472159703573,
           553.3421475728353,
           763.7152400970459,
-          365.9220316960261
+          365.9220316960261,
+          734.5950366338094
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22868,6 +22952,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
