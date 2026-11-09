@@ -22,8 +22,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <c>Task&lt;IReadOnlyList&lt;T&gt;&gt;</c> parameter), which the materialized array must be typed as so
 ///     the produced task's result type matches the parameter exactly; for an
 ///     <see cref="DependencyKind.AwaitedKeyedCollection" /> it is the inner dictionary shape
-///     (<c>IReadOnlyDictionary&lt;string, T&gt;</c>), used both to type the produced task and, for suppression, to
-///     recognize a registered synchronous dictionary that claims the awaited view (null for every other kind).
+///     (<c>IReadOnlyDictionary&lt;string, T&gt;</c>), used to type the produced task. For both it also recognizes a
+///     registration of the inner shape, whose <c>Task</c> the parameter then becomes (null for every other kind).
 ///     <c>KeyType</c> is the requested dictionary key type of a keyed collection (the <c>string</c> keyword or a
 ///     fully-qualified enum type), used to synthesize a <c>Dictionary&lt;TKey, T&gt;</c> of the right key type,
 ///     including the empty case where no keyed registration exists to derive it from (null for every other kind).

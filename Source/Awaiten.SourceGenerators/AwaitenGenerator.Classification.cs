@@ -15,7 +15,7 @@ partial class AwaitenGenerator
 	///     sibling is AWT101 rather than a silently synthesized collection that could disagree. A registered
 	///     synchronous shape also claims the <c>IAsyncEnumerable&lt;T&gt;</c> and awaited <c>Task&lt;C&gt;</c>
 	///     views, except the <c>Task</c> of its own type, which is a <c>Task&lt;T&gt;</c> relationship over the
-	///     registration, as by-type resolution serves it; async, awaited and keyed shapes claim only their own.
+	///     registration, as for any other service; async, awaited and keyed shapes claim only their own.
 	///     Shared by the constructor-parameter and <c>[Inject]</c>-property paths.
 	/// </summary>
 	private static ParameterModel SuppressRegisteredCollectionSynthesis(

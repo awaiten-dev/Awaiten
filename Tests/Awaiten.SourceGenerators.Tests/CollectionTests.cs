@@ -981,7 +981,7 @@ public class CollectionTests
 		                                       """);
 
 		await That(result.Diagnostics).IsEmpty()
-			.Because("the Task of the registered shape is a Task relationship over the registration, as by-type resolution serves it");
+			.Because("the Task of the registered shape is a Task relationship over the registration, a completed task as for any other synchronous service");
 		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
 			.Contains("new global::MyCode.Host(global::System.Threading.Tasks.Task.FromResult<global::System.Collections.Generic.IReadOnlyList<global::MyCode.IPlugin>>(Root.ResolveConfig(__s.__root)))")
 			.Because("the task completes with the registered Config, not a synthesized collection of the IPlugin registrations");

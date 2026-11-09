@@ -2017,7 +2017,7 @@ public class GeneralTests
 			""");
 
 		await That(result.Diagnostics).IsEmpty()
-			.Because("the awaited view of a registered dictionary is a Task relationship over the registration, as by-type resolution serves it");
+			.Because("the awaited view of a registered dictionary is a Task relationship over the registration, a completed task as for any other synchronous service");
 		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
 			.Contains("new global::MyCode.Router(global::System.Threading.Tasks.Task.FromResult<global::System.Collections.Generic.IReadOnlyDictionary<string, global::MyCode.IChannel>>(Root.ResolveChannelMap(__s.__root)))")
 			.Because("the task completes with the registered ChannelMap, not a synthesized dictionary of the keyed IChannel registrations");
