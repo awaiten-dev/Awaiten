@@ -102,6 +102,50 @@ public class ModuleHandleSharingTests
 		await That(user.DecoratorDisposed).IsTrue()
 			.Because("the container disposes the decorator link through the handle variant of its disposal");
 	}
+
+	[Test]
+	public async Task FactoryTakingAnInternalServiceReplacedByAnExtendingContainer_NeverRuns()
+	{
+		using ReplacedHandledFactoryContainer.Root container = new();
+
+		await That(container.Resolve<IHandledFactoryClock>()).IsExactly<FakeHandledFactoryClock>()
+			.Because("the extending container's factory replaces the inherited one, although the module calls it through a handle");
+		await That(HandledFactoryCounter.FactoryCalls).IsEqualTo(0);
+		await That(HandledFactoryCounter.TimeSources).IsEqualTo(0)
+			.Because("nothing the container resolved needs the internal service the replaced factory takes");
+	}
+
+	[Test]
+	public async Task FactoryTakingAnInternalServiceBesideTheContainersOwnFactory_LosesTheSingleResolution()
+	{
+		using OwnHandledFactoryContainer.Root container = new();
+
+		await That(container.Resolve<IHandledFactoryClock>()).IsExactly<FakeHandledFactoryClock>()
+			.Because("the container's own factory wins over the module's factory of the same service");
+		await That(HandledFactoryCounter.FactoryCalls).IsEqualTo(0);
+	}
+}
+
+/// <summary>The clock this assembly produces over the factory of <see cref="CrossAssemblyHandledFactoryModule" />.</summary>
+public sealed class FakeHandledFactoryClock : IHandledFactoryClock;
+
+[Container]
+[Import(typeof(CrossAssemblyHandledFactoryModule))]
+public static partial class HandledFactoryContainer;
+
+[Container(Extends = typeof(HandledFactoryContainer))]
+[Singleton<IHandledFactoryClock>(Factory = nameof(CreateFakeClock))]
+public static partial class ReplacedHandledFactoryContainer
+{
+	private static IHandledFactoryClock CreateFakeClock() => new FakeHandledFactoryClock();
+}
+
+[Container]
+[Import(typeof(CrossAssemblyHandledFactoryModule))]
+[Singleton<IHandledFactoryClock>(Factory = nameof(CreateFakeClock))]
+public static partial class OwnHandledFactoryContainer
+{
+	private static IHandledFactoryClock CreateFakeClock() => new FakeHandledFactoryClock();
 }
 
 /// <summary>The clock this assembly registers over the eager default of <see cref="CrossAssemblyOverriddenEagerModule" />.</summary>

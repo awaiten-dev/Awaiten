@@ -360,12 +360,12 @@ partial class AwaitenGenerator
 	private static void AssignMemberIdentities(List<RawRegistration> raw, INamedTypeSymbol containerSymbol, Compilation compilation)
 	{
 		HashSet<string> implementations = new(
-			raw.Where(registration => !NamesOnlyItsService(registration)).Select(registration => registration.ImplementationType),
+			raw.Where(registration => !NamesOnlyItsService(registration, compilation)).Select(registration => registration.ImplementationType),
 			StringComparer.Ordinal);
 		for (int index = 0; index < raw.Count; index++)
 		{
 			RawRegistration registration = raw[index];
-			if (NamesOnlyItsService(registration) && !implementations.Contains(registration.ImplementationType))
+			if (NamesOnlyItsService(registration, compilation) && !implementations.Contains(registration.ImplementationType))
 			{
 				raw[index] = registration with
 				{
@@ -373,11 +373,16 @@ partial class AwaitenGenerator
 				};
 			}
 		}
-
-		bool NamesOnlyItsService(RawRegistration registration)
-			=> registration is { Production: not ProductionKind.Constructor, IsScan: false, }
-			   && registration.ImplementationType == (registration.ServiceSymbol is { } service ? TypeIdentity(service, compilation) : registration.ServiceType);
 	}
+
+	/// <summary>
+	///     Whether <paramref name="registration" /> is a <c>Factory</c> or <c>Instance</c> registration that names only its
+	///     service, which <see cref="AssignMemberIdentities" /> identifies by its member unless another registration names
+	///     the type as its implementation.
+	/// </summary>
+	private static bool NamesOnlyItsService(RawRegistration registration, Compilation compilation)
+		=> registration is { Production: not ProductionKind.Constructor, IsScan: false, }
+		   && registration.ImplementationType == (registration.ServiceSymbol is { } service ? TypeIdentity(service, compilation) : registration.ServiceType);
 
 	/// <summary>
 	///     The marker inside the identity of a type that the compilation does not find by its name (see
