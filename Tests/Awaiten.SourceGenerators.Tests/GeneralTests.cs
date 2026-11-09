@@ -2734,4 +2734,27 @@ public class GeneralTests
 		await That(result.Diagnostics).DoesNotContain("*CS1729*").AsWildcard()
 			.Because("the error shell keeps both Root constructors, so consumer code does not cascade into compile errors");
 	}
+
+	[Test]
+	public async Task BuildingFlagField_DoesNotCollideWithAServiceNamedLikeIt()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public sealed class Reader { }
+		                                       public sealed class ReaderBuilding { }
+
+		                                       [Container]
+		                                       [Singleton<Reader>]
+		                                       [Singleton<ReaderBuilding>]
+		                                       public static partial class MyContainer
+		                                       {
+		                                       }
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the name table reserves the derived 'Building' suffix, so a service named like another service's '_readerBuilding' flag is renamed instead of colliding");
+	}
 }

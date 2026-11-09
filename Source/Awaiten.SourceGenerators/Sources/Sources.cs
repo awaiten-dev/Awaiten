@@ -793,11 +793,15 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits the single cache field of a non-skipped instance: the synchronous cache field (plus its
-	///     wired-completion flag for a deferred instance), or the async memoization field for an async-tainted one.
+	///     Emits the cache fields of a non-skipped instance: its "being built" flag and the synchronous cache field (plus
+	///     its wired-completion flag for a deferred instance), or the async memoization field for an async-tainted one.
 	/// </summary>
 	private static void EmitCacheField(StringBuilder builder, int depth, InstanceModel instance, Names names, int i)
 	{
+		// Read and written only under __gate, which a thread waiting for the build cannot enter, so it needs no
+		// volatile: only the building thread can see it set (see EmitBuildingGuard).
+		Indent(builder, depth).Append("private bool ").Append(names.BuildingField(i)).AppendLine(";");
+
 		// The async cache memoizes the construction-and-initialization Task so it is awaited exactly once; it is
 		// volatile so the lock-free read cannot observe it before its writes are visible.
 		if (instance.IsAsyncTainted)

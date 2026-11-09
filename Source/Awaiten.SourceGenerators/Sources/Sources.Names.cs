@@ -122,6 +122,13 @@ internal static partial class Sources
 		public string WiredField(int index) => _fields[index] + "Wired";
 
 		/// <summary>
+		///     The "being built" flag of a cached instance: <c>_foo -&gt; _fooBuilding</c>. Set under <c>__gate</c> while
+		///     the cache-miss block builds the instance, so a re-entrant resolve on the same thread throws instead of
+		///     building it again.
+		/// </summary>
+		public string BuildingField(int index) => _fields[index] + "Building";
+
+		/// <summary>
 		///     The helper that sets the container-side members of an instance built through an owner's generated factory:
 		///     <c>ResolveFoo -&gt; __AssignFoo</c>, with the double underscore of the other generated names, so it cannot
 		///     collide with a container member the construction expression references by simple name.
@@ -247,18 +254,19 @@ internal static partial class Sources
 
 		/// <summary>
 		///     Reserves a base name together with the derived member names generated off it (the <c>Async</c>,
-		///     <c>AsyncTask</c> and <c>Wired</c> suffixes). The base names alone are not enough: a service type
-		///     named e.g. <c>FooWired</c> would collide with the <c>_fooWired</c> wiring flag of a deferred-member
-		///     service named <c>Foo</c> (CS0102), and likewise <c>FooAsync</c>/<c>FooAsyncTask</c> against the async
-		///     members. Rejecting a name when any of the four is taken keeps every derived name unique in both
-		///     directions.
+		///     <c>AsyncTask</c>, <c>Wired</c> and <c>Building</c> suffixes). The base names alone are not enough: a
+		///     service type named e.g. <c>FooWired</c> would collide with the <c>_fooWired</c> wiring flag of a
+		///     deferred-member service named <c>Foo</c> (CS0102), and likewise <c>FooAsync</c>/<c>FooAsyncTask</c>
+		///     against the async members. Rejecting a name when any of the five is taken keeps every derived name
+		///     unique in both directions.
 		/// </summary>
 		private static bool TryReserve(HashSet<string> used, string name)
 		{
 			string asyncName = name + "Async";
 			string asyncTask = name + "AsyncTask";
 			string wired = name + "Wired";
-			if (used.Contains(name) || used.Contains(asyncName) || used.Contains(asyncTask) || used.Contains(wired))
+			string building = name + "Building";
+			if (used.Contains(name) || used.Contains(asyncName) || used.Contains(asyncTask) || used.Contains(wired) || used.Contains(building))
 			{
 				return false;
 			}
@@ -267,6 +275,7 @@ internal static partial class Sources
 			used.Add(asyncName);
 			used.Add(asyncTask);
 			used.Add(wired);
+			used.Add(building);
 			return true;
 		}
 
