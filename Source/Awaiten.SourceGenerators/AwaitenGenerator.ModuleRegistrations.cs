@@ -1672,6 +1672,13 @@ partial class AwaitenGenerator
 		=> factory + "_FirstProperty";
 
 	/// <summary>
+	///     A deterministic name for the method next to the generated factory <paramref name="factory" /> that returns the
+	///     type the factory builds, which a consumer passes to a <c>[RequestingType]</c> parameter in its stead.
+	/// </summary>
+	internal static string RequestingTypeName(string factory)
+		=> factory + "_RequestingType";
+
+	/// <summary>
 	///     The position of the first parameter of a generated factory that stands for an <c>[Inject]</c> property, which
 	///     a consumer cannot tell from a constructor parameter in metadata, or <see cref="int.MaxValue" /> when it has none.
 	/// </summary>

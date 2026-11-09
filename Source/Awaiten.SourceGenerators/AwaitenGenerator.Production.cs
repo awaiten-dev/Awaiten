@@ -138,6 +138,7 @@ partial class AwaitenGenerator
 		// An implementation hidden in its module is built through the module's factory, which returns its service.
 		bool viaModuleFactory = info.ConstructVia is not null;
 		bool asyncRelease = releaseHook is not null && IsAsyncHookReturn(releaseHook.ReturnType, compilation);
+		string? productionMember = viaModuleFactory ? info.ConstructVia : ProducerCall(info, producer, compilation, context.Modules);
 		return new InstanceModel(
 			info.ImplementationType,
 			info.Symbol.Name,
@@ -147,7 +148,7 @@ partial class AwaitenGenerator
 			disposable,
 			info.Symbol.IsReferenceType,
 			viaModuleFactory ? ProductionKind.Factory : info.Production,
-			viaModuleFactory ? info.ConstructVia : ProducerCall(info, producer, compilation, context.Modules),
+			productionMember,
 			asyncInitializers,
 			IsAsyncFactory: asyncFactory,
 			RuntimeDisposalCheck: runtimeDisposalCheck,
@@ -170,7 +171,8 @@ partial class AwaitenGenerator
 			AsyncReleaseHookName: asyncRelease && releaseHook is { } hook && hook.ContainingType.Name != InternalsClass ? hook.Name : null,
 			Unlisted: info.Unlisted,
 			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics),
-			When: BuildPredicate(info, context));
+			When: BuildPredicate(info, context),
+			RequestingType: GeneratedRequestingType(info, producer, productionMember));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -185,6 +187,35 @@ partial class AwaitenGenerator
 		static bool CouldHideDisposable(ITypeSymbol type)
 			=> type.TypeKind is TypeKind.Interface or TypeKind.TypeParameter
 			   || (type.TypeKind == TypeKind.Class && !type.IsSealed);
+	}
+
+	/// <summary>
+	///     The call of the method that returns the type the generated factory <paramref name="productionMember" /> builds
+	///     (see <see cref="RequestingTypeName" />), for an instance a module or base container builds through a factory
+	///     that returns an accessible type in its stead, or <see langword="null" /> for any other instance, which presents
+	///     its constructed type. A factory generated in the same run always has the method, one read from metadata only
+	///     when its owner was built by a generator that emits it, so an older module keeps the type its factory returns.
+	/// </summary>
+	private static string? GeneratedRequestingType(ImplInfo info, IMethodSymbol producer, string? productionMember)
+	{
+		if (productionMember is null || (info.ConstructVia is null && !IsOwnerFactoryProduced(info)))
+		{
+			return null;
+		}
+
+		bool generated = producer.MethodKind == MethodKind.Constructor
+		                 || (producer.ContainingType.Name == InternalsClass
+		                     && producer.ContainingType.GetMembers(RequestingTypeName(producer.Name)).OfType<IMethodSymbol>().Any());
+		if (!generated)
+		{
+			return null;
+		}
+
+		// A closing's type arguments may name a type in a namespace or type called Internals, so they start at the first '<'.
+		int generic = productionMember.IndexOf('<');
+		return generic < 0
+			? $"{RequestingTypeName(productionMember)}()"
+			: $"{RequestingTypeName(productionMember.Substring(0, generic))}{productionMember.Substring(generic)}()";
 	}
 
 	/// <summary>Whether <paramref name="info" /> is registered by a <c>[Module]</c>.</summary>

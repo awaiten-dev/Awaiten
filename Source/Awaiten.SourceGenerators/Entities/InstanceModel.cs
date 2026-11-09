@@ -47,6 +47,9 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="When" /> is the predicate of a conditional decorator chain link: when it is <see langword="false" />,
 ///     the link returns its inner instance instead of building the decorator, so its resolvers return
 ///     <see cref="ResolverType" />, the decorated service.
+///     <see cref="RequestingType" /> is the call of the method next to a generated factory that returns the type the
+///     factory builds (see <see cref="AwaitenGenerator.RequestingTypeName" />), which its dependencies receive as
+///     their requesting type in place of the accessible type the factory returns.
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -80,7 +83,8 @@ internal sealed record InstanceModel(
 	bool Unlisted = false,
 	bool TracksHandleDisposal = false,
 	bool NullableProduct = false,
-	PredicateModel? When = null)
+	PredicateModel? When = null,
+	string? RequestingType = null)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated
