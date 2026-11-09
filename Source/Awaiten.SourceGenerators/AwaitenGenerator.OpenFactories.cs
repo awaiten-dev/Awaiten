@@ -436,6 +436,8 @@ partial class AwaitenGenerator
 		Compilation compilation = context.Compilation;
 		bool wrappedEverywhere = IsHiddenInModule(definition, context.Module, compilation);
 		ITypeSymbol[] typeParameters = definition.TypeParameters.Cast<ITypeSymbol>().ToArray();
+		const int unificationBudget = 1000;
+		int unificationSteps = 0;
 		foreach (ISymbol member in AccessibleMembers(context.Module, hookName, compilation))
 		{
 			if (IsModuleHookCandidate(member, wrappedEverywhere, context, out IMethodSymbol method)
@@ -457,6 +459,7 @@ partial class AwaitenGenerator
 				return $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' its constraints admit";
 			}
 
+			unificationSteps = 0;
 			foreach (INamedTypeSymbol shape in new[] { definition, }.Concat(BaseTypes(definition)).Concat(definition.AllInterfaces))
 			{
 				foreach (Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings in Unifications(shape, instance, new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default)))
@@ -473,7 +476,8 @@ partial class AwaitenGenerator
 				}
 			}
 
-			return null;
+			// The bindings multiply with each variant type argument, so beyond a budget the overload counts as competing.
+			return unificationSteps > unificationBudget ? $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' it may bind" : null;
 		}
 
 		// A type parameter constrained to reference types against one constrained to value types admits no closing.
@@ -484,9 +488,14 @@ partial class AwaitenGenerator
 
 		// Every way to bind the definition's type parameters in a type it converts to so that it becomes the instance
 		// parameter's type, trying a supertype of a variant type argument beside the plain one, since a binding that unifies
-		// may still fail the final check where another passes.
+		// may still fail the final check where another passes. They are produced lazily, so the first that passes ends the search.
 		IEnumerable<Dictionary<ITypeParameterSymbol, ITypeSymbol>> Unifications(ITypeSymbol pattern, ITypeSymbol target, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
 		{
+			if (++unificationSteps > unificationBudget)
+			{
+				return [];
+			}
+
 			if (pattern is ITypeParameterSymbol parameter && definition.TypeParameters.Contains(parameter, SymbolEqualityComparer.Default))
 			{
 				return Bind(parameter, target, bindings);
@@ -509,8 +518,8 @@ partial class AwaitenGenerator
 				return SymbolEqualityComparer.Default.Equals(pattern, target) ? [bindings,] : [];
 			}
 
-			List<Dictionary<ITypeParameterSymbol, ITypeSymbol>> results = [bindings,];
-			for (int index = 0; index < named.TypeArguments.Length && results.Count > 0; index++)
+			IEnumerable<Dictionary<ITypeParameterSymbol, ITypeSymbol>> results = [bindings,];
+			for (int index = 0; index < named.TypeArguments.Length; index++)
 			{
 				ITypeSymbol argument = named.TypeArguments[index];
 				ITypeSymbol targetArgument = targetNamed.TypeArguments[index];
@@ -520,7 +529,7 @@ partial class AwaitenGenerator
 					VarianceKind.In => new[] { (argument, targetArgument), }.Concat(BaseTypes(targetArgument).Concat(targetArgument.AllInterfaces).Select(supertype => (argument, (ITypeSymbol)supertype))).ToArray(),
 					_ => new[] { (argument, targetArgument), },
 				};
-				results = results.SelectMany(current => attempts.SelectMany(attempt => Unifications(attempt.Pattern, attempt.Target, current))).ToList();
+				results = results.SelectMany(current => attempts.SelectMany(attempt => Unifications(attempt.Pattern, attempt.Target, current)));
 			}
 
 			return results;

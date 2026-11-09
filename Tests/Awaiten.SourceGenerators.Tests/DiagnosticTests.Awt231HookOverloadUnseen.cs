@@ -141,6 +141,55 @@ public partial class DiagnosticTests
 					.IsEqualTo("*AWT231*'Lib.DataModule'*'Lib.Repository<T>' with the OnActivated hook 'Ready', which this container does not run, because*taking 'Lib.Repository<Lib.Order>', that accepts 'Lib.Repository<Lib.Order>' too*give the hook methods distinct names*").AsWildcard()
 					.Because("this assembly does not see the internal overload, so calling the public one could run another overload than the module's assembly would");
 			}
+
+			[Test]
+			[Arguments("internal static void Ready(object repository) { }", "object")]
+			[Arguments("internal static void Ready<T>(IRepository<T> repository) { }", "Lib.IRepository<T>")]
+			public async Task AnInternalOverloadForEveryClosing_IsReportedInAnotherAssembly(string overload, string taking)
+			{
+				string library = Library("public static void Ready<T>(Repository<T> repository) { }\n\n" + overload);
+
+				GeneratorResult own = Generator.Run(SameAssembly(library, Consumer));
+				GeneratorResult result = Run(Reference.ReferenceAssembly, library, Consumer);
+
+				await That(own.Diagnostics).HasCount(2).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT190", StringComparison.Ordinal))
+					.Because("both overloads accept every closing");
+				await That(result.Diagnostics).HasSingle().Which
+					.IsEqualTo($"*AWT231*'Lib.Repository<T>' with the OnActivated hook 'Ready', which this container does not run, because*taking '{taking}', that accepts every closing of 'Lib.Repository<T>' too*").AsWildcard()
+					.Because("this assembly sees only the public overload, which it would call for every closing");
+			}
+
+			[Test]
+			public async Task AnOverloadWithManyVariantBindings_IsCountedWithoutTryingEveryBinding()
+			{
+				string parameters = string.Join(", ", Enumerable.Range(1, 8).Select(index => $"T{index}"));
+				string library = $$"""
+				                   using Awaiten;
+
+				                   namespace Lib;
+
+				                   public interface IVariant<{{string.Join(", ", Enumerable.Range(1, 8).Select(index => $"out A{index}"))}}> { }
+				                   public interface IRepository<{{parameters}}> { }
+				                   public sealed class Repository<{{parameters}}> : IRepository<{{parameters}}>, IVariant<{{string.Join(", ", Enumerable.Repeat("string", 8))}}> { }
+
+				                   [Module]
+				                   [Scoped(typeof(Repository<,,,,,,,>), typeof(IRepository<,,,,,,,>), OnActivated = nameof(Ready))]
+				                   public static partial class DataModule
+				                   {
+				                       public static void Ready<{{parameters}}>(Repository<{{parameters}}> repository) { }
+
+				                       internal static void Ready<{{parameters}}>(IVariant<{{parameters}}> repository) where T1 : struct { }
+				                   }
+				                   """;
+				System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+
+				GeneratorResult result = Generator.Run(library);
+
+				await That(watch.Elapsed).IsLessThan(TimeSpan.FromSeconds(30))
+					.Because("each of the eight variant type arguments binds to any of the supertypes of string, which multiply to far more bindings than can be tried");
+				await That(ModuleSource(result)).Contains("public const string HookSkipped_OnActivated_Repository_").And.Contains("it may bind")
+					.Because("an overload the search cannot decide counts as competing, which keeps another assembly from calling the public one");
+			}
 		}
 
 		public class APublicClosedType

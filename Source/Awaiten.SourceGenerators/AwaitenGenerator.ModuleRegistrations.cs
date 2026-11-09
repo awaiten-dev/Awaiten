@@ -752,6 +752,17 @@ partial class AwaitenGenerator
 			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(definition, hookName, [contribution.Service,], scope);
 			if (matches.Count != 1 || ambiguous.Count > 0)
 			{
+				// Another assembly calls the public overload for every closing, while the module's assembly reports each as AWT190.
+				if (matches.Exists(match => match.DeclaredAccessibility == Accessibility.Public)
+				    && matches.Find(match => match.DeclaredAccessibility != Accessibility.Public) is { } unseen
+				    && skipped.TrueForAll(existing => existing.MarkerName != skippedName))
+				{
+					skipped.Add(new SkippedRegistration(
+						skippedName,
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload that is not public, taking '{Display(unseen.OriginalDefinition.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts every closing of '{Display(definition.ToDisplayString(FullyQualified))}' too, so a container that does not see it would call the wrong overload where a container in the module's assembly reports AWT190",
+						Hook: true));
+				}
+
 				return null;
 			}
 
