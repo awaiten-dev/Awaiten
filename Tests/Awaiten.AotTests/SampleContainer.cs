@@ -1,6 +1,8 @@
-using Awaiten.AotSample.Domain;
+using Awaiten.AotTests.Domain;
+using CoffeeShop;
+using CoffeeShop.Composition;
 
-namespace Awaiten.AotSample;
+namespace Awaiten.AotTests;
 
 [Container]
 [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
@@ -10,4 +12,6 @@ namespace Awaiten.AotSample;
 [Singleton<Warmup>]
 [Scan(typeof(IMessageHandler<>), As = ScanAs.Marker)]
 [Transient<Mediator>]
+[Import(typeof(PaymentModule))]
+[Transient<Barista>]
 public static partial class SampleContainer;

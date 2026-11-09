@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- A single target, not a one-item TargetFrameworks, so the pipeline publishes it without a framework argument. -->
+		<TargetFrameworks />
+		<TargetFramework>net10.0</TargetFramework>
+		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
+		<!-- Proves the no-reflection claim: the whole graph (Awaiten container, a module of another assembly and the
+		     MS.DI relay) must publish with native AOT and run. Trim/AOT analysis is enabled so any reflection use
+		     fails the build. Not a TUnit project: the AotTests target publishes it and fails on a non-zero exit code. -->
+		<PublishAot>true</PublishAot>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<TrimmerSingleWarn>false</TrimmerSingleWarn>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Remove="TUnit.Engine" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Remove="aweXpect" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Awaiten.SourceGenerators\Awaiten.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\Source\Awaiten.Extensions.DependencyInjection\Awaiten.Extensions.DependencyInjection.csproj" />
+		<ProjectReference Include="..\Support\CoffeeShop.Domain\CoffeeShop.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+	</ItemGroup>
+
+</Project>

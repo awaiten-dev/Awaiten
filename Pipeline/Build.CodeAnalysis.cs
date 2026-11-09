@@ -20,7 +20,7 @@ partial class Build
 				.SetProjectKey("awaiten-dev_Awaiten")
 				.AddVSTestReports(TestResultsDirectory / "*.trx")
 				.AddGenericCoveragePaths(TestResultsDirectory / "reports" / "SonarQube.xml")
-				.SetCoverageExclusions("Benchmarks/**,Samples/**")
+				.SetCoverageExclusions("Benchmarks/**,Tests/Awaiten.AotTests/**")
 				.SetPullRequestOrBranchName(GitHubActions, GitVersion)
 				.SetVersion(GitVersion.SemVer)
 				.SetQualityGateWait(GitHubActions?.IsPullRequest == true)

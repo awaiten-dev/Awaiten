@@ -126,8 +126,8 @@ jobs:
                     GithubToken: ${{ secrets.GITHUB_TOKEN }}
                     WorkflowRunId: ${{ github.run_id }}
 
-    aot-sample:
-        name: "AOT sample"
+    aot-tests:
+        name: "AOT tests"
         runs-on: windows-latest
         env:
             DOTNET_NOLOGO: true
@@ -140,25 +140,8 @@ jobs:
                 with:
                     dotnet-version: |
                         10.0.x
-            -   name: Publish and run the native-AOT sample
-                run: ./build.ps1 AotSample
-
-    web-sample:
-        name: "Web sample"
-        runs-on: ubuntu-latest
-        env:
-            DOTNET_NOLOGO: true
-        steps:
-            -   uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-                with:
-                    fetch-depth: 0
-            -   name: Setup .NET SDKs
-                uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
-                with:
-                    dotnet-version: |
-                        10.0.x
-            -   name: Run the web sample's smoke test
-                run: ./build.sh WebSample
+            -   name: Publish and run the native-AOT tests
+                run: ./build.ps1 AotTests
 
     static-code-analysis:
         name: "Static code analysis"
@@ -227,7 +210,7 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         runs-on: macos-latest
         environment: production
-        needs: [ pack, unit-tests, api-tests, aot-sample, web-sample, publish-test-results, static-code-analysis ]
+        needs: [ pack, unit-tests, api-tests, aot-tests, publish-test-results, static-code-analysis ]
         permissions:
             contents: write
             id-token: write

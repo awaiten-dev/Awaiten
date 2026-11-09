@@ -1,4 +1,4 @@
-namespace Awaiten.AotSample.Domain;
+namespace Awaiten.AotTests.Domain;
 
 /// <summary>
 ///     A transient Awaiten service that mixes an Awaiten-owned dependency (<see cref="IClock" />) with a
