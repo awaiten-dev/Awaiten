@@ -1590,6 +1590,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
         "message": "fix: resolve the Task relationship shapes of async and parameterized services by type (#353) (#362)"
+      },
+      {
+        "sha": "b6fbf5843e21ec750aa3ba4b4ed3dc4bb75faa10",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
+        "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
       }
     ],
     "labels": [
@@ -1857,7 +1863,8 @@ window.BENCHMARK_DATA = {
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
-      "f3f5d5f9"
+      "f3f5d5f9",
+      "b6fbf584"
     ],
     "datasets": [
       {
@@ -2128,7 +2135,8 @@ window.BENCHMARK_DATA = {
           5.20149103552103,
           9.021765273596559,
           8.410147752080645,
-          5.6252589122607155
+          5.6252589122607155,
+          3.1781767984231313
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2140,6 +2148,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2683,7 +2692,8 @@ window.BENCHMARK_DATA = {
           4.225872686753671,
           7.530216293839308,
           8.009043975671132,
-          9.034505256666588
+          9.034505256666588,
+          4.165271706346955
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2695,6 +2705,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3238,7 +3249,8 @@ window.BENCHMARK_DATA = {
           61.791328242846895,
           123.99669589996338,
           121.55810548464457,
-          105.8507758470682
+          105.8507758470682,
+          70.14324264866966
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3250,6 +3262,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3789,7 +3802,8 @@ window.BENCHMARK_DATA = {
           5.276136915271099,
           9.537649073771068,
           9.286914279063543,
-          9.308832441767057
+          9.308832441767057,
+          5.271602862079939
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3801,6 +3815,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4336,7 +4351,8 @@ window.BENCHMARK_DATA = {
           6.474353870749473,
           10.928194963683685,
           11.194190442562103,
-          10.898004936320442
+          10.898004936320442,
+          6.588703354554517
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4348,6 +4364,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6212,6 +6229,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
         "message": "fix: resolve the Task relationship shapes of async and parameterized services by type (#353) (#362)"
+      },
+      {
+        "sha": "b6fbf5843e21ec750aa3ba4b4ed3dc4bb75faa10",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
+        "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
       }
     ],
     "labels": [
@@ -6479,7 +6502,8 @@ window.BENCHMARK_DATA = {
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
-      "f3f5d5f9"
+      "f3f5d5f9",
+      "b6fbf584"
     ],
     "datasets": [
       {
@@ -6750,7 +6774,8 @@ window.BENCHMARK_DATA = {
           5.659553093569619,
           10.021910636470867,
           9.765964990854263,
-          6.733922401299844
+          6.733922401299844,
+          3.2985996875379766
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6762,6 +6787,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7305,7 +7331,8 @@ window.BENCHMARK_DATA = {
           4.244569593171279,
           7.884757070740064,
           7.872277247054236,
-          8.336239863719259
+          8.336239863719259,
+          4.218575139343739
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7317,6 +7344,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7860,7 +7888,8 @@ window.BENCHMARK_DATA = {
           69.71168947219849,
           121.03836520512898,
           124.5044670899709,
-          109.37445321877797
+          109.37445321877797,
+          68.02762233293973
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7872,6 +7901,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8411,7 +8441,8 @@ window.BENCHMARK_DATA = {
           5.189187937549183,
           9.329074828823407,
           9.321945255994796,
-          9.306884950399398
+          9.306884950399398,
+          5.146115201392344
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8423,6 +8454,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8958,7 +8990,8 @@ window.BENCHMARK_DATA = {
           6.54805464843909,
           14.34063483402133,
           14.758640643954276,
-          14.834315475076437
+          14.834315475076437,
+          6.530886283942631
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8970,6 +9003,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10834,6 +10868,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
         "message": "fix: resolve the Task relationship shapes of async and parameterized services by type (#353) (#362)"
+      },
+      {
+        "sha": "b6fbf5843e21ec750aa3ba4b4ed3dc4bb75faa10",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
+        "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
       }
     ],
     "labels": [
@@ -11101,7 +11141,8 @@ window.BENCHMARK_DATA = {
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
-      "f3f5d5f9"
+      "f3f5d5f9",
+      "b6fbf584"
     ],
     "datasets": [
       {
@@ -11372,7 +11413,8 @@ window.BENCHMARK_DATA = {
           16.25509641766548,
           24.43364462455114,
           25.794940121968587,
-          31.3170676444258
+          31.3170676444258,
+          20.189720977629936
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11644,6 +11686,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -11927,7 +11970,8 @@ window.BENCHMARK_DATA = {
           1322.9963602338519,
           1693.190038172404,
           1698.0383867899577,
-          1812.8252599080404
+          1812.8252599080404,
+          1394.0626440684
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11939,6 +11983,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12482,7 +12527,8 @@ window.BENCHMARK_DATA = {
           26611.32065993089,
           31144.06512044271,
           31065.75565011161,
-          25491.347737630207
+          25491.347737630207,
+          28924.994596354165
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12758,7 +12804,8 @@ window.BENCHMARK_DATA = {
           32478,
           32482,
           32482,
-          32476
+          32476,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13033,7 +13080,8 @@ window.BENCHMARK_DATA = {
           610.3815039952595,
           786.7764767328898,
           777.4957644144694,
-          706.8918061937604
+          706.8918061937604,
+          701.4829897085825
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13063,6 +13111,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13580,7 +13629,8 @@ window.BENCHMARK_DATA = {
           10830.831926472982,
           12590.531173706055,
           12174.94017791748,
-          12648.298657226562
+          12648.298657226562,
+          11658.820182213416
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13851,6 +13901,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -15456,6 +15507,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
         "message": "fix: resolve the Task relationship shapes of async and parameterized services by type (#353) (#362)"
+      },
+      {
+        "sha": "b6fbf5843e21ec750aa3ba4b4ed3dc4bb75faa10",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
+        "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
       }
     ],
     "labels": [
@@ -15723,7 +15780,8 @@ window.BENCHMARK_DATA = {
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
-      "f3f5d5f9"
+      "f3f5d5f9",
+      "b6fbf584"
     ],
     "datasets": [
       {
@@ -15994,7 +16052,8 @@ window.BENCHMARK_DATA = {
           125.3586114186507,
           218.12429305712382,
           177.5605443318685,
-          406.5752867698669
+          406.5752867698669,
+          177.5243011542729
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16266,6 +16325,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -16549,7 +16609,8 @@ window.BENCHMARK_DATA = {
           10545.585482788087,
           15574.256378173828,
           16093.015236409505,
-          16044.088948567709
+          16044.088948567709,
+          14501.666290283203
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16561,6 +16622,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17104,7 +17166,8 @@ window.BENCHMARK_DATA = {
           623530.4167131697,
           746658.2487444197,
           736809.2450474331,
-          611951.3041666667
+          611951.3041666667,
+          709321.6667829241
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17380,7 +17443,8 @@ window.BENCHMARK_DATA = {
           719052,
           740010,
           736978,
-          735938
+          735938,
+          738518
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17655,7 +17719,8 @@ window.BENCHMARK_DATA = {
           35284.97294514974,
           46491.65418419471,
           47028.901676432295,
-          40833.57213541667
+          40833.57213541667,
+          44097.17397460937
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17927,7 +17992,8 @@ window.BENCHMARK_DATA = {
           80355,
           80640,
           81576,
-          79663
+          79663,
+          80085
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18202,7 +18268,8 @@ window.BENCHMARK_DATA = {
           261212.2841796875,
           385005.5725911458,
           360908.5953776042,
-          348269.4754464286
+          348269.4754464286,
+          350246.33283342636
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18474,7 +18541,8 @@ window.BENCHMARK_DATA = {
           573171,
           573072,
           573058,
-          571202
+          571202,
+          573025
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20054,6 +20122,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
         "message": "fix: resolve the Task relationship shapes of async and parameterized services by type (#353) (#362)"
+      },
+      {
+        "sha": "b6fbf5843e21ec750aa3ba4b4ed3dc4bb75faa10",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 18:01:27 2026 \u002B0100",
+        "message": "fix: share the handle of one of several producers of a class with a container\u0027s registration of that class without an extra AWT241 (#363)"
       }
     ],
     "labels": [
@@ -20317,7 +20391,8 @@ window.BENCHMARK_DATA = {
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
-      "f3f5d5f9"
+      "f3f5d5f9",
+      "b6fbf584"
     ],
     "datasets": [
       {
@@ -20584,7 +20659,8 @@ window.BENCHMARK_DATA = {
           255.60729413032533,
           260.2770937760671,
           217.89570474624634,
-          465.88870385487877
+          465.88870385487877,
+          154.28339212735494
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -20619,6 +20695,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -21131,7 +21208,8 @@ window.BENCHMARK_DATA = {
           565.2388330868313,
           614.2237078984579,
           477.1922259012858,
-          618.9872041066487
+          618.9872041066487,
+          367.1279403613164
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -21143,6 +21221,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -21678,7 +21757,8 @@ window.BENCHMARK_DATA = {
           6120.789250946045,
           6428.4692459106445,
           5226.451495107015,
-          6544.357175445557
+          6544.357175445557,
+          3227.5620529174803
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21762,6 +21842,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -22225,7 +22306,8 @@ window.BENCHMARK_DATA = {
           415.9466773668925,
           402.44254802068076,
           353.10874707358226,
-          415.9029161135356
+          415.9029161135356,
+          237.23565520559038
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22237,6 +22319,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -22772,7 +22855,8 @@ window.BENCHMARK_DATA = {
           642.0628806522915,
           708.1472159703573,
           553.3421475728353,
-          763.7152400970459
+          763.7152400970459,
+          365.9220316960261
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22784,6 +22868,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
