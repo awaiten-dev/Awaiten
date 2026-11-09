@@ -1620,6 +1620,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
         "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
+      },
+      {
+        "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
+        "message": "fix!: keep the generic hook wrapper of an open registration from running the wrong overload in another assembly (#370)"
       }
     ],
     "labels": [
@@ -1892,7 +1898,8 @@ window.BENCHMARK_DATA = {
       "2a7e1b70",
       "c22e6871",
       "464cf015",
-      "a8dc6378"
+      "a8dc6378",
+      "af6814f5"
     ],
     "datasets": [
       {
@@ -2168,7 +2175,8 @@ window.BENCHMARK_DATA = {
           2.9940283437569937,
           3.091545872963392,
           5.146448550316004,
-          5.437558035765376
+          5.437558035765376,
+          6.527111094731551
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2180,6 +2188,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2733,7 +2742,8 @@ window.BENCHMARK_DATA = {
           4.0607187430063885,
           4.091284190437624,
           6.70151378462712,
-          7.297164591153463
+          7.297164591153463,
+          7.325951104362805
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2745,6 +2755,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3298,7 +3309,8 @@ window.BENCHMARK_DATA = {
           59.38939729531606,
           58.70615660349528,
           84.84291051115308,
-          125.2359938621521
+          125.2359938621521,
+          135.20926240285237
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3310,6 +3322,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3859,7 +3872,8 @@ window.BENCHMARK_DATA = {
           4.399175313434431,
           4.831798102458318,
           6.779460614919662,
-          7.377478778362274
+          7.377478778362274,
+          9.093067325651646
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3871,6 +3885,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4416,7 +4431,8 @@ window.BENCHMARK_DATA = {
           6.084432356556257,
           6.074147207232622,
           8.868350263436636,
-          9.617391478802476
+          9.617391478802476,
+          10.989498717280535
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4428,6 +4444,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6327,6 +6344,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
         "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
+      },
+      {
+        "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
+        "message": "fix!: keep the generic hook wrapper of an open registration from running the wrong overload in another assembly (#370)"
       }
     ],
     "labels": [
@@ -6599,7 +6622,8 @@ window.BENCHMARK_DATA = {
       "2a7e1b70",
       "c22e6871",
       "464cf015",
-      "a8dc6378"
+      "a8dc6378",
+      "af6814f5"
     ],
     "datasets": [
       {
@@ -6875,7 +6899,8 @@ window.BENCHMARK_DATA = {
           3.351104906698068,
           3.1616943845791474,
           5.117693428809826,
-          5.635203438145774
+          5.635203438145774,
+          7.132826404912131
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6887,6 +6912,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7440,7 +7466,8 @@ window.BENCHMARK_DATA = {
           4.16335051965255,
           4.073771895697484,
           6.513590522110462,
-          7.117961529890696
+          7.117961529890696,
+          7.305907238806997
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7452,6 +7479,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8005,7 +8033,8 @@ window.BENCHMARK_DATA = {
           62.19555695851644,
           56.42908051808675,
           88.8390486796697,
-          96.24784821271896
+          96.24784821271896,
+          126.19988008907863
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8017,6 +8046,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8566,7 +8596,8 @@ window.BENCHMARK_DATA = {
           4.686877440661192,
           4.867841382644007,
           6.844925430204187,
-          7.1904394168938905
+          7.1904394168938905,
+          9.09549425223044
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8578,6 +8609,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9123,7 +9155,8 @@ window.BENCHMARK_DATA = {
           6.21930137849771,
           7.83459864131042,
           11.69243601922478,
-          12.992012273271879
+          12.992012273271879,
+          14.351332194530046
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9135,6 +9168,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11034,6 +11068,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
         "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
+      },
+      {
+        "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
+        "message": "fix!: keep the generic hook wrapper of an open registration from running the wrong overload in another assembly (#370)"
       }
     ],
     "labels": [
@@ -11306,7 +11346,8 @@ window.BENCHMARK_DATA = {
       "2a7e1b70",
       "c22e6871",
       "464cf015",
-      "a8dc6378"
+      "a8dc6378",
+      "af6814f5"
     ],
     "datasets": [
       {
@@ -11582,7 +11623,8 @@ window.BENCHMARK_DATA = {
           11.18777190844218,
           10.863310586128916,
           19.8530861054148,
-          20.21032026410103
+          20.21032026410103,
+          28.363061809539794
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11854,6 +11896,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12147,7 +12190,8 @@ window.BENCHMARK_DATA = {
           785.212169011434,
           764.4053814070566,
           1412.088979427631,
-          1466.0034839630127
+          1466.0034839630127,
+          1776.1530934651694
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12159,6 +12203,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12712,7 +12757,8 @@ window.BENCHMARK_DATA = {
           17477.29008178711,
           17690.463463919503,
           28664.417978140023,
-          29745.690598707934
+          29745.690598707934,
+          31426.48087855748
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12992,6 +13038,7 @@ window.BENCHMARK_DATA = {
           32482,
           32477,
           32477,
+          32482,
           32482,
           32482
         ],
@@ -13273,7 +13320,8 @@ window.BENCHMARK_DATA = {
           410.3091636657715,
           398.0455641746521,
           785.4260772069296,
-          713.8057792027791
+          713.8057792027791,
+          785.2916119893392
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13303,6 +13351,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13830,7 +13879,8 @@ window.BENCHMARK_DATA = {
           6739.870621744792,
           6899.94153213501,
           11746.541063748873,
-          11618.4874613444
+          11618.4874613444,
+          13099.605563572475
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14107,7 +14157,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15741,6 +15792,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
         "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
+      },
+      {
+        "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
+        "message": "fix!: keep the generic hook wrapper of an open registration from running the wrong overload in another assembly (#370)"
       }
     ],
     "labels": [
@@ -16013,7 +16070,8 @@ window.BENCHMARK_DATA = {
       "2a7e1b70",
       "c22e6871",
       "464cf015",
-      "a8dc6378"
+      "a8dc6378",
+      "af6814f5"
     ],
     "datasets": [
       {
@@ -16289,7 +16347,8 @@ window.BENCHMARK_DATA = {
           81.86421142305646,
           80.83628448645274,
           203.4926332950592,
-          186.69636693000794
+          186.69636693000794,
+          270.7339647928874
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16561,6 +16620,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -16854,7 +16914,8 @@ window.BENCHMARK_DATA = {
           7452.948784964426,
           7385.233759053548,
           14404.613651529948,
-          14457.201711382184
+          14457.201711382184,
+          16981.940146891277
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16866,6 +16927,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -17419,7 +17481,8 @@ window.BENCHMARK_DATA = {
           432106.91692708334,
           428498.51201171876,
           710195.1243024553,
-          724859.0543387277
+          724859.0543387277,
+          803447.8815755208
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17700,7 +17763,8 @@ window.BENCHMARK_DATA = {
           718405,
           719034,
           738521,
-          740462
+          740462,
+          740994
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17980,7 +18044,8 @@ window.BENCHMARK_DATA = {
           23484.690748948316,
           24367.236414982723,
           44030.050986153736,
-          44145.53891194661
+          44145.53891194661,
+          47610.412418619795
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18257,7 +18322,8 @@ window.BENCHMARK_DATA = {
           80349,
           80961,
           80082,
-          80012
+          80012,
+          80779
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -18537,7 +18603,8 @@ window.BENCHMARK_DATA = {
           193755.47859700522,
           192890.6171875,
           340804.2206655649,
-          375849.54791666666
+          375849.54791666666,
+          407757.76712239586
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18814,7 +18881,8 @@ window.BENCHMARK_DATA = {
           573039,
           573103,
           573089,
-          573027
+          573027,
+          573056
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20424,6 +20492,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
         "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
+      },
+      {
+        "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
+        "message": "fix!: keep the generic hook wrapper of an open registration from running the wrong overload in another assembly (#370)"
       }
     ],
     "labels": [
@@ -20692,7 +20766,8 @@ window.BENCHMARK_DATA = {
       "2a7e1b70",
       "c22e6871",
       "464cf015",
-      "a8dc6378"
+      "a8dc6378",
+      "af6814f5"
     ],
     "datasets": [
       {
@@ -20964,7 +21039,8 @@ window.BENCHMARK_DATA = {
           270.82263746261594,
           462.9290444056193,
           166.4517787013735,
-          220.17193072182792
+          220.17193072182792,
+          172.43724274635315
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -20999,6 +21075,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -21521,7 +21598,8 @@ window.BENCHMARK_DATA = {
           607.2651880809238,
           629.8939990361531,
           387.6872832775116,
-          455.777627547582
+          455.777627547582,
+          401.53917558376605
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -21533,6 +21611,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -22078,7 +22157,8 @@ window.BENCHMARK_DATA = {
           6643.22431400844,
           7064.876173909505,
           3444.4407035827635,
-          4793.718191000132
+          4793.718191000132,
+          3467.2230824061803
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22162,6 +22242,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -22635,7 +22716,8 @@ window.BENCHMARK_DATA = {
           407.77374127932956,
           426.9386099747249,
           253.91504907608032,
-          347.7106599966685
+          347.7106599966685,
+          242.49249636332195
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22647,6 +22729,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -23192,7 +23275,8 @@ window.BENCHMARK_DATA = {
           734.5950366338094,
           757.0640335718791,
           390.3306481043498,
-          568.0868235270183
+          568.0868235270183,
+          396.41191104253136
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23204,6 +23288,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
