@@ -282,6 +282,165 @@ public class ModuleScanInstanceHandleTests
 		}
 	}
 
+	public class AContainerScanOfAPublicMatch
+	{
+		private static string PublicLibrary(string scans, string? friend = null)
+			=> Library(friend, scans).Replace("internal sealed class Roaster", "public sealed class Roaster");
+
+		private static string Container(string scan, string ns) => $$"""
+			using Awaiten;
+			using Lib;
+
+			namespace {{ns}};
+
+			public sealed class SystemClock : IClock { }
+
+			[Container]
+			[Import(typeof(PluginModule))]
+			[Singleton<SystemClock, IClock>]
+			{{scan}}
+			public static partial class MyContainer
+			{
+			    private static void Hook(Roaster roaster) { }
+			}
+			""";
+
+		private static (GeneratorResult SameAssembly, GeneratorResult Friend, GeneratorResult External, GeneratorResult Reference) RunEverywhere(string scans, string scan)
+			=> (Generator.Run(PublicLibrary(scans) + Container(scan, "Lib").Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace Lib;", "")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary(scans, "TestAssembly"), Container(scan, "MyCode")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary(scans), Container(scan, "MyCode")),
+				Generator.RunWithGeneratedReferenceAssembly(PublicLibrary(scans), Container(scan, "MyCode")));
+
+		private const string Scans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]";
+
+		[Test]
+		public async Task WithADifferentLifetime_ReportsAwt142AsInTheModulesAssembly()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult friend, GeneratorResult external, GeneratorResult reference) = RunEverywhere(
+				Scans,
+				"[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, Lifetime = Lifetime.Transient)]");
+
+			foreach (GeneratorResult result in new[] { sameAssembly, friend, external, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*warning AWT142: 'Lib.Roaster' is matched by scans with conflicting lifetimes (Transient and Singleton); the first scan's Transient is used").AsWildcard()
+					.Because("the container's own scan precedes the module's, so its lifetime wins in every assembly");
+			}
+
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("AwaitenRegistration(typeof(global::Lib.IRoaster), global::Awaiten.Lifetime.Transient,")
+				.And.Contains("Alias_Roaster_")
+				.Because("the module's handle takes the lifetime of the container's scan, which shares the handle's instance");
+		}
+
+		[Test]
+		public async Task WithAHook_ReportsAwt241OnlyInAnExternalContainer()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult friend, GeneratorResult external, GeneratorResult reference) = RunEverywhere(
+				Scans,
+				"[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, Lifetime = Lifetime.Singleton, OnActivated = nameof(Hook))]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { external, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*error AWT241: 'Lib.Roaster' is built through a generated handle of the imported module 'Lib.PluginModule'*it sets OnActivated, which the handle cannot apply*").AsWildcard()
+					.Because("the handle runs only the hooks its module generated wrappers for, so it cannot run the container's hook on the instance it builds");
+			}
+		}
+
+		[Test]
+		public async Task WithTheSameLifetime_KeepsTheModulesHook()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult friend, GeneratorResult external, GeneratorResult reference) = RunEverywhere(
+				Scans.Replace("Lifetime.Singleton)]", "Lifetime.Singleton, OnActivated = nameof(Activate))]"),
+				"[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, Lifetime = Lifetime.Singleton)]");
+
+			await That(sameAssembly.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty();
+			await That(reference.Diagnostics).IsEmpty();
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Lib.PluginModule.Internals.ScanHook_OnActivated_Roaster_")
+				.Because("the container's scan sets no hook, so the module's hook still runs on the shared instance, as in the module's assembly");
+		}
+	}
+
+	public class AMatchOfAnotherModuleOverTheHandle
+	{
+		private static string Library(string marker, string options) => $$"""
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IPlugin { }
+			public interface IRoaster { }
+			public interface IBrewer { }
+			public sealed class Roaster : IPlugin, IRoaster, IBrewer { }
+
+			[Module]
+			[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+			public static partial class FirstModule;
+
+			[Module]
+			[Scan<{{marker}}>(As = ScanAs.Marker{{options}})]
+			public static partial class SecondModule
+			{
+			    internal static void Hook(Roaster roaster) { }
+			}
+
+			""";
+
+		private static string Container(bool secondFirst) => $$"""
+			[Container]
+			[Import(typeof({{(secondFirst ? "SecondModule" : "FirstModule")}}))]
+			[Import(typeof({{(secondFirst ? "FirstModule" : "SecondModule")}}))]
+			public static partial class MyContainer;
+			""";
+
+		private static (GeneratorResult SameAssembly, GeneratorResult External, GeneratorResult Reference) RunEverywhere(string marker, string options, bool secondFirst)
+			=> (Generator.Run(Library(marker, options) + Container(secondFirst)),
+				Generator.RunWithGeneratedReferencedAssembly(Library(marker, options), "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container(secondFirst)),
+				Generator.RunWithGeneratedReferenceAssembly(Library(marker, options), "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + Container(secondFirst)));
+
+		[Test]
+		[Arguments("IRoaster", false, "Singleton", "Transient")]
+		[Arguments("IRoaster", true, "Transient", "Singleton")]
+		[Arguments("IBrewer", false, "Singleton", "Transient")]
+		[Arguments("IBrewer", true, "Transient", "Singleton")]
+		public async Task WithADifferentLifetime_ReportsAwt142AsInTheModulesAssembly(string marker, bool secondFirst, string first, string second)
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult reference) = RunEverywhere(marker, ", Lifetime = Lifetime.Transient", secondFirst);
+
+			foreach (GeneratorResult result in new[] { sameAssembly, external, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains($"*warning AWT142: 'Lib.Roaster' is matched by scans with conflicting lifetimes ({first} and {second}); the first scan's {first} is used").AsWildcard()
+					.Because("the scan of the module imported first decides the lifetime of the one instance in every assembly");
+			}
+
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains($"AwaitenRegistration(typeof(global::Lib.{marker}), global::Awaiten.Lifetime.{first}")
+				.And.Contains($"AwaitenRegistration(typeof(global::Lib.IPlugin), global::Awaiten.Lifetime.{first}")
+				.Because("the other module's match serves the handle's instance, which takes the first scan's lifetime");
+		}
+
+		[Test]
+		[Arguments("IRoaster")]
+		[Arguments("IBrewer")]
+		public async Task WithAHook_ReportsAwt241OnlyInAnExternalContainer(string marker)
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult reference) = RunEverywhere(marker, ", Lifetime = Lifetime.Singleton, OnActivated = nameof(Hook)", false);
+
+			await That(sameAssembly.Diagnostics).IsEmpty()
+				.Because("in the module's assembly the hooks of both scans run on the one instance");
+			foreach (GeneratorResult result in new[] { external, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*error AWT241: 'Lib.Roaster' is built through a generated handle of the imported module 'Lib.FirstModule'*it sets OnActivated, which the handle cannot apply*").AsWildcard()
+					.Because("the other module's match serves the instance of the handle, which cannot run that module's hook");
+			}
+		}
+	}
+
 	[Test]
 	public async Task AnInternalConvention_RunsThroughItsWrapper()
 	{

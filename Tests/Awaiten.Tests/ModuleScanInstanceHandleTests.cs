@@ -222,6 +222,32 @@ public partial class ModuleScanInstanceHandleTests
 		}
 
 		[Test]
+		public async Task AContainerScanOfAPublicMatch_GivesTheSharedInstanceItsLifetime()
+		{
+			await using ScannedPublicMatchContainer.Root container = new();
+			await container.InitializeAsync();
+
+			IPublicMultiRoaster first;
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				first = scope.Resolve<IPublicMultiRoaster>();
+				await That((object)scope.Resolve<IPublicMultiPlugin>()).IsSameAs(first);
+				await That((object)scope.Resolve<PublicMultiRoaster>()).IsSameAs(first)
+					.Because("the container's scan shares the instance of the module's handle");
+				await That(first.Activations).IsEqualTo(1)
+					.Because("the container's scan sets no hook, so the module's hook still runs once on the instance, as in the module's assembly");
+			}
+
+			await That(first.Disposals).IsEqualTo(1)
+				.Because("the scoped instance is disposed once with its scope");
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				await That((object)scope.Resolve<IPublicMultiPlugin>()).IsNotSameAs(first)
+					.Because("the shared instance takes the scoped lifetime of the container's scan, which precedes the module's singleton scan");
+			}
+		}
+
+		[Test]
 		public async Task AMatchBuiltFromARuntimeArgument_IsBuiltFromTheArgumentOfEitherFactory()
 		{
 			await using ArgumentMultiExposureContainer.Root container = new();
@@ -273,6 +299,11 @@ public partial class ModuleScanInstanceHandleTests
 		public static partial class UndisposedPublicMatchContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
+		[Import(typeof(PublicMultiExposureScanModule))]
+		[Scan<IPublicMultiPlugin>(InAssembliesOf = new[] { typeof(IPublicMultiPlugin) }, Lifetime = Lifetime.Scoped)]
+		public static partial class ScannedPublicMatchContainer;
+
+		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(MultiExposureScanModule))]
 		public static partial class MultiExposureContainer;
 
@@ -319,9 +350,35 @@ public partial class ModuleScanInstanceHandleTests
 			}
 		}
 
+		[Test]
+		public async Task AContainerScanOfTheMatch_GivesTheSharedInstanceItsLifetime()
+		{
+			await using ScannedLocalMatchContainer.Root container = new();
+
+			ILocalRoaster first;
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				first = scope.Resolve<ILocalRoaster>();
+				await That((object)scope.Resolve<ILocalPlugin>()).IsSameAs(first);
+				await That(first.Activations).IsEqualTo(1)
+					.Because("the container's scan sets no hook, so the module's scan contributes its hook");
+			}
+
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				await That((object)scope.Resolve<ILocalPlugin>()).IsNotSameAs(first)
+					.Because("the container's scan precedes the module's, so its scoped lifetime wins");
+			}
+		}
+
 		[Container]
 		[Import(typeof(LocalMultiExposureScanModule))]
 		public static partial class LocalMultiExposureContainer;
+
+		[Container]
+		[Import(typeof(LocalMultiExposureScanModule))]
+		[Scan<ILocalPlugin>(Lifetime = Lifetime.Scoped)]
+		internal static partial class ScannedLocalMatchContainer;
 
 		[Container]
 		[Import(typeof(LocalMultiExposureScanModule))]
