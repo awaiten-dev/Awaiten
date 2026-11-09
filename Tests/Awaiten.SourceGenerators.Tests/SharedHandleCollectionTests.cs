@@ -125,15 +125,17 @@ public class SharedHandleCollectionTests
 		}
 
 		[Test]
-		public async Task AndARegistrationOfAnExtendingContainer_IsOneCollectionMember()
+		[Arguments(ContainerScan)]
+		[Arguments("[Singleton<Roaster, IPlugin>]")]
+		public async Task AndARegistrationOfAnExtendingContainer_IsOneCollectionMember(string registration)
 		{
-			string container = """
+			string container = $$"""
 				[Container]
 				[Import(typeof(PluginModule))]
 				public static partial class BaseContainer;
 
 				[Container(Extends = typeof(BaseContainer))]
-				[Singleton<Roaster, IPlugin>]
+				{{registration}}
 				public static partial class MyContainer;
 				""";
 
