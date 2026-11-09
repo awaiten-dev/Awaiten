@@ -63,7 +63,7 @@ internal static partial class Sources
 			.Where(instance => instance.When?.Member == predicate.Member)
 			.Select(instance => AwaitenGenerator.Display(instance.SurfaceType))
 			.Distinct());
-		return $"\"Awaiten: the decorator predicate '{AwaitenGenerator.Display(predicate.Member)}' that decides whether to decorate '{services}' was used again while it was being evaluated, because a service it takes resolves '{services}' through a Func or Lazy while it is built; call that Func or Lazy only after the constructor returns, or let the predicate take services that do not need '{services}'.\"";
+		return $"\"Awaiten: the decorator predicate '{AwaitenGenerator.Display(predicate.DeclaredMember)}' that decides whether to decorate '{services}' was used again while it was being evaluated, because a service it takes resolves '{services}' through a Func or Lazy while it is built; call that Func or Lazy only after the constructor returns, or let the predicate take services that do not need '{services}'.\"";
 	}
 
 	/// <summary>

@@ -194,7 +194,8 @@ internal static partial class Sources
 	///     <c>Internals</c> class: an extending container in another assembly reaches it through <c>InternalsVisibleTo</c>,
 	///     and a public class would only add an empty type to a public container's API. The class is public only when it
 	///     holds a record of a type whose <c>[Inject]</c> property another assembly cannot see, which an extending
-	///     container without <c>InternalsVisibleTo</c> reads to report the type instead of building it without the property.
+	///     container without <c>InternalsVisibleTo</c> reads to report the type instead of building it without the property,
+	///     or the public wrapper of an internal decorator predicate, which such a container calls.
 	/// </summary>
 	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties)
 	{
@@ -204,7 +205,7 @@ internal static partial class Sources
 		}
 
 		builder.AppendLine();
-		OpenInternals(builder, outerDepth, hiddenProperties.Length > 0 ? "public" : "internal",
+		OpenInternals(builder, outerDepth, hiddenProperties.Length > 0 || wrappers.Any(wrapper => !wrapper.IsInternal) ? "public" : "internal",
 			"Generated for a container that extends this one: the factories and wrappers it calls. Not intended to be",
 			"used directly.");
 		int depth = outerDepth + 1;
@@ -238,9 +239,18 @@ internal static partial class Sources
 			}
 
 			first = false;
-			EmitMemberWrapper(builder, depth, wrapper, "internal",
-				"Generated for a container that extends this one: forwards to a private member of this container, which the",
-				"extending container cannot call.");
+			if (wrapper.IsInternal)
+			{
+				EmitMemberWrapper(builder, depth, wrapper, "internal",
+					"Generated for a container that extends this one: forwards to a private member of this container, which the",
+					"extending container cannot call.");
+			}
+			else
+			{
+				EmitMemberWrapper(builder, depth, wrapper, "public",
+					"Generated for a container that extends this one: forwards to an internal decorator predicate of this",
+					"container, which an extending container in another assembly cannot call.");
+			}
 		}
 
 		foreach (RecordedFactoryFault fault in faults)

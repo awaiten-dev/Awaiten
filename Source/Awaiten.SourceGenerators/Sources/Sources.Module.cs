@@ -201,6 +201,12 @@ internal static partial class Sources
 					"Generated from a module registration: why no wrapper calls this Factory member. A consuming container",
 					"that cannot call the member reports this reason.");
 			}
+			else if (skipped.Predicate)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module [Decorate]: why no wrapper calls this decorator predicate. An assembly granted",
+					"InternalsVisibleTo calls the predicate itself; a consuming container that cannot reports this reason.");
+			}
 			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,

@@ -32,8 +32,7 @@ partial class AwaitenGenerator
 		List<ISymbol> candidates = owner.GetMembers(name).ToList();
 		if (candidates.Count == 0 && foreign && !own)
 		{
-			ReportInaccessiblePredicate(display, owner, foreign, location, diagnostics);
-			return false;
+			return ThroughWrapper(out predicate);
 		}
 
 		List<ISymbol> usable = candidates.Where(candidate => PredicateShapeProblem(candidate, compilation) is null).ToList();
@@ -53,13 +52,63 @@ partial class AwaitenGenerator
 
 		if (!own && !compilation.IsSymbolAccessibleWithin(usable[0], containerSymbol))
 		{
-			ReportInaccessiblePredicate(display, owner, foreign, location, diagnostics);
-			return false;
+			if (usable[0].DeclaredAccessibility == Accessibility.Private)
+			{
+				ReportInaccessiblePredicate(display, owner, false, location, diagnostics);
+				return false;
+			}
+
+			return ThroughWrapper(out predicate);
 		}
 
 		predicate = new DecoratorPredicate($"{owner.ToDisplayString(FullyQualified)}.{name}", usable[0] as IMethodSymbol, location);
 		return true;
+
+		// Only an owner in another assembly carries the wrapper: one in this assembly generates it in this same run.
+		bool ThroughWrapper(out DecoratorPredicate? wrapped)
+		{
+			wrapped = null;
+			string wrapperName = PredicateWrapperName(name);
+			if (!foreign
+			    || InternalsMembers(owner, wrapperName).FirstOrDefault(member => compilation.IsSymbolAccessibleWithin(member, containerSymbol) && PredicateShapeProblem(member, compilation) is null) is not { } wrapper)
+			{
+				ReportInaccessiblePredicate(display, owner, foreign, location, diagnostics, name);
+				return false;
+			}
+
+			string ownerName = owner.ToDisplayString(FullyQualified);
+			wrapped = new DecoratorPredicate($"{ownerName}.{InInternals(wrapperName)}", wrapper as IMethodSymbol, location, $"{ownerName}.{name}");
+			return true;
+		}
 	}
+
+	/// <summary>
+	///     The predicate the <c>When</c> of <paramref name="attribute" />, a <c>[Decorate]</c> of
+	///     <paramref name="owner" />, names when it is internal, which a public owner wraps for containers in other
+	///     assemblies (see <see cref="PredicateWrapperName" />), or <see langword="null" />. A private predicate gets no
+	///     wrapper: a container in the owner's assembly could not call it either.
+	/// </summary>
+	private static ISymbol? InternalPredicate(AttributeData attribute, INamedTypeSymbol owner, Compilation compilation)
+	{
+		if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
+		    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
+		    || NamedArgument(attribute, "When") is not { } name)
+		{
+			return null;
+		}
+
+		List<ISymbol> usable = owner.GetMembers(name).Where(member => PredicateShapeProblem(member, compilation) is null).ToList();
+		return usable.Count == 1 && usable[0].DeclaredAccessibility == Accessibility.Internal ? usable[0] : null;
+	}
+
+	/// <summary>
+	///     The name of the public wrapper a module or base container generates in its <see cref="InternalsClass" /> for its
+	///     internal predicate <paramref name="name" />, which is unique among its predicates (AWT246).
+	/// </summary>
+	private static string PredicateWrapperName(string name) => "Predicate_" + name;
+
+	/// <summary>The name of the constant that records why a module generated no wrapper for its internal predicate <paramref name="name" />.</summary>
+	private static string PredicateSkippedName(string name) => "PredicateSkipped_" + name;
 
 	/// <summary>
 	///     Why <paramref name="member" /> cannot be a decorator predicate, or <see langword="null" /> when it is a static
@@ -87,29 +136,40 @@ partial class AwaitenGenerator
 			: $"'{member.Name}' returns '{Display(type.ToDisplayString(FullyQualified))}', not bool";
 	}
 
-	/// <summary>Reports AWT247: the predicate is declared on a module or base container the container cannot reach it on.</summary>
-	private static void ReportInaccessiblePredicate(string display, INamedTypeSymbol owner, bool foreign, Location? location, List<DiagnosticInfo> diagnostics)
-		=> diagnostics.Add(new DiagnosticInfo(
+	/// <summary>
+	///     Reports AWT247: the predicate is declared on a module or base container the container cannot reach it on. For an
+	///     owner in another assembly that generated no wrapper for the predicate <paramref name="name" />, the cause names
+	///     why when the owner's metadata tells: a module that cannot receive generated members, or the reason it recorded.
+	/// </summary>
+	private static void ReportInaccessiblePredicate(string display, INamedTypeSymbol owner, bool foreign, Location? location, List<DiagnosticInfo> diagnostics, string? name = null)
+	{
+		string grant = $"grant this assembly InternalsVisibleTo in the {(HasAwaitenAttribute(owner.GetAttributes(), "ContainerAttribute") ? "container" : "module")}'s assembly";
+		string other = $"{DescribePredicateOwner(owner)} is in another assembly, whose non-public members the container cannot call";
+		string? unwrapped = name is null
+			? null
+			: ModuleShapeReason(owner)
+			  ?? InternalsMembers(owner, PredicateSkippedName(name)).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(reason => reason is not null);
+		diagnostics.Add(new DiagnosticInfo(
 			Diagnostics.InaccessibleDecoratorPredicate,
 			LocationInfo.From(location),
 			new EquatableArray<string>([
 				display,
-				foreign
-					? $"{DescribePredicateOwner(owner)} is in another assembly, whose non-public members the container cannot call; make it public"
-					: $"it is private to {DescribePredicateOwner(owner)}; make it internal or public",
+				!foreign ? $"it is private to {DescribePredicateOwner(owner)}; make it internal or public"
+				: unwrapped is not null ? $"{other}, and it generated no public wrapper for it: {unwrapped}; make the predicate and its parameter types public, or {grant}"
+				: $"{other}; make it public, or {grant}",
 			])));
+	}
 
 	/// <summary>
-	///     Reports, in the module's own build, the <c>When</c> predicates of its <c>[Decorate]</c> attributes that a
-	///     container importing it cannot use, so the library that declares the module sees them: one that is unusable
-	///     (AWT246) or private (AWT247), unless a container of its assembly imports the module and reports it itself, and
-	///     one that is not public on a module other assemblies can import (AWT247), which no container of its assembly reports.
+	///     Reports, in the module's own build, the <c>When</c> predicates of its <c>[Decorate]</c> attributes that no
+	///     container importing it can use, so the library that declares the module sees them: one that is unusable (AWT246)
+	///     or private (AWT247), unless a container of its assembly imports the module and reports it itself. An internal
+	///     predicate is not reported: a container in the module's assembly or in a friend calls it, and one in another
+	///     assembly calls the module's wrapper or reports why the module generated none (see <see cref="CollectModuleMemberWrappers" />).
 	/// </summary>
 	private static void ReportModuleDecoratorPredicates(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
-		bool imported = AssemblyModuleIndex.Of(compilation).ImportedByContainer(module);
-		bool exported = IsExternallyAccessible(module);
-		if (imported && !exported)
+		if (AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
 		{
 			return;
 		}
@@ -123,28 +183,11 @@ partial class AwaitenGenerator
 			}
 
 			Location? location = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
-			if (!TryReadDecoratorPredicate(attribute, module, module, compilation, location, imported ? new List<DiagnosticInfo>() : diagnostics, out DecoratorPredicate? predicate)
-			    || predicate is null)
+			if (TryReadDecoratorPredicate(attribute, module, module, compilation, location, diagnostics, out DecoratorPredicate? predicate)
+			    && predicate is not null
+			    && module.GetMembers(predicate.Member.Substring(predicate.Member.LastIndexOf('.') + 1)).First(member => PredicateShapeProblem(member, compilation) is null).DeclaredAccessibility == Accessibility.Private)
 			{
-				continue;
-			}
-
-			string name = predicate.Member.Substring(predicate.Member.LastIndexOf('.') + 1);
-			Accessibility accessibility = module.GetMembers(name).First(member => PredicateShapeProblem(member, compilation) is null).DeclaredAccessibility;
-			string display = Display(predicate.Member);
-			if (exported && accessibility != Accessibility.Public && !(imported && accessibility == Accessibility.Private))
-			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.InaccessibleDecoratorPredicate,
-					LocationInfo.From(location),
-					new EquatableArray<string>([
-						display,
-						$"{DescribePredicateOwner(module)} is public, so containers in other assemblies import it, but they cannot call a predicate that is not public; make it public",
-					])));
-			}
-			else if (!exported && accessibility == Accessibility.Private)
-			{
-				ReportInaccessiblePredicate(display, module, false, location, diagnostics);
+				ReportInaccessiblePredicate(Display(predicate.Member), module, false, location, diagnostics);
 			}
 		}
 	}
@@ -187,10 +230,10 @@ partial class AwaitenGenerator
 	{
 		if (predicate.Method is not { Parameters.Length: > 0, } method)
 		{
-			return new PredicateModel(predicate.Member, predicate.Method is not null, default);
+			return new PredicateModel(predicate.Member, predicate.Method is not null, default, Declared: predicate.Declared);
 		}
 
-		string display = Display(predicate.Member);
+		string display = Display(predicate.Declared ?? predicate.Member);
 		LocationInfo? attributeLocation = LocationInfo.From(predicate.Location);
 		List<ParameterModel> parameters = new();
 		List<string> declaredTypes = new();
@@ -231,7 +274,7 @@ partial class AwaitenGenerator
 			declaredTypes.Add(parameter.Type.ToDisplayString(FullyQualified));
 		}
 
-		return new PredicateModel(predicate.Member, true, new EquatableArray<ParameterModel>(parameters.ToArray()), new EquatableArray<string>(declaredTypes.ToArray()));
+		return new PredicateModel(predicate.Member, true, new EquatableArray<ParameterModel>(parameters.ToArray()), new EquatableArray<string>(declaredTypes.ToArray()), predicate.Declared);
 	}
 
 	/// <summary>
@@ -271,7 +314,7 @@ partial class AwaitenGenerator
 					diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.InvalidDecoratorPredicateParameter,
 						parameter.Location,
-						new EquatableArray<string>([Display(predicate.Member), DisplayKeyed(predicate.DeclaredTypes.AsArray()[p], parameter.Key), problem,])));
+						new EquatableArray<string>([Display(predicate.DeclaredMember), DisplayKeyed(predicate.DeclaredTypes.AsArray()[p], parameter.Key), problem,])));
 				}
 			}
 		}

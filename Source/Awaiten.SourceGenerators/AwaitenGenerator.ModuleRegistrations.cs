@@ -330,7 +330,9 @@ partial class AwaitenGenerator
 	///     import, gets only such internal wrappers. A return type private
 	///     to the module is exposed as the registered type (see <see cref="OwnedMemberType" />). Whether a public member
 	///     already serves a registration is judged by the members that produce its type and the hooks that take it, so a
-	///     public overload of another type does not stand in for an internal one.
+	///     public overload of another type does not stand in for an internal one. An internal decorator predicate (see
+	///     <see cref="InternalPredicate" />) gets a public wrapper too, a property for a property or field, taking an
+	///     internal service through its handle; one with a parameter no wrapper can take lands in <paramref name="skipped" />.
 	/// </summary>
 	private static List<MemberWrapper> CollectModuleMemberWrappers(
 		INamedTypeSymbol module,
@@ -419,7 +421,65 @@ partial class AwaitenGenerator
 			}
 		}
 
+		foreach (AttributeData attribute in external ? module.GetAttributes() : [])
+		{
+			if (InternalPredicate(attribute, module, compilation) is { } predicate)
+			{
+				Add(PredicateWrapper(predicate));
+			}
+		}
+
 		return wrappers;
+
+		// A container in the module's assembly or in a friend calls the predicate itself, so a predicate no wrapper can
+		// serve is recorded rather than reported, and a container in another assembly names the reason (AWT247).
+		MemberWrapper? PredicateWrapper(ISymbol predicate)
+		{
+			string name = PredicateWrapperName(predicate.Name);
+			if (predicate is not IMethodSymbol method)
+			{
+				return new MemberWrapper(name, "bool", predicate.Name, default, IsProperty: true);
+			}
+
+			(int, INamedTypeSymbol[])? demanded = hidden?.Snapshot();
+			List<FactoryParameter> parameters = new();
+			foreach (IParameterSymbol parameter in method.Parameters)
+			{
+				string? cause = parameter.RefKind != RefKind.None ? "is passed by reference"
+					: UnmirroredAttribute(parameter.GetAttributes()) is { } attribute ? $"is marked {attribute}"
+					: null;
+				if (cause is null && !IsExternallyAccessible(parameter.Type))
+				{
+					if (MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out _) is { Error: null, } handle)
+					{
+						parameters.Add(handle.Parameter);
+						continue;
+					}
+
+					cause = UnbuildableCause(parameter.Type) ?? $"has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public";
+				}
+
+				if (cause is not null)
+				{
+					if (demanded is { } snapshot)
+					{
+						hidden!.Restore(snapshot);
+					}
+
+					string skippedName = PredicateSkippedName(predicate.Name);
+					if (skipped.TrueForAll(existing => existing.MarkerName != skippedName))
+					{
+						skipped.Add(new SkippedRegistration(skippedName, $"'{predicate.Name}' is internal and its parameter '{parameter.Name}' {cause}", Predicate: true));
+					}
+
+					return null;
+				}
+
+				parameters.Add(MirrorParameter(parameter));
+			}
+
+			return new MemberWrapper(name, "bool", predicate.Name, new EquatableArray<FactoryParameter>(parameters.ToArray()));
+		}
 
 		MemberWrapper? InternalWrapper(ProductionKind production, string member, INamedTypeSymbol produced)
 		{
@@ -1718,13 +1778,18 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether a closed registration of <paramref name="module" /> names a <c>Factory</c> or <c>Instance</c> member or
-	///     a lifecycle hook that exists but has no public overload, which a container in another assembly calls only
-	///     through a generated wrapper.
+	///     a lifecycle hook that exists but has no public overload, or a decorator predicate that is internal, which a
+	///     container in another assembly calls only through a generated wrapper.
 	/// </summary>
 	private static bool HasMemberNeedingWrapper(INamedTypeSymbol module, Compilation compilation)
 	{
 		foreach (AttributeData attribute in module.GetAttributes())
 		{
+			if (InternalPredicate(attribute, module, compilation) is not null)
+			{
+				return true;
+			}
+
 			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
 			    || ProducedRegistrationType(attribute, attributeClass) is not { } produced)
@@ -1764,7 +1829,7 @@ partial class AwaitenGenerator
 	///     partial and so carries no generated factory or wrapper: one the generator left to the assemblies granted
 	///     <c>InternalsVisibleTo</c>, or one with a member that needs a wrapper (see <see cref="HasMemberNeedingWrapper" />)
 	///     or a contribution that needs a factory (see <see cref="HasContributionNeedingFactory" />). Its presence tells a
-	///     consumer that the module skipped them on purpose (AWT231, AWT108, AWT109, AWT153, AWT164), not built without the
+	///     consumer that the module skipped them on purpose (AWT231, AWT108, AWT109, AWT153, AWT164, AWT247), not built without the
 	///     generator (AWT154). It records the module, not a member, so a consumer that cannot see internal members gives a
 	///     misspelled member the same reason.
 	/// </summary>

@@ -1140,7 +1140,7 @@ The predicate is looked up only on the type that declares the `[Decorate]`, so a
 ### AWT247
 
 :::danger[Error]
-A `[Decorate]` on a module or an extended container names a predicate the generated container cannot call: it is private, or the module or container is in another assembly and the predicate is not public. The decorator is left out.
+A `[Decorate]` on a module or an extended container names a predicate the generated container cannot call: it is private, or the module or container is in another assembly, the predicate is not public and the owner generated no wrapper for it. The decorator is left out.
 :::
 
 ```csharp expect=AWT247
@@ -1157,9 +1157,9 @@ public static class PaymentModule
 public static partial class CoffeeShop;
 ```
 
-A container in another assembly sees only the public members of a module or base container, so an internal predicate there is reported as well, even when it exists. The module's own build reports a predicate that is not public on a public module, which containers in other assemblies can import, and a private predicate of a module no container of its assembly imports, so the library that declares the module sees the error before its consumers do.
+A container in another assembly sees only the public members of a module or base container. It calls an `internal` predicate through the public wrapper that a public, `partial` module or a public base container generates for it, and a container in an assembly the owner's assembly grants `InternalsVisibleTo` calls the predicate directly. When the owner generated no wrapper, the message names why when the owner's metadata tells: the module isn't `partial`, or a parameter has a type the wrapper can't take, such as an internal type that no module of the library registers. The module's own build reports a private predicate of a module no container of its assembly imports, so the library that declares the module sees the error before its consumers do. It doesn't report an internal predicate, which a container in its own assembly can call.
 
-**Fix:** Make the predicate `internal` or `public` when the container is in the same assembly, and `public` when it is in another one or the module is public.
+**Fix:** Make the predicate `internal` or `public`. For a container in another assembly, make the module `partial`, make the predicate's parameter types public or register the internal ones in the library, or grant the container's assembly `InternalsVisibleTo`.
 
 ### AWT248
 

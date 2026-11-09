@@ -28,25 +28,21 @@ public partial class DiagnosticTests
 		public class InTheModulesOwnBuild
 		{
 			[Test]
-			[Arguments("internal")]
-			[Arguments("private")]
-			public async Task ReportsANonPublicPredicateOfAPublicModule(string predicate)
+			public async Task ReportsAPrivatePredicateOfAPublicModule()
 			{
-				GeneratorResult result = Generator.Run(Module("public", predicate));
+				GeneratorResult result = Generator.Run(Module("public", "private"));
 
-				await That(result.Diagnostics).Contains("*AWT247*'MyCode.ClientModule.Enabled'*the module 'MyCode.ClientModule' is public, so containers in other assemblies import it, but they cannot call a predicate that is not public; make it public*").AsWildcard()
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The decorator predicate 'MyCode.ClientModule.Enabled' is not accessible from the container: it is private to the module 'MyCode.ClientModule'; make it internal or public")
 					.Because("the library that declares the module sees the mistake, not only the containers of its consumers, which cannot fix it");
-				await That(result.Diagnostics).HasCount(1);
 			}
 
 			[Test]
-			public async Task ReportsAnInternalPredicateOfAPublicModuleThatAContainerOfItsAssemblyImports()
+			public async Task DoesNotReportAnInternalPredicateOfAPublicModuleThatAContainerOfItsAssemblyImports()
 			{
 				GeneratorResult result = Generator.Run(SameAssemblyModule("public", "internal"));
 
-				await That(result.Diagnostics).Contains("*AWT247*'MyCode.ClientModule.Enabled'*is public, so containers in other assemblies import it*").AsWildcard()
-					.Because("the container of the module's assembly can call the predicate, but a container of another assembly cannot");
-				await That(result.Diagnostics).HasCount(1);
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container of the module's assembly calls the predicate, and one of another assembly calls the module's public wrapper");
 			}
 
 			[Test]
@@ -60,6 +56,7 @@ public partial class DiagnosticTests
 
 			[Test]
 			[Arguments("internal", "internal")]
+			[Arguments("public", "internal")]
 			[Arguments("public", "public")]
 			public async Task DoesNotReportAPredicateEveryImportingContainerCanCall(string module, string predicate)
 			{
@@ -125,7 +122,18 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly(OtherAssemblyModule("internal"), Importer);
 
-			await That(result.Diagnostics).Contains("*AWT247*'Lib.ClientModule.Enabled'*the module 'Lib.ClientModule' is in another assembly, whose non-public members the container cannot call; make it public*").AsWildcard();
+			await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The decorator predicate 'Lib.ClientModule.Enabled' is not accessible from the container: the module 'Lib.ClientModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly")
+				.Because("a module built without the generator carries no wrapper for its internal predicate");
+		}
+
+		[Test]
+		public async Task DoesNotReportAnInternalPredicateOfAModuleInAnotherAssemblyThatGrantsAccess()
+		{
+			GeneratorResult result = Generator.RunWithReferencedAssembly(
+				OtherAssemblyModule("internal").Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;"), Importer);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a friend calls the internal predicate directly");
 		}
 
 		[Test]
