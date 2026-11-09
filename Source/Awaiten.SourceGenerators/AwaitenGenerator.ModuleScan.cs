@@ -763,10 +763,7 @@ partial class AwaitenGenerator
 			// hook directly, so a private hook usable one way and AWT164 the other would be inconsistent; a private
 			// method is not a usable hook, falling through to AWT164 in both. A type hidden in the module is
 			// the exception: every container runs its hooks through the wrapper, so a private hook is usable there.
-			if (member is not IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true, Parameters.Length: >= 1, } method
-			    || !IsHookReturn(method, compilation)
-			    || (!wrappedEverywhere && !compilation.IsSymbolAccessibleWithin(method, context.Module.ContainingAssembly))
-			    || method.Parameters.Any(parameter => parameter.RefKind != RefKind.None))
+			if (!IsModuleHookCandidate(member, wrappedEverywhere, context, out IMethodSymbol method))
 			{
 				continue;
 			}
@@ -794,6 +791,21 @@ partial class AwaitenGenerator
 		}
 
 		return (matches, ambiguous);
+	}
+
+	/// <summary>
+	///     Whether <paramref name="member" /> of the module may run as a hook of a type (see
+	///     <see cref="CollectModuleHookOverloads" />): a static method with an instance parameter, returning what a hook may,
+	///     taking no parameter by reference and reachable from the module's assembly unless the type is
+	///     <paramref name="wrappedEverywhere" />.
+	/// </summary>
+	private static bool IsModuleHookCandidate(ISymbol member, bool wrappedEverywhere, ModuleScanContext context, out IMethodSymbol method)
+	{
+		method = (member as IMethodSymbol)!;
+		return member is IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true, Parameters.Length: >= 1, }
+		       && IsHookReturn(method, context.Compilation)
+		       && (wrappedEverywhere || context.Compilation.IsSymbolAccessibleWithin(method, context.Module.ContainingAssembly))
+		       && method.Parameters.All(parameter => parameter.RefKind == RefKind.None);
 	}
 
 	/// <summary>

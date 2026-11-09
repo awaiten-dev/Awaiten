@@ -715,6 +715,10 @@ partial class AwaitenGenerator
 			{
 				registration = ThroughOpenFactory(registration, candidate.Via.Owner, factories[0].Construct(typeArguments), context.Inputs.Compilation);
 			}
+			else if (candidate.Factory is null)
+			{
+				registration = ThroughOpenHookWrappers(registration, context.Inputs.Compilation);
+			}
 
 			context.Raw.Add(registration);
 			context.Synthesized++;
@@ -852,9 +856,44 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     A closing the container constructs itself of an open registration of a module in another assembly that does not
+	///     grant it access, rewritten to run each hook it cannot call through the generic wrapper the module generated for
+	///     it, which the ordinary hook binding closes with the closing's marker.
+	/// </summary>
+	private static RawRegistration ThroughOpenHookWrappers(RawRegistration registration, Compilation compilation)
+	{
+		if (registration.Origin is not { } owner
+		    || SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
+		    || owner.ContainingAssembly.GivesAccessTo(compilation.Assembly))
+		{
+			return registration;
+		}
+
+		INamedTypeSymbol definition = registration.Implementation.OriginalDefinition;
+		return registration with
+		{
+			OnActivated = Wrapped(registration.OnActivated, release: false),
+			OnRelease = Wrapped(registration.OnRelease, release: true),
+		};
+
+		string? Wrapped(string? hook, bool release)
+		{
+			if (hook is null)
+			{
+				return null;
+			}
+
+			string wrapper = InInternals(RegistrationHookWrapperName(definition, release, hook));
+			return MembersNamed(owner, wrapper).Any(member => member is IMethodSymbol { IsGenericMethod: true, } && compilation.IsSymbolAccessibleWithin(member, compilation.Assembly)) ? wrapper : hook;
+		}
+	}
+
+	/// <summary>
 	///     Leaves out each hook of a closing built through the owner's generic factory that more than one overload of the
 	///     owner accepts for this closing, reporting AWT190 as for a closing the container builds itself: the owner bound
-	///     the wrapper for the open definition, which an overload for one closing does not accept.
+	///     the wrapper for the open definition, which an overload for one closing does not accept. The bound overload
+	///     counts even where this compilation does not see it. A hook the owner of another assembly recorded a skip for,
+	///     because an overload this compilation does not see may accept the closing too, is left out with AWT231.
 	/// </summary>
 	private static RawRegistration WithoutAmbiguousOpenHooks(RawRegistration registration, OpenRegistration candidate, string closedImplName, ExpansionContext context)
 	{
@@ -872,9 +911,32 @@ partial class AwaitenGenerator
 			}
 
 			INamedTypeSymbol owner = candidate.Via!.Owner;
+			Compilation compilation = context.Inputs.Compilation;
+			if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
+			    && SkippedHookReason(owner, registration.Implementation.OriginalDefinition, release, hookName) is { } skipped)
+			{
+				string slot = release ? "OnRelease" : "OnActivated";
+				DiagnosticInfo diagnostic = new(
+					Diagnostics.ModuleRegistrationNotSelfCompiled,
+					candidate.Location,
+					new EquatableArray<string>([
+						AwaitenGenerator.Display(owner.ToDisplayString(FullyQualified)), AwaitenGenerator.Display(closedImplName), $"{slot} hook wrapper", skipped,
+						$"give the hook method '{hookName}' a unique name",
+					]));
+				if (!context.Diagnostics.Contains(diagnostic))
+				{
+					context.Diagnostics.Add(diagnostic);
+				}
+
+				return null;
+			}
+
 			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(
-				registration.Implementation, hookName, [registration.ServiceSymbol!,], new ModuleScanContext(owner, context.Inputs.Compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal)));
-			if (matches.Count + ambiguous.Count < 2)
+				registration.Implementation, hookName, [registration.ServiceSymbol!,], new ModuleScanContext(owner, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal)));
+
+			// Another assembly may not see the overload the owner bound, which accepts every closing, beside one it sees.
+			int unseen = OwnerBoundHook(registration.Implementation, hookName, registration.ServiceSymbol!, owner, compilation) is null ? 1 : 0;
+			if (matches.Count + ambiguous.Count + unseen < 2)
 			{
 				return hookName;
 			}
