@@ -26,7 +26,8 @@ internal sealed record DiagnosticInfo(
 	///     The diagnostic to report in <paramref name="compilation" />, located in its syntax tree of the same file path, because
 	///     the compiler applies the <c>.editorconfig</c> severities of a file and its <c>#pragma warning</c> directives only to a
 	///     location in a tree of the compilation; <see cref="LocationInfo.ToLocation" /> yields a location in no tree. A location
-	///     in a referenced compilation, whose file may share the path of a different file here, keeps that external location.
+	///     whose span does not fit the file of that path here, such as one in another file of a referenced compilation that shares
+	///     the path, keeps that external location.
 	/// </summary>
 	public Diagnostic ToDiagnostic(Compilation compilation, CancellationToken cancellationToken)
 	{
