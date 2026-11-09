@@ -222,9 +222,9 @@ partial class AwaitenGenerator
 		public bool Declares(INamedTypeSymbol service)
 			=> SymbolEqualityComparer.Default.Equals(Provider(service) ?? Module, Module);
 
-		/// <summary>The fully qualified name of the instance handle of <paramref name="implementation" />, or of its <paramref name="producer" />.</summary>
+		/// <summary>The fully qualified name of the instance handle of <paramref name="implementation" />, or of its <paramref name="producer" />, which only this module declares.</summary>
 		public string InstanceHandleType(INamedTypeSymbol implementation, string? producer = null)
-			=> $"{(InstanceProvider(implementation) ?? Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenInstanceName(implementation, producer)}";
+			=> $"{(producer is null ? InstanceProvider(implementation) ?? Module : Module).ToDisplayString(FullyQualified)}.{InternalsClass}.{HiddenInstanceName(implementation, producer)}";
 
 		/// <summary>Whether this module declares the instance handle of <paramref name="implementation" /> (see <see cref="InstanceProvider" />).</summary>
 		public bool DeclaresInstance(INamedTypeSymbol implementation)
@@ -272,10 +272,10 @@ partial class AwaitenGenerator
 				         .SelectMany(entry => entry.Value.Select(registration => (Module: entry.Key, Registration: registration)))
 				         .GroupBy<(INamedTypeSymbol Module, ModuleRegistration Registration), INamedTypeSymbol>(entry => entry.Registration.Implementation, SymbolEqualityComparer.Default))
 			{
-				if (produced.All(entry => NamesOnlyItsService(entry.Registration))
-				    && produced.Select(entry => $"{entry.Module.ToDisplayString(FullyQualified)}.{entry.Registration.Member}").Distinct(StringComparer.Ordinal).Skip(1).Any())
+				if (produced.Where(entry => NamesOnlyItsService(entry.Registration))
+				    .Select(entry => $"{entry.Module.ToDisplayString(FullyQualified)}.{entry.Registration.Member}").Distinct(StringComparer.Ordinal).Skip(1).Any())
 				{
-					Producers.Add(produced.Key);
+					(produced.All(entry => NamesOnlyItsService(entry.Registration)) ? Producers : SharedProducers).Add(produced.Key);
 				}
 			}
 
@@ -362,6 +362,16 @@ partial class AwaitenGenerator
 		///     which no other module shares.
 		/// </summary>
 		public HashSet<INamedTypeSymbol> Producers { get; } = new(SymbolEqualityComparer.Default);
+
+		/// <summary>
+		///     The services that several <c>Factory</c> or <c>Instance</c> members of the assembly's modules produce while
+		///     naming only the service, where another registration names the type as its implementation. A container in the
+		///     modules' own assembly keeps each member as an implementation of its own unless a module it imports names the
+		///     type, so a module whose registrations of the type all name only the service builds each member through handles
+		///     of its own as in <see cref="Producers" />, besides the shared handle, and a consuming container picks one or the
+		///     other from what it imports (see <c>ThroughHandle</c>).
+		/// </summary>
+		public HashSet<INamedTypeSymbol> SharedProducers { get; } = new(SymbolEqualityComparer.Default);
 
 		public static AssemblyModuleIndex Of(Compilation compilation)
 			=> Cache.GetValue(compilation, static created => new AssemblyModuleIndex(created));
@@ -635,8 +645,8 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     The member when it is one of several producers of a service that names no implementation (see
-		///     <see cref="AssemblyModuleIndex.Producers" />), which then has a handle, an instance handle and aliases of its
-		///     own, named after it, or <see langword="null" />.
+		///     <see cref="AssemblyModuleIndex.Producers" /> and <see cref="AssemblyModuleIndex.SharedProducers" />), which then
+		///     has a handle, an instance handle and aliases of its own, named after it, or <see langword="null" />.
 		/// </summary>
 		public string? Producer { get; init; }
 
@@ -826,8 +836,10 @@ partial class AwaitenGenerator
 		foreach ((INamedTypeSymbol implementation, List<ModuleRegistration> registrations, string? producer) in hidden.Assembly.RegistrationsOf(module)
 			         .GroupBy<ModuleRegistration, INamedTypeSymbol>(registration => registration.Implementation, SymbolEqualityComparer.Default)
 			         .SelectMany(group => hidden.Assembly.Producers.Contains(group.Key)
-				         ? group.GroupBy(registration => registration.Member, StringComparer.Ordinal).Select(produced => (group.Key, produced.ToList(), produced.Key))
-				         : [(group.Key, HandledTogether(group), null),]))
+				         ? PerMember(group)
+				         : hidden.Assembly.SharedProducers.Contains(group.Key) && group.All(NamesOnlyItsService)
+					         ? PerMember(group).Prepend((group.Key, HandledTogether(group), null))
+					         : [(group.Key, HandledTogether(group), null),]))
 		{
 			if (!Buildable(module, implementation, registrations, compilation)
 			    || (!HandledShape(module, implementation, registrations, compilation) && !(hidden.SeveralModules && hidden.HandledElsewhere(implementation))))
@@ -877,6 +889,9 @@ partial class AwaitenGenerator
 		hidden.NeededNonViable.Clear();
 		hidden.Tracking = true;
 		return hidden;
+
+		static IEnumerable<(INamedTypeSymbol, List<ModuleRegistration>, string?)> PerMember(IGrouping<INamedTypeSymbol, ModuleRegistration> group)
+			=> group.GroupBy(registration => registration.Member, StringComparer.Ordinal).Select(produced => (group.Key, produced.ToList(), produced.Key));
 	}
 
 	/// <summary>
@@ -912,7 +927,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> diagnostics)
 	{
 		INamedTypeSymbol module = hidden.Module;
-		foreach (HiddenImplementation candidate in hidden.Implementations)
+		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => !BesidesShared(candidate)))
 		{
 			ReportHandledConflicts(candidate.Implementation, candidate.Producer, module, compilation, diagnostics);
 		}
@@ -941,7 +956,7 @@ partial class AwaitenGenerator
 			foreach (HiddenImplementation candidate in pending.Where(candidate => !built.Contains(candidate)).Distinct().ToList())
 			{
 				built.Add(candidate);
-				RegistrationFactory? factory = BuildHiddenFactory(candidate, context, initializers, warnings);
+				RegistrationFactory? factory = BuildHiddenFactory(candidate, context, initializers, BesidesShared(candidate) ? null : warnings);
 				if (factory is not null)
 				{
 					factories.Add(factory);
@@ -1022,6 +1037,11 @@ partial class AwaitenGenerator
 		}
 
 		return (factories, handles, aliases, initializers);
+
+		// The shared handle of the same registrations reports their conflicts and warnings already.
+		bool BesidesShared(HiddenImplementation candidate)
+			=> candidate.Producer is not null
+			   && hidden.Implementations.Exists(other => other.Producer is null && SymbolEqualityComparer.Default.Equals(other.Implementation, candidate.Implementation));
 
 		IEnumerable<INamedTypeSymbol> Declared(IEnumerable<INamedTypeSymbol> needed, Func<INamedTypeSymbol, INamedTypeSymbol?> provider)
 			=> needed

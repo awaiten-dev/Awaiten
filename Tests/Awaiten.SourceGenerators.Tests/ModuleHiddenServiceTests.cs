@@ -1666,6 +1666,132 @@ public class ModuleHiddenServiceTests
 				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("a constructor and factory 'Lib.ClockModule.CreateA'"))
 					.Because("the container's constructor names the class as its implementation, so the module's factories of it are further productions of the one instance, as in the module's own assembly");
 			}
+
+			public class OfTheImportedModules
+			{
+				private const string ThreeModules = """
+					using Awaiten;
+
+					namespace Lib;
+
+					internal sealed class TimeSource { }
+					public sealed class Clock : System.IDisposable { internal Clock(TimeSource source) { } public void Dispose() { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					public static partial class AModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[{0}<Clock>(Factory = nameof(CreateB))]
+					public static partial class BModule
+					{
+					    internal static Clock CreateB(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Singleton<Clock>]
+					public static partial class CModule;
+					""";
+
+				[Test]
+				[Arguments("same", "Singleton")]
+				[Arguments("friend", "Singleton")]
+				[Arguments("full", "Singleton")]
+				[Arguments("reference", "Singleton")]
+				[Arguments("same", "Scoped")]
+				[Arguments("friend", "Scoped")]
+				[Arguments("full", "Scoped")]
+				[Arguments("reference", "Scoped")]
+				public async Task WhenNoneNamesTheClass_AreTwoProducers(string consumer, string lifetime)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(AModule))]
+						[Import(typeof(BModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(ThreeModules.Replace("{0}", lifetime), container, consumer);
+
+					await That(result.Diagnostics).IsEmpty()
+						.Because("neither imported module names the class as its implementation, so a container of the modules' own assembly keeps both factories as producers of their own, whatever another module of the assembly registers");
+					if (consumer is "full" or "reference")
+					{
+						await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+							.Contains(ProducerFactory("AModule", "global::Lib.Clock", "CreateA"))
+							.And.Contains(ProducerFactory("BModule", "global::Lib.Clock", "CreateB"))
+							.Because("each factory has a handle of its own besides the shared one, so the container calls both");
+					}
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WhenOneNamesTheClass_ConflictsAsInTheModulesOwnAssembly(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(AModule))]
+						[Import(typeof(BModule))]
+						[Import(typeof(CModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(ThreeModules.Replace("{0}", "Singleton"), container, consumer);
+					string expected = Run(ThreeModules.Replace("{0}", "Singleton"), container, "same").Diagnostics.Single();
+
+					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && Message(diagnostic) == Message(expected))
+						.Because("CModule constructs the class, so the factories of the other modules are further productions of its one instance, as in the modules' own assembly");
+
+					static string Message(string diagnostic)
+						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task TwoFactoriesOfOneModule_BesideAModuleThatConstructsTheClass_ReportOnlyTheConflict(string consumer)
+				{
+					const string library = """
+						using Awaiten;
+
+						namespace Lib;
+
+						internal sealed class TimeSource { }
+						public sealed class Clock { public Clock() { } }
+
+						[Module]
+						[Singleton<TimeSource>]
+						[Singleton<Clock>(Factory = nameof(CreateA))]
+						[Singleton<Clock>(Factory = nameof(CreateB))]
+						public static partial class ClockModule
+						{
+						    internal static Clock CreateA(TimeSource source) => new();
+						    internal static Clock CreateB(TimeSource source) => new();
+						}
+
+						[Module]
+						[Singleton<Clock>]
+						public static partial class OtherModule;
+						""";
+					const string container = """
+						[Container]
+						[Import(typeof(ClockModule))]
+						[Import(typeof(OtherModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(library, container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("factory 'Lib.ClockModule.CreateA'"))
+						.Because("the module calls each factory through a handle of its own, so no factory falls back to a call of its internal method (AWT108) and only the conflict of the one instance remains");
+				}
+			}
 		}
 
 		[Test]

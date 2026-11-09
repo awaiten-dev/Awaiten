@@ -57,7 +57,7 @@ partial class AwaitenGenerator
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
 			List<DiagnosticInfo> moduleDiagnostics = module.Inherited ? new List<DiagnosticInfo>() : diagnostics;
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance, modules),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
 
@@ -242,7 +242,8 @@ partial class AwaitenGenerator
 	///     used for a referenced-assembly module whose attributes have no syntax. The open generic <c>typeof</c>-form
 	///     registrations go into <see cref="Open" />. <see cref="Inherited" /> marks a module or base inherited through
 	///     <c>Extends</c>, whose inaccessible declarations the inheritance reports (AWT226). <see cref="Modules" /> holds
-	///     what the modules of the container's own assembly generate.
+	///     what the modules of the container's own assembly generate. <see cref="Imports" /> are the modules the container
+	///     imports, which decide how a module of another assembly is built through its handles (see <see cref="ThroughHandle" />).
 	/// </summary>
 	private readonly record struct LifetimeCollectionContext(
 		INamedTypeSymbol Owner,
@@ -253,7 +254,8 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> Diagnostics,
 		SameCompilationModules Modules,
 		bool Inherited = false,
-		Inheritance? Inheritance = null);
+		Inheritance? Inheritance = null,
+		List<ImportedModule>? Imports = null);
 
 	/// <summary>
 	///     Reads the <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registrations declared on the context's
@@ -354,7 +356,7 @@ partial class AwaitenGenerator
 				WhenInjectedInto: whenInjectedInto);
 
 			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations
-			    && ThroughHandle(registration, context.Compilation, implicitHandles) is { } handled)
+			    && ThroughHandle(registration, context.Compilation, implicitHandles, context.Imports ?? []) is { } handled)
 			{
 				result.AddRange(handled);
 				continue;

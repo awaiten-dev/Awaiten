@@ -144,7 +144,26 @@ public class ModuleHandleSharingTests
 		await That(container.Resolve<IEnumerable<IProducedClock>>().Select(clock => clock.Name)).IsEqualTo(["first", "second", "third",])
 			.Because("the factory of the other module is a producer of its own too, not a second production of the same instance");
 	}
+
+	[Test]
+	public async Task FactoriesOfAClassAnotherModuleConstructs_AreTwoProducersWhenThatModuleIsNotImported()
+	{
+		using ImportedProducersContainer.Root container = new();
+
+		ImportedProducerClock[] clocks = container.Resolve<IEnumerable<ImportedProducerClock>>().ToArray();
+
+		await That(clocks.Select(clock => clock.Name)).IsEqualTo(["a", "b",])
+			.Because("neither imported module constructs the class, so each factory is a producer of its own, as in a container of the modules' own assembly that imports the same modules");
+		await That(clocks[0]).IsNotSameAs(clocks[1]);
+		await That(container.Resolve<ImportedProducerClock>()).IsSameAs(clocks[0])
+			.Because("the first producer wins the single resolution");
+	}
 }
+
+[Container]
+[Import(typeof(CrossAssemblyImportedProducerAModule))]
+[Import(typeof(CrossAssemblyImportedProducerBModule))]
+public static partial class ImportedProducersContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyTwoClocksModule))]

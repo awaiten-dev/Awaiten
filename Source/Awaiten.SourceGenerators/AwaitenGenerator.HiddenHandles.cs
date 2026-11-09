@@ -496,13 +496,18 @@ partial class AwaitenGenerator
 	///     module of that assembly coalesce into one instance. Every service of the implementation is an alias that
 	///     returns the instance from the handle and owns nothing, with an identity of its service and implementation;
 	///     one under an internal service is dependency-only too.
+	///     A member that names only its service and has handles of its own (see <c>AssemblyModuleIndex.Producers</c>) is
+	///     built through them, unless the module also has the shared handle of the implementation and an imported module of
+	///     its assembly names the implementation (see <see cref="ImplementedByImport" />), as a container of that assembly
+	///     then keeps one instance.
 	/// </summary>
-	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<string> implicitHandles)
+	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<string> implicitHandles, IEnumerable<ImportedModule> imports)
 	{
 		INamedTypeSymbol module = registration.Origin!;
 		INamedTypeSymbol implementation = registration.Implementation;
 		string? producer = registration is { Production: not ProductionKind.Constructor, ProductionMember: { } member, }
 		                   && HiddenProducer(module, HiddenFactoryName(implementation, member), compilation) is not null
+		                   && !(HiddenProducer(module, HiddenFactoryName(implementation), compilation) is not null && ImplementedByImport(implementation, module, imports, compilation))
 			? member
 			: null;
 		if (registration.ServiceSymbol is not { } service
@@ -582,4 +587,14 @@ partial class AwaitenGenerator
 				? InInternals(wrapper)
 				: null;
 	}
+
+	/// <summary>
+	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers
+	///     <paramref name="implementation" /> other than through a member that names only its service, so a container of
+	///     that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).
+	/// </summary>
+	private static bool ImplementedByImport(INamedTypeSymbol implementation, INamedTypeSymbol module, IEnumerable<ImportedModule> imports, Compilation compilation)
+		=> imports.Any(import => SymbolEqualityComparer.Default.Equals(import.Symbol.ContainingAssembly, module.ContainingAssembly)
+		                         && ConstructedModuleRegistrations(import.Symbol, compilation, members: true)
+			                         .Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && !NamesOnlyItsService(registration)));
 }
