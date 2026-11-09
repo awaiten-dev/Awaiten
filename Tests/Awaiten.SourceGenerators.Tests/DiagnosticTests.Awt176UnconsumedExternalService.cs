@@ -47,8 +47,8 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).IsEmpty()
-				.Because("the collection is not routed, but a direct resolve of the import still is");
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo("*warning AWT250*").AsWildcard()
+				.Because("the collection is not routed, so it is always empty, but a direct resolve of the import still is");
 		}
 
 		[Test]
