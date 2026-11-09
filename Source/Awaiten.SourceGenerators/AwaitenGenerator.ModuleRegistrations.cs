@@ -774,7 +774,7 @@ partial class AwaitenGenerator
 				{
 					skipped.Add(new SkippedRegistration(
 						skippedName,
-						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so a container that sees only one of them would call it where a container in the module's assembly reports AWT190",
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so {(matches[0].DeclaredAccessibility == Accessibility.Public || overload.DeclaredAccessibility == Accessibility.Public ? "a container that sees only the public one would call it" : "a generated wrapper would run the wrong overload")} where a container in the module's assembly reports AWT190",
 						Hook: true));
 				}
 

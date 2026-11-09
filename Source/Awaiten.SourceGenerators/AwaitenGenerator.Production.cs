@@ -1801,7 +1801,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The non-generic static methods named <paramref name="hook" /> of <paramref name="owner" /> that could run as the
 	///     lifecycle hook of <paramref name="produced" />, whatever their accessibility, so a same-named overload for
-	///     another type does not count when the module decides on a hook wrapper and a container on calling it.
+	///     another type does not count when the module decides on a hook wrapper and a container on calling it. A generic
+	///     overload does not count either: nothing binds its type parameters for a closed registration (AWT164), so no
+	///     container runs it beside a non-generic one.
 	/// </summary>
 	private static IEnumerable<IMethodSymbol> HookCandidates(INamedTypeSymbol owner, string hook, ITypeSymbol produced, Compilation compilation)
 		=> AccessibleMembers(owner, hook, compilation)

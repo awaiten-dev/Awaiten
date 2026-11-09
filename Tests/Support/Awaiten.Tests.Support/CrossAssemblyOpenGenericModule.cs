@@ -260,6 +260,35 @@ public static partial class ValueHookedOpenGenericModule
 		=> log.Entries.Add($"activated a cache of the reference type {typeof(T).Name}");
 }
 
+/// <summary>An entry of the caches of <see cref="EntryHookedOpenGenericModule" />, whose type parameter it constrains.</summary>
+public class CacheEntry;
+
+/// <summary>A cache per entry type, built from an internal open generic implementation whose module hooks every closing.</summary>
+public interface IHookedEntryCache<T>;
+
+internal sealed class HookedEntryCache<T> : IHookedEntryCache<T>
+	where T : CacheEntry;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration of caches constrained to a class type names an
+///     activation hook beside a generic overload for value types, which accepts no closing, so a container in another
+///     assembly without <c>InternalsVisibleTo</c> builds every closing through the generic factory and runs the hook
+///     through its wrapper.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(HookedEntryCache<>), typeof(IHookedEntryCache<>), OnActivated = nameof(Activate))]
+public static partial class EntryHookedOpenGenericModule
+{
+	internal static void Activate<T>(HookedEntryCache<T> cache, OpenHookLog log)
+		where T : CacheEntry
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Activate<T>(IHookedEntryCache<T> cache, OpenHookLog log)
+		where T : struct
+		=> log.Entries.Add($"activated a cache of the value type {typeof(T).Name}");
+}
+
 internal sealed class AsyncHookedOpenCache<T> : IHookedOpenCache<T>
 	where T : class;
 
