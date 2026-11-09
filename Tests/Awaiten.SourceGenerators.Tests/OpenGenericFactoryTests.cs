@@ -1360,7 +1360,7 @@ public class OpenGenericFactoryTests
 				GeneratorResult result = Run(reference, Library(overload), OrderConsumer);
 
 				await That(result.Diagnostics).HasSingle().Which
-					.IsEqualTo($"*AWT231*'Lib.Repository<T>'*its OnActivated hook 'Ready' has another overload, taking {cause} too*").AsWildcard()
+					.IsEqualTo($"*AWT231*'Lib.Repository<T>'*its OnActivated hook 'Ready' has another overload, taking {cause} too*; give the overloads distinct names;*").AsWildcard()
 					.Because("the module cannot tell this assembly which closings the overload accepts, so no generic wrapper runs the generic overload for them");
 			}
 
@@ -1376,6 +1376,38 @@ public class OpenGenericFactoryTests
 					.Because("the order repository converts to a repository of objects, while the repository of numbers, a value type, does not");
 				await That(external.Diagnostics).HasSingle().Which
 					.IsEqualTo("*AWT231*taking 'Lib.IRepository<object>', that accepts 'Lib.Repository<object>' too*").AsWildcard();
+			}
+
+			[Test]
+			public async Task AGenericOverloadOnlyAClosingConvertsTo_IsRecorded()
+			{
+				const string library = """
+				                       using Awaiten;
+
+				                       namespace Lib;
+
+				                       public interface IRepository<T> { }
+				                       public interface IHandler<T> { }
+				                       public sealed class Order { }
+				                       internal sealed class Repository<T> : IRepository<T>, IHandler<Order> { }
+
+				                       [Module]
+				                       [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Ready))]
+				                       public static partial class DataModule
+				                       {
+				                           internal static void Ready<T>(Repository<T> repository) { }
+
+				                           internal static void Ready<T>(IHandler<T> handler) { }
+				                       }
+				                       """;
+
+				GeneratorResult same = Generator.Run(SameAssembly(library));
+				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, OrderConsumer);
+
+				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Lib.IRepository<Lib.Order>'*'Ready'*").AsWildcard()
+					.Because("the order repository is an order handler, so the generic handler overload accepts it too");
+				await That(external.Diagnostics).HasSingle().Which
+					.IsEqualTo("*AWT231*taking 'Lib.IHandler<T>', that accepts 'Lib.Repository<Lib.Order>' too*").AsWildcard();
 			}
 
 			[Test]

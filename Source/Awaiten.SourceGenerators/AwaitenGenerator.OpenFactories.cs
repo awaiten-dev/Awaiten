@@ -144,7 +144,7 @@ partial class AwaitenGenerator
 					skipped.AddRange(built.HookSkips!);
 				}
 
-				skipped.Add(new SkippedRegistration(contribution.SkippedName, foreign, Open: true));
+				skipped.Add(new SkippedRegistration(contribution.SkippedName, $"{foreign}; give the overloads distinct names", Open: true));
 			}
 			else if (built.Factory is { } factory)
 			{
@@ -421,9 +421,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     An overload of the hook other than <paramref name="bound" />, the one bound for the open
 	///     <paramref name="definition" />, that a container in the module's assembly also finds for some closing of it, with
-	///     a description of those closings, or <see langword="null" />: a non-generic overload whose instance parameter a
-	///     closing converts to, or a generic one whose constraints keep it from binding for the definition's own type
-	///     parameters but not for every closing.
+	///     a description of those closings, or <see langword="null" />: an overload whose instance parameter, for a generic
+	///     one closed with the closing's type arguments, a closing converts to, or a generic one whose constraints keep it
+	///     from binding for the definition's own type parameters but not for every closing.
 	/// </summary>
 	private static (IMethodSymbol Overload, string Closings)? ClosingOnlyHookOverload(INamedTypeSymbol definition, string hookName, IMethodSymbol bound, ModuleScanContext context)
 	{
@@ -438,17 +438,19 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (method.Arity > 0)
+			if (method.Arity > 0 && method.Arity != typeParameters.Length)
 			{
-				if (method.Arity == typeParameters.Length && compilation.HasImplicitConversion(definition, method.Construct(typeParameters).Parameters[0].Type))
-				{
-					return (method, $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' its constraints admit");
-				}
-
 				continue;
 			}
 
-			ITypeSymbol instance = method.Parameters[0].Type;
+			// A container closes a generic overload with the closing's type arguments, so it is unified closed with the
+			// definition's own type parameters, which then may stand on either side.
+			ITypeSymbol instance = method.Arity > 0 ? method.Construct(typeParameters).Parameters[0].Type : method.Parameters[0].Type;
+			if (method.Arity > 0 && compilation.HasImplicitConversion(definition, instance))
+			{
+				return (method, $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' its constraints admit");
+			}
+
 			foreach (INamedTypeSymbol shape in new[] { definition, }.Concat(BaseTypes(definition)).Concat(definition.AllInterfaces))
 			{
 				Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings = new(SymbolEqualityComparer.Default);
@@ -459,7 +461,10 @@ partial class AwaitenGenerator
 
 				ITypeSymbol[] arguments = definition.TypeParameters.Select(parameter => bindings.TryGetValue(parameter, out ITypeSymbol? argument) ? argument : parameter).ToArray();
 				INamedTypeSymbol closing = definition.Construct(arguments);
-				if (compilation.HasImplicitConversion(closing, instance) && ConstraintsSatisfied(definition, arguments, compilation))
+				bool accepts = method.Arity > 0
+					? SatisfiesConstraints(method, arguments.ToImmutableArray(), compilation) && compilation.HasImplicitConversion(closing, method.Construct(arguments).Parameters[0].Type)
+					: compilation.HasImplicitConversion(closing, instance);
+				if (accepts && ConstraintsSatisfied(definition, arguments, compilation))
 				{
 					return (method, $"'{Display(closing.ToDisplayString(FullyQualified))}'");
 				}
@@ -480,6 +485,17 @@ partial class AwaitenGenerator
 				}
 
 				bindings[parameter] = target;
+				return true;
+			}
+
+			if (target is ITypeParameterSymbol targetParameter && definition.TypeParameters.Contains(targetParameter, SymbolEqualityComparer.Default))
+			{
+				if (bindings.TryGetValue(targetParameter, out ITypeSymbol? known))
+				{
+					return SymbolEqualityComparer.Default.Equals(known, pattern);
+				}
+
+				bindings[targetParameter] = pattern;
 				return true;
 			}
 
