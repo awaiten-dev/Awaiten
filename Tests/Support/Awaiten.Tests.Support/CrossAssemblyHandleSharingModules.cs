@@ -380,3 +380,67 @@ public static partial class CrossAssemblyScannedProducerBModule
 [Module]
 [Scan<IScannedProducerAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
 public static partial class CrossAssemblyScannedProducerScanModule;
+
+/// <summary>The marker <see cref="CrossAssemblySelfScannedModule" /> scans for.</summary>
+public interface ISelfScannedAppliance;
+
+/// <summary>A clock that <see cref="CrossAssemblySelfScannedModule" /> produces through a factory that takes an internal service, and also scans.</summary>
+public sealed class SelfScannedClock : ISelfScannedAppliance
+{
+	internal SelfScannedClock(SelfScannedTimeSource source) => Source = source;
+
+	/// <summary>Whether the module's factory produced the clock.</summary>
+	public bool FromFactory { get; private init; }
+
+	internal SelfScannedTimeSource Source { get; }
+
+	internal static SelfScannedClock Create(SelfScannedTimeSource source) => new(source) { FromFactory = true, };
+}
+
+internal sealed class SelfScannedTimeSource;
+
+/// <summary>A <c>[Module]</c> whose factory of the clock takes an internal service and whose scan matches the clock too.</summary>
+[Module]
+[Singleton<SelfScannedTimeSource>]
+[Singleton<SelfScannedClock>(Factory = nameof(CreateClock))]
+[Scan<ISelfScannedAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+public static partial class CrossAssemblySelfScannedModule
+{
+	internal static SelfScannedClock CreateClock(SelfScannedTimeSource source) => SelfScannedClock.Create(source);
+}
+
+/// <summary>The marker <see cref="CrossAssemblySharedScanScanModule" /> scans for.</summary>
+public interface ISharedScanAppliance;
+
+/// <summary>A clock that <see cref="CrossAssemblySharedScanAModule" /> produces through a factory that takes an internal service, <see cref="CrossAssemblySharedScanInstanceModule" /> registers as an instance, and <see cref="CrossAssemblySharedScanScanModule" /> scans.</summary>
+public sealed class SharedScanClock : ISharedScanAppliance
+{
+	internal SharedScanClock(SharedScanTimeSource source) => Source = source;
+
+	internal SharedScanTimeSource Source { get; }
+}
+
+internal sealed class SharedScanTimeSource;
+
+/// <summary>A <c>[Module]</c> that registers the internal service the clock's constructor takes, and a factory of the clock.</summary>
+[Module]
+[Singleton<SharedScanTimeSource>]
+[Singleton<SharedScanClock>(Factory = nameof(CreateA))]
+public static partial class CrossAssemblySharedScanAModule
+{
+	internal static SharedScanClock CreateA(SharedScanTimeSource source) => new(source);
+}
+
+/// <summary>A <c>[Module]</c> that registers a prebuilt clock.</summary>
+[Module]
+[Singleton<SharedScanClock>(Instance = nameof(Default))]
+public static partial class CrossAssemblySharedScanInstanceModule
+{
+	/// <summary>The clock the module registers.</summary>
+	public static readonly SharedScanClock Default = new(new SharedScanTimeSource());
+}
+
+/// <summary>A <c>[Module]</c> whose scan matches the clock, whose generated factory takes the internal service of <see cref="CrossAssemblySharedScanAModule" />.</summary>
+[Module]
+[Scan<ISharedScanAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+public static partial class CrossAssemblySharedScanScanModule;

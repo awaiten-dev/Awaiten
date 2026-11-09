@@ -10,8 +10,6 @@
 		<!-- AWT218, AWT219: several tests resolve a service the container does not hand out through that typed call,
 		     to pin the run-time exception and its guidance that untyped callers still get. -->
 		<NoWarn>$(NoWarn);AWT218;AWT219</NoWarn>
-		<!-- AWT142: the ModuleScanInstanceHandleTests containers scan a module's match with another lifetime on purpose, to pin that the container's scan wins; the source generator emits it, so a #pragma cannot suppress it. -->
-		<NoWarn>$(NoWarn);AWT142</NoWarn>
 		<!-- Awaiten.Tests.ContainerSupport grants this assembly InternalsVisibleTo, so its copy of the Nullable attributes is visible here and a second one would conflict (CS0436). -->
 		<DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES_DISABLE</DefineConstants>
 		<!-- The generated containers must compile without nullable warnings for a consumer with warnings as errors. -->

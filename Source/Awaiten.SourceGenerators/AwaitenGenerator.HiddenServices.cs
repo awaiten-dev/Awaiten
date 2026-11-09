@@ -939,7 +939,8 @@ partial class AwaitenGenerator
 	///     The implementations of a module another assembly can name that it builds through a handle, and which of
 	///     them can be built: those it builds through a handle on its own account (see <see cref="HandledShape" />), and
 	///     in an assembly with several modules those another module builds through a handle, so all of them share one
-	///     instance handle. The module drops such an implementation again when one of its scans matches it too. One private
+	///     instance handle. The module drops such an implementation again when one of its scans matches it too, unless a
+	///     member produces it (see <see cref="RejectScannedHiddenImplementations" />). One private
 	///     to the module is built through its handle for a container in another assembly, while a container in the
 	///     module's own assembly, or in one it grants <c>InternalsVisibleTo</c>, calls its internal factory (see
 	///     <see cref="CollectModuleRegistrationFactories" />). An implementation whose generated
@@ -1418,7 +1419,10 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Rejects every implementation the module builds through a handle that one of its scans matches too, since the
 	///     scan's factory would build a second instance of what the handle shares (AWT197). One registered under
-	///     accessible services only leaves the handles to the self-compiled registrations, which report it themselves.
+	///     accessible services only and constructed leaves the handles to the self-compiled registrations, which report
+	///     it themselves. One produced by a <c>Factory</c> or <c>Instance</c> member keeps its handles, since nothing else
+	///     can call the member, and a consuming container serves the match from its instance handle (see
+	///     <c>ShareHandledInstances</c>), as a container in the module's own assembly lets the match yield to the registration.
 	///     One under an internal service is no longer viable, so nothing takes its handle; it is reported unless the
 	///     module's assembly grants <c>InternalsVisibleTo</c>, whose assemblies construct it once for both, or unless a
 	///     self-compiled registration of it reports it already.
@@ -1427,8 +1431,8 @@ partial class AwaitenGenerator
 	{
 		INamedTypeSymbol module = hidden.Module;
 		Compilation compilation = hidden.Compilation;
-		hidden.Implementations.RemoveAll(candidate => candidate.Shared && scanFactories.Any(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)));
-		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => candidate.Viable))
+		hidden.Implementations.RemoveAll(candidate => candidate is { Shared: true, Production: ProductionKind.Constructor, } && scanFactories.Any(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)));
+		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => candidate is { Viable: true, Shared: false, }))
 		{
 			if (scanFactories.FirstOrDefault(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)) is not { } scanned)
 			{

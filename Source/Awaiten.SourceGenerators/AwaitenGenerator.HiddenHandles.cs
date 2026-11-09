@@ -26,9 +26,9 @@ partial class AwaitenGenerator
 	///     internal service it holds, as <c>Lib.BeanStore (internal to module Lib.CoffeeModule)</c>, which the message
 	///     quotes like any other type, so a message never names a type the user did not write. A handle inside a longer
 	///     argument, such as a type argument, is named by the service alone. A generated hook wrapper is named by the
-	///     hook the module declares.
+	///     hook the module declares. <paramref name="produced" /> holds the production members the container's graph calls.
 	/// </summary>
-	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics)
 	{
 		List<ImportedModule> imported = CollectImportedModules(container, new List<DiagnosticInfo>());
 		if (ReadExtends(container) is { } baseContainer)
@@ -41,7 +41,7 @@ partial class AwaitenGenerator
 			.Where(module => !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
 			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
 			.ToList();
-		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, diagnostics);
+		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, produced, diagnostics);
 		if (diagnostics.Count == 0)
 		{
 			return;
@@ -122,17 +122,27 @@ partial class AwaitenGenerator
 	///     Reports AWT238 at the <c>[Import]</c> of a module of another assembly whose generated members take the handle
 	///     of an internal service that another module of that assembly declares, when no imported module of that assembly
 	///     registers the service and the container does not import that other module, and drops the AWT101, AWT242, AWT123
-	///     or AWT210 the missing handle registration causes, since the import is the one fix.
+	///     or AWT210 the missing handle registration causes, since the import is the one fix. A scan factory that is not
+	///     among the <paramref name="produced" /> members of the graph needs no handle, such as one whose match shares the
+	///     instance of another registration's handle through an alias (see <see cref="ShareHandledInstances" />).
 	///     Returns the modules that declare a handle an imported module takes, which name those handles in diagnostics.
 	/// </summary>
-	private static List<INamedTypeSymbol> ReportMissingHandleProviders(List<ImportedModule> imported, List<INamedTypeSymbol> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static List<INamedTypeSymbol> ReportMissingHandleProviders(List<ImportedModule> imported, List<INamedTypeSymbol> modules, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics)
 	{
 		List<INamedTypeSymbol> providers = new();
 		foreach (ImportedModule import in imported.Where(import => modules.Contains(import.Symbol, SymbolEqualityComparer.Default)))
 		{
 			INamedTypeSymbol module = import.Symbol;
+			HashSet<string> uncalledScanFactories = new(
+				module.GetAttributes()
+					.Where(attribute => attribute.AttributeClass is { } attributeClass && IsGeneratedScanRegistration(attributeClass) && attribute.ConstructorArguments.Length == 1)
+					.Select(attribute => attribute.ConstructorArguments[0].Value)
+					.OfType<string>()
+					.Where(factory => !produced.Contains($"{module.ToDisplayString(FullyQualified)}.{factory}")),
+				StringComparer.Ordinal);
 			IEnumerable<ITypeSymbol> types = (module.GetTypeMembers(InternalsClass).FirstOrDefault()?.GetMembers() ?? ImmutableArray<ISymbol>.Empty)
 				.OfType<IMethodSymbol>()
+				.Where(method => !uncalledScanFactories.Contains(InInternals(method.Name)))
 				.SelectMany(method => method.Parameters.Select(parameter => parameter.Type).Concat([method.ReturnType,]));
 			foreach (INamedTypeSymbol handle in types.SelectMany(TypesIn).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
 			{

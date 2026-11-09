@@ -338,10 +338,13 @@ public partial class ModuleScanInstanceHandleTests
 		[Singleton<PublicMultiRoaster, IPublicMultiRoaster>(SuppressDisposal = true)]
 		public static partial class UndisposedPublicMatchContainer;
 
+		// AWT142: the container's scan takes the module's match with another lifetime on purpose, to pin that its lifetime wins.
+#pragma warning disable AWT142
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(PublicMultiExposureScanModule))]
 		[Scan<IPublicMultiPlugin>(InAssembliesOf = new[] { typeof(IPublicMultiPlugin) }, Lifetime = Lifetime.Scoped)]
 		public static partial class ScannedPublicMatchContainer;
+#pragma warning restore AWT142
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(PublicMultiExposureScanModule))]
@@ -494,8 +497,11 @@ internal sealed class LocalRoaster : ILocalPlugin, ILocalRoaster
 }
 
 /// <summary>A <c>[Module]</c> of this assembly whose scan exposes its internal match under two interfaces.</summary>
+// AWT142: ScannedLocalMatchContainer scans the match with another lifetime on purpose, which is reported at this later scan.
 [Module]
+#pragma warning disable AWT142
 [Scan<ILocalPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]
+#pragma warning restore AWT142
 public static partial class LocalMultiExposureScanModule
 {
 	internal static void Activate(LocalRoaster roaster) => roaster.Activations++;
