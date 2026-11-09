@@ -38,6 +38,8 @@ partial class AwaitenGenerator
 
 		public Compilation Compilation { get; }
 
+		public CancellationToken CancellationToken => _cancellationToken;
+
 		/// <summary>The modules of the module's assembly and their registrations.</summary>
 		public AssemblyModuleIndex Assembly { get; }
 

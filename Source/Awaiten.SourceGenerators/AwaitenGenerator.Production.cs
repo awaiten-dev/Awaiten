@@ -1020,6 +1020,18 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Why this compilation calls no internal <c>Factory</c> member of <paramref name="module" />, a module in another
+	///     assembly that does not grant it access, when the module can carry no wrapper for one (see
+	///     <see cref="ModuleShapeReason" />), or <see langword="null" />.
+	/// </summary>
+	private static string? UnwrappableModuleCause(INamedTypeSymbol module, Compilation compilation)
+		=> !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		   && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
+		   && ModuleShapeReason(module) is { } shape
+			? $"this assembly does not see a method internal to the module's assembly, and the module generated no public wrapper for one, because {shape}"
+			: null;
+
+	/// <summary>
 	///     Collects the usable overloads of <paramref name="hookName" /> for <see cref="ResolveHook" />: the
 	///     dispatchable methods (non-generic ones whose first parameter accepts the instance, and generic ones bound
 	///     to a single closed marker form), and separately the closed-form sets of any generic overload that several
@@ -1568,7 +1580,7 @@ partial class AwaitenGenerator
 		if (candidates.Count == 0
 		    && info.Origin is { } module
 		    && !info.GenericFactory
-		    && SkippedFactoryReason(module, info.ProductionMember!, info.Symbol) is { } reason)
+		    && (SkippedFactoryReason(module, info.ProductionMember!, info.Symbol) ?? (IsModuleOrigin(info) ? UnwrappableModuleCause(module, compilation) : null)) is { } reason)
 		{
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.UnwrappedModuleFactory,
