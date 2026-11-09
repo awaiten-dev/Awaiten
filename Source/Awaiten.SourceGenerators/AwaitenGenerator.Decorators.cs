@@ -229,16 +229,18 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     Whether the decorator wraps the imported <paramref name="service" />. <c>AllKeys</c> cannot, since only the host
-		///     knows the keys it provides the service under, so it reports AWT123 naming the keys as the remedy.
+		///     knows the keys it provides the service under, so it reports AWT123 naming the keys as the remedy, as it does for
+		///     an empty <c>Keys</c>, which selects nothing.
 		/// </summary>
 		private bool WrapsImport(string service, DecorateRegistration decorator)
 		{
-			if (decorator.Keys is not null)
+			if (decorator.Keys is { Count: > 0, })
 			{
 				return true;
 			}
 
-			Report(Diagnostics.DecoratedImportUnderAllKeys, decorator.Location, service, decorator.Decorator.ToDisplayString(FullyQualified));
+			Report(decorator.Keys is null ? Diagnostics.DecoratedImportUnderAllKeys : Diagnostics.DecoratedImportUnderNoKeys, decorator.Location,
+				service, decorator.Decorator.ToDisplayString(FullyQualified));
 			return false;
 		}
 
@@ -940,9 +942,9 @@ partial class AwaitenGenerator
 				return parameterModel with { ServiceType = inner.ServiceType, Kind = DependencyKind.External, Key = inner.InnerKey, ImportedInner = true, };
 			}
 
-			// An outer link over a keyed import slot sees the undecorated unkeyed import as External, yet wraps the link below.
-			if (parameterModel is { Kind: DependencyKind.Direct, Key: null, }
-			    || (info.DecoratesImport && parameterModel is { Kind: DependencyKind.External, Key: null, }))
+			// An inner parameter declared as an imported type is External, yet wraps the link below: an outer link over a
+			// keyed import slot that sees the undecorated unkeyed import, or a link whose inner is an imported base of the service.
+			if (parameterModel is { Kind: DependencyKind.Direct or DependencyKind.External, Key: null, })
 			{
 				return parameterModel with { ServiceType = inner.ServiceType, Kind = DependencyKind.Direct, Key = inner.InnerKey, };
 			}

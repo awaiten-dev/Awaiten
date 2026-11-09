@@ -428,6 +428,18 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for a decorator with an empty <c>Keys</c> over an imported
+	///     service, which selects no instance the host provides.
+	/// </summary>
+	public static readonly DiagnosticDescriptor DecoratedImportUnderNoKeys = new(
+		"AWT123",
+		DecoratedServiceNotRegistered.Title,
+		"'{0}' is decorated by '{1}' with an empty Keys, which selects no instance the host provides '{0}' under; name the keys to decorate in Keys, or remove Keys to decorate the unkeyed import",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for an open decorator over an open import, whose closings
 	///     the container learns only from the dependencies that ask for them.
 	/// </summary>

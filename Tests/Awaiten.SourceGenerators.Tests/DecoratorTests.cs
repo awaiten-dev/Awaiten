@@ -89,6 +89,60 @@ public class DecoratorTests
 		await That(source).Contains("new global::MyCode.LoggingDecorator(ResolveReal2(__s))");
 	}
 
+	[Test]
+	public async Task Decorator_WithInnerParameterTypedAsAnImportedBase_WrapsTheRegistration()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public interface IBase { }
+		                                       public interface IGrinder : IBase { }
+		                                       public sealed class Grinder : IGrinder { }
+		                                       public sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IBase inner) { } }
+
+		                                       [Container]
+		                                       [Singleton<Grinder, IGrinder>]
+		                                       [ImportService<IBase>]
+		                                       [Decorate<LoggingGrinder, IGrinder>]
+		                                       public static partial class MyContainer;
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty();
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		await That(source).Contains("new global::MyCode.LoggingGrinder(Root.ResolveGrinder(__s.__root))")
+			.Because("the inner parameter receives the registration it decorates, even when its declared base type is imported");
+		await That(source).DoesNotContain("__ResolveExternal(typeof(global::MyCode.IBase)")
+			.Because("no dependency asks the host for the base type");
+	}
+
+	[Test]
+	public async Task Decorator_WithASeparateImportedBaseDependency_AsksTheHostForIt()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public interface IBase { }
+		                                       public interface IGrinder : IBase { }
+		                                       public sealed class Grinder : IGrinder { }
+		                                       public sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, IBase host) { } }
+
+		                                       [Container]
+		                                       [Singleton<Grinder, IGrinder>]
+		                                       [ImportService<IBase>]
+		                                       [Decorate<LoggingGrinder, IGrinder>]
+		                                       public static partial class MyContainer;
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty();
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		await That(source).Contains("new global::MyCode.LoggingGrinder(Root.ResolveGrinder(__s.__root), (global::MyCode.IBase)__s.__ResolveExternal(typeof(global::MyCode.IBase), null))")
+			.Because("the most derived parameter receives the inner instance, and the other one is an ordinary dependency on the import");
+	}
+
 	public sealed class KeyedRegistrations
 	{
 		[Test]

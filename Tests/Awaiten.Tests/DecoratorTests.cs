@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,6 +145,30 @@ public partial class DecoratorTests
 	}
 
 	[Test]
+	[Arguments(true)]
+	[Arguments(false)]
+	public async Task Decorator_WithInnerParameterTypedAsAnImportedBase_WrapsTheRegistration(bool hostProvidesTheBase)
+	{
+		using ImportedBaseInnerContainer.Root container = new(new BaseResolver(hostProvidesTheBase));
+
+		IDerivedService service = container.Resolve<IDerivedService>();
+
+		await That(service.Describe()).IsEqualTo("Base(Real)")
+			.Because("the inner parameter receives the registration it decorates, not the host's instance of its declared base type");
+	}
+
+	[Test]
+	public async Task Decorator_WithASeparateImportedBaseDependency_ReceivesTheHostInstanceForIt()
+	{
+		using ImportedBaseDependencyContainer.Root container = new(new BaseResolver(true));
+
+		IDerivedService service = container.Resolve<IDerivedService>();
+
+		await That(service.Describe()).IsEqualTo("HostAware(Real, Host)")
+			.Because("only the inner parameter wraps the registration, another dependency on the imported base comes from the host");
+	}
+
+	[Test]
 	public async Task Decorator_InheritsTheDecoratedRegistrationsScopedLifetime()
 	{
 		using ScopedLifetimeContainer.Root container = new();
@@ -241,6 +266,25 @@ public partial class DecoratorTests
 	public sealed class BaseTypedDecorator(IBase inner) : IDerivedService
 	{
 		public string Describe() => $"Base({inner.Describe()})";
+	}
+
+	public sealed class HostAwareDecorator(IDerivedService inner, IBase host) : IDerivedService
+	{
+		public string Describe() => $"HostAware({inner.Describe()}, {host.Describe()})";
+	}
+
+	public sealed class HostBase : IBase
+	{
+		public string Describe() => "Host";
+	}
+
+	private sealed class BaseResolver(bool providesTheBase) : IExternalResolver
+	{
+		public bool TryResolve(Type serviceType, object? key, [NotNullWhen(true)] out object? instance)
+		{
+			instance = providesTheBase && serviceType == typeof(IBase) ? new HostBase() : null;
+			return instance is not null;
+		}
 	}
 
 	public sealed class ScopedReal : IService
@@ -381,6 +425,18 @@ public partial class DecoratorTests
 	[Transient<DerivedReal, IDerivedService>]
 	[Decorate<BaseTypedDecorator, IDerivedService>]
 	public static partial class BaseTypedInnerContainer;
+
+	[Container]
+	[Transient<DerivedReal, IDerivedService>]
+	[ImportService<IBase>]
+	[Decorate<BaseTypedDecorator, IDerivedService>]
+	public static partial class ImportedBaseInnerContainer;
+
+	[Container]
+	[Transient<DerivedReal, IDerivedService>]
+	[ImportService<IBase>]
+	[Decorate<HostAwareDecorator, IDerivedService>]
+	public static partial class ImportedBaseDependencyContainer;
 
 	[Container]
 	[Scoped<ScopedReal, IService>]

@@ -971,7 +971,7 @@ new ServiceCollection().AddAwaitenContainer<CoffeeShop.Root>();   // MS.DI would
 ### AWT123
 
 :::danger[Error]
-A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. A service declared with `[ImportService<T>]` is [decorated](./04-registration/02-decorators.md#decorate-an-imported-service) without a registration, except by a decorator with `AllKeys`, whose keys only the host knows, or by an open decorator over an open import, whose closings the container does not know. `[ImportServices]` declares no service imported, so it does not count. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported, like an open composite.
+A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. A service declared with `[ImportService<T>]` is [decorated](./04-registration/02-decorators.md#decorate-an-imported-service) without a registration, except by a decorator with `AllKeys`, whose keys only the host knows, by one with an empty `Keys`, which selects none, or by an open decorator over an open import, whose closings the container does not know. `[ImportServices]` declares no service imported, so it does not count. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported, like an open composite.
 :::
 
 ```csharp expect=AWT123
