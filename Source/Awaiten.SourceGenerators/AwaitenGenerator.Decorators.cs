@@ -940,9 +940,11 @@ partial class AwaitenGenerator
 				return parameterModel with { ServiceType = inner.ServiceType, Kind = DependencyKind.External, Key = inner.InnerKey, ImportedInner = true, };
 			}
 
-			if (parameterModel is { Kind: DependencyKind.Direct, Key: null, })
+			// An outer link over a keyed import slot sees the undecorated unkeyed import as External, yet wraps the link below.
+			if (parameterModel is { Kind: DependencyKind.Direct, Key: null, }
+			    || (info.DecoratesImport && parameterModel is { Kind: DependencyKind.External, Key: null, }))
 			{
-				return parameterModel with { ServiceType = inner.ServiceType, Key = inner.InnerKey, };
+				return parameterModel with { ServiceType = inner.ServiceType, Kind = DependencyKind.Direct, Key = inner.InnerKey, };
 			}
 		}
 

@@ -69,4 +69,34 @@ public class DecoratedImportTests
 		string source = result.Sources["Awaiten.MyCode.TestShop.g.cs"];
 		await That(source).Contains("new global::MyCode.LoggingGrinder((global::MyCode.IGrinder)__s.__ResolveExternal(typeof(global::MyCode.IGrinder), null))");
 	}
+
+	[Test]
+	public async Task OuterDecoratorOfAKeyedImport_WrapsTheInnerDecorator()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+
+		                                       namespace MyCode;
+
+		                                       public interface IGrinder { }
+		                                       public sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner) { } }
+		                                       public sealed class TracingGrinder : IGrinder { public TracingGrinder(IGrinder inner) { } }
+
+		                                       [Container]
+		                                       [ImportService<IGrinder>]
+		                                       [Decorate<LoggingGrinder, IGrinder>(Keys = ["burr"])]
+		                                       [Decorate<TracingGrinder, IGrinder>(Keys = ["burr"], When = nameof(IsTraced))]
+		                                       public static partial class MyContainer
+		                                       {
+		                                           public static bool IsTraced() => true;
+		                                       }
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("only the innermost decorator of the keyed slot asks the host, so the conditional outer one has a decorator to fall back to");
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		await That(source).Contains("__s.__ResolveExternal(typeof(global::MyCode.IGrinder), \"burr\")");
+		await That(source).DoesNotContain("__s.__ResolveExternal(typeof(global::MyCode.IGrinder), null)")
+			.Because("the unkeyed import is not decorated, but the outer decorator's inner parameter must still reach the inner decorator");
+	}
 }

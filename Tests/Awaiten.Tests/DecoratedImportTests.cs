@@ -112,6 +112,15 @@ public partial class DecoratedImportTests
 
 	[Container]
 	[ImportService<IGrinder>]
+	[Decorate<AuditGrinder, IGrinder>(Keys = ["burr"])]
+	[Decorate<TracingGrinder, IGrinder>(Keys = ["burr"], Order = 1, When = nameof(IsTraced))]
+	public static partial class KeyedChainShop
+	{
+		public static bool IsTraced() => true;
+	}
+
+	[Container]
+	[ImportService<IGrinder>]
 	[Singleton<GrindSettings>(Instance = nameof(Settings))]
 	[Decorate<TracingGrinder, IGrinder>(When = nameof(IsLogged))]
 	public static partial class ConditionalShop
@@ -295,6 +304,21 @@ public partial class DecoratedImportTests
 			await That(scope.Resolve(typeof(IGrinder), "burr")).Is<LoggingGrinder>();
 			await That(scope.Resolve(typeof(IGrinder), "other")).Is<HostGrinder>()
 				.Because("a key no decorator selects still goes to the host");
+		}
+
+		[Test]
+		public async Task KeyedChain_WrapsEachDecoratorInTheNextLowerOne()
+		{
+			CountingResolver host = new();
+			using KeyedChainShop.Root shop = new(host);
+
+			object grinder = shop.Resolve(typeof(IGrinder), "burr");
+
+			await That(grinder).Is<TracingGrinder>();
+			await That(((TracingGrinder)grinder).Inner).Is<AuditGrinder>()
+				.Because("the outer decorator of a keyed slot wraps the inner decorator, not the host's unkeyed instance");
+			await That(((AuditGrinder)((TracingGrinder)grinder).Inner).Inner).IsSameAs(host.Handed.Single());
+			await That(host.Keys).IsEqualTo(["burr",]);
 		}
 	}
 
