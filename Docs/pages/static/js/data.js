@@ -1566,6 +1566,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
         "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
+      },
+      {
+        "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
+        "message": "fix: let a container replace a module factory of another assembly that it calls through a handle (#359)"
       }
     ],
     "labels": [
@@ -1829,7 +1835,8 @@ window.BENCHMARK_DATA = {
       "4792177d",
       "de96b6de",
       "f379f8d7",
-      "9acb67d6"
+      "9acb67d6",
+      "625dd9f2"
     ],
     "datasets": [
       {
@@ -2096,7 +2103,8 @@ window.BENCHMARK_DATA = {
           6.899865116064365,
           7.776726760466894,
           7.149903906079439,
-          8.400816798210144
+          8.400816798210144,
+          5.20149103552103
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2108,6 +2116,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2643,7 +2652,8 @@ window.BENCHMARK_DATA = {
           5.892761447599956,
           8.558466980499881,
           7.38249815083467,
-          7.377010000439791
+          7.377010000439791,
+          4.225872686753671
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2655,6 +2665,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3190,7 +3201,8 @@ window.BENCHMARK_DATA = {
           136.75030146326338,
           154.46070103645326,
           126.70430167516072,
-          110.64731404611042
+          110.64731404611042,
+          61.791328242846895
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3202,6 +3214,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -3733,7 +3746,8 @@ window.BENCHMARK_DATA = {
           8.540617718228273,
           8.788059824456772,
           9.430027000032938,
-          9.087229053561504
+          9.087229053561504,
+          5.276136915271099
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3745,6 +3759,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4272,7 +4287,8 @@ window.BENCHMARK_DATA = {
           11.740022263924281,
           11.031720500725966,
           10.854860769708951,
-          11.305613294243813
+          11.305613294243813,
+          6.474353870749473
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4284,6 +4300,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6120,6 +6137,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
         "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
+      },
+      {
+        "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
+        "message": "fix: let a container replace a module factory of another assembly that it calls through a handle (#359)"
       }
     ],
     "labels": [
@@ -6383,7 +6406,8 @@ window.BENCHMARK_DATA = {
       "4792177d",
       "de96b6de",
       "f379f8d7",
-      "9acb67d6"
+      "9acb67d6",
+      "625dd9f2"
     ],
     "datasets": [
       {
@@ -6650,7 +6674,8 @@ window.BENCHMARK_DATA = {
           8.917366255323092,
           8.47184823338802,
           8.23509739020041,
-          9.40567595225114
+          9.40567595225114,
+          5.659553093569619
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -6662,6 +6687,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7197,7 +7223,8 @@ window.BENCHMARK_DATA = {
           6.015865101416906,
           7.324089056501786,
           7.380321126182874,
-          7.313285709491798
+          7.313285709491798,
+          4.244569593171279
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7209,6 +7236,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7744,7 +7772,8 @@ window.BENCHMARK_DATA = {
           136.7502739270528,
           126.78299527168274,
           120.76294655799866,
-          109.13068155731473
+          109.13068155731473,
+          69.71168947219849
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -7756,6 +7785,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8287,7 +8317,8 @@ window.BENCHMARK_DATA = {
           8.634743743141492,
           8.78349883052019,
           9.429755300283432,
-          9.092772919398088
+          9.092772919398088,
+          5.189187937549183
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8299,6 +8330,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8826,7 +8858,8 @@ window.BENCHMARK_DATA = {
           11.476824291547139,
           14.496232369542122,
           14.17709597142843,
-          14.892666957775752
+          14.892666957775752,
+          6.54805464843909
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -8838,6 +8871,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10674,6 +10708,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
         "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
+      },
+      {
+        "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
+        "message": "fix: let a container replace a module factory of another assembly that it calls through a handle (#359)"
       }
     ],
     "labels": [
@@ -10937,7 +10977,8 @@ window.BENCHMARK_DATA = {
       "4792177d",
       "de96b6de",
       "f379f8d7",
-      "9acb67d6"
+      "9acb67d6",
+      "625dd9f2"
     ],
     "datasets": [
       {
@@ -11204,7 +11245,8 @@ window.BENCHMARK_DATA = {
           10.880171182751656,
           17.79494422674179,
           16.653887857993443,
-          15.873865734253611
+          15.873865734253611,
+          16.25509641766548
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -11476,6 +11518,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216
         ],
         "borderColor": "#63A2AC",
@@ -11751,7 +11794,8 @@ window.BENCHMARK_DATA = {
           757.6677000363668,
           1266.9949095408122,
           1344.510694885254,
-          1128.662778036935
+          1128.662778036935,
+          1322.9963602338519
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -11763,6 +11807,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -12298,7 +12343,8 @@ window.BENCHMARK_DATA = {
           17312.165673828124,
           18888.588522774833,
           26565.093375651042,
-          25363.69736735026
+          25363.69736735026,
+          26611.32065993089
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -12569,6 +12615,7 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32474,
+          32478,
           32478,
           32478
         ],
@@ -12841,7 +12888,8 @@ window.BENCHMARK_DATA = {
           382.6635476521083,
           525.4180841445923,
           614.0228361765544,
-          563.2767645972116
+          563.2767645972116,
+          610.3815039952595
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -12871,6 +12919,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -13380,7 +13429,8 @@ window.BENCHMARK_DATA = {
           6269.9820474897115,
           9181.85485135592,
           10497.938401285808,
-          8681.686106755184
+          8681.686106755184,
+          10830.831926472982
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -13648,6 +13698,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -15228,6 +15279,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
         "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
+      },
+      {
+        "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
+        "message": "fix: let a container replace a module factory of another assembly that it calls through a handle (#359)"
       }
     ],
     "labels": [
@@ -15491,7 +15548,8 @@ window.BENCHMARK_DATA = {
       "4792177d",
       "de96b6de",
       "f379f8d7",
-      "9acb67d6"
+      "9acb67d6",
+      "625dd9f2"
     ],
     "datasets": [
       {
@@ -15758,7 +15816,8 @@ window.BENCHMARK_DATA = {
           76.83804666996002,
           214.7912073135376,
           118.20292917092641,
-          115.3097060918808
+          115.3097060918808,
+          125.3586114186507
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -16030,6 +16089,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432
         ],
         "borderColor": "#63A2AC",
@@ -16305,7 +16365,8 @@ window.BENCHMARK_DATA = {
           7141.932856877645,
           13110.022040303547,
           12021.685920715332,
-          10493.613839285714
+          10493.613839285714,
+          10545.585482788087
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16317,6 +16378,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -16852,7 +16914,8 @@ window.BENCHMARK_DATA = {
           414037.19619516225,
           475883.223563058,
           649004.415876116,
-          617008.7640206473
+          617008.7640206473,
+          623530.4167131697
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17124,7 +17187,8 @@ window.BENCHMARK_DATA = {
           740300,
           740873,
           740074,
-          721262
+          721262,
+          719052
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17395,7 +17459,8 @@ window.BENCHMARK_DATA = {
           23131.308079310827,
           30938.507843017578,
           38255.352693684894,
-          35620.19782802037
+          35620.19782802037,
+          35284.97294514974
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17663,7 +17728,8 @@ window.BENCHMARK_DATA = {
           80304,
           80297,
           80006,
-          80969
+          80969,
+          80355
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17934,7 +18000,8 @@ window.BENCHMARK_DATA = {
           187340.04161783855,
           256777.68185221354,
           322033.45439453126,
-          261367.6338936942
+          261367.6338936942,
+          261212.2841796875
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18202,7 +18269,8 @@ window.BENCHMARK_DATA = {
           573038,
           571193,
           573058,
-          573027
+          573027,
+          573171
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19758,6 +19826,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
         "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
+      },
+      {
+        "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
+        "author": "Valentin Breu\u00DF",
+        "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
+        "message": "fix: let a container replace a module factory of another assembly that it calls through a handle (#359)"
       }
     ],
     "labels": [
@@ -20017,7 +20091,8 @@ window.BENCHMARK_DATA = {
       "4792177d",
       "de96b6de",
       "f379f8d7",
-      "9acb67d6"
+      "9acb67d6",
+      "625dd9f2"
     ],
     "datasets": [
       {
@@ -20280,7 +20355,8 @@ window.BENCHMARK_DATA = {
           155.58806353348953,
           203.35485884348552,
           206.36169155438742,
-          435.3590312639872
+          435.3590312639872,
+          255.60729413032533
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -20315,6 +20391,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -20819,7 +20896,8 @@ window.BENCHMARK_DATA = {
           397.27538010279335,
           481.4657674153646,
           474.6827694892883,
-          619.5660879770915
+          619.5660879770915,
+          565.2388330868313
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -20831,6 +20909,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -21358,7 +21437,8 @@ window.BENCHMARK_DATA = {
           3460.933431352888,
           5259.893307277134,
           4913.920828501384,
-          6439.631222025553
+          6439.631222025553,
+          6120.789250946045
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21442,6 +21522,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -21897,7 +21978,8 @@ window.BENCHMARK_DATA = {
           243.3989061968667,
           346.84544906616213,
           346.30119609832764,
-          398.35327361424766
+          398.35327361424766,
+          415.9466773668925
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21909,6 +21991,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -22436,7 +22519,8 @@ window.BENCHMARK_DATA = {
           374.6583217212132,
           552.4876335144043,
           554.2914553324382,
-          757.6502473831176
+          757.6502473831176,
+          642.0628806522915
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22448,6 +22532,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
