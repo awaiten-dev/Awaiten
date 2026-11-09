@@ -1259,6 +1259,125 @@ public class ModuleHiddenServiceTests
 			}
 		}
 
+		public class FactoryOfTheServiceReplaced
+		{
+			private static string Library(bool suppressDisposal) => $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IClock { }
+				internal sealed class TimeSource { }
+				internal sealed class SystemClock : IClock { public SystemClock(TimeSource source) { } }
+
+				[Module]
+				[Singleton<TimeSource>]
+				[Singleton<IClock>(Factory = nameof(CreateClock){{(suppressDisposal ? ", SuppressDisposal = true" : "")}})]
+				public static partial class ClockModule
+				{
+				    internal static IClock CreateClock(TimeSource source) => new SystemClock(source);
+				}
+				""";
+
+			private const string Extending = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				public sealed class FakeClock : IClock { }
+
+				[Container]
+				[Import(typeof(ClockModule))]
+				public static partial class Shop;
+
+				[Container(Extends = typeof(Shop))]
+				[Singleton<IClock>(Factory = nameof(CreateFakeClock))]
+				public static partial class TestShop
+				{
+				    private static IClock CreateFakeClock() => new FakeClock();
+				}
+				""";
+
+			private const string Importing = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				public sealed class FakeClock : IClock { }
+
+				[Container]
+				[Import(typeof(ClockModule))]
+				[Singleton<IClock>(Factory = nameof(CreateFakeClock))]
+				public static partial class TestShop
+				{
+				    private static IClock CreateFakeClock() => new FakeClock();
+				}
+				""";
+
+			[Test]
+			[Arguments(false, false)]
+			[Arguments(false, true)]
+			[Arguments(true, false)]
+			[Arguments(true, true)]
+			public async Task ByAnExtendingContainer_ServesTheReplacementWithoutBuildingTheHandle(bool suppressDisposal, bool referenceAssembly)
+			{
+				GeneratorResult result = referenceAssembly
+					? Generator.RunWithGeneratedReferenceAssembly(Library(suppressDisposal), Extending)
+					: Generator.RunWithGeneratedReferencedAssembly(Library(suppressDisposal), Extending);
+				string source = result.Sources["Awaiten.MyCode.TestShop.g.cs"];
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the factory only names its service, so the extending container's factory replaces it like any other inherited registration");
+				await That(result.Sources["Awaiten.MyCode.Shop.g.cs"]).Contains($"global::Lib.ClockModule.Internals.{HiddenFactory("global::Lib.IClock")}(");
+				await That(source).Contains("__s._iClock = CreateFakeClock();").And.DoesNotContain(HiddenFactory("global::Lib.IClock")).And.DoesNotContain(Alias("global::Lib.IClock", "global::Lib.IClock"))
+					.Because("the replaced factory is served neither through its handle nor through the alias of the handle");
+			}
+
+			[Test]
+			[Arguments(false, false)]
+			[Arguments(false, true)]
+			[Arguments(true, false)]
+			[Arguments(true, true)]
+			public async Task ByAnImportingContainer_ServesTheReplacementWithoutBuildingTheHandle(bool suppressDisposal, bool referenceAssembly)
+			{
+				GeneratorResult result = referenceAssembly
+					? Generator.RunWithGeneratedReferenceAssembly(Library(suppressDisposal), Importing)
+					: Generator.RunWithGeneratedReferencedAssembly(Library(suppressDisposal), Importing);
+				string source = result.Sources["Awaiten.MyCode.TestShop.g.cs"];
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("both factories only name their service, so they are two implementations of it, as in a container of the module's own assembly");
+				await That(source).Contains("__s._iClock = CreateFakeClock();").And.Contains($"global::Lib.ClockModule.Internals.{HiddenFactory("global::Lib.IClock")}(")
+					.Because("the container's own factory serves the single resolution, while the module's factory stays a collection member");
+			}
+
+			[Test]
+			public async Task ImplementationTheModuleNames_StillConflictsWithAnotherFactoryOfIt()
+			{
+				string library = Library(suppressDisposal: false)
+					.Replace("internal sealed class SystemClock : IClock { public SystemClock", "public sealed class SystemClock : IClock { internal SystemClock")
+					.Replace("[Singleton<IClock>(Factory = nameof(CreateClock))]", "[Singleton<SystemClock, IClock>(Factory = nameof(CreateClock))]")
+					.Replace("internal static IClock CreateClock", "internal static SystemClock CreateClock");
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<SystemClock>(Factory = nameof(CreateOtherClock))]
+					public static partial class {0}
+					{
+					    private static SystemClock CreateOtherClock() => null!;
+					}
+					""";
+				GeneratorResult same = Generator.Run(library + "\n" + container.Replace("{0}", "SameContainer"));
+				GeneratorResult cross = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + container.Replace("{0}", "MyContainer"));
+
+				await That(same.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111"));
+				await That(cross.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111"))
+					.Because("the module names the implementation its factory produces, so the container's factory of it is a second production of the one instance");
+			}
+		}
+
 		[Test]
 		public async Task ConsumerGrantedInternalsVisibleTo_ConstructsDirectly()
 		{

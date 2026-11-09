@@ -377,17 +377,27 @@ partial class AwaitenGenerator
 	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166).
 	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
 	///     which therefore comes first. A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
+	///     A <c>Factory</c> or <c>Instance</c> registration that names only its service shares the handle only when a
+	///     registration names that type as its implementation, since <see cref="AssignMemberIdentities" /> otherwise
+	///     identifies both by their members, so precedence decides between them as between any two producers of a service.
 	/// </summary>
 	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		HashSet<string> lifetimes = new(StringComparer.Ordinal);
 		HashSet<string> productions = new(StringComparer.Ordinal);
 		HashSet<string> directives = new(StringComparer.Ordinal);
+		HashSet<string> implementations = new(
+			raw.Where(registration => registration.Hidden is null)
+				.Select(registration => registration.Aliased ?? registration)
+				.Where(registration => !NamesOnlyItsService(registration, compilation))
+				.Select(registration => registration.ImplementationType),
+			StringComparer.Ordinal);
 		for (int index = 0; index < raw.Count; index++)
 		{
 			RawRegistration registration = raw[index];
 			if (registration.Hidden is not null
 			    || registration.ScanImplementation is not null
+			    || (NamesOnlyItsService(registration, compilation) && !implementations.Contains(registration.ImplementationType))
 			    || handles.FirstOrDefault(entry => entry.Identity == registration.ImplementationType) is not ({ } handle, int handleIndex, _))
 			{
 				continue;

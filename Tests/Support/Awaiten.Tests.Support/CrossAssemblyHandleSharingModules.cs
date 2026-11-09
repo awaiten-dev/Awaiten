@@ -222,3 +222,46 @@ public static partial class CrossAssemblyTillModule;
 [Module]
 [Decorate<LoggingTill, IDecoratedTill>]
 public static partial class CrossAssemblyTillLoggingModule;
+
+/// <summary>A clock <see cref="CrossAssemblyHandledFactoryModule" /> produces through a factory that takes an internal service.</summary>
+public interface IHandledFactoryClock;
+
+/// <summary>Counts what <see cref="CrossAssemblyHandledFactoryModule" /> builds, so a test sees whether its factory runs.</summary>
+public static class HandledFactoryCounter
+{
+	private static int _factoryCalls;
+	private static int _timeSources;
+
+	/// <summary>How often the module's factory was called.</summary>
+	public static int FactoryCalls => System.Threading.Volatile.Read(ref _factoryCalls);
+
+	/// <summary>How often the internal time source was constructed.</summary>
+	public static int TimeSources => System.Threading.Volatile.Read(ref _timeSources);
+
+	internal static void CallFactory() => System.Threading.Interlocked.Increment(ref _factoryCalls);
+
+	internal static void ConstructTimeSource() => System.Threading.Interlocked.Increment(ref _timeSources);
+}
+
+internal sealed class HandledTimeSource
+{
+	public HandledTimeSource() => HandledFactoryCounter.ConstructTimeSource();
+}
+
+internal sealed class HandledSystemClock(HandledTimeSource source) : IHandledFactoryClock
+{
+	public HandledTimeSource Source => source;
+}
+
+/// <summary>A <c>[Module]</c> whose factory of a public service takes an internal service, so a container in another assembly calls it through a handle.</summary>
+[Module]
+[Singleton<HandledTimeSource>]
+[Singleton<IHandledFactoryClock>(Factory = nameof(CreateClock), SuppressDisposal = true)]
+public static partial class CrossAssemblyHandledFactoryModule
+{
+	internal static IHandledFactoryClock CreateClock(HandledTimeSource source)
+	{
+		HandledFactoryCounter.CallFactory();
+		return new HandledSystemClock(source);
+	}
+}
