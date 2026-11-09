@@ -163,7 +163,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 
 		foreach (DiagnosticInfo diagnostic in detected)
 		{
-			report(ToDiagnostic(diagnostic, compilation));
+			report(diagnostic.ToDiagnostic(compilation, cancellationToken));
 		}
 
 		// AWT179, AWT158, AWT245 and AWT249 come out of the graph build, but the generator leaves them to the analyzer so that
@@ -182,7 +182,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 
 		foreach (DiagnosticInfo diagnostic in fromGraph.Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct) || nullableProducts.TryAdd(diagnostic, true)))
 		{
-			report(ToDiagnostic(diagnostic, compilation));
+			report(diagnostic.ToDiagnostic(compilation, cancellationToken));
 		}
 	}
 
@@ -204,27 +204,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 
 		foreach (DiagnosticInfo diagnostic in model.Diagnostics.AsArray().Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)))
 		{
-			report(ToDiagnostic(diagnostic, compilation));
+			report(diagnostic.ToDiagnostic(compilation, cancellationToken));
 		}
-	}
-
-	// Builds the reportable diagnostic. The location is reconstructed against the compilation's actual syntax
-	// tree (matched by file path) rather than via LocationInfo.ToLocation(), which yields an external location
-	// detached from any tree, and a diagnostic without a source-tree location cannot be suppressed by an
-	// in-source #pragma warning disable / [SuppressMessage].
-	private static Diagnostic ToDiagnostic(DiagnosticInfo info, Compilation compilation)
-	{
-		Location location = Location.None;
-		if (info.Location is { } source)
-		{
-			SyntaxTree? tree = compilation.SyntaxTrees.FirstOrDefault(t => t.FilePath == source.FilePath);
-			location = tree is null ? source.ToLocation() : Location.Create(tree, source.TextSpan);
-		}
-
-		object?[] args = info.MessageArgs.AsArray().Cast<object?>().ToArray();
-		return info.Severity is { } severity
-			? Diagnostic.Create(info.Descriptor, location, severity, additionalLocations: null, properties: null, args)
-			: Diagnostic.Create(info.Descriptor, location, args);
 	}
 
 	// Builds (or returns the cached) object graph of a container, with the diagnostics produced while building
