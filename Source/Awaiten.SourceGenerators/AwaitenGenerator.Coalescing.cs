@@ -880,19 +880,19 @@ partial class AwaitenGenerator
 	///     service-&gt;impl map is known, at the container's location.
 	/// </summary>
 	private static void ReportContradictingExternalServices(
-		HashSet<string> externalServiceTypes,
+		ExternalServiceTypes externalServiceTypes,
 		Dictionary<ServiceKey, string> serviceToImpl,
 		INamedTypeSymbol containerSymbol,
 		List<DiagnosticInfo> diagnostics)
 	{
-		if (externalServiceTypes.Count == 0)
+		if (externalServiceTypes.Closed.Count == 0)
 		{
 			return;
 		}
 
 		LocationInfo? location = LocationInfo.From(containerSymbol.Locations.FirstOrDefault());
-		foreach (string externalType in externalServiceTypes
-			         .Where(type => IsRegisteredService(type, serviceToImpl))
+		foreach (string externalType in externalServiceTypes.Closed
+			         .Where(type => IsRegisteredService(type, serviceToImpl, externalServiceTypes))
 			         .OrderBy(type => type, StringComparer.Ordinal))
 		{
 			diagnostics.Add(new DiagnosticInfo(
@@ -923,7 +923,7 @@ partial class AwaitenGenerator
 		foreach (string closing in routed
 			         .Where(type => externalServiceTypes.Closings.ContainsKey(type)
 			                        && !externalServiceTypes.Closed.Contains(type)
-			                        && IsRegisteredService(type, serviceToImpl))
+			                        && IsRegisteredService(type, serviceToImpl, externalServiceTypes))
 			         .OrderBy(type => type, StringComparer.Ordinal))
 		{
 			diagnostics.Add(new DiagnosticInfo(
@@ -942,9 +942,13 @@ partial class AwaitenGenerator
 			.Where(dependency => dependency.Kind == DependencyKind.External)
 			.Select(dependency => dependency.ServiceType), StringComparer.Ordinal);
 
-	/// <summary>Whether any registration (of any key) provides the service type, so a declared external type contradicts it.</summary>
-	private static bool IsRegisteredService(string serviceType, Dictionary<ServiceKey, string> serviceToImpl)
-		=> serviceToImpl.Keys.Any(key => string.Equals(key.Service, serviceType, StringComparison.Ordinal));
+	/// <summary>
+	///     Whether any registration (of any key) provides the service type, so a declared external type contradicts it. A
+	///     decorator chain over the import is no registration: it wraps the host's instance.
+	/// </summary>
+	private static bool IsRegisteredService(string serviceType, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
+		=> serviceToImpl.Keys.Any(key => string.Equals(key.Service, serviceType, StringComparison.Ordinal))
+		   && !externalServiceTypes.Decorated.Any(key => string.Equals(key.Service, serviceType, StringComparison.Ordinal));
 
 	/// <summary>
 	///     The single encoding of coalescing precedence: explicit strong registrations first, then overridable

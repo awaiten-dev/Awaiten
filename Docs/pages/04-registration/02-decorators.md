@@ -184,14 +184,33 @@ A conditional decorator answers one question: should this cross-cutting wrapper 
 
 ## Lifetime and disposal
 
-A decorator inherits the lifetime of what it decorates. Wrap a singleton and the decorator is a singleton. On teardown the chain is disposed outermost first, so the decorator is disposed before its inner service.
+A decorator inherits the lifetime of what it decorates. Wrap a singleton and the decorator is a singleton. A decorator of an [imported service](#decorate-an-imported-service) is transient. On teardown the chain is disposed outermost first, so the decorator is disposed before its inner service.
 
 ## Async inner services
 
 If the inner service is async-initialized, the whole chain is async-tainted. Resolve it with `ResolveAsync`. A synchronous resolve is a build error ([AWT119](../09-diagnostics.md#awt119)). See [Async initialization](../03-core-concepts/03-async-initialization.md).
 
+## Decorate an imported service
+
+A decorator also wraps a service the host provides through [`[ImportService<T>]`](../07-hosting/02-external-services.mdx). The container owns the decorator, and the host keeps its instance.
+
+```csharp
+[Container]
+[ImportService<IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+
+// Resolve<IPaymentTerminal>() returns LoggingTerminal(the host's terminal)
+```
+
+An imported service has no lifetime the decorator could inherit, so the chain is transient: each resolve builds the decorators again, and the innermost asks the host for its instance, as an undecorated import does. The container tracks and disposes the decorators like any transient and never disposes the host's instance. A singleton that depends on the service holds one chain, as it would hold the bare import.
+
+- **Keys.** The host decides the keys it provides a service under, so name them in `Keys`: `Keys = ["backup"]` wraps the instance the host provides under `"backup"`. `AllKeys` is a build error ([AWT123](../09-diagnostics.md#awt123)).
+- **Generics.** An open decorator wraps each closed `[ImportService<T>]` of its service, and a closed decorator can wrap a closing of an open import. An open decorator over an open import is a build error ([AWT123](../09-diagnostics.md#awt123)), since the container learns its closings only from the dependencies that ask for them.
+- **`[ImportServices]`.** It declares no service imported, so a decorated service needs its own `[ImportService<T>]`.
+
 :::note
-Decorating a service that is not registered is a build error ([AWT123](../09-diagnostics.md#awt123)), and a decorator needs exactly one constructor parameter of the decorated type ([AWT124](../09-diagnostics.md#awt124)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the decorator's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
+Decorating a service that is neither registered nor imported is a build error ([AWT123](../09-diagnostics.md#awt123)), and a decorator needs exactly one constructor parameter of the decorated type ([AWT124](../09-diagnostics.md#awt124)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the decorator's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
 :::
 
 ## Where to go next

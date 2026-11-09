@@ -50,6 +50,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="RequestingType" /> is the call of the method next to a generated factory that returns the type the
 ///     factory builds (see <see cref="AwaitenGenerator.RequestingTypeName" />), which its dependencies receive as
 ///     their requesting type in place of the accessible type the factory returns.
+///     <see cref="DecoratesImport" /> marks a link of a decorator chain over an imported service, which is not advertised
+///     for projection into a host, since it would replace the host's own registration the chain wraps.
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -84,7 +86,8 @@ internal sealed record InstanceModel(
 	bool TracksHandleDisposal = false,
 	bool NullableProduct = false,
 	PredicateModel? When = null,
-	string? RequestingType = null)
+	string? RequestingType = null,
+	bool DecoratesImport = false)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated

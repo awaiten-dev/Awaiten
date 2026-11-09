@@ -159,6 +159,7 @@ partial class AwaitenGenerator
 				diagnostics.RemoveAll(diagnostic => (diagnostic.Descriptor == Diagnostics.MissingDependency
 				                                     || diagnostic.Descriptor == Diagnostics.RelationshipOverImportedService
 				                                     || diagnostic.Descriptor == Diagnostics.DecoratedServiceNotRegistered
+				                                     || diagnostic.Descriptor == Diagnostics.DecoratedServiceNotImported
 				                                     || diagnostic.Descriptor == Diagnostics.DecoratedKeyNotRegistered)
 				                                    && diagnostic.MessageArgs.AsArray().Any(argument => argument.StartsWith(missing, StringComparison.Ordinal)));
 				string service = ConstructedModuleRegistrations(provider, compilation, members: true)

@@ -211,8 +211,10 @@ partial class AwaitenGenerator
 	///     <see cref="ParameterServiceType" /> is the parameter's own declared type (used to pick the single inner
 	///     parameter), and <see cref="ServiceType" /> is the decorated service the links are registered under, so the
 	///     redirect keys to <c>(ServiceType, InnerKey)</c> even when the parameter is declared as a base of the service.
+	///     <see cref="Imported" /> marks the innermost link over an imported service, whose inner parameter asks the
+	///     external resolver for <see cref="ServiceType" /> under <see cref="InnerKey" />, the user key of the decorated slot.
 	/// </summary>
-	private readonly record struct DecoratorInner(string ParameterServiceType, string ServiceType, string InnerKey);
+	private readonly record struct DecoratorInner(string ParameterServiceType, string ServiceType, string? InnerKey, bool Imported = false);
 
 	private sealed class ImplInfo
 	{
@@ -248,6 +250,9 @@ partial class AwaitenGenerator
 		///     instance as when the predicate is <see langword="false" />, or <see langword="null" />.
 		/// </summary>
 		public (DecoratorPredicate Predicate, string Service)? When { get; init; }
+
+		/// <summary>Whether this is a link of a decorator chain over an imported service.</summary>
+		public bool DecoratesImport { get; init; }
 
 		/// <summary>Whether this is the instance of a <c>[Composite]</c>.</summary>
 		public bool IsComposite { get; init; }

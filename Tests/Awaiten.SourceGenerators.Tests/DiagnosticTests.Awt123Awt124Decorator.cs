@@ -240,5 +240,143 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).DoesNotContain("*@__dec:*").AsWildcard()
 				.Because("the internal synthetic '@__dec:' identity must not leak into the captive-dependency diagnostic");
 		}
+
+		public class Imports
+		{
+			[Test]
+			public async Task DoesNotReportAwt123ForADecoratorOverAnImportedService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [ImportService<IService>]
+				                                       [Decorate<LoggingDecorator, IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = ["primary"])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("a decorator wraps the instance the host provides under each key it selects, and its chain is no registration that contradicts the import (AWT175)");
+			}
+
+			[Test]
+			public async Task ReportsAwt123ForAllKeysOverAnImportedService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [ImportService<IService>]
+				                                       [Decorate<LoggingDecorator, IService>(AllKeys = true)]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' under all keys*only the host knows the keys*name the keys to decorate in Keys*").AsWildcard()
+					.Because("the container cannot see the keys the host provides an import under");
+			}
+
+			[Test]
+			public async Task ReportsAwt123ForAnOpenDecoratorOverAnOpenImport()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IFeed<T> { }
+				                                       public sealed class AuditedFeed<T> : IFeed<T> { public AuditedFeed(IFeed<T> inner) { } }
+				                                       public sealed class Reader { public Reader(IFeed<int> feed) { } }
+
+				                                       [Container]
+				                                       [ImportService(typeof(IFeed<>))]
+				                                       [Transient<Reader>]
+				                                       [Decorate(typeof(AuditedFeed<>), typeof(IFeed<>))]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IFeed<T>' is decorated by the open decorator 'MyCode.AuditedFeed<T>'*imported as an open generic*[ImportService<T>]*").AsWildcard()
+					.Because("the closings of an open import are known only from the dependencies, so the decorator would silently wrap none");
+			}
+
+			[Test]
+			public async Task ReportsAwt123UnderImportServicesForAnUndeclaredService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [ImportServices]
+				                                       [Decorate<LoggingDecorator, IService>]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*[ImportServices] declares no service imported*declare it with [ImportService]*").AsWildcard()
+					.Because("the blanket fall-through declares no type, so a misspelled decorated service is not silently wrapped around a host lookup");
+			}
+
+			[Test]
+			public async Task ReportsAwt105WhenASingletonCapturesADecoratorOfAnImportThatTakesAScopedService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Session { }
+				                                       public sealed class SessionDecorator : IService { public SessionDecorator(IService inner, Session session) { } }
+				                                       public sealed class Consumer { public Consumer(IService service) { } }
+
+				                                       [Container]
+				                                       [ImportService<IService>]
+				                                       [Scoped<Session>]
+				                                       [Singleton<Consumer>]
+				                                       [Decorate<SessionDecorator, IService>]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT105*Consumer*Session*").AsWildcard()
+					.Because("the decorator chain over an import is transient, so the singleton captures the scoped service through it");
+			}
+
+			[Test]
+			public async Task ReportsAwt175WhenTheDecoratedImportIsAlsoRegistered()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [ImportService<IService>]
+				                                       [Singleton<Real, IService>]
+				                                       [Decorate<LoggingDecorator, IService>]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT175*").AsWildcard()
+					.Because("the decorator wraps the registration, which still contradicts the import");
+			}
+		}
 	}
 }

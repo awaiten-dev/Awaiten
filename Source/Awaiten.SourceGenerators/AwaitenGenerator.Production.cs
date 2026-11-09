@@ -172,7 +172,8 @@ partial class AwaitenGenerator
 			Unlisted: info.Unlisted,
 			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics),
 			When: BuildPredicate(info, context),
-			RequestingType: GeneratedRequestingType(info, producer, productionMember));
+			RequestingType: GeneratedRequestingType(info, producer, productionMember),
+			DecoratesImport: info.DecoratesImport);
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{

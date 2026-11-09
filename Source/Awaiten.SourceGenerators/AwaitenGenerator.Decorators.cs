@@ -128,6 +128,7 @@ partial class AwaitenGenerator
 			targets.AddRange(TargetKeys(service, contextual: true));
 			targets.AddRange(TargetKeys(service, contextual: false));
 			List<string?> populated = targets.Where(key => TargetBaseImpls(service, key).Count > 0).ToList();
+			bool imported = populated.Count == 0 && _external.ServiceTypes.Routes(chain[0].ServiceSymbol, service);
 
 			// Order the chain by (Order, declaration): innermost first, outermost last, with the decorators inherited
 			// from an extended base inside the extending container's own, so a test wraps production. A decorator with
@@ -135,10 +136,17 @@ partial class AwaitenGenerator
 			List<DecorateRegistration> ordered = new();
 			foreach (DecorateRegistration decorator in chain.OrderByDescending(d => d.Inherited).ThenBy(d => d.Order).ThenBy(d => d.DeclarationOrder))
 			{
-				if (HasSomethingToWrap(service, decorator, populated))
+				if (imported ? WrapsImport(service, decorator) : HasSomethingToWrap(service, decorator, populated))
 				{
 					ordered.Add(decorator);
 				}
+			}
+
+			// An imported service has the slots its decorators name: the host decides which keys it provides.
+			if (imported)
+			{
+				populated = ordered.SelectMany(decorator => decorator.Keys!).Distinct()
+					.OrderBy(key => key is not null).ThenBy(key => key, StringComparer.Ordinal).ToList();
 			}
 
 			if (ordered.Count == 0)
@@ -170,6 +178,12 @@ partial class AwaitenGenerator
 
 				if (slotChain.Count == 0)
 				{
+					continue;
+				}
+
+				if (imported)
+				{
+					WrapImport(new ServiceChain(service, resolutionKey, null, null, slotChain, slotInnerTypes, Imported: true), baseIndex++);
 					continue;
 				}
 
@@ -206,11 +220,41 @@ partial class AwaitenGenerator
 			}
 			else if (!any && !_rejected.Contains(service))
 			{
-				Report(Diagnostics.DecoratedServiceNotRegistered, decorator.Location,
+				Report(_external.ImportServices ? Diagnostics.DecoratedServiceNotImported : Diagnostics.DecoratedServiceNotRegistered, decorator.Location,
 					service, decorator.Decorator.ToDisplayString(FullyQualified));
 			}
 
 			return any;
+		}
+
+		/// <summary>
+		///     Whether the decorator wraps the imported <paramref name="service" />. <c>AllKeys</c> cannot, since only the host
+		///     knows the keys it provides the service under, so it reports AWT123 naming the keys as the remedy.
+		/// </summary>
+		private bool WrapsImport(string service, DecorateRegistration decorator)
+		{
+			if (decorator.Keys is not null)
+			{
+				return true;
+			}
+
+			Report(Diagnostics.DecoratedImportUnderAllKeys, decorator.Location, service, decorator.Decorator.ToDisplayString(FullyQualified));
+			return false;
+		}
+
+		/// <summary>
+		///     Builds the chain over the imported service under one key: transient links, since an import has no lifetime the
+		///     container could share them by, whose innermost asks the external resolver for the host's instance on each resolve.
+		/// </summary>
+		private void WrapImport(ServiceChain chain, int baseIndex)
+		{
+			_external.ServiceTypes.Decorated.Add(new ServiceKey(chain.Service, chain.ResolutionKey));
+			string? innerKey = chain.ResolutionKey;
+			for (int i = 0; i < chain.Ordered.Count; i++)
+			{
+				AddChainLink(chain, baseIndex, i, i == chain.Ordered.Count - 1, Lifetime.Transient, LocationInfo.From(chain.Ordered[i].Location), innerKey, imported: i == 0);
+				innerKey = DecoratorKey(chain.Service, baseIndex, i + 1);
+			}
 		}
 
 		/// <summary>
@@ -362,7 +406,7 @@ partial class AwaitenGenerator
 		///     contextual binding, a user key for a keyed registration); every other link is keyed so it is reached only
 		///     as the inner of the link above it (or as a rewritten collection member).
 		/// </summary>
-		private string AddChainLink(ServiceChain chain, int baseIndex, int linkIndex, bool isPublic, Lifetime lifetime, LocationInfo? location, string innerKey)
+		private string AddChainLink(ServiceChain chain, int baseIndex, int linkIndex, bool isPublic, Lifetime lifetime, LocationInfo? location, string? innerKey, bool imported = false)
 		{
 			string service = chain.Service;
 			int link = linkIndex + 1;
@@ -380,6 +424,7 @@ partial class AwaitenGenerator
 				Hidden = chain.Ordered[linkIndex].ThroughHandle ? decorator : null,
 				Unlisted = chain.Ordered[linkIndex].ThroughHandle,
 				When = chain.Ordered[linkIndex].When is { } when ? (when, service) : null,
+				DecoratesImport = chain.Imported,
 			};
 			_byImpl[identity] = info;
 			_implOrder.Add(info);
@@ -393,7 +438,7 @@ partial class AwaitenGenerator
 			// Redirect this link's inner parameter to the link below it. The chain links are all registered under
 			// the decorated service type, so the redirect keys to (service, innerKey), not to the parameter's own
 			// declared type, which may be a base of the service and is not a registration key.
-			_decoratorInner[identity] = new DecoratorInner(chain.InnerParameterTypes[linkIndex], service, innerKey);
+			_decoratorInner[identity] = new DecoratorInner(chain.InnerParameterTypes[linkIndex], service, innerKey, imported);
 
 			return identity;
 		}
@@ -423,6 +468,7 @@ partial class AwaitenGenerator
 		///     the resolution key being wrapped (null for the public dispatch, a synthetic context key for a
 		///     contextual binding, a user key for a keyed registration), that key's winner and collection membership
 		///     (if any), the decorators innermost-first, and each decorator's inner-parameter type (positionally matching <c>Ordered</c>).
+		///     <c>Imported</c> marks a chain over an imported service, which has no winner or members.
 		/// </summary>
 		private readonly record struct ServiceChain(
 			string Service,
@@ -430,7 +476,8 @@ partial class AwaitenGenerator
 			string? Winner,
 			List<string>? Members,
 			List<DecorateRegistration> Ordered,
-			List<string> InnerParameterTypes);
+			List<string> InnerParameterTypes,
+			bool Imported = false);
 
 		/// <summary>
 		///     The fully-qualified type of a decorator's single constructor parameter that receives the inner
@@ -884,11 +931,19 @@ partial class AwaitenGenerator
 		ImplInfo info,
 		Dictionary<string, DecoratorInner> decoratorInner)
 	{
-		if (parameterModel is { Kind: DependencyKind.Direct, Key: null, }
-		    && decoratorInner.TryGetValue(info.ImplementationType, out DecoratorInner inner)
+		if (decoratorInner.TryGetValue(info.ImplementationType, out DecoratorInner inner)
 		    && parameterModel.ServiceType == inner.ParameterServiceType)
 		{
-			return parameterModel with { ServiceType = inner.ServiceType, Key = inner.InnerKey, };
+			// Over an import, the inner parameter stays External while only a keyed slot is decorated.
+			if (inner.Imported && parameterModel is { Kind: DependencyKind.Direct or DependencyKind.External, Key: null, })
+			{
+				return parameterModel with { ServiceType = inner.ServiceType, Kind = DependencyKind.External, Key = inner.InnerKey, ImportedInner = true, };
+			}
+
+			if (parameterModel is { Kind: DependencyKind.Direct, Key: null, })
+			{
+				return parameterModel with { ServiceType = inner.ServiceType, Key = inner.InnerKey, };
+			}
 		}
 
 		return parameterModel;

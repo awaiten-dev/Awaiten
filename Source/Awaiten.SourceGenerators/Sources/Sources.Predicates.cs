@@ -123,7 +123,7 @@ internal static partial class Sources
 
 		int index = context.Predicates.FindIndex(known => known.Member == predicate.Member);
 		ParameterModel inner = instance.ConstructorParameters.AsArray()
-			.First(parameter => parameter.Key?.StartsWith(AwaitenGenerator.DecoratorKeyPrefix, StringComparison.Ordinal) == true);
+			.First(parameter => parameter.ImportedInner || parameter.Key?.StartsWith(AwaitenGenerator.DecoratorKeyPrefix, StringComparison.Ordinal) == true);
 		string enabled = predicate.IsLazy ? $"Root.{PredicateMethod(index)}(__s.__root)" : $"__s.__root.{PredicateField(index)}";
 		Indent(builder, depth).Append("if (!").Append(enabled).AppendLine(")");
 		Indent(builder, depth).AppendLine("{");

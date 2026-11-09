@@ -40,6 +40,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     against the parameter, while <c>ServiceType</c> and <c>FuncArgTypes</c> match them without annotations. An
 ///     <c>[Arg]</c> type built from a type parameter has no <c>DeclaredType</c>: its resolver spells it as registered,
 ///     and the factory forgives the argument it forwards.
+///     <c>ImportedInner</c> marks the <see cref="DependencyKind.External" /> inner parameter of the innermost decorator
+///     over an imported service, which a conditional link returns when its predicate is false.
 /// </summary>
 internal sealed record ParameterModel(
 	string ServiceType,
@@ -53,4 +55,5 @@ internal sealed record ParameterModel(
 	EquatableArray<DispatchMember> DispatchMembers = default,
 	bool NestedNullable = false,
 	string? DeclaredType = null,
-	EquatableArray<string> DeclaredFuncArgTypes = default);
+	EquatableArray<string> DeclaredFuncArgTypes = default,
+	bool ImportedInner = false);

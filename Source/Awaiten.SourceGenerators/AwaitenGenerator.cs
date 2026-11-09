@@ -731,6 +731,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		/// <summary>The closed service types, routed only when a dependency names exactly that type.</summary>
 		public HashSet<string> Closed { get; } = new(StringComparer.Ordinal);
 
+		/// <summary>The declared closed generic types, which an open decorator closes over; only those still in <see cref="Closed" /> count.</summary>
+		public List<INamedTypeSymbol> ClosedGenerics { get; } = new();
+
 		/// <summary>The unbound generic definitions, routing every closing a dependency names.</summary>
 		public HashSet<string> Open { get; } = new(StringComparer.Ordinal);
 
@@ -743,6 +746,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		/// <summary>Each closing of an <see cref="Open" /> definition met during classification, mapped to that definition.</summary>
 		public Dictionary<string, string> Closings { get; } = new(StringComparer.Ordinal);
+
+		/// <summary>
+		///     The imported services and keys a decorator chain wraps: a direct dependency of one resolves the chain, whose
+		///     innermost link alone asks the host.
+		/// </summary>
+		public HashSet<ServiceKey> Decorated { get; } = new();
 
 		/// <summary>Whether a direct dependency of <paramref name="type" /> (displayed as <paramref name="serviceType" />) is routed externally.</summary>
 		public bool Routes(ITypeSymbol type, string serviceType)
@@ -956,7 +965,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Open generic decorators: synthesize a closed [Decorate] per matching closing before building the chains,
 		// so they flow through the same DecoratorChainBuilder as the closed form and interleave with it. A no-op
 		// when there are none (closedServices is then empty and the expansion has nothing to iterate).
-		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, compilation, diagnostics);
+		ExpandOpenDecorators(decorators, openDecorators, closedServices, graph, constraintRejected, externalServiceTypes, compilation, diagnostics);
 
 		// Decorator chains: for each [Decorate]d service, move the base impl(s) onto a synthetic key and register
 		// each decorator as a chain link whose inner parameter redirects to the next-lower key. decoratorInner
@@ -1000,7 +1009,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// AWT175: a closed type declared [ImportService] must not also be registered on the container - it is either
 		// host-owned or Awaiten-owned, not both. Reported now that the coalesced service->impl map is known. The
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
-		ReportContradictingExternalServices(externalServiceTypes.Closed, serviceToImpl, containerSymbol, diagnostics);
+		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
 		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
 
