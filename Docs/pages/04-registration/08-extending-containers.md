@@ -120,7 +120,7 @@ public async Task TestCoffeeBar_SkipsTheMonitoring()
 }
 ```
 
-The predicate runs in the extending container. When the test lives in another assembly, the base generates a public wrapper for the internal predicate, and the extending container calls it. A private predicate is an error there ([AWT247](../09-diagnostics.md#awt247)), and so is one whose parameter types are not all public, unless the base's assembly grants the test assembly `InternalsVisibleTo`.
+The predicate runs in the extending container. When the test lives in another assembly, the base generates a public wrapper for the internal predicate, and the extending container calls it. A private predicate is an error in any assembly ([AWT247](../09-diagnostics.md#awt247)). An internal one whose parameter types are not all public gets no wrapper, so it is an error in another assembly too, unless the base's assembly grants the test assembly `InternalsVisibleTo`.
 
 ## Per-test doubles from the host
 
