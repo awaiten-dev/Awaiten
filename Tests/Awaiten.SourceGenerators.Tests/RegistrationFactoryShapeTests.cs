@@ -1717,13 +1717,12 @@ public class RegistrationFactoryShapeTests
 		}
 
 		[Test]
-		public async Task AFactoryAndASelfCompiledRegistrationWithTheSameHook_BothRunTheSharedWrapperInAnotherAssembly()
+		public async Task AFactoryAndASelfCompiledRegistrationWithTheSameHook_ConflictInAnotherAssembly()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(SharedHookModule, Consumer);
 
-			await That(result.Diagnostics).IsEmpty();
-			await That(result.Sources.Single(source => source.Key.Contains("AppContainer")).Value).Contains("global::Lib.GreetingModule.Internals.Hook_OnActivated_Kettle_").Exactly(2)
-				.Because("the consumer runs the shared wrapper for the Factory registration and for the self-compiled one");
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("a constructor"))
+				.Because("the module's generated factory constructs the implementation the Factory registration produces too, so both are one instance with two productions, as in the module's own assembly");
 		}
 	}
 

@@ -1469,6 +1469,168 @@ public class ModuleHiddenServiceTests
 			}
 		}
 
+		public class SeveralProducersOfOneService
+		{
+			private const string OneModule = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IClock { }
+				internal sealed class TimeSource { }
+				internal sealed class SystemClock : IClock { public SystemClock(TimeSource source) { } }
+
+				[Module]
+				[Singleton<TimeSource>]
+				[Singleton<IClock>(Factory = nameof(CreateA))]
+				[Singleton<IClock>(Factory = nameof(CreateB))]
+				public static partial class ClockModule
+				{
+				    internal static IClock CreateA(TimeSource source) => new SystemClock(source);
+				    internal static IClock CreateB(TimeSource source) => new SystemClock(source);
+				}
+				""";
+
+			private const string TwoModules = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IClock { }
+				internal sealed class TimeSource { }
+				internal sealed class SystemClock : IClock { public SystemClock(TimeSource source) { } }
+
+				[Module]
+				[Singleton<TimeSource>]
+				[Singleton<IClock>(Factory = nameof(CreateClock))]
+				public static partial class ClockModule
+				{
+				    internal static IClock CreateClock(TimeSource source) => new SystemClock(source);
+				}
+
+				[Module]
+				[Singleton<IClock>(Factory = nameof(CreateB))]
+				public static partial class OtherModule
+				{
+				    internal static IClock CreateB(TimeSource source) => new SystemClock(source);
+				}
+				""";
+
+			private const string CollectionContainer = """
+				public sealed class Shop(System.Collections.Generic.IEnumerable<IClock> clocks)
+				{
+				    public System.Collections.Generic.IEnumerable<IClock> Clocks => clocks;
+				}
+
+				[Container]
+				[Import(typeof(ClockModule))]{1}
+				[Singleton<Shop>]
+				public static partial class {0};
+				""";
+
+			private static GeneratorResult Run(string library, string container, string consumer)
+			{
+				const string usings = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n";
+				return consumer switch
+				{
+					"same" => Generator.Run(library + "\n" + container.Replace("{0}", "SameContainer")),
+					"friend" => Generator.RunWithGeneratedReferencedAssembly(
+						library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Lib;"),
+						usings + container.Replace("{0}", "MyContainer")),
+					"reference" => Generator.RunWithGeneratedReferenceAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+					_ => Generator.RunWithGeneratedReferencedAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+				};
+			}
+
+			private static string ProducerFactory(string module, string implementation, string producer)
+				=> $"global::Lib.{module}.Internals.HiddenRegistration_{SimpleName(implementation)}_{Fnv1a($"{implementation}\0{producer}"):x8}(";
+
+			[Test]
+			public async Task OneModule_BuildsTheLibraryWithoutAConflict()
+			{
+				GeneratorResult result = Generator.Run(OneModule);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("two factories that name only their service are two producers of it, not two productions of one implementation");
+				await That(ModuleSource(result)).Contains("HiddenRegistration_IClock_").And.Contains("CreateA(").And.Contains("CreateB(");
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task OneModule_ServesBothFactoriesInTheCollection(string consumer)
+			{
+				GeneratorResult result = Run(OneModule, CollectionContainer.Replace("{1}", ""), consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("a container of the module's own assembly keeps both factories as two members of the collection");
+				if (consumer is "full" or "reference")
+				{
+					await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+						.Contains(ProducerFactory("ClockModule", "global::Lib.IClock", "CreateA"))
+						.And.Contains(ProducerFactory("ClockModule", "global::Lib.IClock", "CreateB"))
+						.Because("each factory has a handle of its own, so the container calls both");
+				}
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task TwoModules_ServesBothFactoriesInTheCollection(string consumer)
+			{
+				GeneratorResult result = Run(TwoModules, CollectionContainer.Replace("{1}", "\n[Import(typeof(OtherModule))]"), consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("factories of two modules that name only their service are two producers of it, as in the modules' own assembly");
+				if (consumer is "full" or "reference")
+				{
+					await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+						.Contains(ProducerFactory("ClockModule", "global::Lib.IClock", "CreateClock"))
+						.And.Contains(ProducerFactory("OtherModule", "global::Lib.IClock", "CreateB"))
+						.Because("each module builds its factory into an instance handle of its own");
+				}
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ConstructedThroughTheModulesFactory_ConflictsWithAFactoryOfTheContainer(string consumer)
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					internal sealed class TimeSource { }
+					public sealed class Clock { internal Clock(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>]
+					public static partial class ClockModule;
+					""";
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<Clock>(Factory = nameof(CreateFake))]
+					public static partial class {0}
+					{
+					    private static Clock CreateFake() => null!;
+					}
+					""";
+				GeneratorResult result = Run(library, container, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && diagnostic.Contains("a constructor"))
+					.Because("the module constructs the implementation, even through its generated factory, so the container's factory of it is a second production of the one instance");
+			}
+		}
+
 		[Test]
 		public async Task ConsumerGrantedInternalsVisibleTo_ConstructsDirectly()
 		{

@@ -327,15 +327,22 @@ partial class AwaitenGenerator
 	///     wrapper the module generates for each of its conventions that initializes the implementation, which runs the
 	///     convention on the instance the handle holds, so neither the service nor the convention has to be accessible.
 	///     The module decides which conventions apply (see <see cref="HiddenInitializedType" />), since only it sees the
-	///     return type of a private <c>Factory</c> member, so every convention whose wrapper it generated runs.
+	///     return type of a private <c>Factory</c> member, so every convention whose wrapper it generated runs. The handle
+	///     of one of several producers of a service (see <see cref="ThroughHandle" />) has wrappers named after its member.
 	/// </summary>
 	private static EquatableArray<AsyncInitializerModel> HiddenAsyncInitializers(ImplInfo info, INamedTypeSymbol implementation, INamedTypeSymbol module, BuildContext context)
 	{
 		List<AsyncInitializerModel> models = new();
 		HashSet<string> names = new(StringComparer.Ordinal);
-		foreach (AsyncInitializerConvention convention in DeclaredAsyncInitializers(module, context.Compilation, null))
+		List<AsyncInitializerConvention> conventions = DeclaredAsyncInitializers(module, context.Compilation, null);
+		string? producer = conventions.Count == 0
+			? null
+			: ConstructedModuleRegistrations(module, context.Compilation, members: true)
+				.Select(registration => registration.Member)
+				.FirstOrDefault(member => member is not null && info.ProductionMember == InInternals(HiddenFactoryName(implementation, member)));
+		foreach (AsyncInitializerConvention convention in conventions)
 		{
-			string name = HiddenInitializerName(implementation, convention);
+			string name = HiddenInitializerName(implementation, convention, producer);
 			if (names.Add(name)
 			    && InternalsMembers(module, name).OfType<IMethodSymbol>().FirstOrDefault(method => context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly)) is { } wrapper)
 			{

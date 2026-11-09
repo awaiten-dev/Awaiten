@@ -59,13 +59,15 @@ partial class AwaitenGenerator
 					if (NamedArgument(registration.Attribute, release ? "OnRelease" : "OnActivated") is { } hook)
 					{
 						hooks[$"{moduleName}.{InternalsClass}.{HiddenHookName(registration.Implementation, release, hook)}"] = $"{moduleName}.{hook}";
+						hooks[$"{moduleName}.{InternalsClass}.{HiddenHookName(registration.Implementation, release, hook, registration.Member)}"] = $"{moduleName}.{hook}";
 						hooks[$"{moduleName}.{InternalsClass}.{RegistrationHookWrapperName(registration.Implementation, release, hook)}"] = $"{moduleName}.{hook}";
 					}
 				}
 
 				string service = Display(registration.Service.ToDisplayString(FullyQualified));
 				handles[$"{moduleName}.{InternalsClass}.{HiddenHandleName(registration.Service)}"] = (service, moduleName);
-				if (HiddenProducer(module, HiddenFactoryName(registration.Implementation), compilation) is { Handle: { } instance, })
+				if (((registration.Member is { } member ? HiddenProducer(module, HiddenFactoryName(registration.Implementation, member), compilation) : null)
+				     ?? HiddenProducer(module, HiddenFactoryName(registration.Implementation), compilation)) is { Handle: { } instance, })
 				{
 					handles[Display(instance.ToDisplayString(FullyQualified))] = (Display(registration.Implementation.ToDisplayString(FullyQualified)), moduleName);
 				}
@@ -196,7 +198,7 @@ partial class AwaitenGenerator
 	///     A later surviving registration that contradicts the first is AWT107 or AWT166 when one of the two is an
 	///     overridable default, which the library's build leaves to the container.
 	/// </summary>
-	private static void SettleHandleDirectives(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void SettleHandleDirectives(List<RawRegistration> raw, INamedTypeSymbol container, List<DiagnosticInfo> diagnostics)
 	{
 		HashSet<int> dropped = DroppedOverridableDefaults(raw);
 		List<RawRegistration> aliases = InPrecedenceOrder(raw)
@@ -206,12 +208,12 @@ partial class AwaitenGenerator
 		List<int> unused = new();
 		for (int index = 0; index < raw.Count; index++)
 		{
-			if (raw[index] is not { Hidden: { } implementation, Origin: { } module, } handle || !handle.ImplementationType.Contains(HiddenKeyMarker))
+			if (raw[index] is not { Hidden: not null, Origin: { } module, } handle || !handle.ImplementationType.Contains(HiddenKeyMarker))
 			{
 				continue;
 			}
 
-			string marker = AliasKeyMarker + TypeIdentity(implementation, compilation);
+			string marker = AliasKeyMarker + HandledIdentity(handle);
 			List<RawRegistration> own = aliases
 				.Where(alias => alias.Aliased is not null && SymbolEqualityComparer.Default.Equals(alias.Origin, module) && alias.ImplementationType.EndsWith(marker, StringComparison.Ordinal))
 				.Select(alias => alias.Aliased!)
@@ -241,13 +243,13 @@ partial class AwaitenGenerator
 			};
 		}
 
-		HashSet<INamedTypeSymbol> kept = new(raw.Where((registration, index) => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker) && !unused.Contains(index))
-			.Select(registration => registration.Hidden!), SymbolEqualityComparer.Default);
+		HashSet<string> kept = new(raw.Where((registration, index) => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker) && !unused.Contains(index))
+			.Select(HandledIdentity), StringComparer.Ordinal);
 		List<int> removed = new();
 		foreach (int index in unused)
 		{
-			string marker = AliasKeyMarker + TypeIdentity(raw[index].Hidden!, compilation);
-			if (aliases.Any(alias => alias.ImplementationType.EndsWith(marker, StringComparison.Ordinal)) && kept.Add(raw[index].Hidden!))
+			string handled = HandledIdentity(raw[index]);
+			if (aliases.Any(alias => alias.ImplementationType.EndsWith(AliasKeyMarker + handled, StringComparison.Ordinal)) && kept.Add(handled))
 			{
 				raw[index] = raw[index] with { Weak = true, Eager = false, };
 			}
@@ -336,16 +338,24 @@ partial class AwaitenGenerator
 			: index;
 
 	/// <summary>
+	///     The identity of what an instance handle registration holds, before its <see cref="HiddenKeyMarker" />, which the
+	///     identities of its aliases end with (see <see cref="ThroughAlias" />).
+	/// </summary>
+	private static string HandledIdentity(RawRegistration handle)
+		=> handle.ImplementationType.Substring(0, handle.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal));
+
+	/// <summary>
 	///     <paramref name="registration" /> served through <paramref name="alias" />, the generated member of
 	///     <paramref name="module" /> that returns the instance of <paramref name="implementation" /> from its instance
-	///     handle. Its identity names the alias's type and the implementation, and it owns nothing.
+	///     handle. Its identity names the alias's type and the implementation, or the <paramref name="handled" /> identity
+	///     of one of several producers of a service (see <see cref="ThroughHandle" />), and it owns nothing.
 	/// </summary>
-	private static RawRegistration ThroughAlias(RawRegistration registration, INamedTypeSymbol module, INamedTypeSymbol implementation, IMethodSymbol alias, Compilation compilation)
+	private static RawRegistration ThroughAlias(RawRegistration registration, INamedTypeSymbol module, INamedTypeSymbol implementation, IMethodSymbol alias, Compilation compilation, string? handled = null)
 	{
 		INamedTypeSymbol aliasType = (INamedTypeSymbol)alias.ReturnType;
 		return registration with
 		{
-			ImplementationType = $"{TypeIdentity(aliasType, compilation)}{AliasKeyMarker}{TypeIdentity(implementation, compilation)}",
+			ImplementationType = $"{TypeIdentity(aliasType, compilation)}{AliasKeyMarker}{handled ?? TypeIdentity(implementation, compilation)}",
 			Implementation = aliasType,
 			Origin = module,
 			Production = ProductionKind.Factory,
@@ -407,7 +417,7 @@ partial class AwaitenGenerator
 			    || (!handle.TraitsExact && !raw.Where((alias, aliasIndex) => alias.Aliased is not null
 			                                                               && !dropped.Contains(aliasIndex)
 			                                                               && SymbolEqualityComparer.Default.Equals(alias.Origin, handle.Origin)
-			                                                               && alias.ImplementationType.EndsWith(AliasKeyMarker + registration.ImplementationType, StringComparison.Ordinal)).Any()))
+			                                                               && alias.ImplementationType.EndsWith(AliasKeyMarker + HandledIdentity(handle), StringComparison.Ordinal)).Any()))
 			{
 				continue;
 			}
@@ -483,18 +493,26 @@ partial class AwaitenGenerator
 	///     returns the instance from the handle and owns nothing, with an identity of its service and implementation;
 	///     one under an internal service is dependency-only too.
 	/// </summary>
-	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<INamedTypeSymbol> implicitHandles)
+	private static List<RawRegistration>? ThroughHandle(RawRegistration registration, Compilation compilation, HashSet<string> implicitHandles)
 	{
 		INamedTypeSymbol module = registration.Origin!;
 		INamedTypeSymbol implementation = registration.Implementation;
+		string? producer = registration is { Production: not ProductionKind.Constructor, ProductionMember: { } member, }
+		                   && HiddenProducer(module, HiddenFactoryName(implementation, member), compilation) is not null
+			? member
+			: null;
 		if (registration.ServiceSymbol is not { } service
-		    || HiddenProducer(module, HiddenFactoryName(implementation), compilation) is not { Handle: { } handle, } factory)
+		    || HiddenProducer(module, HiddenFactoryName(implementation, producer), compilation) is not { Handle: { } handle, } factory)
 		{
 			return null;
 		}
 
-		List<ModuleRegistration> registrations = HandledTogether(ConstructedModuleRegistrations(module, compilation, members: true)
-			.Where(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation, implementation)));
+		IEnumerable<ModuleRegistration> registered = ConstructedModuleRegistrations(module, compilation, members: true)
+			.Where(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation, implementation));
+		List<ModuleRegistration> registrations = producer is null ? HandledTogether(registered) : registered.Where(candidate => candidate.Member == producer).ToList();
+		string identity = producer is null
+			? registration.ImplementationType
+			: $"{registration.ImplementationType}{MemberKeyMarker}{TypeIdentity(module, compilation)}.{producer}";
 		if (registrations.Count == 0
 		    || registrations[0].Production != registration.Production
 		    || registrations[0].Member != registration.ProductionMember
@@ -506,7 +524,7 @@ partial class AwaitenGenerator
 		}
 
 		List<RawRegistration> handled = new();
-		if (implicitHandles.Add(implementation))
+		if (implicitHandles.Add(identity))
 		{
 			handled.Add(HandleRegistration() with { Weak = false, IsDefault = false, WhenInjectedInto = null, });
 		}
@@ -521,19 +539,20 @@ partial class AwaitenGenerator
 			module,
 			implementation,
 			alias,
-			compilation) with
+			compilation,
+			identity) with
 		{
 			Aliased = registration with { OnActivated = Hook(registration.OnActivated, release: false), OnRelease = Hook(registration.OnRelease, release: true), },
 		});
 		return handled;
 
 		IMethodSymbol? Alias(INamedTypeSymbol aliased)
-			=> GeneratedFactoryNamed(module, HiddenAliasName(implementation, aliased), compilation);
+			=> GeneratedFactoryNamed(module, HiddenAliasName(implementation, aliased, producer), compilation);
 
 		RawRegistration HandleRegistration()
 			=> registration with
 			{
-				ImplementationType = $"{registration.ImplementationType}{HiddenKeyMarker}{TypeIdentity(handle.ContainingType?.ContainingType ?? module, compilation)}",
+				ImplementationType = $"{identity}{HiddenKeyMarker}{TypeIdentity(handle.ContainingType?.ContainingType ?? module, compilation)}",
 				ServiceType = handle.ToDisplayString(FullyQualified),
 				ServiceSymbol = handle,
 				Implementation = handle,
@@ -554,7 +573,7 @@ partial class AwaitenGenerator
 
 		string? Hook(string? hook, bool release)
 			=> hook is not null
-			   && HiddenHookName(implementation, release, hook) is { } wrapper
+			   && HiddenHookName(implementation, release, hook, producer) is { } wrapper
 			   && !InternalsMembers(module, wrapper).IsEmpty
 				? InInternals(wrapper)
 				: null;

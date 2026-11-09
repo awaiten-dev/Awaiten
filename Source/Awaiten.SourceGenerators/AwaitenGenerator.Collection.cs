@@ -272,7 +272,7 @@ partial class AwaitenGenerator
 		Location? fallbackLocation = context.FallbackLocation;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
 		bool reportedNotSelfCompiled = false;
-		HashSet<INamedTypeSymbol> implicitHandles = new(SymbolEqualityComparer.Default);
+		HashSet<string> implicitHandles = new(StringComparer.Ordinal);
 		bool fromModule = origin is not null && HasAwaitenAttribute(context.Owner.GetAttributes(), "ModuleAttribute");
 		foreach (AttributeData attribute in context.Owner.GetAttributes())
 		{

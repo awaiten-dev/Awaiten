@@ -265,3 +265,39 @@ public static partial class CrossAssemblyHandledFactoryModule
 		return new HandledSystemClock(source);
 	}
 }
+
+/// <summary>A clock that <see cref="CrossAssemblyTwoClocksModule" /> and <see cref="CrossAssemblyThirdClockModule" /> produce through several factories that take an internal service.</summary>
+public interface IProducedClock
+{
+	/// <summary>The name of the factory that produced the clock.</summary>
+	string Name { get; }
+}
+
+internal sealed class ProducedTimeSource;
+
+internal sealed class ProducedClock(string name, ProducedTimeSource source) : IProducedClock
+{
+	public string Name => name;
+
+	public ProducedTimeSource Source => source;
+}
+
+/// <summary>A <c>[Module]</c> with two factories of one public service that take an internal service, so a container in another assembly calls each through a handle of its own.</summary>
+[Module]
+[Singleton<ProducedTimeSource>]
+[Singleton<IProducedClock>(Factory = nameof(CreateFirst))]
+[Singleton<IProducedClock>(Factory = nameof(CreateSecond))]
+public static partial class CrossAssemblyTwoClocksModule
+{
+	internal static IProducedClock CreateFirst(ProducedTimeSource source) => new ProducedClock("first", source);
+
+	internal static IProducedClock CreateSecond(ProducedTimeSource source) => new ProducedClock("second", source);
+}
+
+/// <summary>A <c>[Module]</c> with another factory of the service of <see cref="CrossAssemblyTwoClocksModule" />, which takes the internal service that module registers.</summary>
+[Module]
+[Singleton<IProducedClock>(Factory = nameof(CreateThird))]
+public static partial class CrossAssemblyThirdClockModule
+{
+	internal static IProducedClock CreateThird(ProducedTimeSource source) => new ProducedClock("third", source);
+}

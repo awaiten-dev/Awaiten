@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Awaiten.Tests.Support;
 
 namespace Awaiten.Tests;
@@ -124,7 +126,34 @@ public class ModuleHandleSharingTests
 			.Because("the container's own factory wins over the module's factory of the same service");
 		await That(HandledFactoryCounter.FactoryCalls).IsEqualTo(0);
 	}
+
+	[Test]
+	public async Task TwoFactoriesOfOneServiceTakingAnInternalService_AreBothCollectionMembers()
+	{
+		using TwoClocksContainer.Root container = new();
+
+		await That(container.Resolve<IEnumerable<IProducedClock>>().Select(clock => clock.Name)).IsEqualTo(["first", "second",])
+			.Because("each factory is a producer of its own, as in a container of the module's own assembly");
+	}
+
+	[Test]
+	public async Task FactoriesOfOneServiceInTwoModules_AreAllCollectionMembers()
+	{
+		using ThreeClocksContainer.Root container = new();
+
+		await That(container.Resolve<IEnumerable<IProducedClock>>().Select(clock => clock.Name)).IsEqualTo(["first", "second", "third",])
+			.Because("the factory of the other module is a producer of its own too, not a second production of the same instance");
+	}
 }
+
+[Container]
+[Import(typeof(CrossAssemblyTwoClocksModule))]
+public static partial class TwoClocksContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyTwoClocksModule))]
+[Import(typeof(CrossAssemblyThirdClockModule))]
+public static partial class ThreeClocksContainer;
 
 /// <summary>The clock this assembly produces over the factory of <see cref="CrossAssemblyHandledFactoryModule" />.</summary>
 public sealed class FakeHandledFactoryClock : IHandledFactoryClock;
