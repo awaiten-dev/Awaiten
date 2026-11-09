@@ -69,6 +69,38 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsAnInternalDecoratorWhoseFactoryCannotTakeAServiceOfAModuleThatIsNotPartial()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGreeter { }
+				public sealed class Greeter : IGreeter { }
+				internal sealed class Volume { }
+				internal sealed class LoudGreeter(IGreeter inner, Volume volume) : IGreeter
+				{
+				    public IGreeter Inner { get; } = inner;
+				    public Volume Volume { get; } = volume;
+				}
+
+				[Module]
+				[Singleton<Volume>]
+				public static class VolumeModule { }
+
+				[Module]
+				[Singleton<Greeter, IGreeter>]
+				[Decorate<LoudGreeter, IGreeter>]
+				public static partial class GreetingModule { }
+				""", Consumer);
+
+			await That(result.Diagnostics).HasSingle().Which.EndsWith(
+					"error AWT230: The imported module 'Lib.GreetingModule' declares the decorator 'Lib.LoudGreeter', which this container cannot construct, and the module generated no factory for it; make 'Lib.LoudGreeter' and its constructor public, or grant this assembly InternalsVisibleTo")
+				.Because("the factory of the decorator cannot take the internal service that only a module that is not partial registers, so the partial module carries none");
+		}
+
+		[Test]
 		public async Task ReportsAnInternalOpenGenericImplementation()
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly("""
