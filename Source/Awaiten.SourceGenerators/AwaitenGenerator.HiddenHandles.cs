@@ -380,6 +380,10 @@ partial class AwaitenGenerator
 	///     A <c>Factory</c> or <c>Instance</c> registration that names only its service shares the handle only when a
 	///     registration names that type as its implementation, since <see cref="AssignMemberIdentities" /> otherwise
 	///     identifies both by their members, so precedence decides between them as between any two producers of a service.
+	///     A handle that runs a module's <c>Factory</c> or <c>Instance</c> member (its traits are not exact, see
+	///     <see cref="ThroughHandle" />) shares nothing once every registration of its module that it serves is replaced
+	///     or a dropped overridable default, since the registration then stands alone and running the member would build
+	///     what the container replaced.
 	/// </summary>
 	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
@@ -392,13 +396,18 @@ partial class AwaitenGenerator
 				.Where(registration => !NamesOnlyItsService(registration, compilation))
 				.Select(registration => registration.ImplementationType),
 			StringComparer.Ordinal);
+		HashSet<int> dropped = DroppedOverridableDefaults(raw);
 		for (int index = 0; index < raw.Count; index++)
 		{
 			RawRegistration registration = raw[index];
 			if (registration.Hidden is not null
 			    || registration.ScanImplementation is not null
 			    || (NamesOnlyItsService(registration, compilation) && !implementations.Contains(registration.ImplementationType))
-			    || handles.FirstOrDefault(entry => entry.Identity == registration.ImplementationType) is not ({ } handle, int handleIndex, _))
+			    || handles.FirstOrDefault(entry => entry.Identity == registration.ImplementationType) is not ({ } handle, int handleIndex, _)
+			    || (!handle.TraitsExact && !raw.Where((alias, aliasIndex) => alias.Aliased is not null
+			                                                               && !dropped.Contains(aliasIndex)
+			                                                               && SymbolEqualityComparer.Default.Equals(alias.Origin, handle.Origin)
+			                                                               && alias.ImplementationType.EndsWith(AliasKeyMarker + registration.ImplementationType, StringComparison.Ordinal)).Any()))
 			{
 				continue;
 			}

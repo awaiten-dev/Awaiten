@@ -1376,6 +1376,97 @@ public class ModuleHiddenServiceTests
 				await That(cross.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111"))
 					.Because("the module names the implementation its factory produces, so the container's factory of it is a second production of the one instance");
 			}
+
+			private const string ClassLibrary = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public sealed class Clock { }
+				internal sealed class TimeSource { }
+
+				[Module]
+				[Singleton<TimeSource>]
+				[Singleton<Clock>(Factory = nameof(CreateClock), SuppressDisposal = true{0})]
+				public static partial class ClockModule
+				{
+				    internal static Clock CreateClock(TimeSource source) => new Clock();
+				}
+				""";
+
+			[Test]
+			[Arguments(false)]
+			[Arguments(true)]
+			public async Task ByARegistrationOfTheImplementationOnAnExtendingContainer_ServesItWithoutTheHandle(bool referenceAssembly)
+			{
+				string library = ClassLibrary.Replace("{0}", "");
+				const string extending = """
+					using Awaiten;
+					using Lib;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(ClockModule))]
+					public static partial class Shop;
+
+					[Container(Extends = typeof(Shop))]
+					[Transient<Clock>]
+					public static partial class TestShop;
+					""";
+				GeneratorResult result = referenceAssembly
+					? Generator.RunWithGeneratedReferenceAssembly(library, extending)
+					: Generator.RunWithGeneratedReferencedAssembly(library, extending);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the extending container's registration replaces the module's factory in full, so another lifetime, production or SuppressDisposal is no conflict");
+				await That(result.Sources["Awaiten.MyCode.TestShop.g.cs"]).Contains("new global::Lib.Clock()").And.DoesNotContain(HiddenFactory("global::Lib.Clock"))
+					.Because("the replaced factory never runs, so the container constructs the implementation itself");
+			}
+
+			[Test]
+			[Arguments(false)]
+			[Arguments(true)]
+			public async Task ByARegistrationOfTheImplementationOverAnOverridableDefault_ServesItWithoutTheHandle(bool referenceAssembly)
+			{
+				string library = ClassLibrary.Replace("{0}", ", Fallback = Fallback.Silent");
+				const string importing = """
+					using Awaiten;
+					using Lib;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Transient<Clock>]
+					public static partial class TestShop;
+					""";
+				GeneratorResult result = referenceAssembly
+					? Generator.RunWithGeneratedReferenceAssembly(library, importing)
+					: Generator.RunWithGeneratedReferencedAssembly(library, importing);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container's registration drops the module's overridable default in full, as in the module's own assembly");
+				await That(result.Sources["Awaiten.MyCode.TestShop.g.cs"]).Contains("new global::Lib.Clock()").And.DoesNotContain(HiddenFactory("global::Lib.Clock"));
+			}
+
+			[Test]
+			public async Task ByARegistrationOfTheImplementationBesideTheModulesFactory_StillConflicts()
+			{
+				string library = ClassLibrary.Replace("{0}", "");
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<Clock>]
+					public static partial class {0};
+					""";
+				GeneratorResult same = Generator.Run(library + "\n" + container.Replace("{0}", "SameContainer"));
+				GeneratorResult cross = Generator.RunWithGeneratedReferencedAssembly(library, "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n" + container.Replace("{0}", "MyContainer"));
+
+				await That(same.Diagnostics).Contains(diagnostic => diagnostic.Contains("AWT111"));
+				await That(cross.Diagnostics).Contains(diagnostic => diagnostic.Contains("AWT111"))
+					.Because("the module's factory still produces the implementation the container constructs, so both are one instance with two productions");
+			}
 		}
 
 		[Test]
