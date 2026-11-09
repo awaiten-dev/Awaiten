@@ -641,11 +641,14 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers
-	///     <paramref name="implementation" /> other than through a member that names only its service, so a container of
-	///     that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).
+	///     <paramref name="implementation" /> other than through a member that names only its service, or scans it, so a
+	///     container of that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).
 	/// </summary>
 	private static bool ImplementedByImport(INamedTypeSymbol implementation, INamedTypeSymbol module, IEnumerable<ImportedModule> imports, Compilation compilation)
 		=> imports.Any(import => SymbolEqualityComparer.Default.Equals(import.Symbol.ContainingAssembly, module.ContainingAssembly)
-		                         && ConstructedModuleRegistrations(import.Symbol, compilation, members: true)
-			                         .Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && !NamesOnlyItsService(registration)));
+		                         && (ConstructedModuleRegistrations(import.Symbol, compilation, members: true)
+			                             .Any(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation) && !NamesOnlyItsService(registration))
+		                             || import.Symbol.GetAttributes().Any(attribute => attribute.AttributeClass is { } attributeClass
+		                                                                               && IsGeneratedScanRegistration(attributeClass)
+		                                                                               && NamedArgument(attribute, "Implementation") == MetadataNameOf(implementation))));
 }

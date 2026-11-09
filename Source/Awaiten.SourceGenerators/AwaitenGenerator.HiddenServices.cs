@@ -275,7 +275,7 @@ partial class AwaitenGenerator
 				if (produced.Where(entry => NamesOnlyItsService(entry.Registration))
 				    .Select(entry => $"{entry.Module.ToDisplayString(FullyQualified)}.{entry.Registration.Member}").Distinct(StringComparer.Ordinal).Skip(1).Any())
 				{
-					(produced.All(entry => NamesOnlyItsService(entry.Registration)) ? Producers : SharedProducers).Add(produced.Key);
+					(produced.All(entry => NamesOnlyItsService(entry.Registration)) && !ScannedByModule(produced.Key) ? Producers : SharedProducers).Add(produced.Key);
 				}
 			}
 
@@ -365,16 +365,31 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     The services that several <c>Factory</c> or <c>Instance</c> members of the assembly's modules produce while
-		///     naming only the service, where another registration names the type as its implementation. A container in the
-		///     modules' own assembly keeps each member as an implementation of its own unless a module it imports names the
-		///     type, so a module whose registrations of the type all name only the service builds each member through handles
-		///     of its own as in <see cref="Producers" />, besides the shared handle, and a consuming container picks one or the
-		///     other from what it imports (see <c>ThroughHandle</c>).
+		///     naming only the service, where another registration names the type as its implementation or a module's scan
+		///     may match it (see <see cref="ScannedByModule" />). A container in the modules' own assembly keeps each member
+		///     as an implementation of its own unless a module it imports names the type, so a module whose registrations of
+		///     the type all name only the service builds each member through handles of its own as in <see cref="Producers" />,
+		///     besides the shared handle, and a consuming container picks one or the other from what it imports (see
+		///     <c>ThroughHandle</c>).
 		/// </summary>
 		public HashSet<INamedTypeSymbol> SharedProducers { get; } = new(SymbolEqualityComparer.Default);
 
 		public static AssemblyModuleIndex Of(Compilation compilation)
 			=> Cache.GetValue(compilation, static created => new AssemblyModuleIndex(created));
+
+		/// <summary>
+		///     Whether a <c>[Scan]</c> of a module of the assembly may match <paramref name="type" />, by its marker and
+		///     filters, which names the type as its implementation like a registration does (see <see cref="SharedProducers" />).
+		///     A match the scan drops later still counts, which costs only the shared handle.
+		/// </summary>
+		private bool ScannedByModule(INamedTypeSymbol type)
+			=> Registrations.Keys.Any(module => module.GetAttributes().Any(attribute =>
+				attribute.AttributeClass is { Name: "ScanAttribute", } attributeClass
+				&& attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+				&& ScanMarker(attribute, attributeClass) is var marker
+				&& (marker is not null || IsMarkerlessScan(attribute, attributeClass))
+				&& IsScanCandidate(type, marker, _compilation)
+				&& PassesScanFilters(type, ScanFiltersOf(attribute), new ScanFilterHits())));
 
 		/// <summary>
 		///     Whether a module of the assembly may provide <paramref name="service" /> under <paramref name="key" />: a

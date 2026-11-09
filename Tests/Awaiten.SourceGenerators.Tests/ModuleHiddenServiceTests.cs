@@ -1844,6 +1844,81 @@ public class ModuleHiddenServiceTests
 						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
 				}
 			}
+
+			public class ScannedByAnotherModule
+			{
+				private const string Library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IAppliance { }
+					internal sealed class TimeSource { }
+					public sealed class Clock : IAppliance { internal Clock(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					public static partial class AModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Singleton<Clock>(Factory = nameof(CreateB))]
+					public static partial class BModule
+					{
+					    internal static Clock CreateB(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Scan<IAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+					public static partial class SModule;
+					""";
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithOneProducer_SharesItsInstance(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(AModule))]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+
+					await That(result.Diagnostics).IsEmpty()
+						.Because("the scan names the class, so the factory produces its one instance and the match shares it, as in the modules' own assembly");
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithTwoProducers_ConflictsAsInTheModulesOwnAssembly(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(AModule))]
+						[Import(typeof(BModule))]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+					string expected = Run(Library, container, "same").Diagnostics.Single();
+
+					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && Message(diagnostic) == Message(expected))
+						.Because("the scan names the class, so both factories are productions of its one instance, as in the modules' own assembly");
+
+					static string Message(string diagnostic)
+						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
+				}
+			}
 		}
 
 		[Test]
