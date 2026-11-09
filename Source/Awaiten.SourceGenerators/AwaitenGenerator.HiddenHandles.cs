@@ -438,6 +438,9 @@ partial class AwaitenGenerator
 	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166).
 	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
 	///     which therefore comes first. A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
+	///     A scan match takes the handle's lifetime too, which it decided itself when it precedes the scan of a scan handle
+	///     (see <see cref="YieldScanHandles" />), and a hook it sets on a scan handle's instance is AWT241 (see
+	///     <see cref="UnappliedScanHooks" />).
 	///     The handle of one of several producers of a service (see <see cref="ThroughHandle" />) has an alias named after
 	///     its member, which only its own module declares.
 	///     A <c>Factory</c> or <c>Instance</c> registration that names only its service shares the handle only when a
@@ -496,6 +499,10 @@ partial class AwaitenGenerator
 					}
 				}
 			}
+			else
+			{
+				diagnostics.AddRange(UnappliedScanHooks(registration, handle, yieldedTo, compilation));
+			}
 
 			string handled = HandledIdentity(handle);
 			string? producer = handled.Contains(MemberKeyMarker) ? handled.Substring(handled.LastIndexOf('.') + 1) : null;
@@ -520,6 +527,33 @@ partial class AwaitenGenerator
 						remedy,
 					])));
 		}
+	}
+
+	/// <summary>
+	///     AWT241 for each hook that the scan match <paramref name="match" /> sets on the implementation of the scan instance
+	///     handle <paramref name="handle" /> (see <see cref="IsScanHandle" />), which serves the match through an alias that
+	///     runs no hook: a container of the module's own assembly merges the hooks of the scan matches that share the
+	///     instance (AWT199 keeps the first of two in one slot), unless an explicit registration wins over the scans (see
+	///     <see cref="YieldScanHandles" />).
+	/// </summary>
+	private static IEnumerable<DiagnosticInfo> UnappliedScanHooks(RawRegistration match, RawRegistration handle, Dictionary<string, RawRegistration> yieldedTo, Compilation compilation)
+	{
+		if (!IsScanHandle(handle) || (yieldedTo.TryGetValue(TypeIdentity(handle.Hidden!, compilation), out RawRegistration? winner) && !winner.IsScan))
+		{
+			return [];
+		}
+
+		return new[] { (Directive: "OnActivated", Hook: match.OnActivated), (Directive: "OnRelease", Hook: match.OnRelease), }
+			.Where(hook => hook.Hook is not null)
+			.Select(hook => new DiagnosticInfo(
+				Diagnostics.RegistrationNotSharedWithHandle,
+				LocationInfo.From(match.Location),
+				new EquatableArray<string>([
+					Display(handle.Hidden!.ToDisplayString(FullyQualified)),
+					Display(handle.Origin!.ToDisplayString(FullyQualified)),
+					$"it sets {hook.Directive}, which the handle cannot apply to the instance it builds",
+					$"remove {hook.Directive}, or grant this assembly InternalsVisibleTo in the module's assembly",
+				])));
 	}
 
 	/// <summary>

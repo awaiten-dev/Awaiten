@@ -42,14 +42,16 @@ partial class AwaitenGenerator
 	///     Lets the scan match of a module in another assembly share the instance of an implementation another module
 	///     builds through a generated handle (see <see cref="ThroughHandle" />). The handle hides the instance, so the
 	///     match can only serve it through an alias that serves the implementation under a service that converts to the
-	///     match's service, whose identity it takes so coalescing keeps one instance. Without such an alias the match's
+	///     match's service, whose identity it takes so coalescing keeps one instance, with the handle's lifetime, which
+	///     <see cref="YieldScanHandles" /> settled between the scans. A hook of the match is AWT241 (see
+	///     <see cref="UnappliedScanHooks" />). Without such an alias the match's
 	///     factory would build a second instance, so the match is dropped after reporting AWT240. Two modules that each
 	///     build a scan match through a handle of their own are AWT240 first (see <see cref="DropDuplicateScanHandles" />).
 	/// </summary>
 	private static void ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		DropDuplicateScanHandles(raw, compilation, diagnostics);
-		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, compilation);
+		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, compilation, diagnostics);
 		List<(RawRegistration Handle, int Index, string Identity)> indexed = raw
 			.Select((registration, index) => (registration, index))
 			.Where(entry => entry.registration.Hidden is not null && entry.registration.ImplementationType.Contains(HiddenKeyMarker))
@@ -75,6 +77,7 @@ partial class AwaitenGenerator
 			                                && alias.ImplementationType == TypeIdentity(aliased, compilation) + aliasMarker
 			                                && compilation.HasImplicitConversion(aliased, service)) is { } alias)
 			{
+				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, compilation));
 				raw[index] = match with
 				{
 					ImplementationType = alias.ImplementationType,
@@ -82,6 +85,7 @@ partial class AwaitenGenerator
 					Origin = alias.Origin,
 					Production = alias.Production,
 					ProductionMember = alias.ProductionMember,
+					Lifetime = handle.Lifetime,
 					OnActivated = null,
 					OnRelease = null,
 					Traits = alias.Traits,
@@ -99,6 +103,7 @@ partial class AwaitenGenerator
 				                                 && TakesHandle(generated, handle.ServiceType)
 				                                 && compilation.HasImplicitConversion(generated.ReturnType, service)) is ({ } owner, { } shared))
 			{
+				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, compilation));
 				raw[index] = ThroughAlias(match with { Lifetime = handle.Lifetime, }, owner, implementation, shared, compilation);
 				continue;
 			}
@@ -178,29 +183,57 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Lets the first registration in precedence order that constructs or produces the implementation of a scan instance
-	///     handle (see <see cref="IsScanHandle" />) win over the scan, as an explicit registration wins over a scan match in
-	///     the module's own assembly: the handle and the scan's aliases take its lifetime and <c>SuppressDisposal</c>, and
-	///     the scan's hooks are dropped. An overridable default that coalescing drops wins nothing. Returns the winning
-	///     registration per implementation identity.
+	///     handle (see <see cref="IsScanHandle" />) win over the scan, as in the module's own assembly. An explicit
+	///     registration wins over every scan match: the handle and the scan's aliases take its lifetime and
+	///     <c>SuppressDisposal</c>, and the scan's hooks are dropped. Among the scan matches, which include the container's
+	///     own scans and the matches of other modules, the first decides the lifetime, which the handle and the scan's
+	///     aliases take while keeping the scan's hooks, and each later one with another lifetime is AWT142 once per
+	///     implementation. An overridable default that coalescing drops wins nothing. Returns the winning registration per
+	///     implementation identity.
 	/// </summary>
-	private static Dictionary<string, RawRegistration> YieldScanHandles(List<RawRegistration> raw, Compilation compilation)
+	private static Dictionary<string, RawRegistration> YieldScanHandles(List<RawRegistration> raw, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		Dictionary<string, RawRegistration> winners = new(StringComparer.Ordinal);
-		HashSet<string> handled = new(raw.Where(IsScanHandle).Select(handle => TypeIdentity(handle.Hidden!, compilation)), StringComparer.Ordinal);
-		if (handled.Count == 0)
+		Dictionary<string, RawRegistration> handles = raw.Where(IsScanHandle).ToDictionary(handle => TypeIdentity(handle.Hidden!, compilation), StringComparer.Ordinal);
+		if (handles.Count == 0)
 		{
 			return winners;
 		}
 
 		HashSet<int> dropped = DroppedOverridableDefaults(raw);
+		Dictionary<string, Lifetime> firstScanLifetimes = new(StringComparer.Ordinal);
+		HashSet<string> reported = new(StringComparer.Ordinal);
 		foreach ((RawRegistration registration, int index) in InPrecedenceOrder(raw))
 		{
-			if (registration is { Hidden: null, ScanImplementation: null, IsScan: false, }
-			    && !dropped.Contains(index)
-			    && handled.Contains(registration.ImplementationType)
-			    && !winners.ContainsKey(registration.ImplementationType))
+			if (registration.Hidden is not null
+			    || dropped.Contains(index)
+			    || HandledBy(registration) is not { } identity
+			    || (winners.TryGetValue(identity, out RawRegistration? winner) && !winner.IsScan))
 			{
-				winners.Add(registration.ImplementationType, registration);
+				continue;
+			}
+
+			if (registration.IsScan && firstScanLifetimes.TryGetValue(identity, out Lifetime first))
+			{
+				if (first != registration.Lifetime && reported.Add(identity))
+				{
+					diagnostics.Add(new DiagnosticInfo(
+						Diagnostics.ScanLifetimeConflict,
+						LocationInfo.From(registration.Location),
+						new EquatableArray<string>([DisplayInstance(identity), first.ToString(), registration.Lifetime.ToString(),])));
+				}
+
+				continue;
+			}
+
+			if (registration.IsScan)
+			{
+				firstScanLifetimes.Add(identity, registration.Lifetime);
+			}
+
+			if (registration.Aliased is null)
+			{
+				winners.Add(identity, registration);
 			}
 		}
 
@@ -226,10 +259,28 @@ partial class AwaitenGenerator
 			}
 
 			RawRegistration Yielded(RawRegistration registration)
-				=> registration with { Lifetime = winner.Lifetime, SuppressDisposal = winner.SuppressDisposal, OnActivated = null, OnRelease = null, };
+				=> winner.IsScan
+					? registration with { Lifetime = winner.Lifetime, }
+					: registration with { Lifetime = winner.Lifetime, SuppressDisposal = winner.SuppressDisposal, OnActivated = null, OnRelease = null, };
 		}
 
 		return winners;
+
+		// The implementation identity of the scan handle a registration constructs, produces or scans, where the aliases
+		// of the handle's own scan stand for that scan.
+		string? HandledBy(RawRegistration registration)
+		{
+			string identity = registration.ScanImplementation is { } scanned ? TypeIdentity(scanned, compilation) : registration.ImplementationType;
+			if (handles.ContainsKey(identity))
+			{
+				return identity;
+			}
+
+			return registration is { IsScan: true, Aliased: not null, }
+				? handles.FirstOrDefault(handle => SymbolEqualityComparer.Default.Equals(handle.Value.Origin, registration.Origin)
+				                                   && registration.ImplementationType.EndsWith(AliasKeyMarker + handle.Key, StringComparison.Ordinal)).Key
+				: null;
+		}
 	}
 
 	/// <summary>
