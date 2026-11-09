@@ -1315,40 +1315,39 @@ partial class AwaitenGenerator
 		{
 			IParameterSymbol parameter = constructor.Parameters[index];
 			List<DiagnosticInfo> rejections = new();
-			if (!TryMirrorParameter(parameter, context with { Diagnostics = rejections, }, location, subject, $"its constructor parameter '{parameter.Name}'", out _)
-			    && rejections.Count > 0
-			    && !Alternative(rejections[0]))
+			if (TryMirrorParameter(parameter, context with { Diagnostics = rejections, }, location, subject, $"its constructor parameter '{parameter.Name}'", out _)
+			    || rejections.FirstOrDefault() is not { } rejection)
 			{
-				diagnostics[diagnostics.Count - 1] = rejections[0];
+				continue;
+			}
+
+			if (!hidden.Takes.ContainsKey(rejection))
+			{
+				diagnostics[diagnostics.Count - 1] = rejection;
 				return;
 			}
+
+			alternatives.Add(rejection);
 		}
 
 		List<DiagnosticInfo> propertyRejections = new();
 		EquatableArray<FactoryParameter> none = new EquatableArray<FactoryParameter>([]);
 		if (mirrorProperties
 		    && !TryMirrorInjectedProperties(constructor.ContainingType, context with { Diagnostics = propertyRejections, }, location, subject, ref none, out _)
-		    && propertyRejections.Count > 0
-		    && !Alternative(propertyRejections[0]))
+		    && propertyRejections.FirstOrDefault() is { } propertyRejection)
 		{
-			diagnostics[diagnostics.Count - 1] = propertyRejections[0];
-			return;
+			if (!hidden.Takes.ContainsKey(propertyRejection))
+			{
+				diagnostics[diagnostics.Count - 1] = propertyRejection;
+				return;
+			}
+
+			alternatives.Add(propertyRejection);
 		}
 
 		if (alternatives.Count > 0)
 		{
 			hidden.Alternatives[diagnostics[diagnostics.Count - 1]] = alternatives;
-		}
-
-		bool Alternative(DiagnosticInfo rejection)
-		{
-			if (!hidden.Takes.ContainsKey(rejection))
-			{
-				return false;
-			}
-
-			alternatives.Add(rejection);
-			return true;
 		}
 	}
 
