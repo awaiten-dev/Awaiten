@@ -268,4 +268,108 @@ public class ModuleRequestingTypeTests
 		await That(module).Contains("public static global::System.Type Registration_Kettle_2655994a_RequestingType() => typeof(global::Lib.Kettle);")
 			.Because("a container in another assembly calls the method for the type it cannot name, next to the factory of the same accessibility");
 	}
+
+	[Test]
+	public async Task OpenGenericClosedOverATypeInAnInternalsNamespace_IsTheClosedImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public static class Internals { public sealed class Bean { } }
+			        public interface IRepo<T> { }
+			        internal sealed class Repo<T> : IRepo<T> { public Repo(Log log) { } }
+			        public sealed class Cafe { public Cafe(IRepo<Internals.Bean> repo) { } }
+			        """, "[Transient(typeof(Repo<>), typeof(IRepo<>))]"),
+			Consumer("[Transient<Cafe>]"),
+			"global::Lib.Repo<global::Lib.Internals.Bean>");
+
+	[Test]
+	public async Task FactoryRegistrationWithAHook_IsTheRegisteredTypeEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IKettle { }
+			        internal sealed class Kettle : IKettle { }
+			        """, "[Singleton<IKettle>(Factory = nameof(MakeKettle), OnActivated = nameof(Warm))]",
+				"    internal static IKettle MakeKettle(Log log) => new Kettle();\n    internal static void Warm(IKettle kettle, Log log) { }"),
+			Consumer(""),
+			"global::Lib.IKettle", "global::Lib.IKettle");
+
+	[Test]
+	public async Task KeyedInternalDecorator_IsTheRequestingTypeEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal sealed class Grinder : IGrinder { }
+			        internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, Log log) { } }
+			        public sealed class Cafe { public Cafe([FromKey("a")] IGrinder g) { } }
+			        """, """
+			             [Singleton<Grinder, IGrinder>(Key = "a")]
+			             [Decorate<LoggingGrinder, IGrinder>(AllKeys = true)]
+			             [Transient<Cafe>]
+			             """),
+			Consumer(""),
+			"global::Lib.LoggingGrinder");
+
+	[Test]
+	public async Task OpenGenericInternalDecorator_IsTheClosedDecoratorEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IRepo<T> { }
+			        internal sealed class Repo<T> : IRepo<T> { public Repo(Log log) { } }
+			        internal sealed class LoggingRepo<T> : IRepo<T> { public LoggingRepo(IRepo<T> inner, Log log) { } }
+			        public sealed class Cafe { public Cafe(IRepo<int> repo) { } }
+			        """, "[Transient(typeof(Repo<>), typeof(IRepo<>))] [Decorate(typeof(LoggingRepo<>), typeof(IRepo<>))]"),
+			Consumer("[Transient<Cafe>]"),
+			"global::Lib.Repo<int>", "global::Lib.LoggingRepo<int>");
+
+	[Test]
+	public async Task DeferredPropertyAndHookOfAnInternalImplementation_GetTheImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IBrewer { }
+			        internal sealed class Brewer : IBrewer { public Brewer(Log log) { } [Inject(Deferred = true)] public Log Late { get; set; } = null!; }
+			        """, "[Singleton<Brewer, IBrewer>(OnActivated = nameof(Warm))]", "    internal static void Warm(Brewer b, Log log) { }"),
+			Consumer(""),
+			"global::Lib.Brewer", "global::Lib.Brewer", "global::Lib.Brewer");
+
+	[Test]
+	public async Task ImplementationPrivateToABaseContainer_IsTheRequestingTypeOfAnExtendingContainer()
+	{
+		const string library = """
+		                       #nullable enable
+		                       using System;
+		                       using Awaiten;
+
+		                       [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+		                       namespace Lib;
+
+		                       public sealed class Log { public Log(string category) { } }
+		                       public interface ISecret { }
+
+		                       [Container]
+		                       [Transient<Log>(Factory = nameof(CreateLog))]
+		                       [Singleton<Shop.Secret, ISecret>]
+		                       public static partial class Shop
+		                       {
+		                           public static Log CreateLog([RequestingType] Type? requestingType) => new(requestingType?.Name ?? "<root>");
+		                           private sealed class Secret : ISecret { public Secret(Log log) { } }
+		                       }
+		                       """;
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+		                                                                              using Awaiten;
+		                                                                              using Lib;
+
+		                                                                              namespace App;
+
+		                                                                              [Container(Extends = typeof(Shop))]
+		                                                                              public static partial class TestShop;
+		                                                                              """);
+		string container = result.Sources.Single(source => source.Key.EndsWith(".TestShop.g.cs", StringComparison.Ordinal)).Value;
+		string own = string.Concat(Generator.Run(library).Sources.Values);
+
+		await That(result.Diagnostics).IsEmpty();
+		await That(own).Contains("ResolveLog(__s, typeof(global::Lib.Shop.Secret))");
+		await That(Regex.Matches(container, @"ResolveLog\(__s, ([\w.:]+_RequestingType\(\))\)").Select(match => Evaluated(match.Groups[1].Value, own)))
+			.IsEqualTo(["global::Lib.Shop.Secret",])
+			.Because("the extending container builds the base's private implementation through the base's factory and passes the type the base passes itself");
+	}
 }

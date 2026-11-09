@@ -211,8 +211,8 @@ partial class AwaitenGenerator
 			return null;
 		}
 
-		int name = productionMember.LastIndexOf(InternalsClass + ".", StringComparison.Ordinal);
-		int generic = productionMember.IndexOf('<', name);
+		// A closing's type arguments may name a type in a namespace or type called Internals, so they start at the first '<'.
+		int generic = productionMember.IndexOf('<');
 		return generic < 0
 			? $"{RequestingTypeName(productionMember)}()"
 			: $"{RequestingTypeName(productionMember.Substring(0, generic))}{productionMember.Substring(generic)}()";
