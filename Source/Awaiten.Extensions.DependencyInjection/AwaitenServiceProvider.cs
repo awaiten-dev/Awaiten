@@ -265,7 +265,10 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 	///     because <see cref="GetKeyedService" /> declines it: Awaiten has no wildcard-key semantics. A keyed
 	///     service the container withholds is reported, as on the unkeyed surface, because
 	///     <see cref="GetKeyedService" /> answers it with its guidance rather than <see langword="null" />. A keyed
-	///     import is reported when the host's <see cref="IServiceProviderIsKeyedService" /> reports it.
+	///     <c>Task&lt;T&gt;</c> over an async-only keyed registration is reported as well, because
+	///     <see cref="GetKeyedService" /> projects it from the registration metadata, although the container serves no
+	///     keyed relationship shape and its <see cref="IAwaitenRoot.GetResolvability" /> reports it as not registered. A
+	///     keyed import is reported when the host's <see cref="IServiceProviderIsKeyedService" /> reports it.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="serviceType" /> is <see langword="null" />.</exception>
 	public bool IsKeyedService(Type serviceType, object? serviceKey)

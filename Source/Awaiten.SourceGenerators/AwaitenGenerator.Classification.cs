@@ -14,8 +14,9 @@ partial class AwaitenGenerator
 	///     Suppression is all-or-nothing per shape: the registered shape resolves directly, and an unregistered
 	///     sibling is AWT101 rather than a silently synthesized collection that could disagree. A registered
 	///     synchronous shape also claims the <c>IAsyncEnumerable&lt;T&gt;</c> and awaited <c>Task&lt;C&gt;</c>
-	///     views; async, awaited and keyed shapes claim only their own. Shared by the constructor-parameter and
-	///     <c>[Inject]</c>-property paths.
+	///     views, except the <c>Task</c> of its own type, which is a <c>Task&lt;T&gt;</c> relationship over the
+	///     registration, as for any other service; async, awaited and keyed shapes claim only their own.
+	///     Shared by the constructor-parameter and <c>[Inject]</c>-property paths.
 	/// </summary>
 	private static ParameterModel SuppressRegisteredCollectionSynthesis(
 		ParameterModel parameterModel,
@@ -28,25 +29,20 @@ partial class AwaitenGenerator
 		                            && serviceToImpl.ContainsKey(new ServiceKey(AsyncEnumerableShapeType(parameterModel.ServiceType), parameterModel.Key));
 		bool awaitedOrKeyedShapeRegistered = parameterModel.Kind is DependencyKind.AwaitedEnumerable or DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection or DependencyKind.TypeDispatch
 		                                     && serviceToImpl.ContainsKey(new ServiceKey(declaredType.ToDisplayString(FullyQualified), parameterModel.Key));
-		// A registered dictionary claims the awaited Task<…> view too (inner dictionary type in
-		// AwaitedCollectionType). How it is claimed depends on whether a synthesized awaited view could exist at
-		// all (see below).
-		bool keyedSyncShapeRegistered = parameterModel.Kind == DependencyKind.AwaitedKeyedCollection
-		                                && serviceToImpl.ContainsKey(new ServiceKey(parameterModel.AwaitedCollectionType!, parameterModel.Key));
+		// The awaited view of a registered collection or dictionary is the Task of that registration (inner type in
+		// AwaitedCollectionType), unless the Task<…> itself is registered.
+		bool awaitedRegistration = parameterModel.Kind is DependencyKind.AwaitedEnumerable or DependencyKind.AwaitedKeyedCollection
+		                           && !awaitedOrKeyedShapeRegistered
+		                           && serviceToImpl.ContainsKey(new ServiceKey(parameterModel.AwaitedCollectionType!, parameterModel.Key));
+		if (awaitedRegistration)
+		{
+			return parameterModel with { ServiceType = parameterModel.AwaitedCollectionType!, Kind = DependencyKind.Task, AwaitedCollectionType = null, };
+		}
+
 		if (syncShapeRegistered || asyncShapeRegistered || awaitedOrKeyedShapeRegistered)
 		{
 			string collectionType = declaredType.ToDisplayString(FullyQualified);
 			return parameterModel with { ServiceType = collectionType, Kind = DependencyKind.Direct, AwaitedCollectionType = null, };
-		}
-
-		if (keyedSyncShapeRegistered)
-		{
-			// A registered synchronous dictionary claims its awaited Task<…> view all-or-nothing when the view is a
-			// keyless string-keyed one (so the sibling becomes Direct, AWT101 if unregistered). A [FromKey] or
-			// non-string key admits no synthesized awaited view, so it stays the bare Task over the registered dictionary.
-			return parameterModel.Key is null && KeyedDependencyKeyType(declaredType)?.SpecialType == SpecialType.System_String
-				? parameterModel with { ServiceType = declaredType.ToDisplayString(FullyQualified), Kind = DependencyKind.Direct, AwaitedCollectionType = null, }
-				: parameterModel with { ServiceType = parameterModel.AwaitedCollectionType!, Kind = DependencyKind.Task, AwaitedCollectionType = null, };
 		}
 
 		return parameterModel;

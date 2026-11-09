@@ -333,7 +333,7 @@ partial class AwaitenGenerator
 		}
 
 		// AWT187: no own-namespace winner decided the convention tie, so several same-named interfaces all
-		// registered above — usually one of them is an incidental same-named interface. Like the other per-match
+		// registered above; usually one of them is an incidental same-named interface. Like the other per-match
 		// warnings, a markerless scan is exempt.
 		if (contracts.AmbiguousMatching && markerDisplay is not null)
 		{

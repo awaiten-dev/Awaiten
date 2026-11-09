@@ -55,7 +55,7 @@ Task<IReadOnlyList<IDrink>> drinks = shop.Resolve<Task<IReadOnlyList<IDrink>>>()
 
 ## Registering your own collection
 
-Register a collection shape explicitly and it wins. Awaiten stops synthesizing the collection for that element type and uses yours.
+Register a collection shape explicitly and it wins. Awaiten stops synthesizing the collection for that element type and uses yours. A dependency on a `Task` of the shape you registered, here `Task<IEnumerable<ISyrup>>`, gets a task over your registration, while the other shapes and their `Task` forms are no longer available.
 
 ```csharp
 [Singleton<SyrupBundle, IEnumerable<ISyrup>>]

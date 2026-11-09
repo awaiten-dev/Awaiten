@@ -916,7 +916,42 @@ public class CollectionTests
 	}
 
 	[Test]
-	public async Task ExplicitlyRegisteredSyncCollectionShape_SuppressesTheAwaitedViewOnInjectionToo()
+	public async Task ExplicitlyRegisteredSyncCollectionShape_SuppressesTheOtherAwaitedViewsOnInjectionToo()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+		                                       using System.Collections.Generic;
+		                                       using System.Threading.Tasks;
+
+		                                       namespace MyCode;
+
+		                                       public interface IPlugin { }
+		                                       public sealed class Alpha : IPlugin { }
+		                                       public sealed class Config : IReadOnlyList<IPlugin>
+		                                       {
+		                                           public IPlugin this[int i] => null;
+		                                           public int Count => 0;
+		                                           public IEnumerator<IPlugin> GetEnumerator() => null;
+		                                           System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => null;
+		                                       }
+		                                       public sealed class Host { public Host(Task<IEnumerable<IPlugin>> plugins) { } }
+
+		                                       [Container]
+		                                       [Singleton<Alpha, IPlugin>]
+		                                       [Singleton<Config, IReadOnlyList<IPlugin>>]
+		                                       [Singleton<Host>]
+		                                       public static partial class MyContainer
+		                                       {
+		                                       }
+		                                       """);
+
+		await That(result.Diagnostics).HasSingle().Which
+			.Contains("*AWT101*requires 'System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<MyCode.IPlugin>>', which is not registered*").AsWildcard()
+			.Because("a registered shape makes the whole IPlugin collection opaque, so a sibling awaited view is not synthesized behind it");
+	}
+
+	[Test]
+	public async Task ExplicitlyRegisteredSyncCollectionShape_ServesTheTaskOfItsOwnShapeOnInjection()
 	{
 		GeneratorResult result = Generator.Run("""
 		                                       using Awaiten;
@@ -945,15 +980,11 @@ public class CollectionTests
 		                                       }
 		                                       """);
 
-		// A registered synchronous shape makes the whole IPlugin collection opaque, suppressing the awaited
-		// Task<IReadOnlyList<IPlugin>> view too. The AWT101 names that exact awaited shape as the missing
-		// dependency; no bare-Task fallback resolves it through the registered IReadOnlyList<IPlugin>.
-		await That(result.Diagnostics)
-			.Contains("*AWT101*requires 'System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<MyCode.IPlugin>>', which is not registered*").AsWildcard()
-			.Because("suppressing the awaited view rewrites the parameter to a direct dependency on the full Task<IReadOnlyList<IPlugin>> type, so that exact awaited shape is the missing dependency - the registered IReadOnlyList<IPlugin> does not serve it through a bare Task relationship");
-		await That(result.Sources.TryGetValue("Awaiten.MyCode.MyContainer.g.cs", out string? source) ? source : string.Empty)
-			.DoesNotContain("Task.FromResult<global::System.Collections.Generic.IReadOnlyList<global::MyCode.IPlugin>>")
-			.Because("the suppressed awaited view is not synthesized behind the opaque registration");
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the Task of the registered shape is a Task relationship over the registration, a completed task as for any other synchronous service");
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"])
+			.Contains("new global::MyCode.Host(global::System.Threading.Tasks.Task.FromResult<global::System.Collections.Generic.IReadOnlyList<global::MyCode.IPlugin>>(Root.ResolveConfig(__s.__root)))")
+			.Because("the task completes with the registered Config, not a synthesized collection of the IPlugin registrations");
 	}
 
 	[Test]

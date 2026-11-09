@@ -742,14 +742,33 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			return "an Owned<T> disposal handle cannot be produced through Lazy<…>; resolve Owned<T>, Func<…, Owned<T>>, Task<Owned<T>> or Func<…, Task<Owned<T>>> instead";
 		}
 
-		// The container serves the Task shapes only over a service that needs asynchronous initialization or runtime
-		// arguments, so a Task shape over a synchronous one it provides is missing for that reason, not a registration.
-		if (TaskShapeTarget(service) is { } target
-		    && target.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is var targetDisplay
-		    && !surface.Fails(targetDisplay, onRoot: false, asynchronous: false, mayBeVariant: false, out _))
+		// A parameterized service is reached only through its factory, whose runtime arguments a by-type call cannot pass.
+		ITypeSymbol? target = TaskShapeTarget(service);
+		string subjectDisplay = target?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? display;
+		InstanceModel? subject = InstanceOf(graph, subjectDisplay);
+		if (subject is { IsParameterized: true, })
 		{
-			string shown = AwaitenGenerator.Display(targetDisplay);
-			return $"the container serves the Task shapes only over a service that needs asynchronous initialization or runtime arguments, and '{shown}' needs neither; resolve '{shown}' directly, or through ResolveAsync to get it as a task";
+			string shown = AwaitenGenerator.Display(subjectDisplay);
+			string argumentTypes = AwaitenGenerator.Display(string.Join(", ", subject.ArgTypes()));
+			string result = subject.IsAsyncTainted ? $"System.Threading.Tasks.Task<{shown}>" : shown;
+			return $"'{shown}' is built from runtime arguments, so resolve its factory 'System.Func<{argumentTypes}, {result}>' instead";
+		}
+
+		if (target is not null)
+		{
+			string shown = AwaitenGenerator.Display(subjectDisplay);
+			// An async requesting-type factory gets every Task shape but the Owned forms (AWT186), as the generated miss says.
+			if (subject is { IsAsyncTainted: true, IsRequestingTypeFactory: true, })
+			{
+				return $"'{shown}' is built by a requesting-type factory, which has no Owned<T> form; resolve it as Task<T> or Func<Task<T>> instead";
+			}
+
+			// The container serves the Task shapes only over a service that needs asynchronous initialization or runtime
+			// arguments, so a Task shape over a synchronous one it provides is missing for that reason, not a registration.
+			if (!surface.Fails(subjectDisplay, onRoot: false, asynchronous: false, mayBeVariant: false, out _))
+			{
+				return $"the container serves the Task shapes only over a service that needs asynchronous initialization or runtime arguments, and '{shown}' needs neither; resolve '{shown}' directly, or through ResolveAsync to get it as a task";
+			}
 		}
 
 		if (service is not INamedTypeSymbol { IsGenericType: true, } named
@@ -770,6 +789,12 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		string registration = closed == serviceDisplay ? $"[{open.Lifetime}<{closed}>]" : $"[{open.Lifetime}<{closed}, {serviceDisplay}>]";
 		return $"register this closing explicitly next to the open generic registration, such as {registration}, {reason}";
 	}
+
+	private static InstanceModel? InstanceOf(GraphModel graph, string service)
+		=> graph.ServiceToImpl.TryGetValue(new ServiceKey(service, null), out string? implementation)
+		   && graph.ImplToIndex.TryGetValue(implementation, out int index)
+			? graph.Instances[index]
+			: null;
 
 	// The service of a Task shape the container serves over an async-initialized service (Task<T>, Func<Task<T>>,
 	// Lazy<Task<T>>, Task<Owned<T>> or Func<Task<Owned<T>>>), or null for any other type; the generated

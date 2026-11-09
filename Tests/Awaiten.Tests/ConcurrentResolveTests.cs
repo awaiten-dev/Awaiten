@@ -7,8 +7,8 @@ namespace Awaiten.Tests;
 
 /// <summary>
 ///     Concurrency guarantees for singleton resolution and disposal: a singleton resolved from many
-///     threads at once is constructed (and, for the async path, initialized) exactly once, and — because
-///     the racing resolutions never double-track it in the disposal list — it is disposed exactly once
+///     threads at once is constructed (and, for the async path, initialized) exactly once, and, because
+///     the racing resolutions never double-track it in the disposal list, it is disposed exactly once
 ///     when the container is torn down. Covered on both the synchronous <c>Resolve</c> path and the
 ///     asynchronous <c>ResolveAsync</c> path.
 /// </summary>

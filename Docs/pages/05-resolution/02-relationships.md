@@ -41,7 +41,7 @@ public sealed class Barista(Task<EspressoMachine> machine)
 
 ## Resolve a relationship directly
 
-The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service. The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
+The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service, with two exceptions: a service with [runtime arguments](./06-runtime-arguments.md) comes only as its factories, such as `Func<TArg..., T>` and `Func<TArg..., Owned<T>>`, and a service built by a factory with a `[RequestingType]` parameter has no `Owned<T>` ([AWT186](../09-diagnostics.md#awt186)). The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
 
 ```csharp
 Func<Task<EspressoMachine>> machines = shop.Resolve<Func<Task<EspressoMachine>>>();

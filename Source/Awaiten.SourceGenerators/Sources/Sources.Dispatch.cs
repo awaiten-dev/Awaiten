@@ -471,7 +471,27 @@ internal static partial class Sources
 			// service to resolve instead. It stays a "No registration" miss without a resolvability reason, so the MS.DI
 			// bridge still answers null for it. An async-only service would have the shape, so its miss has another
 			// cause and keeps the plain message. The probe exists whenever the dispatch table does.
-			Indent(builder, depth + 1).AppendLine("if (__TaskShapeTarget(serviceType) is global::System.Type __target && __GetResolvability(__target, null).Status is not (global::Awaiten.AwaitenResolvabilityStatus.NotRegistered or global::Awaiten.AwaitenResolvabilityStatus.AsyncOnly))");
+			Indent(builder, depth + 1).AppendLine("global::System.Type? __target = __TaskShapeTarget(serviceType);");
+			// An async requesting-type factory gets every Task shape but the Owned forms (AWT186), so a miss over one is
+			// an Owned form, whether SyncAfterInit makes the service resolvable or not.
+			string[] ownedless = instances
+				.Where(instance => instance.IsAsyncTainted && instance.IsRequestingTypeFactory && !instance.IsParameterized)
+				.SelectMany(instance => instance.ListedServices)
+				.Where(service => service.Key is null)
+				.Select(service => $"__target == typeof({service.Service})")
+				.Distinct()
+				.ToArray();
+			if (ownedless.Length > 0)
+			{
+				Indent(builder, depth + 1).AppendLine($"if ({string.Join(" || ", ownedless)})");
+				Indent(builder, depth + 1).AppendLine("{");
+				Indent(builder, depth + 2).AppendLine(
+					"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: '{__target}' is built by a requesting-type factory, which has no Owned<T> form; resolve it as Task<T> or Func<Task<T>> instead.\");");
+				Indent(builder, depth + 1).AppendLine("}");
+				builder.AppendLine();
+			}
+
+			Indent(builder, depth + 1).AppendLine("if (__target is not null && __GetResolvability(__target, null).Status is not (global::Awaiten.AwaitenResolvabilityStatus.NotRegistered or global::Awaiten.AwaitenResolvabilityStatus.AsyncOnly))");
 			Indent(builder, depth + 1).AppendLine("{");
 			Indent(builder, depth + 2).AppendLine(
 				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: the Task shapes are served only over a service that needs asynchronous initialization or runtime arguments, and '{__target}' needs neither; resolve '{__target}' directly, or through ResolveAsync to get it as a task.\");");
