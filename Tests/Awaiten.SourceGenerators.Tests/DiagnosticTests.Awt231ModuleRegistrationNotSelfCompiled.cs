@@ -94,5 +94,31 @@ public partial class DiagnosticTests
 				.Because("without the generator the module carries no record of a skip, so it was never expanded");
 			await That(result.Diagnostics).DoesNotContain("*AWT231*").AsWildcard();
 		}
+
+		[Test]
+		public async Task ARegistrationTheLibraryBuildRejected_ReportsTheRecordedCauseInsteadOfAwt154()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGreeter { }
+				internal sealed class Formatter { }
+				internal sealed class Greeter : IGreeter { public Greeter(Formatter formatter) { } }
+
+				[Module]
+				[Singleton<Greeter, IGreeter>]
+				public static partial class GreetingModule { }
+				""";
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.Contains("*error AWT195: 'Lib.Greeter' is self-compiled from a module registration, but its constructor parameter 'formatter' has the type 'Lib.Formatter'*").AsWildcard()
+				.Because("the library build rejects the registration, which a user may still downgrade to build it");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT231: The imported module 'Lib.GreetingModule' registers 'Lib.Greeter', which this container cannot construct, and the module's assembly generated no factory for it because its constructor parameter 'formatter' has the type 'Lib.Formatter', which is not accessible outside the module's assembly; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Lib.Greeter', its constructor and the constructor's parameter types public*").AsWildcard()
+				.Because("the generator ran and recorded why it generated no factory, so the module was not built without it (AWT154)");
+		}
 	}
 }

@@ -1429,6 +1429,12 @@ partial class AwaitenGenerator
 
 		if (!FitsFactorySignature(parameter.Type, context))
 		{
+			if (!argument && ClosingOverInternal(parameter.Type, context) is { } closing)
+			{
+				mirrored = new FactoryParameter(ClosingHandleType(context.Module, closing), parameter.Name, KeyAttribute(FromKey(parameterAttributes)), $"@{parameter.Name}.Value", Closing: closing);
+				return true;
+			}
+
 			DiagnosticInfo rejection = new(
 				Diagnostics.ModuleScanParameterInaccessible,
 				LocationInfo.From(location),

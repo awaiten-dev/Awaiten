@@ -380,13 +380,13 @@ internal static partial class Sources
 	/// </remarks>
 	private static void EmitExternalMetadata(StringBuilder fields, StringBuilder members, int depth, InstanceModel[] instances, ContainerModel? model)
 	{
-		List<(string Type, string? Key)> external = new(ExternalDependencies(instances));
+		List<(string Type, string? Key, bool ClosingHandle)> external = new(ExternalDependencies(instances));
 		if (model is not null)
 		{
 			HashSet<string> consumed = new(external.Select(dependency => dependency.Type), StringComparer.Ordinal);
 			external.AddRange(model.ImportedServices.AsArray()
 				.Where(consumed.Add)
-				.Select(service => (service, (string?)null)));
+				.Select(service => (service, (string?)null, false)));
 		}
 
 		Separate(members);
@@ -400,9 +400,9 @@ internal static partial class Sources
 		Separate(fields);
 		Indent(fields, depth).AppendLine("private static readonly global::Awaiten.AwaitenExternalDependency[] __externalDependencies =");
 		Indent(fields, depth).AppendLine("{");
-		foreach ((string type, string? key) in external)
+		foreach ((string type, string? key, bool closingHandle) in external)
 		{
-			Indent(fields, depth + 1).Append("new global::Awaiten.AwaitenExternalDependency(typeof(").Append(type).Append("), ")
+			Indent(fields, depth + 1).Append("new global::Awaiten.AwaitenExternalDependency(").Append(ExternalTypeExpression(type, closingHandle)).Append(", ")
 				.Append(ExternalKeyLiteral(key)).AppendLine("),");
 		}
 
@@ -1712,9 +1712,9 @@ internal static partial class Sources
 	///     advertised by the Root as <c>ExternalDependencies</c> and used to decide whether the external-resolution
 	///     surface is emitted.
 	/// </summary>
-	private static (string Type, string? Key)[] ExternalDependencies(InstanceModel[] instances)
+	private static (string Type, string? Key, bool ClosingHandle)[] ExternalDependencies(InstanceModel[] instances)
 	{
-		List<(string Type, string? Key)> external = new();
+		List<(string Type, string? Key, bool ClosingHandle)> external = new();
 		HashSet<(string, string?)> seen = new();
 		foreach (InstanceModel instance in instances)
 		{
@@ -1725,7 +1725,7 @@ internal static partial class Sources
 			{
 				if (parameter.Kind == DependencyKind.External && seen.Add((parameter.ServiceType, parameter.Key)))
 				{
-					external.Add((parameter.ServiceType, parameter.Key));
+					external.Add((parameter.ServiceType, parameter.Key, parameter.ClosingHandle));
 				}
 			}
 		}

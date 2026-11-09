@@ -2509,6 +2509,21 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     A generated member of an imported module of another assembly takes a closing of a public generic service over a
+	///     type internal to the module's assembly, such as <c>ILogger&lt;Brew&gt;</c> for an internal <c>Brew</c>, which the
+	///     container can neither name nor close itself. It serves the closing only when it imports the definition from its
+	///     host, or keeps the module's own open registration of it, which the module closes in its build; <c>{4}</c> says
+	///     why neither applies, with the remedy. Reported instead of AWT101, which would name the generated handle.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnservedClosingOverInternalType = new(
+		"AWT253",
+		"Closing over an internal type cannot be served",
+		"'{0}' cannot be resolved: '{1}' requires '{2}', a closing over a type internal to the assembly of the module '{3}', which this container cannot close itself, and {4}; or grant this assembly InternalsVisibleTo in the module's assembly",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A dependency on a collection or keyed dictionary of relationships (<c>IEnumerable&lt;Lazy&lt;T&gt;&gt;</c>,
 	///     <c>Func&lt;T&gt;[]</c>, <c>IReadOnlyDictionary&lt;string, Owned&lt;T&gt;&gt;</c> and the like) whose element type
 	///     has no registration of its own. A collection holds the registrations of its element type, and relationships

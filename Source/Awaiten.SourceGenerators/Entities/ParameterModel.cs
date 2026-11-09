@@ -56,4 +56,5 @@ internal sealed record ParameterModel(
 	bool NestedNullable = false,
 	string? DeclaredType = null,
 	EquatableArray<string> DeclaredFuncArgTypes = default,
-	bool ImportedInner = false);
+	bool ImportedInner = false,
+	bool ClosingHandle = false);

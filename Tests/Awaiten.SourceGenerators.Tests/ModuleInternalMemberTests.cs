@@ -110,7 +110,7 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
-		public async Task TakingAnInternalServiceAndAGenericOverAnInternalType_ExternalAwt108NamesTheGeneric()
+		public async Task TakingAnInternalServiceAndAGenericOverAnInternalType_IsBuiltThroughHandles()
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(
 				Library("[Singleton(typeof(Log<>), typeof(ILog<>))][Singleton<BeanStore>][Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "internal static IGrinder CreateGrinder(BeanStore store, ILog<Grinder> log) => new Grinder(store);")
@@ -119,9 +119,8 @@ public class ModuleInternalMemberTests
 			await That(library.Diagnostics).IsEmpty();
 			await That(same.Diagnostics).IsEmpty();
 			await That(friend.Diagnostics).IsEmpty();
-			await That(external.Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT108: 'Lib.IGrinder' cannot be produced: the module 'Lib.CoffeeModule' has no accessible method 'CreateGrinder' returning 'Lib.IGrinder': 'CreateGrinder' is internal and its parameter 'log' has the type 'Lib.ILog<Lib.Grinder>', which is not public, so the module generated no public wrapper for it; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly")
-				.Because("the handle of the internal service would serve 'store', so the parameter that keeps the module from wrapping the factory is 'log'");
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the handle of the internal service serves 'store', and the closing handle built from the module's open registration serves 'log'");
 		}
 
 		[Test]
@@ -202,7 +201,7 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
-		public async Task ThatOnlyOneOfTwoOtherModulesCanBuild_ExternalAwt108NamesTheBlockingParameter()
+		public async Task ThatOnlyOneOfTwoOtherModulesCanBuild_ExternalNamesTheBlockingParameter()
 		{
 			string library = (Library("[Singleton<IGrinder>(Factory = nameof(CreateGrinder))]", "internal static IGrinder CreateGrinder(BeanStore store, ILog<Grinder> log) => new Grinder(store);") + """
 
@@ -237,8 +236,8 @@ public class ModuleInternalMemberTests
 			await That(Generator.RunWithGeneratedReferencedAssembly(library.Replace(", ILog<Grinder> log", ""), container).Diagnostics).IsEmpty()
 				.Because("the factory takes the internal service through the handle that 'Lib.BStoreModule' can build");
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT108: 'Lib.IGrinder' cannot be produced: the module 'Lib.CoffeeModule' has no accessible method 'CreateGrinder' returning 'Lib.IGrinder': 'CreateGrinder' is internal and its parameter 'log' has the type 'Lib.ILog<Lib.Grinder>', which is not public, so the module generated no public wrapper for it; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly")
-				.Because("another module that registers the internal service can build it, so its handle serves 'store' and the parameter that blocks the wrapper is 'log'");
+					"error AWT253: 'Lib.IGrinder (internal to module Lib.CoffeeModule)' cannot be resolved: 'Lib.IGrinder' requires 'Lib.ILog<Lib.Grinder>', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and neither the container nor an imported module registers or imports 'Lib.ILog<>'; import it from the host with [ImportService(typeof(Lib.ILog<>))], or register it in the module 'Lib.CoffeeModule'; or grant this assembly InternalsVisibleTo in the module's assembly")
+				.Because("another module that registers the internal service can build it, so its handle serves 'store', and nothing provides the closing 'log' takes");
 		}
 		[Test]
 		[Arguments("[Singleton<Plugin, IPlugin>(OnActivated = nameof(Ready))]", "internal static void Ready(Plugin plugin, BeanStore store) { }", "registers 'Lib.Plugin' with the OnActivated hook 'Ready', which this container cannot call, and the module's assembly generated no wrapper for it")]

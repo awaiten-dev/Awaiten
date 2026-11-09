@@ -320,7 +320,14 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<HiddenHandle>(handles.ToArray()),
 			new EquatableArray<HiddenAlias>(aliases.ToArray()),
 			new EquatableArray<HiddenInitializer>(initializers.ToArray()),
-			new EquatableArray<ConventionWrapper>(expanded ? conventionWrappers.ToArray() : []));
+			new EquatableArray<ConventionWrapper>(expanded ? conventionWrappers.ToArray() : []),
+			new EquatableArray<ClosingHandle>(CompleteClosings(
+				factories.SelectMany(factory => factory.Parameters.AsArray())
+					.Concat(registrations.SelectMany(registration => registration.Parameters.AsArray()))
+					.Select(parameter => parameter.Closing)
+					.OfType<ClosingHandle>(),
+				moduleSymbol,
+				compilation).ToArray()));
 	}
 
 	/// <summary>
@@ -819,7 +826,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		AsyncInitializerScopes AsyncInitializers,
 		SameCompilationModules Modules,
 		HiddenInjectedProperties HiddenInjectedProperties,
-		Dictionary<string, PredicateModel> Predicates);
+		Dictionary<string, PredicateModel> Predicates,
+		Dictionary<string, string> ClosingFaults);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -914,7 +922,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// Collect also expands [Scan]s into overridable registrations (IsScan), ordered after the explicit ones
 		// so an explicit registration wins single resolution while every match still joins its collection.
-		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections, List<OpenRegistration> open) = Collect(
+		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections, List<OpenRegistration> open, Dictionary<string, string> closingFaults) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
 
 		if (factories is not null)
@@ -1009,7 +1017,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal));
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults);
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

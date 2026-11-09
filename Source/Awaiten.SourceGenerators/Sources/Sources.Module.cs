@@ -158,6 +158,12 @@ internal static partial class Sources
 			EmitHiddenHandle(builder, depth + 2, handle);
 		}
 
+		foreach (ClosingHandle closing in model.Closings.AsArray())
+		{
+			builder.AppendLine();
+			EmitClosingHandle(builder, depth + 2, closing);
+		}
+
 		EmitAliases(builder, depth + 2, model.Aliases.AsArray());
 		EmitInitializers(builder, depth + 2, model.Initializers.AsArray());
 		foreach (ConventionWrapper wrapper in model.ConventionWrappers.AsArray())
@@ -501,6 +507,83 @@ internal static partial class Sources
 		}
 
 		Indent(builder, depth).AppendLine("}");
+	}
+
+	/// <summary>
+	///     Emits the handle of a closing over a type internal to the module's assembly (see <see cref="ClosingHandle" />): a
+	///     public class another assembly can name but neither create from an instance of its own nor unwrap, which records
+	///     the closing and wraps what a consuming container's external resolver returns for it. When the module registers
+	///     the definition, the factory that builds the closing from that registration follows, or the reason it has none.
+	/// </summary>
+	private static void EmitClosingHandle(StringBuilder builder, int depth, ClosingHandle closing)
+	{
+		AppendXmlSummary(builder, depth,
+			"Generated from a module registration: holds a closing of a public generic service over a type internal to the module's",
+			"assembly, so a consuming container in another assembly depends on it without naming the closing. Not intended to be used directly.");
+		Indent(builder, depth).AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
+		Indent(builder, depth).Append("public sealed class ").Append(closing.Name);
+		List<string> interfaces = new();
+		if (closing.Disposable)
+		{
+			interfaces.Add("global::System.IDisposable");
+		}
+
+		if (closing.AsyncDisposable)
+		{
+			interfaces.Add("global::System.IAsyncDisposable");
+		}
+
+		builder.AppendLine(interfaces.Count == 0 ? string.Empty : " : " + string.Join(", ", interfaces));
+		Indent(builder, depth).AppendLine("{");
+		AppendXmlSummary(builder, depth + 1, "The unbound generic service the handle closes, which a consuming container imports from its host.");
+		Indent(builder, depth + 1).Append("public const string Definition = ").Append(SymbolDisplay.FormatLiteral(closing.Definition, quote: true)).AppendLine(";");
+		builder.AppendLine();
+		AppendXmlSummary(builder, depth + 1, "The closing the handle holds, which a consuming container names in its diagnostics.");
+		Indent(builder, depth + 1).Append("public const string Closing = ").Append(SymbolDisplay.FormatLiteral(closing.ClosedType, quote: true)).AppendLine(";");
+		builder.AppendLine();
+		AppendXmlSummary(builder, depth + 1, "The closed service type a consuming container asks its external resolver for.");
+		Indent(builder, depth + 1).Append("public static readonly global::System.Type ServiceType = typeof(").Append(closing.ClosedType).AppendLine(");");
+		builder.AppendLine();
+		Indent(builder, depth + 1).Append("internal ").Append(closing.Name).Append('(').Append(closing.ClosedType).AppendLine(" value) => Value = value;");
+		builder.AppendLine();
+		Indent(builder, depth + 1).Append("internal ").Append(closing.ClosedType).AppendLine(" Value { get; }");
+		builder.AppendLine();
+		AppendXmlSummary(builder, depth + 1, "Wraps the instance the external resolver of a consuming container returned for <see cref=\"ServiceType\" />.");
+		Indent(builder, depth + 1).Append("public static ").Append(closing.Name).Append(" FromImport(object instance) => new ").Append(closing.Name)
+			.Append("((").Append(closing.ClosedType).AppendLine(")instance);");
+		if (closing.Disposable)
+		{
+			builder.AppendLine();
+			Indent(builder, depth + 1).AppendLine("void global::System.IDisposable.Dispose() => ((global::System.IDisposable)Value).Dispose();");
+		}
+
+		if (closing.AsyncDisposable)
+		{
+			builder.AppendLine();
+			Indent(builder, depth + 1).AppendLine("global::System.Threading.Tasks.ValueTask global::System.IAsyncDisposable.DisposeAsync() => ((global::System.IAsyncDisposable)Value).DisposeAsync();");
+		}
+
+		if (closing.SkipReason is { } reason)
+		{
+			builder.AppendLine();
+			EmitSkipReason(builder, depth + 1, "RegistrationSkipped", reason,
+				"Why the module generates no factory that builds this closing from its open registration, which a consuming container",
+				"that keeps the registration reports.");
+		}
+
+		Indent(builder, depth).AppendLine("}");
+		if (closing.Implementation is { } implementation)
+		{
+			FactoryParameter[] parameters = closing.Parameters.AsArray();
+			builder.AppendLine();
+			AppendXmlSummary(builder, depth,
+				"Generated from a module registration: builds the closing the handle holds from the module's open generic registration,",
+				"so a consuming container in another assembly that keeps the registration shares it without naming the closing.");
+			Indent(builder, depth).Append("public static ").Append(closing.Name).Append(" Registration_").Append(closing.Name).Append('(')
+				.Append(string.Join(", ", parameters.Where(parameter => !parameter.Fixed).Select(MirroredParameter)))
+				.Append(") => new ").Append(closing.Name).Append("(new ").Append(implementation).Append('(')
+				.Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).AppendLine("));");
+		}
 	}
 
 	private static void EmitHandleVariant(StringBuilder builder, int depth, HiddenHandle handle, string name, string interfaces, params string[] members)

@@ -16,7 +16,7 @@ partial class AwaitenGenerator
 	/// </summary>
 	private const string ScanKeyMarker = "@scan:";
 
-	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections, List<OpenRegistration> Open) Collect(
+	private static (List<RawRegistration> Raw, HashSet<string> ConstraintRejectedServices, Dictionary<ServiceKey, List<DiagnosticInfo>> DeferredRejections, List<OpenRegistration> Open, Dictionary<string, string> ClosingFaults) Collect(
 		INamedTypeSymbol containerSymbol,
 		List<ImportedModule> modules,
 		Compilation compilation,
@@ -101,6 +101,9 @@ partial class AwaitenGenerator
 			ReportUnbuildableInheritedOpen(inheritance, open, diagnostics);
 		}
 
+		// Before the expansion, so the dependencies of a closing a module builds for the container seed it too.
+		Dictionary<string, string> closingFaults = RegisterClosings(result, open, modules, containerSymbol, compilation, external, wrappers);
+
 		// Expand open generic registrations: for every closed generic service required from the graph
 		// whose open form is registered but which has no concrete registration, synthesize the closed
 		// implementation (iterating to a fixpoint over its own generic dependencies).
@@ -125,7 +128,7 @@ partial class AwaitenGenerator
 			result.AddRange(scanMatches);
 		}
 
-		return (result, constraintRejected, deferredRejections, open);
+		return (result, constraintRejected, deferredRejections, open, closingFaults);
 	}
 
 	/// <summary>

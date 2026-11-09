@@ -77,6 +77,14 @@ partial class AwaitenGenerator
 				}
 			}
 
+			foreach (INamedTypeSymbol handle in module.GetTypeMembers(InternalsClass).SelectMany(internals => internals.GetTypeMembers()))
+			{
+				if (ClosingHandleOf(handle) is var (_, closing))
+				{
+					handles[Display(handle.ToDisplayString(FullyQualified))] = (Display(closing), moduleName);
+				}
+			}
+
 			foreach (AttributeData scanned in module.GetAttributes().Where(attribute => attribute.AttributeClass is { Name: "GeneratedScanRegistrationAttribute", }))
 			{
 				if (scanned.ConstructorArguments.Length == 1
