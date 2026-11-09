@@ -11,9 +11,9 @@ namespace Awaiten.Extensions.DependencyInjection;
 ///     surface, so an Awaiten container can be consumed as an <see cref="IServiceProvider" /> (and used to
 ///     create <see cref="IServiceScope">scopes</see>). <see cref="GetService" /> maps to the container's
 ///     <see cref="IAwaitenResolver.TryResolve(Type, out object)" />, returning <see langword="null" /> for an unregistered
-///     service as <see cref="IServiceProvider" /> requires. A service that requires asynchronous resolution
-///     (advertised through <see cref="IAwaitenRoot.Registrations" />) is served as a <c>Task&lt;T&gt;</c>
-///     (request <c>Task&lt;TService&gt;</c> and await it), mirroring the collection projection. An
+///     service as <see cref="IServiceProvider" /> requires. A service that requires asynchronous resolution is
+///     served as a <c>Task&lt;T&gt;</c> (request <c>Task&lt;TService&gt;</c> and await it): the container serves it
+///     unkeyed, and the provider projects a keyed one from <see cref="IAwaitenRoot.Registrations" />. An
 ///     <c>IEnumerable&lt;T&gt;</c> the container has no unkeyed registration for resolves to an empty sequence for
 ///     a reference element type, as MS.DI guarantees for every element type. A service the container withholds
 ///     throws its guidance naming the fix rather than answering <see langword="null" />, so the failure lands at
@@ -43,7 +43,7 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 	private readonly bool _ownsContainer;
 
 	/// <summary>
-	///     The container root, whose registration metadata and resolvability flow into scope providers so async
+	///     The container root, whose registration metadata and resolvability flow into scope providers so keyed async
 	///     services stay resolvable as <c>Task&lt;T&gt;</c> from scopes too. Null when the adapted scope is not a root.
 	/// </summary>
 	private readonly IAwaitenRoot? _metadata;
@@ -52,9 +52,9 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 	/// <remarks>
 	///     Wrapping a generated container root picks up its registration metadata, so the provider offers
 	///     <see cref="IServiceProviderIsService" /> and <see cref="IServiceProviderIsKeyedService" />, serves
-	///     async services as <c>Task&lt;T&gt;</c> and passes all of that on to the scopes it creates. A wrapped child
+	///     keyed async services as <c>Task&lt;T&gt;</c> and passes all of that on to the scopes it creates. A wrapped child
 	///     <see cref="IAwaitenScope" /> carries no metadata, so that provider runs without the feature-detection
-	///     probe and without the <c>Task&lt;T&gt;</c> projection. To get both in a scope, wrap the root and create
+	///     probe and without the keyed <c>Task&lt;T&gt;</c> projection. To get both in a scope, wrap the root and create
 	///     the scope from the provider.
 	/// </remarks>
 	/// <param name="container">The Awaiten container to adapt.</param>
@@ -95,23 +95,10 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 			return this;
 		}
 
+		// The container serves Task<T> of every unkeyed service that needs asynchronous initialization itself.
 		if (_container.TryResolve(serviceType, out object? instance))
 		{
 			return instance;
-		}
-
-		// An async-tainted service has no synchronous resolution path; serve it as Task<T> through
-		// ResolveAsync when the container's metadata advertises it, mirroring the collection projection.
-		if (_metadata is not null
-		    && serviceType.IsConstructedGenericType
-		    && serviceType.GetGenericTypeDefinition() == typeof(Task<>))
-		{
-			Type innerType = serviceType.GenericTypeArguments[0];
-			Func<Task<object>, object>? asTypedTask = AsyncConverterFor(innerType);
-			if (asTypedTask is not null)
-			{
-				return asTypedTask(_container.ResolveAsync(innerType));
-			}
 		}
 
 		// The container has the service but withholds it here: it needs asynchronous initialization, or it is a
@@ -140,7 +127,7 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 	///     A <see langword="null" /> <paramref name="serviceKey" /> resolves the unkeyed registration, exactly like
 	///     <see cref="GetService" />. <see cref="KeyedService.AnyKey" /> is declined (Awaiten has no wildcard-key
 	///     semantics), returning <see langword="null" />. An async-tainted keyed service is served as a
-	///     <c>Task&lt;T&gt;</c> under the same key, mirroring the unkeyed projection.
+	///     <c>Task&lt;T&gt;</c> under the same key, as the container serves an unkeyed one.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="serviceType" /> is <see langword="null" />.</exception>
 	/// <exception cref="InvalidOperationException">
@@ -171,8 +158,8 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 			return instance;
 		}
 
-		// An async-tainted keyed service has no synchronous path; serve it as Task<T> through the keyed ResolveAsync
-		// when the container's metadata advertises it under this key, mirroring the unkeyed Task<T> projection.
+		// The container serves no keyed Task<T>, so serve an async-tainted keyed service as one through the keyed
+		// ResolveAsync when the container's metadata advertises it under this key, as the container serves it unkeyed.
 		if (_metadata is not null
 		    && serviceType.IsConstructedGenericType
 		    && serviceType.GetGenericTypeDefinition() == typeof(Task<>))
@@ -247,8 +234,8 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 	///     container dispatches rather than a re-derivation of the generator's synthesis rules: a registration, the
 	///     relationship shapes over it, the synthesized collections and keyed dictionaries, the awaited views over
 	///     those, and a variance-compatible closing. Shapes the container does not dispatch are reported when
-	///     <see cref="GetService" /> still answers them with something other than <see langword="null" />: the
-	///     bridge's own <c>Task&lt;T&gt;</c> projection, a service withheld with a reason, and an
+	///     <see cref="GetService" /> still answers them with something other than <see langword="null" />: a
+	///     service withheld with a reason, and an
 	///     <c>IEnumerable&lt;T&gt;</c> served as an empty sequence. So the probe cannot drift from what
 	///     <see cref="GetService" /> does. A type the container imports from the host
 	///     (<see cref="AwaitenResolvabilityStatus.External" />) is reported when the host's own
@@ -340,7 +327,7 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 
 	/// <summary>
 	///     Whether the container has <paramref name="serviceType" /> under <paramref name="key" />, or the bridge can
-	///     serve it as the <c>Task&lt;T&gt;</c> projection of an async-only registration. A service the container
+	///     serve it as the <c>Task&lt;T&gt;</c> projection of an async-only keyed registration. A service the container
 	///     withholds exists, and <see cref="GetService" /> and <see cref="GetKeyedService" /> throw its reason rather
 	///     than returning <see langword="null" />, so reporting it keeps the probe and resolution in step.
 	/// </summary>
@@ -359,10 +346,11 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 			return true;
 		}
 
-		// The container withholds an async-only service from synchronous resolution, so the bridge serves it as a
-		// Task<T> built from the registration metadata. That projection is the bridge's own, so it is answered
-		// here rather than by the container.
-		return serviceType.IsConstructedGenericType
+		// The container has no keyed Task<T>, so the bridge serves an async-only keyed service as a Task<T> built from
+		// the registration metadata. That projection is the bridge's own, so it is answered here rather than by the
+		// container.
+		return key is not null
+		       && serviceType.IsConstructedGenericType
 		       && serviceType.GetGenericTypeDefinition() == typeof(Task<>)
 		       && AsyncConverterFor(serviceType.GenericTypeArguments[0], key) is not null;
 	}
@@ -443,12 +431,6 @@ public sealed class AwaitenServiceProvider : IKeyedServiceProvider, ISupportRequ
 		Justification = "The element type is always a reference type here, whose array type native AOT generates on demand; a value-typed element is excluded by EmptyEnumerableElement.")]
 #endif
 	private static Array EmptyArrayOf(Type elementType) => Array.CreateInstance(elementType, 0);
-
-	/// <summary>
-	///     The generator-emitted <c>Task&lt;object&gt;</c> to <c>Task&lt;T&gt;</c> converter for an unkeyed
-	///     async-advertised service type, or null when the type is not an async registration.
-	/// </summary>
-	private Func<Task<object>, object>? AsyncConverterFor(Type serviceType) => AsyncConverterFor(serviceType, null);
 
 	/// <summary>
 	///     The generator-emitted <c>Task&lt;object&gt;</c> to <c>Task&lt;T&gt;</c> converter for the async-advertised

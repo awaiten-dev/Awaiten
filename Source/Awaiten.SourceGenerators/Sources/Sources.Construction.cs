@@ -542,7 +542,7 @@ internal static partial class Sources
 			// An async-tainted factory produces its Task through the awaiting async resolver; a synchronous one
 			// wraps its resolver's result in a completed task. By-type deferral carries no ambient token (default).
 			string taskValue = target.IsAsyncTainted
-				? AsServiceTask(parameter, target, $"{asyncResolver}(__s, {requestingType}, default)")
+				? AsServiceTask(parameter.ServiceType, target, $"{asyncResolver}(__s, {requestingType}, default)")
 				: $"global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({resolver}(__s, {requestingType}))";
 			return parameter.Kind switch
 			{
@@ -571,13 +571,13 @@ internal static partial class Sources
 	{
 		if (parameter.ProducesOwned)
 		{
-			string ownedValue = $"__s.__OwnedAsync<{parameter.ServiceType}>({AsyncOwnedInner(parameter, target, targetIndex, names, rootOwned)}, default)";
+			string ownedValue = $"__s.__OwnedAsync<{parameter.ServiceType}>({AsyncOwnedInner(parameter.ServiceType, target, targetIndex, names, rootOwned)}, default)";
 			return parameter.Kind == DependencyKind.FuncTask
 				? AsyncOwnedFuncFactory(funcArgTypes, parameter.ServiceType, ownedValue)
 				: ownedValue;
 		}
 
-		string asyncValue = AsyncRelationshipValue(parameter, target, targetIndex, names, rootOwned);
+		string asyncValue = AsyncRelationshipValue(parameter.ServiceType, target, targetIndex, names, rootOwned);
 		return parameter.Kind switch
 		{
 			DependencyKind.FuncTask => AsyncFuncFactory(funcArgTypes, parameter.ServiceType, asyncValue),
@@ -618,28 +618,28 @@ internal static partial class Sources
 	///     wrapped with <c>Task.FromResult</c>. Created at construction time with no ambient token. A root-owned
 	///     target is read straight off <c>__root</c> so the call devirtualizes.
 	/// </summary>
-	private static string AsyncRelationshipValue(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned)
+	private static string AsyncRelationshipValue(string service, InstanceModel target, int targetIndex, Names names, bool rootOwned)
 	{
 		string[] forwarded = ForwardedArgs(target);
 		string callArgs = string.Join("", forwarded.Select(arg => arg + ", "));
 		if (target.IsAsyncTainted)
 		{
-			return AsServiceTask(parameter, target, AsyncResolveCall(names.AsyncResolver(targetIndex), rootOwned, callArgs + "default"));
+			return AsServiceTask(service, target, AsyncResolveCall(names.AsyncResolver(targetIndex), rootOwned, callArgs + "default"));
 		}
 
 		string syncArgs = string.Join("", forwarded.Select(arg => ", " + arg));
-		return $"global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({ResolveCall(names.Resolver(targetIndex), rootOwned, syncArgs)})";
+		return $"global::System.Threading.Tasks.Task.FromResult<{service}>({ResolveCall(names.Resolver(targetIndex), rootOwned, syncArgs)})";
 	}
 
 	/// <summary>
-	///     Adapts the <c>Task</c> of <paramref name="target" />'s async resolver to the task of the parameter's service
+	///     Adapts the <c>Task</c> of <paramref name="target" />'s async resolver to the task of <paramref name="service" />
 	///     through <c>__AsTask</c> when the two differ, since <c>Task&lt;T&gt;</c> is not covariant.
 	/// </summary>
-	private static string AsServiceTask(ParameterModel parameter, InstanceModel target, string task)
-		=> ConvertsTask(parameter, target) ? $"__AsTask<{target.SurfaceType}, {parameter.ServiceType}>({task})" : task;
+	private static string AsServiceTask(string service, InstanceModel target, string task)
+		=> ConvertsTask(service, target) ? $"__AsTask<{target.SurfaceType}, {service}>({task})" : task;
 
-	private static bool ConvertsTask(ParameterModel parameter, InstanceModel target)
-		=> target.IsAsyncTainted && target.SurfaceType != parameter.ServiceType;
+	private static bool ConvertsTask(string service, InstanceModel target)
+		=> target.IsAsyncTainted && target.SurfaceType != service;
 
 	/// <summary>
 	///     Whether some async relationship dependency adapts its target's task through <c>__AsTask</c>
@@ -650,8 +650,15 @@ internal static partial class Sources
 		=> instances.Any(instance => instance.WalkedDependencies().Any(parameter =>
 			parameter.Kind is DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask
 			&& serviceToIndex.TryGetValue(new ServiceKey(parameter.ServiceType, parameter.Key), out int index)
-			&& ConvertsTask(parameter, instances[index])
+			&& ConvertsTask(parameter.ServiceType, instances[index])
 			&& !(parameter.ProducesOwned && IsRootOwned(instances[index]))));
+
+	/// <summary>
+	///     Whether the by-type dispatch adapts a task through <c>__AsTask</c>: its async relationship shapes cover every
+	///     unkeyed service, so it does for an async-tainted instance listed under a service other than its own type.
+	/// </summary>
+	private static bool DispatchConvertsTask(InstanceModel[] instances)
+		=> instances.Any(instance => instance.ListedServices.Any(service => service.Key is null && ConvertsTask(service.Service, instance)));
 
 	/// <summary>
 	///     A <c>new Func&lt;TArg…, Task&lt;T&gt;&gt;((a0, …) =&gt; …)</c> expression: the async counterpart of
@@ -673,22 +680,22 @@ internal static partial class Sources
 	///     <c>ResolveAsync(Type)</c> surface; any other calls its async resolver directly (or wraps a synchronous
 	///     one in a completed task).
 	/// </summary>
-	private static string AsyncOwnedInner(ParameterModel parameter, InstanceModel target, int targetIndex, Names names, bool rootOwned)
+	private static string AsyncOwnedInner(string service, InstanceModel target, int targetIndex, Names names, bool rootOwned)
 	{
 		if (rootOwned)
 		{
-			return $"async (__o, __ct) => ({parameter.ServiceType})await __o.ResolveAsync(typeof({parameter.ServiceType}), __ct).ConfigureAwait(false)";
+			return $"async (__o, __ct) => ({service})await __o.ResolveAsync(typeof({service}), __ct).ConfigureAwait(false)";
 		}
 
 		string[] forwarded = ForwardedArgs(target);
 		if (target.IsAsyncTainted)
 		{
 			string callArgs = string.Join("", forwarded.Select(arg => arg + ", "));
-			return $"(__o, __ct) => {AsServiceTask(parameter, target, $"{names.AsyncResolver(targetIndex)}(__o, {callArgs}__ct)")}";
+			return $"(__o, __ct) => {AsServiceTask(service, target, $"{names.AsyncResolver(targetIndex)}(__o, {callArgs}__ct)")}";
 		}
 
 		string syncArgs = string.Join("", forwarded.Select(arg => ", " + arg));
-		return $"(__o, __ct) => global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({names.Resolver(targetIndex)}(__o{syncArgs}))";
+		return $"(__o, __ct) => global::System.Threading.Tasks.Task.FromResult<{service}>({names.Resolver(targetIndex)}(__o{syncArgs}))";
 	}
 
 	/// <summary>

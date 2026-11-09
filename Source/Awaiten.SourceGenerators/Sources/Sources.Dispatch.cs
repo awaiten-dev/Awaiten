@@ -465,6 +465,20 @@ internal static partial class Sources
 		}
 
 		EmitImportedMiss(builder, depth + 1, imports, "null");
+		if (entries.Count > 0)
+		{
+			// The Task shapes over a synchronous, non-parameterized service are not dispatched, so the miss names the
+			// service to resolve instead. It stays a "No registration" miss without a resolvability reason, so the MS.DI
+			// bridge still answers null for it. The probe exists whenever the dispatch table does.
+			Indent(builder, depth + 1).AppendLine("if (__TaskShapeTarget(serviceType) is global::System.Type __target && __GetResolvability(__target, null).Status != global::Awaiten.AwaitenResolvabilityStatus.NotRegistered)");
+			Indent(builder, depth + 1).AppendLine("{");
+			Indent(builder, depth + 2).AppendLine(
+				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: the Task shapes are served only over a service that needs asynchronous initialization or runtime arguments, and '{__target}' needs neither; resolve '{__target}' directly, or through ResolveAsync to get it as a task.\");");
+			Indent(builder, depth + 1).AppendLine("}");
+			builder.AppendLine();
+			EmitTaskShapeTarget(helpers, depth);
+		}
+
 		Indent(builder, depth + 1).AppendLine(
 			"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container.\");");
 		Indent(builder, depth).AppendLine("}");
@@ -539,6 +553,37 @@ internal static partial class Sources
 		EmitTryResolveMiss(builder, depth + 1, imports, "null");
 		Indent(builder, depth).AppendLine("}");
 		return new DispatchShape(true, false, hasWithheld, hasRootWithheld);
+	}
+
+	/// <summary>
+	///     Emits <c>__TaskShapeTarget</c>, which peels a requested <c>Task</c> shape (<c>Task&lt;T&gt;</c>, also inside
+	///     <c>Func</c>, <c>Lazy</c> or around <c>Owned</c>) down to its service <c>T</c>, or returns null for any other
+	///     type. Only a failed <c>Resolve</c> calls it, so the runtime type inspection stays off the hot path.
+	/// </summary>
+	private static void EmitTaskShapeTarget(StringBuilder helpers, int depth)
+	{
+		Separate(helpers);
+		Indent(helpers, depth).AppendLine("private static global::System.Type? __TaskShapeTarget(global::System.Type serviceType)");
+		Indent(helpers, depth).AppendLine("{");
+		Indent(helpers, depth + 1).AppendLine("bool __task = false;");
+		Indent(helpers, depth + 1).AppendLine("global::System.Type __type = serviceType;");
+		Indent(helpers, depth + 1).AppendLine("while (__type.IsConstructedGenericType && __type.GenericTypeArguments.Length == 1)");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("global::System.Type __definition = __type.GetGenericTypeDefinition();");
+		Indent(helpers, depth + 2).AppendLine("if (__definition == typeof(global::System.Threading.Tasks.Task<>))");
+		Indent(helpers, depth + 2).AppendLine("{");
+		Indent(helpers, depth + 3).AppendLine("__task = true;");
+		Indent(helpers, depth + 2).AppendLine("}");
+		Indent(helpers, depth + 2).AppendLine("else if (__definition != typeof(global::System.Func<>) && __definition != typeof(global::System.Lazy<>) && __definition != typeof(global::Awaiten.Owned<>))");
+		Indent(helpers, depth + 2).AppendLine("{");
+		Indent(helpers, depth + 3).AppendLine("break;");
+		Indent(helpers, depth + 2).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 2).AppendLine("__type = __type.GenericTypeArguments[0];");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("return __task ? __type : null;");
+		Indent(helpers, depth).AppendLine("}");
 	}
 
 	/// <summary>
@@ -852,6 +897,13 @@ internal static partial class Sources
 			{
 				AddRelationshipEntries(instances[i], names.Resolver(i), entries, seen, IsFuncWithheld(instances, i, serviceToIndex, membership, strict));
 			}
+		}
+
+		// The async relationship shapes over the async-tainted and parameterized services: each hands back a task or a
+		// delegate synchronously and awaits any initialization behind it, like the awaited collections below.
+		for (int i = 0; i < instances.Length; i++)
+		{
+			AddTaskRelationshipEntries(instances, i, names, serviceToIndex, IsWithheld(instances[i], strict), IsFuncWithheld(instances, i, serviceToIndex, membership, strict), entries, seen);
 		}
 
 		// Collection dispatch: every unkeyed, sync-materializable collection is publicly resolvable as all six
@@ -1281,6 +1333,94 @@ internal static partial class Sources
 	}
 
 	/// <summary>
+	///     Adds the async relationship entries over each unkeyed service type of an async-tainted or parameterized
+	///     instance, with the values injection builds: <c>Task&lt;T&gt;</c>, <c>Func&lt;Task&lt;T&gt;&gt;</c>,
+	///     <c>Lazy&lt;Task&lt;T&gt;&gt;</c>, <c>Task&lt;Owned&lt;T&gt;&gt;</c> and <c>Func&lt;Task&lt;Owned&lt;T&gt;&gt;&gt;</c>, or for a parameterized
+	///     service <c>Func&lt;TArg…, Task&lt;T&gt;&gt;</c> and <c>Func&lt;TArg…, Task&lt;Owned&lt;T&gt;&gt;&gt;</c>. A
+	///     requesting-type factory has no <c>Owned&lt;T&gt;</c> form (AWT186), and <c>Lazy&lt;Task&lt;Owned&lt;T&gt;&gt;&gt;</c>
+	///     is never offered (AWT121). Under strict lifetime safety a shape that builds a fresh disposable on each
+	///     resolution or call is root-withheld, like the bare type and the plain <c>Func</c>. A registration of the shape
+	///     itself owns its slot, even when it is async-tainted and so absent from <paramref name="seen" />. A synchronous,
+	///     non-parameterized service gets none: it resolves directly, and the shapes for every service would grow the
+	///     table, the assembly and the container's startup considerably.
+	/// </summary>
+	private static void AddTaskRelationshipEntries(
+		InstanceModel[] instances,
+		int index,
+		Names names,
+		Dictionary<ServiceKey, int> serviceToIndex,
+		bool bareWithheld,
+		bool funcWithheld,
+		List<DispatchEntry> entries,
+		HashSet<string> seen)
+	{
+		InstanceModel instance = instances[index];
+		if (!instance.IsAsyncTainted && !instance.IsParameterized)
+		{
+			return;
+		}
+
+		bool rootOwned = IsRootOwned(instance);
+		string[] argTypes = instance.ArgTypes();
+		string args = argTypes.Length == 0 ? string.Empty : string.Join(", ", argTypes) + ", ";
+		foreach (ServiceKey serviceKey in instance.ListedServices)
+		{
+			if (serviceKey.Key is not null)
+			{
+				continue;
+			}
+
+			string service = serviceKey.Service;
+			string task = $"global::System.Threading.Tasks.Task<{service}>";
+			string ownedTask = $"global::System.Threading.Tasks.Task<global::Awaiten.Owned<{service}>>";
+			string withheld = TaskWithheldMessage(service);
+			// A Task of a registered collection or dictionary is its awaited view, which the awaited entries below govern
+			// (all-or-nothing, as injection classifies it), not a Task relationship over the registration.
+			bool awaitedView = IsAwaitedViewShape(service);
+			if (instance.IsRequestingTypeFactory)
+			{
+				string requested = AsServiceTask(service, instance, $"{names.AsyncResolver(index)}(__s, null, default)");
+				Add(task, awaitedView ? null : requested, null);
+				Add($"global::System.Func<{task}>", $"new global::System.Func<{task}>(() => {requested})", null);
+				Add($"global::System.Lazy<{task}>", $"new global::System.Lazy<{task}>(() => {requested})", null);
+				continue;
+			}
+
+			string value = AsyncRelationshipValue(service, instance, index, names, rootOwned);
+			string owned = $"__s.__OwnedAsync<{service}>({AsyncOwnedInner(service, instance, index, names, rootOwned)}, default)";
+			if (argTypes.Length > 0)
+			{
+				Add($"global::System.Func<{args}{task}>", AsyncFuncFactory(instance.DeclaredArgTypes(), service, value), funcWithheld ? withheld : null);
+				Add($"global::System.Func<{args}{ownedTask}>", AsyncOwnedFuncFactory(instance.DeclaredArgTypes(), service, owned), null);
+				continue;
+			}
+
+			Add(task, awaitedView ? null : value, bareWithheld ? withheld : null);
+			Add($"global::System.Func<{task}>", AsyncFuncFactory([], service, value), funcWithheld ? withheld : null);
+			Add($"global::System.Lazy<{task}>", $"new global::System.Lazy<{task}>(() => {value})", null);
+			Add(ownedTask, owned, null);
+			Add($"global::System.Func<{ownedTask}>", AsyncOwnedFuncFactory([], service, owned), null);
+		}
+
+		void Add(string type, string? value, string? guidance)
+		{
+			if (value is not null && !serviceToIndex.ContainsKey(new ServiceKey(type, null)) && seen.Add(type))
+			{
+				entries.Add(new DispatchEntry(type, value, guidance));
+			}
+		}
+	}
+
+	/// <summary>
+	///     Whether <c>Task&lt;</c><paramref name="service" /><c>&gt;</c> is an awaited collection or keyed-dictionary
+	///     view: <paramref name="service" /> is one of the collection shapes or an <c>IReadOnlyDictionary&lt;TKey, T&gt;</c>.
+	/// </summary>
+	private static bool IsAwaitedViewShape(string service)
+		=> service.EndsWith("[]", StringComparison.Ordinal)
+		   || new[] { "IEnumerable<", "IReadOnlyList<", "IReadOnlyCollection<", "IList<", "ICollection<", "IReadOnlyDictionary<" }
+			   .Any(shape => service.StartsWith("global::System.Collections.Generic." + shape, StringComparison.Ordinal));
+
+	/// <summary>
 	///     Emits the data-driven by-type dispatch: a nested <c>__Bucket</c> slot type, the static
 	///     <c>__buckets</c> / <c>__bucketSize</c> table (built once in the static constructor and shared by every
 	///     scope and the <c>Root</c>), the <c>__BuildBuckets</c> distributor, and a <c>__R</c> forwarder per
@@ -1640,12 +1780,12 @@ internal static partial class Sources
 				_sync[entry.Type] = entry.Guidance;
 			}
 
-			foreach ((string service, string _, bool _, bool _, string? rootWithheldMessage) in BuildAsyncArms(instances, names, serviceToIndex, strict, syncAfterInit))
+			foreach ((string service, string _, string? rootWithheldMessage) in BuildAsyncArms(instances, names, serviceToIndex, strict, syncAfterInit))
 			{
 				_async[service] = rootWithheldMessage;
 			}
 
-			foreach ((string type, string guidance) in AsyncWithheldServices(instances, syncAfterInit).Concat(AsyncWithheldCollections(names, serviceToIndex, syncAfterInit)))
+			foreach ((string type, string guidance) in AsyncWithheldServices(instances, serviceToIndex, syncAfterInit).Concat(AsyncWithheldCollections(names, serviceToIndex, syncAfterInit)))
 			{
 				_asyncOnly[type] = guidance;
 			}

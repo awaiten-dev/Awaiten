@@ -197,6 +197,53 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsATaskShapeOverASynchronousServiceWithTheServiceToResolve()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static async Task Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		root.Resolve<Task<IGen<int>>>();
+			                                 		root.Resolve<Func<Task<IGen<int>>>>();
+			                                 		root.Resolve<Lazy<Task<IGen<int>>>>();
+			                                 		root.Resolve<Task<Owned<IGen<int>>>>();
+			                                 		await root.ResolveAsync<Func<Task<Owned<IGen<int>>>>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasCount(5)
+				.Because("the container serves the Task shapes only over an async-initialized or parameterized service");
+			await That(reports.All(report => report.Contains("'MyCode.IGen<int>' needs neither; resolve 'MyCode.IGen<int>' directly, or through ResolveAsync") && !report.Contains("register it"))).IsTrue()
+				.Because("the service is provided, so the remedy names it rather than a registration");
+		}
+
+		[Test]
+		public async Task ReportsALazyOverAnOwnedHandleWithTheShapesThatProduceOne()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static void Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		root.Resolve<Lazy<Owned<IGen<int>>>>();
+			                                 		root.Resolve<Lazy<Task<Owned<IGen<int>>>>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasCount(2)
+				.Because("an Owned<T> handle cannot be produced through Lazy, as AWT121 reports for injection");
+			await That(reports.All(report => report.Contains("cannot be produced through Lazy") && !report.Contains("register it"))).IsTrue()
+				.Because("registering the shape is not the fix, resolving a shape that produces the handle is");
+		}
+
+		[Test]
 		public async Task DoesNotReportAnUntypedReceiver()
 		{
 			string[] diagnostics = await Run("""
@@ -392,6 +439,12 @@ public partial class DiagnosticTests
 
 		                                public sealed class Lease : IDisposable { public void Dispose() { } }
 
+		                                public sealed class Kettle : IInitializable, IDisposable
+		                                {
+		                                	public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+		                                	public void Dispose() { }
+		                                }
+
 		                                """;
 
 		private const string StrictContainer = Services + """
@@ -399,6 +452,7 @@ public partial class DiagnosticTests
 		                                                  [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
 		                                                  [Singleton<Database>]
 		                                                  [Transient<Lease>]
+		                                                  [Transient<Kettle>]
 		                                                  public static partial class MyContainer;
 
 		                                                  """;
@@ -547,6 +601,110 @@ public partial class DiagnosticTests
 
 			await That(diagnostics.Any(d => d.Contains("AWT219"))).IsFalse()
 				.Because("LifetimeSafety.Loose serves a disposable transient from the Root");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheAsyncRelationshipsOfAnAsyncInitializedService()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static async Task Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		using MyContainer.Scope scope = root.CreateScope();
+			                                 		root.Resolve<Task<Database>>();
+			                                 		root.Resolve<Func<Task<Database>>>();
+			                                 		root.Resolve<Lazy<Task<Database>>>();
+			                                 		root.Resolve<Task<Owned<Database>>>();
+			                                 		root.Resolve<Func<Task<Owned<Database>>>>();
+			                                 		await root.ResolveAsync<Owned<Database>>();
+			                                 		scope.Resolve<Task<Database>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			await That(diagnostics.Any(d => d.Contains("AWT219") || d.Contains("AWT218"))).IsFalse()
+				.Because("each async shape hands out a task or a delegate that awaits the initialization");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheAsyncFactoriesOfAParameterizedService()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>(Services + """
+			                                                                     public sealed class Brew : IInitializable
+			                                                                     {
+			                                                                     	public Brew([Arg] int size) { }
+			                                                                     	public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+			                                                                     }
+
+			                                                                     public sealed class Mug { public Mug([Arg] int size) { } }
+
+			                                                                     [Container]
+			                                                                     [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+			                                                                     [Transient<Brew>]
+			                                                                     [Transient<Mug>]
+			                                                                     public static partial class MyContainer;
+
+			                                                                     public static class Usage
+			                                                                     {
+			                                                                     	public static void Use()
+			                                                                     	{
+			                                                                     		using MyContainer.Root root = new();
+			                                                                     		root.Resolve<Func<int, Task<Brew>>>();
+			                                                                     		root.Resolve<Func<int, Task<Owned<Brew>>>>();
+			                                                                     		root.Resolve<Func<int, Task<Mug>>>();
+			                                                                     		root.Resolve<Func<int, Task<Owned<Mug>>>>();
+			                                                                     	}
+			                                                                     }
+			                                                                     """);
+
+			await That(diagnostics.Any(d => d.Contains("AWT219") || d.Contains("AWT218"))).IsFalse()
+				.Because("the container serves the async factories of a parameterized service, as injection does");
+		}
+
+		[Test]
+		public async Task ReportsATaskOverARootWithheldTransientOnTheRoot()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static void Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		using MyContainer.Scope scope = root.CreateScope();
+			                                 		root.Resolve<Task<Kettle>>();
+			                                 		root.Resolve<Func<Task<Kettle>>>();
+			                                 		scope.Resolve<Func<Task<Kettle>>>();
+			                                 		root.Resolve<Func<Task<Owned<Kettle>>>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT219")).ToArray();
+			await That(reports).HasCount(2)
+				.Because("strict lifetime safety withholds a Task over a disposable transient from the Root, but not from a child scope or behind an Owned handle");
+			await That(reports[0]).Contains("*withheld*Task<Owned<MyCode.Kettle>>*").AsWildcard()
+				.Because("the guidance names the leak-free alternatives");
+			await That(diagnostics.Any(d => d.Contains("AWT218"))).IsFalse();
+		}
+
+		[Test]
+		public async Task ReportsASynchronousRelationshipOfAnAsyncInitializedServiceWithTheTaskShape()
+		{
+			string[] diagnostics = await Run("""
+			                                 public static class Usage
+			                                 {
+			                                 	public static void Use()
+			                                 	{
+			                                 		using MyContainer.Root root = new();
+			                                 		root.Resolve<Func<Database>>();
+			                                 	}
+			                                 }
+			                                 """);
+
+			await That(diagnostics).HasSingle().Which.Contains("*AWT219*'System.Func<MyCode.Database>' would resolve 'MyCode.Database' synchronously*'System.Func<System.Threading.Tasks.Task<MyCode.Database>>'*").AsWildcard()
+				.Because("a synchronous Func cannot await the initializer, so the guidance names the shape that can rather than a missing registration");
 		}
 	}
 }

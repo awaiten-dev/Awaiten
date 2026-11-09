@@ -443,7 +443,7 @@ internal static partial class Sources
 		// paths for each registered service.
 		EmitGenericResolverImpls(typed, body, instances, names, strict, syncAfterInit);
 		bool typedUsesAsTask = EmitTypedAsyncResolverImpls(typed, body, instances, names, strict);
-		if (typedUsesAsTask || UsesTaskConversion(instances, serviceToIndex))
+		if (typedUsesAsTask || UsesTaskConversion(instances, serviceToIndex) || DispatchConvertsTask(instances))
 		{
 			EmitAsTaskHelper(helpers, body);
 		}

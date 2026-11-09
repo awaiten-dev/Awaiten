@@ -607,7 +607,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			context.ReportDiagnostic(Diagnostic.Create(
 				Diagnostics.TypedResolveOfUnprovidedService, invocation.Syntax.GetLocation(), AwaitenGenerator.Display(display),
 				key is null ? "unkeyed registration" : $"registration under the key {AwaitenGenerator.KeyArgumentDisplay(key)}",
-				container.ToDisplayString(), call, UnprovidedRemedy(service, display, key, graph)));
+				container.ToDisplayString(), call, UnprovidedRemedy(service, display, key, graph, surface)));
 		}
 	}
 
@@ -728,11 +728,28 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	// A closing of an open generic registration gets the explicit closed registration it needs, with the open
 	// registration's lifetime and its implementation closed over the same type arguments, which AWT128 keeps in
 	// declaration order.
-	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph)
+	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph, Sources.ByTypeSurface surface)
 	{
 		if (key is not null)
 		{
 			return "register it under that key on the [Container], or call TryResolve if it is optional";
+		}
+
+		// The container serves no Lazy over an Owned<T> handle, whatever it registers (AWT121 for injection).
+		if (display.StartsWith("global::System.Lazy<global::Awaiten.Owned<", StringComparison.Ordinal)
+		    || display.StartsWith("global::System.Lazy<global::System.Threading.Tasks.Task<global::Awaiten.Owned<", StringComparison.Ordinal))
+		{
+			return "an Owned<T> disposal handle cannot be produced through Lazy<…>; resolve Owned<T>, Func<…, Owned<T>>, Task<Owned<T>> or Func<…, Task<Owned<T>>> instead";
+		}
+
+		// The container serves the Task shapes only over a service that needs asynchronous initialization or runtime
+		// arguments, so a Task shape over a synchronous one it provides is missing for that reason, not a registration.
+		if (TaskShapeTarget(service) is { } target
+		    && target.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is var targetDisplay
+		    && !surface.Fails(targetDisplay, onRoot: false, asynchronous: false, mayBeVariant: false, out _))
+		{
+			string shown = AwaitenGenerator.Display(targetDisplay);
+			return $"the container serves the Task shapes only over a service that needs asynchronous initialization or runtime arguments, and '{shown}' needs neither; resolve '{shown}' directly, or through ResolveAsync to get it as a task";
 		}
 
 		if (service is not INamedTypeSymbol { IsGenericType: true, } named
@@ -752,6 +769,30 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		string serviceDisplay = AwaitenGenerator.Display(display);
 		string registration = closed == serviceDisplay ? $"[{open.Lifetime}<{closed}>]" : $"[{open.Lifetime}<{closed}, {serviceDisplay}>]";
 		return $"register this closing explicitly next to the open generic registration, such as {registration}, {reason}";
+	}
+
+	// The service a Task shape (Task<T>, also inside Func or Lazy or around Owned) is over, or null for any other type;
+	// the generated __TaskShapeTarget peels the same way at run time.
+	private static ITypeSymbol? TaskShapeTarget(ITypeSymbol service)
+	{
+		bool task = false;
+		ITypeSymbol type = service;
+		while (type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named)
+		{
+			string definition = named.ConstructedFrom.ToDisplayString();
+			if (definition == "System.Threading.Tasks.Task<TResult>")
+			{
+				task = true;
+			}
+			else if (definition is not ("System.Func<TResult>" or "System.Lazy<T>" or "Awaiten.Owned<T>"))
+			{
+				break;
+			}
+
+			type = named.TypeArguments[0];
+		}
+
+		return task ? type : null;
 	}
 
 	// A container with errors emits a shell that throws on every call, and its build fails anyway, so it is not checked.

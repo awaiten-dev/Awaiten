@@ -39,6 +39,17 @@ public sealed class Barista(Task<EspressoMachine> machine)
 }
 ```
 
+## Resolve a relationship directly
+
+The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service. The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
+
+```csharp
+Func<Task<EspressoMachine>> machines = shop.Resolve<Func<Task<EspressoMachine>>>();
+EspressoMachine machine = await machines();
+```
+
+A synchronous shape over an async-initialized service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task.
+
 ## Relationships bind to their owner
 
 A relationship resolves from the scope that built the consumer, not from wherever it is later called. A singleton that holds a `Func<Order>` resolves that `Order` from the root, always. It is never rebound to some child scope that happens to call it later. This keeps lifetimes predictable.

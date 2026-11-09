@@ -314,7 +314,7 @@ public sealed partial class BridgeTests
 
 		AsyncService resolved = await (Task<AsyncService>)provider.GetService(typeof(Task<AsyncService>))!;
 		await That(resolved.Initialized).IsTrue()
-			.Because("the registration metadata advertises it, so Task<T> resolves through ResolveAsync");
+			.Because("the container serves Task<T> of an async service, which awaits its initialization");
 
 		await That(provider.GetService(typeof(Task<string>))).IsNull()
 			.Because("a Task<T> over a type the container does not advertise is genuinely not its service");
@@ -330,5 +330,32 @@ public sealed partial class BridgeTests
 		// The registration metadata flows into scope providers, so async services stay reachable there.
 		AsyncService resolved = await (Task<AsyncService>)scope.ServiceProvider.GetService(typeof(Task<AsyncService>))!;
 		await That(resolved.Initialized).IsTrue();
+	}
+
+	[Test]
+	public async Task AwaitenServiceProvider_OverAChildScope_ServesAsyncServiceAsTask()
+	{
+		using BridgeContainer.Root container = new();
+		using AwaitenServiceProvider provider = new(container.CreateScope());
+
+		AsyncService resolved = await (Task<AsyncService>)provider.GetService(typeof(Task<AsyncService>))!;
+
+		await That(resolved.Initialized).IsTrue()
+			.Because("the container serves Task<T> itself, so a provider without registration metadata serves it too");
+	}
+
+	[Test]
+	public async Task AwaitenServiceProvider_ServesTheAsyncRelationshipShapesTheContainerServes()
+	{
+		using BridgeContainer.Root container = new();
+		using AwaitenServiceProvider provider = new(container);
+
+		Func<Task<AsyncService>> factory = (Func<Task<AsyncService>>)provider.GetService(typeof(Func<Task<AsyncService>>))!;
+
+		await That((await factory()).Initialized).IsTrue();
+		await That(provider.IsService(typeof(Func<Task<AsyncService>>))).IsTrue();
+		await That(provider.GetService(typeof(Task<IService>))).IsNull()
+			.Because("the container serves the Task shapes only over a service that needs them, and a synchronous one resolves directly");
+		await That(provider.IsService(typeof(Task<IService>))).IsFalse();
 	}
 }
