@@ -1330,13 +1330,15 @@ partial class AwaitenGenerator
 			return true;
 		}
 
-		if (ServiceRejectedElsewhere(parameter.Type, context, location, subject, label) is { } rejectedElsewhere)
+		// The caller passes an [Arg] to the factory, so no other module's handle could serve it and its type has to be accessible.
+		bool argument = HasArgAttribute(parameterAttributes);
+		if (!argument && ServiceRejectedElsewhere(parameter.Type, context, location, subject, label) is { } rejectedElsewhere)
 		{
 			diagnostics.Add(rejectedElsewhere);
 			return false;
 		}
 
-		if (InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
+		if (!argument && InternalServiceOfAnotherModule(parameter.Type, context) is { } otherModule)
 		{
 			diagnostics.Add(otherModule.WithLocation(location, subject, label));
 			return false;

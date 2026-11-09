@@ -305,6 +305,63 @@ public class ModuleInternalMemberTests
 		}
 
 		[Test]
+		[Arguments("internal sealed class BeanStore { }")]
+		[Arguments("internal sealed class BeanStore(Settings settings) { public Settings Settings { get; } = settings; }")]
+		public async Task ArgOfOneThatTheOtherModuleRegisters_IsNotAccessible(string store)
+		{
+			string library = TwoModules("[Singleton<Grinder, IGrinder>]", "")
+				.Replace("internal sealed class BeanStore { }", store)
+				.Replace("internal sealed class Grinder(BeanStore store)", "internal sealed class Grinder([Arg] BeanStore store)");
+
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.Contains(
+					"error AWT195: 'Lib.Grinder' is self-compiled from a module registration, but its constructor parameter 'store' has the type 'Lib.BeanStore', which is not accessible outside the module's assembly, so the generated factory cannot expose it")
+				.Because("the caller passes an [Arg] to the factory and has to name its type, whatever another module that registers the type can build");
+		}
+
+		[Test]
+		public async Task ScanHookTakingOneThatTheOtherModuleCannotBuild_WhileTheModulesAreJudged_IsLeftToTheContainers()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IPlugin { }
+				public interface IRoaster { }
+				internal sealed class Roaster : IPlugin, IRoaster { }
+				internal sealed class Beans { }
+				internal sealed class Settings { }
+				internal sealed class Secret { }
+				internal sealed class BeanStore(Settings settings, Secret secret) { public Settings Settings { get; } = settings; public Secret Secret { get; } = secret; }
+
+				[Module]
+				[Singleton<Beans>]
+				[Scan<IPlugin>(As = ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
+				public static partial class PluginModule
+				{
+					internal static void Wire(Roaster roaster, BeanStore store) { }
+				}
+
+				[Module][Singleton<BeanStore>] public static partial class StoreModule;
+				[Module][Singleton<Settings>] public static partial class SettingsModule;
+				""";
+			const string container = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container][Import(typeof(PluginModule))][Import(typeof(StoreModule))][Import(typeof(SettingsModule))]
+				public static partial class MyContainer;
+				""";
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("judging which internal services the modules can build mirrors the scan hook, whose cause, judged from the other module, must not ask for that judgement again");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(
+				"error AWT231: The imported module 'Lib.PluginModule' registers 'Lib.Roaster', which this container cannot construct, and the module's assembly generated no factory for it because the parameter 'store' of its OnActivated hook needs the internal service 'Lib.BeanStore', which the module 'Lib.StoreModule' cannot build (AWT195: 'Lib.BeanStore' is registered under the internal service 'Lib.BeanStore', which a consuming container reaches through a generated handle, but its constructor parameter 'secret' has the type 'Lib.Secret', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or register it in the module); grant this assembly InternalsVisibleTo in the module's assembly, or change the module so its [Scan] can generate a factory for 'Lib.Roaster'");
+		}
+
+		[Test]
 		[Arguments(false)]
 		[Arguments(true)]
 		public async Task ScanHookTakingOneThatAModuleCannotBuild_IsLeftToTheContainers(bool sameModule)
@@ -359,7 +416,7 @@ public class ModuleInternalMemberTests
 			else
 			{
 				await That(result.Diagnostics).IsEmpty()
-					.Because("a container of the module's assembly calls the hook directly, and judging the other module from the hook while the modules are judged must not ask for that judgement again");
+					.Because("a container of the module's assembly calls the hook directly");
 			}
 
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, container).Diagnostics).HasSingle().Which.EndsWith(expected)
