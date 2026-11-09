@@ -350,6 +350,27 @@ public class ModuleScanInstanceHandleTests
 		}
 
 		[Test]
+		public async Task WithAHookInTheSlotOfTheModulesHook_ReportsAwt241InsteadOfAwt199InAnExternalContainer()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult friend, GeneratorResult external, GeneratorResult reference) = RunEverywhere(
+				Scans.Replace("Lifetime.Singleton)]", "Lifetime.Singleton, OnActivated = nameof(Activate))]"),
+				"[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, Lifetime = Lifetime.Singleton, OnActivated = nameof(Hook))]");
+
+			foreach (GeneratorResult result in new[] { sameAssembly, friend, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*warning AWT199: 'Lib.Roaster' is matched by scans naming conflicting OnActivated hooks ('Hook' and 'Lib.PluginModule.*'); the first scan's 'Hook' is used").AsWildcard();
+			}
+
+			foreach (GeneratorResult result in new[] { external, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*error AWT241: 'Lib.Roaster' is built through a generated handle of the imported module 'Lib.PluginModule'*it sets OnActivated, which the handle cannot apply*").AsWildcard()
+					.Because("the handle runs the module's hook, so it can neither run the container's hook that wins the slot in the module's assembly nor drop the module's");
+			}
+		}
+
+		[Test]
 		public async Task WithTheSameLifetime_KeepsTheModulesHook()
 		{
 			(GeneratorResult sameAssembly, GeneratorResult friend, GeneratorResult external, GeneratorResult reference) = RunEverywhere(

@@ -532,8 +532,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     AWT241 for each hook that the scan match <paramref name="match" /> sets on the implementation of the scan instance
 	///     handle <paramref name="handle" /> (see <see cref="IsScanHandle" />), which serves the match through an alias that
-	///     runs no hook: a container of the module's own assembly runs the hooks of every scan match that shares the
-	///     instance, unless an explicit registration wins over the scans (see <see cref="YieldScanHandles" />).
+	///     runs no hook: a container of the module's own assembly merges the hooks of the scan matches that share the
+	///     instance (AWT199 keeps the first of two in one slot), unless an explicit registration wins over the scans (see
+	///     <see cref="YieldScanHandles" />).
 	/// </summary>
 	private static IEnumerable<DiagnosticInfo> UnappliedScanHooks(RawRegistration match, RawRegistration handle, Dictionary<string, RawRegistration> yieldedTo, Compilation compilation)
 	{
