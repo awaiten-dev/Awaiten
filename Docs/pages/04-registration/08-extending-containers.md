@@ -67,7 +67,7 @@ A registration written directly on the extending container replaces every inheri
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
 - **Open generics.** A closed registration replaces its closing of an inherited open generic, and the other closings still come from the base. An open registration replaces an inherited open registration of the same generic.
 - **Fallback.** A registration with `Fallback` is an [overridable default](./07-modules.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
-- **Decorators.** The inherited decorators wrap the replacement. A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed.
+- **Decorators.** The inherited decorators wrap the replacement. A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed, but a test can [switch it off](#switch-an-inherited-decorator-off).
 - **Shared instances.** When the base registers one implementation under several services, replacing one of them leaves the others on the production implementation, which then no longer shares an instance with the replacement.
 
 ```csharp
@@ -82,6 +82,45 @@ public static partial class TestShop;
 ```
 
 The whole graph is validated again. A replacement that breaks a dependency is reported like any other mistake: replacing a singleton's dependency with a scoped one is a [captive dependency](../09-diagnostics.md#awt105). A problem that the base already has is reported only on the base.
+
+## Switch an inherited decorator off
+
+An inherited decorator cannot be removed, but it can be [conditional](./02-decorators.md#apply-a-decorator-conditionally). When its `When` predicate takes a service, such as a settings singleton, the extending container can replace that service, for example with an `Instance`, and so decide whether the decorator applies. A test that must not run a monitoring decorator, say one that polls the device in the background, turns it off this way.
+
+```csharp
+public sealed class MonitoringSettings
+{
+    public bool Enabled { get; init; } = true;
+}
+
+public sealed class MonitoringTerminal(IPaymentTerminal inner) : IPaymentTerminal;
+
+[Container]
+[Singleton<MonitoringSettings>]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<MonitoringTerminal, IPaymentTerminal>(When = nameof(IsMonitored))]
+public static partial class CoffeeBar
+{
+    public static bool IsMonitored(MonitoringSettings settings) => settings.Enabled;
+}
+
+[Container(Extends = typeof(CoffeeBar))]
+[Singleton<MonitoringSettings>(Instance = nameof(NoMonitoring))]
+public static partial class TestCoffeeBar
+{
+    private static readonly MonitoringSettings NoMonitoring = new() { Enabled = false };
+}
+
+[Test]
+public async Task TestCoffeeBar_SkipsTheMonitoring()
+{
+    using TestCoffeeBar.Root bar = new();
+
+    await That(bar.Resolve<IPaymentTerminal>()).IsExactly<CardTerminal>();
+}
+```
+
+The predicate runs in the extending container, so it must be public when the test lives in another assembly ([AWT247](../09-diagnostics.md#awt247)).
 
 ## Per-test doubles from the host
 

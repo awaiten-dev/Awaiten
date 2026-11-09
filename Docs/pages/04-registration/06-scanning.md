@@ -101,6 +101,34 @@ Marker assignability is often wider than you want. Three optional filters narrow
 
 In either pattern list a bare entry includes and a `!`-prefixed entry excludes; a candidate passes an axis when it matches some include (or the list gives none) and no exclude. Matching is ordinal (case-sensitive). A filter set that removes every match warns with [AWT172](../09-diagnostics.md#awt172), a never-applied exclusion with [AWT173](../09-diagnostics.md#awt173), and a match-everything include (`*` or `**`) with [AWT174](../09-diagnostics.md#awt174).
 
+## Leave out types that are not services
+
+A marker often matches types that never come from the container: a design-time view model nested in the real one, or a row view model that your code creates with `new` because it takes a model in its constructor. Two options keep them out without an `Exclude` entry for each new one.
+
+```csharp expect=AWT141
+public sealed class MenuViewModel : IViewModel
+{
+    public sealed class DesignTime : IViewModel;
+}
+
+public sealed class OrderLineViewModel(string product) : IViewModel;
+
+[Container]
+[Scan<IViewModel>(NamePatterns = ["!DesignTime"], SkipUnconstructable = true)]
+public static partial class CoffeeShop;
+```
+
+- **`NamePatterns = ["!DesignTime"]`** excludes every type with that simple name, so each nested `DesignTime` helper stays out as long as it follows the convention.
+- **`SkipUnconstructable = true`** skips a match the container cannot construct, such as `OrderLineViewModel`, which needs a `string` that nothing registers. The skip is the warning [AWT141](../09-diagnostics.md#awt141) instead of the error [AWT101](../09-diagnostics.md#awt101), so you still see what was left out. A match that is also registered explicitly is never skipped.
+
+If you build with `TreatWarningsAsErrors` and the skips are intended, keep AWT141 a warning in the project file:
+
+```xml
+<PropertyGroup>
+  <WarningsNotAsErrors>$(WarningsNotAsErrors);AWT141</WarningsNotAsErrors>
+</PropertyGroup>
+```
+
 ## Scan without a marker
 
 Some conventions have no shared marker at all: every `Foo` has its own `IFoo` and nothing else in common. The parameterless `[Scan]` matches every concrete type instead of a marker, narrowed by the same filters.
