@@ -378,7 +378,7 @@ public class SelfCompiledModuleRegistrationTests
 	public class OutOfScope
 	{
 		[Test]
-		public async Task OpenGenericInternalImplementation_ReportsAwt230AtTheConsumer()
+		public async Task OpenGenericInternalImplementationOfANonPartialModule_ReportsAwt231AtTheConsumer()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
 				using Awaiten;
@@ -411,8 +411,8 @@ public class SelfCompiledModuleRegistrationTests
 				}
 				""");
 
-			await That(result.Diagnostics).Contains("*AWT230*").AsWildcard()
-				.Because("an open generic registration is not self-compiled in v1, so the consumer reports the implementation it cannot construct");
+			await That(result.Diagnostics).Contains("*AWT231*'Lib.Repository<T>'*because the module, or a class that contains it, is not partial*").AsWildcard()
+				.Because("a module that is not partial generates no generic factory and records why, so the consumer reports the implementation it cannot construct with that reason");
 			await That(result.Diagnostics).DoesNotContain("*AWT104*").AsWildcard()
 				.Because("the clear diagnostic replaces the misleading constructor error, leaving only the missing dependency it causes");
 		}

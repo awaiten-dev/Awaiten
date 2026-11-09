@@ -71,7 +71,7 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task ReportsAnInternalOpenGenericImplementation()
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			GeneratorResult result = Generator.RunWithReferencedAssembly("""
 				using Awaiten;
 
 				namespace Lib;
@@ -84,7 +84,8 @@ public partial class DiagnosticTests
 				public static class GreetingModule { }
 				""", Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT230*GreetingModule*the open generic registration of 'Lib.Greeter<T>'*").AsWildcard();
+			await That(result.Diagnostics).Contains("*AWT230*GreetingModule*the open generic registration of 'Lib.Greeter<T>'*").AsWildcard()
+				.Because("a module built without the generator records no reason, which a module that is not partial records since it has an open generic");
 		}
 
 		[Test]

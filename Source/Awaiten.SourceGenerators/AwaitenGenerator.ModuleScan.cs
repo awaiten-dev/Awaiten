@@ -825,9 +825,24 @@ partial class AwaitenGenerator
 			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
 			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
-				if (unbuildable is not null && handle is null && error.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible && context.Hidden is { } services)
+				if (handle is null && error.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible && context.Hidden is { } services)
 				{
-					services.UnbuildableNeeds[error] = UnbuildableNeed($"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook", unbuildable);
+					string member = $"the parameter '{parameter.Name}' of its {(release ? "OnRelease" : "OnActivated")} hook";
+					if (unbuildable is not null)
+					{
+						services.UnbuildableNeeds[error] = UnbuildableNeed(member, unbuildable);
+					}
+
+					// Judging another module judges its services anew, so it waits until the module's own are judged, which keeps that from recursing.
+					else if (services.Tracking
+					         && !HasArgAttribute(parameter.GetAttributes())
+					         && !HasRequestingType(parameter.GetAttributes())
+					         && HiddenShapeOf(parameter.Type) is (not (null or HiddenShape.FuncWithArguments or HiddenShape.FuncWithArgumentsOwned), INamedTypeSymbol service)
+					         && IsHiddenService(service, context.Module, context.Compilation)
+					         && services.RejectedElsewhere(service) is var (builder, rejection))
+					{
+						services.UnbuildableNeeds[error] = UnbuildableNeed(member, service, builder, rejection);
+					}
 				}
 
 				context.Diagnostics.Add(error);

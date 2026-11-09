@@ -1229,8 +1229,8 @@ public class OpenGenericFactoryTests
 				public static class DataModule { }
 				""", Consumer);
 
-			await That(result.Diagnostics).Contains("*AWT230*DataModule*the open generic registration of 'Lib.Repository<T>'*").AsWildcard()
-				.Because("a module that is not partial carries neither a factory nor a record of why");
+			await That(result.Diagnostics).Contains("*AWT231*DataModule*'Lib.Repository<T>'*because the module, or a class that contains it, is not partial*").AsWildcard()
+				.Because("a module that is not partial carries no factory, but records that it is not partial");
 		}
 
 		[Test]
