@@ -297,21 +297,39 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			public async Task AGenericOverload_IsNotRecorded()
+			public async Task AGenericOverloadTheCallInfers_IsRecorded()
 			{
 				string library = Library.Replace("internal static void Ready(Repository repository) { }", "internal static void Ready<T>(T repository) where T : IRepository { }");
+
+				GeneratorResult own = Generator.Run(library);
+				GeneratorResult same = Generator.Run(SameAssembly(library, Consumer));
+				GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), Consumer);
+				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+				await That(ModuleSource(own)).Contains("public const string HookSkipped_OnActivated_Repository_")
+					.Because("a call without type arguments infers the generic overload for the repository, which C# prefers to the one for objects");
+				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Ready'*").AsWildcard();
+				await That(friend.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Ready'*").AsWildcard();
+				await That(external.Diagnostics).HasSingle().Which
+					.IsEqualTo("*AWT231*'Lib.Repository' with the OnActivated hook 'Ready', which this container does not run, because*another overload that is not public, taking 'T', that accepts 'Lib.Repository' too*").AsWildcard()
+					.Because("this assembly sees only the overload for objects, while the module's assembly would run the generic one");
+			}
+
+			[Test]
+			[Arguments("internal static void Ready<T>(T repository) where T : struct { }")]
+			[Arguments("internal static void Ready<T>(System.Collections.Generic.IList<T> items) { }")]
+			public async Task AGenericOverloadTheCallDoesNotInfer_IsNotRecorded(string overload)
+			{
+				string library = Library.Replace("internal static void Ready(Repository repository) { }", overload);
 
 				GeneratorResult own = Generator.Run(library);
 				GeneratorResult same = Generator.Run(SameAssembly(library, Consumer));
 				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
 				await That(own.Sources.Values).All().Satisfy(source => !source.Contains("HookSkipped_", StringComparison.Ordinal))
-					.Because("nothing binds the type parameter of a generic overload for a closed registration, so no container runs it");
+					.Because("the generic overload does not accept the repository, so C# never picks it");
 				await That(same.Diagnostics).IsEmpty();
 				await That(external.Diagnostics).IsEmpty();
-				await That(same.Sources.Values).Any().Satisfy(source => source.Contains("global::Lib.DataModule.Ready(", StringComparison.Ordinal));
-				await That(external.Sources.Values).Any().Satisfy(source => source.Contains("global::Lib.DataModule.Ready(", StringComparison.Ordinal))
-					.Because("both containers call the public overload for objects");
 			}
 		}
 
@@ -585,6 +603,17 @@ public partial class DiagnosticTests
 				await That(external.Diagnostics).IsEmpty();
 				await That(external.Sources.Values).Any().Satisfy(source => source.Contains("global::Lib.DataModule.Ready<global::Lib.Entity>(", StringComparison.Ordinal));
 			}
+
+			[Test]
+			public async Task AnOverloadForValueTypesOfAnEnumConstrainedType_IsRecorded()
+			{
+				string library = Library.Replace("where T : Entity", "where T : System.Enum");
+
+				GeneratorResult own = Generator.Run(library);
+
+				await That(ModuleSource(own)).Contains("public const string HookSkipped_OnActivated_Repository_")
+					.Because("System.Enum admits enums, which the overload for value types accepts too");
+			}
 		}
 
 		public class AModuleImportedByABaseInAnotherAssembly
@@ -675,6 +704,75 @@ public partial class DiagnosticTests
 				await That(result.Diagnostics).HasSingle().Which
 					.IsEqualTo("*AWT231*'Lib.DataModule'*'Lib.Repository' with the OnActivated hook 'Ready', which this container does not run*").AsWildcard()
 					.Because("the base reports the hook itself, so the extending container adds no second error");
+			}
+		}
+
+		public class AnOpenTypeOfAModuleImportedByABaseInAnotherAssembly
+		{
+			private const string Module = """
+			                              using Awaiten;
+
+			                              namespace Lib;
+
+			                              public interface IRepository<T> { }
+			                              public sealed class Order { }
+			                              public sealed class Repository<T> : IRepository<T> { }
+
+			                              [Module]
+			                              [Scoped(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Ready))]
+			                              public static partial class DataModule
+			                              {
+			                                  public static void Ready<T>(Repository<T> repository) { }
+
+			                                  internal static void Ready(Repository<Order> repository) { }
+			                              }
+			                              """;
+
+			private const string Base = """
+			                            using Awaiten;
+			                            using Lib;
+
+			                            namespace Shop;
+
+			                            public sealed class Seed
+			                            {
+			                                public Seed(IRepository<Order> orders) { }
+			                            }
+
+			                            [Container]
+			                            [Import(typeof(DataModule))]
+			                            [Transient<Seed>]
+			                            public static partial class ShopContainer
+			                            {
+			                            }
+			                            """;
+
+			private const string Extender = """
+			                                using Awaiten;
+			                                using Lib;
+
+			                                namespace App;
+
+			                                public sealed class Checkout
+			                                {
+			                                    public Checkout(IRepository<Order> orders, IRepository<int> numbers) { }
+			                                }
+
+			                                [Container(Extends = typeof(Shop.ShopContainer))]
+			                                [Transient<Checkout>]
+			                                public static partial class TestShop
+			                                {
+			                                }
+			                                """;
+
+			[Test]
+			public async Task AnExtendingContainerInAThirdAssembly_ReportsTheHookAlsoForAClosingOfTheBase()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Module, Base,], Extender);
+
+				await That(result.Diagnostics).HasSingle().Which
+					.IsEqualTo("*AWT226*'Lib.Repository<T>' cannot be built by 'App.TestShop', which inherits it from 'Shop.ShopContainer' through Extends: its OnActivated hook 'Ready' has another overload, taking 'Lib.Repository<Lib.Order>'*; give the hook methods distinct names").AsWildcard()
+					.Because("the base reports the same AWT231 for its own closing, which would hide the extending container's report and leave the hook out silently");
 			}
 		}
 

@@ -774,7 +774,7 @@ public static partial class CoffeeShop
 A lifecycle hook (`OnActivated` / `OnRelease`) names an overloaded method, so there is no way to choose which one to call.
 :::
 
-A hook is looked up by simple name on its owner (the container, or a module whose `[Scan]` names it), so two accepting overloads leave the choice (and the graph dependencies the extra parameters resolve) order-dependent. Give the hook a unique name, exactly as a factory method must be unambiguous.
+A hook is looked up by simple name on its owner (the container, or a module whose `[Scan]` names it), so two accepting overloads leave the choice (and the graph dependencies the extra parameters resolve) order-dependent. A generic overload counts beside a non-generic one when the call infers its type arguments from the instance, as `Calibrate<T>(T machine)` does, since the generated call names no type arguments and C# could pick it. Give the hook a unique name, exactly as a factory method must be unambiguous.
 
 ```csharp expect=AWT190
 [Container]

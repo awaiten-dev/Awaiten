@@ -502,10 +502,11 @@ partial class AwaitenGenerator
 				=> (ReferenceTypesOnly(own) && (other.HasValueTypeConstraint || other.HasUnmanagedTypeConstraint))
 				   || ((own.HasValueTypeConstraint || own.HasUnmanagedTypeConstraint) && ReferenceTypesOnly(other))).Any(excludes => excludes);
 
-		// A class type constraint admits only reference types, except System.Enum, which admits enums too.
+		// A class type constraint admits only reference types, except one a value type boxes to: System.Enum, and
+		// System.ValueType or object, which only a type parameter from metadata of another language carries.
 		static bool ReferenceTypesOnly(ITypeParameterSymbol parameter)
 			=> parameter.HasReferenceTypeConstraint
-			   || parameter.ConstraintTypes.Any(constraint => constraint is { TypeKind: TypeKind.Class, SpecialType: not SpecialType.System_Enum, });
+			   || parameter.ConstraintTypes.Any(constraint => constraint is { TypeKind: TypeKind.Class, SpecialType: not (SpecialType.System_Enum or SpecialType.System_ValueType or SpecialType.System_Object), });
 
 		// Every way to bind the definition's type parameters in a type it converts to so that it becomes the instance
 		// parameter's type, trying a supertype of a variant type argument beside the plain one, since a binding that unifies
