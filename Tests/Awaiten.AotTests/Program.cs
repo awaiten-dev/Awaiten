@@ -49,6 +49,22 @@ public static class Program
 		bool emptySequence = unmentioned is not null && !unmentioned.Any();
 		Console.WriteLine($"empty sequence for an unmentioned element type: {emptySequence}");
 
-		return rendered == "Awaiten on AOT @ 2026-06-24" && warmup.Ready && reply == "pong" && receipt.Amount == 2.40m && emptySequence ? 0 : 1;
+		// A by-type miss over a service with a runtime argument unwraps the requested relationship to name its factory.
+		// The type travels in a variable, as it does for a caller that only knows it at run time, where AWT218 cannot see it.
+		Type requested = typeof(Lazy<Ticket>);
+		string guidance = string.Empty;
+		try
+		{
+			root.Resolve(requested);
+		}
+		catch (InvalidOperationException exception)
+		{
+			guidance = exception.Message;
+		}
+
+		bool namesFactory = guidance.Contains("System.Func<int, Awaiten.AotTests.Domain.Ticket>");
+		Console.WriteLine($"miss names the factory: {namesFactory}");
+
+		return rendered == "Awaiten on AOT @ 2026-06-24" && warmup.Ready && reply == "pong" && receipt.Amount == 2.40m && emptySequence && namesFactory ? 0 : 1;
 	}
 }

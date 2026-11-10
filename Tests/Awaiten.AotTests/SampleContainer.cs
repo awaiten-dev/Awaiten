@@ -14,4 +14,5 @@ namespace Awaiten.AotTests;
 [Transient<Mediator>]
 [Import(typeof(PaymentModule))]
 [Transient<Barista>]
+[Transient<Ticket>]
 public static partial class SampleContainer;

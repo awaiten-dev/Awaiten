@@ -6,6 +6,7 @@ reflection-free and native-AOT compatible. It registers a generated `[Container]
 `VerifyAwaitenContainers`, and resolves a service (whose graph mixes an Awaiten-owned `IClock` with a
 host-owned `Banner` injected across the seam via `[ImportService<T>]`) from an MS.DI scope. It also imports the `PaymentModule` of `Tests/Support/CoffeeShop.Domain`, so the internal payment
 gateway a module of another assembly builds through its generated factory is published and run with native AOT too.
+A by-type miss over a service with a runtime argument checks that the generated guidance, which inspects the requested type, runs under native AOT as well.
 It is not a TUnit project: `Main` returns a non-zero exit code when a check fails.
 
 The project is part of `Awaiten.slnx`, so it is compiled cross-platform alongside the unit tests. Because
