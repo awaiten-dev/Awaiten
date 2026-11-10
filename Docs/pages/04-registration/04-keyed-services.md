@@ -91,7 +91,7 @@ public static partial class CoffeeShop
 
 The `[FromKey]` on each factory parameter selects the keyed registration, whether a string key or a typed `MilkKind.Oat`, and `Blend` never mentions Awaiten. A factory parameter can also be a relationship such as `[FromKey("Oat")] Func<IMilk>` or `[FromKey("Oat")] Lazy<IMilk>` to pull a keyed implementation on demand, and it takes an [`[Arg]`](../05-resolution/06-runtime-arguments.md) the same way, for a value supplied at resolve time.
 
-To pick a keyed registration imperatively, outside any constructor, pass the key to `Resolve`. See [keyed resolution](../05-resolution/01-resolving-services.md#keyed-resolution). That reads the container directly, so it puts no attribute on a domain type.
+To pick a keyed registration imperatively, outside any constructor, pass the key to `Resolve`. See [keyed resolution](../05-resolution/01-resolving-services.md#keyed-resolution). That reads the container directly, so it puts no attribute on a domain type. A keyed resolve serves plain services only: a relationship such as `Func<IMilk>`, a collection, or the factory of a service with runtime arguments comes under a key through `[FromKey]` injection alone.
 
 ## Select directly with `[FromKey]`
 

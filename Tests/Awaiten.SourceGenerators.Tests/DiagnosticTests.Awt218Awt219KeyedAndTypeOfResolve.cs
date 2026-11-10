@@ -119,6 +119,189 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Func<IMilk>", "System.Func<MyCode.IMilk>")]
+		[Arguments("Lazy<IMilk>", "System.Lazy<MyCode.IMilk>")]
+		[Arguments("Owned<IMilk>", "Awaiten.Owned<MyCode.IMilk>")]
+		[Arguments("Func<Owned<IMilk>>", "System.Func<Awaiten.Owned<MyCode.IMilk>>")]
+		[Arguments("Task<IMilk>", "System.Threading.Tasks.Task<MyCode.IMilk>")]
+		public async Task ReportsAKeyedRelationshipAsServedOnlyToInjection(string relationship, string display)
+		{
+			string[] diagnostics = await Run($"""
+			                                  		root.Resolve<{relationship}>("Oat");
+			                                  """);
+
+			await That(diagnostics.Where(d => d.Contains("AWT218"))).HasSingle().Which
+				.Contains($"*has no registration under the key \"Oat\"*a keyed resolve serves only plain services, not the relationships over them; resolve 'MyCode.IMilk' under that key, or inject '{display}' through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("IMilk is registered under \"Oat\", but the keyed by-type dispatch serves registrations, never a relationship over one");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheKeyedRelationshipsTheRemedyInjects()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+			                                                           using System;
+			                                                           using System.Threading.Tasks;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IMilk;
+			                                                           public sealed class OatMilk : IMilk;
+			                                                           public sealed class Latte
+			                                                           {
+			                                                           	public Latte(
+			                                                           		[FromKey("Oat")] Func<IMilk> func,
+			                                                           		[FromKey("Oat")] Lazy<IMilk> lazy,
+			                                                           		[FromKey("Oat")] Owned<IMilk> owned,
+			                                                           		[FromKey("Oat")] Func<Owned<IMilk>> owner,
+			                                                           		[FromKey("Oat")] Task<IMilk> task) { }
+			                                                           }
+
+			                                                           [Container]
+			                                                           [Transient<OatMilk, IMilk>(Key = "Oat")]
+			                                                           [Transient<Latte>]
+			                                                           public static partial class MyContainer;
+			                                                           """);
+
+			await That(diagnostics).IsEmpty()
+				.Because("[FromKey] injection builds every relationship shape over a keyed registration, which the AWT218 remedy points to");
+		}
+
+		[Test]
+		public async Task ReportsAKeyedRelationshipOfAnUnregisteredKeyWithTheRegistration()
+		{
+			string[] diagnostics = await Run("""
+			                                 		root.Resolve<Func<IMilk>>("Soy");
+			                                 """);
+
+			await That(diagnostics.Where(d => d.Contains("AWT218"))).HasSingle().Which
+				.Contains("*a keyed resolve serves only plain services, not the relationships over them; register 'MyCode.IMilk' under that key, then resolve 'MyCode.IMilk' or inject 'System.Func<MyCode.IMilk>' through a [FromKey] parameter or property").AsWildcard()
+				.Because("nothing is registered under \"Soy\", and a registration alone would still not serve the relationship by type");
+		}
+
+		[Test]
+		public async Task ReportsAKeyedFactoryOfAServiceWithoutRuntimeArgumentsWithTheRegistration()
+		{
+			string[] diagnostics = await Run("""
+			                                 		root.Resolve<Func<int, IMilk>>("Oat");
+			                                 """);
+
+			await That(diagnostics.Where(d => d.Contains("AWT218"))).HasSingle().Which
+				.Contains("*has no registration under the key \"Oat\"*register it under that key on the [Container], or call TryResolve if it is optional").AsWildcard()
+				.And.DoesNotContain("[FromKey]")
+				.Because("IMilk takes no runtime arguments, so injecting a Func<int, IMilk> would be AWT113, and only a registration of the factory itself serves it");
+		}
+
+		[Test]
+		[Arguments("Lazy<Owned<IMilk>>")]
+		[Arguments("Lazy<Task<Owned<IMilk>>>")]
+		public async Task ReportsAKeyedLazyOverOwnedWithTheShapesThatProduceAHandle(string relationship)
+		{
+			string[] diagnostics = await Run($"""
+			                                  		root.Resolve<{relationship}>("Oat");
+			                                  """);
+
+			await That(diagnostics.Where(d => d.Contains("AWT218"))).HasSingle().Which
+				.Contains("*an Owned<T> disposal handle cannot be produced through Lazy<…>, and a keyed resolve serves only plain services; inject Owned<T>, Func<…, Owned<T>>, Task<Owned<T>> or Func<…, Task<Owned<T>>> through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("injecting the requested Lazy over an Owned<T> under the key would be AWT121");
+		}
+
+		[Test]
+		[Arguments("Func<Database>", "System.Func<System.Threading.Tasks.Task<MyCode.Database>>")]
+		[Arguments("Lazy<Database>", "System.Lazy<System.Threading.Tasks.Task<MyCode.Database>>")]
+		[Arguments("Owned<Database>", "System.Threading.Tasks.Task<Awaiten.Owned<MyCode.Database>>")]
+		[Arguments("Func<Owned<Database>>", "System.Func<System.Threading.Tasks.Task<Awaiten.Owned<MyCode.Database>>>")]
+		[Arguments("Task<Database>", "System.Threading.Tasks.Task<MyCode.Database>")]
+		public async Task ReportsAKeyedRelationshipOverAnAsyncInitializedServiceWithItsTaskForm(string relationship, string asyncShape)
+		{
+			string[] diagnostics = await Run($"""
+			                                  		root.Resolve<{relationship}>("main");
+			                                  """);
+
+			await That(diagnostics.Where(d => d.Contains("AWT218"))).HasSingle().Which
+				.Contains($"*'MyCode.Database' is async-initialized, and a keyed resolve serves only plain services, not the relationships over them; resolve 'MyCode.Database' under that key through ResolveAsync, or inject '{asyncShape}' through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("a synchronous relationship over an async-initialized service is AWT119 for injection too, so the remedy names the Task form");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheKeyedTaskFormsTheRemedyInjects()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+			                                       using System.Threading;
+			                                       using System.Threading.Tasks;
+
+			                                       namespace MyCode;
+
+			                                       public interface IInitializable { Task InitializeAsync(CancellationToken cancellationToken); }
+			                                       public sealed class Database : IInitializable
+			                                       {
+			                                       	public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+			                                       }
+			                                       public sealed class Report
+			                                       {
+			                                       	public Report(
+			                                       		[FromKey("main")] Func<Task<Database>> func,
+			                                       		[FromKey("main")] Lazy<Task<Database>> lazy,
+			                                       		[FromKey("main")] Task<Owned<Database>> owned,
+			                                       		[FromKey("main")] Func<Task<Owned<Database>>> owner) { }
+			                                       }
+
+			                                       [Container]
+			                                       [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+			                                       [Singleton<Database>(Key = "main")]
+			                                       [Transient<Report>]
+			                                       public static partial class MyContainer;
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("[FromKey] injection builds the Task form of every relationship over an async-initialized keyed service, which the AWT218 remedy points to");
+		}
+
+		[Test]
+		public async Task ReportsAKeyedParameterizedServiceWithItsFactoryForInjection()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+			                                                           using System;
+
+			                                                           namespace MyCode;
+
+			                                                           public sealed class Cup { public Cup([Arg] int size) { } }
+			                                                           public sealed class Counter
+			                                                           {
+			                                                           	public Counter([FromKey("large")] Func<int, Cup> cups, [FromKey("large")] Func<int, Owned<Cup>> owned) { }
+			                                                           }
+
+			                                                           [Container]
+			                                                           [Transient<Cup>(Key = "large")]
+			                                                           [Transient<Counter>]
+			                                                           public static partial class MyContainer;
+
+			                                                           public static class Usage
+			                                                           {
+			                                                           	public static void Use()
+			                                                           	{
+			                                                           		using MyContainer.Root root = new();
+			                                                           		root.Resolve<Cup>("large");
+			                                                           		root.Resolve<Owned<Cup>>("large");
+			                                                           		root.Resolve<Func<int, Cup>>("large");
+			                                                           	}
+			                                                           }
+			                                                           """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasCount(3);
+			await That(reports[2]).Contains("*has no registration under the key \"large\"*inject its factory 'System.Func<int, MyCode.Cup>' through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("the keyed by-type dispatch does not serve the factory itself either");
+			await That(reports[0]).Contains("*'MyCode.Cup' is built from runtime arguments, and a keyed resolve serves only plain services, not their factories; inject its factory 'System.Func<int, MyCode.Cup>' through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("the keyed by-type dispatch serves neither the service nor its factory, while [FromKey] injection, as Counter shows, does");
+			await That(reports[1]).Contains("*inject its factory 'System.Func<int, Awaiten.Owned<MyCode.Cup>>' through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("an Owned request names the factory of the handle");
+		}
+
+		[Test]
 		public async Task ReportsAnUnregisteredKeyOnEveryKeyedOverload()
 		{
 			string[] diagnostics = await Run("""

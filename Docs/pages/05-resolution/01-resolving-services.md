@@ -24,6 +24,8 @@ There is a `Type`-based overload for when you do not know the type at compile ti
 object cup = shop.Resolve(typeof(Cup));
 ```
 
+A service with [runtime arguments](./06-runtime-arguments.md) resolves only through its factory, because a call by type has no way to pass the arguments. Resolving its bare type, or a `Func<T>`, `Lazy<T>` or `Owned<T>` over it, throws, and the message names the factory to resolve instead, such as `Func<string, Cup>` when `Cup` takes its size as an `[Arg]`.
+
 ## TryResolve
 
 `TryResolve<T>(out T?)` returns `false` instead of throwing when the service is not available.
@@ -62,7 +64,7 @@ IMilk soy = await shop.ResolveAsync<IMilk>("Soy", cancellationToken);
 
 The key is an `object`, so a string, an `enum` constant, or a `typeof(...)` all work, matching the key the registration carries. A `null` key resolves the unkeyed registration, exactly like the keyless overload. An unknown key follows the same miss rules as above: `Resolve` throws, `TryResolve` reports `false`. See [Keyed services](../04-registration/04-keyed-services.md).
 
-A keyed resolve hands out the registration under the key, not a collection of the registrations. `Resolve<IEnumerable<IMilk>>("Oat")` throws even when several `IMilk` are registered under `"Oat"`, because the container builds a collection under a key only for injection: take it through a `[FromKey("Oat")] IEnumerable<IMilk>` parameter or property.
+A keyed resolve serves plain services only: it hands out the registration under the key, not a collection of the registrations, a [relationship](./02-relationships.md) over it or the factory of a service with [runtime arguments](./06-runtime-arguments.md). `Resolve<IEnumerable<IMilk>>("Oat")` and `Resolve<Func<IMilk>>("Oat")` throw even when an `IMilk` is registered under `"Oat"`. The container builds these shapes under a key for injection: take them through a `[FromKey("Oat")] IEnumerable<IMilk>` or `[FromKey("Oat")] Func<IMilk>` parameter or property.
 
 ## Prefer constructor injection
 

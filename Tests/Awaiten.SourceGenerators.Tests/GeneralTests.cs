@@ -604,10 +604,58 @@ public class GeneralTests
 		await That(source).Contains("new global::MyCode.Robot(Root.ResolveEngine(__s.__root), a0)");
 		await That(source).Contains("new global::System.Func<string, global::MyCode.Robot>((a0) => ResolveRobot(__s, a0))");
 		await That(source).Contains("typeof(global::System.Func<string, global::MyCode.Robot>)");
-		await That(source).DoesNotContain("typeof(global::MyCode.Robot)")
+		await That(source).DoesNotContain("new __Bucket(typeof(global::MyCode.Robot)")
 			.Because("the bare parameterized service type is not dispatchable");
+		await That(source).Contains("if (serviceType == typeof(global::MyCode.Robot))")
+			.Because("only the miss of a by-type resolve compares the request with it, to name its factory");
 		await That(source).DoesNotContain("global::Awaiten.IAwaitenResolver<global::MyCode.Robot>")
 			.Because("a parameterized service has no typed resolution fast path");
+	}
+
+	[Test]
+	public async Task RuntimeArguments_NameTheFactoryOnAMissForEveryServiceShape()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+		                                       using System;
+		                                       using System.Collections.Generic;
+
+		                                       public sealed class GlobalCup { public GlobalCup([Arg] int size) { } }
+
+		                                       namespace MyCode
+		                                       {
+		                                       	public sealed class Outer { public sealed class Inner { public Inner([Arg] int size) { } } }
+		                                       	public sealed class Box<T> { public Box([Arg] T value) { } public sealed class Nested { public Nested([Arg] T[] values) { } } }
+		                                       	public sealed class Repo<T> { public Repo([Arg] string name) { } }
+		                                       	public sealed class Consumer { public Consumer(Func<string, Repo<int>> repos) { } }
+
+		                                       	[Container]
+		                                       	[Transient<global::GlobalCup>]
+		                                       	[Transient<Outer.Inner>]
+		                                       	[Transient<Box<(int, string)>>]
+		                                       	[Transient<Box<(int, string)>.Nested>]
+		                                       	[Transient<Box<int?>>]
+		                                       	[Transient(typeof(Repo<>))]
+		                                       	[Transient<Consumer>]
+		                                       	[Transient<List<string>>(Factory = nameof(MakeList))]
+		                                       	public static partial class MyContainer
+		                                       	{
+		                                       		private static List<string> MakeList([Arg] int count) => new(count);
+		                                       	}
+		                                       }
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the miss compares the request with every parameterized service by typeof, which compiles for each of these shapes");
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		await That(source).Contains("if (serviceType == typeof(global::GlobalCup))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Outer.Inner))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Box<(int, string)>.Nested))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Box<int?>))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Repo<int>))")
+			.And.Contains("if (serviceType == typeof(global::System.Collections.Generic.List<string>))")
+			.Because("a service in the global namespace, a nested, generic, tuple or nullable one, a closing of an open generic and a factory product each get the factory remedy");
+		await That(source).Contains("resolve its factory 'System.Func<(int, string)[], MyCode.Box<(int, string)>.Nested>' instead");
 	}
 
 	[Test]

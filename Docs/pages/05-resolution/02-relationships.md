@@ -48,7 +48,9 @@ Func<Task<EspressoMachine>> machines = shop.Resolve<Func<Task<EspressoMachine>>>
 EspressoMachine machine = await machines();
 ```
 
-A synchronous shape over an async-initialized service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task.
+A synchronous shape over an async-initialized service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task. A `Func<T>`, `Lazy<T>` or `Owned<T>` over a service with runtime arguments throws with its factory as the remedy.
+
+Resolving a relationship directly works without a key only. A [keyed resolve](./01-resolving-services.md#keyed-resolution) serves plain services, so `Resolve<Func<IMilk>>("Oat")` throws even when an `IMilk` is registered under `"Oat"`. Inject the keyed relationship instead, through a `[FromKey("Oat")] Func<IMilk>` parameter or property.
 
 ## Relationships wrap a single service
 

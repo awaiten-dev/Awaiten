@@ -164,6 +164,93 @@ public class ModuleHiddenServiceTests
 			.Because("a module that is not partial builds no handle, and the container cannot name the internal service nor reach it otherwise, so it drops the registration as it does for an internal implementation");
 		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("IBeanStore");
 	}
+
+	[Test]
+	public async Task ShapesOverAHandle_AreLeftOutOfTheDispatch_WhileShapesOverAPublicServiceStay()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IBrewerFactory { }
+			internal interface IBrewer { }
+			internal sealed class Brewer : IBrewer { }
+			internal sealed class BrewerFactory : IBrewerFactory { public BrewerFactory(IBrewer brewer) { } }
+
+			[Module]
+			[Singleton<Brewer, IBrewer>]
+			[Singleton<BrewerFactory, IBrewerFactory>]
+			public static partial class CoffeeModule { }
+			""", """
+			using Awaiten;
+
+			namespace MyCode;
+
+			[Container]
+			[Import(typeof(Lib.CoffeeModule))]
+			public static partial class MyContainer { }
+			""");
+		string container = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		string handle = Handle("global::Lib.IBrewer");
+
+		await That(result.Diagnostics).IsEmpty();
+		await That(container).Contains("typeof(global::System.Collections.Generic.IEnumerable<global::Lib.IBrewerFactory>)")
+			.And.Contains("typeof(global::System.Func<global::Lib.IBrewerFactory>)")
+			.Because("the shapes over a public service are dispatched, whatever names of unlisted services they extend");
+		await That(container).Contains(handle)
+			.And.DoesNotContain($"typeof(global::System.Collections.Generic.IEnumerable<{handle}>)")
+			.And.DoesNotContain($"typeof(global::System.Func<{handle}>)")
+			.Because("only the dependencies of the module reach the handle of the internal service");
+	}
+
+	[Test]
+	public async Task NoHandle_ReachesTheDispatch_InAnyShape()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			using Awaiten;
+			using System.Collections.Generic;
+
+			namespace Lib;
+
+			public interface ILog<T> { }
+			public sealed class Log<T> : ILog<T> { }
+			public interface IBrewer { }
+			internal interface IKettle { }
+			internal sealed class Kettle : IKettle { }
+			internal sealed class SpareKettle : IKettle { }
+			internal sealed class Brewer : IBrewer
+			{
+				public Brewer(IKettle kettle, IEnumerable<IKettle> all, ILog<Kettle> log) { }
+			}
+
+			[Module]
+			[Singleton(typeof(Log<>), typeof(ILog<>))]
+			[Transient<Kettle, IKettle>]
+			[Transient<SpareKettle, IKettle>(Key = "spare")]
+			[Transient<Brewer, IBrewer>]
+			public static partial class CoffeeModule { }
+			""", """
+			using Awaiten;
+
+			namespace MyCode;
+
+			[Container]
+			[Import(typeof(Lib.CoffeeModule))]
+			public static partial class MyContainer { }
+			""");
+		string container = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		string[] dispatched = container.Split('\n').Where(line => line.Contains("new __Bucket(typeof(") || line.Contains("new __KeyedKey(typeof(") || line.Contains("new global::Awaiten.AwaitenRegistration(typeof(")).ToArray();
+
+		await That(result.Diagnostics).IsEmpty();
+		await That(container).Contains(".Internals.Hidden_").And.Contains(".Internals.Closed_")
+			.Because("the container builds the internal services and the closing over an internal type through their handles");
+		await That(dispatched).Contains("*typeof(global::System.Func<global::Lib.IBrewer>)*").AsWildcard()
+			.Because("the shapes over the public service are dispatched");
+		await That(dispatched).None().Satisfy(line => line.Contains(".Internals."))
+			.Because("no service, relationship or collection over a handle may become a public by-type resolve");
+	}
+
 	[Test]
 	public async Task EagerInternalSingleton_GetsAHandle()
 	{
