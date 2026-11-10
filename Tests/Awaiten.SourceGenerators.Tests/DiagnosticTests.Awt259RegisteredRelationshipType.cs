@@ -87,6 +87,51 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("public Reader(Func<IClock> clock) { }")]
+		[Arguments("[Inject] public Func<IClock> Clock { get; set; } = null!;")]
+		public async Task ReportsAContextualRegistrationForItsConsumer(string consumer)
+		{
+			GeneratorResult result = Run(
+				"[Singleton<SystemClock, IClock>]\n[Singleton<Func<IClock>>(Instance = nameof(Registered), WhenInjectedInto = typeof(Reader))]",
+				consumer,
+				"private static Func<IClock> Registered => () => new SystemClock();");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT259*'MyCode.Reader' requires 'System.Func<MyCode.IClock>', which the container registers as a service*").AsWildcard()
+				.Because("the consumer that the WhenInjectedInto registration targets gets the built-in Func over IClock, never the registration, which is the same error and not only the AWT167 warning");
+		}
+
+		[Test]
+		public async Task DoesNotReportAContextualRegistrationForAnotherConsumer()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class SystemClock : IClock { }
+			                                       public sealed class Other { public Other(Func<IClock> clock) { } }
+			                                       public sealed class Reader { public Reader(Func<IClock> clock) { } }
+
+			                                       [Container]
+			                                       [Singleton<SystemClock, IClock>]
+			                                       [Singleton<Func<IClock>>(Instance = nameof(Registered), WhenInjectedInto = typeof(Reader))]
+			                                       [Singleton<Reader>]
+			                                       [Singleton<Other>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                           private static Func<IClock> Registered => () => new SystemClock();
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT259*'MyCode.Reader' requires*").AsWildcard()
+				.Because("the WhenInjectedInto registration targets only Reader, so Other's Func over IClock bypasses no registration");
+		}
+
+		[Test]
 		public async Task ReportsAParameterizedFactory()
 		{
 			GeneratorResult result = Run(
