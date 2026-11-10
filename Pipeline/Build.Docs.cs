@@ -228,7 +228,7 @@ partial class Build
 					"",
 					Capitalize(entry.Title.Groups["text"].Value),
 					int.Parse(entry.Item.Groups["number"].Value),
-					entry.Item.Groups["url"].Value)))
+					$"https://github.com/{BuildExtensions.Owner}/{BuildExtensions.Repo}/pull/{entry.Item.Groups["number"].Value}")))
 			.ToList();
 		return ChangelogCategories
 			.SelectMany(category => items

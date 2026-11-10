@@ -1,0 +1,10 @@
+{
+	"label": "Ownership & lifecycle",
+	"link": {
+		"type": "generated-index",
+		"description": "Take finer control of when instances go away. Owned handles and lifecycle hooks."
+	},
+	"customProps": {
+		"description": "Take finer control of when instances go away. Owned handles and lifecycle hooks."
+	}
+}

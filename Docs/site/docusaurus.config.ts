@@ -76,7 +76,10 @@ const config: Config = {
     [
       '@docusaurus/plugin-client-redirects',
       {
-        redirects: [{from: '/docs', to: '/docs/getting-started'}],
+        redirects: [
+          {from: '/docs', to: '/docs/getting-started'},
+          {from: '/docs/lifetime/lifetime-safety', to: '/docs/core-concepts/lifetime-safety'},
+        ],
         createRedirects: (path: string) =>
           path.startsWith('/docs/') && path.length > '/docs/'.length ? [path.slice('/docs'.length)] : undefined,
       },

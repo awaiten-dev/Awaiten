@@ -62,4 +62,4 @@ In this repository:
 - [Docs/agents/design-goals.md](Docs/agents/design-goals.md): the goals, code and test rules for every change, the checks before a commit and how to handle reviews.
 - [Docs/agents/workflows.md](Docs/agents/workflows.md): build, test, benchmark and docs commands, the Fallout pipeline targets and the CI workflows.
 - [Docs/agents/project-structure.md](Docs/agents/project-structure.md): architecture, source locations and where to change what.
-- [Docs/pages/08-design-principles.md](Docs/pages/08-design-principles.md): the user-facing design Awaiten serves (composition root, the four anti-patterns); features must not push users towards them.
+- [Docs/pages/03-design-principles.md](Docs/pages/03-design-principles.md): the user-facing design Awaiten serves (composition root, the four anti-patterns); features must not push users towards them.

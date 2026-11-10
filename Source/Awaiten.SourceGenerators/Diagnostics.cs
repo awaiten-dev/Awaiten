@@ -8,6 +8,8 @@ namespace Awaiten.SourceGenerators;
 /// </summary>
 internal static class Diagnostics
 {
+	private static string HelpLink(string id) => "https://awaiten.dev/docs/diagnostics#" + id.ToLowerInvariant();
+
 	/// <summary>
 	///     A required dependency (a constructor parameter of a registered type) has no registration on
 	///     the container.
@@ -18,7 +20,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', which is not registered on the container",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT101"));
 
 	/// <summary>
 	///     The form of <see cref="MissingDependency">AWT101</see> for a service whose registration on a module of the
@@ -31,7 +34,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', which is not registered on the container; its registration on the module '{3}' is left out, because {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT101"));
 
 	/// <summary>
 	///     A dependency cycle exists in the object graph.
@@ -42,7 +46,8 @@ internal static class Diagnostics
 		"Dependency cycle detected: {0}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT102"));
 
 	/// <summary>
 	///     A registered implementation type cannot be instantiated (it is abstract or an interface) and no
@@ -55,7 +60,8 @@ internal static class Diagnostics
 		"'{0}' cannot be used as an implementation: it is abstract or an interface, so the container cannot construct it. Register a concrete type, or produce the instance through a Factory or Instance member; the type argument may then stay abstract, naming only the service.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT103"));
 
 	/// <summary>
 	///     A registered implementation type has no constructor the container can call.
@@ -66,7 +72,8 @@ internal static class Diagnostics
 		"'{0}' has no accessible constructor for the container to call",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT104"));
 
 	/// <summary>
 	///     A singleton depends, directly or transitively through transients, on a shorter-lived scoped
@@ -78,7 +85,8 @@ internal static class Diagnostics
 		"Captive dependency: the singleton '{0}' depends on '{1}', which has the shorter Scoped lifetime and would be captured for the container's lifetime",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT105"));
 
 	/// <summary>
 	///     A synchronous <c>Factory</c> method's body provably constructs (or returns a local of) a concrete
@@ -100,7 +108,8 @@ internal static class Diagnostics
 		"The factory '{0}' constructs '{1}', which is async-initialized by '{3}', but declares return type '{2}'; the container cannot see that it needs initialization, so the initializer never runs. Return '{1}', or make the factory 'async Task<{2}>' and handle initialization inside it.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT106"));
 
 	/// <summary>
 	///     <see cref="FactoryHidesAsyncInitialization" /> for a module's factory that constructs a type private to the
@@ -112,7 +121,8 @@ internal static class Diagnostics
 		"The factory '{0}' constructs '{1}', which is async-initialized by '{3}', but declares return type '{2}'; the container cannot see that it needs initialization, so the initializer never runs. '{1}' is private to the module, so no container can see it as the return type; make the factory 'async Task<{2}>' and handle initialization inside it, or make '{1}' internal and return it.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT106"));
 
 	/// <summary>
 	///     The same implementation is registered with more than one lifetime; coalescing into a single
@@ -124,7 +134,8 @@ internal static class Diagnostics
 		"'{0}' is registered with conflicting lifetimes: {1} and {2}. Register the implementation with a single lifetime.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT107"));
 
 	/// <summary>
 	///     A <c>Factory</c> registration names a member that is not a usable factory method on its owner -
@@ -137,7 +148,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced: {2} has no accessible method '{1}' returning '{0}'",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT108"));
 
 	/// <summary>
 	///     <see cref="InvalidFactory">AWT108</see> for a closed registration whose <c>Factory</c> names only generic
@@ -150,7 +162,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced: the method '{1}' on {2} is generic, and a closed registration cannot infer its type parameter(s) {3}; declare '{1}' without type parameters, since only the closings of an open generic typeof registration supply them",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT108"));
 
 	/// <summary>
 	///     The form of <see cref="InvalidFactory">AWT108</see> for a <c>Factory</c> member of an imported module of
@@ -163,7 +176,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced: {2} has no accessible method '{1}' returning '{0}': {3}; make the method and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT108"));
 
 	/// <summary>
 	///     An <c>Instance</c> registration names a member that is not a usable instance member on its owner -
@@ -176,7 +190,8 @@ internal static class Diagnostics
 		"'{0}' cannot be exposed: {2} has no accessible field or property '{1}' of type '{0}'",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT109"));
 
 	/// <summary>
 	///     The form of <see cref="InvalidInstance">AWT109</see> for an <c>Instance</c> member of an imported module of
@@ -189,7 +204,8 @@ internal static class Diagnostics
 		"'{0}' cannot be exposed: {2} has no accessible field or property '{1}' of type '{0}': {3}; make the member and its type public, or grant this assembly InternalsVisibleTo in the module's assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT109"));
 
 	/// <summary>
 	///     A single registration sets both <c>Factory</c> and <c>Instance</c>; the two directives are
@@ -201,7 +217,8 @@ internal static class Diagnostics
 		"'{0}' sets both Factory and Instance. Specify exactly one of them.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT110"));
 
 	/// <summary>
 	///     The same implementation is registered with more than one production (a different kind -
@@ -214,7 +231,8 @@ internal static class Diagnostics
 		"'{0}' is registered with conflicting production strategies ({1} and {2}). Register the implementation with a single production strategy.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT111"));
 
 	/// <summary>
 	///     A <c>Factory</c> registration names a method that is overloaded: more than one accessible
@@ -226,7 +244,8 @@ internal static class Diagnostics
 		"'{0}' has an ambiguous factory: {2} has more than one accessible method '{1}' returning '{0}'. Give the factory method a unique name.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT112"));
 
 	/// <summary>
 	///     A <c>Func&lt;TArg…, T&gt;</c> relationship's runtime arguments do not match the
@@ -238,7 +257,8 @@ internal static class Diagnostics
 		"The Func<…, {0}> relationship supplies runtime arguments ({1}) that do not match the [Arg] parameters ({2}) of '{0}'",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT113"));
 
 	/// <summary>
 	///     A service with <c>[Arg]</c>-marked parameters is built fresh from its runtime arguments on every
@@ -250,7 +270,8 @@ internal static class Diagnostics
 		"'{0}' has [Arg] parameters and is built fresh from its runtime arguments on every request, so its '{1}' lifetime cannot be honored; register it as Transient",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT114"));
 
 	/// <summary>
 	///     A parameterized service (one with <c>[Arg]</c>-marked parameters) is requested as a plain
@@ -263,7 +284,8 @@ internal static class Diagnostics
 		"'{1}' cannot depend on '{0}' directly: '{0}' has [Arg] parameters and can only be obtained through a Func<…, {0}> relationship that supplies them",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT115"));
 
 	/// <summary>
 	///     A <c>[Container]</c> class is not declared <c>static</c>. The container is a pure definition and
@@ -275,7 +297,8 @@ internal static class Diagnostics
 		"'{0}' must be a static class. The [Container] class is a definition whose factory and instance members are static; create the container with 'new {0}.Root()'.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT116"));
 
 	/// <summary>
 	///     Two different implementations are registered under the same service type and key, so a keyed
@@ -287,7 +310,8 @@ internal static class Diagnostics
 		"'{0}' is registered more than once with key '{1}'; a keyed resolution would be ambiguous",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT117"));
 
 	/// <summary>
 	///     A root-owned instance (a singleton or pre-built instance), directly or through its transitive
@@ -314,7 +338,8 @@ internal static class Diagnostics
 		"'{1}' holds a Func over '{0}', which is built on demand; the instances it builds - and the disposables created while constructing them - are tracked on the container root and accumulate for its lifetime; {2}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT118"));
 
 	/// <summary>
 	///     The strict-lifetime-safety form of <see cref="RootAccumulatingFactory">AWT118</see>: the same
@@ -355,7 +380,8 @@ internal static class Diagnostics
 		"'{0}' resolves '{2}' through a synchronous {1}<>, but '{2}' is async-initialized; resolve it through ResolveAsync, or set AsyncSafety.SyncAfterInit on the [Container]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT119"));
 
 	/// <summary>
 	///     A synchronous <c>Func&lt;T&gt;</c> / <c>Lazy&lt;T&gt;</c> / <c>Owned&lt;T&gt;</c> relationship
@@ -369,7 +395,8 @@ internal static class Diagnostics
 		"'{0}' resolves an async-tainted service synchronously: {1}. Resolve it through ResolveAsync, or set AsyncSafety.SyncAfterInit on the [Container].",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT120"));
 
 	/// <summary>
 	///     An <c>Owned&lt;T&gt;</c> disposal handle is requested through a <c>Lazy&lt;Owned&lt;T&gt;&gt;</c> or
@@ -385,7 +412,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}' through a Lazy relationship, but an Owned<T> disposal handle cannot be produced through Lazy<…>; request it directly as an Owned<T>, or through Func<…, Owned<T>>, Task<Owned<T>> or Func<…, Task<Owned<T>>>",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT121"));
 
 	/// <summary>
 	///     A collection dependency (<c>IEnumerable&lt;T&gt;</c> and friends) has a member whose implementation
@@ -402,7 +430,8 @@ internal static class Diagnostics
 		"'{0}' resolves the collection of '{1}' synchronously, but the member '{2}' is async-tainted; a synchronous collection is materialized eagerly, with no place to await an initialization - consume it as IAsyncEnumerable<T> or Task<IReadOnlyList<T>> (which await each member), set AsyncSafety.SyncAfterInit on the [Container] (and resolve after InitializeAsync), or remove the async member from the collection",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT122"));
 
 	/// <summary>
 	///     A <c>[Decorate&lt;TDecorator, TService&gt;]</c> names a service that has no registration to
@@ -414,7 +443,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by '{1}' but has no registration to decorate; register the service before decorating it",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT123"));
 
 	/// <summary>
 	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> under <c>[ImportServices]</c>, which routes an unregistered
@@ -426,7 +456,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by '{1}' but has no registration to decorate, and [ImportServices] declares no service imported; register the service, or declare it with [ImportService] so the decorator wraps the instance the host provides",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT123"));
 
 	/// <summary>
 	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for a decorator with <c>AllKeys</c> over an imported
@@ -438,7 +469,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by '{1}' under all keys, but '{0}' is imported and only the host knows the keys it provides it under; name the keys to decorate in Keys",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT123"));
 
 	/// <summary>
 	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for a decorator with an empty <c>Keys</c>, which selects
@@ -450,7 +482,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by '{1}' with an empty Keys, which selects nothing to decorate; name the keys to decorate in Keys, or remove Keys to decorate the unkeyed service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT123"));
 
 	/// <summary>
 	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for an open decorator over an open import, whose closings
@@ -462,7 +495,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by the open decorator '{1}', but it is imported as an open generic, whose closings the container learns only from the dependencies that ask for them; declare each closing to decorate with [ImportService<T>]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT123"));
 
 	/// <summary>
 	///     A decorator's constructor has no parameter assignable to the decorated service type, or more than
@@ -475,7 +509,8 @@ internal static class Diagnostics
 		"The decorator '{0}' has no single constructor parameter that receives the inner '{1}': it has none that accepts it, or several with none converting to all the others; take '{1}' in one parameter, or make one parameter more derived than all the others",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT124"));
 
 	/// <summary>
 	///     An open generic registration's implementation and service have different arity, so no closed
@@ -488,7 +523,8 @@ internal static class Diagnostics
 		"The open generic registration of '{0}' for '{1}' is invalid: the implementation has {2} type parameter(s) but the service has {3}; their arity must match",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT125"));
 
 	/// <summary>
 	///     The form of <see cref="OpenGenericArityMismatch">AWT125</see> for an open generic implementation or service
@@ -502,7 +538,8 @@ internal static class Diagnostics
 		"The open generic registration of '{0}' for '{1}' is invalid: '{2}' is nested in the generic type '{3}', whose type parameters a closing of the service cannot supply; declare it outside the generic type",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT125"));
 
 	/// <summary>
 	///     A closed generic required from the graph cannot be constructed from an open generic
@@ -519,7 +556,8 @@ internal static class Diagnostics
 		"'{0}' cannot be constructed from the open generic '{1}': the type argument(s) violate its type-parameter constraints, and no other registration of '{2}' accepts them{3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT126"));
 
 	/// <summary>
 	///     The <c>typeof</c>-argument form of a lifetime attribute exists for open generics and must receive an
@@ -534,7 +572,8 @@ internal static class Diagnostics
 		"The open generic registration must use an unbound open generic type such as typeof(Repository<>); '{0}' is not an unbound generic type - register a closed or non-generic type with the generic attribute form instead",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT127"));
 
 	/// <summary>
 	///     A closed service is mapped onto an open generic implementation by applying its type arguments to the
@@ -549,7 +588,8 @@ internal static class Diagnostics
 		"The open generic implementation '{0}' does not expose the service '{1}' with its type parameters in declaration order, so a closed service cannot be mapped onto it by position; the implementation's type parameters must map one-to-one, in order, onto the service's",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT128"));
 
 	/// <summary>
 	///     Open generic expansion nested deeper than the supported limit, which almost always means the
@@ -565,7 +605,8 @@ internal static class Diagnostics
 		"Open generic expansion reached '{0}' at nesting depth {1} and was stopped; the open generic registrations likely form an unbounded recursion (an implementation depending on an ever-larger closed generic of the same registration)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT129"));
 
 	/// <summary>
 	///     A <c>[Composite&lt;TComposite, TService&gt;]</c> implementation has no constructor parameter that is a
@@ -578,7 +619,8 @@ internal static class Diagnostics
 		"The composite '{0}' must have a constructor parameter that is a collection of the composed service '{1}'; it has none",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT130"));
 
 	/// <summary>
 	///     The composite type is also registered as an ordinary member of the service it composes (e.g. a
@@ -592,7 +634,8 @@ internal static class Diagnostics
 		"The composite '{0}' is also registered as a member of the composed service '{1}'; a composite is excluded from its own fan-out, so that registration has no effect and is ignored",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT131"));
 
 	/// <summary>
 	///     More than one <c>[Composite&lt;_, TService&gt;]</c> names the same service. A service can have at most
@@ -605,7 +648,8 @@ internal static class Diagnostics
 		"The service '{0}' has more than one composite; a service can have at most one composite façade, so all but the first are ignored",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT132"));
 
 	/// <summary>
 	///     A <c>[Composite&lt;TComposite, TService&gt;]</c> has a collection constructor parameter, but its element
@@ -619,7 +663,8 @@ internal static class Diagnostics
 		"The composite '{0}' fans out over a collection of '{1}', not the composed service '{2}'; its collection parameter's element type must be exactly the composed service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT133"));
 
 	/// <summary>
 	///     A container-side composition attribute (a lifetime registration, <c>[Scan]</c>, <c>[Decorate]</c>,
@@ -639,7 +684,8 @@ internal static class Diagnostics
 		"'{0}' carries the composition attribute [{1}], but this assembly declares no [Container]; registration and composition belong on the [Container] (or an imported [Module]), not on domain code",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT134"));
 
 	/// <summary>
 	///     A resolver seam (<c>IAwaitenResolver</c>, <c>IAwaitenAsyncResolver</c>, <c>IAwaitenScope</c>,
@@ -659,7 +705,8 @@ internal static class Diagnostics
 		"'{0}' takes the resolver interface '{1}'; resolving from the container at run time hides real dependencies and defeats the compile-time graph check. Inject the dependency you need instead; only the [Container] composition root should hold '{1}'. If '{0}' adapts the container to a host's own dependency-injection surface, holding the resolver is the adaptation itself: suppress this in source with a justification.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT135"));
 
 	/// <summary>
 	///     A property marked <c>[Inject]</c> has no <c>set</c> or <c>init</c> accessor the container can assign
@@ -672,7 +719,8 @@ internal static class Diagnostics
 		"The property '{0}' on '{1}' is marked [Inject] but has no set or init accessor the container can assign through; give it an accessible init/set accessor or remove [Inject]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT136"));
 
 	/// <summary>
 	///     A <c>[Scan]</c> matched no concrete type assignable to its marker in the container's assembly, so
@@ -684,7 +732,8 @@ internal static class Diagnostics
 		"No concrete types assignable to '{0}' were found in this assembly to register",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT138"));
 
 	/// <summary>
 	///     A <c>[Scan(As = ScanAs.Marker)]</c> matched a concrete type that implements no interface assignable to
@@ -697,7 +746,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan but implements no interface assignable to '{1}', so it is not registered; scan a marker interface or add the ScanAs.Self flag",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT139"));
 
 	/// <summary>
 	///     A <c>[Scan(InAssembliesOf = …)]</c> names an assembly that holds no concrete type assignable to the
@@ -710,7 +760,8 @@ internal static class Diagnostics
 		"The assembly '{0}' named by InAssembliesOf has no concrete type to scan for this marker; check that the project is referenced and the marker type is correct",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT140"));
 
 	/// <summary>
 	///     A <c>[Scan(SkipUnconstructable = true)]</c> matched a concrete type the container cannot construct
@@ -724,7 +775,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan but cannot be constructed ({1}), so it is not registered",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT141"));
 
 	/// <summary>
 	///     Two <c>[Scan]</c> attributes match the same implementation with different lifetimes; the first
@@ -738,7 +790,8 @@ internal static class Diagnostics
 		"'{0}' is matched by scans with conflicting lifetimes ({1} and {2}); the first scan's {1} is used",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT142"));
 
 	/// <summary>
 	///     A <c>[Scan(InAssembliesOf = …)]</c> resolved to no assembly at all (an empty array, or entries that
@@ -753,7 +806,8 @@ internal static class Diagnostics
 		"This scan's InAssembliesOf names no assembly to scan, so the scan registers nothing; list one type from each assembly to scan",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT143"));
 
 	/// <summary>
 	///     A property marked <c>[Inject(Deferred = true)]</c> has only an <c>init</c> accessor, or is
@@ -768,7 +822,8 @@ internal static class Diagnostics
 		"The property '{0}' on '{1}' is marked [Inject(Deferred = true)] but is {2}; a deferred property is assigned after construction and omitted from the object initializer, so it needs a plain set accessor and must not be required (init accessors and required members can only be satisfied inside an object initializer)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT144"));
 
 	/// <summary>
 	///     Every participant in a cycle of <c>[Inject(Deferred = true)]</c> properties is a transient. A deferred
@@ -783,7 +838,8 @@ internal static class Diagnostics
 		"Deferred property cycle in which every participant is a transient detected: {0}. A deferred property breaks a cycle only when a participant is cached (singleton or scoped) before it is wired, so a re-entrant resolve returns that cached instance; when every participant is a transient nothing is cached anywhere, so this cycle would recurse forever. Make at least one participant singleton or scoped, or break the cycle.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT145"));
 
 	/// <summary>
 	///     A cycle of <c>[Inject(Deferred = true)]</c> properties includes an async-tainted participant (one that
@@ -800,7 +856,8 @@ internal static class Diagnostics
 		"Deferred property cycle through an async-initialized service detected: {0}. A deferred property breaks a cycle only when a re-entrant resolve returns the already-cached instance; an async resolver publishes its memoized task only after that re-entrant resolve has returned, so this cycle would overflow the stack or deadlock at runtime. Break the cycle, or make its participants synchronous (without an async initializer or an asynchronous OnActivated hook, and not dependent on an async service).",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT146"));
 
 	/// <summary>
 	///     A cycle that involves at least one <c>[Inject(Deferred = true)]</c> property is only partly broken: it
@@ -820,7 +877,8 @@ internal static class Diagnostics
 		"The cycle {0} is only partly broken by a deferred property: it still has at least one construction-time edge (a constructor parameter, a plain [Inject] property, or an eager Owned<T>/Task<T>). Resolution that traverses that edge re-enters a participant before it is cached, so it constructs a duplicate of a cached (singleton/scoped) participant - or recurses forever when every participant is a transient. To fix it, turn the remaining constructor parameter (or plain [Inject] property) into an [Inject(Deferred = true)] property, or remove one of the dependencies to break the cycle.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT147"));
 
 	/// <summary>
 	///     Two overridable <c>Default</c> registrations provide the same service and neither is overridden by a
@@ -835,7 +893,8 @@ internal static class Diagnostics
 		"'{0}' has more than one overridable default registration and none overrides the others; the first declared wins",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT148"));
 
 	/// <summary>
 	///     An <c>[Import]</c> names a type that is not marked <c>[Module]</c>. Only modules can be imported, so
@@ -849,7 +908,8 @@ internal static class Diagnostics
 		"'{0}' is imported but is not marked [Module], so nothing is imported from it; only [Module] types can be imported",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT149"));
 
 	/// <summary>
 	///     An imported <c>[Module]</c> carries its own <c>[Import]</c>, which is not followed: module imports are
@@ -863,7 +923,8 @@ internal static class Diagnostics
 		"The imported module '{0}' has its own [Import], which is not followed; import the nested module directly, because module imports are resolved one level deep",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT150"));
 
 	/// <summary>
 	///     An imported <c>[Module]</c> declares no <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c>
@@ -877,7 +938,8 @@ internal static class Diagnostics
 		"The imported module '{0}' declares no registrations, so it contributes nothing",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT151"));
 
 	/// <summary>
 	///     An imported <c>[Module]</c> class is not declared <c>static</c>. Like a container, a module is a
@@ -890,7 +952,8 @@ internal static class Diagnostics
 		"'{0}' must be a static class. A [Module] class is a definition whose factory and instance members are static; it is imported, never instantiated.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT152"));
 
 	/// <summary>
 	///     A module registration's <c>Factory</c>/<c>Instance</c> member exists on the module but is not
@@ -907,7 +970,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced: the member '{2}' exists on the module '{1}' but is not accessible from the generated container; make it public, or internal within a visible assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT153"));
 
 	/// <summary>
 	///     The form of <see cref="InaccessibleModuleMember">AWT153</see> for an internal member of an imported module of
@@ -920,7 +984,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced: the member '{2}' exists on the module '{1}' but is not accessible from the generated container: {3}; make it public, or internal within a visible assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT153"));
 
 	/// <summary>
 	///     <em>(Repurposed.)</em> An imported module needs code its own build generates, but its assembly carries
@@ -939,7 +1004,8 @@ internal static class Diagnostics
 		"The imported module '{0}' {1}, but its assembly carries no code generated for it; it was compiled without the Awaiten source generator (or with a version predating self-compiled modules), so the container cannot use it; rebuild the module's assembly with the Awaiten generator referenced",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT154"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleScanNotExpanded">AWT154</see> for a <c>[GeneratedScanRegistration]</c> whose
@@ -952,7 +1018,8 @@ internal static class Diagnostics
 		"The imported module '{0}' carries a generated scan registration of '{1}' whose factory '{2}' names no factory or skipped match in its generated code; its assembly was compiled with another version of the Awaiten source generator, so the container cannot use the match; rebuild the module's assembly with the version of the generator this container uses",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT154"));
 
 	/// <summary>
 	///     Two different imported modules register the same service key with different implementations at
@@ -977,7 +1044,8 @@ internal static class Diagnostics
 		"'{0}' is registered by both the imported modules '{1}' and '{2}'; the earlier import '{1}' wins single resolution - {3}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT155"));
 
 	/// <summary>
 	///     A generated <c>Root</c> or <c>Scope</c> is disposed synchronously (<c>using</c> or a direct
@@ -1009,7 +1077,8 @@ internal static class Diagnostics
 		"'{0}' is disposed synchronously, but its container owns {1}; this Dispose() throws when its drain reaches such a service - dispose with DisposeAsync ('await using')",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT156"));
 
 	/// <summary>
 	///     A property marked <c>[Inject(Optional = true)]</c> is <c>required</c>. An optional property is omitted
@@ -1023,7 +1092,8 @@ internal static class Diagnostics
 		"The property '{0}' on '{1}' is marked [Inject(Optional = true)] but is required; an optional property is omitted from the object initializer when its dependency is not registered, which a required member does not allow (the generated construction would fail with CS9035). Drop 'required', or drop 'Optional'.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT157"));
 
 	/// <summary>
 	///     A property marked <c>[Inject(Optional = true)]</c> has only an <c>init</c> accessor. It is still
@@ -1039,7 +1109,8 @@ internal static class Diagnostics
 		"The property '{0}' on '{1}' is marked [Inject(Optional = true)] but is init-only; when its dependency is not registered it is omitted from the object initializer and left at its default, and an init-only accessor cannot be assigned afterwards, so it stays default with no fallback. Give it a plain set accessor so a value can still be assigned after construction when the dependency is not registered.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT158"));
 
 	/// <summary>
 	///     A synthesized keyed collection (<c>IReadOnlyDictionary&lt;TKey, TService&gt;</c>) cannot be synthesized under
@@ -1054,7 +1125,8 @@ internal static class Diagnostics
 		"'{0}' requests a keyed dictionary with key type '{1}', which {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT159"));
 
 	/// <summary>
 	///     A <c>[FromKey]</c> is applied to a synthesized keyed collection
@@ -1069,7 +1141,8 @@ internal static class Diagnostics
 		"'{0}' applies [FromKey({1})] to the keyed collection '{2}', which resolves every keyed registration of its service type; remove the [FromKey], or register a dictionary service under that key to take precedence over synthesis",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT160"));
 
 	/// <summary>
 	///     A <c>[Singleton&lt;T&gt;(Eager = true)]</c> singleton is async-tainted in the strict default: it is
@@ -1084,7 +1157,8 @@ internal static class Diagnostics
 		"'{0}' is marked Eager but is async-initialized; it cannot be constructed synchronously at container build time - InitializeAsync already warms the async singletons, or opt into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)] to allow synchronous eager construction",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT161"));
 
 	/// <summary>
 	///     <see cref="EagerAsyncSingleton" /> in the build of the module that registers the singleton: the module does not
@@ -1099,7 +1173,8 @@ internal static class Diagnostics
 		"'{0}' is marked Eager but is async-initialized, so a container with the default AsyncSafety cannot construct it synchronously at build time and reports AWT161; drop Eager, since InitializeAsync already warms the async singletons, unless every importing container opts into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT161"));
 
 	/// <summary>
 	///     A <c>[RequestingType]</c> factory parameter is declared with a type other than
@@ -1112,7 +1187,8 @@ internal static class Diagnostics
 		"The parameter '{0}' of the factory for '{1}' is marked [RequestingType] but is not of type System.Type; a [RequestingType] parameter receives the requesting consumer's typeof(…), so it must be System.Type",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT162"));
 
 	/// <summary>
 	///     A factory has both a <c>[RequestingType]</c> parameter and an <c>[Arg]</c> runtime-argument
@@ -1126,7 +1202,8 @@ internal static class Diagnostics
 		"The factory for '{0}' has both a [RequestingType] parameter and an [Arg] runtime-argument parameter; a requesting-type factory is built per consumer and cannot also be a parameterized (Func<TArg…, T>) factory, so remove one",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT163"));
 
 	/// <summary>
 	///     An <c>OnActivated</c> / <c>OnRelease</c> registration names a member that is not a usable lifecycle
@@ -1140,7 +1217,8 @@ internal static class Diagnostics
 		"'{0}' cannot use the lifecycle hook '{1}': {2} has no accessible static method '{1}' accepting '{3}' and returning void, Task or ValueTask{4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT164"));
 
 	/// <summary>
 	///     <see cref="InvalidLifecycleHook">AWT164</see> for a registration without a marker closing whose hook names only
@@ -1153,7 +1231,8 @@ internal static class Diagnostics
 		"'{0}' cannot use the lifecycle hook '{1}': the method '{1}' on {2} is generic, and nothing binds its type parameter(s) {3} for this registration; declare '{1}' without type parameters, since only the closings of an open generic registration or [Scan] marker supply them",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT164"));
 
 	/// <summary>
 	///     An <c>OnActivated</c> / <c>OnRelease</c> lifecycle hook is set on a pre-built <c>Instance</c>
@@ -1166,7 +1245,8 @@ internal static class Diagnostics
 		"'{0}' sets an OnActivated/OnRelease lifecycle hook on a pre-built Instance, which the container does not own and never runs the hook around; remove the hook, or register the type for construction instead of as an Instance",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT165"));
 
 	/// <summary>
 	///     The same implementation is registered more than once with contradicting per-instance directives -
@@ -1183,7 +1263,8 @@ internal static class Diagnostics
 		"'{0}' is registered with conflicting {1} directives ({2} and {3}); coalescing keeps the first registration's directives, so the other is silently dropped. Declare a single {1} for the implementation.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT166"));
 
 	/// <summary>
 	///     The form of <see cref="ConflictingLifecycleDirectives">AWT166</see> for a <c>[Scan]</c> that names an
@@ -1198,7 +1279,8 @@ internal static class Diagnostics
 		"'{0}' is matched by a scan whose {1} hook is {2}, but its instance is owned by a registration of '{0}' whose {1} hook is {3}; the scan yields to that registration, so its hook would never run. Name the same {1} hook on the registration, or exclude '{0}' from the scan.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT166"));
 
 	/// <summary>
 	///     A <c>WhenInjectedInto</c> contextual binding never applies, because the named consumer type has no
@@ -1213,7 +1295,8 @@ internal static class Diagnostics
 		"The registration of '{0}' for '{1}' is never applied: '{1}' has no unkeyed direct '{0}' constructor parameter or [Inject] property to redirect (a [FromKey] dependency, one deferred behind Func/Lazy, or a collection does not qualify)",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT167"));
 
 	/// <summary>
 	///     A registration sets both <c>WhenInjectedInto</c> and <c>Key</c>. A contextual binding is stored under a
@@ -1227,7 +1310,8 @@ internal static class Diagnostics
 		"The registration of '{0}' sets both WhenInjectedInto and Key; a contextual binding is reached only through its consumer, so the Key is silently dropped. Remove one of the two.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT168"));
 
 	/// <summary>
 	///     Two different implementations set <c>WhenInjectedInto</c> for the same service and consumer, so both
@@ -1240,7 +1324,8 @@ internal static class Diagnostics
 		"'{0}' has more than one contextual binding for '{1}'; the contextual resolution into '{1}' would be ambiguous",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT169"));
 
 	/// <summary>
 	///     A <c>Key</c> property or <c>[FromKey]</c> uses a constant whose type is not a supported key type. A resolution key
@@ -1253,7 +1338,8 @@ internal static class Diagnostics
 		"'{0}' uses an unsupported key type '{1}'; a resolution key must be a string, an enum value, or a typeof(...)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT170"));
 
 	/// <summary>
 	///     A closing of an open generic <c>[Decorate]</c>/<c>[Composite]</c> cannot be constructed because its type
@@ -1269,7 +1355,8 @@ internal static class Diagnostics
 		"'{0}' cannot be constructed from the open generic '{1}': the type argument(s) violate its type-parameter constraints, so that closing is left as-is",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT171"));
 
 	/// <summary>
 	///     A <c>[Scan]</c> matched concrete types assignable to its marker, but its <c>NamePatterns</c>,
@@ -1283,7 +1370,8 @@ internal static class Diagnostics
 		"Concrete types assignable to '{0}' were found, but the scan's name, namespace and exclude filters removed them all, so nothing is registered",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT172"));
 
 	/// <summary>
 	///     A <c>[Scan]</c> exclusion (an <c>Exclude</c> type, or a <c>!</c>-prefixed <c>NamePatterns</c>/
@@ -1296,7 +1384,8 @@ internal static class Diagnostics
 		"The scan exclusion '{0}' matched no candidate, so it has no effect; it is likely stale after a rename",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT173"));
 
 	/// <summary>
 	///     A <c>[Scan]</c> include pattern matches every candidate (a name pattern of <c>*</c>, or a namespace
@@ -1308,7 +1397,8 @@ internal static class Diagnostics
 		"The scan pattern '{0}' matches every candidate, so it does not narrow the scan",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT174"));
 
 	/// <summary>
 	///     A type is declared <c>[ImportService]</c> (drawn from the external provider) yet is also registered on the
@@ -1322,7 +1412,8 @@ internal static class Diagnostics
 		"'{0}' is drawn from the external provider by [ImportService] but also registered on the container; a type is either host-owned or Awaiten-owned. Remove the registration or the [ImportService] declaration.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT175"));
 
 	/// <summary>
 	///     An <c>[InjectProperty&lt;TImplementation&gt;(name)]</c> on the container names a member that is not a
@@ -1336,7 +1427,8 @@ internal static class Diagnostics
 		"'{1}' has no settable property '{0}' for [InjectProperty] to fill; check the name (use nameof), and that it is a property with a set/init accessor rather than a field, method or read-only member",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT177"));
 
 	/// <summary>
 	///     An <c>[InjectProperty&lt;TImplementation&gt;]</c> targets a <c>TImplementation</c> produced by a
@@ -1351,7 +1443,8 @@ internal static class Diagnostics
 		"'{1}' is produced by a Factory or Instance registration, so its property '{0}' cannot be filled by [InjectProperty]; property injection applies only to a container-constructed instance",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT178"));
 
 	/// <summary>
 	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for a type a module or base of another
@@ -1366,7 +1459,8 @@ internal static class Diagnostics
 		"'{1}' is built by the generated factory of '{2}' because {3}, so its property '{0}' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of '{2}', so the container constructs '{1}' itself",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT178"));
 
 	/// <summary>
 	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for an init-only property of a type a module
@@ -1380,7 +1474,8 @@ internal static class Diagnostics
 		"'{1}' is built by the generated factory of '{2}', so its init-only property '{0}' cannot be filled by [InjectProperty], since the container can only set it after the factory returned the instance; give the property a set accessor",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT178"));
 
 	/// <summary>
 	///     Two <c>[InjectProperty]</c> entries of the same shape (both closed or both open-generic) name the same
@@ -1399,7 +1494,8 @@ internal static class Diagnostics
 		"'{1}' has more than one [InjectProperty] entry for the property '{0}'; a property is injected once, so the duplicate is ignored",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT179"));
 
 	/// <summary>
 	///     An <c>[InjectProperty&lt;TImplementation&gt;]</c> targets a <c>TImplementation</c> that has no
@@ -1415,7 +1511,8 @@ internal static class Diagnostics
 		"'{1}' has no container-constructed registration, so its [InjectProperty] entry for '{0}' is never applied; register '{1}' as a constructed service, or for a generic definition make sure a consumer requires one of its closings",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT180"));
 
 	/// <summary>
 	///     A property is named by both <c>[Inject]</c> and a container-side
@@ -1430,7 +1527,8 @@ internal static class Diagnostics
 		"The property '{0}' on '{1}' carries [Inject] and also has an [InjectProperty] entry; the [Inject] member wins, so the entry's Optional/Deferred/Key are ignored - remove one",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT181"));
 
 	/// <summary>
 	///     A <c>[Scan(As = ScanAs.MatchingInterface)]</c> matched a concrete type that implements no interface named
@@ -1445,7 +1543,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan but implements no interface named '{1}', so it is not registered; implement '{1}' or add the ScanAs.Self flag",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT182"));
 
 	/// <summary>
 	///     A markerless <c>[Scan]</c> (the parameterless attribute) is misconfigured: its <c>As</c> includes the
@@ -1459,7 +1558,8 @@ internal static class Diagnostics
 		"The markerless [Scan] {0}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT183"));
 
 	/// <summary>
 	///     A markerless <c>[Scan]</c> matched candidate types but registered none of them: either its filters
@@ -1472,7 +1572,8 @@ internal static class Diagnostics
 		"The markerless [Scan] matched no type to register; check its NamePatterns, NamespacePatterns and InAssembliesOf, and (for ScanAs.MatchingInterface) that matches follow the I + name convention",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT184"));
 
 	/// <summary>
 	///     A <c>[Scan]</c>'s <c>As</c> resolved to no <c>ScanAs</c> flag, so the scan would expose its matches
@@ -1486,7 +1587,8 @@ internal static class Diagnostics
 		"The scan's As resolved to no ScanAs flag, so it would register nothing; combine flags with | (not &), or omit As for the Self default",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT185"));
 
 	/// <summary>
 	///     An <c>Owned&lt;T&gt;</c>-family relationship (a bare <c>Owned&lt;T&gt;</c>, <c>Func&lt;…, Owned&lt;T&gt;&gt;</c>,
@@ -1508,7 +1610,8 @@ internal static class Diagnostics
 		"'{0}' consumes '{1}' through an Owned<T> relationship, but '{1}' is produced by a requesting-type factory, which has no owner scope; Owned<T> (and its Func/Task forms) is not supported here - consume '{1}' directly, or through Func<T> or Lazy<T>",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT186"));
 
 	/// <summary>
 	///     A <c>[Scan(As = ScanAs.MatchingInterface)]</c> matched a type that implements several accessible
@@ -1525,7 +1628,8 @@ internal static class Diagnostics
 		"'{0}' implements multiple interfaces named '{1}', so it is registered under each of them; keep a single convention interface or exclude the type from the scan",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT187"));
 
 	/// <summary>
 	///     A scan exposure selected only interfaces the generated container cannot reference: the match implements
@@ -1540,7 +1644,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan, but its interface '{1}' is not accessible to the generated container, so it is not registered; widen the interface's accessibility or add the ScanAs.Self flag",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT188"));
 
 	/// <summary>
 	///     A lifecycle hook parameter (after the leading instance parameter of an <c>OnActivated</c> /
@@ -1555,7 +1660,8 @@ internal static class Diagnostics
 		"The parameter '{0}' of the lifecycle hook for '{1}' is marked [Arg], but a hook's parameters are resolved from the graph; runtime arguments are supplied only through a Func<…> factory to constructor parameters, never to a lifecycle hook",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT189"));
 
 	/// <summary>
 	///     An <c>OnActivated</c> / <c>OnRelease</c> registration names a method that is overloaded: more than one
@@ -1571,7 +1677,8 @@ internal static class Diagnostics
 		"'{0}' has an ambiguous lifecycle hook: {2} has more than one accessible method '{1}' accepting the instance, so the choice would be arbitrary. Give the hook method a unique name.",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT190"));
 
 	/// <summary>
 	///     An <c>OnRelease</c> hook parameter is a <c>Func</c>/<c>Lazy</c> relationship (including their
@@ -1587,7 +1694,8 @@ internal static class Diagnostics
 		"The parameter '{0}' of the OnRelease lifecycle hook for '{1}' defers resolution behind a Func/Lazy, but a release hook runs during its owner's teardown, when the container no longer resolves; take the dependency directly, so it is captured at construction",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT191"));
 
 	/// <summary>
 	///     <c>SuppressDisposal</c> is set on a pre-built <c>Instance</c> registration. The container does not own a
@@ -1601,7 +1709,8 @@ internal static class Diagnostics
 		"'{0}' sets SuppressDisposal on a pre-built Instance, which the container does not own or dispose, so it has no effect; remove SuppressDisposal, or register the type for construction instead of as an Instance",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT192"));
 
 	/// <summary>
 	///     A <c>[Scan]</c> matched a type the generated container cannot name: it is internal to another assembly
@@ -1622,7 +1731,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan, but the type itself is not accessible to the generated container, so it is not registered; widen the type's accessibility (or grant the container's assembly InternalsVisibleTo), or exclude it from the scan with a NamePatterns/NamespacePatterns entry",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT193"));
 
 	/// <summary>
 	///     The private form of <see cref="ScanTypeInaccessible">AWT193</see>: a <c>[Scan]</c> matched a private or
@@ -1642,7 +1752,8 @@ internal static class Diagnostics
 		"'{0}' matched the scan, but {1}, so it is not registered; {2}, or exclude it from the scan",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT193"));
 
 	/// <summary>
 	///     A <c>[Module]</c> carries a <c>[Scan]</c>, or a registration of an implementation another assembly
@@ -1657,7 +1768,8 @@ internal static class Diagnostics
 		"The module '{0}' {1} but is not partial (or is nested in a type that is not), so it cannot be self-compiled; add the partial modifier to the module class and every type containing it",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT194"));
 
 	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> match or module registration has a constructor or factory member, named
@@ -1673,7 +1785,8 @@ internal static class Diagnostics
 		"{0}, but {1} has the type '{2}', which is not accessible outside the module's assembly, so the generated factory cannot expose it; widen the parameter type's accessibility or {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT195"));
 
 	/// <summary>
 	///     The module-private form of <see cref="ModuleScanParameterInaccessible">AWT195</see>: the type of the
@@ -1688,7 +1801,8 @@ internal static class Diagnostics
 		"{0}, but {1} needs '{2}', which is private to the module or a class containing it, so no container can register or resolve it; depend on an accessible service that '{2}' implements instead, and register '{2}' under that service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT195"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleScanParameterInaccessible">AWT195</see> for a type private to the module whose
@@ -1704,7 +1818,8 @@ internal static class Diagnostics
 		"{0}, but {1}, so the generated factory cannot take it; fix what keeps the module from building that service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT195"));
 
 	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> matched a type but no exposure selected an interface accessible
@@ -1721,7 +1836,8 @@ internal static class Diagnostics
 		"'{0}' matched the module scan, but no exposure selected an interface accessible outside the module's assembly, so a consumer could not resolve it; expose it through a public interface (ScanAs.MatchingInterface or ScanAs.Marker) or exclude it from the scan",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT196"));
 
 	/// <summary>
 	///     A self-compiled module registration of an inaccessible implementation would be exposed under more than one
@@ -1738,7 +1854,8 @@ internal static class Diagnostics
 		"{0}, but it would be exposed under multiple interfaces ({1}); a self-compiled implementation supports a single exposure, so {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT197"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleScanMultipleExposures">AWT197</see> for a self-compiled module <c>[Scan]</c> match
@@ -1752,7 +1869,8 @@ internal static class Diagnostics
 		"{0}, but it would be exposed under multiple interfaces ({1}), and {2}, so no generated handle can {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT197"));
 
 	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> match or module registration carries injection metadata the
@@ -1767,7 +1885,8 @@ internal static class Diagnostics
 		"{0}, but {1}, which the generated factory cannot mirror and would silently drop; remove the attribute, {2}, or register it through a hand-written module factory",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT200"));
 
 	/// <summary>
 	///     A generic <c>[Module]</c> (or one nested in a generic type) declares a <c>[Scan]</c>, or a registration of
@@ -1782,7 +1901,8 @@ internal static class Diagnostics
 		"The module '{0}' {1} but is generic (or nested in a generic type), so no closed module exists for a consumer to import; move it onto a non-generic module",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT201"));
 
 	/// <summary>
 	///     A module <c>[Scan]</c> declares <c>InAssembliesOf</c>. A self-compiled scan exists to reach the module's
@@ -1797,7 +1917,8 @@ internal static class Diagnostics
 		"The module '{0}' declares a [Scan] with InAssembliesOf, but a self-compiled scan sweeps only the module's own assembly (another assembly's internal types stay invisible to it, and its public types a container [Scan] already covers); remove InAssembliesOf or move the [Scan] onto the container",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT202"));
 
 	/// <summary>
 	///     A generic lifecycle hook (an <c>OnActivated</c>/<c>OnRelease</c> named on a
@@ -1813,7 +1934,8 @@ internal static class Diagnostics
 		"The generic lifecycle hook '{1}' could bind '{0}' through more than one closed marker form ({2}), so its type arguments are ambiguous; register the type explicitly with the intended hook, or ensure only one closed form binds it",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT198"));
 
 	/// <summary>
 	///     Two <c>[Scan]</c> attributes match the same implementation and name different methods for the same
@@ -1831,7 +1953,8 @@ internal static class Diagnostics
 		"'{0}' is matched by scans naming conflicting {1} hooks ('{2}' and '{3}'); the first scan's '{2}' is used",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT199"));
 
 	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> or module registration names a lifecycle hook whose parameter after
@@ -1849,7 +1972,8 @@ internal static class Diagnostics
 		"{0}, but its {1} hook parameter of type '{2}' is not accessible outside the module's assembly, so the generated hook wrapper cannot expose it; widen the parameter type's accessibility, resolve a different dependency, or drop the hook",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT203"));
 
 	/// <summary>
 	///     The module-private form of <see cref="ModuleScanHookParameterInaccessible">AWT203</see>: a hook parameter's type
@@ -1862,7 +1986,8 @@ internal static class Diagnostics
 		"{0}, but its {1} hook parameter '{2}' needs '{3}', which is private to the module or a class containing it, so no container can register or resolve it; depend on an accessible service that '{3}' implements instead, and register '{3}' under that service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT203"));
 
 	/// <summary>
 	///     A self-compiled module <c>[Scan]</c> or module registration names a lifecycle hook with a parameter (after the instance) marked
@@ -1880,7 +2005,8 @@ internal static class Diagnostics
 		"{0}, but its {1} hook parameter '{2}' is marked {3}, which the generated hook wrapper cannot mirror and would silently drop; remove the attribute, resolve the dependency plainly, or drop the hook",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT204"));
 
 	/// <summary>
 	///     User code constructs an <c>Owned&lt;T&gt;</c> disposal handle with <c>new</c>. The handle disposes the scope
@@ -1895,7 +2021,8 @@ internal static class Diagnostics
 		"{0} is created by the container; resolve {0} or inject Func<{0}> instead. A handle built by hand disposes whatever scope it is given, the container root included.",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT205"));
 
 	/// <summary>
 	///     A closed <c>typeof</c> registration (<c>[Singleton(typeof(Repository), typeof(IRepository))]</c>) names an
@@ -1909,7 +2036,8 @@ internal static class Diagnostics
 		"'{0}' cannot be registered as '{1}': the implementation of a typeof registration must be a class or interface assignable to its service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT206"));
 
 	/// <summary>
 	///     <c>Eager</c> or <c>Instance</c> on an open generic <c>typeof</c> registration. Both describe one concrete
@@ -1923,7 +2051,8 @@ internal static class Diagnostics
 		"{0} needs a closed type, but '{1}' is an open generic; register the closings you want with a closed type instead",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT207"));
 
 	/// <summary>
 	///     The <c>Factory</c> of an open generic <c>typeof</c> registration must be a generic method with exactly the
@@ -1937,7 +2066,8 @@ internal static class Diagnostics
 		"'{0}' is an open generic, so its factory '{1}' on {2} must be a generic method with exactly {3} type parameter(s), mapped in declaration order onto the service's",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT208"));
 
 	/// <summary>
 	///     A closing of an open generic <c>typeof</c> registration with a generic <c>Factory</c> violates the factory
@@ -1952,7 +2082,8 @@ internal static class Diagnostics
 		"'{0}' cannot be produced by the generic factory '{1}': the type argument(s) violate its type-parameter constraints",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT209"));
 
 	/// <summary>
 	///     A key in a decorator's <c>Keys</c> matches no registration of the decorated service, so that chain has
@@ -1966,7 +2097,8 @@ internal static class Diagnostics
 		"'{0}' is decorated by '{1}' under key '{2}', but no registration of '{0}' has that key; register it under that key or remove the key from Keys",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT210"));
 
 	/// <summary>
 	///     A decorator sets both <c>Keys</c> and <c>AllKeys</c>. <c>AllKeys</c> already selects every key, so the
@@ -1978,7 +2110,8 @@ internal static class Diagnostics
 		"The decorator '{0}' for '{1}' sets both Keys and AllKeys; set Keys to decorate selected keys, or AllKeys to decorate every key",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT211"));
 
 	/// <summary>
 	///     A keyed composite's <c>Key</c> matches no registration of the composed service, so it has nothing to
@@ -1990,7 +2123,8 @@ internal static class Diagnostics
 		"The composite '{0}' fronts '{1}' under key '{2}', but no registration of '{1}' has that key; register the members under that key or change the composite's Key",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT212"));
 
 	/// <summary>
 	///     A <c>Type</c>-keyed dictionary dependency cannot be synthesized as a runtime-type dispatch dictionary: its
@@ -2004,7 +2138,8 @@ internal static class Diagnostics
 		"'{0}' requests the runtime-type dispatch dictionary '{1}', which {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT213"));
 
 	/// <summary>
 	///     A container is projected into Microsoft.Extensions.DependencyInjection (<c>AddAwaitenContainer&lt;TRoot&gt;</c>
@@ -2020,7 +2155,8 @@ internal static class Diagnostics
 		"'{0}' is projected into Microsoft.Extensions.DependencyInjection, but its container suppresses the disposal of '{1}', which MS.DI would dispose anyway, so the projection throws at startup; remove SuppressDisposal, register a pre-built Instance you own, or resolve the service from the container directly (AwaitenServiceProvider)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT214"));
 
 	/// <summary>
 	///     The <c>typeof</c> argument of an <c>[ImportService(typeof(…))]</c> or an
@@ -2035,7 +2171,8 @@ internal static class Diagnostics
 		"The typeof argument '{1}' of [{0}] is neither a closed type nor an unbound generic definition; pass a closed type such as typeof(Repository<Order>) or an unbound generic definition with every type argument omitted such as typeof(Repository<>)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT215"));
 
 	/// <summary>
 	///     A registration's implementation (for a <c>Factory</c> or <c>Instance</c> registration its registered type) is,
@@ -2052,7 +2189,8 @@ internal static class Diagnostics
 		"'{0}' cannot be registered: '{1}' is private or protected and {2}; {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT216"));
 
 	/// <summary>
 	///     The <c>[Arg]</c> form of <see cref="RegisteredTypeLessAccessible">AWT216</see>: a runtime argument type of the
@@ -2066,7 +2204,8 @@ internal static class Diagnostics
 		"'{0}' cannot be registered: its [Arg] type '{1}' is private or protected, but the internal resolver members of the generated Root and Scope take runtime arguments as parameters; make '{1}' internal or public",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT216"));
 
 	/// <summary>
 	///     A typed <c>Resolve&lt;T&gt;()</c>, <c>ResolveAsync&lt;T&gt;()</c>, <c>Resolve(typeof(T))</c> or
@@ -2085,7 +2224,8 @@ internal static class Diagnostics
 		"'{0}' has no {1} on '{2}', so this {3} throws at run time; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT218"));
 
 	/// <summary>
 	///     A typed resolve on a generated <c>Root</c> or <c>Scope</c> names a service the container has, unkeyed or
@@ -2102,7 +2242,8 @@ internal static class Diagnostics
 		"This {0} on '{1}' throws at run time: {2}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT219"));
 
 	/// <summary>
 	///     <c>[Container(Extends = typeof(…))]</c> names a type that is not a usable base: it is not a <c>[Container]</c>,
@@ -2115,7 +2256,8 @@ internal static class Diagnostics
 		"'{0}' extends '{1}', but {2}, so nothing is inherited; Extends must name a non-generic [Container]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT222"));
 
 	/// <summary>
 	///     <c>[Container(Extends = typeof(…))]</c> names the container itself. Nothing is inherited.
@@ -2126,7 +2268,8 @@ internal static class Diagnostics
 		"'{0}' names itself in Extends; Extends names another [Container] whose composition this one starts from",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT223"));
 
 	/// <summary>
 	///     The base named by <c>Extends</c> itself extends another container. Extending is one level deep, so a chain of
@@ -2139,7 +2282,8 @@ internal static class Diagnostics
 		"'{0}' extends '{1}', which itself extends '{2}'; a container can extend only a container without Extends, so extend '{2}' directly or move what '{1}' adds into a [Module]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT224"));
 
 	/// <summary>
 	///     A container with <c>Extends</c> sets a <c>[Container]</c> option that decides how its graph is validated
@@ -2152,7 +2296,8 @@ internal static class Diagnostics
 		"'{0}' sets {1}, but a container with Extends inherits {1} from its base '{2}', so its graph is validated exactly like the base's; remove {1} from '{0}'",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT225"));
 
 	/// <summary>
 	///     A declaration a container inherits through <c>Extends</c> needs a type or member that the extending container
@@ -2167,7 +2312,8 @@ internal static class Diagnostics
 		"{0} is not accessible from '{1}', which inherits it from '{2}' through Extends; make it public, or internal and grant the assembly of '{1}' [InternalsVisibleTo]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT226"));
 
 	/// <summary>
 	///     AWT226 for a type private to the base container, or to a class that contains it, that an extending container
@@ -2183,7 +2329,8 @@ internal static class Diagnostics
 		"{0} cannot be built by '{1}', which inherits it from '{2}' through Extends: {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT226"));
 
 	/// <summary>
 	///     An imported module of another assembly declares a decorator, a composite or an open generic registration
@@ -2200,7 +2347,8 @@ internal static class Diagnostics
 		"The imported module '{0}' declares {1} '{2}', which this container cannot construct, and the module generated no factory for it; make '{2}' and its constructor public, or grant this assembly InternalsVisibleTo",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT230"));
 
 	/// <summary>
 	///     An imported module of another assembly registers an implementation this container cannot construct, and the
@@ -2220,7 +2368,8 @@ internal static class Diagnostics
 		"The imported module '{0}' registers '{1}', which this container cannot construct, and the module's assembly generated no {2} for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a <c>Factory</c> registration: the
@@ -2233,7 +2382,8 @@ internal static class Diagnostics
 		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container cannot call, and the module's assembly generated no wrapper for it because {4}; {5}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a decorator or composite, which the
@@ -2245,7 +2395,8 @@ internal static class Diagnostics
 		"The imported module '{0}' declares {1} '{2}', which this container cannot construct, and the module's assembly generated no factory for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a hook with another overload this
@@ -2259,7 +2410,8 @@ internal static class Diagnostics
 		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container does not run, because {4}; give the hook methods distinct names",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a public type the container could
@@ -2285,7 +2437,8 @@ internal static class Diagnostics
 		"The imported module '{0}' registers '{1}' through its Factory member '{2}', which this container cannot call, and the module's assembly generated no wrapper for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     A lifecycle hook is asynchronous in a way the container cannot run: an <c>OnActivated</c> hook returns a
@@ -2298,7 +2451,8 @@ internal static class Diagnostics
 		"'{0}' cannot use the lifecycle hook '{1}': {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT232"));
 
 	/// <summary>
 	///     An <c>[AsyncInitializer&lt;T&gt;(method)]</c> names no method the container can await through <c>T</c>: there is
@@ -2312,7 +2466,8 @@ internal static class Diagnostics
 		"The async initializer '{0}.{1}' cannot be used: {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT233"));
 
 	/// <summary>
 	///     An <c>[AsyncInitializer&lt;T&gt;]</c> convention initializes an implementation, but the code that has to call it
@@ -2326,7 +2481,8 @@ internal static class Diagnostics
 		"{0} is initialized by the async initializer '{1}.{2}', but {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT234"));
 
 	/// <summary>
 	///     A <c>[Module]</c> or <c>[Container]</c> declares a member named <c>Internals</c>, the name of the nested class
@@ -2338,7 +2494,8 @@ internal static class Diagnostics
 		"'{0}' declares a member named 'Internals', which is reserved for the class that holds its generated members; rename the member",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT235"));
 
 	/// <summary>
 	///     In a module's own build, a generated factory needs an internal service that the module does not register but
@@ -2351,7 +2508,8 @@ internal static class Diagnostics
 		"{0}, but {1} needs the internal service '{2}', which is registered only by {3}, so a container in another assembly cannot provide it to '{4}'; register '{2}' in '{4}' too, or move both registrations into one module",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT236"));
 
 	/// <summary>
 	///     In a module's own build, a generated factory needs an internal service the module registers, but in a shape
@@ -2364,7 +2522,8 @@ internal static class Diagnostics
 		"{0}, but {1} takes the internal service '{2}' as '{3}', which the generated factory cannot pass on to a container in another assembly; take '{2}' directly, or as Func<T>, Lazy<T>, Owned<T>, Func<Owned<T>>, Func<TArg..., T>, Func<TArg..., Owned<T>> or a collection of T",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT237"));
 
 	/// <summary>
 	///     A container imports a module of another assembly whose generated members take the handle of an internal
@@ -2377,7 +2536,8 @@ internal static class Diagnostics
 		"The imported module '{0}' needs the internal service '{1}', which the module '{2}' of the same assembly registers; import '{2}' too",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT238"));
 
 	/// <summary>
 	///     A scan match of an imported module in another assembly and another registration or scan match of the same
@@ -2391,7 +2551,8 @@ internal static class Diagnostics
 		"'{0}' is matched by the [Scan] of the imported module '{1}' as '{2}', but this container builds its one instance of '{0}' as '{3}', which does not convert to '{2}', and cannot construct '{0}' itself; the match's generated factory would build a second instance, so the match is dropped; grant this assembly InternalsVisibleTo in the module's assembly, or exclude '{0}' from the scan",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT240"));
 
 	/// <summary>
 	///     The form of <see cref="ScanMatchNotShared">AWT240</see> for two imported modules of another assembly whose scans
@@ -2405,7 +2566,8 @@ internal static class Diagnostics
 		"'{0}' is matched by the [Scan]s of the imported modules '{1}' and '{2}', which each build it through a generated handle of their own, while a container in their assembly shares one instance; the matches of '{2}' are dropped; import only one of the modules, grant this assembly InternalsVisibleTo in their assembly, or exclude '{0}' from one of the scans",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT240"));
 
 	/// <summary>
 	///     A registration of an implementation that an imported module of another assembly builds through a generated
@@ -2419,7 +2581,8 @@ internal static class Diagnostics
 		"'{0}' is built through a generated handle of the imported module '{1}', which this registration of '{0}' shares in a container of the module's own assembly, but {2}; {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT241"));
 
 	/// <summary>
 	///     A relationship (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>, <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> and their
@@ -2435,7 +2598,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', a relationship over '{3}', which the container imports from its external resolver only as a direct dependency; depend on '{3}' directly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT242"));
 
 	/// <summary>
 	///     The project compiles with a C# version older than the code the generator would emit for a container or module
@@ -2447,7 +2611,8 @@ internal static class Diagnostics
 		"The code Awaiten generates for '{0}' needs C# {1} or later, but the project compiles with C# {2}; set <LangVersion> to {1} or later, for example latest",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT243"));
 
 	/// <summary>
 	///     A container constructs a type whose internal <c>[Inject]</c> property is declared in another assembly and not
@@ -2461,7 +2626,8 @@ internal static class Diagnostics
 		"'{0}' constructs '{1}', whose [Inject] property '{2}' is declared in the assembly '{3}' and is not accessible from this assembly, so it would be left unset; make the property and its setter public, register '{1}' through a [Module] of '{3}', whose generated factory sets an internal property, or grant this assembly [InternalsVisibleTo] in '{3}'",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT244"));
 
 	/// <summary>
 	///     A <c>Factory</c> or <c>Instance</c> member whose declared type is nullable at its top level (a nullable reference
@@ -2480,7 +2646,8 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		description: "The container does not check what a Factory or Instance member produces. A singleton or scoped instance that is null counts as not built yet on a synchronous resolve, so its factory runs again on every one, and for a disposable type each run adds another entry to the disposal list. Consumers, decorators, OnActivated hooks and async initializers receive null, so an async initializer throws a NullReferenceException; a collection contains null, and the untyped Resolve(Type) returns null. Declare the member non-nullable, or register a null object that does nothing in place of null.");
+		description: "The container does not check what a Factory or Instance member produces. A singleton or scoped instance that is null counts as not built yet on a synchronous resolve, so its factory runs again on every one, and for a disposable type each run adds another entry to the disposal list. Consumers, decorators, OnActivated hooks and async initializers receive null, so an async initializer throws a NullReferenceException; a collection contains null, and the untyped Resolve(Type) returns null. Declare the member non-nullable, or register a null object that does nothing in place of null.",
+		helpLinkUri: HelpLink("AWT245"));
 
 	/// <summary>
 	///     The <c>When</c> of a <c>[Decorate]</c> names no member the root can evaluate as its predicate: the type that
@@ -2494,7 +2661,8 @@ internal static class Diagnostics
 		"The decorator predicate '{0}' is not usable: {1}; name a static bool method, property or field of the type that declares the [Decorate]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT246"));
 
 	/// <summary>
 	///     The <c>When</c> of a <c>[Decorate]</c> on a module or an extended base container names a predicate the generated
@@ -2509,7 +2677,8 @@ internal static class Diagnostics
 		"The decorator predicate '{0}' is not accessible from the container: {1}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT247"));
 
 	/// <summary>
 	///     A decorator predicate takes a parameter the root cannot supply before it evaluates the predicate once: a runtime
@@ -2522,7 +2691,8 @@ internal static class Diagnostics
 		"The decorator predicate '{0}' cannot take '{1}': {2}; a predicate is evaluated once per root and takes only singletons, Instance registrations or imported services that are not initialized asynchronously",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT248"));
 
 	/// <summary>
 	///     An unkeyed open generic <c>[Decorate]</c> or <c>[Composite]</c> that a container declares itself applies to no
@@ -2539,7 +2709,8 @@ internal static class Diagnostics
 		"The open {0} '{1}' applies to no closing of '{2}', since the container's graph has none; register or consume a closing, or correct the service type, or, on a base container meant only for extension, suppress this warning there",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT249"));
 
 	/// <summary>
 	///     A collection (any sequence shape, the awaited and asynchronous ones and a keyed dictionary included) whose
@@ -2554,7 +2725,8 @@ internal static class Diagnostics
 		"'{0}' depends on a collection of '{1}', which is always empty: the container imports '{2}' from its external resolver, which serves only a direct dependency, and a collection holds only the container's own registrations, including variance matches, of which there are none; depend on '{2}' directly to receive the host's instance",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT250"));
 
 	/// <summary>
 	///     An imported module of another assembly passes a decorator or composite an empty collection of an internal
@@ -2571,7 +2743,8 @@ internal static class Diagnostics
 		"'{0}' passes '{1}' an empty collection of '{2}', fixed in the module's own build since no module of its assembly registers it, although '{3}' registers it in this container; make '{4}' public so the module's factory takes the collection from the container, or grant this assembly InternalsVisibleTo from the assemblies of '{0}' and '{3}' so the container builds '{1}' itself",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT252"));
 
 	/// <summary>
 	///     A generated member of an imported module of another assembly takes a closing of a public generic service over a
@@ -2586,7 +2759,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', a closing over a type internal to the assembly of the module '{3}', which this container cannot close itself, and {4}; or grant this assembly InternalsVisibleTo in the module's assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT253"));
 
 	/// <summary>
 	///     A dependency on a collection or keyed dictionary of relationships (<c>IEnumerable&lt;Lazy&lt;T&gt;&gt;</c>,
@@ -2601,7 +2775,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', a collection of the relationship '{3}', which the container does not build; inject '{4}' to get every registration of '{5}', or '{3}' to get a single one",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT254"));
 
 	/// <summary>
 	///     The generator cannot emit the wiring of a container that reports no error: a dependency resolves to no instance
@@ -2617,6 +2792,7 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT255"),
 		customTags: WellKnownDiagnosticTags.NotConfigurable);
 
 	/// <summary>
@@ -2632,7 +2808,8 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', a relationship over the collection '{3}', which the container does not build, because a relationship wraps a single service; inject '{3}' to get every registration, or register a service that takes '{3}' and inject the relationship over that service",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT256"));
 
 	/// <summary>
 	///     A collection the container builds itself, such as the <c>IEnumerable&lt;T&gt;</c> of a decorator it constructs
@@ -2647,7 +2824,8 @@ internal static class Diagnostics
 		"'{0}' takes a collection of '{1}', which would miss '{2}': '{3}' registers it under '{4}' through a generated handle this container cannot read; grant this assembly InternalsVisibleTo in the assembly of '{3}', or make '{4}' public",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT257"));
 
 	/// <summary>
 	///     An <c>[ImportService]</c> names a collection shape (<c>IEnumerable&lt;T&gt;</c>, <c>T[]</c>,
@@ -2660,7 +2838,8 @@ internal static class Diagnostics
 		"'{0}' imports the collection '{1}', but a collection is always built from the container's own registrations, so the external resolver is never asked for it; import '{2}' and depend on it directly, or register the members of the collection",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT258"));
 
 	/// <summary>
 	///     A dependency on a relationship shape (<c>Func&lt;T&gt;</c>, <c>Func&lt;TArg…, T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
@@ -2676,5 +2855,6 @@ internal static class Diagnostics
 		"'{0}' cannot be resolved: '{1}' requires '{2}', which the container {3} as a service, but it injects '{2}' as the relationship over '{4}' and never hands out that service; {5}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT259"));
 }

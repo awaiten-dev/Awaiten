@@ -1,0 +1,10 @@
+{
+	"label": "Registration",
+	"link": {
+		"type": "generated-index",
+		"description": "Tell the container what to build. Factories, decorators, composites, keyed services, open generics, scanning, modules, extending containers, and modules shipped from a library."
+	},
+	"customProps": {
+		"description": "Tell the container what to build. Factories, decorators, composites, keyed services, open generics, scanning, modules, extending containers, and modules shipped from a library."
+	}
+}
