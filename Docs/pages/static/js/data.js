@@ -1854,6 +1854,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:34:37 2026 \u002B0100",
         "message": "fix: skip the factory body of a base container referenced as a compilation instead of crashing the generator (#413)"
+      },
+      {
+        "sha": "52a71095f94a2d71edd50266633fa49f3e92e7ef",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
+        "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
       }
     ],
     "labels": [
@@ -2165,7 +2171,8 @@ window.BENCHMARK_DATA = {
       "009f7ed0",
       "e0151207",
       "b5c83863",
-      "d8bac02e"
+      "d8bac02e",
+      "52a71095"
     ],
     "datasets": [
       {
@@ -2480,7 +2487,8 @@ window.BENCHMARK_DATA = {
           6.828966619712966,
           6.447218766169889,
           6.757366170103733,
-          3.4132429510354996
+          3.4132429510354996,
+          5.5973863410098215
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2492,6 +2500,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3123,7 +3132,8 @@ window.BENCHMARK_DATA = {
           6.560703294475873,
           7.500096421975356,
           6.695313321550687,
-          4.182680657009284
+          4.182680657009284,
+          5.545253348137651
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3135,6 +3145,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3766,7 +3777,8 @@ window.BENCHMARK_DATA = {
           145.16703917298997,
           124.33896012306214,
           127.79357104301452,
-          62.88186379273733
+          62.88186379273733,
+          132.23012913068135
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3778,6 +3790,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4405,7 +4418,8 @@ window.BENCHMARK_DATA = {
           9.295375420578889,
           8.810002580285072,
           9.107129331145968,
-          4.976306225572314
+          4.976306225572314,
+          8.267077020804088
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4417,6 +4431,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5040,7 +5055,8 @@ window.BENCHMARK_DATA = {
           12.703755187136787,
           10.965610186258951,
           11.540314421057701,
-          6.37540391087532
+          6.37540391087532,
+          11.547120290994645
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5052,6 +5068,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7224,6 +7241,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:34:37 2026 \u002B0100",
         "message": "fix: skip the factory body of a base container referenced as a compilation instead of crashing the generator (#413)"
+      },
+      {
+        "sha": "52a71095f94a2d71edd50266633fa49f3e92e7ef",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
+        "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
       }
     ],
     "labels": [
@@ -7535,7 +7558,8 @@ window.BENCHMARK_DATA = {
       "009f7ed0",
       "e0151207",
       "b5c83863",
-      "d8bac02e"
+      "d8bac02e",
+      "52a71095"
     ],
     "datasets": [
       {
@@ -7850,7 +7874,8 @@ window.BENCHMARK_DATA = {
           7.355308528129871,
           7.130707523475091,
           6.816932302713394,
-          3.3276499681747875
+          3.3276499681747875,
+          6.208043794546809
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7862,6 +7887,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8493,7 +8519,8 @@ window.BENCHMARK_DATA = {
           6.623251500725746,
           7.450944925347964,
           6.77188468667177,
-          4.0995806604623795
+          4.0995806604623795,
+          5.91299176911513
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8505,6 +8532,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9136,7 +9164,8 @@ window.BENCHMARK_DATA = {
           144.71617903312048,
           133.39592753923856,
           128.49380480448406,
-          61.01889252662659
+          61.01889252662659,
+          131.48539803709303
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9148,6 +9177,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9775,7 +9805,8 @@ window.BENCHMARK_DATA = {
           9.315972051450185,
           8.924493367473284,
           9.018629960219066,
-          4.993574793636799
+          4.993574793636799,
+          8.32251436050449
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9787,6 +9818,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10410,7 +10442,8 @@ window.BENCHMARK_DATA = {
           12.644412888930393,
           14.712151935696602,
           11.567813004766192,
-          6.4013731777668
+          6.4013731777668,
+          11.400160962343216
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10422,6 +10455,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12594,6 +12628,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:34:37 2026 \u002B0100",
         "message": "fix: skip the factory body of a base container referenced as a compilation instead of crashing the generator (#413)"
+      },
+      {
+        "sha": "52a71095f94a2d71edd50266633fa49f3e92e7ef",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
+        "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
       }
     ],
     "labels": [
@@ -12905,7 +12945,8 @@ window.BENCHMARK_DATA = {
       "009f7ed0",
       "e0151207",
       "b5c83863",
-      "d8bac02e"
+      "d8bac02e",
+      "52a71095"
     ],
     "datasets": [
       {
@@ -13220,7 +13261,8 @@ window.BENCHMARK_DATA = {
           12.246485344568889,
           19.16673678358396,
           19.685137575864793,
-          15.965986266732216
+          15.965986266732216,
+          19.38641125758489
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13492,6 +13534,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13863,7 +13906,8 @@ window.BENCHMARK_DATA = {
           848.9520992914836,
           1478.833124923706,
           1482.8013188680013,
-          1201.7093800136022
+          1201.7093800136022,
+          1461.2798653920493
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13875,6 +13919,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14506,7 +14551,8 @@ window.BENCHMARK_DATA = {
           18974.952052815755,
           30090.764811197918,
           33477.21045735677,
-          26352.368054199218
+          26352.368054199218,
+          29806.09082845052
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14826,7 +14872,8 @@ window.BENCHMARK_DATA = {
           32477,
           32482,
           32482,
-          32478
+          32478,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15145,7 +15192,8 @@ window.BENCHMARK_DATA = {
           418.7236991564433,
           708.3776025136311,
           711.4499312082927,
-          565.6097396850586
+          565.6097396850586,
+          753.5389819463094
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15175,6 +15223,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15780,7 +15829,8 @@ window.BENCHMARK_DATA = {
           6601.49125289917,
           11398.01439412435,
           11414.651120503744,
-          9953.945464070637
+          9953.945464070637,
+          11586.48605448405
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16094,6 +16144,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24760,
+          24761,
           24761,
           24761,
           24761
@@ -17964,6 +18015,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:34:37 2026 \u002B0100",
         "message": "fix: skip the factory body of a base container referenced as a compilation instead of crashing the generator (#413)"
+      },
+      {
+        "sha": "52a71095f94a2d71edd50266633fa49f3e92e7ef",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
+        "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
       }
     ],
     "labels": [
@@ -18275,7 +18332,8 @@ window.BENCHMARK_DATA = {
       "009f7ed0",
       "e0151207",
       "b5c83863",
-      "d8bac02e"
+      "d8bac02e",
+      "52a71095"
     ],
     "datasets": [
       {
@@ -18590,7 +18648,8 @@ window.BENCHMARK_DATA = {
           82.41390550931295,
           176.8744782924652,
           149.27300153459822,
-          129.05652453218187
+          129.05652453218187,
+          197.2232696533203
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18862,6 +18921,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19233,7 +19293,8 @@ window.BENCHMARK_DATA = {
           7591.001345498221,
           14352.705903116863,
           13629.864998372395,
-          11864.136309814454
+          11864.136309814454,
+          14317.778718058269
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19245,6 +19306,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19876,7 +19938,8 @@ window.BENCHMARK_DATA = {
           454625.4781901042,
           739809.3088727678,
           816227.3568638393,
-          661173.6964285715
+          661173.6964285715,
+          738664.0919471154
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20196,7 +20259,8 @@ window.BENCHMARK_DATA = {
           718356,
           740460,
           741779,
-          739163
+          739163,
+          741784
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20515,7 +20579,8 @@ window.BENCHMARK_DATA = {
           24812.39584350586,
           42988.993168131514,
           46857.05039876302,
-          38238.38661702474
+          38238.38661702474,
+          43923.82186686198
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20831,7 +20896,8 @@ window.BENCHMARK_DATA = {
           80348,
           80009,
           80301,
-          80860
+          80860,
+          80303
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21150,7 +21216,8 @@ window.BENCHMARK_DATA = {
           196908.29109700522,
           353805.6998046875,
           352081.00959660456,
-          326626.1856770833
+          326626.1856770833,
+          352633.2625651042
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21466,7 +21533,8 @@ window.BENCHMARK_DATA = {
           572961,
           573026,
           573074,
-          573057
+          573057,
+          573153
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23310,6 +23378,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:34:37 2026 \u002B0100",
         "message": "fix: skip the factory body of a base container referenced as a compilation instead of crashing the generator (#413)"
+      },
+      {
+        "sha": "52a71095f94a2d71edd50266633fa49f3e92e7ef",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
+        "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
       }
     ],
     "labels": [
@@ -23617,7 +23691,8 @@ window.BENCHMARK_DATA = {
       "009f7ed0",
       "e0151207",
       "b5c83863",
-      "d8bac02e"
+      "d8bac02e",
+      "52a71095"
     ],
     "datasets": [
       {
@@ -23928,7 +24003,8 @@ window.BENCHMARK_DATA = {
           282.3499278655419,
           275.52255256359393,
           169.20086812973022,
-          271.2630590756734
+          271.2630590756734,
+          211.50062402884166
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23963,6 +24039,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24563,7 +24640,8 @@ window.BENCHMARK_DATA = {
           713.5978768666586,
           620.611712052272,
           410.27340926442827,
-          631.2596435546875
+          631.2596435546875,
+          454.6767617384593
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24575,6 +24653,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -25198,7 +25277,8 @@ window.BENCHMARK_DATA = {
           6853.560237121582,
           6921.489273616246,
           3697.0315144856772,
-          6942.2471043904625
+          6942.2471043904625,
+          5139.9616132463725
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25282,6 +25362,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25833,7 +25914,8 @@ window.BENCHMARK_DATA = {
           432.6525168759482,
           437.5529160499573,
           262.276526927948,
-          425.93246304194133
+          425.93246304194133,
+          347.96452945073446
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25845,6 +25927,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26468,7 +26551,8 @@ window.BENCHMARK_DATA = {
           751.8187510808309,
           754.0539578119914,
           414.63128692763195,
-          755.9604560852051
+          755.9604560852051,
+          533.926207610539
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26480,6 +26564,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
