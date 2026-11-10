@@ -719,7 +719,7 @@ partial class AwaitenGenerator
 				// Another assembly calls the public overload, while a container in the module's assembly also sees one that is not and reports AWT190.
 				if ((candidates.Find(candidate => candidate.DeclaredAccessibility != Accessibility.Public && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly))
 				     ?? AccessibleMembers(module, hookName, compilation).OfType<IMethodSymbol>().FirstOrDefault(candidate =>
-					     candidate is { MethodKind: MethodKind.Ordinary, IsStatic: true, IsGenericMethod: true, Parameters.Length: >= 1, }
+					     candidate is { MethodKind: MethodKind.Ordinary, IsStatic: true, Parameters.Length: >= 1, }
 					     && candidate.DeclaredAccessibility != Accessibility.Public
 					     && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)
 					     && IsHookReturn(candidate, compilation)

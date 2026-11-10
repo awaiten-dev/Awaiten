@@ -78,6 +78,81 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("private static void Started(params Service[] instances) { }")]
+		[Arguments("private static void Started<T>(params T[] instances) { }")]
+		[Arguments("private static void Started(params System.Collections.Generic.IEnumerable<Service> instances) { }")]
+		public async Task ReportsWhenTheCallExpandsAParamsOverloadBesideANonGenericOne(string overload)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public sealed class Service { }
+
+			                                         [Container]
+			                                         [Singleton<Service>(OnActivated = nameof(Started))]
+			                                         public static partial class MyContainer
+			                                         {
+			                                         	private static void Started(object instance) { }
+			                                         	{{overload}}
+			                                         }
+			                                         """);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Started'*").AsWildcard()
+				.Because("C# binds the generated call in the expanded form of the params overload, which takes the service itself, and prefers it to the one for objects");
+		}
+
+		[Test]
+		[Arguments("private static void Started(ref Service instance) { }")]
+		[Arguments("private static void Started(out Service instance) { instance = null!; }")]
+		[Arguments("private static void Started<T>(ref T instance) { }")]
+		[Arguments("private static void Started<T>(T instance, out int attempts) { attempts = 0; }")]
+		public async Task DoesNotReportAnOverloadTheCallCannotPassByReference(string overload)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public sealed class Service { }
+
+			                                         [Container]
+			                                         [Singleton<Service>(OnActivated = nameof(Started))]
+			                                         public static partial class MyContainer
+			                                         {
+			                                         	private static void Started(object instance) { }
+			                                         	{{overload}}
+			                                         }
+			                                         """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the generated call passes its arguments by value, so C# never binds an overload that takes one by reference");
+		}
+
+		[Test]
+		public async Task DoesNotReportAParamsOverloadWhoseElementDoesNotAcceptTheInstance()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Service { }
+
+			                                       [Container]
+			                                       [Singleton<Service>(OnActivated = nameof(Started))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static void Started(object instance) { }
+			                                       	private static void Started(params int[] values) { }
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
 		public async Task DoesNotReportWhenOnlyOneOverloadAcceptsTheInstance()
 		{
 			GeneratorResult result = Generator.Run("""

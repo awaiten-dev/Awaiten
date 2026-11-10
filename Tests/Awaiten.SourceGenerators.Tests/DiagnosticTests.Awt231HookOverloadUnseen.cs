@@ -300,9 +300,12 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			public async Task AGenericOverloadTheCallInfers_IsRecorded()
+			[Arguments("internal static void Ready<T>(T repository) where T : IRepository { }", "T")]
+			[Arguments("internal static void Ready<T>(params T[] repositories) { }", "T[]")]
+			[Arguments("internal static void Ready(params Repository[] repositories) { }", "Lib.Repository[]")]
+			public async Task AnOverloadTheCallInfersOrExpands_IsRecorded(string overload, string taking)
 			{
-				string library = Library.Replace("internal static void Ready(Repository repository) { }", "internal static void Ready<T>(T repository) where T : IRepository { }");
+				string library = Library.Replace("internal static void Ready(Repository repository) { }", overload);
 
 				GeneratorResult own = Generator.Run(library);
 				GeneratorResult same = Generator.Run(SameAssembly(library, Consumer));
@@ -310,12 +313,12 @@ public partial class DiagnosticTests
 				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 
 				await That(ModuleSource(own)).Contains("public const string HookSkipped_OnActivated_Repository_")
-					.Because("a call without type arguments infers the generic overload for the repository, which C# prefers to the one for objects");
+					.Because("a call without type arguments binds the overload for the repository, which C# prefers to the one for objects");
 				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Ready'*").AsWildcard();
 				await That(friend.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Ready'*").AsWildcard();
 				await That(external.Diagnostics).HasSingle().Which
-					.IsEqualTo("*AWT231*'Lib.Repository' with the OnActivated hook 'Ready', which this container does not run, because*another overload that is not public, taking 'T', that accepts 'Lib.Repository' too*").AsWildcard()
-					.Because("this assembly sees only the overload for objects, while the module's assembly would run the generic one");
+					.IsEqualTo($"*AWT231*'Lib.Repository' with the OnActivated hook 'Ready', which this container does not run, because*another overload that is not public, taking '{taking}', that accepts 'Lib.Repository' too*").AsWildcard()
+					.Because("this assembly sees only the overload for objects, while the module's assembly would run the other one");
 			}
 
 			[Test]
@@ -331,6 +334,23 @@ public partial class DiagnosticTests
 
 				await That(own.Sources.Values).All().Satisfy(source => !source.Contains("HookSkipped_", StringComparison.Ordinal))
 					.Because("the generic overload does not accept the repository, so C# never picks it");
+				await That(same.Diagnostics).IsEmpty();
+				await That(external.Diagnostics).IsEmpty();
+			}
+
+			[Test]
+			[Arguments("internal static void Ready(ref Repository repository) { }")]
+			[Arguments("internal static void Ready<T>(ref T repository) where T : IRepository { }")]
+			public async Task AnOverloadTakingTheInstanceByReference_IsNotRecorded(string overload)
+			{
+				string library = Library.Replace("internal static void Ready(Repository repository) { }", overload);
+
+				GeneratorResult own = Generator.Run(library);
+				GeneratorResult same = Generator.Run(SameAssembly(library, Consumer));
+				GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+
+				await That(own.Sources.Values).All().Satisfy(source => !source.Contains("HookSkipped_", StringComparison.Ordinal))
+					.Because("the generated call passes the instance by value, so C# never picks an overload that takes it by reference");
 				await That(same.Diagnostics).IsEmpty();
 				await That(external.Diagnostics).IsEmpty();
 			}
@@ -449,6 +469,40 @@ public partial class DiagnosticTests
 					.Because("the wrapper's call cannot bind a generic overload that does not accept the repository");
 				await That(external.Diagnostics).IsEmpty();
 				await That(external.Sources.Values).Any().Satisfy(source => source.Contains("Hook_OnActivated_Repository_", StringComparison.Ordinal));
+			}
+
+			[Test]
+			[Arguments("internal static void Ready(object repository) { }", "Lib.DataModule.Ready(object)", "internal static void Ready<T>(params T[] repositories) { }", false)]
+			[Arguments("internal static void Ready(object repository) { }", "Lib.DataModule.Ready(object)", "internal static void Ready<T>(params T[] repositories) { }", true)]
+			[Arguments("internal static void Ready(object repository) { }", "Lib.DataModule.Ready(object)", "internal static void Ready(params Repository[] repositories) { }", false)]
+			[Arguments("internal static void Ready(object repository) { }", "Lib.DataModule.Ready(object)", "internal static void Ready(params Repository[] repositories) { }", true)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static void Ready<T>(T repository, int attempt = 0) { }", false)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static void Ready<T>(ref T repository) { }", false)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static void Ready<T>(this T repository) where T : IRepository { }", false)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static System.Threading.Tasks.Task Ready<T>(T repository) => System.Threading.Tasks.Task.CompletedTask;", false)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static void Ready<T>(T repository) where T : struct { }", false)]
+			[Arguments("internal static void Ready(IRepository repository) { }", "Lib.DataModule.Ready(Lib.IRepository)", "internal static void Ready<T>(T repository) where T : struct { }", true)]
+			public async Task TheWrapperCallsTheHookTheModuleJudged_OrTheModuleReportsTheAmbiguity(string hook, string judged, string overload, bool scan)
+			{
+				string library = Library(hook + "\n\n" + overload);
+				if (scan)
+				{
+					library = library.Replace("[Scoped<Repository, IRepository>(OnActivated = nameof(Ready))]", "[Scan(typeof(IRepository), OnActivated = nameof(Ready))]");
+				}
+
+				GeneratorResult own = Generator.Run(library);
+				List<string?> targets = HookCallTargets(library).ToList();
+
+				if (own.Diagnostics.Any(diagnostic => diagnostic.Contains("AWT190", StringComparison.Ordinal)))
+				{
+					await That(targets).IsEmpty().Because("a module that reports the ambiguity generates no wrapper");
+				}
+				else
+				{
+					await That(own.Diagnostics).IsEmpty();
+					await That(targets).IsNotEmpty().And.All().AreEqualTo(judged)
+						.Because("the wrapper's call must bind the hook the module judged, not another overload C# prefers");
+				}
 			}
 
 			[Test]
@@ -706,6 +760,24 @@ public partial class DiagnosticTests
 				await That(same.Diagnostics).IsEmpty();
 				await That(external.Diagnostics).IsEmpty();
 				await That(external.Sources.Values).Any().Satisfy(source => source.Contains("global::Lib.DataModule.Ready<global::Lib.Order, int>(", StringComparison.Ordinal));
+			}
+
+			[Test]
+			[Arguments("where T : class")]
+			[Arguments("where T : class where U : struct")]
+			[Arguments("where T : class where U : System.IComparable<U>")]
+			public async Task AConstraintTheBoundTypeArgumentMeets_IsRecorded(string constraint)
+			{
+				string library = Library.Replace("where U : struct", constraint);
+
+				GeneratorResult own = Generator.Run(library);
+				GeneratorResult same = Generator.Run(SameAssembly(library, Consumer));
+				GeneratorResult external = Generator.RunWithGeneratedReferenceAssembly(library, Consumer);
+
+				await That(ModuleSource(own)).Contains("public const string HookSkipped_OnActivated_Repository_")
+					.Because("the order meets the constraint of the type parameter the overload binds, so it competes for closings of the other one");
+				await That(same.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Lib.IPair<Lib.Order, int>'*'Ready'*").AsWildcard();
+				await That(external.Diagnostics).HasSingle().Which.IsEqualTo("*AWT231*taking 'Lib.IPair<Lib.Order, U>'*").AsWildcard();
 			}
 		}
 

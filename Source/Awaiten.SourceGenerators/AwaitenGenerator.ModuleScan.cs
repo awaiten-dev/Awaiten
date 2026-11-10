@@ -748,7 +748,8 @@ partial class AwaitenGenerator
 	///     static methods of that name returning what a hook may (see <see cref="IsHookReturn" />) whose first
 	///     parameter accepts the match (a non-generic one directly, a generic one bound to exactly one closed marker form), plus separately the closed-form sets of
 	///     any generic overload several forms could bind (AWT198 when it is the only candidate). Beside a non-generic match,
-	///     a generic overload no form binds that the call infers from the instance matches too (see <see cref="InfersHook" />),
+	///     a generic overload no form binds that the call infers from the instance, or a <c>params</c> overload that takes it as its
+	///     element, matches too (see <see cref="InfersHook" />),
 	///     as in <see cref="CollectHookOverloads" />. A hook must be
 	///     accessible from a separate type in the module's assembly (<c>internal</c> or wider): the wrapper could
 	///     call even a <c>private</c> hook, but a same-compilation container binding the hook directly could not, so a
@@ -785,6 +786,10 @@ partial class AwaitenGenerator
 				if (compilation.HasImplicitConversion(matchType, method.Parameters[0].Type))
 				{
 					matches.Add(method);
+				}
+				else if (InfersHook(method, matchType, compilation))
+				{
+					inferred.Add(method);
 				}
 
 				continue;
