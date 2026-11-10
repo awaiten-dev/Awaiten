@@ -1154,7 +1154,7 @@ partial class AwaitenGenerator
 	///     forms could bind, which stay usable (an AWT190 collision when a sibling also matches) yet cannot be
 	///     dispatched (AWT198 when they are the only candidate). The forms of each ambiguous overload are kept so the
 	///     AWT198 message can name them. Beside a non-generic match, a generic overload no form binds that the call infers
-	///     from the instance matches too (see <see cref="InfersHook" />). Open generic expansion uses it too, so it seeds
+	///     from the instance, or a <c>params</c> overload that takes it as its element, matches too (see <see cref="InfersHook" />). Open generic expansion uses it too, so it seeds
 	///     from the hook that is dispatched.
 	/// </summary>
 	private static (List<IMethodSymbol> Matches, List<IReadOnlyList<INamedTypeSymbol>> AmbiguousMethods) CollectHookOverloads(
@@ -1174,6 +1174,7 @@ partial class AwaitenGenerator
 			// reachable from the partial, a module's are not); an inaccessible module method is not a usable hook.
 			if (member is not IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true, Parameters.Length: >= 1, } method
 			    || !IsHookReturn(method, compilation)
+			    || TakesByReference(method)
 			    || (origin is not null && !compilation.IsSymbolAccessibleWithin(method, containerSymbol)))
 			{
 				continue;
@@ -1186,6 +1187,10 @@ partial class AwaitenGenerator
 				if (compilation.HasImplicitConversion(implementation, method.Parameters[0].Type))
 				{
 					matches.Add(method);
+				}
+				else if (InfersHook(method, implementation, compilation))
+				{
+					inferred.Add(method);
 				}
 
 				continue;
@@ -1416,14 +1421,19 @@ partial class AwaitenGenerator
 	///     constraint satisfaction - notably <em>not</em> a user-defined implicit operator, which
 	///     <c>HasImplicitConversion</c> would accept and which would leak CS0311 into the generated source.
 	///     <c>notnull</c> is not checked: violating it is only a compiler warning, so the constructed call still
-	///     compiles.
+	///     compiles. With <paramref name="boundOnly" />, an argument that contains a type parameter, and a constraint type
+	///     that does once substituted, stand for every closing and are not checked.
 	/// </summary>
-	private static bool SatisfiesConstraints(IMethodSymbol method, ImmutableArray<ITypeSymbol> arguments, Compilation compilation)
+	private static bool SatisfiesConstraints(IMethodSymbol method, ImmutableArray<ITypeSymbol> arguments, Compilation compilation, bool boundOnly = false)
 	{
 		for (int index = 0; index < method.TypeParameters.Length; index++)
 		{
 			ITypeParameterSymbol parameter = method.TypeParameters[index];
 			ITypeSymbol argument = arguments[index];
+			if (boundOnly && ContainsTypeParameter(argument))
+			{
+				continue;
+			}
 
 			if ((parameter.HasReferenceTypeConstraint && !argument.IsReferenceType)
 			    || (parameter.HasValueTypeConstraint && (!argument.IsValueType || argument.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T))
@@ -1433,8 +1443,8 @@ partial class AwaitenGenerator
 				return false;
 			}
 
-			if (parameter.ConstraintTypes.Any(constraint =>
-				    !SatisfiesConstraintType(argument, SubstituteTypeParameters(constraint, method, arguments, compilation), compilation)))
+			if (parameter.ConstraintTypes.Select(constraint => SubstituteTypeParameters(constraint, method, arguments, compilation)).Any(constraint =>
+				    !(boundOnly && ContainsTypeParameter(constraint)) && !SatisfiesConstraintType(argument, constraint, compilation)))
 			{
 				return false;
 			}
@@ -1912,30 +1922,64 @@ partial class AwaitenGenerator
 			.OfType<IMethodSymbol>()
 			.Where(method => method is { MethodKind: MethodKind.Ordinary, IsStatic: true, Arity: 0, Parameters.Length: >= 1, }
 			                 && IsHookReturn(method, compilation)
+			                 && !TakesByReference(method)
 			                 && compilation.HasImplicitConversion(produced, method.Parameters[0].Type));
+
+	/// <summary>
+	///     Whether <paramref name="method" /> takes a parameter by <c>ref</c> or <c>out</c>, which a generated hook call, passing
+	///     its arguments by value, never binds.
+	/// </summary>
+	private static bool TakesByReference(IMethodSymbol method)
+		=> method.Parameters.Any(parameter => parameter.RefKind is RefKind.Ref or RefKind.Out);
 
 	/// <summary>
 	///     Whether C# infers the generic <paramref name="method" /> from an argument of type <paramref name="produced" />, so
 	///     the generated call of a non-generic hook, which names no type arguments, may bind it instead, as it prefers
 	///     <c>Ready&lt;Order&gt;(Order)</c> to <c>Ready(object)</c>. Only the instance parameter is unified, with
-	///     <paramref name="produced" /> or a type it derives from or implements.
+	///     <paramref name="produced" /> or a type it derives from or implements. A <c>params</c> instance parameter also takes
+	///     the instance as its element, which C# prefers too (<c>Ready(params Order[])</c> to <c>Ready(object)</c>), so this holds for
+	///     such a non-generic method as well.
 	/// </summary>
 	private static bool InfersHook(IMethodSymbol method, ITypeSymbol produced, Compilation compilation)
 	{
+		if (TakesByReference(method))
+		{
+			return false;
+		}
+
+		if (method.Arity == 0)
+		{
+			return ParamsElement(method.Parameters[0]) is { } element && compilation.HasImplicitConversion(produced, element);
+		}
+
 		foreach (ITypeSymbol target in new[] { produced, }.Concat(BaseTypes(produced)).Concat(produced.AllInterfaces))
 		{
-			Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings = new(SymbolEqualityComparer.Default);
-			if (Unify(method.Parameters[0].Type, target, bindings) && bindings.Count == method.Arity)
+			foreach (bool expanded in new[] { false, true, })
 			{
-				ImmutableArray<ITypeSymbol> arguments = method.TypeParameters.Select(parameter => bindings[parameter]).ToImmutableArray();
-				if (SatisfiesConstraints(method, arguments, compilation) && compilation.HasImplicitConversion(produced, method.Construct(arguments.ToArray()).Parameters[0].Type))
+				ITypeSymbol? pattern = expanded ? ParamsElement(method.Parameters[0]) : method.Parameters[0].Type;
+				Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings = new(SymbolEqualityComparer.Default);
+				if (pattern is not null && Unify(pattern, target, bindings) && bindings.Count == method.Arity)
 				{
-					return true;
+					ImmutableArray<ITypeSymbol> arguments = method.TypeParameters.Select(parameter => bindings[parameter]).ToImmutableArray();
+					IParameterSymbol constructed = method.Construct(arguments.ToArray()).Parameters[0];
+					if (SatisfiesConstraints(method, arguments, compilation)
+					    && (expanded ? ParamsElement(constructed) : constructed.Type) is { } instance
+					    && compilation.HasImplicitConversion(produced, instance))
+					{
+						return true;
+					}
 				}
 			}
 		}
 
 		return false;
+
+		// A params collection other than an array is approximated by its single type argument (Span<T>, IEnumerable<T>, List<T>).
+		static ITypeSymbol? ParamsElement(IParameterSymbol parameter)
+			=> !parameter.IsParams ? null
+				: parameter.Type is IArrayTypeSymbol array ? array.ElementType
+				: parameter.Type is INamedTypeSymbol { TypeArguments.Length: 1, } named ? named.TypeArguments[0]
+				: null;
 
 		bool Unify(ITypeSymbol pattern, ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
 		{

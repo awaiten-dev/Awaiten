@@ -747,7 +747,10 @@ partial class AwaitenGenerator
 	///     The usable overloads of a module hook (see <see cref="ResolveModuleHook" />): the module's own
 	///     static methods of that name returning what a hook may (see <see cref="IsHookReturn" />) whose first
 	///     parameter accepts the match (a non-generic one directly, a generic one bound to exactly one closed marker form), plus separately the closed-form sets of
-	///     any generic overload several forms could bind (AWT198 when it is the only candidate). A hook must be
+	///     any generic overload several forms could bind (AWT198 when it is the only candidate). Beside a non-generic match,
+	///     a generic overload no form binds that the call infers from the instance, or a <c>params</c> overload that takes it as its
+	///     element, matches too (see <see cref="InfersHook" />),
+	///     as in <see cref="CollectHookOverloads" />. A hook must be
 	///     accessible from a separate type in the module's assembly (<c>internal</c> or wider): the wrapper could
 	///     call even a <c>private</c> hook, but a same-compilation container binding the hook directly could not, so a
 	///     <c>private</c> method is not a usable hook here either and falls through to AWT164. A method with a
@@ -765,6 +768,7 @@ partial class AwaitenGenerator
 		bool wrappedEverywhere = IsHiddenInModule(matchType, context.Module, compilation);
 		List<IMethodSymbol> matches = new();
 		List<IReadOnlyList<INamedTypeSymbol>> ambiguous = new();
+		List<IMethodSymbol> inferred = new();
 		foreach (ISymbol member in AccessibleMembers(context.Module, hookName, compilation))
 		{
 			// A hook must be reachable from a separate type in the module's assembly - internal or wider. The wrapper
@@ -783,6 +787,10 @@ partial class AwaitenGenerator
 				{
 					matches.Add(method);
 				}
+				else if (InfersHook(method, matchType, compilation))
+				{
+					inferred.Add(method);
+				}
 
 				continue;
 			}
@@ -797,6 +805,17 @@ partial class AwaitenGenerator
 			{
 				ambiguous.Add(bindable.Select(candidate => candidate.Form).ToList());
 			}
+			else if (InfersHook(method, matchType, compilation))
+			{
+				inferred.Add(method);
+			}
+		}
+
+		// The wrapper calls a non-generic hook without type arguments, so C# may bind an inferred generic overload instead,
+		// which a container in the module's assembly counts too (see CollectHookOverloads).
+		if (matches.Exists(match => !match.IsGenericMethod))
+		{
+			matches.AddRange(inferred);
 		}
 
 		return (matches, ambiguous);
