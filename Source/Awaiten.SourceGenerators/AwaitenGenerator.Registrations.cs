@@ -388,6 +388,9 @@ partial class AwaitenGenerator
 		/// <inheritdoc cref="RawRegistration" />
 		public string? HiddenProduction { get; init; }
 
+		/// <inheritdoc cref="RawRegistration" />
+		public INamedTypeSymbol? ScanImplementation { get; init; }
+
 		public List<ServiceKey> Services { get; }
 
 		/// <summary>

@@ -248,7 +248,8 @@ partial class AwaitenGenerator
 		foreach (IMethodSymbol setter in DeferredSetters(producer))
 		{
 			ParameterModel dependency = RedirectVariance(
-				ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
+				RedirectContextualBinding(ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation),
+				setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
 			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
 			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl, context.External.ServiceTypes))
 			{
@@ -1200,7 +1201,7 @@ partial class AwaitenGenerator
 			// parameter (a dropped [Arg] above never reaches here, so it is not doubly reported).
 			ReportUnsupportedFromKey(parameter.GetAttributes(), parameterModel.Location ?? info.Location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
-			parameterModel = RedirectContextualBinding(parameterModel, info, context.ServiceToImpl, context.ConsumedConditionals);
+			parameterModel = RedirectContextualBinding(parameterModel, info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation);
 			parameterModel = SuppressRegisteredCollectionSynthesis(parameterModel, parameter.Type, context.ServiceToImpl);
 			parameterModel = ResolveTypeDispatch(parameterModel, parameter.Type, info, context.DispatchCandidates, context.Diagnostics);
 

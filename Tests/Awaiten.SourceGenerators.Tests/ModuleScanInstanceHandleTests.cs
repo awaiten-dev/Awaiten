@@ -196,6 +196,19 @@ public class ModuleScanInstanceHandleTests
 			.Because("the consumer serves its own registration from the handle through the alias under the implementation, as a container in the library shares one instance");
 	}
 
+	[Test]
+	public async Task AContainerSideInjectPropertyOfAPublicMatch_NamesTheScanAsTheReasonForTheHandle()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+			Library(scans: "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]")
+				.Replace("internal sealed class Roaster", "public sealed class Roaster")
+				.Replace("public Roaster(IClock clock) { }", "public Roaster(IClock clock) { }\n    public IClock Backup { get; set; } = null!;"),
+			Consumer.Replace("public static partial class MyContainer;", "[InjectProperty<Roaster>(nameof(Roaster.Backup))]\npublic static partial class MyContainer;"));
+
+		await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT178: 'Lib.Roaster' is built by the generated factory of 'Lib.PluginModule' because a scan of the module exposes it under several services, which share one instance of it through a generated handle, so its property 'Backup' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of 'Lib.PluginModule', so the container constructs 'Lib.Roaster' itself")
+			.Because("the module has no registration of the match, so the scan is what makes it build the match through a handle");
+	}
+
 	public class AConsumerRegistrationOfAPublicMatch
 	{
 		private const string Scans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]";

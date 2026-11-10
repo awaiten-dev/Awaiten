@@ -431,6 +431,23 @@ public class CrossContainerAgreementTests
 		}
 
 		[Test]
+		public async Task SharedThroughAnInstanceHandleAndImportedAlone_NamesTheOtherModuleAsTheReason()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface IKettle { }\ninternal sealed class Kettle : IKettle { }")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "[Inject] internal IClock Clock { get; set; } = null!;\n    public IClock Backup { get; set; } = null!;")
+				.Replace("public static partial class CoffeeModule", "[Singleton<Kettle, IKettle>]\npublic static partial class CoffeeModule");
+			string consumer = Consumer
+				.Replace("[Import(typeof(OtherModule))]", string.Empty)
+				.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(external.Diagnostics).HasSingle().Which.EndsWith("error AWT178: 'Lib.Greeter' is built by the generated factory of 'Lib.CoffeeModule' because the module 'Lib.OtherModule' of its assembly registers it too, and the modules share one instance of it through a generated handle, so its property 'Backup' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of 'Lib.CoffeeModule', so the container constructs 'Lib.Greeter' itself")
+				.Because("the container imports only the one module, so the reason names the other module that makes its assembly share the instance");
+		}
+
+		[Test]
 		public async Task HandledForAnInternalServiceOfOneModule_NamesThatServiceAsTheReason()
 		{
 			string library = Library()
