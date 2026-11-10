@@ -1953,7 +1953,8 @@ partial class AwaitenGenerator
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
 	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
 	///     instance handle takes the entries through the handle (see <see cref="WithHandleEntries" />), all but a
-	///     <c>Deferred</c> one, which is AWT178, as is every entry when the handle cannot take them (see
+	///     <c>Deferred</c> one, which is AWT178 unless the handle reported it as AWT181 or AWT177
+	///     (<paramref name="reportedHandleEntries" />), as is every entry when the handle cannot take them (see
 	///     <see cref="HandleAssignment" />), with the reason the module handles it (see <see cref="InstanceHandleReason" />)
 	///     and why the entry cannot reach it. So is an entry for its generic definition that no constructed closing
 	///     matches, which then names the closing the handle builds. The handle of one of several producers of a service
@@ -1964,6 +1965,7 @@ partial class AwaitenGenerator
 	private static void ReportUnmatchedInjectProperties(
 		Dictionary<string, List<InjectPropertyEntry>> injectProperties,
 		List<ImplInfo> implOrder,
+		HashSet<InjectPropertyEntry> reportedHandleEntries,
 		Compilation compilation,
 		List<DiagnosticInfo> diagnostics)
 	{
@@ -2011,7 +2013,8 @@ partial class AwaitenGenerator
 			}
 
 			bool isHandled = handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment) owner);
-			// A handle that takes the entries sets them through its alias (see WithHandleEntries), all but a Deferred one.
+			// A handle that takes the entries sets them through its alias (see WithHandleEntries), all but a Deferred one,
+			// which is AWT178 unless it already reported the entry as AWT181 or AWT177.
 			bool assigned = isHandled && owner.Assignment.Alias is not null;
 			List<ModuleRegistration> registrations = isHandled && !owner.Scan
 				? ConstructedModuleRegistrations(owner.Module, compilation, members: true)
@@ -2021,7 +2024,7 @@ partial class AwaitenGenerator
 			string target = isHandled && owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
 				? Display(closed.ToDisplayString(FullyQualified))
 				: DisplayInstance(implementation.Key);
-			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited && (!assigned || entry.Deferred)))
+			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited && (!assigned || entry.Deferred) && !reportedHandleEntries.Contains(entry)))
 			{
 				// A Factory or Instance member builds the instance whole in every assembly, so the entry is the plain AWT178
 				// a container of the module's own assembly reports, which no InternalsVisibleTo grant would change.

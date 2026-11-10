@@ -575,6 +575,8 @@ public class CrossContainerAgreementTests
 					[Inject] internal IClock Hidden { get; set; } = null!;
 					public IClock Backup { get; set; } = null!;
 					public IClock Frozen { get; init; } = null!;
+					public IClock Spare { get; set; } = null!;
+					public IClock Fixed => null!;
 				}
 
 				[Module]
@@ -763,6 +765,75 @@ public class CrossContainerAgreementTests
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected)
 				.Because("the closing the module's factory builds into its handle gets no entry, even when the other closing's handle takes it");
 			await That(Generator.RunWithGeneratedReferenceAssembly(library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		[Arguments("nameof(Greeter.Clock)", "Clock")]
+		[Arguments("\"Hidden\"", "Hidden")]
+		public async Task ThatIsDeferredForAnInjectProperty_IsReportedAsDuplicateInEveryContainer(string name, string property)
+		{
+			string entry = $"[InjectProperty<Greeter>({name}, Deferred = true)]";
+			string expected = $"warning AWT181: The property '{property}' on 'Lib.Greeter' carries [Inject] and also has an [InjectProperty] entry; the [Inject] member wins, so the entry's Optional/Deferred/Key are ignored - remove one";
+
+			await That(Same(Library, entry).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the [Inject] property wins in the module's own assembly too, so the entry is ignored and its Deferred flag never matters");
+			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		[Arguments("\"Missing\"", "Missing")]
+		[Arguments("nameof(Greeter.Fixed)", "Fixed")]
+		public async Task ThatIsDeferredForNoSettableProperty_IsReportedAsNotFoundInEveryContainer(string name, string property)
+		{
+			string entry = $"[InjectProperty<Greeter>({name}, Deferred = true)]";
+			string expected = $"error AWT177: 'Lib.Greeter' has no settable property '{property}' for [InjectProperty] to fill; check the name (use nameof), and that it is a property with a set/init accessor rather than a field, method or read-only member";
+
+			await That(Same(Library, entry).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the entry names no settable property in any assembly, which is the mistake to fix before the handle matters");
+			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		public async Task ThatIsDeferredForASettableProperty_IsNotSetThroughTheHandle()
+		{
+			const string entry = "[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]";
+
+			await That(Same(Library, entry).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which
+				.Contains("*error AWT178: 'Lib.Greeter' is built by the generated factory of 'Lib.CoffeeModule' because it is registered under the internal service 'Lib.ISecret'*, and the container sets no Deferred entry on the instance a generated handle holds, so its property 'Backup'*").AsWildcard()
+				.Because("a valid Deferred entry is the one a generated handle cannot take");
+			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT178*'Backup'*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ThatIsDeferredNextToAnotherEntry_IsReportedAloneWhileTheOtherIsSet()
+		{
+			const string entry = "[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]\n[InjectProperty<Greeter>(nameof(Greeter.Spare))]";
+
+			await That(Same(Library, entry).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT178*'Backup'*").AsWildcard()
+				.Because("only the Deferred entry is one the handle cannot take, the other is set through it");
+			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT178*'Backup'*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ThatIsDeferredForAnInjectPropertyNextToAnotherEntry_IsReportedAsDuplicateWhileTheOtherIsSet()
+		{
+			const string entry = "[InjectProperty<Greeter>(nameof(Greeter.Clock), Deferred = true)]\n[InjectProperty<Greeter>(nameof(Greeter.Spare))]";
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(Library, Consumer(entry));
+
+			await That(Same(Library, entry).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
+			await That(external.Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
+			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
+			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*Spare = *").AsWildcard();
 		}
 	}
 }
