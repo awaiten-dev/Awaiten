@@ -2645,4 +2645,19 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The graph needs a type the generated container cannot name, because another assembly the project references, or the
+	///     project itself, declares a type of the same full name that the container's assembly can access. Plain C# names such a
+	///     type only through an <c>extern alias</c>, which the generator cannot add, so the generated code would not compile
+	///     (CS0433, or a type mismatch when the project's own type wins). Reported once per type, at the import or registration
+	///     that brings it into the graph.
+	/// </summary>
+	public static readonly DiagnosticDescriptor AmbiguousTypeName = new(
+		"AWT260",
+		"Type the container cannot name",
+		"The generated container cannot name '{0}', which '{1}' {2}, because the assemblies {3} each declare a type named '{4}'; keep the container in a project that references only one of them, or rename one of the types",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

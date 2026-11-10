@@ -17,6 +17,7 @@ partial class AwaitenGenerator
 		Dictionary<ServiceKey, string> serviceToImpl = context.ServiceToImpl;
 		WellKnownTypes wellKnown = context.WellKnown;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
+		context.Names.Report(info.Symbol, info.DeclaredBy ?? info.Origin ?? containerSymbol, "registers", info.Location);
 
 		string? resolverType = null;
 		if (info.ConstructVia is null
@@ -299,7 +300,7 @@ partial class AwaitenGenerator
 			return null;
 		}
 
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations, context.Names);
 		IEnumerable<string> filled = producer.Parameters.Skip(FirstPropertyOrdinal(producer)).Select(parameter => parameter.Name).Concat(members.Select(member => member.MemberName));
 		int count = members.Count;
 		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList(), context.ReportedHandleEntries);
@@ -378,7 +379,7 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations, context.Names);
 
 		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
 		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
@@ -1261,6 +1262,7 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in hookParameters)
 		{
 			ParameterModel parameterModel = ClassifyParameter(parameter, asynchronous, context.External.ServiceTypes);
+			context.Names.Report(parameter.Type, parameter.ContainingSymbol.ContainingType ?? info.Symbol, "takes", info.Location);
 
 			// AWT189: a hook parameter cannot be a runtime [Arg]. Dropped so it contributes no (unresolvable) graph
 			// edge and no emitted argument; the error already fails the build.

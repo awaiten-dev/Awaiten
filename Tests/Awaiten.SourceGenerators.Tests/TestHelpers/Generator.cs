@@ -153,6 +153,16 @@ public static class Generator
 	}
 
 	/// <summary>
+	///     Like <see cref="Run(string, Type[])" />, but compiles <paramref name="source" /> as <paramref name="assemblyName" /> against
+	///     <paramref name="references" />, which the test built itself.
+	/// </summary>
+	public static GeneratorResult RunWithReferences(
+		[StringSyntax("c#-test")] string source,
+		MetadataReference[] references,
+		string assemblyName = "TestAssembly")
+		=> Collect(RunGenerator(source, references, [], assemblyName));
+
+	/// <summary>
 	///     Like <see cref="RunWithGeneratedReferencedAssembly" />, but with a chain of generated referenced assemblies:
 	///     each of <paramref name="referencedSources" /> is compiled with the generator against the ones before it, so a
 	///     library can reference another generated library, and <paramref name="source" /> references all of them. With

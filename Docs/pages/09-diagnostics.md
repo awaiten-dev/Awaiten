@@ -3215,7 +3215,7 @@ It is reported at the `[ImportService]`, for the `typeof` form and an unbound co
 
 ## Project setup
 
-This checks that the project can compile the code Awaiten generates.
+These check that the project can compile the code Awaiten generates.
 
 ### AWT243
 
@@ -3239,6 +3239,36 @@ The project compiles with a C# version older than the code Awaiten generates nee
 ```
 
 On .NET Framework and netstandard2.0 without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
+
+### AWT260
+
+:::danger[Error]
+The container needs a type that its generated code can't name, because another assembly the project references, or the project itself, declares a type of the same full name that the project can access.
+:::
+
+C# names such a type only through an `extern alias`, which Awaiten can't add to your project, so the generated code wouldn't compile. A type the project declares itself wins over a referenced one of the same name, so a container in that project can name its own type but not the other one. The container reports each such type once, at the `[Import]` of the module that registers, takes or imports it, or at the registration, and names the assemblies that declare it. Types of the same name that the container never needs, or that are internal to another assembly the project has no `InternalsVisibleTo` for, aren't reported.
+
+```csharp no-compile
+// In the library CoffeeShop.Brewing:
+namespace Timing { public sealed class Timer; }
+
+[Module]
+[Singleton<Timing.Timer>]
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Grinding, which declares Timing.Timer too:
+[Module]
+[Singleton<Timing.Timer>]
+public static partial class GrindingModule;
+
+// In the application, which references both libraries:
+[Container]
+[Import(typeof(BrewingModule))]    // AWT260 for the Timer of CoffeeShop.Brewing
+[Import(typeof(GrindingModule))]   // AWT260 for the Timer of CoffeeShop.Grinding
+public static partial class CoffeeShop;
+```
+
+**Fix:** Rename one of the types, or keep the container in a project that references only one of the assemblies that declare it.
 
 ## Generator bugs
 

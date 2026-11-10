@@ -926,7 +926,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, PredicateModel> Predicates,
 		Dictionary<string, string> ClosingFaults,
 		HashSet<InjectPropertyEntry> ReportedHandleEntries,
-		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations);
+		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations,
+		AmbiguousTypeNames Names);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -994,7 +995,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// parameter or [Inject] property - to the external provider, while every other unresolved dependency keeps the
 		// AWT101 check. Bundled with the blanket flag as the container's external-resolution surface, threaded through
 		// the coalescing phase that decides constructor satisfiability.
-		ExternalServiceTypes externalServiceTypes = CollectExternalServiceTypes(containerSymbol, modules, compilation, diagnostics);
+		AmbiguousTypeNames names = new(compilation, diagnostics);
+		ExternalServiceTypes externalServiceTypes = CollectExternalServiceTypes(containerSymbol, modules, compilation, diagnostics, names);
 
 		// An extending container's own registration replaces an inherited [ImportService<T>] of that type, as it
 		// replaces an inherited registration (the reverse is in ReplaceInherited).
@@ -1066,6 +1068,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		(List<ImplInfo> implOrder, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<ServiceKey, List<string>> serviceMembers, List<ServiceKey> serviceMemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> varianceCandidates, Dictionary<string, List<KeyedMember>> keyedMembers, List<string> keyedMemberOrder) =
 			CoalesceByImplementation(raw, containerSymbol, compilation, duplicates, checkedHandles, diagnostics);
 		CoalescedGraph graph = new(serviceToImpl, implOrder, serviceMembers);
+		names.ReportServices(raw, serviceMembers, containerSymbol);
 
 		// The closed generic service symbols the coalesced graph holds (recovered from the raw registrations,
 		// which carry each closing's symbol), so an open decorator/composite can find every closing to expand onto.
@@ -1122,7 +1125,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>(), skippedModuleRegistrations);
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>(), skippedModuleRegistrations, names);
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

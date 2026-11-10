@@ -240,6 +240,7 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in method.Parameters)
 		{
 			ParameterModel model = ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes);
+			context.Names.Report(parameter.Type, method.ContainingType, "takes", attributeLocation);
 			model = model with { Location = model.Location ?? attributeLocation, };
 			string? problem = parameter.RefKind != RefKind.None ? "it is passed by reference"
 				: model.Kind == DependencyKind.Arg ? "it is a runtime [Arg], which no caller supplies"
