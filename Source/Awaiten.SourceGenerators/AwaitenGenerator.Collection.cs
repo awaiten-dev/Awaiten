@@ -1889,9 +1889,13 @@ partial class AwaitenGenerator
 	///     entry is unmatched only when no closing of its definition is constructed. An entry inherited from an
 	///     extended base is not reported: the base reports its own, and one whose implementation the extending
 	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
-	///     instance handle is AWT178 instead, since the handle builds it where no container-side entry reaches, with the
-	///     reason the module handles it (see <see cref="InstanceHandleReason" />), and so is an entry for its generic
-	///     definition that no constructed closing matches, which then names the closing the handle builds. An alias that serves the handle's instance
+	///     instance handle takes the entries through the handle (see <see cref="WithHandleEntries" />), all but a
+	///     <c>Deferred</c> one, which is AWT178, as is every entry when the handle cannot take them (see
+	///     <see cref="HandleAssignment" />), with the reason the module handles it (see <see cref="InstanceHandleReason" />)
+	///     and why the entry cannot reach it. So is an entry for its generic definition that no constructed closing
+	///     matches, which then names the closing the handle builds. The handle of one of several producers of a service
+	///     is keyed by the service it names, like a container of the module's own assembly keys the producer, so its
+	///     entry is the plain AWT178 of a factory-produced type. An alias that serves the handle's instance
 	///     (see <see cref="ThroughAlias" />) registers nothing here, although it may return the implementation itself.
 	/// </summary>
 	private static void ReportUnmatchedInjectProperties(
@@ -1906,7 +1910,7 @@ partial class AwaitenGenerator
 		}
 
 		HashSet<string> registered = new(StringComparer.Ordinal);
-		Dictionary<string, (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan)> handled = new(StringComparer.Ordinal);
+		Dictionary<string, (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment)> handled = new(StringComparer.Ordinal);
 		foreach (ImplInfo info in implOrder.Where(info => !info.ImplementationType.Contains(AliasKeyMarker)))
 		{
 			registered.Add(info.ImplementationType);
@@ -1915,10 +1919,11 @@ partial class AwaitenGenerator
 			if (info.Origin is { } module && info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal) is var marker and > 0)
 			{
 				bool scan = info.Hidden is { } hidden && info.ProductionMember == InInternals(ModuleFactoryName(hidden));
-				handled[info.ImplementationType.Substring(0, marker)] = (module, info.Hidden, scan);
+				(IMethodSymbol? Alias, string? Gap) assignment = HandleAssignment(info, compilation);
+				handled[RegisteredType(info.ImplementationType.Substring(0, marker))] = (module, info.Hidden, scan, assignment);
 				if (info.Hidden is { IsGenericType: true, } closed)
 				{
-					handled[TypeIdentity(closed.OriginalDefinition, compilation)] = (module, closed, scan);
+					handled[TypeIdentity(closed.OriginalDefinition, compilation)] = (module, closed, scan, assignment);
 				}
 			}
 		}
@@ -1930,7 +1935,9 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			bool isHandled = handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan) owner);
+			bool isHandled = handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment) owner);
+			// A handle that takes the entries sets them through its alias (see WithHandleEntries), all but a Deferred one.
+			bool assigned = isHandled && owner.Assignment.Alias is not null;
 			List<ModuleRegistration> registrations = isHandled && !owner.Scan
 				? ConstructedModuleRegistrations(owner.Module, compilation, members: true)
 					.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, owner.Implementation))
@@ -1939,7 +1946,7 @@ partial class AwaitenGenerator
 			string target = isHandled && owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
 				? Display(closed.ToDisplayString(FullyQualified))
 				: DisplayInstance(implementation.Key);
-			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited))
+			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited && (!assigned || entry.Deferred)))
 			{
 				// A Factory or Instance member builds the instance whole in every assembly, so the entry is the plain AWT178
 				// a container of the module's own assembly reports, which no InternalsVisibleTo grant would change.
@@ -1958,11 +1965,20 @@ partial class AwaitenGenerator
 							entry.Location,
 							new EquatableArray<string>([
 								entry.PropertyName, target, Display(owner.Module.ToDisplayString(FullyQualified)),
-								InstanceHandleReason(owner.Module, owner.Implementation, owner.Scan, registrations, compilation),
+								Reason(),
 							])));
+			}
+
+			string Reason()
+			{
+				string reason = InstanceHandleReason(owner.Module, owner.Implementation, owner.Scan, registrations, compilation);
+				return (assigned ? DeferredThroughHandle : owner.Assignment.Gap) is { } gap ? $"{reason}, and {gap}" : reason;
 			}
 		}
 	}
+
+	/// <summary>Why a container sets no <c>Deferred</c> entry on the implementation an instance handle holds, for AWT178.</summary>
+	private const string DeferredThroughHandle = "the container sets no Deferred entry on the instance a generated handle holds";
 
 	/// <summary>
 	///     Why <paramref name="module" /> of another assembly builds <paramref name="implementation" /> into an instance

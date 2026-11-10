@@ -451,19 +451,25 @@ partial class AwaitenGenerator
 	///     initializer after construction. See <see cref="ClassifyInjectedMember" /> for the diagnostics reported. For an
 	///     implementation built through an owner's generated factory read from metadata (<paramref name="afterFactory" />),
 	///     the factory fills the <c>[Inject]</c> properties, so only the entries yield members, set on the instance it returns.
+	///     An instance handle passes the implementation it holds as <paramref name="target" />, whose properties the entries
+	///     name, and the <c>[Inject]</c> properties its factory fills as <paramref name="filled" />, which metadata may not show.
 	/// </summary>
 	private static void DiscoverInjectedMembers(
 		ImplInfo info,
 		InjectionContext context,
 		List<InjectPropertyEntry> injectProperties,
 		List<MemberModel> members,
-		bool afterFactory = false)
+		bool afterFactory = false,
+		INamedTypeSymbol? target = null,
+		IEnumerable<string>? filled = null)
 	{
+		target ??= info.Symbol;
+
 		// The property names already filled, so a container-side [InjectProperty<TImpl>] entry for a property that
 		// also carries [Inject] is deduped (injected once, AWT181).
-		HashSet<string> injected = new(StringComparer.Ordinal);
+		HashSet<string> injected = new(filled ?? [], StringComparer.Ordinal);
 
-		foreach (IPropertySymbol property in InjectedProperties(info.Symbol))
+		foreach (IPropertySymbol property in InjectedProperties(target))
 		{
 			injected.Add(property.Name);
 			if (afterFactory)
@@ -497,7 +503,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (ResolveNamedInstanceMember(info.Symbol, entry.PropertyName) is not IPropertySymbol { IsIndexer: false, } property
+			if (ResolveNamedInstanceMember(target, entry.PropertyName) is not IPropertySymbol { IsIndexer: false, } property
 			    || property.SetMethod is null)
 			{
 				context.Diagnostics.Add(new DiagnosticInfo(

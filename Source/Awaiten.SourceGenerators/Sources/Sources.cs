@@ -154,7 +154,9 @@ internal static partial class Sources
 	/// <summary>
 	///     Emits, for each instance built through an owner's generated factory with container-side members that factory
 	///     does not take (see <see cref="MemberModel.AfterFactoryType" />), a helper that sets them on the instance the
-	///     factory returns and hands it back, so the construction stays one expression on every resolver path.
+	///     factory returns and hands it back, so the construction stays one expression on every resolver path. On an
+	///     instance handle the helper sets them through the module's alias that returns the implementation from the handle
+	///     (see <see cref="InstanceModel.AssignThrough" />).
 	/// </summary>
 	private static void EmitAfterFactoryAssigners(StringBuilder builder, int depth, InstanceModel[] instances, Names names)
 	{
@@ -172,9 +174,10 @@ internal static partial class Sources
 				.Append('(').Append(instances[index].ConstructedType).Append(" __instance")
 				.Append(string.Concat(members.Select((member, position) => $", {member.AfterFactoryType} __value{position}"))).AppendLine(")");
 			Indent(builder, depth).AppendLine("{");
+			string target = instances[index].AssignThrough is { } alias ? $"{alias}(__instance)" : "__instance";
 			for (int position = 0; position < members.Length; position++)
 			{
-				Indent(builder, depth + 1).Append("__instance.").Append(members[position].MemberName).Append(" = __value").Append(position).AppendLine(";");
+				Indent(builder, depth + 1).Append(target).Append('.').Append(members[position].MemberName).Append(" = __value").Append(position).AppendLine(";");
 			}
 
 			Indent(builder, depth + 1).AppendLine("return __instance;");
