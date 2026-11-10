@@ -551,8 +551,8 @@ public partial class DiagnosticTests
 			                                       public static partial class MyContainer;
 			                                       """);
 
-			await That(result.Diagnostics).IsEmpty()
-				.Because("a collection is synthesized from the container's registrations and is never missing, so it stays empty");
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo("*warning AWT250*").AsWildcard()
+				.Because("a collection is synthesized from the container's registrations and is never missing, so it is not AWT242 but stays empty, which AWT250 warns about");
 		}
 	}
 }

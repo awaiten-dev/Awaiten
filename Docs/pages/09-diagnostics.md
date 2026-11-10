@@ -3003,6 +3003,25 @@ public static partial class CoffeeShop;
 
 **Fix:** Depend on the imported service directly (`Checkout(IPaymentGateway gateway)`); the host owns it and decides its lifetime. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
 
+### AWT250
+
+:::warning[Warning]
+A collection, such as `IEnumerable<T>`, `IReadOnlyList<T>`, `T[]`, `IAsyncEnumerable<T>` or a keyed dictionary, has an element type that the container imports with `[ImportService]`, as a closed type or as a closing of an open import, and no member. The external resolver serves only a direct dependency, and a collection contains only the container's own registrations, including variance matches, so the collection is always empty. Under `[ImportServices]` alone, which declares no type imported, an empty collection of an unregistered type is not reported.
+:::
+
+```csharp expect=AWT250
+public sealed class Checkout(IEnumerable<IPaymentGateway> gateways);   // always empty: the host's gateway never joins it
+
+[Container]
+[ImportService<IPaymentGateway>]
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+It is not reported when a variance match or a registered closing of an open import gives the collection a member. A warning, not an error, because an empty collection still works. It is reported at the parameter or property that takes the collection, so where an empty collection is intended, suppress it there with `#pragma warning disable AWT250`.
+
+**Fix:** Depend on the imported service directly (`Checkout(IPaymentGateway gateway)`) to receive the host's instance. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
+
 ## Project setup
 
 This checks that the project can compile the code Awaiten generates.

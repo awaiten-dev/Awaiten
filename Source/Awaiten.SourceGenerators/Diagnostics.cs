@@ -2494,6 +2494,21 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     A collection (any sequence shape, the awaited and asynchronous ones and a keyed dictionary included) whose
+	///     element type the container imports through <c>[ImportService]</c>, closed or as a closing of an open import, and
+	///     that has no member, not even a variance match. The external resolver serves only a direct dependency, so the
+	///     collection is always empty. The blanket <c>[ImportServices]</c> declares no service host-owned, so a collection
+	///     under it alone is not reported.
+	/// </summary>
+	public static readonly DiagnosticDescriptor EmptyCollectionOverImportedService = new(
+		"AWT250",
+		"Collection over an imported service is empty",
+		"'{0}' depends on a collection of '{1}', which is always empty: the container imports '{2}' from its external resolver, which serves only a direct dependency, and a collection holds only the container's own registrations, including variance matches, of which there are none; depend on '{2}' directly to receive the host's instance",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A dependency on a collection or keyed dictionary of relationships (<c>IEnumerable&lt;Lazy&lt;T&gt;&gt;</c>,
 	///     <c>Func&lt;T&gt;[]</c>, <c>IReadOnlyDictionary&lt;string, Owned&lt;T&gt;&gt;</c> and the like) whose element type
 	///     has no registration of its own. A collection holds the registrations of its element type, and relationships

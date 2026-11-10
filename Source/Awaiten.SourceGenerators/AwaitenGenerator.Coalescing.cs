@@ -944,6 +944,67 @@ partial class AwaitenGenerator
 			.Select(dependency => dependency.ServiceType), StringComparer.Ordinal);
 
 	/// <summary>
+	///     AWT250 for each collection dependency over a service routed by <c>[ImportService]</c> that has no member once
+	///     the variance matches are unioned in, at the dependency or else at its consumer's registration.
+	/// </summary>
+	private static void ReportEmptyImportedCollections(
+		List<InstanceModel> instances,
+		List<LocationInfo?> instanceLocations,
+		List<ServiceMembers> collections,
+		List<KeyedServiceMembers> keyedCollections,
+		ExternalServiceTypes externalServiceTypes,
+		List<DiagnosticInfo> diagnostics)
+	{
+		if (externalServiceTypes.Closed.Count == 0 && externalServiceTypes.Closings.Count == 0)
+		{
+			return;
+		}
+
+		HashSet<ServiceKey> collected = new(collections.Select(collection => new ServiceKey(collection.Service, collection.Key)));
+		HashSet<string> keyedCollected = new(keyedCollections.Select(keyed => keyed.Service), StringComparer.Ordinal);
+		HashSet<DiagnosticInfo> reported = new();
+		// A collection of relationships is already the AWT254 error at its dependency, which this warning would only repeat.
+		HashSet<LocationInfo> relationshipCollections = new(diagnostics
+			.Where(diagnostic => diagnostic.Descriptor == Diagnostics.CollectionOfRelationships && diagnostic.Location is not null)
+			.Select(diagnostic => diagnostic.Location!));
+		for (int i = 0; i < instances.Count; i++)
+		{
+			// Not the decorator predicate's parameters, which take no collection at all (AWT248).
+			InstanceModel instance = instances[i];
+			foreach (ParameterModel dependency in instance.ConstructorParameters.AsArray()
+				         .Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+				         .Concat(instance.HookParameters()))
+			{
+				bool empty = dependency.Kind switch
+				{
+					DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable => !collected.Contains(KeyOf(dependency)),
+					DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection => !keyedCollected.Contains(dependency.ServiceType),
+					_ => false,
+				};
+				if (!empty
+				    || !externalServiceTypes.Routes(dependency.ServiceType)
+				    || (dependency.Location is { } at && relationshipCollections.Contains(at)))
+				{
+					continue;
+				}
+
+				DiagnosticInfo diagnostic = new(
+					Diagnostics.EmptyCollectionOverImportedService,
+					dependency.Location ?? instanceLocations[i],
+					new EquatableArray<string>([
+						DisplayInstance(instance.ImplementationType),
+						DisplayKeyed(dependency.ServiceType, dependency.Key),
+						Display(dependency.ServiceType),
+					]));
+				if (reported.Add(diagnostic))
+				{
+					diagnostics.Add(diagnostic);
+				}
+			}
+		}
+	}
+
+	/// <summary>
 	///     Whether any registration (of any key) provides the service type, so a declared external type contradicts it. A
 	///     decorator chain over the import is no registration: it wraps the host's instance.
 	/// </summary>

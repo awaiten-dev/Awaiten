@@ -27,8 +27,9 @@ namespace Awaiten;
 ///         collection over it - <c>Func&lt;TService&gt;</c>, <c>Lazy&lt;TService&gt;</c>, <c>Task&lt;TService&gt;</c>,
 ///         <c>IEnumerable&lt;TService&gt;</c> and the like - is not, since the external resolver hands back an
 ///         instance rather than a deferred or fanned-out shape. Such a dependency resolves from the Awaiten graph, which
-///         has no registration of <typeparamref name="TService" />: a relationship is reported (AWT242) and a
-///         collection is empty.
+///         has no registration of <typeparamref name="TService" />: a relationship is reported (AWT242), and a
+///         collection holds only the container's own registrations, including variance matches, so one without any
+///         is always empty and warns (AWT250).
 ///     </para>
 ///     <para>
 ///         Honored on the <see cref="ContainerAttribute">container</see> and on any imported <c>[Module]</c>,
@@ -65,7 +66,7 @@ public sealed class ImportServiceAttribute<TService> : Attribute
 ///         forwarding any <see cref="FromKeyAttribute">[FromKey]</see> key. A relationship or collection over a matching
 ///         type (<c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>, <c>Task&lt;T&gt;</c>, <c>IEnumerable&lt;T&gt;</c> and the
 ///         like) is not routed: it resolves the closings the container registers, and a relationship over a closing it
-///         does not register is reported (AWT242). A direct resolve of a matching type asks the external resolver too. A closed type is
+///         does not register is reported (AWT242), as is a collection with no member (AWT250). A direct resolve of a matching type asks the external resolver too. A closed type is
 ///         listed in <see cref="IAwaitenRoot.ExternalDependencies" />, and of an unbound generic definition each
 ///         concrete closing the graph consumes.
 ///     </para>

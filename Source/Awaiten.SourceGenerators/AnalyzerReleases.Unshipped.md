@@ -142,6 +142,7 @@
  AWT247  | Awaiten   | Error    | A decorator's When names a predicate on a module or base container that the container cannot call, because it is private, or not public in another assembly or on a public module
  AWT248  | Awaiten   | Error    | A decorator predicate takes a parameter the root cannot supply: an [Arg], a by-reference parameter, a relationship, a collection, or a service that is not a synchronously built singleton, Instance or imported service
  AWT249  | Awaiten   | Warning  | An unkeyed open generic decorator or composite of a container applies to no closing of its service in the container's graph
+ AWT250  | Awaiten   | Warning  | A collection over a service the container imports through [ImportService] has no member, so it is always empty, since the external resolver serves only a direct dependency
  AWT254  | Awaiten   | Error    | A dependency is a collection or keyed dictionary of relationships, such as IEnumerable<Lazy<T>>, whose element type has no registration of its own, so it would stay empty
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
