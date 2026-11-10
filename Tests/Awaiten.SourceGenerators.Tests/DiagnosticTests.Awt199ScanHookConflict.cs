@@ -112,7 +112,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task DoesNotReportWhenAnExplicitRegistrationOverridesTheScanHook()
+		public async Task ReportsAwt166InsteadWhenAnExplicitRegistrationNamesAnotherHook()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -132,16 +132,12 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).IsEmpty()
-				.Because("a scan yields to an explicit registration of the same type, hooks included, so overriding is not a conflict");
-			await That(result.Sources.Values.Any(source => source.Contains("Special"))).IsTrue()
-				.Because("the explicit registration's hook is the one that runs");
-			await That(result.Sources.Values.Any(source => source.Contains("FromScan("))).IsFalse()
-				.Because("the scan's hook is replaced, not merged in beside the explicit one");
+			await That(result.Diagnostics).HasSingle().Which.Contains("error AWT166").And.DoesNotContain("AWT199")
+				.Because("the explicit registration owns the instance, so the scan's hook would never run, which is a conflict with the registration rather than between scans");
 		}
 
 		[Test]
-		public async Task DoesNotReportWhenAnExplicitRegistrationWithoutHooksOptsOutOfTheScanHook()
+		public async Task ReportsAwt166InsteadWhenAnExplicitRegistrationNamesNoHook()
 		{
 			GeneratorResult result = Generator.Run("""
 			                                       using Awaiten;
@@ -160,10 +156,8 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).IsEmpty()
-				.Because("an explicit registration replaces the scan's hooks along with everything else");
-			await That(result.Sources.Values.Any(source => source.Contains("FromScan("))).IsFalse()
-				.Because("leaving the hook off the explicit registration deliberately opts the type out of it");
+			await That(result.Diagnostics).HasSingle().Which.Contains("error AWT166").And.Contains("unset")
+				.Because("an explicit registration without the hook does not take the scan's, so the scan's hook would never run");
 		}
 
 		[Test]

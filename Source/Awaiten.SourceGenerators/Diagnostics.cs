@@ -1173,6 +1173,21 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="ConflictingLifecycleDirectives">AWT166</see> for a <c>[Scan]</c> that names an
+	///     <c>OnActivated</c> or <c>OnRelease</c> hook for a match whose instance another registration of the
+	///     implementation owns. The scan yields to that registration, so the shared instance runs the registration's hook
+	///     in that slot, or none, and the scan's hook would silently never run. A scan naming the same method as the
+	///     registration states no contradiction and is not reported.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ScanHookOnOwnedInstance = new(
+		"AWT166",
+		ConflictingLifecycleDirectives.Title,
+		"'{0}' is matched by a scan whose {1} hook is {2}, but its instance is owned by a registration of '{0}' whose {1} hook is {3}; the scan yields to that registration, so its hook would never run. Name the same {1} hook on the registration, or exclude '{0}' from the scan.",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A <c>WhenInjectedInto</c> contextual binding never applies, because the named consumer type has no
 	///     dependency it can redirect: the binding targets an unkeyed direct constructor parameter or
 	///     <c>[Inject]</c> property only, so a <c>[FromKey]</c> dependency, one deferred behind <c>Func</c>/<c>Lazy</c>,
@@ -1601,7 +1616,8 @@ internal static class Diagnostics
 	///     to stand in for it that does not exist (the shapes of <see cref="RegisteredTypeLessAccessible">AWT216</see>),
 	///     for example because <c>ScanAs.Self</c> registers it as itself, or a container extending the scanning base
 	///     cannot build it through the base's generated factory (where an explicit registration is
-	///     <see cref="InheritedPrivateImplementation">AWT226</see>).
+	///     <see cref="InheritedPrivateImplementation">AWT226</see>). It is also the form for a type of another assembly with
+	///     no constructor the container can call, where an explicit registration is <see cref="NoAccessibleConstructor">AWT104</see>.
 	///     <c>{1}</c> names the reason and <c>{2}</c> the remedy. A scan skips such a match with this warning rather
 	///     than failing, and also drops it when only its combination with another registration of the same type has no
 	///     accessible stand-in, so the other registration keeps its meaning.
@@ -1792,8 +1808,8 @@ internal static class Diagnostics
 	///     lifetimes. Two scans naming the same method on the same owner, or hooking different slots, merge cleanly
 	///     and are not reported. A hook name is owner-relative, so the same name from a different origin - a
 	///     module's scan and the container's, or two modules' - is a different method and conflicts too. An explicit
-	///     registration of the implementation is not reported either: a scan deliberately yields to it, hooks
-	///     included.
+	///     registration of the implementation is not reported here: a scan yields to it, and a scan hook the
+	///     registration does not name too is <see cref="ScanHookOnOwnedInstance">AWT166</see>.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ScanHookConflict = new(
 		"AWT199",

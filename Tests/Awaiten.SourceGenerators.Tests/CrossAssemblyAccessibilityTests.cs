@@ -41,7 +41,7 @@ public class CrossAssemblyAccessibilityTests
 	}
 
 	[Test]
-	public async Task InternalConstructorWithoutInternalsVisibleTo_ReportsAwt104()
+	public async Task InternalConstructorWithoutInternalsVisibleTo_SkipsTheMatchWithAwt193()
 	{
 		GeneratorResult result = Generator.RunWithReferencedAssembly("""
 			namespace Lib;
@@ -60,8 +60,8 @@ public class CrossAssemblyAccessibilityTests
 			}
 			""");
 
-		await That(result.Diagnostics).Contains("*AWT104*Lib.Roaster*").AsWildcard()
-			.Because("without the grant the container's assembly cannot call the internal constructor");
+		await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible outside its assembly")
+			.Because("without the grant the container's assembly cannot call the internal constructor, so the scan skips the match");
 	}
 
 	[Test]

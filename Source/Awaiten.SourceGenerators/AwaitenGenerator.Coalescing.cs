@@ -51,7 +51,7 @@ partial class AwaitenGenerator
 	private static void ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		DropDuplicateScanHandles(raw, compilation, diagnostics);
-		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, compilation, diagnostics);
+		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, container, compilation, diagnostics);
 		List<(RawRegistration Handle, int Index, string Identity)> indexed = raw
 			.Select((registration, index) => (registration, index))
 			.Where(entry => entry.registration.Hidden is not null && entry.registration.ImplementationType.Contains(HiddenKeyMarker))
@@ -77,7 +77,7 @@ partial class AwaitenGenerator
 			                                && alias.ImplementationType == TypeIdentity(aliased, compilation) + aliasMarker
 			                                && compilation.HasImplicitConversion(aliased, service)) is { } alias)
 			{
-				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, compilation));
+				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, container, compilation));
 				raw[index] = match with
 				{
 					ImplementationType = alias.ImplementationType,
@@ -103,7 +103,7 @@ partial class AwaitenGenerator
 				                                 && TakesHandle(generated, handle.ServiceType)
 				                                 && compilation.HasImplicitConversion(generated.ReturnType, service)) is ({ } owner, { } shared))
 			{
-				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, compilation));
+				diagnostics.AddRange(UnappliedScanHooks(match, handle, yieldedTo, container, compilation));
 				raw[index] = ThroughAlias(match with { Lifetime = handle.Lifetime, }, owner, implementation, shared, compilation);
 				continue;
 			}
@@ -185,13 +185,14 @@ partial class AwaitenGenerator
 	///     Lets the first registration in precedence order that constructs or produces the implementation of a scan instance
 	///     handle (see <see cref="IsScanHandle" />) win over the scan, as in the module's own assembly. An explicit
 	///     registration wins over every scan match: the handle and the scan's aliases take its lifetime and
-	///     <c>SuppressDisposal</c>, and the scan's hooks are dropped. Among the scan matches, which include the container's
+	///     <c>SuppressDisposal</c>, and the scan's hooks are dropped, each one the registration does not name too after
+	///     reporting AWT166 (see <see cref="ScanHookOnOwnedInstance" />). Among the scan matches, which include the container's
 	///     own scans and the matches of other modules, the first decides the lifetime, which the handle and the scan's
 	///     aliases take while keeping the scan's hooks, and each later one with another lifetime is AWT142 once per
 	///     implementation. An overridable default that coalescing drops wins nothing. Returns the winning registration per
 	///     implementation identity.
 	/// </summary>
-	private static Dictionary<string, RawRegistration> YieldScanHandles(List<RawRegistration> raw, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static Dictionary<string, RawRegistration> YieldScanHandles(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		Dictionary<string, RawRegistration> winners = new(StringComparer.Ordinal);
 		Dictionary<string, RawRegistration> handles = raw.Where(IsScanHandle).ToDictionary(handle => TypeIdentity(handle.Hidden!, compilation), StringComparer.Ordinal);
@@ -244,6 +245,15 @@ partial class AwaitenGenerator
 			    || !winners.TryGetValue(TypeIdentity(implementation, compilation), out RawRegistration? winner))
 			{
 				continue;
+			}
+
+			if (!winner.IsScan)
+			{
+				diagnostics.AddRange(new[] { false, true, }
+					.Select(release => ScanHookOnOwnedInstance(
+						current, module, (release ? winner.OnRelease : winner.OnActivated, DeclaringOrigin(winner, container)), implementation, release,
+						Display(implementation.ToDisplayString(FullyQualified)), container))
+					.OfType<DiagnosticInfo>());
 			}
 
 			string marker = AliasKeyMarker + TypeIdentity(implementation, compilation);
@@ -622,7 +632,9 @@ partial class AwaitenGenerator
 			// Every registration is a member of the collection for its (service type, key), built even when it
 			// loses the single-resolution slot, since it is reachable through the collection.
 			AddCollectionMember(serviceMembers, serviceMemberOrder, serviceKey, registration.ImplementationType);
-			MergeScanHooks(EnsureImpl(implInfos, implOrder, registration, containerSymbol), registration, reportedHookConflicts, diagnostics);
+			ImplInfo coalesced = EnsureImpl(implInfos, implOrder, registration, containerSymbol);
+			ReportScanHooksOnOwnedInstance(coalesced, registration, containerSymbol, reportedDirectiveConflicts, diagnostics);
+			MergeScanHooks(coalesced, registration, reportedHookConflicts, diagnostics);
 
 			// A keyed registration is also a member of its service's keyed collection, indexed by its Key.
 			AddKeyedMember(keyedMembers, keyedMemberOrder, registration, alreadyChosen);
@@ -710,7 +722,8 @@ partial class AwaitenGenerator
 	///     origin - a container scan and a same-compilation module scan, or two modules - is a different method and
 	///     conflicts too; only a restatement from the same origin merges. When the implementation's winning
 	///     registration is not a scan the whole merge is skipped: a scan yields to an explicit registration, whose
-	///     hooks (or deliberate lack of them) replace the scan's like its other options.
+	///     hooks replace the scan's like its other options, and a scan hook the registration does not name too is
+	///     AWT166 (see <see cref="ReportScanHooksOnOwnedInstance" />).
 	/// </summary>
 	private static void MergeScanHooks(
 		ImplInfo info,
@@ -727,6 +740,112 @@ partial class AwaitenGenerator
 			registration, release: false, (info.OnActivated, info.OnActivatedOrigin), info.OnActivatedMarkers, reportedHookConflicts, diagnostics);
 		(info.OnRelease, info.OnReleaseOrigin) = MergeScanHookSlot(
 			registration, release: true, (info.OnRelease, info.OnReleaseOrigin), info.OnReleaseMarkers, reportedHookConflicts, diagnostics);
+	}
+
+	/// <summary>
+	///     <see cref="Diagnostics.ScanHookOnOwnedInstance">AWT166</see> for each hook slot in which a scan registration
+	///     names a hook that the registration owning its implementation's instance does not name too: the scan yields
+	///     to that registration (see <see cref="MergeScanHooks" />), so its hook would never run. Reported once per
+	///     implementation and slot, like the AWT166 of two registrations.
+	/// </summary>
+	private static void ReportScanHooksOnOwnedInstance(
+		ImplInfo info,
+		RawRegistration registration,
+		INamedTypeSymbol containerSymbol,
+		HashSet<string> reportedDirectiveConflicts,
+		List<DiagnosticInfo> diagnostics)
+	{
+		if (!registration.IsScan || info.IsScan)
+		{
+			return;
+		}
+
+		INamedTypeSymbol? scanOrigin = DeclaringOrigin(registration, containerSymbol);
+		string subject = DisplayInstance(registration.ImplementationType);
+		foreach (DiagnosticInfo diagnostic in new[]
+			         {
+				         ScanHookOnOwnedInstance(registration, scanOrigin, (info.OnActivated, info.OnActivatedOrigin), info.Symbol, release: false, subject, containerSymbol),
+				         ScanHookOnOwnedInstance(registration, scanOrigin, (info.OnRelease, info.OnReleaseOrigin), info.Symbol, release: true, subject, containerSymbol),
+			         }
+			         .OfType<DiagnosticInfo>()
+			         .Where(diagnostic => reportedDirectiveConflicts.Add(registration.ImplementationType + "\0" + diagnostic.MessageArgs.AsArray()[1])))
+		{
+			diagnostics.Add(diagnostic);
+		}
+	}
+
+	/// <summary>
+	///     <see cref="Diagnostics.ScanHookOnOwnedInstance">AWT166</see> when the scan registration <paramref name="scan" />
+	///     names a hook in one slot that differs from the hook <paramref name="owner" /> of the registration that owns the
+	///     instance of <paramref name="implementation" />, or <see langword="null" />. A hook is the method its origin
+	///     declares, so a generated wrapper of a module of another assembly is compared by the hook it calls (see
+	///     <see cref="UserHook" />), and the same name on another origin is another method.
+	/// </summary>
+	private static DiagnosticInfo? ScanHookOnOwnedInstance(
+		RawRegistration scan,
+		INamedTypeSymbol? scanOrigin,
+		(string? Hook, INamedTypeSymbol? Origin) owner,
+		INamedTypeSymbol implementation,
+		bool release,
+		string subject,
+		INamedTypeSymbol containerSymbol)
+	{
+		// An extending container cannot name the hook of its base's scan or exclude a type from that scan, so its own
+		// registration replaces the inherited scan's hook, and the base reports a registration of its own in its build.
+		if ((release ? scan.OnRelease : scan.OnActivated) is not { } hook
+		    || (scanOrigin is not null && HasAwaitenAttribute(scanOrigin.GetAttributes(), "ContainerAttribute")))
+		{
+			return null;
+		}
+
+		(string Name, INamedTypeSymbol? Origin) scanned = UserHook(hook, scanOrigin, implementation, release);
+		(string Name, INamedTypeSymbol? Origin)? owned = owner.Hook is { } ownerHook ? UserHook(ownerHook, owner.Origin, implementation, release) : null;
+		if (owned is { } same && same.Name == scanned.Name && SymbolEqualityComparer.Default.Equals(same.Origin, scanned.Origin))
+		{
+			return null;
+		}
+
+		return new DiagnosticInfo(
+			Diagnostics.ScanHookOnOwnedInstance,
+			LocationInfo.From(scan.Location),
+			new EquatableArray<string>([
+				subject,
+				release ? "OnRelease" : "OnActivated",
+				Describe(scanned),
+				owned is { } named ? Describe(named) : "unset",
+			]));
+
+		string Describe((string Name, INamedTypeSymbol? Origin) named) => $"'{Display(QualifiedMember(named.Origin ?? containerSymbol, named.Name))}'";
+	}
+
+	/// <summary>
+	///     The hook a module of another assembly names for <paramref name="implementation" /> when <paramref name="hook" /> is
+	///     the generated wrapper of it that a container there calls instead: a registration's wrapper is matched by the
+	///     hook its name derives from, and a scan's wrapper, one per match and slot, stands for the hook the module's scans
+	///     name for that slot when they all name the same one. Any other hook is returned as it is.
+	/// </summary>
+	private static (string Name, INamedTypeSymbol? Origin) UserHook(string hook, INamedTypeSymbol? origin, INamedTypeSymbol implementation, bool release)
+	{
+		string prefix = InternalsClass + ".";
+		if (origin is null || !hook.StartsWith(prefix, StringComparison.Ordinal))
+		{
+			return (hook, origin);
+		}
+
+		string wrapper = hook.Substring(prefix.Length);
+		string slot = release ? "OnRelease" : "OnActivated";
+		List<(string Name, bool Scan)> named = origin.GetAttributes()
+			.Select(attribute => (Name: NamedArgument(attribute, slot), Scan: attribute.AttributeClass is { Name: "ScanAttribute", }))
+			.Where(entry => entry.Name is not null)
+			.Select(entry => (entry.Name!, entry.Scan))
+			.ToList();
+		if (named.FirstOrDefault(entry => !entry.Scan && wrapper.EndsWith(RegistrationHookWrapperName(implementation, release, entry.Name), StringComparison.Ordinal)) is ({ } registered, _))
+		{
+			return (registered, origin);
+		}
+
+		List<string> scanned = named.Where(entry => entry.Scan).Select(entry => entry.Name).Distinct(StringComparer.Ordinal).ToList();
+		return wrapper.Contains($"ScanHook_{slot}_") && scanned.Count == 1 ? (scanned[0], origin) : (hook, origin);
 	}
 
 	/// <summary>

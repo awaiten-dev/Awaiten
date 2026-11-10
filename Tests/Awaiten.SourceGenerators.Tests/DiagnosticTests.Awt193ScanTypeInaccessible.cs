@@ -439,5 +439,223 @@ public partial class DiagnosticTests
 					.Because("the type is private to another class, so not even the container's own members can name it");
 			}
 		}
+
+		public class ConstructorsOfAnotherAssembly
+		{
+			private const string Library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IEquipment { }
+				public sealed class Roaster : IEquipment { internal Roaster() { } }
+				public sealed class Grinder : IEquipment { }
+				""";
+
+			private const string Container = """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Scan(typeof(Lib.IEquipment), InAssembliesOf = new[] { typeof(Lib.IEquipment) }{0})]
+				public static partial class MyContainer
+				{
+				}
+				""";
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task OnlyInternalConstructors_SkipsTheMatchWithAWarning(string consumer)
+			{
+				string container = Container.Replace("{0}", "");
+				GeneratorResult result = consumer == "reference"
+					? Generator.RunWithGeneratedReferenceAssembly(Library, container)
+					: Generator.RunWithGeneratedReferencedAssembly(Library, container);
+
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible outside its assembly 'ReferencedAssembly'")
+					.And.Contains("make a constructor public, move the scan into a [Module] in 'ReferencedAssembly'")
+					.Because("the container can name Roaster but cannot call its constructor, which the scan skips like a type it cannot name instead of failing with AWT104");
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).DoesNotContain("Lib.Roaster")
+					.Because("the skipped match is not registered");
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("new global::Lib.Grinder()")
+					.Because("the other match still registers");
+			}
+
+			[Test]
+			public async Task SkipUnconstructable_ReportsTheSameWarning()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, Container.Replace("{0}", ", SkipUnconstructable = true"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible")
+					.Because("the constructors are out of reach whatever the opt-in, so the more specific AWT193 explains the skip rather than AWT141");
+			}
+
+			[Test]
+			public async Task OnlyPrivateConstructors_SkipsTheMatchToo()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+					namespace Lib;
+
+					public interface IEquipment { }
+					public sealed class Roaster : IEquipment
+					{
+					    private Roaster() { }
+					    public static Roaster Create() => new();
+					}
+					""", Container.Replace("{0}", ""));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("constructor accessible outside its assembly")
+					.Because("a private constructor is out of the container's reach like an internal one");
+			}
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task DefaultOfAModuleThatCoalescingDrops_SkipsTheMatchToo(string consumer)
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IEquipment { }
+					public sealed class Roaster : IEquipment { internal Roaster() { } }
+					public sealed class Grinder : IEquipment { }
+
+					[Module]
+					[Singleton<Roaster, IEquipment>(Fallback = Fallback.Silent)]
+					public static partial class EquipmentModule;
+					""";
+				const string container = """
+					using Awaiten;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(Lib.EquipmentModule))]
+					[Singleton<Lib.Grinder, Lib.IEquipment>]
+					[Scan(typeof(Lib.IEquipment), InAssembliesOf = new[] { typeof(Lib.IEquipment) }, Lifetime = Lifetime.Singleton)]
+					public static partial class MyContainer
+					{
+					}
+					""";
+				GeneratorResult result = consumer == "reference"
+					? Generator.RunWithGeneratedReferenceAssembly(library, container)
+					: Generator.RunWithGeneratedReferencedAssembly(library, container);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible")
+					.Because("the container's registration of IEquipment replaces the module's default, so no instance of Roaster is built for the match to share");
+			}
+
+			[Test]
+			public async Task FriendAssembly_RegistersTheMatch()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+					Library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Lib;"),
+					Container.Replace("{0}", ""));
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("InternalsVisibleTo lets the container call the internal constructor");
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("new global::Lib.Roaster()");
+			}
+
+			[Test]
+			public async Task ExplicitRegistration_KeepsAwt104()
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, """
+					using Awaiten;
+
+					namespace MyCode;
+
+					[Container]
+					[Singleton<Lib.Roaster>]
+					public static partial class MyContainer
+					{
+					}
+					""");
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("error AWT104").And.Contains("'Lib.Roaster'")
+					.Because("an explicit registration asks for this type, so it stays an error");
+			}
+
+			[Test]
+			public async Task ModuleScanInTheTypesAssembly_BuildsTheMatch()
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IEquipment { }
+					public sealed class Roaster : IEquipment { internal Roaster() { } }
+
+					[Module]
+					[Scan<IEquipment>(As = ScanAs.Marker)]
+					public static partial class EquipmentModule;
+					""";
+
+				GeneratorResult own = Generator.Run(library + """
+
+					[Container]
+					[Import(typeof(EquipmentModule))]
+					public static partial class SameContainer;
+					""");
+				GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, """
+					using Awaiten;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(Lib.EquipmentModule))]
+					public static partial class MyContainer
+					{
+					}
+					""");
+
+				await That(own.Diagnostics).IsEmpty()
+					.Because("the module's scan in its own assembly reaches the internal constructor");
+				await That(other.Diagnostics).IsEmpty()
+					.Because("the module's generated factory builds the match for a container of another assembly");
+				await That(other.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.EquipmentModule.Internals.");
+			}
+
+			[Test]
+			public async Task MatchAModuleOfTheAssemblyRegisters_SharesItsInstance()
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IEquipment { }
+					public sealed class Roaster : IEquipment { internal Roaster() { } }
+
+					[Module]
+					[Singleton<Roaster>]
+					public static partial class EquipmentModule;
+					""";
+
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+					using Awaiten;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(Lib.EquipmentModule))]
+					[Scan(typeof(Lib.IEquipment), InAssembliesOf = new[] { typeof(Lib.IEquipment) }, As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+					public static partial class MyContainer
+					{
+					}
+					""");
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the match shares the instance the module's generated factory builds, so the container never calls the constructor");
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.IEquipment")
+					.Because("the scan still registers the match under its marker");
+			}
+		}
 	}
 }

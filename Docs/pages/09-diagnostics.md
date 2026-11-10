@@ -765,7 +765,7 @@ public static partial class CoffeeShop
 ### AWT166
 
 :::danger[Error]
-An implementation is registered with conflicting `OnActivated`/`OnRelease`/`Eager` directives that coalescing would silently drop.
+An implementation is registered with conflicting `OnActivated`/`OnRelease`/`Eager` directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not.
 :::
 
 ```csharp expect=AWT166
@@ -784,6 +784,20 @@ A hook is identified by its declaring type and its name, so methods of the same 
 The library's build reports this too for an implementation a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), since a container in another assembly serves all its registrations from one instance.
 
 **Fix:** Declare one hook for the implementation: set it on one registration and leave it unset on the others (an unset directive merges with the winner's), or name the same method on all of them. To let the container replace a module's registration, hooks included, mark the module's registration `Fallback`.
+
+A [scan](./04-registration/06-scanning.md#lifecycle-hooks) that names a hook for a match whose instance a registration of the type owns is reported too. The scan yields to the registration, so the shared instance runs the registration's hook in that slot, or none, and the scan's hook would never run. Unlike two registrations, a registration that leaves the hook unset does not take the scan's: the scan hook is reported unless the registration names the same method. This holds for a keyed registration and for one of a module, also in a container of another assembly. A scan an extending container inherits from its base is not reported: the extending container's registration replaces that scan's hooks.
+
+```csharp expect=AWT166
+[Container]
+[Singleton<Espresso, IDrink>]
+[Scan<IDrink>(OnActivated = nameof(Prime))]   // Espresso's instance belongs to the registration, which runs no Prime
+public static partial class CoffeeShop
+{
+    private static void Prime(IDrink drink) { }
+}
+```
+
+**Fix:** Name the same hook on the registration, so the scan agrees with it, or exclude the type from the scan and register it explicitly under the marker.
 
 ### AWT189
 
@@ -1981,7 +1995,7 @@ public static partial class CoffeeShop;
 ### AWT193
 
 :::warning[Warning]
-A `[Scan]` matched a type that is inaccessible to the generated container, or a private nested type it cannot stand in for with an accessible type, so it is not registered.
+A `[Scan]` matched a type that is inaccessible to the generated container, a type of another assembly whose constructors it cannot call, or a private nested type it cannot stand in for with an accessible type, so it is not registered.
 :::
 
 ```csharp no-compile
@@ -2000,6 +2014,20 @@ Where [AWT188](#awt188) is about an interface the match cannot be exposed under,
 A match from another assembly names that assembly in the message and suggests moving the scan into a `[Module]` there: a [module's scan](./04-registration/07-modules.md#self-compiled-scans) runs in the module's own build and generates a factory per internal match, so any container that imports the module registers the matches.
 
 **Fix:** Move the scan into a `[Module]` in the type's assembly, make the type public, grant the container's assembly `InternalsVisibleTo`, or exclude it with a `NamePatterns` or `NamespacePatterns` entry.
+
+A `public` class of another assembly whose constructors are all `internal` is skipped the same way: the container can name it but cannot call a constructor, which an explicit registration reports as [AWT104](#awt104). The message names the constructors as the reason. An assembly granted `InternalsVisibleTo` calls them and registers the match, and a module scan in the type's assembly builds it through the module's generated factory. A match the container shares with another registration of the type, such as one a module of that assembly builds, is kept, unless that registration is a `Fallback` default the container replaces.
+
+```csharp no-compile
+// In a referenced assembly: the type is public, its only constructor is internal.
+public sealed class Grinder : IEquipment { internal Grinder() { } }
+
+// Grinder is skipped with AWT193 instead of failing the build with AWT104.
+[Container]
+[Scan<IEquipment>(InAssembliesOf = [typeof(IEquipment)])]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Make a constructor public, move the scan into a `[Module]` in the type's assembly, grant the container's assembly `InternalsVisibleTo`, or exclude the type from the scan.
 
 A type nested privately in the container is a match like any other: the generated resolvers return an accessible type it converts to (see [AWT216](#awt216)). The scan skips it with this warning, and names the reason, only where no such type exists, so a private type never turns a scan into an error:
 
@@ -2066,9 +2094,9 @@ public static partial class CoffeeShop
 }
 ```
 
-Which method ran for `Widget` would depend on attribute order, so the contradiction is surfaced instead, mirroring [AWT142](#awt142) for lifetimes. Overlapping scans that agree are fine: two scans naming the *same* method merge, and so do scans hooking *different* slots (one scan's `OnActivated` combines with another's `OnRelease`). A hook name is owner-relative, though: a module `[Scan]` resolves its hooks against the module and a container `[Scan]` against the container, so a module scan and a container scan naming the same method name still conflict, because each means its own method. An explicit registration of the type is not reported either: a scan yields to it wholesale, hooks included, so the explicit registration's hooks (or its deliberate lack of them) replace the scan's.
+Which method ran for `Widget` would depend on attribute order, so the contradiction is surfaced instead, mirroring [AWT142](#awt142) for lifetimes. Overlapping scans that agree are fine: two scans naming the *same* method merge, and so do scans hooking *different* slots (one scan's `OnActivated` combines with another's `OnRelease`). A hook name is owner-relative, though: a module `[Scan]` resolves its hooks against the module and a container `[Scan]` against the container, so a module scan and a container scan naming the same method name still conflict, because each means its own method. An explicit registration of the type is not reported here: a scan yields to it, and a scan hook it does not name too is [AWT166](#awt166) instead.
 
-**Fix:** Name the same hook method in both scans, or register the type explicitly with the hook it should get; a scan yields to an explicit registration, hooks included.
+**Fix:** Name the same hook method in both scans, or exclude the type from one of them.
 
 ## Modules
 

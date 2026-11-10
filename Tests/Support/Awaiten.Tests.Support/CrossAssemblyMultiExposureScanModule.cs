@@ -158,6 +158,35 @@ public static partial class PublicMultiExposureScanModule
 	internal static void Activate(PublicMultiRoaster roaster) => roaster.Activations++;
 }
 
+/// <summary>The marker of the match of <see cref="PlainPublicMultiExposureScanModule" />.</summary>
+public interface IPlainPublicMultiPlugin;
+
+/// <summary>The matching interface of the match of <see cref="PlainPublicMultiExposureScanModule" />.</summary>
+public interface IPlainPublicMultiRoaster
+{
+	/// <summary>How often a container disposed the instance.</summary>
+	int Disposals { get; }
+}
+
+/// <summary>A public match of <see cref="PlainPublicMultiExposureScanModule" />, which a consumer may register itself.</summary>
+public sealed class PlainPublicMultiRoaster : IPlainPublicMultiPlugin, IPlainPublicMultiRoaster, IDisposable
+{
+	/// <inheritdoc />
+	public int Disposals { get; private set; }
+
+	/// <inheritdoc />
+	public void Dispose() => Disposals++;
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose scan without hooks exposes its public match under its marker and its matching interface,
+///     which the module shares through a generated instance handle, so a consumer's registration of the match can own the
+///     instance.
+/// </summary>
+[Module]
+[Scan<IPlainPublicMultiPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+public static partial class PlainPublicMultiExposureScanModule;
+
 /// <summary>
 ///     A <c>[Module]</c> whose scans expose each internal match under its marker and its matching interface, which the
 ///     module shares through a generated instance handle per match.
