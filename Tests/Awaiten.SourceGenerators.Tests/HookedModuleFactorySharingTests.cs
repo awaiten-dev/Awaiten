@@ -98,6 +98,35 @@ public class HookedModuleFactorySharingTests
 	}
 
 	[Test]
+	[Arguments("[Singleton<Greeter, IGreeter>]", "[Singleton<Greeter>(Key = \"k\", OnActivated = nameof(Ready))]")]
+	[Arguments("[Singleton<Greeter, IGreeter>(Key = \"m\")]", "[Singleton<Greeter>(OnActivated = nameof(Ready))]")]
+	[Arguments("[Scoped<Greeter, IGreeter>]", "[Scoped<Greeter>(OnActivated = nameof(Ready), OnRelease = nameof(Ready))]")]
+	[Arguments("[Transient<Greeter, IGreeter>]", "[Transient<Greeter>(OnActivated = nameof(Ready), OnRelease = nameof(Ready))]")]
+	public async Task AHookOfTheContainer_BindsOnTheContainerForKeyedScopedAndTransientRegistrations(string moduleRegistration, string registration)
+	{
+		string library = Library(InternalConstructor, moduleRegistration);
+		string consumer = Consumer(registration);
+
+		GeneratorResult same = Generator.Run("using System.Threading.Tasks;\n" + library + "\n" + WithoutHeader(consumer));
+		GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+		GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, consumer);
+
+		foreach (GeneratorResult result in new[] { same, other, reference, })
+		{
+			await That(result.Diagnostics).IsEmpty()
+				.Because("both registrations are one implementation with the container's hook, as in the module's own assembly");
+		}
+
+		foreach (GeneratorResult result in new[] { other, reference, })
+		{
+			await That(Container(result)).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_")
+				.And.DoesNotContain("new global::Lib.Greeter(")
+				.And.Contains("Ready(created)")
+				.Because("the registration calls the module's factory, and the container's hook runs on what it builds");
+		}
+	}
+
+	[Test]
 	[Arguments("[Singleton<Greeter, IGreeter>(OnActivated = nameof(Warm))]", "[Singleton<Greeter>(OnActivated = nameof(Ready))]",
 		"OnActivated directives ('*AppContainer.Ready' and 'Lib.GreetingModule.Warm')")]
 	[Arguments("[Singleton<Greeter, IGreeter>(OnRelease = nameof(Warm))]", "[Singleton<Greeter>(OnRelease = nameof(Ready))]",
