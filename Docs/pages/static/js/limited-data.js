@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "327111ebc4f6d2d917161c7ecadbe4067bb894d1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
-        "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
-      },
-      {
         "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
         "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
+      },
+      {
+        "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
+        "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
       }
     ],
     "labels": [
-      "327111eb",
       "ae650025",
       "7efc634e",
       "9ec72a90",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "4ffb3551",
       "e3a0e8a5",
       "d9c60864",
-      "aabdd154"
+      "aabdd154",
+      "960833f0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.024182619793074,
           7.765617289890845,
           3.7772616835740895,
           6.678210540459706,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.651882083370135,
           3.363661684716741,
           4.898658965031306,
-          4.856297322114309
+          4.856297322114309,
+          5.652835548917452
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          3.8421954895768846,
           7.64637618798476,
           4.087794521450997,
           5.867146718714919,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           8.458894013116756,
           4.076065678436023,
           6.9869589404417916,
-          7.003430208563804
+          7.003430208563804,
+          6.704157524307569
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          53.42860336303711,
           108.55863979657491,
           55.79625258078942,
           136.728231493632,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           128.2282097706428,
           61.6760619242986,
           85.28057911396027,
-          83.27869965632756
+          83.27869965632756,
+          88.40025683811733
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          5.09025456905365,
           9.012350069979826,
           5.169541908303897,
           8.621972555915514,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.115483460823695,
           4.925912924607595,
           6.9404090712467825,
-          7.082697822497441
+          7.082697822497441,
+          7.346101135015488
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.084552629788717,
           11.145316003606869,
           6.549267848332723,
           10.47067702015241,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.463056210676829,
           6.211242971511988,
           8.637163414557774,
-          8.274770711859068
+          8.274770711859068,
+          8.9696418804427
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "327111ebc4f6d2d917161c7ecadbe4067bb894d1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
-        "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
-      },
-      {
         "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
         "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
+      },
+      {
+        "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
+        "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
       }
     ],
     "labels": [
-      "327111eb",
       "ae650025",
       "7efc634e",
       "9ec72a90",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "4ffb3551",
       "e3a0e8a5",
       "d9c60864",
-      "aabdd154"
+      "aabdd154",
+      "960833f0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.197607998053233,
           8.424078018714985,
           4.346064536273479,
           7.812836615102632,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.097307593623797,
           3.3359888419508934,
           5.654750616422722,
-          5.275314815342426
+          5.275314815342426,
+          6.027301663389573
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          3.8077315560409,
           7.503227600684533,
           4.03969646932987,
           5.956316468971116,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           8.448261767625809,
           3.9960171326994898,
           6.49940995986645,
-          6.819443034132322
+          6.819443034132322,
+          6.565504011511803
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          54.58466943105062,
           116.59888793627421,
           61.9205221414566,
           136.64759742296658,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           128.31042706171672,
           57.012191402060644,
           84.72578719946054,
-          82.81950867970785
+          82.81950867970785,
+          90.17035367488862
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          5.054571005914893,
           9.040055798796507,
           4.963326157858739,
           8.695648869872093,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.075121656060219,
           5.060589847465356,
           6.847327436506748,
-          6.804089862566728
+          6.804089862566728,
+          7.335381795962651
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          7.6389928969244165,
           14.368063184831824,
           6.437598618865013,
           10.89857622385025,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           15.485244640282222,
           6.430826219228598,
           11.81320329606533,
-          11.414701374677511
+          11.414701374677511,
+          12.206180542707443
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "327111ebc4f6d2d917161c7ecadbe4067bb894d1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
-        "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
-      },
-      {
         "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 21:56:30 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
         "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
+      },
+      {
+        "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
+        "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
       }
     ],
     "labels": [
-      "327111eb",
       "ae650025",
       "7efc634e",
       "9ec72a90",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "4ffb3551",
       "e3a0e8a5",
       "d9c60864",
-      "aabdd154"
+      "aabdd154",
+      "960833f0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          11.689251612623533,
           25.848719529310863,
           17.694122968117394,
           18.83032664656639,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           11.468443551233836,
           22.096539863518306,
           29.02197804848353,
-          11.815641371409098
+          11.815641371409098,
+          15.051991778612138
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2393,7 +2393,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
-          208,
+          216,
           216,
           216,
           216,
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          808.6582307134356,
           1673.6797379084996,
           1380.2609663645426,
           1421.0019565309797,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           790.6562194188435,
           1343.840008799235,
           1718.548883846828,
-          761.1358243397304
+          761.1358243397304,
+          892.9150653203328
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          18431.370762416296,
           24902.149934895835,
           26906.07615559896,
           29912.833127702987,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18073.73465837751,
           19098.30012003581,
           25095.459439958846,
-          16987.624342698316
+          16987.624342698316,
+          17848.1404683431
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32478,
           32476,
           32478,
           32477,
@@ -2685,6 +2684,7 @@ window.BENCHMARK_DATA = {
           32478,
           32474,
           32474,
+          32478,
           32478
         ],
         "borderColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          393.2971302781786,
           713.6434297561646,
           625.3807200023106,
           669.6020581381662,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           398.9922874768575,
           556.2869133631389,
           705.683532851083,
-          386.35295190811155
+          386.35295190811155,
+          419.0346734046936
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6704.3650153023855,
           12081.53932800293,
           10417.0191116333,
           11882.509128277119,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6789.6760001549355,
           9741.68173828125,
           12399.423900897686,
-          6363.951000213623
+          6363.951000213623,
+          6911.6642613728845
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24760,
-          24760,
           24761,
           24760,
           24761,
@@ -2933,6 +2932,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "327111ebc4f6d2d917161c7ecadbe4067bb894d1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
-        "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
-      },
       {
         "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
         "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
+      },
+      {
+        "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
+        "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
       }
     ],
     "labels": [
-      "327111eb",
       "ae650025",
       "7efc634e",
       "9ec72a90",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "4ffb3551",
       "e3a0e8a5",
       "d9c60864",
-      "aabdd154"
+      "aabdd154",
+      "960833f0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          75.04897839228312,
           340.03775316874186,
           117.61618366241456,
           160.3895860830943,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           83.180823802948,
           260.33723481496173,
           364.71540654500325,
-          79.88588464260101
+          79.88588464260101,
+          80.78373035589854
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3376,7 +3376,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
-          4176,
+          4432,
           4432,
           4432,
           4432,
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7238.157218346229,
           14942.120482308525,
           12136.089542933873,
           14132.133163960774,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7740.74032236735,
           12057.956342569987,
           14769.036908976237,
-          7025.484086608887
+          7025.484086608887,
+          7382.471024576823
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          416771.86896623886,
           593736.0176432292,
           648925.2350027902,
           716147.9576171875,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           448409.7353190104,
           451211.3259277344,
           588662.9877604167,
-          416450.51927083335
+          416450.51927083335,
+          432318.16998697916
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          735271,
           740318,
           719731,
           721215,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           741068,
           718752,
           719414,
-          735423
+          735423,
+          738692
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          22816.632102457683,
           40233.04645182292,
           37734.77399495443,
           41971.86191813151,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           23842.600900503305,
           30597.61916879507,
           40813.885681152344,
-          22303.146776471818
+          22303.146776471818,
+          22956.337223597937
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          79672,
           80763,
           80965,
           80968,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80306,
           80316,
           80317,
-          79672
+          79672,
+          81089
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          201987.96673177084,
           339639.08872070315,
           312314.45003255206,
           364587.8162760417,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           206956.40029672475,
           251248.5345740685,
           346058.7358022836,
-          186965.29064127605
+          186965.29064127605,
+          196796.92210286457
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573039,
           571190,
           573107,
           573092,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573071,
           571199,
           571195,
-          572943
+          572943,
+          573009
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "327111ebc4f6d2d917161c7ecadbe4067bb894d1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 21:32:43 2026 \u002B0100",
-        "message": "refactor!: move the generated scan attributes into Awaiten.Internals (#342)"
-      },
       {
         "sha": "ae6500253ea3e7b3a629052231660ca5257a68ae",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
         "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
+      },
+      {
+        "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
+        "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
       }
     ],
     "labels": [
-      "327111eb",
       "ae650025",
       "7efc634e",
       "9ec72a90",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "4ffb3551",
       "e3a0e8a5",
       "d9c60864",
-      "aabdd154"
+      "aabdd154",
+      "960833f0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          444.5070858637492,
           242.88698859214782,
           202.0225121634347,
           205.63182820592607,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           169.40454427401224,
           180.86298430882968,
           213.60745930671692,
-          167.304328753398
+          167.304328753398,
+          242.36123204231262
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          610.0695203940073,
           565.0554023106893,
           452.51600779805864,
           476.11052789006914,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           399.92640024820963,
           428.8706473937401,
           472.33360290527344,
-          402.16801146098544
+          402.16801146098544,
+          599.6545494715373
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6627.082936423166,
           4335.397855377198,
           4874.576589457194,
           5085.062318361723,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           3584.2331416790303,
           3756.1327089162974,
           4962.40820719401,
-          3700.684037072318
+          3700.684037072318,
+          6546.551977539062
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          396.8058190663656,
           334.61634095509845,
           337.4926118850708,
           358.3014275868734,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           270.06353359956006,
           290.00080370903015,
           348.35470520655315,
-          255.01846878869193
+          255.01846878869193,
+          384.4101921081543
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          708.2082018534343,
           625.1611949284871,
           576.8918360301426,
           566.4528698921204,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           419.74965725626265,
           411.94015083994185,
           559.073273726872,
-          397.3597171123211
+          397.3597171123211,
+          801.5906909306844
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
