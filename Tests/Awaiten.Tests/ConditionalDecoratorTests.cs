@@ -727,7 +727,9 @@ public partial class ConditionalDecoratorTests
 	{
 		private static bool MonitoringEnabled => Switches.Monitoring;
 
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 		private static IClient CreateClient([RequestingType] Type? requestingType) => new NamedClient(requestingType?.Name);
+#pragma warning restore CA1859
 	}
 
 	[Container]

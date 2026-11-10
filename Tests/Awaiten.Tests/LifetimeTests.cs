@@ -161,7 +161,9 @@ public partial class LifetimeTests
 		// is reached through the (live) root, so the resolving scope's disposal is enforced at the entry point,
 		// on both the generic typed fast path and the Type-based path (which take different routes to the resolver).
 		await That(() => scope.Resolve<ISingletonService>()).Throws<ObjectDisposedException>();
+#pragma warning disable CA2263 // the test covers the Type-based overload
 		await That(() => scope.Resolve(typeof(ISingletonService))).Throws<ObjectDisposedException>();
+#pragma warning restore CA2263
 	}
 
 	public interface ISingletonService;

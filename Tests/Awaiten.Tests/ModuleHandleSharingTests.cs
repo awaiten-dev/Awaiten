@@ -235,7 +235,9 @@ public static partial class HandledFactoryContainer;
 [Singleton<IHandledFactoryClock>(Factory = nameof(CreateFakeClock))]
 public static partial class ReplacedHandledFactoryContainer
 {
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static IHandledFactoryClock CreateFakeClock() => new FakeHandledFactoryClock();
+#pragma warning restore CA1859
 }
 
 [Container]
@@ -243,7 +245,9 @@ public static partial class ReplacedHandledFactoryContainer
 [Singleton<IHandledFactoryClock>(Factory = nameof(CreateFakeClock))]
 public static partial class OwnHandledFactoryContainer
 {
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static IHandledFactoryClock CreateFakeClock() => new FakeHandledFactoryClock();
+#pragma warning restore CA1859
 }
 
 /// <summary>The clock this assembly registers over the eager default of <see cref="CrossAssemblyOverriddenEagerModule" />.</summary>

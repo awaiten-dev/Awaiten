@@ -200,7 +200,9 @@ public static partial class FriendHiddenArgumentModule
 public static partial class HiddenArgumentModule
 #endif
 {
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static IHiddenArgumentBrew MakeBrew([Arg] ArgumentOrder order, [Arg] int shots) => new MemberArgumentBrew(order, shots);
+#pragma warning restore CA1859
 }
 
 /// <summary>A <c>[Module]</c> whose scan matches an implementation built from a runtime argument that another module builds through a handle.</summary>

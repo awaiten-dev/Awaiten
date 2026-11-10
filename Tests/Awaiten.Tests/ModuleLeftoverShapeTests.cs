@@ -92,7 +92,9 @@ public partial class ModuleLeftoverShapeTests
 	{
 		public sealed class Kettle : ILocalKettle;
 
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 		private static ILocalKettle Make() => new Kettle();
+#pragma warning restore CA1859
 	}
 
 	[Container]

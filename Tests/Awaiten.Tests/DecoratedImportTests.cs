@@ -362,7 +362,9 @@ public partial class DecoratedImportTests
 			using SingletonShop.Root shop = new(host);
 
 			await That(shop.Resolve<IGrinder>()).Is<TracingGrinder>();
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(shop.Resolve(typeof(IGrinder))).Is<TracingGrinder>();
+#pragma warning restore CA2263
 			await That(shop.TryResolve(typeof(IGrinder), out object? grinder)).IsTrue();
 			await That(grinder).Is<TracingGrinder>();
 		}
@@ -372,8 +374,10 @@ public partial class DecoratedImportTests
 		{
 			using SingletonShop.Root shop = new(new CountingResolver());
 
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(shop.GetResolvability(typeof(IGrinder)).Status).IsEqualTo(AwaitenResolvabilityStatus.Resolvable)
 				.Because("the container resolves the decorator, which asks the host only for its inner instance");
+#pragma warning restore CA2263
 		}
 
 		[Test]
