@@ -1794,6 +1794,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:05 2026 \u002B0100",
         "message": "fix: report relationships over collections as AWT256 and name the remedy for collection misses by type (#402)"
+      },
+      {
+        "sha": "e3a0e8a59c58989c46bebcef54a7778384d120fb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
+        "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
       }
     ],
     "labels": [
@@ -2095,7 +2101,8 @@ window.BENCHMARK_DATA = {
       "291cf485",
       "54f5274d",
       "3cde5b3e",
-      "4ffb3551"
+      "4ffb3551",
+      "e3a0e8a5"
     ],
     "datasets": [
       {
@@ -2400,7 +2407,8 @@ window.BENCHMARK_DATA = {
           2.9457818379004794,
           6.770831393344062,
           4.833898941675822,
-          6.651882083370135
+          6.651882083370135,
+          3.363661684716741
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2412,6 +2420,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3023,7 +3032,8 @@ window.BENCHMARK_DATA = {
           3.8238707493458475,
           7.584012808708044,
           6.703540325164795,
-          8.458894013116756
+          8.458894013116756,
+          4.076065678436023
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3035,6 +3045,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3646,7 +3657,8 @@ window.BENCHMARK_DATA = {
           53.08613698681196,
           138.00487294197083,
           108.94789396013532,
-          128.2282097706428
+          128.2282097706428,
+          61.6760619242986
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3658,6 +3670,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4265,7 +4278,8 @@ window.BENCHMARK_DATA = {
           4.304672426978747,
           8.839598982532818,
           7.253670232494672,
-          8.115483460823695
+          8.115483460823695,
+          4.925912924607595
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4277,6 +4291,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4880,7 +4895,8 @@ window.BENCHMARK_DATA = {
           5.97646344502767,
           11.287941343017987,
           8.63169890542825,
-          11.463056210676829
+          11.463056210676829,
+          6.211242971511988
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4892,6 +4908,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6994,6 +7011,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:05 2026 \u002B0100",
         "message": "fix: report relationships over collections as AWT256 and name the remedy for collection misses by type (#402)"
+      },
+      {
+        "sha": "e3a0e8a59c58989c46bebcef54a7778384d120fb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
+        "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
       }
     ],
     "labels": [
@@ -7295,7 +7318,8 @@ window.BENCHMARK_DATA = {
       "291cf485",
       "54f5274d",
       "3cde5b3e",
-      "4ffb3551"
+      "4ffb3551",
+      "e3a0e8a5"
     ],
     "datasets": [
       {
@@ -7600,7 +7624,8 @@ window.BENCHMARK_DATA = {
           3.191168364423972,
           7.644117609659831,
           5.362752124667168,
-          7.097307593623797
+          7.097307593623797,
+          3.3359888419508934
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7612,6 +7637,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8223,7 +8249,8 @@ window.BENCHMARK_DATA = {
           3.83591697536982,
           7.5561093756785755,
           6.737210959196091,
-          8.448261767625809
+          8.448261767625809,
+          3.9960171326994898
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8235,6 +8262,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8846,7 +8874,8 @@ window.BENCHMARK_DATA = {
           53.424855187535286,
           137.85095125834147,
           90.9442755540212,
-          128.31042706171672
+          128.31042706171672,
+          57.012191402060644
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8858,6 +8887,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9465,7 +9495,8 @@ window.BENCHMARK_DATA = {
           4.585012193024158,
           8.956692815820377,
           7.3463912119468056,
-          8.075121656060219
+          8.075121656060219,
+          5.060589847465356
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9477,6 +9508,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10080,7 +10112,8 @@ window.BENCHMARK_DATA = {
           7.622767894218366,
           13.821164477329988,
           11.48006220261256,
-          15.485244640282222
+          15.485244640282222,
+          6.430826219228598
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10092,6 +10125,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12194,6 +12228,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:05 2026 \u002B0100",
         "message": "fix: report relationships over collections as AWT256 and name the remedy for collection misses by type (#402)"
+      },
+      {
+        "sha": "e3a0e8a59c58989c46bebcef54a7778384d120fb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
+        "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
       }
     ],
     "labels": [
@@ -12495,7 +12535,8 @@ window.BENCHMARK_DATA = {
       "291cf485",
       "54f5274d",
       "3cde5b3e",
-      "4ffb3551"
+      "4ffb3551",
+      "e3a0e8a5"
     ],
     "datasets": [
       {
@@ -12800,7 +12841,8 @@ window.BENCHMARK_DATA = {
           21.187805954615275,
           15.418529229504722,
           15.263687151670457,
-          11.468443551233836
+          11.468443551233836,
+          22.096539863518306
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13072,6 +13114,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13423,7 +13466,8 @@ window.BENCHMARK_DATA = {
           1518.490240097046,
           1186.745524597168,
           1200.6747740336828,
-          790.6562194188435
+          790.6562194188435,
+          1343.840008799235
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13435,6 +13479,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14046,7 +14091,8 @@ window.BENCHMARK_DATA = {
           29684.5962890625,
           25778.082755533855,
           26062.37773844401,
-          18073.73465837751
+          18073.73465837751,
+          19098.30012003581
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14356,7 +14402,8 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32478,
-          32478
+          32478,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14665,7 +14712,8 @@ window.BENCHMARK_DATA = {
           724.146023495992,
           573.2673449516296,
           570.277759552002,
-          398.9922874768575
+          398.9922874768575,
+          556.2869133631389
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14695,6 +14743,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15280,7 +15329,8 @@ window.BENCHMARK_DATA = {
           11889.21452331543,
           8748.149718064527,
           9370.254640432504,
-          6789.6760001549355
+          6789.6760001549355,
+          9741.68173828125
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15586,7 +15636,8 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17394,6 +17445,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:05 2026 \u002B0100",
         "message": "fix: report relationships over collections as AWT256 and name the remedy for collection misses by type (#402)"
+      },
+      {
+        "sha": "e3a0e8a59c58989c46bebcef54a7778384d120fb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
+        "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
       }
     ],
     "labels": [
@@ -17695,7 +17752,8 @@ window.BENCHMARK_DATA = {
       "291cf485",
       "54f5274d",
       "3cde5b3e",
-      "4ffb3551"
+      "4ffb3551",
+      "e3a0e8a5"
     ],
     "datasets": [
       {
@@ -18000,7 +18058,8 @@ window.BENCHMARK_DATA = {
           187.10423607826232,
           115.21089958293098,
           118.57021641731262,
-          83.180823802948
+          83.180823802948,
+          260.33723481496173
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18272,6 +18331,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18623,7 +18683,8 @@ window.BENCHMARK_DATA = {
           14755.798307291667,
           10376.999211992535,
           10708.895836463342,
-          7740.74032236735
+          7740.74032236735,
+          12057.956342569987
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18635,6 +18696,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19246,7 +19308,8 @@ window.BENCHMARK_DATA = {
           723232.9299479167,
           644957.576953125,
           622867.7613002232,
-          448409.7353190104
+          448409.7353190104,
+          451211.3259277344
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19556,7 +19619,8 @@ window.BENCHMARK_DATA = {
           719727,
           742568,
           719488,
-          741068
+          741068,
+          718752
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19865,7 +19929,8 @@ window.BENCHMARK_DATA = {
           43452.675728934155,
           34953.855377197266,
           34914.1299626277,
-          23842.600900503305
+          23842.600900503305,
+          30597.61916879507
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20171,7 +20236,8 @@ window.BENCHMARK_DATA = {
           80968,
           80973,
           80320,
-          80306
+          80306,
+          80316
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20480,7 +20546,8 @@ window.BENCHMARK_DATA = {
           357579.4454101563,
           270134.17755998886,
           263101.334891183,
-          206956.40029672475
+          206956.40029672475,
+          251248.5345740685
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20786,7 +20853,8 @@ window.BENCHMARK_DATA = {
           573106,
           573122,
           573155,
-          573071
+          573071,
+          571199
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22570,6 +22638,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:05 2026 \u002B0100",
         "message": "fix: report relationships over collections as AWT256 and name the remedy for collection misses by type (#402)"
+      },
+      {
+        "sha": "e3a0e8a59c58989c46bebcef54a7778384d120fb",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
+        "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
       }
     ],
     "labels": [
@@ -22867,7 +22941,8 @@ window.BENCHMARK_DATA = {
       "291cf485",
       "54f5274d",
       "3cde5b3e",
-      "4ffb3551"
+      "4ffb3551",
+      "e3a0e8a5"
     ],
     "datasets": [
       {
@@ -23168,7 +23243,8 @@ window.BENCHMARK_DATA = {
           159.1125980445317,
           477.56817887624106,
           275.1795209737924,
-          169.40454427401224
+          169.40454427401224,
+          180.86298430882968
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23203,6 +23279,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -23783,7 +23860,8 @@ window.BENCHMARK_DATA = {
           367.44888928958346,
           637.5130145390829,
           590.1946370942252,
-          399.92640024820963
+          399.92640024820963,
+          428.8706473937401
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -23795,6 +23873,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24398,7 +24477,8 @@ window.BENCHMARK_DATA = {
           3324.8055519104005,
           6910.902172342936,
           6473.398515319825,
-          3584.2331416790303
+          3584.2331416790303,
+          3756.1327089162974
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24482,6 +24562,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25013,7 +25094,8 @@ window.BENCHMARK_DATA = {
           229.09815839620737,
           431.36748530069985,
           431.02507638931274,
-          270.06353359956006
+          270.06353359956006,
+          290.00080370903015
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25025,6 +25107,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -25628,7 +25711,8 @@ window.BENCHMARK_DATA = {
           377.52228422164916,
           784.5602609770639,
           699.70275293986,
-          419.74965725626265
+          419.74965725626265,
+          411.94015083994185
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25640,6 +25724,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
