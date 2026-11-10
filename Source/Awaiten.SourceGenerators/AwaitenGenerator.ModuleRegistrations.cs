@@ -511,6 +511,12 @@ partial class AwaitenGenerator
 						continue;
 					}
 
+					if (ClosingParameter(parameter, context) is { } closing)
+					{
+						parameters.Add(closing);
+						continue;
+					}
+
 					cause = UnbuildableCause(parameter.Type) ?? $"has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public";
 				}
 
@@ -1720,6 +1726,11 @@ partial class AwaitenGenerator
 			{
 				context.Diagnostics.Add(TakingUnbuildable(otherModule, location, subject, $"its property '{property.Name}'", property.Type, context));
 				return false;
+			}
+			else if (!FitsFactorySignature(property.Type, context) && !isOptional && ClosingParameter(property.Type, property.Name, attributes, context) is { } closing)
+			{
+				Add(closing);
+				continue;
 			}
 			else if (!FitsFactorySignature(property.Type, context) || TypeHiddenInModule(property.Type, context.Module, context.Compilation) is not null)
 			{

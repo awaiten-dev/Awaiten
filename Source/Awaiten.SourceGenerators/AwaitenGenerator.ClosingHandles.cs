@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
@@ -41,6 +42,24 @@ partial class AwaitenGenerator
 		ClosingSymbols.GetValue(context.Compilation, static _ => new ConcurrentDictionary<string, INamedTypeSymbol>(StringComparer.Ordinal))[closed] = closing;
 		return new ClosingHandle($"{ClosingHandlePrefix}{closing.Name}_{Fnv1a(closed):x8}", closed, UnboundDisplay(closing));
 	}
+
+	/// <summary>
+	///     The parameter of a generated member that takes <paramref name="parameter" /> through its closing handle (see
+	///     <see cref="ClosingOverInternal" />) and passes on the instance the handle holds, or <see langword="null" /> when
+	///     the parameter is an <c>[Arg]</c>, which the caller passes, or takes no such closing.
+	/// </summary>
+	private static FactoryParameter? ClosingParameter(IParameterSymbol parameter, ModuleScanContext context)
+		=> ClosingParameter(parameter.Type, parameter.Name, parameter.GetAttributes(), context);
+
+	/// <summary>
+	///     The parameter of a generated member named <paramref name="name" /> that takes a dependency of
+	///     <paramref name="type" /> through its closing handle, such as the parameter of an <c>[Inject]</c> property (see
+	///     <see cref="ClosingParameter(IParameterSymbol, ModuleScanContext)" />).
+	/// </summary>
+	private static FactoryParameter? ClosingParameter(ITypeSymbol type, string name, ImmutableArray<AttributeData> attributes, ModuleScanContext context)
+		=> !HasArgAttribute(attributes) && ClosingOverInternal(type, context) is { } closing
+			? new FactoryParameter(ClosingHandleType(context.Module, closing), name, KeyAttribute(FromKey(attributes)), $"@{name}.Value", Closing: closing)
+			: null;
 
 	/// <summary>The fully qualified name of the handle <paramref name="closing" /> declared by <paramref name="module" />.</summary>
 	private static string ClosingHandleType(INamedTypeSymbol module, ClosingHandle closing)

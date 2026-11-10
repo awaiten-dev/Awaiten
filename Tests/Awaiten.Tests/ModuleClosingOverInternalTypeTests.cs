@@ -22,6 +22,10 @@ public partial class ModuleClosingOverInternalTypeTests
 	[ImportService(typeof(IClosingLog<>))]
 	public static partial class ImportedClosingContainer;
 
+	[Container]
+	[Import(typeof(CrossAssemblyClosingMembersModule))]
+	public static partial class ClosingMembersContainer;
+
 	/// <summary>Serves every closing of <see cref="IClosingLog{T}" /> and records each request.</summary>
 	private sealed class LogResolver : IExternalResolver
 	{
@@ -66,6 +70,23 @@ public partial class ModuleClosingOverInternalTypeTests
 
 		await That(log.Disposed).IsTrue()
 			.Because("the container built the closing, so it owns and disposes it");
+	}
+
+	[Test]
+	public async Task TheMembersOfTheImplementation_ReceiveTheClosingOverIt()
+	{
+		await using ClosingMembersContainer.Root container = new();
+
+		IClosingEspresso espresso = await container.ResolveAsync<IClosingEspresso>();
+
+		await That(espresso).IsExactly<DecoratedClosingEspresso>()
+			.Because("the predicate received the log closed over the internal espresso, so it applied the decorator");
+		await That(espresso.Activated?.Category.Name).IsEqualTo("ClosingEspresso")
+			.Because("the hook received the log closed over the internal espresso through the handle");
+		await That(espresso.WarmedUp).IsSameAs(espresso.Activated)
+			.Because("the async initializer received the same singleton closing");
+		await That(espresso.Injected).IsSameAs(espresso.Activated)
+			.Because("the injected property received the same singleton closing");
 	}
 
 	[Test]

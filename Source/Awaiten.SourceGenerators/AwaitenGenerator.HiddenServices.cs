@@ -1527,6 +1527,10 @@ partial class AwaitenGenerator
 
 					mirrored.Add(mirror.Parameter);
 				}
+				else if (!FitsFactorySignature(parameter.Type, context) && ClosingParameter(parameter, context) is { } closing)
+				{
+					mirrored.Add(closing);
+				}
 				else if (!FitsFactorySignature(parameter.Type, context))
 				{
 					context.Diagnostics.Add(new DiagnosticInfo(
