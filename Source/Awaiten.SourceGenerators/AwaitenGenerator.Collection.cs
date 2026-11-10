@@ -1386,8 +1386,10 @@ partial class AwaitenGenerator
 				}
 			}
 
-			if (!TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), diagnostics, out IReadOnlyList<string?>? keys)
-			    || !TryReadDecoratorPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when))
+			// The predicate is read even when the keys skip the decorator, so its own mistakes are reported too.
+			bool keysRead = TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), diagnostics, out IReadOnlyList<string?>? keys);
+			if (!TryReadDecoratorPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when)
+			    || !keysRead)
 			{
 				declarationOrder++;
 				continue;

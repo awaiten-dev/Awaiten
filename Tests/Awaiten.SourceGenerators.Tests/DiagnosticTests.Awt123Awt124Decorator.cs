@@ -492,6 +492,30 @@ public partial class DiagnosticTests
 				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT170*").AsWildcard()
 					.Because("the unsupported key is the one mistake; the keys left over must not also report AWT123");
 			}
+
+			[Test]
+			public async Task StillReportsAnInvalidPredicate()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [Singleton<Real, IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [], When = "Missing")]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasCount(2);
+				await That(result.Diagnostics).Contains("*AWT123*with an empty Keys*").AsWildcard();
+				await That(result.Diagnostics).Contains("*AWT246*has no member 'Missing'*").AsWildcard()
+					.Because("the predicate is a separate mistake that skipping the decorator must not hide");
+			}
 		}
 	}
 }
