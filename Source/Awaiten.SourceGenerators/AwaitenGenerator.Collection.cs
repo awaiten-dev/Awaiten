@@ -115,7 +115,7 @@ partial class AwaitenGenerator
 
 		if (inheritance is not null)
 		{
-			DropInaccessibleInherited(inheritance, result, compilation, constraintRejected, diagnostics);
+			DropInaccessibleInherited(inheritance, result, open, compilation, constraintRejected, diagnostics);
 		}
 
 		// ...then moved back to the end: coalescing is first-wins per service, so the explicit registrations and
@@ -512,15 +512,16 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether another imported module of another assembly generated a registration factory for the implementation of
-	///     <paramref name="registration" />, which has no hooks, so <see cref="ShareGeneratedRegistrationFactories" />
-	///     builds it through that factory although its own module generated none.
+	///     <paramref name="registration" />, which has no hooks, or a generic factory for its open definition, so
+	///     <see cref="ShareGeneratedRegistrationFactories" /> builds it through that factory although its own module
+	///     generated none.
 	/// </summary>
 	private static bool BuiltByAnotherImport(RawRegistration registration, LifetimeCollectionContext context)
 		=> registration is { OnActivated: null, OnRelease: null, }
 		   && context.Imports is { } imports
 		   && imports.Exists(import => !SymbolEqualityComparer.Default.Equals(import.Symbol, registration.Origin)
 		                               && !SymbolEqualityComparer.Default.Equals(import.Symbol.ContainingAssembly, context.Compilation.Assembly)
-		                               && GeneratedFactory(import.Symbol, registration.Implementation, context.Compilation) is not null);
+		                               && GeneratedFactoryOrOpen(import.Symbol, registration.Implementation, context.Compilation) is not null);
 
 	/// <summary>
 	///     Reports AWT231 for a registration of an imported module in another assembly that this container drops because

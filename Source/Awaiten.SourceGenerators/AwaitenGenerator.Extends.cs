@@ -327,13 +327,15 @@ partial class AwaitenGenerator
 	///     The dropped service no longer reports a missing dependency (AWT101) in its consumers, so the one cause is
 	///     reported once. A registration built through an owner's generated factory needs neither the type nor its
 	///     constructor, and neither does a constructed one whose implementation a module of another assembly builds through
-	///     its generated factory, which <see cref="ShareGeneratedRegistrationFactories" /> lets it call. A constructed
+	///     its generated factory, or that closes an open registration such a module builds through its generic factory, which
+	///     <see cref="ShareGeneratedRegistrationFactories" /> lets it call. A constructed
 	///     registration of the base whose type has an <c>[Inject]</c> property the container does not see (see
 	///     <see cref="Inheritance.HiddenPropertyFault" />) is dropped the same way, so it is never built without the property.
 	/// </summary>
 	private static void DropInaccessibleInherited(
 		Inheritance inheritance,
 		List<RawRegistration> registrations,
+		List<OpenRegistration> open,
 		Compilation compilation,
 		HashSet<string> constraintRejected,
 		List<DiagnosticInfo> diagnostics)
@@ -341,6 +343,7 @@ partial class AwaitenGenerator
 		HashSet<string> sharedFactories = new(
 			registrations.Where(registration => registration.Hidden is null && IsOtherAssemblysGeneratedFactory(registration, compilation)).Select(registration => registration.ImplementationType),
 			StringComparer.Ordinal);
+		List<OpenRegistration> openFactories = OpenFactories(open);
 		registrations.RemoveAll(registration =>
 		{
 			if (!inheritance.Owns(registration.Origin) || registration.ConstructVia is not null)
@@ -348,7 +351,8 @@ partial class AwaitenGenerator
 				return false;
 			}
 
-			bool sharesFactory = registration is { Production: ProductionKind.Constructor, IsScan: false, Hidden: null, } && sharedFactories.Contains(registration.ImplementationType);
+			bool sharesFactory = registration is { Production: ProductionKind.Constructor, IsScan: false, Hidden: null, }
+			                     && (sharedFactories.Contains(registration.ImplementationType) || ThroughOpenFactory(registration, openFactories, compilation) is not null);
 			if (InaccessiblePart(registration, sharesFactory) is not { } subject)
 			{
 				if (sharesFactory

@@ -1926,15 +1926,18 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The reason a consumer reports (AWT231) when <paramref name="rejections" /> hold only the AWT104 of an
-	///     implementation of another assembly, or <see langword="null" />. The module reports nothing: a container that
-	///     imports it beside a module of that assembly builds the implementation through that module's generated factory,
-	///     as a container there constructs it, and any other container reports it. Metadata does not show this compilation
-	///     the internal constructors of another assembly, so the reason names no accessibility.
+	///     implementation of another assembly that a module of that assembly builds through its generated factory, or
+	///     <see langword="null" />. The module reports nothing: a container that imports it beside that module builds the
+	///     implementation through the module's factory, as a container there constructs it, and any other container
+	///     reports it. Without such a factory no container can build it, so the module reports the AWT104 itself. Metadata
+	///     does not show this compilation the internal constructors of another assembly, so the reason names no accessibility.
 	/// </summary>
 	private static string? ConstructorOfItsOwnAssembly(INamedTypeSymbol implementation, List<DiagnosticInfo> rejections, Compilation compilation)
 		=> rejections.Count == 1
 		   && rejections[0].Descriptor == Diagnostics.NoAccessibleConstructor
 		   && !SymbolEqualityComparer.Default.Equals(implementation.ContainingAssembly, compilation.Assembly)
+		   && EnumerateTypes(implementation.ContainingAssembly.GlobalNamespace)
+			   .Any(type => HasAwaitenAttribute(type.GetAttributes(), "ModuleAttribute") && GeneratedFactoryOrOpen(type, implementation, compilation) is not null)
 			? $"no constructor of it is accessible outside '{implementation.ContainingAssembly.Name}'"
 			: null;
 

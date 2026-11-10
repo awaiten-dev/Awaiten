@@ -619,12 +619,12 @@ partial class AwaitenGenerator
 			}
 		}
 
-		List<OpenRegistration> openFactories = open.FindAll(registration => registration is { Dropped: false, Via.Method: not null, });
+		List<OpenRegistration> openFactories = OpenFactories(open);
 		for (int index = 0; index < raw.Count && (factories.Count > 0 || openFactories.Count > 0); index++)
 		{
 			if (raw[index] is not { IsScan: false, ConstructVia: null, Hidden: null, } registration
 			    || (registration.Production != ProductionKind.Constructor && !IsOtherAssemblysGeneratedFactory(registration, compilation))
-			    || (factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory) ? factory : ThroughOpenFactoryOf(registration)) is not { } shared
+			    || (factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory) ? factory : ThroughOpenFactory(registration, openFactories, compilation)) is not { } shared
 			    || ReferenceEquals(shared, registration))
 			{
 				continue;
@@ -645,22 +645,31 @@ partial class AwaitenGenerator
 				Declarer = declarer,
 			};
 		}
-
-		RawRegistration? ThroughOpenFactoryOf(RawRegistration registration)
-			=> registration is { Production: ProductionKind.Constructor, Implementation: { IsGenericType: true, } implementation, ServiceSymbol: { } service, }
-			   && openFactories.Find(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation.OriginalDefinition, implementation.OriginalDefinition)) is { Via: { Owner: { } owner, Method: { } method, }, } candidate
-			   && method.Construct(implementation.TypeArguments.ToArray()) is { ReturnType: INamedTypeSymbol product, }
-			   && compilation.HasImplicitConversion(product, service)
-				? registration with
-				{
-					Implementation = product,
-					Origin = owner,
-					Production = ProductionKind.Factory,
-					ProductionMember = candidate.Factory,
-					GenericFactory = true,
-				}
-				: null;
 	}
+
+	/// <summary>The open registrations of <paramref name="open" /> whose closings this container builds through the generic factory a module generated.</summary>
+	private static List<OpenRegistration> OpenFactories(List<OpenRegistration> open)
+		=> open.FindAll(registration => registration is { Dropped: false, Via.Method: not null, });
+
+	/// <summary>
+	///     <paramref name="registration" />, a closed constructor registration of a closing of one of
+	///     <paramref name="openFactories" /> (see <see cref="OpenFactories" />), built through that registration's generic
+	///     factory, or <see langword="null" />.
+	/// </summary>
+	private static RawRegistration? ThroughOpenFactory(RawRegistration registration, List<OpenRegistration> openFactories, Compilation compilation)
+		=> registration is { Production: ProductionKind.Constructor, Implementation: { IsGenericType: true, } implementation, ServiceSymbol: { } service, }
+		   && openFactories.Find(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation.OriginalDefinition, implementation.OriginalDefinition)) is { Via: { Owner: { } owner, Method: { } method, }, } candidate
+		   && method.Construct(implementation.TypeArguments.ToArray()) is { ReturnType: INamedTypeSymbol product, }
+		   && compilation.HasImplicitConversion(product, service)
+			? registration with
+			{
+				Implementation = product,
+				Origin = owner,
+				Production = ProductionKind.Factory,
+				ProductionMember = candidate.Factory,
+				GenericFactory = true,
+			}
+			: null;
 
 	/// <summary>
 	///     Whether <paramref name="registration" /> calls a registration factory that a module of another assembly than
@@ -679,6 +688,17 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static IMethodSymbol? GeneratedFactory(INamedTypeSymbol owner, INamedTypeSymbol implementation, Compilation compilation)
 		=> GeneratedFactoryNamed(owner, RegistrationFactoryName(implementation), compilation);
+
+	/// <summary>
+	///     <see cref="GeneratedFactory" />, or for a closed generic <paramref name="implementation" /> the generic factory
+	///     <paramref name="owner" /> generated for its open definition, which a closed registration of the closing calls
+	///     too (see <see cref="ShareGeneratedRegistrationFactories" />).
+	/// </summary>
+	private static IMethodSymbol? GeneratedFactoryOrOpen(INamedTypeSymbol owner, INamedTypeSymbol implementation, Compilation compilation)
+		=> GeneratedFactory(owner, implementation, compilation)
+		   ?? (implementation.IsGenericType && !SymbolEqualityComparer.Default.Equals(implementation, implementation.OriginalDefinition)
+			   ? GeneratedFactory(owner, implementation.OriginalDefinition, compilation)
+			   : null);
 
 	/// <summary>The generated factory named <paramref name="name" /> that the container can see on <paramref name="owner" />, or <see langword="null" />.</summary>
 	private static IMethodSymbol? GeneratedFactoryNamed(INamedTypeSymbol owner, string name, Compilation compilation)

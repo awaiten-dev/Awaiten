@@ -131,6 +131,33 @@ public class ModuleFactorySharingTests
 				.Because("a container that imports the module beside a module of the implementation's assembly builds the implementation through that module's factory");
 			await That(reference.Diagnostics).IsEmpty();
 		}
+
+		[Test]
+		[Arguments("", InternalConstructor)]
+		[Arguments("[Singleton<Greeter, IGreeter>]", "private Greeter() { }")]
+		public async Task TheModuleAlone_ReportsTheConstructorThatNoModuleOfTheImplementationsAssemblyBuilds(string registration, string members)
+		{
+			const string module = """
+			                      using Awaiten;
+			                      using Lib;
+
+			                      namespace App;
+
+			                      [Module]
+			                      [Singleton<Greeter>]
+			                      public static partial class LocalModule;
+			                      """;
+			string library = Library(members).Replace("[Singleton<Greeter, IGreeter>]", registration);
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, module);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, module);
+
+			foreach (GeneratorResult result in new[] { other, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which.Contains("error AWT104: 'Lib.Greeter' has no accessible constructor for the container to call")
+					.Because("no module of the implementation's assembly generates a factory a container could call instead");
+			}
+		}
 	}
 
 	public class ModuleOfAThirdLibrary
@@ -186,6 +213,21 @@ public class ModuleFactorySharingTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("the library cannot construct the implementation, but a container that imports a module of the implementation's assembly too builds it through that module's factory");
+		}
+
+		[Test]
+		public async Task TheLibrary_ReportsTheConstructorWhenNoModuleOfTheImplementationsAssemblyBuildsIt()
+		{
+			string library = Library().Replace("[Singleton<Greeter, IGreeter>]", string.Empty);
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, OtherLibrary);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, OtherLibrary);
+
+			foreach (GeneratorResult result in new[] { other, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which.Contains("error AWT104: 'Lib.Greeter' has no accessible constructor for the container to call")
+					.Because("no container can build the implementation, so the library reports it in its own build");
+			}
 		}
 
 		[Test]
@@ -256,6 +298,70 @@ public class ModuleFactorySharingTests
 				await That(Container(result)).Contains("global::Lib.RepositoryModule.Internals.Registration_Repository_")
 					.And.DoesNotContain("new global::Lib.Repository<int>()")
 					.Because("the closed registration calls the module's generic factory, closed with its type arguments");
+			}
+		}
+
+		[Test]
+		public async Task AClosedRegistrationOfAThirdLibrary_CallsTheModulesGenericFactory()
+		{
+			const string otherLibrary = """
+			                            using Awaiten;
+
+			                            namespace LibB;
+
+			                            [Module]
+			                            [Singleton<Lib.Repository<int>>]
+			                            public static partial class OtherModule;
+			                            """;
+			const string consumer = """
+			                        using Awaiten;
+
+			                        namespace App;
+
+			                        [Container]
+			                        [Import(typeof(LibB.OtherModule))]
+			                        [Import(typeof(Lib.RepositoryModule))]
+			                        public static partial class AppContainer;
+			                        """;
+			string library = RepositoryLibrary("[Singleton(typeof(Repository<>))]");
+
+			GeneratorResult build = Generator.RunWithGeneratedReferencedAssembly(library, otherLibrary);
+			GeneratorResult chain = Generator.RunWithGeneratedReferencedAssemblyChain([library, otherLibrary,], consumer);
+			GeneratorResult references = Generator.RunWithGeneratedReferencedAssemblyChain([library, otherLibrary,], consumer, referenceAssemblies: true);
+
+			await That(build.Diagnostics).IsEmpty()
+				.Because("a container that imports the module too builds the closing through the module's generic factory");
+			foreach (GeneratorResult result in new[] { chain, references, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(Container(result)).Contains("global::Lib.RepositoryModule.Internals.Registration_Repository_")
+					.And.DoesNotContain("new global::Lib.Repository<int>()")
+					.Because("the third library's closed registration calls the module's generic factory, closed with its type arguments");
+			}
+		}
+
+		[Test]
+		public async Task AClosedRegistrationOfAModuleOfTheContainersAssembly_ReportsTheConstructorWithoutAGenericFactory()
+		{
+			const string module = """
+			                      using Awaiten;
+			                      using Lib;
+
+			                      namespace App;
+
+			                      [Module]
+			                      [Singleton<Repository<int>>]
+			                      public static partial class LocalModule;
+			                      """;
+			string library = RepositoryLibrary(string.Empty);
+
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(library, module);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, module);
+
+			foreach (GeneratorResult result in new[] { other, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which.Contains("error AWT104: 'Lib.Repository<int>' has no accessible constructor for the container to call")
+					.Because("no module of the implementation's assembly generates a factory a container could call instead");
 			}
 		}
 
@@ -524,6 +630,45 @@ public class ModuleFactorySharingTests
 					.Because("the inherited registration and the inherited module's are one instance, which the module's factory builds");
 				await That(Container(result)).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_")
 					.And.DoesNotContain("new global::Lib.Greeter(");
+			}
+		}
+
+		[Test]
+		public async Task OfAClosingOfTheModulesOpenRegistration_CallsTheModulesGenericFactory()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       public sealed class Repository<T> { internal Repository() { } }
+
+			                       [Module]
+			                       [Singleton(typeof(Repository<>))]
+			                       public static partial class RepositoryModule;
+			                       """;
+			const string baseContainer = """
+			                             using Awaiten;
+			                             using Lib;
+
+			                             namespace Base;
+
+			                             [Container]
+			                             [Import(typeof(RepositoryModule))]
+			                             [Singleton<Repository<int>>]
+			                             public static partial class BaseContainer;
+			                             """;
+
+			GeneratorResult chain = Generator.RunWithGeneratedReferencedAssemblyChain([library, baseContainer,], Extending);
+			GeneratorResult references = Generator.RunWithGeneratedReferencedAssemblyChain([library, baseContainer,], Extending, referenceAssemblies: true);
+			GeneratorResult baseInLibrary = Generator.RunWithGeneratedReferencedAssembly(library + "\n" + WithoutHeader(baseContainer), Extending.Replace("Base.BaseContainer", "Lib.BaseContainer"));
+
+			foreach (GeneratorResult result in new[] { chain, references, baseInLibrary, })
+			{
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the inherited closed registration calls the module's generic factory instead of the constructor it cannot reach");
+				await That(Container(result)).Contains("global::Lib.RepositoryModule.Internals.Registration_Repository_")
+					.And.DoesNotContain("new global::Lib.Repository<int>()");
 			}
 		}
 	}

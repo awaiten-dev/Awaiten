@@ -116,6 +116,8 @@ public class ModuleFactorySharingTests
 
 		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>())
 			.Because("the third library cannot construct the kettle, so its registration calls the generated factory of the kettle's module");
+		await That(container.Resolve<InternalConstructorRepository<long>>()).IsSameAs(container.Resolve<InternalConstructorRepository<long>>())
+			.Because("the third library's closed registration calls the generic factory of the repository's module");
 	}
 
 	[Test]
@@ -157,6 +159,8 @@ public class ModuleFactorySharingTests
 		using ExtendingThirdLibraryKettleBaseContainer.Root container = new();
 
 		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>());
+		await That(container.Resolve<InternalConstructorRepository<long>>()).IsSameAs(container.Resolve<InternalConstructorRepository<long>>())
+			.Because("the inherited closed registration calls the module's generic factory instead of the constructor it cannot reach");
 	}
 }
 
