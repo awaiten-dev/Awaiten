@@ -1842,6 +1842,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
         "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
+      },
+      {
+        "sha": "b5c838633285ad755d08db0064f9d4f9ef4d5a66",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:34:12 2026 \u002B0100",
+        "message": "fix!: report AWT181 and AWT177 for a Deferred entry on a type built through an instance handle (#412)"
       }
     ],
     "labels": [
@@ -2151,7 +2157,8 @@ window.BENCHMARK_DATA = {
       "e817eb93",
       "05a7d32c",
       "009f7ed0",
-      "e0151207"
+      "e0151207",
+      "b5c83863"
     ],
     "datasets": [
       {
@@ -2464,7 +2471,8 @@ window.BENCHMARK_DATA = {
           6.4454745521148045,
           6.445080806102071,
           6.828966619712966,
-          6.447218766169889
+          6.447218766169889,
+          6.757366170103733
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2476,6 +2484,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3103,7 +3112,8 @@ window.BENCHMARK_DATA = {
           7.318477579034292,
           7.530204546451569,
           6.560703294475873,
-          7.500096421975356
+          7.500096421975356,
+          6.695313321550687
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3115,6 +3125,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3742,7 +3753,8 @@ window.BENCHMARK_DATA = {
           122.02847677866617,
           120.90929767290751,
           145.16703917298997,
-          124.33896012306214
+          124.33896012306214,
+          127.79357104301452
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3754,6 +3766,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4377,7 +4390,8 @@ window.BENCHMARK_DATA = {
           9.412309763332209,
           8.788216279198727,
           9.295375420578889,
-          8.810002580285072
+          8.810002580285072,
+          9.107129331145968
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4389,6 +4403,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5008,7 +5023,8 @@ window.BENCHMARK_DATA = {
           11.071410642067592,
           10.548220241069794,
           12.703755187136787,
-          10.965610186258951
+          10.965610186258951,
+          11.540314421057701
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5020,6 +5036,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7178,6 +7195,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
         "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
+      },
+      {
+        "sha": "b5c838633285ad755d08db0064f9d4f9ef4d5a66",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:34:12 2026 \u002B0100",
+        "message": "fix!: report AWT181 and AWT177 for a Deferred entry on a type built through an instance handle (#412)"
       }
     ],
     "labels": [
@@ -7487,7 +7510,8 @@ window.BENCHMARK_DATA = {
       "e817eb93",
       "05a7d32c",
       "009f7ed0",
-      "e0151207"
+      "e0151207",
+      "b5c83863"
     ],
     "datasets": [
       {
@@ -7800,7 +7824,8 @@ window.BENCHMARK_DATA = {
           7.432137180368105,
           7.222330558300018,
           7.355308528129871,
-          7.130707523475091
+          7.130707523475091,
+          6.816932302713394
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7812,6 +7837,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8439,7 +8465,8 @@ window.BENCHMARK_DATA = {
           7.3415846735239025,
           7.409464634381807,
           6.623251500725746,
-          7.450944925347964
+          7.450944925347964,
+          6.77188468667177
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8451,6 +8478,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9078,7 +9106,8 @@ window.BENCHMARK_DATA = {
           118.78043036460876,
           119.53935468196869,
           144.71617903312048,
-          133.39592753923856
+          133.39592753923856,
+          128.49380480448406
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9090,6 +9119,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9713,7 +9743,8 @@ window.BENCHMARK_DATA = {
           9.441650154193242,
           8.7871981151402,
           9.315972051450185,
-          8.924493367473284
+          8.924493367473284,
+          9.018629960219066
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9725,6 +9756,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10344,7 +10376,8 @@ window.BENCHMARK_DATA = {
           14.432101769106728,
           13.898424118757248,
           12.644412888930393,
-          14.712151935696602
+          14.712151935696602,
+          11.567813004766192
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10356,6 +10389,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12514,6 +12548,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
         "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
+      },
+      {
+        "sha": "b5c838633285ad755d08db0064f9d4f9ef4d5a66",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:34:12 2026 \u002B0100",
+        "message": "fix!: report AWT181 and AWT177 for a Deferred entry on a type built through an instance handle (#412)"
       }
     ],
     "labels": [
@@ -12823,7 +12863,8 @@ window.BENCHMARK_DATA = {
       "e817eb93",
       "05a7d32c",
       "009f7ed0",
-      "e0151207"
+      "e0151207",
+      "b5c83863"
     ],
     "datasets": [
       {
@@ -13136,7 +13177,8 @@ window.BENCHMARK_DATA = {
           15.519221342603366,
           19.221892208854356,
           12.246485344568889,
-          19.16673678358396
+          19.16673678358396,
+          19.685137575864793
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13408,6 +13450,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13775,7 +13818,8 @@ window.BENCHMARK_DATA = {
           1158.2514842987061,
           1381.5789431163244,
           848.9520992914836,
-          1478.833124923706
+          1478.833124923706,
+          1482.8013188680013
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13787,6 +13831,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14414,7 +14459,8 @@ window.BENCHMARK_DATA = {
           25567.942521158853,
           24553.56516810826,
           18974.952052815755,
-          30090.764811197918
+          30090.764811197918,
+          33477.21045735677
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14732,6 +14778,7 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32477,
+          32482,
           32482
         ],
         "borderColor": "#5E2750",
@@ -15049,7 +15096,8 @@ window.BENCHMARK_DATA = {
           559.6678658894131,
           603.2862009048462,
           418.7236991564433,
-          708.3776025136311
+          708.3776025136311,
+          711.4499312082927
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15079,6 +15127,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15680,7 +15729,8 @@ window.BENCHMARK_DATA = {
           8875.194906107585,
           9996.344518025717,
           6601.49125289917,
-          11398.01439412435
+          11398.01439412435,
+          11414.651120503744
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15994,6 +16044,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -17850,6 +17901,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
         "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
+      },
+      {
+        "sha": "b5c838633285ad755d08db0064f9d4f9ef4d5a66",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:34:12 2026 \u002B0100",
+        "message": "fix!: report AWT181 and AWT177 for a Deferred entry on a type built through an instance handle (#412)"
       }
     ],
     "labels": [
@@ -18159,7 +18216,8 @@ window.BENCHMARK_DATA = {
       "e817eb93",
       "05a7d32c",
       "009f7ed0",
-      "e0151207"
+      "e0151207",
+      "b5c83863"
     ],
     "datasets": [
       {
@@ -18472,7 +18530,8 @@ window.BENCHMARK_DATA = {
           121.91440677642822,
           125.81308767000834,
           82.41390550931295,
-          176.8744782924652
+          176.8744782924652,
+          149.27300153459822
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18744,6 +18803,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19111,7 +19171,8 @@ window.BENCHMARK_DATA = {
           10827.005392456054,
           11758.13661311223,
           7591.001345498221,
-          14352.705903116863
+          14352.705903116863,
+          13629.864998372395
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19123,6 +19184,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19750,7 +19812,8 @@ window.BENCHMARK_DATA = {
           643494.5221121652,
           646613.1810825893,
           454625.4781901042,
-          739809.3088727678
+          739809.3088727678,
+          816227.3568638393
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20068,7 +20131,8 @@ window.BENCHMARK_DATA = {
           740789,
           740464,
           718356,
-          740460
+          740460,
+          741779
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20385,7 +20449,8 @@ window.BENCHMARK_DATA = {
           37862.306388346355,
           38211.43512369792,
           24812.39584350586,
-          42988.993168131514
+          42988.993168131514,
+          46857.05039876302
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20699,7 +20764,8 @@ window.BENCHMARK_DATA = {
           80297,
           80014,
           80348,
-          80009
+          80009,
+          80301
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21016,7 +21082,8 @@ window.BENCHMARK_DATA = {
           272954.5664813702,
           316808.66324869794,
           196908.29109700522,
-          353805.6998046875
+          353805.6998046875,
+          352081.00959660456
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21330,7 +21397,8 @@ window.BENCHMARK_DATA = {
           573023,
           573108,
           572961,
-          573026
+          573026,
+          573074
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23162,6 +23230,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
         "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
+      },
+      {
+        "sha": "b5c838633285ad755d08db0064f9d4f9ef4d5a66",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:34:12 2026 \u002B0100",
+        "message": "fix!: report AWT181 and AWT177 for a Deferred entry on a type built through an instance handle (#412)"
       }
     ],
     "labels": [
@@ -23467,7 +23541,8 @@ window.BENCHMARK_DATA = {
       "e817eb93",
       "05a7d32c",
       "009f7ed0",
-      "e0151207"
+      "e0151207",
+      "b5c83863"
     ],
     "datasets": [
       {
@@ -23776,7 +23851,8 @@ window.BENCHMARK_DATA = {
           275.539402621133,
           268.9508735656738,
           282.3499278655419,
-          275.52255256359393
+          275.52255256359393,
+          169.20086812973022
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23811,6 +23887,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24407,7 +24484,8 @@ window.BENCHMARK_DATA = {
           632.8092979284434,
           630.7711837768554,
           713.5978768666586,
-          620.611712052272
+          620.611712052272,
+          410.27340926442827
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24419,6 +24497,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -25038,7 +25117,8 @@ window.BENCHMARK_DATA = {
           6916.981851704915,
           6760.0615234375,
           6853.560237121582,
-          6921.489273616246
+          6921.489273616246,
+          3697.0315144856772
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25122,6 +25202,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25669,7 +25750,8 @@ window.BENCHMARK_DATA = {
           420.43762197494505,
           418.9902131954829,
           432.6525168759482,
-          437.5529160499573
+          437.5529160499573,
+          262.276526927948
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25681,6 +25763,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26300,7 +26383,8 @@ window.BENCHMARK_DATA = {
           764.5977710996356,
           741.6504019419352,
           751.8187510808309,
-          754.0539578119914
+          754.0539578119914,
+          414.63128692763195
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26312,6 +26396,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
