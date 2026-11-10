@@ -303,7 +303,7 @@ public partial class DiagnosticTests
 				                                       public static partial class MyContainer;
 				                                       """);
 
-				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' with an empty Keys*name the keys to decorate in Keys*").AsWildcard()
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' with an empty Keys, which selects nothing to decorate*").AsWildcard()
 					.Because("an empty Keys selects no instance of the import, so the decorator would silently wrap nothing");
 			}
 
@@ -397,6 +397,124 @@ public partial class DiagnosticTests
 
 				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT175*").AsWildcard()
 					.Because("the decorator wraps the registration, which still contradicts the import");
+			}
+		}
+
+		public class EmptyKeys
+		{
+			[Test]
+			public async Task ReportsAwt123ForAClosedDecoratorOverARegisteredService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [Singleton<Real, IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' with an empty Keys, which selects nothing to decorate; name the keys to decorate in Keys, or remove Keys to decorate the unkeyed service*").AsWildcard()
+					.Because("the service is registered, so the mistake is the empty Keys, not a missing registration");
+			}
+
+			[Test]
+			public async Task ReportsAwt123ForAClosedDecoratorOverKeyedRegistrations()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class Backup : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [Singleton<Real, IService>(Key = "primary")]
+				                                       [Singleton<Backup, IService>(Key = "backup")]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' with an empty Keys*").AsWildcard()
+					.Because("an empty Keys selects none of the keyed registrations");
+			}
+
+			[Test]
+			public async Task ReportsAwt123ForAnOpenDecoratorOverRegisteredClosings()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public sealed class Order { }
+				                                       public interface IHandler<T> { }
+				                                       public sealed class Handler<T> : IHandler<T> { }
+				                                       public sealed class LoggingBehavior<T> : IHandler<T> { public LoggingBehavior(IHandler<T> inner) { } }
+
+				                                       [Container]
+				                                       [Transient<Handler<Order>, IHandler<Order>>]
+				                                       [Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>), Keys = new object[0])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IHandler<>' is decorated by 'MyCode.LoggingBehavior<>' with an empty Keys, which selects nothing to decorate*").AsWildcard()
+					.Because("an open decorator with an empty Keys would otherwise silently decorate no closing");
+			}
+
+			[Test]
+			public async Task ReportsOnlyAwt170WhenEveryKeyHasAnUnsupportedType()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [Singleton<Real, IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [1])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT170*").AsWildcard()
+					.Because("the unsupported key is the one mistake; the keys left over must not also report AWT123");
+			}
+
+			[Test]
+			public async Task StillReportsAnInvalidPredicate()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class Real : IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [Singleton<Real, IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [], When = "Missing")]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasCount(2);
+				await That(result.Diagnostics).Contains("*AWT123*with an empty Keys*").AsWildcard();
+				await That(result.Diagnostics).Contains("*AWT246*has no member 'Missing'*").AsWildcard()
+					.Because("the predicate is a separate mistake that skipping the decorator must not hide");
 			}
 		}
 	}

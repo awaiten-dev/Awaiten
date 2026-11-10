@@ -78,7 +78,7 @@ To decorate keyed registrations, name the keys in `Keys`, where `null` stands fo
 Each key gets its own chain of the decorators that select it, ordered by `Order` and declaration order as above. A decorated key is decorated everywhere: a keyed resolve, a `[FromKey]` parameter and the keyed dictionary all get the chain. The open generic `typeof` form below takes `Keys` and `AllKeys` the same way and decorates the closings registered under the selected keys.
 
 :::note
-A key in `Keys` that matches no registration is a build error ([AWT210](../09-diagnostics.md#awt210)), and so is setting `Keys` together with `AllKeys` ([AWT211](../09-diagnostics.md#awt211)).
+A key in `Keys` that matches no registration is a build error ([AWT210](../09-diagnostics.md#awt210)), and so are an empty `Keys`, which selects nothing ([AWT123](../09-diagnostics.md#awt123)), and setting `Keys` together with `AllKeys` ([AWT211](../09-diagnostics.md#awt211)).
 :::
 
 ## Decorate every closing of an open generic
@@ -210,7 +210,7 @@ An imported service has no lifetime the decorator could inherit, so the chain is
 - **`[ImportServices]`.** It declares no service imported, so a decorated service needs its own `[ImportService<T>]`.
 
 :::note
-Decorating a service that is neither registered nor imported is a build error ([AWT123](../09-diagnostics.md#awt123)), and a decorator needs exactly one constructor parameter of the decorated type ([AWT124](../09-diagnostics.md#awt124)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the decorator's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
+Decorating a service that is neither registered nor imported is a build error ([AWT123](../09-diagnostics.md#awt123)), and a decorator needs a constructor parameter that accepts the decorated service to receive the inner instance ([AWT124](../09-diagnostics.md#awt124)). That parameter can also be of a type the service converts to, such as a base interface, and a `[FromKey]` parameter never receives it. When several parameters accept the service, the one whose type converts to the types of all the others receives the inner instance, and without exactly one such parameter the decorator is ambiguous. The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the decorator's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
 :::
 
 ## Where to go next

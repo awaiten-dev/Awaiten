@@ -971,7 +971,7 @@ new ServiceCollection().AddAwaitenContainer<CoffeeShop.Root>();   // MS.DI would
 ### AWT123
 
 :::danger[Error]
-A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. A service declared with `[ImportService<T>]` is [decorated](./04-registration/02-decorators.md#decorate-an-imported-service) without a registration, except by a decorator with `AllKeys`, whose keys only the host knows, by one with an empty `Keys`, which selects none, or by an open decorator over an open import, whose closings the container does not know. `[ImportServices]` declares no service imported, so it does not count. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported, like an open composite.
+A `[Decorate]` names a service with no registration to decorate. Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. A service declared with `[ImportService<T>]` is [decorated](./04-registration/02-decorators.md#decorate-an-imported-service) without a registration, except by a decorator with `AllKeys`, whose keys only the host knows, or by an open decorator over an open import, whose closings the container does not know. `[ImportServices]` declares no service imported, so it does not count. A decorator with an empty `Keys` selects nothing to decorate, so it is reported whether the service is registered, imported or an open generic. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported, like an open composite.
 :::
 
 ```csharp expect=AWT123
@@ -984,7 +984,7 @@ public static partial class CoffeeShop;
 
 It is not reported for a closed `[Decorate]` when the service's registration was left out for another error, such as an inherited registration the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once.
 
-**Fix:** Register the service before decorating it, for example `[Singleton<CardTerminal, IPaymentTerminal>]`, or declare it with `[ImportService<IPaymentTerminal>]` when the host provides it. If it is registered only under keys, add `Keys` or `AllKeys = true` to the `[Decorate]`. Over an import, name the keys in `Keys` instead of `AllKeys`, and declare each closing of an open import that an open decorator should wrap with `[ImportService<T>]`.
+**Fix:** Register the service before decorating it, for example `[Singleton<CardTerminal, IPaymentTerminal>]`, or declare it with `[ImportService<IPaymentTerminal>]` when the host provides it. If it is registered only under keys, add `Keys` or `AllKeys = true` to the `[Decorate]`. Name at least one key in a `Keys` you set, or remove `Keys` to decorate the unkeyed registrations. Over an import, name the keys in `Keys` instead of `AllKeys`, and declare each closing of an open import that an open decorator should wrap with `[ImportService<T>]`.
 
 ### AWT124
 
@@ -1001,7 +1001,7 @@ public sealed class LoggingTerminal : IPaymentTerminal;   // no IPaymentTerminal
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Give the decorator exactly one constructor parameter of the decorated service, which receives the inner instance: `LoggingTerminal(IPaymentTerminal inner)`.
+**Fix:** Give the decorator a constructor parameter that accepts the decorated service, which receives the inner instance: `LoggingTerminal(IPaymentTerminal inner)`. The parameter can also be of a type the service converts to, such as a base interface; a `[FromKey]` parameter does not count. When several parameters accept the service, the one whose type converts to the types of all the others receives the inner instance, so take the service in one parameter only or make one of them more derived than all the others.
 
 ### AWT130
 

@@ -229,17 +229,16 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     Whether the decorator wraps the imported <paramref name="service" />. <c>AllKeys</c> cannot, since only the host
-		///     knows the keys it provides the service under, so it reports AWT123 naming the keys as the remedy, as it does for
-		///     an empty <c>Keys</c>, which selects nothing.
+		///     knows the keys it provides the service under, so it reports AWT123 naming the keys as the remedy.
 		/// </summary>
 		private bool WrapsImport(string service, DecorateRegistration decorator)
 		{
-			if (decorator.Keys is { Count: > 0, })
+			if (decorator.Keys is not null)
 			{
 				return true;
 			}
 
-			Report(decorator.Keys is null ? Diagnostics.DecoratedImportUnderAllKeys : Diagnostics.DecoratedImportUnderNoKeys, decorator.Location,
+			Report(Diagnostics.DecoratedImportUnderAllKeys, decorator.Location,
 				service, decorator.Decorator.ToDisplayString(FullyQualified));
 			return false;
 		}
