@@ -243,7 +243,7 @@ partial class AwaitenGenerator
 	{
 		if (dependency.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable or DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection)
 		    || RelationshipCollection(declaredType) is not { } shape
-		    || HasElementRegistration(dependency, serviceToImpl))
+		    || HasElementRegistration(dependency.ServiceType, dependency.Key, dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection, serviceToImpl))
 		{
 			return false;
 		}
@@ -294,10 +294,22 @@ partial class AwaitenGenerator
 
 	// A keyed dictionary collects every keyed registration of its value type, the other shapes the registrations under
 	// the dependency's own key.
-	private static bool HasElementRegistration(ParameterModel dependency, Dictionary<ServiceKey, string> serviceToImpl)
-		=> dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection
-			? serviceToImpl.Keys.Any(key => key.Service == dependency.ServiceType && IsUserKey(key.Key))
-			: serviceToImpl.ContainsKey(KeyOf(dependency));
+	private static bool HasElementRegistration(string element, string? key, bool keyedDictionary, Dictionary<ServiceKey, string> serviceToImpl)
+		=> keyedDictionary
+			? serviceToImpl.Keys.Any(registered => registered.Service == element && IsUserKey(registered.Key))
+			: serviceToImpl.ContainsKey(new ServiceKey(element, key));
+
+	/// <summary>
+	///     Whether the element type of the collection shape or keyed dictionary <paramref name="collection" />, requested
+	///     under <paramref name="key" />, has a registration, so a dependency on the shape has members.
+	/// </summary>
+	internal static bool HasCollectionElementRegistration(ITypeSymbol collection, string? key, Dictionary<ServiceKey, string> serviceToImpl)
+		=> CollectionElement(collection) is { } element
+		   && HasElementRegistration(
+			   element.ToDisplayString(FullyQualified),
+			   key,
+			   TryGetKeyedCollectionElement(collection, out _, out _) || TryGetAwaitedKeyedCollection(collection, out _, out _, out _),
+			   serviceToImpl);
 
 	/// <summary>
 	///     The element type of a collection shape (<c>T[]</c>, <c>IEnumerable&lt;T&gt;</c> and its siblings,

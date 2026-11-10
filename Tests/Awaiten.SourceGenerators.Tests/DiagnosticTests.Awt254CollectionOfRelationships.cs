@@ -243,5 +243,41 @@ public partial class DiagnosticTests
 				.Contains("*'System.Collections.Generic.IEnumerable<System.Lazy<MyCode.IClock>>' has no unkeyed registration*the container does not build a collection of the relationship 'System.Lazy<MyCode.IClock>'; resolve 'System.Collections.Generic.IEnumerable<MyCode.IClock>' to get every registration of 'MyCode.IClock', or 'System.Lazy<MyCode.IClock>' to get a single one").AsWildcard()
 				.Because("the call throws at run time, and the remedy is the collection of the service, not a registration of the relationship");
 		}
+
+		[Test]
+		public async Task DoesNotBlameTheRelationshipForATypedResolveWhenTheRelationshipTypeIsRegisteredUnderTheKey()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                                           using Awaiten;
+			                                                           using System;
+			                                                           using System.Collections.Generic;
+
+			                                                           namespace MyCode;
+
+			                                                           public interface IClock { }
+			                                                           public sealed class SystemClock : IClock { }
+
+			                                                           [Container]
+			                                                           [Singleton<Func<IClock>>(Key = "test", Factory = nameof(CreateClockFactory))]
+			                                                           public static partial class MyContainer
+			                                                           {
+			                                                           	private static Func<IClock> CreateClockFactory() => () => new SystemClock();
+			                                                           }
+
+			                                                           public static class Usage
+			                                                           {
+			                                                           	public static void Use()
+			                                                           	{
+			                                                           		using MyContainer.Root root = new();
+			                                                           		root.Resolve<IEnumerable<Func<IClock>>>("test");
+			                                                           	}
+			                                                           }
+			                                                           """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasSingle().Which
+				.Contains("*has no registration under the key \"test\"*register it under that key on the [Container]*").AsWildcard()
+				.Because("a [FromKey(\"test\")] collection of the registered Func<IClock> has a member, so the relationship is not what keeps a typed resolve from it");
+		}
 	}
 }

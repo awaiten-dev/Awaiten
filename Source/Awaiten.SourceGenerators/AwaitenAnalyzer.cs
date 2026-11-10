@@ -712,7 +712,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph, Sources.ByTypeSurface surface)
 	{
 		// AWT254 for injection: a collection holds registrations, so one of relationships is never synthesized.
-		if (AwaitenGenerator.RelationshipCollection(service) is { } shape)
+		if (AwaitenGenerator.RelationshipCollection(service) is { } shape
+		    && !AwaitenGenerator.HasCollectionElementRegistration(service, key, graph.ServiceToImpl))
 		{
 			return $"the container does not build a collection of the relationship '{shape.Element}'; resolve '{shape.Remedy}' to get every registration of '{shape.Target}', or '{shape.Element}' to get a single one";
 		}
