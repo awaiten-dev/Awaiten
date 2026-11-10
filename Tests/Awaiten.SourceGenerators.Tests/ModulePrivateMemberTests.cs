@@ -234,6 +234,37 @@ public class ModulePrivateMemberTests
 		}
 
 		[Test]
+		public async Task PrivateOfAnotherType_IsReportedOnlyAsMissingByTheContainer()
+		{
+			string library = OpenLibrary("public static partial", "public", "private static System.Collections.Generic.List<T> Make<T>() => new();");
+
+			GeneratorResult alone = Generator.Run(library);
+			GeneratorResult same = Generator.Run(library + SameAssemblyConsumer);
+
+			await That(alone.Diagnostics).IsEmpty()
+				.Because("a member that produces another type would not serve the registration even if it were accessible, so the module does not name its accessibility as the cause");
+			await That(same.Diagnostics).HasSingle().Which.Contains("*AWT108*'Make'*").AsWildcard()
+				.Because("the container reports the missing factory once");
+		}
+
+		[Test]
+		[Arguments("public static partial class DataModule<TModule>", "typeof(DataModule<int>)")]
+		[Arguments("public partial class DataModule", "typeof(DataModule)")]
+		public async Task PrivateOnAModuleTheContainerReportsItself_IsNotReportedTwice(string declaration, string import)
+		{
+			string library = OpenLibrary("public static partial", "public", "private static Repository<T> Make<T>() => new Repository<T>();")
+				.Replace("public static partial class DataModule", declaration);
+
+			GeneratorResult alone = Generator.Run(library);
+			GeneratorResult same = Generator.Run(library + SameAssemblyConsumer.Replace("typeof(DataModule)", import));
+
+			await That(alone.Diagnostics).IsEmpty()
+				.Because("a container reports the private member of a generic or non-static module itself, as for a closed registration");
+			await That(same.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT153"))
+				.Because("the module and the container must not both report the member");
+		}
+
+		[Test]
 		[Arguments("public")]
 		[Arguments("internal")]
 		public async Task Internal_IsCalledDirectlyByTheModulesAssemblyAndItsFriends(string repository)

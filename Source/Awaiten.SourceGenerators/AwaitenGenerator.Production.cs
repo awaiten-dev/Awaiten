@@ -1863,7 +1863,7 @@ partial class AwaitenGenerator
 		   && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute")
 		   && module.IsStatic
 		   && !HasOpenTypeParameters(module)
-		   && (info.GenericFactory ? GenericFactoryMembers(module, member, info.Symbol.Arity, compilation) : ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation)).ToList() is { Count: > 0, } candidates
+		   && (info.GenericFactory ? GenericFactoryMembers(module, member, info.Symbol, compilation) :ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation)).ToList() is { Count: > 0, } candidates
 		   && candidates.TrueForAll(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
 
 	/// <summary>
@@ -1883,13 +1883,19 @@ partial class AwaitenGenerator
 		=> production == ProductionKind.Factory ? FindFactoryCandidates(owner, member, produced, compilation) : AccessibleMembers(owner, member, compilation);
 
 	/// <summary>
-	///     The generic methods named <paramref name="member" /> with <paramref name="arity" /> type parameters, whatever
-	///     their accessibility, constraints and return type: what the closings of an open registration may bind as its
-	///     <c>Factory</c> (see <see cref="FindGenericFactoryCandidates" />), so a module and a container judge alike whether
-	///     only a private member could serve them.
+	///     The generic methods named <paramref name="member" /> that produce the open <paramref name="implementation" />
+	///     when constructed with its own type parameters, whatever their accessibility and constraints: what the closings of
+	///     an open registration may bind as its <c>Factory</c> (see <see cref="FindGenericFactoryCandidates" />), so a module
+	///     and a container judge alike whether only a private member could serve them.
 	/// </summary>
-	private static IEnumerable<IMethodSymbol> GenericFactoryMembers(INamedTypeSymbol owner, string member, int arity, Compilation compilation)
-		=> AccessibleMembers(owner, member, compilation).OfType<IMethodSymbol>().Where(method => method.MethodKind == MethodKind.Ordinary && method.Arity == arity);
+	private static IEnumerable<IMethodSymbol> GenericFactoryMembers(INamedTypeSymbol owner, string member, INamedTypeSymbol implementation, Compilation compilation)
+	{
+		INamedTypeSymbol definition = implementation.OriginalDefinition;
+		return AccessibleMembers(owner, member, compilation).OfType<IMethodSymbol>()
+			.Where(method => method.MethodKind == MethodKind.Ordinary
+			                 && method.Arity == definition.Arity
+			                 && compilation.HasImplicitConversion(ProducedType(method.Construct(definition.TypeArguments.ToArray()).ReturnType, compilation), definition));
+	}
 
 	/// <summary>
 	///     The non-generic static methods named <paramref name="hook" /> of <paramref name="owner" /> that could run as the

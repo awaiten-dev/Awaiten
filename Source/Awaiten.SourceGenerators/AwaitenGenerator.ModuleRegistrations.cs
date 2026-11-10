@@ -956,8 +956,8 @@ partial class AwaitenGenerator
 	///     the module reports once (see <see cref="DistinctModuleDiagnostics" />), a factory body that hides async initialization
 	///     behind the declared return type (AWT106), and a convention
 	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
-	///     <see cref="OwnedMemberType" />). Of its open registrations it reports a generic <c>Factory</c> member that is
-	///     private (AWT153), since no container can call it and the module generates no wrapper for a generic member.
+	///     <see cref="OwnedMemberType" />). Of the open registrations of a static, non-generic module it reports a generic
+	///     <c>Factory</c> member that is private (AWT153), since no container can call it and the module generates no wrapper for a generic member.
 	///     Without <paramref name="lintBodies" />, the factory bodies are not read, so AWT106, which never leaves a
 	///     registration out, is not reported.
 	/// </summary>
@@ -1058,8 +1058,10 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			List<IMethodSymbol> factories = GenericFactoryMembers(module, member, implementation.Arity, compilation).ToList();
-			if (factories.Count > 0
+			// A container reports the member of a generic or non-static module itself (see ReportedByModule).
+			if (module.IsStatic
+			    && !HasOpenTypeParameters(module)
+			    && GenericFactoryMembers(module, member, implementation, compilation).ToList() is { Count: > 0, } factories
 			    && factories.TrueForAll(factory => factory.DeclaredAccessibility == Accessibility.Private)
 			    && privateGenericFactories.Add($"{member}\0{implementation.ToDisplayString(FullyQualified)}"))
 			{
@@ -1069,7 +1071,8 @@ partial class AwaitenGenerator
 					new EquatableArray<string>([Display(service.OriginalDefinition.ToDisplayString(FullyQualified)), Display(module.ToDisplayString(FullyQualified)), member,])));
 			}
 
-			foreach (IMethodSymbol factory in lintBodies ? factories.Where(method => !IsAsyncFactoryReturn(method.ReturnType, compilation, out _)) : [])
+			foreach (IMethodSymbol factory in lintBodies ? AccessibleMembers(module, member, compilation).OfType<IMethodSymbol>()
+				         .Where(method => method.MethodKind == MethodKind.Ordinary && method.Arity == implementation.Arity && !IsAsyncFactoryReturn(method.ReturnType, compilation, out _)) : [])
 			{
 				if (checkedFactories.Add(factory))
 				{
