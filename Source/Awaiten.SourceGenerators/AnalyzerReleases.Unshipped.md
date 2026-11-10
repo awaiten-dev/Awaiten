@@ -151,6 +151,7 @@
  AWT257  | Awaiten   | Error    | A collection the container builds would miss a registration that an imported module of another assembly serves only through a generated handle the container cannot read
  AWT258  | Awaiten   | Error    | An [ImportService] names a collection shape or keyed dictionary, which the container always builds from its own registrations, so the external resolver is never asked for it
  AWT259  | Awaiten   | Error    | A dependency is a relationship such as Func<T> whose type the container also registers or imports as a service, which injection never hands out, because it builds the relationship over T
+ AWT260  | Awaiten   | Error    | The container needs a type whose full name another referenced assembly, or the project itself, also declares accessibly, so the generated code cannot name it
  AWT261  | Awaiten   | Error    | A consumer lists a service in ConsumerOwned whose build leaves more than the instance on the owner, such as another disposable transient, a Func or Lazy over one, or a release hook, which the consumer cannot release
  AWT262  | Awaiten   | Warning  | A ConsumerOwned entry that no Func or dispatch dictionary of the consumer over a build-on-demand service the container disposes reaches, in any closing of the registration
  AWT263  | Awaiten   | Error    | A [Singleton] sets both Eager = true and EagerWhen, so the predicate would never decide whether it is built at startup
