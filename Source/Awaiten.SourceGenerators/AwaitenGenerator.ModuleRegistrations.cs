@@ -205,6 +205,43 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports, in the build of a static, non-generic module that cannot receive generated members, its first private
+	///     <c>Factory</c> or <c>Instance</c> member (see <see cref="PrivateProductionMember" />), which a container calls
+	///     only through a wrapper (AWT194).
+	/// </summary>
+	private static void ReportNotPartialPrivateMember(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		if (module.IsStatic && !HasOpenTypeParameters(module) && PrivateProductionMember(module, compilation) is ({ } service, { } member))
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.NonPartialModuleScan,
+				LocationInfo.From(module.Locations.FirstOrDefault()),
+				new EquatableArray<string>([
+					Display(module.ToDisplayString(FullyQualified)),
+					$"produces '{Display(service.ToDisplayString(FullyQualified))}' through its private member '{member}', which a container calls only through a generated wrapper,",
+				])));
+		}
+	}
+
+	/// <summary>
+	///     Reports, as the module's own build does, each private <c>Factory</c> or <c>Instance</c> member of a closed
+	///     registration that no generated wrapper serves (AWT194, else see <see cref="ReportUnwrappedPrivateMembers" />), for
+	///     a container of the module's assembly, which leaves the registration to the module (see
+	///     <see cref="ReportedByModule" />).
+	/// </summary>
+	private static void ReportPrivateMembersWithoutWrapper(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		if (!ReceivesGeneratedMembers(module))
+		{
+			ReportNotPartialPrivateMember(module, compilation, diagnostics);
+		}
+		else if (PrivateProductionMember(module, compilation) is not null)
+		{
+			ReportUnwrappedPrivateMembers(module, compilation, CollectModuleMemberWrappers(module, compilation, new List<DiagnosticInfo>(), new List<SkippedRegistration>()), diagnostics);
+		}
+	}
+
+	/// <summary>
 	///     Reports, in the build of a module that receives generated members, each private <c>Factory</c> or
 	///     <c>Instance</c> member it generates no wrapper for (see <see cref="CollectModuleMemberWrappers" />), which no
 	///     container can call: AWT112 for overloads no wrapper can choose between, else AWT153. A container of the
@@ -919,8 +956,10 @@ partial class AwaitenGenerator
 	///     the module reports once (see <see cref="DistinctModuleDiagnostics" />), a factory body that hides async initialization
 	///     behind the declared return type (AWT106), and a convention
 	///     that initializes a private return type but not the registered type a container sees instead (AWT234, see
-	///     <see cref="OwnedMemberType" />). Without <paramref name="lintBodies" />, the factory bodies are not read, so
-	///     AWT106, which never leaves a registration out, is not reported.
+	///     <see cref="OwnedMemberType" />). Of its open registrations it reports a generic <c>Factory</c> member that is
+	///     private (AWT153), since no container can call it and the module generates no wrapper for a generic member.
+	///     Without <paramref name="lintBodies" />, the factory bodies are not read, so AWT106, which never leaves a
+	///     registration out, is not reported.
 	/// </summary>
 	private static void ReportModuleProductionMembers(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics, bool lintBodies = true)
 	{
@@ -1007,19 +1046,30 @@ partial class AwaitenGenerator
 			}
 		}
 
-		foreach (AttributeData attribute in lintBodies ? module.GetAttributes() : [])
+		HashSet<string> privateGenericFactories = new(StringComparer.Ordinal);
+		foreach (AttributeData attribute in module.GetAttributes())
 		{
 			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
 			    || ReadProduction(attribute) is not { Production: ProductionKind.Factory, Member: { } member, Conflicting: false, }
-			    || !TryReadTypeofPair(attribute, out INamedTypeSymbol implementation, out _)
+			    || !TryReadTypeofPair(attribute, out INamedTypeSymbol implementation, out INamedTypeSymbol service)
 			    || !implementation.IsUnboundGenericType)
 			{
 				continue;
 			}
 
-			foreach (IMethodSymbol factory in AccessibleMembers(module, member, compilation).OfType<IMethodSymbol>()
-				         .Where(method => method.MethodKind == MethodKind.Ordinary && method.Arity == implementation.Arity && !IsAsyncFactoryReturn(method.ReturnType, compilation, out _)))
+			List<IMethodSymbol> factories = GenericFactoryMembers(module, member, implementation.Arity, compilation).ToList();
+			if (factories.Count > 0
+			    && factories.TrueForAll(factory => factory.DeclaredAccessibility == Accessibility.Private)
+			    && privateGenericFactories.Add($"{member}\0{implementation.ToDisplayString(FullyQualified)}"))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.InaccessibleModuleMember,
+					LocationInfo.From(attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()),
+					new EquatableArray<string>([Display(service.OriginalDefinition.ToDisplayString(FullyQualified)), Display(module.ToDisplayString(FullyQualified)), member,])));
+			}
+
+			foreach (IMethodSymbol factory in lintBodies ? factories.Where(method => !IsAsyncFactoryReturn(method.ReturnType, compilation, out _)) : [])
 			{
 				if (checkedFactories.Add(factory))
 				{

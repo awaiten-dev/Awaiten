@@ -179,15 +179,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// Member wrappers and the factories of decorators are generated only into a module that can receive them, so a
 		// module that cannot keeps building without them, as it did before they existed.
 		bool receives = ReceivesGeneratedMembers(moduleSymbol);
-		if (!receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && PrivateProductionMember(moduleSymbol, compilation) is ({ } privateService, { } privateMember))
+		if (!receives)
 		{
-			diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.NonPartialModuleScan,
-				LocationInfo.From(moduleSymbol.Locations.FirstOrDefault()),
-				new EquatableArray<string>([
-					Display(moduleSymbol.ToDisplayString(FullyQualified)),
-					$"produces '{Display(privateService.ToDisplayString(FullyQualified))}' through its private member '{privateMember}', which a container calls only through a generated wrapper,",
-				])));
+			ReportNotPartialPrivateMember(moduleSymbol, compilation, diagnostics);
 		}
 
 		List<SkippedRegistration> skipped = new();
@@ -603,8 +597,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			RemoveBaseDiagnostics(diagnostics, baseDiagnostics, containerSymbol, baseContainer);
 		}
 
-		// A module of this assembly reports a member producing a type private to it in its own build, which leaves the
-		// registration out of the graph here (see BuildInstance), so only the shell is emitted while that fails the build.
+		// A module of this assembly reports a member producing a type private to it, or a private member no wrapper serves,
+		// in its own build, which leaves the registration out of the graph here (see BuildInstance and ReportedByModule),
+		// so only the shell is emitted while that fails the build.
 		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
 			.Select(module => module.Symbol)
 			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
@@ -613,6 +608,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			{
 				List<DiagnosticInfo> moduleDiagnostics = new();
 				ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
+				ReportPrivateMembersWithoutWrapper(module, compilation, moduleDiagnostics);
 				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation));
 			});
 
