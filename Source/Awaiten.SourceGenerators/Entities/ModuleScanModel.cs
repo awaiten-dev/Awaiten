@@ -138,12 +138,15 @@ internal sealed record MemberInitializer(string Name, string Convention);
 ///     composite the module generates no generic factory for, whatever its assembly grants. <see cref="Contribution" />
 ///     marks a decorator or composite of an internal service the module cannot build, whose constant holds the type a
 ///     consumer reports instead. <see cref="Member" /> marks a <c>Factory</c> member the module neither wraps nor builds
-///     through a handle, whose constant holds why, which a consumer that cannot call the member reports (AWT108).
-///     <see cref="Predicate" /> marks an internal decorator predicate the module generates no wrapper for (AWT247).
-///     <see cref="EmptyCollection" /> marks an element type whose collection a factory of the module passes empty, whose
-///     constant holds the type that receives it, which a consumer that registers the element type reports (AWT252).
+///     through a handle, whose constant holds why, which a consumer that cannot call the member reports (AWT108), or of
+///     an open registration a consumer reports as AWT231. <see cref="Predicate" /> marks an internal decorator
+///     predicate the module generates no wrapper for (AWT247). <see cref="EmptyCollection" /> marks an element type
+///     whose collection a factory of the module passes empty, whose constant holds the type that receives it, which a
+///     consumer that registers the element type reports (AWT252). A <see cref="Remedy" /> is emitted as a constant of
+///     its own for a skip whose cause no grant cures, such as a hook no container can run, so a consumer names it
+///     instead of a grant.
 /// </summary>
-internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false, bool Predicate = false, bool EmptyCollection = false);
+internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false, bool Predicate = false, bool EmptyCollection = false, string? Remedy = null);
 
 /// <summary>
 ///     The generated factory of an implementation that only its owner can construct: a self-compiled module

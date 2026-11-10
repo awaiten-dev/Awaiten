@@ -1361,8 +1361,8 @@ public class OpenGenericFactoryTests
 				GeneratorResult result = Run(reference, Library(overload), OrderConsumer);
 
 				await That(result.Diagnostics).HasSingle().Which
-					.IsEqualTo($"*AWT231*'Lib.Repository<T>'*its OnActivated hook 'Ready' has another overload, taking {cause} too*; give the overloads distinct names;*").AsWildcard()
-					.Because("the module cannot tell this assembly which closings the overload accepts, so no generic wrapper runs the generic overload for them");
+					.IsEqualTo($"*AWT231*'Lib.Repository<T>'*its OnActivated hook 'Ready' has another overload, taking {cause} too*AWT190; give the overloads distinct names").AsWildcard()
+					.Because("the module cannot tell this assembly which closings the overload accepts, so no generic wrapper runs the generic overload for them, and a grant would not change that");
 			}
 
 			[Test]

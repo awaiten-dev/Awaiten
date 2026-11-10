@@ -1728,6 +1728,32 @@ partial class AwaitenGenerator
 			return null;
 		}
 
+		// The module wraps no generic member, so it records why for a container that cannot call it, unlike its own assembly and friends.
+		if (candidates.Count == 0
+		    && info.GenericFactory
+		    && info.Origin is { } module
+		    && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		    && SkippedMemberReason(module, "Factory", info.ProductionMember!, info.Symbol.OriginalDefinition) is { } genericReason)
+		{
+			string member = UserMemberName(info.ProductionMember)!;
+			DiagnosticInfo diagnostic = new(
+				Diagnostics.ModuleFactoryMemberNotWrapped,
+				info.Location,
+				new EquatableArray<string>([
+					Display(module.ToDisplayString(FullyQualified)),
+					Display(info.Symbol.OriginalDefinition.ToDisplayString(FullyQualified)),
+					member,
+					genericReason,
+					NotSelfCompiledRemedy(module, info.Symbol, compilation, $"make '{member}' and the types in its signature public"),
+				]));
+			if (!diagnostics.Contains(diagnostic))
+			{
+				diagnostics.Add(diagnostic);
+			}
+
+			return null;
+		}
+
 		diagnostics.Add(new DiagnosticInfo(
 			candidates.Count == 0 ? Diagnostics.InvalidFactory : Diagnostics.AmbiguousFactory,
 			info.Location,

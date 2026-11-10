@@ -2209,12 +2209,15 @@ internal static class Diagnostics
 	///     because it cannot mirror the hook's parameters, or no factory at all because the module is generic or not
 	///     partial. The module's assembly grants <c>InternalsVisibleTo</c> to some assembly, which constructs the
 	///     implementation itself, so its own build only records the reason. Reported at the consumer's <c>[Import]</c>,
-	///     and the registration is dropped.
+	///     and the registration is dropped. The last argument is the whole remedy, chosen by the cause: a grant for a
+	///     container in an assembly without one, what the grant does not reach for one with it, a type private to the
+	///     module made internal or public, or the remedy the module recorded for a fault of its own, such as a hook no
+	///     container can run.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleRegistrationNotSelfCompiled = new(
 		"AWT231",
 		"Module registration has no generated factory or hook wrapper",
-		"The imported module '{0}' registers '{1}', which this container cannot construct, and the module's assembly generated no {2} for it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or {4}",
+		"The imported module '{0}' registers '{1}', which this container cannot construct, and the module's assembly generated no {2} for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -2227,7 +2230,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleHookNotWrapped = new(
 		"AWT231",
 		ModuleRegistrationNotSelfCompiled.Title,
-		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container cannot call, and the module's assembly generated no wrapper for it because {4}; grant this assembly InternalsVisibleTo in the module's assembly, or make the hook and its parameter types public",
+		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container cannot call, and the module's assembly generated no wrapper for it because {4}; {5}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -2239,7 +2242,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleContributionFactorySkipped = new(
 		"AWT231",
 		ModuleRegistrationNotSelfCompiled.Title,
-		"The imported module '{0}' declares {1} '{2}', which this container cannot construct, and the module's assembly generated no factory for it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make '{2}', its constructor and the constructor's parameter types public",
+		"The imported module '{0}' declares {1} '{2}', which this container cannot construct, and the module's assembly generated no factory for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
@@ -2266,7 +2269,20 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor ModuleRegistrationPropertyNotSet = new(
 		"AWT231",
 		ModuleRegistrationNotSelfCompiled.Title,
-		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; grant this assembly InternalsVisibleTo in the module's assembly, or make the [Inject] properties of '{1}', their setters and their types public",
+		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; {4}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for the generic <c>Factory</c> member of
+	///     an open registration that this container cannot call: the module generates no wrapper for a generic member and
+	///     recorded why, while its own assembly and the assemblies it grants <c>InternalsVisibleTo</c> call the member directly.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleFactoryMemberNotWrapped = new(
+		"AWT231",
+		ModuleRegistrationNotSelfCompiled.Title,
+		"The imported module '{0}' registers '{1}' through its Factory member '{2}', which this container cannot call, and the module's assembly generated no wrapper for it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

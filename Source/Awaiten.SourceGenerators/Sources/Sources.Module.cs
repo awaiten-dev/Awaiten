@@ -220,6 +220,12 @@ internal static partial class Sources
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
 					"Generated from a module registration: why no generic factory builds this open generic type. A consuming",
 					"container that cannot construct it reports this reason.");
+				if (skipped.Remedy is { } remedy)
+				{
+					builder.AppendLine();
+					EmitSkipReason(builder, depth + 2, AwaitenGenerator.SkippedRemedyName(skipped.MarkerName), remedy,
+						"Generated from a module registration: what lets the module generate a generic factory for this open generic type.");
+				}
 			}
 			else if (skipped.Contribution)
 			{

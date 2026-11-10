@@ -109,7 +109,9 @@ partial class AwaitenGenerator
 	///     construct (see <see cref="SelfCompilesRegistration" />, asked of the open definition), and a skip record with
 	///     the reason for each it cannot generate, which a consumer that cannot construct the type reports (AWT231). The
 	///     module's own build reports nothing for them: before modules generated these factories the module built and
-	///     a consumer reported AWT230, so a library whose containers all live in its own assembly keeps building. A
+	///     a consumer reported AWT230, so a library whose containers all live in its own assembly keeps building. Only a
+	///     hook that no container could run for any closing (see <see cref="OpenFactory.Fault" />) is reported into
+	///     <paramref name="diagnostics" /> too, as for a closed registration, and recorded with its remedy. A
 	///     factory whose hook wrapper only a container in the module's assembly may run (see
 	///     <see cref="OpenFactory.ForeignReason" />) is internal and kept only for a type private to the module, whose
 	///     closings that container builds through it, and carries the skip record too, which a container in another
@@ -117,7 +119,7 @@ partial class AwaitenGenerator
 	///     internal service through its handle does not keep a factory from being generated in the module's own build, which
 	///     passes <paramref name="hidden" />.
 	/// </summary>
-	private static (List<RegistrationFactory> Factories, List<SkippedRegistration> Skipped) CollectModuleOpenFactories(INamedTypeSymbol module, Compilation compilation, HiddenServices? hidden = null)
+	private static (List<RegistrationFactory> Factories, List<SkippedRegistration> Skipped) CollectModuleOpenFactories(INamedTypeSymbol module, Compilation compilation, HiddenServices? hidden = null, List<DiagnosticInfo>? diagnostics = null)
 	{
 		List<RegistrationFactory> factories = new();
 		List<SkippedRegistration> skipped = new();
@@ -146,7 +148,7 @@ partial class AwaitenGenerator
 					skipped.AddRange(built.HookSkips!);
 				}
 
-				skipped.Add(new SkippedRegistration(contribution.SkippedName, $"{foreign}; give the overloads distinct names", Open: true));
+				skipped.Add(new SkippedRegistration(contribution.SkippedName, foreign, Open: true, Remedy: "give the overloads distinct names"));
 			}
 			else if (built.Factory is { } factory)
 			{
@@ -154,7 +156,11 @@ partial class AwaitenGenerator
 			}
 			else
 			{
-				skipped.Add(new SkippedRegistration(contribution.SkippedName, built.Reason!, Open: true));
+				skipped.Add(new SkippedRegistration(contribution.SkippedName, built.Reason!, Open: true, Remedy: built.Remedy));
+				if (built.Fault is { } fault && diagnostics?.Contains(fault) == false)
+				{
+					diagnostics.Add(fault);
+				}
 			}
 		}
 
@@ -211,9 +217,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The generic factory of an open contribution, or the reason the owner cannot generate one. A
 	///     <see cref="ForeignReason" /> tells why only a container in the owner's assembly may run a hook wrapper of the
-	///     factory, and <see cref="HookSkips" /> record that for the hooks a friend cannot judge either.
+	///     factory, and <see cref="HookSkips" /> record that for the hooks a friend cannot judge either. A
+	///     <see cref="Remedy" /> goes with a reason no grant cures, and a <see cref="Fault" /> is the diagnostic of a hook
+	///     every container fails to run, whatever the closing.
 	/// </summary>
-	private readonly record struct OpenFactory(RegistrationFactory? Factory, string? Reason, string? ForeignReason = null, List<SkippedRegistration>? HookSkips = null);
+	private readonly record struct OpenFactory(RegistrationFactory? Factory, string? Reason, string? ForeignReason = null, List<SkippedRegistration>? HookSkips = null, string? Remedy = null, DiagnosticInfo? Fault = null);
 
 	/// <summary>
 	///     Builds the generic factory of an open contribution: a method with the definition's type parameters and their
@@ -284,9 +292,9 @@ partial class AwaitenGenerator
 		string typeParameterList = $"<{string.Join(", ", definition.TypeParameters.Select(parameter => EscapedName(parameter.Name)))}>";
 		string constraints = TypeParameterConstraints(definition);
 		List<SkippedRegistration> hookSkips = new();
-		if (OpenHookWrappers(contribution, subject, signature, typeParameters, typeParameterList, constraints, out string? hookReason, out string? foreignReason, hookSkips) is not { } hooks)
+		if (OpenHookWrappers(contribution, subject, signature, typeParameters, typeParameterList, constraints, out HookFailure failure, out string? foreignReason, hookSkips) is not { } hooks)
 		{
-			return new OpenFactory(null, hookReason);
+			return new OpenFactory(null, failure.Reason, Remedy: failure.Remedy, Fault: failure.Fault);
 		}
 
 		return new OpenFactory(
@@ -317,9 +325,13 @@ partial class AwaitenGenerator
 	///     closes with each closing like the factory: each hook is bound as a container binds it per closing, with the
 	///     open service constructed with the definition's own type parameters as the marker, so a generic hook is called
 	///     with those type parameters and a parameter after the instance may use them. Returns <see langword="null" /> and
-	///     the <paramref name="reason" /> when a hook cannot be wrapped (unusable, ambiguous, a parameter another assembly
+	///     the <paramref name="failure" /> when a hook cannot be wrapped (unusable, ambiguous, a parameter another assembly
 	///     cannot name or carrying <c>[Arg]</c>, <c>[FromKey]</c> or <c>[Inject]</c>, constraints the definition's type
-	///     parameters do not satisfy, or a parameter named like one of them). A wrapper runs its hook for every closing,
+	///     parameters do not satisfy, or a parameter named like one of them). A hook that only a wrapper cannot express, a
+	///     parameter another assembly cannot name or one carrying <c>[FromKey]</c> or <c>[Inject]</c>, fails for its
+	///     reason alone, since a container granted <c>InternalsVisibleTo</c> calls the hook directly. Constraints or an
+	///     order of type parameters some closings still bind fail with the remedy for the hook, and any other fault, which
+	///     every container hits for every closing, with that diagnostic as the fault too. A wrapper runs its hook for every closing,
 	///     so when another overload accepts some closing too (see <see cref="ClosingOnlyHookOverloads" />), for which a
 	///     container in the owner's assembly reports AWT190, the <paramref name="foreignReason" /> tells why a container
 	///     in another assembly, which does not see that overload when it is not public, may not run the wrapper, and a
@@ -332,11 +344,11 @@ partial class AwaitenGenerator
 		HashSet<string> typeParameters,
 		string typeParameterList,
 		string constraints,
-		out string? reason,
+		out HookFailure failure,
 		out string? foreignReason,
 		List<SkippedRegistration> hookSkips)
 	{
-		reason = null;
+		failure = default;
 		foreignReason = null;
 		List<RegistrationHook> hooks = new();
 		HashSet<string> seen = new(StringComparer.Ordinal);
@@ -358,15 +370,29 @@ partial class AwaitenGenerator
 				string prefix = $"its {slot} hook '{hookName}' cannot be run through a generated wrapper";
 				if (resolved is null)
 				{
-					reason = rejections.Count == 0
-						? prefix
-						: $"{prefix}: {(rejections[0].Descriptor == Diagnostics.InvalidLifecycleHook ? UnboundGenericHook(registration, hookName, context) : null) ?? rejections[0].ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}";
+					if (rejections.Count == 0)
+					{
+						failure = new HookFailure(prefix);
+					}
+					else if ((rejections[0].Descriptor == Diagnostics.InvalidLifecycleHook ? UnboundGenericHook(registration, hookName, context) : null) is { } unbound)
+					{
+						failure = new HookFailure($"{prefix}: {unbound.Cause}", unbound.Remedy);
+					}
+					else
+					{
+						DiagnosticInfo rejection = rejections[0];
+						string reason = $"{prefix}: {rejection.ToDiagnostic().GetMessage(CultureInfo.InvariantCulture)}";
+						failure = FailsForEveryClosing(rejection, registration, hookName, context)
+							? new HookFailure(reason, $"fix the {slot} hook '{hookName}' in the module's assembly, since no container can run it as it is", rejection)
+							: new HookFailure(reason);
+					}
+
 					return null;
 				}
 
 				if (resolved.Wrapper.Parameters.AsArray().FirstOrDefault(parameter => typeParameters.Contains(parameter.Name)) is { Name: { } clash, })
 				{
-					reason = $"{prefix}, because its parameter '{clash}' has the name of a type parameter";
+					failure = new HookFailure($"{prefix}, because its parameter '{clash}' has the name of a type parameter");
 					return null;
 				}
 
@@ -392,11 +418,31 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Why a generic overload of the hook does not bind for the open definition of <paramref name="registration" />,
-	///     although it may for a closing, or <see langword="null" /> when the hook has no such overload: its constraints
-	///     do not hold for the definition's type parameters, or it does not take them in their order.
+	///     Whether a hook of an open <paramref name="registration" /> that failed for its definition with
+	///     <paramref name="rejection" /> fails so for every container and closing, which the module's own build then reports
+	///     as it does for a closed registration. A wrapper's own limits (AWT203, AWT204) spare a container granted
+	///     <c>InternalsVisibleTo</c>, which calls the hook directly, and a hook no overload binds for the definition may
+	///     still bind for some closing (see <see cref="UnboundGenericHook" /> and <see cref="ClosingOnlyHookOverloads" />).
 	/// </summary>
-	private static string? UnboundGenericHook(OpenContribution registration, string hookName, ModuleScanContext context)
+	private static bool FailsForEveryClosing(DiagnosticInfo rejection, OpenContribution registration, string hookName, ModuleScanContext context)
+		=> rejection.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible
+		   && rejection.Descriptor != Diagnostics.ModuleScanHookInjectionMetadata
+		   && !(rejection.Descriptor == Diagnostics.InvalidLifecycleHook
+		        && (UnboundGenericHook(registration, hookName, context) is not null || ClosingOnlyHookOverloads(registration.Definition, hookName, null, context).Any()));
+
+	/// <summary>
+	///     Why <see cref="OpenHookWrappers" /> wraps no hook: the <see cref="Reason" /> it records, the <see cref="Remedy" />
+	///     for a cause no grant cures, and the <see cref="Fault" /> the module reports when no container could run the hook.
+	/// </summary>
+	private readonly record struct HookFailure(string? Reason, string? Remedy = null, DiagnosticInfo? Fault = null);
+
+	/// <summary>
+	///     Why a generic overload of the hook does not bind for the open definition of <paramref name="registration" />,
+	///     although it may for a closing, and how to change the hook so it binds for every closing, or
+	///     <see langword="null" /> when the hook has no such overload: its constraints do not hold for the definition's
+	///     type parameters, or it does not take them in their order.
+	/// </summary>
+	private static (string Cause, string Remedy)? UnboundGenericHook(OpenContribution registration, string hookName, ModuleScanContext context)
 	{
 		INamedTypeSymbol definition = registration.Definition;
 		string type = Display(definition.ToDisplayString(FullyQualified));
@@ -415,12 +461,12 @@ partial class AwaitenGenerator
 			{
 				if (!SatisfiesConstraints(method, typeParameters, context.Compilation))
 				{
-					return $"the constraints of its generic overload do not hold for every closing of '{type}'; constrain the type parameters of '{type}' alike";
+					return ($"the constraints of its generic overload do not hold for every closing of '{type}'", $"constrain the type parameters of '{type}' alike");
 				}
 			}
 			else if (method.Parameters[0].Type is INamedTypeSymbol instance && shapes.Contains(instance.OriginalDefinition))
 			{
-				return $"its generic overload does not take the type parameters of '{type}' in their order; declare them in the same order on the hook";
+				return ($"its generic overload does not take the type parameters of '{type}' in their order", "declare them in the same order on the hook");
 			}
 		}
 
@@ -444,12 +490,12 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The overloads of the hook other than <paramref name="bound" />, the one bound for the open
-	///     <paramref name="definition" />, that a container in the module's assembly also finds for some closing of it, each
+	///     <paramref name="definition" /> if any, that a container in the module's assembly also finds for some closing of it, each
 	///     with a description of those closings: an overload whose instance parameter, for a generic one closed with the
 	///     closing's type arguments, a closing converts to, or a generic one whose constraints keep it from binding for the
 	///     definition's own type parameters but not for every closing.
 	/// </summary>
-	private static IEnumerable<(IMethodSymbol Overload, string Closings)> ClosingOnlyHookOverloads(INamedTypeSymbol definition, string hookName, IMethodSymbol bound, ModuleScanContext context)
+	private static IEnumerable<(IMethodSymbol Overload, string Closings)> ClosingOnlyHookOverloads(INamedTypeSymbol definition, string hookName, IMethodSymbol? bound, ModuleScanContext context)
 	{
 		Compilation compilation = context.Compilation;
 		bool wrappedEverywhere = IsHiddenInModule(definition, context.Module, compilation);
@@ -458,7 +504,7 @@ partial class AwaitenGenerator
 		foreach (ISymbol member in AccessibleMembers(context.Module, hookName, compilation))
 		{
 			if (IsModuleHookCandidate(member, wrappedEverywhere, context, out IMethodSymbol method)
-			    && !SymbolEqualityComparer.Default.Equals(method, bound.OriginalDefinition)
+			    && !SymbolEqualityComparer.Default.Equals(method, bound?.OriginalDefinition)
 			    && (method.Arity == 0 || method.Arity == typeParameters.Length)
 			    && AcceptedClosings(method) is { } closings)
 			{
@@ -780,7 +826,7 @@ partial class AwaitenGenerator
 
 		string type = Display(definition.ToDisplayString(FullyQualified));
 		DiagnosticInfo diagnostic = SkippedOpenReason(owner, request.FactoryName) is { } reason
-			? ContributionNotSelfCompiled(owner, request.Kind, type, reason, request.ImportLocation ?? request.Location)
+			? ContributionNotSelfCompiled(owner, request.Kind, definition, reason, request.ImportLocation ?? request.Location, compilation, SkippedOpenRemedy(owner, request.FactoryName))
 			: new DiagnosticInfo(
 				Diagnostics.ModuleContributionNotSelfCompiled,
 				LocationInfo.From(request.Location),
@@ -897,6 +943,19 @@ partial class AwaitenGenerator
 			   .Select(field => field.ConstantValue as string)
 			   .FirstOrDefault(reason => reason is not null)
 		   ?? ModuleShapeReason(owner);
+
+	/// <summary>
+	///     The remedy the owner of another assembly recorded beside the reason of <see cref="SkippedOpenReason" /> for a cause
+	///     no grant cures (see <see cref="SkippedRegistration.Remedy" />), or <see langword="null" />.
+	/// </summary>
+	private static string? SkippedOpenRemedy(INamedTypeSymbol owner, string factoryName)
+		=> InternalsMembers(owner, SkippedRemedyName(OpenSkippedName(factoryName)))
+			.OfType<IFieldSymbol>()
+			.Select(field => field.ConstantValue as string)
+			.FirstOrDefault(remedy => remedy is not null);
+
+	/// <summary>The name of the constant that records the <see cref="SkippedRegistration.Remedy" /> of the skip named <paramref name="markerName" />.</summary>
+	internal static string SkippedRemedyName(string markerName) => markerName + "_Remedy";
 }
 
 /// <summary>

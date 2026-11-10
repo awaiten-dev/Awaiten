@@ -482,9 +482,33 @@ partial class AwaitenGenerator
 			{
 				Add(PredicateWrapper(predicate));
 			}
+
+			if (UnwrappedGenericFactory(attribute) is var (marker, reason) && skipped.TrueForAll(existing => existing.MarkerName != marker))
+			{
+				skipped.Add(new SkippedRegistration(marker, reason, Member: true));
+			}
 		}
 
 		return wrappers;
+
+		// No wrapper calls the generic Factory member of an open registration, so an internal one is recorded for a container
+		// in another assembly that cannot call it (AWT231); a private one is the module's own build's to report (AWT153).
+		(string Marker, string Reason)? UnwrappedGenericFactory(AttributeData attribute)
+		{
+			if (attribute.AttributeClass is not { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, } attributeClass
+			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
+			    || ReadProduction(attribute) is not { Production: ProductionKind.Factory, Member: { } member, Conflicting: false, }
+			    || !TryReadTypeofPair(attribute, out INamedTypeSymbol implementation, out _)
+			    || !implementation.IsUnboundGenericType
+			    || GenericFactoryMembers(module, member, implementation, compilation).Where(factory => factory.DeclaredAccessibility != Accessibility.Private).ToList() is not { Count: > 0, } factories
+			    || factories.Exists(factory => factory.DeclaredAccessibility == Accessibility.Public))
+			{
+				return null;
+			}
+
+			return (MemberSkippedName("Factory", member, implementation.OriginalDefinition),
+				$"'{member}' is {SyntaxFacts.GetText(factories[0].DeclaredAccessibility)} and generic, and the module generates no public wrapper for a generic member");
+		}
 
 		// A container in the module's assembly or in a friend calls the predicate itself, so a predicate no wrapper can
 		// serve is recorded rather than reported, and a container in another assembly names the reason (AWT247).
@@ -792,6 +816,22 @@ partial class AwaitenGenerator
 		// generated the wrapper, and generates none when another overload accepts some closing, which the consumer could not
 		// tell apart, but records the hook when it or a competing overload is not public, since another assembly would call
 		// the overload it sees for every closing.
+		// A hook no container can run for any closing is reported in the module's own build, as for a closed registration.
+		void ReportEveryClosingHookFault(OpenContribution contribution, string hookName, bool release)
+		{
+			ModuleScanContext scope = context with { Diagnostics = new List<DiagnosticInfo>(), Hidden = null, };
+			if (ResolveModuleHookCore(
+				    new ModuleHookRequest(contribution.Definition, hookName, contribution.Location, release, RegistrationHookWrapperName(contribution.Definition, release, hookName), RegistrationSubject(contribution.Definition)),
+				    [contribution.Service,],
+				    scope) is null
+			    && scope.Diagnostics.Count > 0
+			    && FailsForEveryClosing(scope.Diagnostics[0], contribution, hookName, scope)
+			    && !diagnostics.Contains(scope.Diagnostics[0]))
+			{
+				diagnostics.Add(scope.Diagnostics[0]);
+			}
+		}
+
 		MemberWrapper? OpenHookWrapper(OpenContribution contribution, string hookName, bool release)
 		{
 			INamedTypeSymbol definition = contribution.Definition;
@@ -799,6 +839,11 @@ partial class AwaitenGenerator
 			string name = RegistrationHookWrapperName(definition, release, hookName);
 			string skippedName = RegistrationHookSkippedName(definition, release, hookName);
 			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(definition, hookName, [contribution.Service,], scope);
+			if (!matches.Exists(match => match.DeclaredAccessibility == Accessibility.Public))
+			{
+				ReportEveryClosingHookFault(contribution, hookName, release);
+			}
+
 			if (matches.Count != 1 || ambiguous.Count > 0)
 			{
 				// Another assembly calls the public overload for every closing, while the module's assembly reports each as AWT190.
@@ -1121,6 +1166,47 @@ partial class AwaitenGenerator
 					LocationInfo.From(registration.Location),
 					new EquatableArray<string>([Display(registration.Implementation.ToDisplayString(FullyQualified)),]),
 					DiagnosticSeverity.Warning));
+			}
+		}
+	}
+
+	/// <summary>
+	///     Reports AWT216, in the module's own build, for each eager or async-initialized singleton of the module whose
+	///     implementation and service are both private to it: a container starts it though nothing depends on it, and no
+	///     container can, since none can name the service to hold it, so a container in the module's assembly reports
+	///     AWT216 and one in another assembly AWT231. A container of the module's assembly that imports the module reports
+	///     it itself.
+	/// </summary>
+	private static void ReportModulePrivateStartedSingletons(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		if (AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
+		{
+			return;
+		}
+
+		List<AsyncInitializerConvention>? conventions = null;
+		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
+		{
+			if (registration.Attribute.AttributeClass?.Name != "SingletonAttribute"
+			    || !IsHiddenInModule(registration.Implementation, module, compilation)
+			    || TypeHiddenInModule(registration.Service, module, compilation) is null)
+			{
+				continue;
+			}
+
+			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
+			if (NamedFlag(registration.Attribute, "Eager") || IsHiddenAsyncInitialized(registration.Implementation, [registration,], module, compilation, conventions))
+			{
+				string implementation = Display(registration.Implementation.ToDisplayString(FullyQualified));
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.RegisteredTypeLessAccessible,
+					LocationInfo.From(registration.Location),
+					new EquatableArray<string>([
+						implementation,
+						implementation,
+						RegisteredAsPrivateService(registration.Implementation, registration.Service),
+						$"register it under an accessible service, or make '{implementation}' internal or public",
+					])));
 			}
 		}
 	}
