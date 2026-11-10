@@ -424,6 +424,21 @@ partial class AwaitenGenerator
 		return null;
 	}
 
+	/// <summary>A bounded number of steps for a search that stops, undecided, once they are spent.</summary>
+	private sealed class StepBudget(int limit)
+	{
+		private int _steps;
+
+		/// <summary>Whether the search took more steps than the limit.</summary>
+		public bool Spent => _steps > limit;
+
+		/// <summary>Starts counting again for the next search.</summary>
+		public void Reset() => _steps = 0;
+
+		/// <summary>Takes one step, and whether the limit allows it.</summary>
+		public bool TryTake() => ++_steps <= limit;
+	}
+
 	/// <summary>
 	///     The overloads of the hook other than <paramref name="bound" />, the one bound for the open
 	///     <paramref name="definition" />, that a container in the module's assembly also finds for some closing of it, each
@@ -436,8 +451,7 @@ partial class AwaitenGenerator
 		Compilation compilation = context.Compilation;
 		bool wrappedEverywhere = IsHiddenInModule(definition, context.Module, compilation);
 		ITypeSymbol[] typeParameters = definition.TypeParameters.Cast<ITypeSymbol>().ToArray();
-		const int unificationBudget = 1000;
-		int unificationSteps = 0;
+		StepBudget unification = new(1000);
 		foreach (ISymbol member in AccessibleMembers(context.Module, hookName, compilation))
 		{
 			if (IsModuleHookCandidate(member, wrappedEverywhere, context, out IMethodSymbol method)
@@ -459,7 +473,7 @@ partial class AwaitenGenerator
 				return $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' its constraints admit";
 			}
 
-			unificationSteps = 0;
+			unification.Reset();
 			foreach (INamedTypeSymbol shape in new[] { definition, }.Concat(BaseTypes(definition)).Concat(definition.AllInterfaces))
 			{
 				foreach (Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings in Unifications(shape, instance, new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default)))
@@ -477,7 +491,7 @@ partial class AwaitenGenerator
 			}
 
 			// The bindings multiply with each variant type argument, so beyond a budget the overload counts as competing.
-			return unificationSteps > unificationBudget ? $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' it may bind" : null;
+			return unification.Spent ? $"the closings of '{Display(definition.ToDisplayString(FullyQualified))}' it may bind" : null;
 		}
 
 		// A type parameter constrained to reference types against one constrained to value types admits no closing.
@@ -491,7 +505,7 @@ partial class AwaitenGenerator
 		// may still fail the final check where another passes. They are produced lazily, so the first that passes ends the search.
 		IEnumerable<Dictionary<ITypeParameterSymbol, ITypeSymbol>> Unifications(ITypeSymbol pattern, ITypeSymbol target, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
 		{
-			if (++unificationSteps > unificationBudget)
+			if (!unification.TryTake())
 			{
 				return [];
 			}
