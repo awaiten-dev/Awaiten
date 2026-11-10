@@ -208,7 +208,7 @@ public partial class DiagnosticTests
 			                                       """);
 
 			await That(result.Diagnostics).DoesNotContain("*AWT179*").AsWildcard()
-				.Because("AwaitenAnalyzer reports the duplicate, so the generator must not report it a second time where it cannot be suppressed in source");
+				.Because("AwaitenAnalyzer reports the duplicate, so the generator must not report it a second time");
 		}
 
 		[Test]

@@ -328,7 +328,7 @@ public static class Generator
 	}
 
 	/// <summary>The severities of an <c>.editorconfig</c>, which the compiler reads per syntax tree.</summary>
-	private sealed class EditorConfigOptions(AnalyzerConfigSet configs) : SyntaxTreeOptionsProvider
+	internal sealed class EditorConfigOptions(AnalyzerConfigSet configs) : SyntaxTreeOptionsProvider
 	{
 		public override GeneratedKind IsGenerated(SyntaxTree tree, CancellationToken cancellationToken) => GeneratedKind.Unknown;
 

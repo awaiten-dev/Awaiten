@@ -98,7 +98,7 @@ public class LifetimeSafetyTests
 		                                       """);
 
 		await That(diagnostics.Any(d => d.Contains("AWT118"))).IsFalse()
-			.Because("a loose AWT118 warning is reported by an analyzer, so #pragma warning disable suppresses it in source");
+			.Because("a loose AWT118 warning is configurable, so #pragma warning disable suppresses it in source");
 	}
 
 	[Test]

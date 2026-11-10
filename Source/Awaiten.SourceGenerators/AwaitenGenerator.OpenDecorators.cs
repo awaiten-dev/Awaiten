@@ -99,8 +99,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reports AWT249 for an unkeyed open <paramref name="kind" /> the container declares itself that applies to no
 	///     closing of <paramref name="service" />, unless a closing of it was dropped for a reported reason
-	///     (<paramref name="rejected" />), which explains it. The analyzer reports it, so it can be suppressed at the
-	///     attribute; one a module or an extended base declares is left alone, since its consumers register the closings.
+	///     (<paramref name="rejected" />), which explains it. The analyzer reports it at the attribute; one a module or an
+	///     extended base declares is left alone, since its consumers register the closings.
 	/// </summary>
 	private static void ReportOpenContributionWithoutClosing(string kind, INamedTypeSymbol type, INamedTypeSymbol service, Location? location, HashSet<string> rejected, List<DiagnosticInfo> diagnostics)
 	{

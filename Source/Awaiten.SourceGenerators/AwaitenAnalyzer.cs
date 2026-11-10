@@ -31,7 +31,7 @@ namespace Awaiten.SourceGenerators;
 ///     Microsoft.Extensions.DependencyInjection, which would dispose it anyway. Also reports
 ///     <see cref="Diagnostics.DuplicateInjectProperty">AWT179</see>, <see cref="Diagnostics.OptionalPropertyIsInitOnly">AWT158</see>,
 ///     <see cref="Diagnostics.NullableProduct">AWT245</see> and <see cref="Diagnostics.OpenContributionWithoutClosing">AWT249</see>, which the graph or module build detects and the generator
-///     leaves to the analyzer so that they can be suppressed in source. Also reports
+///     leaves to the analyzer (see the remarks). Also reports
 ///     <see cref="Diagnostics.TypedResolveOfUnprovidedService">AWT218</see> and
 ///     <see cref="Diagnostics.TypedResolveOfWithheldService">AWT219</see> at a typed <c>Resolve&lt;T&gt;()</c>,
 ///     <c>ResolveAsync&lt;T&gt;()</c> or <c>Resolve(typeof(T))</c>, keyed or not, on a generated <c>Root</c> or
@@ -40,14 +40,18 @@ namespace Awaiten.SourceGenerators;
 ///     service singly.
 /// </summary>
 /// <remarks>
-///     AWT118 is an analyzer (rather than a generator) diagnostic so that, under loose lifetime safety where
-///     it is a warning, it can be suppressed in source with <c>#pragma warning disable AWT118</c> or
-///     <c>[SuppressMessage]</c>; a generator-reported diagnostic cannot. Under strict lifetime safety (the
-///     default) it is instead reported through <see cref="Diagnostics.RootAccumulatingFactoryStrict" />: an
-///     error carrying <see cref="WellKnownDiagnosticTags.NotConfigurable" />, so it cannot be suppressed by
-///     <c>#pragma</c>, <c>&lt;NoWarn&gt;</c> or an editorconfig severity override; the only opt-out is
-///     <c>LifetimeSafety.Loose</c>. That non-suppressibility is what keeps the leak structurally impossible
-///     under strict lifetime safety. The graph it walks is built by the same
+///     The generator's diagnostics honor <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> and
+///     <c>.editorconfig</c> severities like the analyzer's, so whether the generator or an analyzer reports a diagnostic
+///     does not decide whether a user can suppress it. The split remains for other reasons. AWT156, AWT214, AWT218,
+///     AWT219 and AWT155 are found at call sites in user code, which the generator does not walk. AWT118 under strict lifetime safety (the default) is
+///     an error that must not cost the container its wiring, which a generator error does (the container keeps only its
+///     shell); it is reported through <see cref="Diagnostics.RootAccumulatingFactoryStrict" />, which carries
+///     <see cref="WellKnownDiagnosticTags.NotConfigurable" /> so that neither <c>#pragma</c>, <c>&lt;NoWarn&gt;</c> nor
+///     an editorconfig severity override can silence it, and the only opt-out is <c>LifetimeSafety.Loose</c>, which
+///     reports the plain warning. That non-suppressibility keeps the leak structurally impossible under strict
+///     lifetime safety. AWT158, AWT179, AWT245 and AWT249 could move to the generator; they stay here because the
+///     analyzer already builds the graph for AWT118 and already reports an AWT245 that several containers share once
+///     and an AWT158 or AWT245 of a base only on the base. The graph it walks is built by the same
 ///     <c>AwaitenGenerator.BuildGraph</c> the generator uses.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -167,8 +171,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			report(diagnostic.ToDiagnostic(compilation, cancellationToken));
 		}
 
-		// AWT179, AWT158, AWT245 and AWT249 come out of the graph build, but the generator leaves them to the analyzer so that
-		// they can be suppressed in source. An AWT158 or AWT245 the base reports itself is not repeated on a container
+		// AWT179, AWT158, AWT245 and AWT249 come out of the graph build, but the generator leaves them to the analyzer (see
+		// the remarks on the class). An AWT158 or AWT245 the base reports itself is not repeated on a container
 		// that extends it, and an AWT245 at the registration of a module several containers import is reported once.
 		List<DiagnosticInfo> fromGraph = built.Diagnostics
 			.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.DuplicateInjectProperty) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly)
@@ -188,7 +192,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	}
 
 	// AWT245 for a member a module wraps for a handle comes out of the module's own build when no container of its
-	// assembly imports the module. The generator leaves it to the analyzer so that it can be suppressed in source.
+	// assembly imports the module. The generator leaves it to the analyzer, which reports the AWT245 of the containers too.
 	private static void AnalyzeModule(
 		INamedTypeSymbol type,
 		INamedTypeSymbol moduleAttribute,
@@ -210,7 +214,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	}
 
 	// Builds (or returns the cached) object graph of a container, with the diagnostics produced while building
-	// it. Apart from AWT179 they are the generator's to report, so the analyzer ignores them.
+	// it. Apart from AWT179, AWT158, AWT245 and AWT249 they are the generator's to report, so the analyzer ignores them.
 	private static ContainerGraph CachedGraph(
 		ConcurrentDictionary<INamedTypeSymbol, Lazy<ContainerGraph>> graphByContainer,
 		INamedTypeSymbol container,

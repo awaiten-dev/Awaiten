@@ -615,8 +615,8 @@ internal static class Diagnostics
 	///     Composition belongs on the <c>[Container]</c> composition root (or an imported <c>[Module]</c>); a
 	///     domain or application assembly should stay free of Awaiten's composition attributes. The consumer-side
 	///     escape hatches <c>[Arg]</c>, <c>[FromKey]</c> and <c>[Inject]</c> are permitted on domain types and are
-	///     not reported. Reported by <see cref="AwaitenBoundaryAnalyzer" /> (not the generator) so it is
-	///     suppressible in source; best-effort, since it stays silent in an assembly that also declares the
+	///     not reported. Reported by <see cref="AwaitenBoundaryAnalyzer" />, since the generator reads only containers
+	///     and modules; best-effort, since it stays silent in an assembly that also declares the
 	///     <c>[Container]</c> (a single-project app), where the cross-assembly boundary is better enforced by an
 	///     architecture test.
 	/// </summary>
@@ -637,7 +637,7 @@ internal static class Diagnostics
 	///     real dependencies and defeats the compile-time graph check. Inject the dependency the type actually
 	///     needs instead; only the composition root should hold the resolver. The typed fast-path
 	///     <c>IAwaitenResolver&lt;T&gt;</c> is a single-service seam (closer to <c>Func&lt;T&gt;</c>) and is not
-	///     reported. Reported by <see cref="AwaitenBoundaryAnalyzer" /> (not the generator) so a deliberate seam,
+	///     reported. Reported by <see cref="AwaitenBoundaryAnalyzer" />, at a type of any assembly; a deliberate seam,
 	///     such as the MS.DI bridge adapter, can be suppressed in source.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ServiceLocatorInjection = new(
@@ -980,8 +980,8 @@ internal static class Diagnostics
 	///     disposed owner: a root-owned instance (a singleton or pre-built instance) always tracks on the
 	///     <c>Root</c> (its resolver runs against the root even when first resolved inside a child scope), so a
 	///     child <c>Scope</c>'s drain can never reach it, and a container whose only async-only disposables are
-	///     root-owned does not warn on a <c>Scope</c> disposal. Reported by <see cref="AwaitenAnalyzer" /> (not
-	///     the generator) so a deliberate site can be suppressed in source, and a team can forbid it outright
+	///     root-owned does not warn on a <c>Scope</c> disposal. Reported by <see cref="AwaitenAnalyzer" /> at the
+	///     disposal site; a deliberate site can be suppressed in source, and a team can forbid it outright
 	///     per project (<c>dotnet_diagnostic.AWT156.severity = error</c>). Only a receiver statically typed as
 	///     the generated <c>Root</c>/<c>Scope</c> is recognized: a dispose through <c>IAwaitenScope</c> /
 	///     <c>IDisposable</c>, from another assembly, by a host framework, a factory output hiding the
@@ -1377,7 +1377,8 @@ internal static class Diagnostics
 	///     that changes an option is a deliberate specialisation of that closing and is not reported. A warning rather
 	///     than an error: the graph is well-defined (the first entry wins, and a closed entry wins over an open-generic
 	///     one on the same closing), like the other no-op detections (AWT172-AWT174). Reported by
-	///     <see cref="AwaitenAnalyzer" /> rather than the generator, so it can be suppressed in source.
+	///     <see cref="AwaitenAnalyzer" /> rather than the generator (see its remarks); a deliberate duplicate can be
+	///     suppressed in source.
 	/// </summary>
 	public static readonly DiagnosticDescriptor DuplicateInjectProperty = new(
 		"AWT179",
@@ -1873,7 +1874,7 @@ internal static class Diagnostics
 	///     it is given, so a hand-built one over the container root disposes the root, and one over any other scope
 	///     ends that scope's lifetime behind its owner's back. Only the container creates the handle, over the
 	///     throwaway scope it built the value in. Reported by <see cref="AwaitenBoundaryAnalyzer" />, which skips
-	///     generated code, so a deliberate construction (a test double, for example) can be suppressed in source.
+	///     generated code; a deliberate construction (a test double, for example) can be suppressed in source.
 	/// </summary>
 	public static readonly DiagnosticDescriptor OwnedConstructedByHand = new(
 		"AWT205",
@@ -2060,7 +2061,7 @@ internal static class Diagnostics
 	///     container has no registration for, unkeyed or under the constant key the call passes, so the call throws at
 	///     run time. The common case is a closing of an open generic registration that nothing in the graph injects:
 	///     the generator closes an open generic only over the closings the graph asks for. Reported by
-	///     <see cref="AwaitenAnalyzer" /> at the call so a deliberate call can be suppressed in source. A receiver typed
+	///     <see cref="AwaitenAnalyzer" /> at the call, where a deliberate call can be suppressed in source. A receiver typed
 	///     as an Awaiten interface, a type argument that is a type parameter, a <c>Type</c> other than a
 	///     <c>typeof</c> argument, a key other than a constant, <c>TryResolve</c>, a service left to the host
 	///     (<c>[ImportService]</c>, <c>[ImportServices]</c>) and a container from a referenced assembly are not checked.
@@ -2439,7 +2440,7 @@ internal static class Diagnostics
 	///     container hands the value to every consumer as a non-nullable service.
 	///     Reported once at the registration in place of the nullable warnings the generated code would otherwise raise.
 	///     A warning like the compiler's own nullable warnings, which it replaces, and reported by
-	///     <see cref="AwaitenAnalyzer" /> so that it can be suppressed in source. The generated code never checks the
+	///     <see cref="AwaitenAnalyzer" /> (see its remarks), at the registration, where it can be suppressed in source. The generated code never checks the
 	///     result: a cached instance that is <see langword="null" /> counts as not built yet on a synchronous resolve, so
 	///     it is built again on every one, and everything downstream receives <see langword="null" />.
 	/// </summary>
@@ -2576,7 +2577,9 @@ internal static class Diagnostics
 	/// <summary>
 	///     The generator cannot emit the wiring of a container that reports no error: a dependency resolves to no instance
 	///     of the graph, or the emission throws. Only a bug of the generator gets here; the container then emits only its
-	///     shell, instead of the compiler turning the exception into warning CS8785 and leaving the container out.
+	///     shell, instead of the compiler turning the exception into warning CS8785 and leaving the container out. It carries
+	///     <see cref="WellKnownDiagnosticTags.NotConfigurable" />, so neither an <c>.editorconfig</c> severity, <c>NoWarn</c>
+	///     nor <c>#pragma warning disable</c> can turn it into a build that passes with a container that throws.
 	/// </summary>
 	public static readonly DiagnosticDescriptor GeneratorInconsistency = new(
 		"AWT255",
@@ -2584,7 +2587,8 @@ internal static class Diagnostics
 		"Awaiten cannot generate the container '{0}': {1}; this is a bug in Awaiten, please report it at https://github.com/awaiten-dev/Awaiten/issues",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		customTags: WellKnownDiagnosticTags.NotConfigurable);
 
 	/// <summary>
 	///     A dependency on a relationship over a collection shape or keyed dictionary (<c>Func&lt;IEnumerable&lt;T&gt;&gt;</c>,
