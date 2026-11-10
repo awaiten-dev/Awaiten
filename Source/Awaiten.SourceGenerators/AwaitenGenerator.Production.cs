@@ -1853,7 +1853,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Whether the member of <paramref name="info" />, which the container reaches neither itself nor through a wrapper,
 	///     is private to a module of the container's own assembly, whose own build reports it: AWT194 when the module
-	///     cannot receive the wrapper, else why it generates none (see <see cref="ReportUnwrappedPrivateMembers" />).
+	///     cannot receive the wrapper, else why it generates none (see <see cref="ReportUnwrappedPrivateMembers" />), and
+	///     AWT153 for the generic member of an open registration, which gets no wrapper (see
+	///     <see cref="ReportModuleProductionMembers" />).
 	/// </summary>
 	private static bool ReportedByModule(ImplInfo info, Compilation compilation)
 		=> info is { Origin: { } module, ProductionMember: { } member, Production: ProductionKind.Factory or ProductionKind.Instance, }
@@ -1861,7 +1863,8 @@ partial class AwaitenGenerator
 		   && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute")
 		   && module.IsStatic
 		   && !HasOpenTypeParameters(module)
-		   && ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation).All(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
+		   && (info.GenericFactory ? GenericFactoryMembers(module, member, info.Symbol, compilation) :ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation)).ToList() is { Count: > 0, } candidates
+		   && candidates.TrueForAll(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
 
 	/// <summary>
 	///     Whether <paramref name="within" /> reaches a <c>Factory</c> member named <paramref name="member" /> that produces
@@ -1878,6 +1881,21 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static IEnumerable<ISymbol> ProductionMemberCandidates(INamedTypeSymbol owner, ProductionKind production, string member, ITypeSymbol produced, Compilation compilation)
 		=> production == ProductionKind.Factory ? FindFactoryCandidates(owner, member, produced, compilation) : AccessibleMembers(owner, member, compilation);
+
+	/// <summary>
+	///     The generic methods named <paramref name="member" /> that produce the open <paramref name="implementation" />
+	///     when constructed with its own type parameters, whatever their accessibility and constraints: what the closings of
+	///     an open registration may bind as its <c>Factory</c> (see <see cref="FindGenericFactoryCandidates" />), so a module
+	///     and a container judge alike whether only a private member could serve them.
+	/// </summary>
+	private static IEnumerable<IMethodSymbol> GenericFactoryMembers(INamedTypeSymbol owner, string member, INamedTypeSymbol implementation, Compilation compilation)
+	{
+		INamedTypeSymbol definition = implementation.OriginalDefinition;
+		return AccessibleMembers(owner, member, compilation).OfType<IMethodSymbol>()
+			.Where(method => method.MethodKind == MethodKind.Ordinary
+			                 && method.Arity == definition.Arity
+			                 && compilation.HasImplicitConversion(ProducedType(method.Construct(definition.TypeArguments.ToArray()).ReturnType, compilation), definition));
+	}
 
 	/// <summary>
 	///     The non-generic static methods named <paramref name="hook" /> of <paramref name="owner" /> that could run as the
