@@ -615,8 +615,8 @@ internal static class Diagnostics
 	///     Composition belongs on the <c>[Container]</c> composition root (or an imported <c>[Module]</c>); a
 	///     domain or application assembly should stay free of Awaiten's composition attributes. The consumer-side
 	///     escape hatches <c>[Arg]</c>, <c>[FromKey]</c> and <c>[Inject]</c> are permitted on domain types and are
-	///     not reported. Reported by <see cref="AwaitenBoundaryAnalyzer" /> (not the generator) so it is
-	///     suppressible in source; best-effort, since it stays silent in an assembly that also declares the
+	///     not reported. Reported by <see cref="AwaitenBoundaryAnalyzer" />, since the generator reads only containers
+	///     and modules; best-effort, since it stays silent in an assembly that also declares the
 	///     <c>[Container]</c> (a single-project app), where the cross-assembly boundary is better enforced by an
 	///     architecture test.
 	/// </summary>

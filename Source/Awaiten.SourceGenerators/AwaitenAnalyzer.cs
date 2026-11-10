@@ -41,9 +41,9 @@ namespace Awaiten.SourceGenerators;
 /// </summary>
 /// <remarks>
 ///     The generator's diagnostics honor <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> and
-///     <c>.editorconfig</c> severities as these do, so where a diagnostic is reported no longer decides whether a user
-///     can suppress it. The split remains for other reasons. AWT156, AWT214, AWT218, AWT219 and AWT155 are found at
-///     call sites in user code, which the generator does not walk. AWT118 under strict lifetime safety (the default) is
+///     <c>.editorconfig</c> severities like the analyzer's, so whether the generator or an analyzer reports a diagnostic
+///     does not decide whether a user can suppress it. The split remains for other reasons. AWT156, AWT214, AWT218,
+///     AWT219 and AWT155 are found at call sites in user code, which the generator does not walk. AWT118 under strict lifetime safety (the default) is
 ///     an error that must not cost the container its wiring, which a generator error does (the container keeps only its
 ///     shell); it is reported through <see cref="Diagnostics.RootAccumulatingFactoryStrict" />, which carries
 ///     <see cref="WellKnownDiagnosticTags.NotConfigurable" /> so that neither <c>#pragma</c>, <c>&lt;NoWarn&gt;</c> nor

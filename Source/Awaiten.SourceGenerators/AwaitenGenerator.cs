@@ -390,7 +390,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				break;
 			}
 
-			if (trivia.GetStructure() is not PragmaWarningDirectiveTriviaSyntax { IsActive: true, } pragma)
+			// The compiler ignores a directive it could not parse, such as a #pragma warning without disable or restore.
+			if (trivia.GetStructure() is not PragmaWarningDirectiveTriviaSyntax { IsActive: true, WarningKeyword.IsMissing: false, DisableOrRestoreKeyword.IsMissing: false, } pragma)
 			{
 				continue;
 			}

@@ -2986,6 +2986,48 @@ public class ModuleHiddenServiceTests
 				.Because("the pragma in the module's file suppresses the error where it is reported");
 		}
 
+		[Test]
+		[Arguments("#pragma warning\n", "", "")]
+		[Arguments("#pragma warning foo AWT216\n", "", "")]
+		[Arguments("#pragma warning disable AWT216 AWT101\n", "", "")]
+		[Arguments("#pragma warning disable AWT101 AWT216\n", "", "")]
+		[Arguments("#pragma warning disable AWT216,\n", "", "")]
+		[Arguments("#pragma warning disable awt216\n", "", "")]
+		[Arguments("#pragma warning disable CS8618, nullable, AWT216\n", "", "")]
+		[Arguments("#pragma warning disable nullable\n", "", "")]
+		[Arguments("#pragma warning disable AWT216 /* why */\n", "", "")]
+		[Arguments("#pragma warning disable /* why */ AWT216\n", "", "")]
+		[Arguments("#pragma warning disable @AWT216\n", "", "")]
+		[Arguments("#pragma warning disable AWT\\u003216\n", "", "")]
+		[Arguments("#pragma warning disable 216\n", "", "")]
+		[Arguments("#pragma warning disable \"AWT216\"\n", "", "")]
+		[Arguments("#pragma warning disable AWT216\n#pragma warning enable AWT216\n", "", "")]
+		[Arguments("#pragma warning disable\n#pragma warning enable AWT216\n", "", "")]
+		[Arguments("#pragma warning disable\n#pragma warning restore AWT101\n", "", "")]
+		[Arguments("#define ON\n#if ON\n#pragma warning disable AWT216\n#endif\n", "", "")]
+		[Arguments("#if NEVER\n#elif true\n#pragma warning disable AWT216\n#else\n#pragma warning restore AWT216\n#endif\n", "", "")]
+		[Arguments("#if true\n#if NEVER\n#else\n#pragma warning disable AWT216\n#endif\n#endif\n", "", "")]
+		[Arguments("#pragma warning disable AWT216\n#if NEVER\n#elif NEVER2\n#pragma warning restore AWT216\n#endif\n", "", "")]
+		[Arguments("#region why\n#pragma warning disable AWT216\n#endregion\n", "", "")]
+		[Arguments("#line 100 \"Other.cs\"\n#pragma warning disable AWT216\n", "", "")]
+		[Arguments("#pragma warning disable AWT216\n#line 1 \"Other.cs\"\n", "", "")]
+		[Arguments("#line hidden\n#pragma warning disable AWT216\n#line default\n", "", "")]
+		[Arguments("#nullable enable\n#pragma warning disable AWT216\n#nullable restore\n", "", "")]
+		[Arguments("", "#pragma warning disable AWT216\n", "")]
+		[Arguments("#pragma warning disable AWT216\n", "#pragma warning restore AWT216\n", "")]
+		[Arguments("", "", "#pragma warning disable AWT216\n")]
+		[Arguments("#pragma warning disable AWT216\n", "", "#pragma warning restore AWT216\n")]
+		public async Task RegisteredType_UnderPragmas_LeavesTheContainerAShellExactlyWhenTheCompilerReportsTheError(string first, string beforeRegistration, string inRegistration)
+		{
+			string library = RegisteredTypeLibrary.Replace("[Singleton<CoffeeModule.Impl, IKettle>(", $"{beforeRegistration}[Singleton<CoffeeModule.Impl, IKettle>(\n{inRegistration}");
+
+			GeneratorResult result = Generator.Run(first + library + Container);
+
+			bool reported = result.Diagnostics.Any(diagnostic => diagnostic.Contains("error AWT216"));
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"].Contains("has registration errors")).IsEqualTo(reported)
+				.Because("the container keeps only its shell exactly when the compiler still reports the module's error");
+		}
+
 		private static string RegisteredTypeLibrary => Library("Singleton<CoffeeModule.Impl, IKettle>(Factory = nameof(Make))", "private static Impl Make() => new Impl();")
 			.Replace("[Singleton<User, IUser>]", "");
 
