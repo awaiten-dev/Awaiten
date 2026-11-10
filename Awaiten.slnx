@@ -19,6 +19,7 @@
 	</Folder>
 	<Folder Name="/Tests/Support/">
 		<Project Path="Tests/Support/Awaiten.Tests.ContainerSupport/Awaiten.Tests.ContainerSupport.csproj" />
+		<Project Path="Tests/Support/Awaiten.Tests.GrantingSupport/Awaiten.Tests.GrantingSupport.csproj" />
 		<Project Path="Tests/Support/Awaiten.Tests.PolyfillFreeSupport/Awaiten.Tests.PolyfillFreeSupport.csproj" />
 		<Project Path="Tests/Support/Awaiten.Tests.Support/Awaiten.Tests.Support.csproj" />
 		<Project Path="Tests/Support/CoffeeShop.Domain/CoffeeShop.Domain.csproj" />

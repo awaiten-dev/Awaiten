@@ -432,9 +432,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		List<ModuleFactory> factories = new();
 		if (HasAwaitenAttribute(module.GetAttributes(), "ScanAttribute"))
 		{
-			// An assembly granted InternalsVisibleTo calls the scan factories too, and it resolves the internal
-			// services themselves rather than their handles, so scans take handles only without such a grant.
-			factories = CollectModuleScanFactories(module, compilation, diagnostics, cancellationToken, hidden is { Friends: false, } ? hidden : null)
+			factories = CollectModuleScanFactories(module, compilation, diagnostics, cancellationToken, hidden)
 				.Select(expansion => expansion.Factory)
 				.ToList();
 		}
@@ -450,13 +448,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		skipped.Clear();
 		skipped.AddRange(distinct);
 		registrations.AddRange(contributions);
-		if (factories.Any(factory => factory.Skip is null && factory.Parameters.AsArray().Any(parameter => parameter.Argument is not null)))
+		bool friends = hidden is { Friends: true, };
+		if (factories.Any(factory => (factory.Skip is null && TakesHandles(factory.Parameters)) || (friends && HooksTakeHandles(factory))))
 		{
-			// A private match whose factory takes a handle gets an internal factory that takes the service directly,
-			// which a container in the module's own assembly calls, since it builds the internal services itself.
-			registrations.AddRange(InternalScanFactories(module, compilation, cancellationToken)
-				.Where(expansion => factories.Any(factory => factory.Skip is null && "Internal" + factory.FactoryName == expansion.Factory.FactoryName))
-				.Select(expansion => new RegistrationFactory(expansion.Factory.FactoryName, expansion.Factory.ServiceType, expansion.Factory.ImplementationType, expansion.Factory.Parameters, default, IsInternal: true)));
+			registrations.AddRange(InternalScanMembers(module, compilation, factories, friends, cancellationToken));
 		}
 
 		if (hidden is null)

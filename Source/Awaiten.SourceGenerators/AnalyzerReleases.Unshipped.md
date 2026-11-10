@@ -124,7 +124,7 @@
  AWT225  | Awaiten   | Error    | A container with Extends sets AsyncSafety or LifetimeSafety, which it inherits from its base
  AWT226  | Awaiten   | Error    | A type or member a container inherits through Extends is not accessible from it, or a private implementation of the base it cannot build through the base's generated factory
  AWT230  | Awaiten   | Error    | An imported module of another assembly declares a decorator, composite or open generic registration whose type the container cannot construct, and the module generated no factory for it
- AWT231  | Awaiten   | Error    | An imported module of another assembly registers an implementation the container cannot construct, for which the module generated no factory or hook wrapper because it cannot support it
+ AWT231  | Awaiten   | Error    | An imported module of another assembly registers an implementation, or declares a decorator or composite, that the container cannot construct, for which the module generated no factory or hook wrapper because it cannot support it
  AWT232  | Awaiten   | Error    | A lifecycle hook returns Task<T> or ValueTask<T>, or an asynchronous OnRelease hook takes a CancellationToken
  AWT233  | Awaiten   | Error    | An [AsyncInitializer<T>] names a method that is missing, overloaded, static, generic or inaccessible, does not return Task or ValueTask, or has a ref or Awaiten-attributed parameter
  AWT234  | Awaiten   | Error    | An [AsyncInitializer<T>] convention initializes an implementation, but its type or method is not accessible where the container calls it

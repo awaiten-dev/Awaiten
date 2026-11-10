@@ -647,7 +647,7 @@ partial class AwaitenGenerator
 			HiddenServices? judgement = CollectHiddenServices(module, _compilation, cancellationToken, buildable);
 			if (judgement is not null && HasAwaitenAttribute(module.GetAttributes(), "ScanAttribute"))
 			{
-				List<ModuleFactory> scanned = CollectModuleScanFactories(module, _compilation, new List<DiagnosticInfo>(), cancellationToken, judgement.Friends ? null : judgement)
+				List<ModuleFactory> scanned = CollectModuleScanFactories(module, _compilation, new List<DiagnosticInfo>(), cancellationToken, judgement)
 					.Select(expansion => expansion.Factory)
 					.ToList();
 				RejectScannedHiddenImplementations(judgement, scanned, new List<DiagnosticInfo>());
