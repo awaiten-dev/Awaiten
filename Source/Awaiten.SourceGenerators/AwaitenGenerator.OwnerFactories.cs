@@ -594,7 +594,7 @@ partial class AwaitenGenerator
 	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A registration with a lifecycle hook
 	///     keeps its constructor, since its hook binds on its own owner, not on the module that owns the factory.
 	/// </summary>
-	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, Compilation compilation)
+	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation)
 	{
 		Dictionary<string, RawRegistration> factories = new(StringComparer.Ordinal);
 		foreach (RawRegistration registration in raw)
@@ -621,6 +621,7 @@ partial class AwaitenGenerator
 					ProductionMember = factory.ProductionMember,
 					Traits = factory.Traits,
 					TraitsExact = factory.TraitsExact,
+					Declarer = registration.Origin ?? container,
 				};
 			}
 		}

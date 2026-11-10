@@ -670,6 +670,48 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Container]\n[Import(typeof(KettleModule))]\n[Import(typeof(FooModule))]\n[Singleton<Kettle, IFoo>]\n[Singleton<Cafe>]\npublic static partial class MyContainer;")]
+		[Arguments("[Container]\n[Import(typeof(KettleModule))]\n[Import(typeof(FooModule))]\n[Singleton<Kettle, IFoo>]\npublic static partial class BaseContainer;\n\n[Container(Extends = typeof(BaseContainer))]\n[Singleton<Cafe>]\npublic static partial class MyContainer;")]
+		public async Task DoesNotReportWhenAContainerRegistersAnImplementationAModuleOfAnotherAssemblyBuildsThroughItsFactory(string containers)
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       public interface IKettle { }
+			                       public interface IFoo { }
+			                       public sealed class Kettle : IKettle, IFoo { internal Kettle() { } }
+			                       public sealed class OtherFoo : IFoo { }
+
+			                       [Module]
+			                       [Singleton<Kettle, IKettle>]
+			                       public static partial class KettleModule { }
+
+			                       [Module]
+			                       [Singleton<OtherFoo, IFoo>]
+			                       public static partial class FooModule { }
+			                       """;
+			string consumer = $$"""
+			                    using Awaiten;
+			                    using Lib;
+
+			                    namespace MyCode;
+
+			                    public sealed class Cafe { public Cafe(IFoo foo) { } }
+
+			                    {{containers}}
+			                    """;
+
+			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the container declares the registration that calls the module's generated factory, so it overrides the other module as it does in the library's assembly");
+		}
+
+		[Test]
 		public async Task DoesNotSuggestAnOverridableDefaultWhenAVarianceCollectionHoldsTheService()
 		{
 			GeneratorResult result = Generator.Run("""

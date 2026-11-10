@@ -32,7 +32,9 @@ namespace Awaiten.SourceGenerators;
 ///     implementation such a handle holds, and <c>HiddenProduction</c> how the module produces it, which two handle
 ///     registrations of one implementation are compared by (AWT111). <c>Aliased</c> is the module registration an
 ///     alias of such a handle stands for, with its hooks named by their generated wrappers, whose directives the
-///     handle takes when it is the first registration that survives coalescing.
+///     handle takes when it is the first registration that survives coalescing. <c>Declarer</c> is the container or module
+///     that declares a registration whose <c>Origin</c> became the module whose generated factory it calls (see
+///     <c>ShareGeneratedRegistrationFactories</c>), which AWT155 and AWT167 judge it by.
 /// </summary>
 /// <remarks>
 ///     <see cref="Location" /> is the live Roslyn location (with its syntax tree), not an equatable
@@ -74,7 +76,8 @@ internal sealed record RawRegistration(
 	bool Unlisted = false,
 	INamedTypeSymbol? Hidden = null,
 	string? HiddenProduction = null,
-	RawRegistration? Aliased = null);
+	RawRegistration? Aliased = null,
+	INamedTypeSymbol? Declarer = null);
 
 /// <summary>
 ///     An imported module: its symbol and the location of the container's <c>[Import]</c> attribute that
