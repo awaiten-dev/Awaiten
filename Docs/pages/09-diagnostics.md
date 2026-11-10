@@ -2936,7 +2936,9 @@ public sealed class KitchenDisplay;   // has no IReceiptPrinter parameter to red
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Let the consumer take the service as an unkeyed constructor parameter or `[Inject]` property (`KitchenDisplay(IReceiptPrinter printer)`), or remove the binding.
+A decorator or a composite is a consumer like any other, but a binding never reaches the inner parameter that receives the instance it wraps or the collection parameter it fans out over. A binding of the decorated service that names a type registered only as its decorator therefore never applies. A binding that names an open generic type, such as `typeof(LoggingHandler<>)`, never applies either, because each consumer is a closing.
+
+**Fix:** Let the consumer take the service as an unkeyed constructor parameter or `[Inject]` property (`KitchenDisplay(IReceiptPrinter printer)`), name a closing of an open generic consumer, or remove the binding.
 
 ### AWT168
 

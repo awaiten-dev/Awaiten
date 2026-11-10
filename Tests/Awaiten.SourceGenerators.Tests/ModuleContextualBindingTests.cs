@@ -144,20 +144,188 @@ public class ModuleContextualBindingTests
 			.Because("a container of the module's own assembly constructs the match, which only a binding naming it reaches");
 	}
 
+	/// <summary>
+	///     A module whose decorator and composites a container of another assembly cannot construct, so it builds them
+	///     through the module's generated factories.
+	/// </summary>
+	private static string DecoratedLibrary(bool friend = false) => $$"""
+		using Awaiten;
+		using System.Collections.Generic;
+
+		{{(friend ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "")}}
+
+		namespace Lib;
+
+		public interface IFlavor { }
+		public sealed class HouseFlavor : IFlavor { }
+
+		public interface ICup { }
+		public sealed class Cup : ICup { }
+		public sealed class CupLogger : ICup { internal CupLogger(ICup inner, IFlavor flavor) { } }
+
+		public interface IGrinder { }
+		public sealed class Grinder : IGrinder { }
+		public sealed class GrinderBlend : IGrinder { internal GrinderBlend(IEnumerable<IGrinder> grinders, IFlavor flavor) { } }
+
+		[Module]
+		[Singleton<HouseFlavor, IFlavor>]
+		[Singleton<Cup, ICup>]
+		[Singleton<Cup, ICup>(Key = "to-go")]
+		[Decorate<CupLogger, ICup>(Keys = new object[] { null, "to-go" })]
+		[Singleton<Grinder, IGrinder>]
+		[Singleton<Grinder, IGrinder>(Key = "fine")]
+		[Composite<GrinderBlend, IGrinder>]
+		[Composite<GrinderBlend, IGrinder>(Key = "fine")]
+		public static partial class CoffeeModule;
+
+		""";
+
+	private const string DecoratorBindings = """
+		public sealed class GuestFlavor : Lib.IFlavor { }
+
+		[Awaiten.Container]
+		[Awaiten.Import(typeof(Lib.CoffeeModule))]
+		[Awaiten.Singleton<GuestFlavor, Lib.IFlavor>(WhenInjectedInto = typeof(Lib.CupLogger))]
+		[Awaiten.Singleton<GuestFlavor, Lib.IFlavor>(WhenInjectedInto = typeof(Lib.GrinderBlend))]
+		public static partial class MyContainer;
+		""";
+
 	[Test]
-	public async Task ADecoratorOfTheModule_IsNoConsumerInAnyAssembly()
+	[Arguments(false)]
+	[Arguments(true)]
+	public async Task ADecoratorOrCompositeOfTheModule_InTheModulesOwnAssemblyOrAFriend_IsAConsumer(bool friend)
 	{
-		string library = Library()
-			.Replace("public interface ICup { }", "public interface ICup { }\npublic sealed class CupLogger : ICup { internal CupLogger(ICup inner, IFlavor flavor) { } }")
-			.Replace("[Scan<IPlugin>(", "[Decorate<CupLogger, ICup>]\n[Scan<IPlugin>(");
-		string bindings = Bindings.Replace("typeof(Lib.Plugin)", "typeof(Lib.CupLogger)");
-		const string expected = "warning AWT167: The registration of 'Lib.IFlavor' for 'Lib.CupLogger' is never applied: 'Lib.CupLogger' has no unkeyed direct 'Lib.IFlavor' constructor parameter or [Inject] property to redirect (a [FromKey] dependency, one deferred behind Func/Lazy, or a collection does not qualify)";
+		GeneratorResult result = friend
+			? Generator.RunWithGeneratedReferencedAssembly(DecoratedLibrary(friend: true), "namespace MyCode;\n\n" + DecoratorBindings)
+			: Generator.Run(DecoratedLibrary() + DecoratorBindings);
+		string source = result.Sources[friend ? "Awaiten.MyCode.MyContainer.g.cs" : "Awaiten.Lib.MyContainer.g.cs"];
+		string[] constructions = source.Split('\n').Where(line => line.Contains("new global::Lib.CupLogger(") || line.Contains("new global::Lib.GrinderBlend(")).ToArray();
 
-		GeneratorResult same = Generator.Run(library + bindings);
-		GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, "namespace MyCode;\n\n" + bindings);
+		await That(result.Diagnostics).IsEmpty()
+			.Because("both bindings reach a dependency of the decorator or composite they name");
+		await That(constructions).HasCount(4)
+			.Because("the decorator wraps the unkeyed and the keyed cup, and a composite fronts the unkeyed and the keyed grinders");
+		await That(constructions).All().Satisfy(line => line.TrimEnd().EndsWith($", {Guest});"))
+			.Because("every link and every composite takes the contextual implementation, never for its inner instance or collection");
+	}
 
-		await That(same.Diagnostics).HasSingle().Which.EndsWith(expected);
-		await That(external.Diagnostics).HasSingle().Which.EndsWith(expected)
-			.Because("a contextual binding does not reach a decorator's dependencies in the module's own assembly either");
+	[Test]
+	[Arguments(false)]
+	[Arguments(true)]
+	public async Task ADecoratorOrCompositeOfTheModule_InAnotherAssembly_IsAConsumerThroughTheGeneratedFactory(bool referenceAssembly)
+	{
+		GeneratorResult result = referenceAssembly
+			? Generator.RunWithGeneratedReferenceAssembly(DecoratedLibrary(), "namespace MyCode;\n\n" + DecoratorBindings)
+			: Generator.RunWithGeneratedReferencedAssembly(DecoratedLibrary(), "namespace MyCode;\n\n" + DecoratorBindings);
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		string[] calls = source.Split('\n').Where(line => line.Contains("Internals.Decorator_") || line.Contains("Internals.Composite_")).ToArray();
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("both bindings reach a dependency of the decorator or composite they name, as in the module's own assembly");
+		await That(calls).HasCount(4)
+			.Because("the container builds each link and each composite through the module's generated factory");
+		await That(calls).All().Satisfy(line => line.TrimEnd().EndsWith($", {Guest});"))
+			.Because("the factory takes the decorator's and the composite's own dependencies besides the inner instance or collection");
+	}
+
+	[Test]
+	[Arguments(0)]
+	[Arguments(1)]
+	[Arguments(2)]
+	public async Task AClosingOfAnOpenDecoratorOfTheModule_IsAConsumerInEveryAssembly(int assembly)
+	{
+		const string library = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IFlavor { }
+			public sealed class HouseFlavor : IFlavor { }
+			public sealed class Order { }
+			public sealed class Refund { }
+			public interface IHandler<T> { }
+			public sealed class Handler<T> : IHandler<T> { }
+			public sealed class Logging<T> : IHandler<T> { internal Logging(IHandler<T> inner, IFlavor flavor) { } }
+
+			[Module]
+			[Singleton<HouseFlavor, IFlavor>]
+			[Singleton(typeof(Handler<>), typeof(IHandler<>))]
+			[Decorate(typeof(Logging<>), typeof(IHandler<>))]
+			public static partial class CoffeeModule;
+
+			""";
+		const string bindings = """
+			public sealed class GuestFlavor : Lib.IFlavor { }
+			public sealed class Desk { public Desk(Lib.IHandler<Lib.Order> orders, Lib.IHandler<Lib.Refund> refunds) { } }
+
+			[Awaiten.Container]
+			[Awaiten.Import(typeof(Lib.CoffeeModule))]
+			[Awaiten.Singleton<GuestFlavor, Lib.IFlavor>(WhenInjectedInto = typeof(Lib.Logging<Lib.Order>))]
+			[Awaiten.Singleton<Desk>]
+			public static partial class MyContainer;
+			""";
+		GeneratorResult result = assembly switch
+		{
+			0 => Generator.Run(library + bindings),
+			1 => Generator.RunWithGeneratedReferencedAssembly(library, "namespace MyCode;\n\n" + bindings),
+			_ => Generator.RunWithGeneratedReferenceAssembly(library, "namespace MyCode;\n\n" + bindings),
+		};
+		string source = result.Sources[assembly == 0 ? "Awaiten.Lib.MyContainer.g.cs" : "Awaiten.MyCode.MyContainer.g.cs"];
+		string[] orders = source.Split('\n').Where(line => line.Contains("Logging") && line.Contains("Lib.Order>(")).Select(line => line.TrimEnd()).ToArray();
+		string[] refunds = source.Split('\n').Where(line => line.Contains("Logging") && line.Contains("Lib.Refund>(")).Select(line => line.TrimEnd()).ToArray();
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the binding names a closing of the decorator, which takes the service besides its inner instance");
+		await That(orders).HasSingle().Which.EndsWith($", {Guest});")
+			.Because("the closing the binding names takes the contextual implementation");
+		await That(refunds).HasSingle().Which.DoesNotContain(Guest)
+			.Because("every other closing takes the unconditional one");
+	}
+
+	[Test]
+	[Arguments(0)]
+	[Arguments(1)]
+	[Arguments(2)]
+	public async Task ADecoratorOfAnInternalServiceOfTheModule_IsAConsumerInEveryAssembly(int assembly)
+	{
+		const string library = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IFlavor { }
+			public sealed class HouseFlavor : IFlavor { }
+			internal interface IInternalCup { }
+			public sealed class Cup : IInternalCup { }
+			public sealed class CupLogger : IInternalCup { internal CupLogger(IInternalCup inner, IFlavor flavor) { } }
+			public sealed class Counter { internal Counter(IInternalCup cup) { } }
+
+			[Module]
+			[Singleton<HouseFlavor, IFlavor>]
+			[Singleton<Cup, IInternalCup>]
+			[Singleton<Counter>]
+			[Decorate<CupLogger, IInternalCup>]
+			public static partial class CoffeeModule;
+
+			""";
+		const string bindings = """
+			public sealed class GuestFlavor : Lib.IFlavor { }
+
+			[Awaiten.Container]
+			[Awaiten.Import(typeof(Lib.CoffeeModule))]
+			[Awaiten.Singleton<GuestFlavor, Lib.IFlavor>(WhenInjectedInto = typeof(Lib.CupLogger))]
+			public static partial class MyContainer;
+			""";
+		GeneratorResult result = assembly switch
+		{
+			0 => Generator.Run(library + bindings),
+			1 => Generator.RunWithGeneratedReferencedAssembly(library, "namespace MyCode;\n\n" + bindings),
+			_ => Generator.RunWithGeneratedReferenceAssembly(library, "namespace MyCode;\n\n" + bindings),
+		};
+		string source = result.Sources[assembly == 0 ? "Awaiten.Lib.MyContainer.g.cs" : "Awaiten.MyCode.MyContainer.g.cs"];
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the decorator takes the service besides its inner instance, also when the module builds it into the service's handle");
+		await That(source.Split('\n').Where(line => line.Contains("CupLogger") && line.Contains(Guest))).HasSingle();
 	}
 }

@@ -1071,13 +1071,19 @@ partial class AwaitenGenerator
 	///     The type a <c>WhenInjectedInto</c> consumer is matched against for the dependencies of <paramref name="info" />:
 	///     the implementation it builds, as a container in the module's own assembly names it, also when a module of
 	///     another assembly builds it through an instance handle or a scan factory, whose identities name the handle's
-	///     module or the scanned service instead.
+	///     module or the scanned service instead. A decorator chain link and a keyed composite match as the type they
+	///     construct, whose synthetic identity names the decorated or composed service too.
 	/// </summary>
 	private static string ContextConsumer(ImplInfo info, Compilation compilation)
 	{
 		if (info.ScanImplementation is { } scanned)
 		{
 			return TypeIdentity(scanned, compilation);
+		}
+
+		if (info.IsComposite || info.ImplementationType.Contains("@" + DecoratorKeyPrefix))
+		{
+			return TypeIdentity(info.Symbol, compilation);
 		}
 
 		int handle = info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal);
