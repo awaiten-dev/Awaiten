@@ -276,7 +276,8 @@ internal static partial class Sources
 	///     public (unkeyed) registrations with their lifetimes, which the
 	///     <c>Awaiten.Extensions.DependencyInjection</c> companion projects into a service collection. Parameterized
 	///     services are omitted (not resolvable by service type alone); a user-keyed registration is advertised with
-	///     its <c>Key</c>, while the synthetic decorator/contextual keys stay internal. An async-tainted service is
+	///     its <c>Key</c>, while the synthetic decorator/contextual keys stay internal. A decorated import is left to the
+	///     host, whose own registration its chain wraps. An async-tainted service is
 	///     flagged <c>requiresAsync</c> so the bridge projects a keyed one as a <c>Task&lt;T&gt;</c>, unless
 	///     <paramref name="syncAfterInit" /> makes it synchronously resolvable after warm-up.
 	/// </summary>
@@ -292,7 +293,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 		foreach (InstanceModel instance in instances)
 		{
-			if (instance.IsParameterized)
+			if (instance.IsParameterized || instance.DecoratesImport)
 			{
 				continue;
 			}

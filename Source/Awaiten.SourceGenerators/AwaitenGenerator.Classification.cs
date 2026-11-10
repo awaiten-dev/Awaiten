@@ -810,8 +810,9 @@ partial class AwaitenGenerator
 		// also routes a keyed one, whether a constructor parameter, a factory parameter or an [Inject] property (this
 		// is the shared classification core). A relationship (Func/Lazy/Task) or collection over T returned above, so
 		// only the direct dependency of type T is routed; every other unresolved dependency still gets the AWT101 check.
+		// A decorated import resolves its decorator chain instead, whose innermost link is redirected to the host.
 		string serviceType = type.ToDisplayString(FullyQualified);
-		if (externalServiceTypes.Routes(type, serviceType))
+		if (externalServiceTypes.Routes(type, serviceType) && !externalServiceTypes.Decorated.Contains(new ServiceKey(serviceType, key)))
 		{
 			return new ParameterModel(serviceType, DependencyKind.External, Key: key, Location: location);
 		}
@@ -1336,6 +1337,11 @@ partial class AwaitenGenerator
 		void Add(HashSet<string> set, ITypeSymbol type, string display)
 		{
 			set.Add(display);
+			if (set == types.Closed && type is INamedTypeSymbol { IsGenericType: true, } generic)
+			{
+				types.ClosedGenerics.Add(generic);
+			}
+
 			if (!compilation.IsSymbolAccessibleWithin(type, containerSymbol))
 			{
 				types.Inaccessible.Add(display);

@@ -67,7 +67,7 @@ A registration written directly on the extending container replaces every inheri
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
 - **Open generics.** A closed registration replaces its closing of an inherited open generic, and the other closings still come from the base. An open registration replaces an inherited open registration of the same generic.
 - **Fallback.** A registration with `Fallback` is an [overridable default](./07-modules.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
-- **Decorators.** The inherited decorators wrap the replacement. A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed, but a test can [switch it off](#switch-an-inherited-decorator-off).
+- **Decorators.** The inherited decorators wrap the replacement, also one the host provides through [`[ImportService<T>]`](#per-test-doubles-from-the-host), except an inherited decorator with `AllKeys`, which cannot wrap an import ([AWT123](../09-diagnostics.md#awt123)). A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed, but a test can [switch it off](#switch-an-inherited-decorator-off).
 - **Shared instances.** When the base registers one implementation under several services, replacing one of them leaves the others on the production implementation, which then no longer shares an instance with the replacement.
 
 ```csharp
@@ -124,7 +124,7 @@ The predicate runs in the extending container. When the test lives in another as
 
 ## Per-test doubles from the host
 
-To hand each test its own double, declare the service `[ImportService<T>]` on the extending container. That replaces the inherited registration too, and the test supplies the instance through the external resolver. In the other direction, a registration on the extending container replaces an inherited `[ImportService<T>]`, so a test can register what production draws from its host.
+To hand each test its own double, declare the service `[ImportService<T>]` on the extending container. That replaces the inherited registration too, and the test supplies the instance through the external resolver. The inherited decorators wrap that instance, and their chain is [transient](./02-decorators.md#decorate-an-imported-service). In the other direction, a registration on the extending container replaces an inherited `[ImportService<T>]`, so a test can register what production draws from its host.
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;

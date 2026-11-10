@@ -404,6 +404,42 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> under <c>[ImportServices]</c>, which routes an unregistered
+	///     service to the host but declares none imported, so a decorator does not wrap it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor DecoratedServiceNotImported = new(
+		"AWT123",
+		DecoratedServiceNotRegistered.Title,
+		"'{0}' is decorated by '{1}' but has no registration to decorate, and [ImportServices] declares no service imported; register the service, or declare it with [ImportService] so the decorator wraps the instance the host provides",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for a decorator with <c>AllKeys</c> over an imported
+	///     service: only the host knows the keys it provides the service under.
+	/// </summary>
+	public static readonly DiagnosticDescriptor DecoratedImportUnderAllKeys = new(
+		"AWT123",
+		DecoratedServiceNotRegistered.Title,
+		"'{0}' is decorated by '{1}' under all keys, but '{0}' is imported and only the host knows the keys it provides it under; name the keys to decorate in Keys",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     <see cref="DecoratedServiceNotRegistered">AWT123</see> for an open decorator over an open import, whose closings
+	///     the container learns only from the dependencies that ask for them.
+	/// </summary>
+	public static readonly DiagnosticDescriptor DecoratedOpenImport = new(
+		"AWT123",
+		DecoratedServiceNotRegistered.Title,
+		"'{0}' is decorated by the open decorator '{1}', but it is imported as an open generic, whose closings the container learns only from the dependencies that ask for them; declare each closing to decorate with [ImportService<T>]",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A decorator's constructor has no parameter assignable to the decorated service type, or more than
 	///     one ambiguous one, so Awaiten cannot tell which parameter receives the inner instance
 	///     (e.g. <c>LoggingDecorator(IService a, IService b)</c> or one that takes no <c>IService</c> at all).

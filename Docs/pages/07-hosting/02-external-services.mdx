@@ -127,7 +127,7 @@ public static partial class CoffeeShop;
 
 The external resolver hands back one instance of the type it is asked for, so only a direct dependency of an imported service is routed to it. Take the imported service directly: the host owns it and decides its lifetime, whatever shape the consumer would like to hold it in.
 
-A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). `[ImportServices]` declares no type imported, so under it alone an unregistered relationship is still a missing registration ([AWT101](../09-diagnostics.md#awt101)), as is an unregistered injected property even in its direct form.
+A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). A [decorated](#decorate-an-imported-service) import is the exception: the relationship resolves the decorator chain. `[ImportServices]` declares no type imported, so under it alone an unregistered relationship is still a missing registration ([AWT101](../09-diagnostics.md#awt101)), as is an unregistered injected property even in its direct form.
 
 ```csharp expect=AWT242
 public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // AWT242: take IPaymentGateway directly
@@ -141,6 +141,26 @@ public static partial class CoffeeShop;
 A collection (`IEnumerable<T>`, `IReadOnlyList<T>`, `T[]` and the like) is built from the container's own registrations of `T`, never from the host. A closed imported type cannot be registered ([AWT175](../09-diagnostics.md#awt175)), so a collection of it is always empty.
 
 For an open import, a relationship or collection over a closing resolves the closings the container registers, because the closing is routed to the host only where a direct dependency asks for it.
+
+## Decorate an imported service
+
+A [decorator](../04-registration/02-decorators.md#decorate-an-imported-service) wraps an imported service like a registered one. Every dependency of the service and every resolve of it then gets the decorator, and only the innermost decorator asks the host.
+
+```csharp
+[Container]
+[ImportService<IPaymentGateway>]
+[Singleton<Till>]
+[Singleton<Register>]
+[Decorate<AuditedGateway, IPaymentGateway>]
+public static partial class CoffeeShop;
+
+public sealed class AuditedGateway(IPaymentGateway inner) : IPaymentGateway
+{
+    public Receipt Charge(decimal amount) => inner.Charge(amount);
+}
+```
+
+The decorator chain is transient and belongs to the container: it is built on each resolve, which asks the host again, and is disposed with the scope that built it. The instance the host hands in stays the host's. A collection of the service stays empty, as for an undecorated import. Under the [MS.DI bridge](./01-msdi-bridge.md), the container leaves the service's registration in the host alone, so a host consumer of `IPaymentGateway` gets the host's instance, and the services the container projects get the decorator.
 
 ## Providing the external resolver
 
@@ -195,7 +215,7 @@ Awaiten advertises its external dependencies so you can check them at startup: e
 
 ## Ownership
 
-An externally supplied instance belongs to the external provider. Awaiten never disposes it.
+An externally supplied instance belongs to the external provider. Awaiten never disposes it, even when a decorator of the container wraps it.
 
 ## Where to go next
 

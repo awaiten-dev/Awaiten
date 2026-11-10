@@ -17,7 +17,9 @@ partial class AwaitenGenerator
 	///     selected key that no closing has, unless a closing of its service was dropped under that key for a reported
 	///     reason (<paramref name="rejected" />). Like an open composite, an unkeyed open decorator that matches no closing
 	///     decorates nothing; one the container declares itself warns AWT249 (see
-	///     <see cref="ReportOpenContributionWithoutClosing" />).
+	///     <see cref="ReportOpenContributionWithoutClosing" />). It also closes over each declared closed import of its
+	///     service, under every key it selects, since the host decides the keys; the closings of an open import are known
+	///     only from the dependencies, so an open decorator over one reports AWT123.
 	/// </summary>
 	private static void ExpandOpenDecorators(
 		List<DecorateRegistration> decorators,
@@ -25,6 +27,7 @@ partial class AwaitenGenerator
 		List<(string Display, INamedTypeSymbol Symbol)> closedServices,
 		CoalescedGraph graph,
 		HashSet<string> rejected,
+		ExternalServiceTypes external,
 		Compilation compilation,
 		List<DiagnosticInfo> diagnostics)
 	{
@@ -34,15 +37,32 @@ partial class AwaitenGenerator
 				display => decorator.Keys is not { } keys
 					? PresentUnderAnyKey(graph, display)
 					: keys.Any(key => PresentUnderKey(graph, display, key)));
-			ReportUnmatchedOpenDecorator(decorator, closings, graph, rejected, diagnostics);
+			List<INamedTypeSymbol> importedClosings = MatchingClosings(decorator.Service,
+				external.ClosedGenerics.Select(service => (service.ToDisplayString(FullyQualified), service)).ToList(),
+				display => external.Closed.Contains(display) && !PresentUnderAnyKey(graph, display))
+				.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToList();
+			bool openImport = external.Open.Contains(UnboundDisplay(decorator.Service));
+			if (openImport)
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.DecoratedOpenImport,
+					LocationInfo.From(decorator.Location),
+					new EquatableArray<string>([Display(decorator.Service.ToDisplayString(FullyQualified)), Display(decorator.Decorator.ToDisplayString(FullyQualified)),])));
+			}
+
+			if (importedClosings.Count == 0)
+			{
+				ReportUnmatchedOpenDecorator(decorator, closings, graph, rejected, diagnostics);
+			}
+
 			if (decorator is { Owner: null, Inherited: false, DecoratesHandles: false, }
 			    && (decorator.Keys is null || (decorator.Keys.Count == 1 && decorator.Keys[0] is null))
-			    && closings.Count == 0)
+			    && closings.Count == 0 && importedClosings.Count == 0 && !openImport)
 			{
 				ReportOpenContributionWithoutClosing("decorator", decorator.Decorator, decorator.Service, decorator.Location, rejected, diagnostics);
 			}
 
-			foreach (INamedTypeSymbol closed in closings)
+			foreach (INamedTypeSymbol closed in closings.Concat(importedClosings))
 			{
 				ITypeSymbol[] typeArguments = closed.TypeArguments.ToArray();
 
@@ -53,9 +73,12 @@ partial class AwaitenGenerator
 					continue;
 				}
 
-				// Only the keys this closing is registered under, so a key another closing lacks is no AWT210 here.
+				// Only the keys this closing is registered under, so a key another closing lacks is no AWT210 here. An
+				// imported closing takes every key the decorator selects.
 				string display = closed.ToDisplayString(FullyQualified);
-				IReadOnlyList<string?>? keys = decorator.Keys?.Where(key => PresentUnderKey(graph, display, key)).ToList();
+				IReadOnlyList<string?>? keys = importedClosings.Contains(closed, SymbolEqualityComparer.Default)
+					? decorator.Keys
+					: decorator.Keys?.Where(key => PresentUnderKey(graph, display, key)).ToList();
 				INamedTypeSymbol closedDecorator = decorator.Decorator.Construct(typeArguments);
 				decorators.Add(new DecorateRegistration(
 					display,
