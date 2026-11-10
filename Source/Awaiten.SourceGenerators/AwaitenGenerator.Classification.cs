@@ -212,7 +212,8 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void ReportWhenUnregistered(ParameterModel parameterModel, ITypeSymbol declaredType, ImplInfo info, BuildContext context)
 	{
-		if (ReportCollectionOfRelationships(parameterModel, declaredType, info, context.ServiceToImpl, context.Diagnostics))
+		if (ReportCollectionOfRelationships(parameterModel, declaredType, info, context.ServiceToImpl, context.Diagnostics)
+		    || ReportRegisteredRelationshipType(parameterModel, declaredType, info, info.Location, context.ServiceToImpl, context.ConsumedConditionals, context.External.ServiceTypes, context.Compilation, context.Diagnostics))
 		{
 			return;
 		}
@@ -260,6 +261,64 @@ partial class AwaitenGenerator
 				shape.Element,
 				shape.Remedy,
 				shape.Target,
+			])));
+		return true;
+	}
+
+	/// <summary>
+	///     Reports <see cref="Diagnostics.RegisteredRelationshipType">AWT259</see> for a relationship dependency, such as
+	///     <c>Func&lt;IClock&gt;</c>, whose declared type the container registers under the dependency's key, registers
+	///     <c>WhenInjectedInto</c> this consumer for an unkeyed one, or imports with <c>[ImportService]</c>: injection
+	///     builds the relationship over the wrapped service, so it would never hand out that registration or import. A
+	///     contextual registration reported here counts as consumed, so AWT167 does not repeat it. Returns whether it
+	///     reported.
+	/// </summary>
+	private static bool ReportRegisteredRelationshipType(
+		ParameterModel dependency,
+		ITypeSymbol declaredType,
+		ImplInfo info,
+		LocationInfo? location,
+		Dictionary<ServiceKey, string> serviceToImpl,
+		HashSet<ServiceKey> consumedConditionals,
+		ExternalServiceTypes externalServiceTypes,
+		Compilation compilation,
+		List<DiagnosticInfo> diagnostics)
+	{
+		if (dependency.Kind is not (DependencyKind.Func or DependencyKind.Lazy or DependencyKind.Owned or DependencyKind.Task or DependencyKind.FuncTask or DependencyKind.LazyTask))
+		{
+			return false;
+		}
+
+		string relationship = declaredType.ToDisplayString(FullyQualified);
+		bool registered = serviceToImpl.ContainsKey(new ServiceKey(relationship, dependency.Key));
+		if (!registered && dependency.Key is null)
+		{
+			ServiceKey contextKey = new(relationship, ContextKey(ContextConsumer(info, compilation)));
+			if (serviceToImpl.ContainsKey(contextKey))
+			{
+				consumedConditionals.Add(contextKey);
+				registered = true;
+			}
+		}
+
+		if (!registered && !externalServiceTypes.Routes(declaredType, relationship))
+		{
+			return false;
+		}
+
+		string target = DisplayKeyed(dependency.ServiceType, dependency.Key);
+		diagnostics.Add(new DiagnosticInfo(
+			Diagnostics.RegisteredRelationshipType,
+			dependency.Location ?? location,
+			new EquatableArray<string>([
+				DisplayInstance(info.OwningServiceOrImpl),
+				DisplayInstance(info.ImplementationType),
+				DisplayKeyed(relationship, dependency.Key),
+				registered ? "registers" : "imports",
+				target,
+				registered
+					? $"register a named type, such as an interface, in place of '{Display(relationship)}', or register '{target}' and let the container build the relationship"
+					: $"import a named type, such as an interface, in place of '{Display(relationship)}'",
 			])));
 		return true;
 	}
@@ -748,6 +807,7 @@ partial class AwaitenGenerator
 		// Owned<T> requested through Lazy surfaces the targeted AWT121 instead, and an [ImportService<T>] member
 		// (External) is satisfied from the external provider, so it is never missing.
 		if (!isCollection
+		    && !ReportRegisteredRelationshipType(dependency, property.Type, info, location, context.ServiceToImpl, context.ConsumedConditionals, externalServiceTypes, context.Compilation, context.Diagnostics)
 		    && dependency.Kind != DependencyKind.External
 		    && !context.ServiceToImpl.ContainsKey(KeyOf(dependency))
 		    && !context.ConstraintRejected.Contains(dependency.ServiceType)
