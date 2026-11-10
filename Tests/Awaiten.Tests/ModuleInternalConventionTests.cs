@@ -13,6 +13,29 @@ public sealed partial class ModuleInternalConventionTests
 	[Import(typeof(InternalConventionModule))]
 	public static partial class ConventionShop;
 
+	[Container]
+	[Import(typeof(ServiceConventionModule))]
+	public static partial class ServiceConventionShop;
+
+	[Test]
+	public async Task TakingAnInternalService_TheConventionRunsOnceWithTheModulesInstance()
+	{
+		using CancellationTokenSource cancellation = new();
+		await using ServiceConventionShop.Root container = new();
+
+		ServiceConventionBrewer brewer = await container.ResolveAsync<ServiceConventionBrewer>(cancellation.Token);
+		IServiceConventionGrinder grinder = await container.ResolveAsync<IServiceConventionGrinder>(cancellation.Token);
+
+		await That(brewer.Runs).IsEqualTo(1)
+			.Because("the container runs the convention through the module's wrapper, which takes the internal recipe through its handle");
+		await That(grinder.Device.Runs).IsEqualTo(1);
+		await That(brewer.Recipe).IsNotNull();
+		await That(grinder.Device.Recipe).IsSameAs(brewer.Recipe)
+			.Because("the recipe is a singleton of the module, which the container builds once through its handle");
+		await That(brewer.Token).IsEqualTo(cancellation.Token)
+			.Because("the wrapper forwards the resolve-time token to the convention");
+	}
+
 	[Test]
 	public async Task OnAPublicImplementation_TheConventionsRunOncePerInstanceAfterOnActivated()
 	{

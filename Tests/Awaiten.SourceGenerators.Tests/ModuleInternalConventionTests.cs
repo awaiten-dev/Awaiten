@@ -342,34 +342,132 @@ public class ModuleInternalConventionTests
 		}
 	}
 
+	public class InternalServiceParameters
+	{
+		[Test]
+		[Arguments("internal", "Settings settings")]
+		[Arguments("public", "Settings settings")]
+		[Arguments("internal", "System.Func<Settings> settings")]
+		[Arguments("public", "System.Lazy<Settings> settings")]
+		[Arguments("public", "System.Collections.Generic.IEnumerable<Settings> settings")]
+		public async Task TheWrapperTakesTheServiceThroughItsHandle_AndRunsOnceInEveryContainer(string accessibility, string parameter)
+		{
+			string library = Library(
+				$"internal sealed class Settings {{ }}\n{accessibility} sealed class Brew : IBrew {{ internal Task WarmUpAsync({parameter}, CancellationToken cancellationToken) => Task.CompletedTask; }}",
+				MethodConvention + "[Singleton<Settings>][Singleton<Brew, IBrew>]");
+			(GeneratorResult built, GeneratorResult same, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(library);
+
+			await That(built.Diagnostics).IsEmpty()
+				.Because("the module's wrapper takes the internal service through the handle the module generates for it");
+			await That(built.Sources["Awaiten.ModuleScan.Lib.CoffeeModule.g.cs"]).Contains("Initializer_Brew_")
+				.And.Contains("Hidden_Settings_");
+			foreach (GeneratorResult result in new[] { same, external, reference, compilation, friend, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+			}
+
+			foreach (GeneratorResult result in new[] { external, reference, compilation, })
+			{
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.Initializer_Brew_").Exactly(1)
+					.And.DoesNotContain(").WarmUpAsync(")
+					.Because("a container in another assembly runs the convention once through the module's wrapper and resolves the service's handle for it");
+			}
+
+			await That(same.Sources["Awaiten.Lib.SameContainer.g.cs"]).Contains(").WarmUpAsync(").Exactly(1)
+				.And.DoesNotContain("Initializer_")
+				.Because("a container in the module's assembly calls the convention directly, as before");
+			await That(friend.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains(").WarmUpAsync(").Exactly(1)
+				.And.DoesNotContain("Initializer_")
+				.Because("a friend sees the internal convention and calls it directly, as before");
+		}
+
+		[Test]
+		public async Task OnAScanMatch_RunsOnceInEveryContainer()
+		{
+			string library = Library(
+				"internal sealed class Settings { }\ninternal sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }",
+				MethodConvention + "[Singleton<Settings>][Scan<IBrew>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]");
+			(GeneratorResult built, GeneratorResult _, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(library);
+
+			await That(built.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { external, reference, compilation, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.").Exactly(1)
+					.Because("the container runs the convention of the scan match once, through a wrapper that takes the service's handle");
+			}
+		}
+
+		[Test]
+		public async Task AServiceOfAnotherModule_IsTakenThroughThatModulesHandle()
+		{
+			string library = """
+				using Awaiten;
+				using System.Threading.Tasks;
+
+				namespace Lib;
+
+				public interface IBrew { }
+				internal sealed class Settings { }
+				public sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }
+
+				[Module]
+				[Singleton<Settings>]
+				public static partial class SettingsModule;
+
+				[Module]
+				[AsyncInitializer<Brew>(nameof(Brew.WarmUpAsync))]
+				[Singleton<Brew, IBrew>]
+				public static partial class CoffeeModule;
+				""";
+			const string consumer = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(SettingsModule))]
+				[Import(typeof(CoffeeModule))]
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult built = Generator.Run(library);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(built.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the wrapper takes the internal service through the handle of the module that registers it");
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.Initializer_Brew_").Exactly(1);
+		}
+	}
+
 	public class Unreachable
 	{
 		[Test]
-		public async Task ASelfCompiledImplementation_WithAConventionParameterOfAnInternalType_FailsTheLibrary()
+		public async Task ASelfCompiledImplementation_WithAConventionParameterOfAnUnregisteredInternalType_FailsTheLibrary()
 		{
 			GeneratorResult result = Generator.Run(Library(
 				"internal sealed class Settings { }\ninternal sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }",
-				MethodConvention + "[Singleton<Settings>][Singleton<Brew, IBrew>]"));
+				MethodConvention + "[Singleton<Brew, IBrew>]"));
 
 			await That(result.Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but its parameter 'settings' has the type 'Lib.Settings', which is not public, so the module can generate no wrapper through which a container in another assembly runs it; make the parameter type public")
+					"error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but its parameter 'settings' has the type 'Lib.Settings', which is not public, so the module can generate no wrapper through which a container in another assembly runs it; make the parameter type public or register it in the module")
 				.Because("the module builds the brew for every container in another assembly, and none of them could run its convention");
 		}
 
 		[Test]
-		public async Task APublicImplementation_WithAConventionParameterOfAnInternalType_IsReportedByAContainerInAnotherAssembly()
+		public async Task APublicImplementation_WithAConventionParameterOfAnUnregisteredInternalType_IsReportedByAContainerInAnotherAssembly()
 		{
-			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(Library(
+			string library = Library(
 				"internal sealed class Settings { }\npublic sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }",
-				MethodConvention + "[Singleton<Settings>][Singleton<Brew, IBrew>]"));
-			const string expected = "error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but the method is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because its parameter 'settings' has the type 'Lib.Settings', which is not public; make it public, or grant this assembly InternalsVisibleTo in its assembly";
+				MethodConvention + "[Singleton<Brew, IBrew>]");
+			(GeneratorResult _, GeneratorResult _, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult _) = RunAll(library);
+			const string expected = "error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but the method is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because its parameter 'settings' has the type 'Lib.Settings', which is not public; make the parameter type public or register it in the module, or grant this assembly InternalsVisibleTo in the module's assembly";
 
-			await That(library.Diagnostics).IsEmpty()
-				.Because("a container in the module's assembly constructs the public brew and calls the convention itself");
-			await That(same.Diagnostics).IsEmpty();
-			await That(friend.Diagnostics).IsEmpty();
 			await That(external.Diagnostics).HasSingle().Which.EndsWith(expected)
-				.Because("a container in another assembly can call neither the convention nor a wrapper, and the module recorded why it generated none");
+				.Because("a container in another assembly can call neither the convention nor a wrapper, and the module recorded why it generated none and what lets it");
 			await That(reference.Diagnostics).HasSingle().Which.EndsWith(expected);
 			await That(compilation.Diagnostics).HasSingle().Which.EndsWith(expected);
 		}
@@ -381,8 +479,8 @@ public class ModuleInternalConventionTests
 
 			await That(Generator.Run(library).Diagnostics).IsEmpty();
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but the method is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because the module, or a class that contains it, is not partial; make it public, or grant this assembly InternalsVisibleTo in its assembly")
-				.Because("the module records that it is not partial, so a container in another assembly names why it cannot run the convention instead of leaving it out");
+					"error AWT234: 'Lib.Brew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but the method is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because the module, or a class that contains it, is not partial; make the module and every class that contains it partial, or grant this assembly InternalsVisibleTo in the module's assembly")
+				.Because("the module records that it is not partial, so a container in another assembly names why it cannot run the convention and asks for the partial modifier");
 		}
 
 		[Test]

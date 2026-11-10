@@ -32,6 +32,9 @@ partial class AwaitenGenerator
 		///     extending container in another assembly does not see (see <see cref="RecordBaseOpenFactories" />).
 		/// </summary>
 		public List<SkippedRegistration> HookSkips { get; } = new();
+
+		/// <summary>The wrappers of the conventions an extending container in another assembly cannot call (see <see cref="CollectConventionWrappers" />).</summary>
+		public List<ConventionWrapper> ConventionWrappers { get; } = new();
 	}
 
 	/// <summary>

@@ -148,7 +148,7 @@ internal static partial class Sources
 		}
 
 		EmitAfterFactoryAssigners(builder, depth, context.Instances, names);
-		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray(), model.HookSkips.AsArray());
+		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray(), model.HookSkips.AsArray(), model.ConventionWrappers.AsArray());
 	}
 
 	/// <summary>
@@ -199,17 +199,18 @@ internal static partial class Sources
 	///     and a public class would only add an empty type to a public container's API. The class is public only when it
 	///     holds a record of a type whose <c>[Inject]</c> property another assembly cannot see, which an extending
 	///     container without <c>InternalsVisibleTo</c> reads to report the type instead of building it without the property,
-	///     or the public wrapper of an internal decorator predicate, which such a container calls.
+	///     or the public wrapper of an internal decorator predicate or async initializer convention, or the record of why
+	///     such a convention has none, which such a container calls or reads.
 	/// </summary>
-	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties, SkippedRegistration[] hookSkips)
+	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties, SkippedRegistration[] hookSkips, ConventionWrapper[] conventionWrappers)
 	{
-		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0 && hiddenProperties.Length == 0)
+		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0 && hiddenProperties.Length == 0 && conventionWrappers.Length == 0)
 		{
 			return;
 		}
 
 		builder.AppendLine();
-		OpenInternals(builder, outerDepth, hiddenProperties.Length > 0 || wrappers.Any(wrapper => !wrapper.IsInternal) ? "public" : "internal",
+		OpenInternals(builder, outerDepth, hiddenProperties.Length > 0 || conventionWrappers.Length > 0 || wrappers.Any(wrapper => !wrapper.IsInternal) ? "public" : "internal",
 			"Generated for a container that extends this one: the factories and wrappers it calls. Not intended to be",
 			"used directly.");
 		int depth = outerDepth + 1;
@@ -292,6 +293,17 @@ internal static partial class Sources
 			EmitSkipReason(builder, depth, hook.MarkerName, hook.Reason,
 				"Generated for a container that extends this one: why a hook wrapper of a generic factory may run another overload",
 				"than this container would, which an extending container in another assembly reports instead of running it.");
+		}
+
+		foreach (ConventionWrapper wrapper in conventionWrappers)
+		{
+			if (!first)
+			{
+				builder.AppendLine();
+			}
+
+			first = false;
+			EmitConventionWrapper(builder, depth, wrapper, "container");
 		}
 
 		Indent(builder, outerDepth).AppendLine("}");

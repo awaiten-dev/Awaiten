@@ -337,21 +337,28 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits the wrapper that runs a convention of the module another assembly cannot call on any instance, or the
-	///     constant that records why the module generates none.
+	///     Emits the wrapper that runs a convention of the module or base container another assembly cannot call on any
+	///     instance, or the constants that record why the owner generates none and what lets it.
 	/// </summary>
-	private static void EmitConventionWrapper(StringBuilder builder, int depth, ConventionWrapper wrapper)
+	private static void EmitConventionWrapper(StringBuilder builder, int depth, ConventionWrapper wrapper, string owner = "module")
 	{
 		if (wrapper.SkipReason is { } reason)
 		{
 			EmitSkipReason(builder, depth, wrapper.Name, reason,
-				"Generated from a module [AsyncInitializer]: why no wrapper runs this convention. An assembly granted",
+				$"Generated from a {owner} [AsyncInitializer]: why no wrapper runs this convention. An assembly granted",
 				"InternalsVisibleTo calls it itself; a consuming container that cannot reports this reason.");
+			if (wrapper is { RemedyName: { } remedyName, SkipRemedy: { } remedy, })
+			{
+				builder.AppendLine();
+				EmitSkipReason(builder, depth, remedyName, remedy,
+					$"Generated from a {owner} [AsyncInitializer]: what lets the {owner} generate a wrapper for this convention.");
+			}
+
 			return;
 		}
 
 		AppendXmlSummary(builder, depth,
-			"Generated from a module [AsyncInitializer]: runs the convention on an instance the module registers, so a consuming",
+			$"Generated from a {owner} [AsyncInitializer]: runs the convention on an instance the {owner} {(owner == "module" ? "registers" : "builds")}, so a consuming",
 			"container in another assembly initializes it without naming the convention.");
 		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
 		string instance = UnusedName("awaiten__instance", parameters);
