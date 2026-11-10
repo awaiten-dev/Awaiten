@@ -1818,6 +1818,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
         "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
+      },
+      {
+        "sha": "e817eb93bddd13a391964d7724fb10cf4aeddd85",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
+        "message": "docs: shorten the requirements on the getting started page (#407)"
       }
     ],
     "labels": [
@@ -2123,7 +2129,8 @@ window.BENCHMARK_DATA = {
       "e3a0e8a5",
       "d9c60864",
       "aabdd154",
-      "960833f0"
+      "960833f0",
+      "e817eb93"
     ],
     "datasets": [
       {
@@ -2432,7 +2439,8 @@ window.BENCHMARK_DATA = {
           3.363661684716741,
           4.898658965031306,
           4.856297322114309,
-          5.652835548917452
+          5.652835548917452,
+          6.4454745521148045
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2444,6 +2452,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3063,7 +3072,8 @@ window.BENCHMARK_DATA = {
           4.076065678436023,
           6.9869589404417916,
           7.003430208563804,
-          6.704157524307569
+          6.704157524307569,
+          7.318477579034292
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3075,6 +3085,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3694,7 +3705,8 @@ window.BENCHMARK_DATA = {
           61.6760619242986,
           85.28057911396027,
           83.27869965632756,
-          88.40025683811733
+          88.40025683811733,
+          122.02847677866617
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3706,6 +3718,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4321,7 +4334,8 @@ window.BENCHMARK_DATA = {
           4.925912924607595,
           6.9404090712467825,
           7.082697822497441,
-          7.346101135015488
+          7.346101135015488,
+          9.412309763332209
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4333,6 +4347,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4944,7 +4959,8 @@ window.BENCHMARK_DATA = {
           6.211242971511988,
           8.637163414557774,
           8.274770711859068,
-          8.9696418804427
+          8.9696418804427,
+          11.071410642067592
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4956,6 +4972,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7086,6 +7103,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
         "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
+      },
+      {
+        "sha": "e817eb93bddd13a391964d7724fb10cf4aeddd85",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
+        "message": "docs: shorten the requirements on the getting started page (#407)"
       }
     ],
     "labels": [
@@ -7391,7 +7414,8 @@ window.BENCHMARK_DATA = {
       "e3a0e8a5",
       "d9c60864",
       "aabdd154",
-      "960833f0"
+      "960833f0",
+      "e817eb93"
     ],
     "datasets": [
       {
@@ -7700,7 +7724,8 @@ window.BENCHMARK_DATA = {
           3.3359888419508934,
           5.654750616422722,
           5.275314815342426,
-          6.027301663389573
+          6.027301663389573,
+          7.432137180368105
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7712,6 +7737,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8331,7 +8357,8 @@ window.BENCHMARK_DATA = {
           3.9960171326994898,
           6.49940995986645,
           6.819443034132322,
-          6.565504011511803
+          6.565504011511803,
+          7.3415846735239025
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8343,6 +8370,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8962,7 +8990,8 @@ window.BENCHMARK_DATA = {
           57.012191402060644,
           84.72578719946054,
           82.81950867970785,
-          90.17035367488862
+          90.17035367488862,
+          118.78043036460876
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8974,6 +9003,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9589,7 +9619,8 @@ window.BENCHMARK_DATA = {
           5.060589847465356,
           6.847327436506748,
           6.804089862566728,
-          7.335381795962651
+          7.335381795962651,
+          9.441650154193242
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9601,6 +9632,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10212,7 +10244,8 @@ window.BENCHMARK_DATA = {
           6.430826219228598,
           11.81320329606533,
           11.414701374677511,
-          12.206180542707443
+          12.206180542707443,
+          14.432101769106728
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10224,6 +10257,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12354,6 +12388,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
         "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
+      },
+      {
+        "sha": "e817eb93bddd13a391964d7724fb10cf4aeddd85",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
+        "message": "docs: shorten the requirements on the getting started page (#407)"
       }
     ],
     "labels": [
@@ -12659,7 +12699,8 @@ window.BENCHMARK_DATA = {
       "e3a0e8a5",
       "d9c60864",
       "aabdd154",
-      "960833f0"
+      "960833f0",
+      "e817eb93"
     ],
     "datasets": [
       {
@@ -12968,7 +13009,8 @@ window.BENCHMARK_DATA = {
           22.096539863518306,
           29.02197804848353,
           11.815641371409098,
-          15.051991778612138
+          15.051991778612138,
+          15.519221342603366
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13240,6 +13282,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13599,7 +13642,8 @@ window.BENCHMARK_DATA = {
           1343.840008799235,
           1718.548883846828,
           761.1358243397304,
-          892.9150653203328
+          892.9150653203328,
+          1158.2514842987061
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13611,6 +13655,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14230,7 +14275,8 @@ window.BENCHMARK_DATA = {
           19098.30012003581,
           25095.459439958846,
           16987.624342698316,
-          17848.1404683431
+          17848.1404683431,
+          25567.942521158853
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14543,6 +14589,7 @@ window.BENCHMARK_DATA = {
           32478,
           32474,
           32474,
+          32478,
           32478,
           32478
         ],
@@ -14857,7 +14904,8 @@ window.BENCHMARK_DATA = {
           556.2869133631389,
           705.683532851083,
           386.35295190811155,
-          419.0346734046936
+          419.0346734046936,
+          559.6678658894131
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14887,6 +14935,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15480,7 +15529,8 @@ window.BENCHMARK_DATA = {
           9741.68173828125,
           12399.423900897686,
           6363.951000213623,
-          6911.6642613728845
+          6911.6642613728845,
+          8875.194906107585
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15790,7 +15840,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17622,6 +17673,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
         "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
+      },
+      {
+        "sha": "e817eb93bddd13a391964d7724fb10cf4aeddd85",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
+        "message": "docs: shorten the requirements on the getting started page (#407)"
       }
     ],
     "labels": [
@@ -17927,7 +17984,8 @@ window.BENCHMARK_DATA = {
       "e3a0e8a5",
       "d9c60864",
       "aabdd154",
-      "960833f0"
+      "960833f0",
+      "e817eb93"
     ],
     "datasets": [
       {
@@ -18236,7 +18294,8 @@ window.BENCHMARK_DATA = {
           260.33723481496173,
           364.71540654500325,
           79.88588464260101,
-          80.78373035589854
+          80.78373035589854,
+          121.91440677642822
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18508,6 +18567,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18867,7 +18927,8 @@ window.BENCHMARK_DATA = {
           12057.956342569987,
           14769.036908976237,
           7025.484086608887,
-          7382.471024576823
+          7382.471024576823,
+          10827.005392456054
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18879,6 +18940,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19498,7 +19560,8 @@ window.BENCHMARK_DATA = {
           451211.3259277344,
           588662.9877604167,
           416450.51927083335,
-          432318.16998697916
+          432318.16998697916,
+          643494.5221121652
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19812,7 +19875,8 @@ window.BENCHMARK_DATA = {
           718752,
           719414,
           735423,
-          738692
+          738692,
+          740789
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20125,7 +20189,8 @@ window.BENCHMARK_DATA = {
           30597.61916879507,
           40813.885681152344,
           22303.146776471818,
-          22956.337223597937
+          22956.337223597937,
+          37862.306388346355
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20435,7 +20500,8 @@ window.BENCHMARK_DATA = {
           80316,
           80317,
           79672,
-          81089
+          81089,
+          80297
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20748,7 +20814,8 @@ window.BENCHMARK_DATA = {
           251248.5345740685,
           346058.7358022836,
           186965.29064127605,
-          196796.92210286457
+          196796.92210286457,
+          272954.5664813702
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21058,7 +21125,8 @@ window.BENCHMARK_DATA = {
           571199,
           571195,
           572943,
-          573009
+          573009,
+          573023
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22866,6 +22934,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
         "message": "fix: run internal conventions that take an internal service, and those of a base container, through generated wrappers in other assemblies (#405)"
+      },
+      {
+        "sha": "e817eb93bddd13a391964d7724fb10cf4aeddd85",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
+        "message": "docs: shorten the requirements on the getting started page (#407)"
       }
     ],
     "labels": [
@@ -23167,7 +23241,8 @@ window.BENCHMARK_DATA = {
       "e3a0e8a5",
       "d9c60864",
       "aabdd154",
-      "960833f0"
+      "960833f0",
+      "e817eb93"
     ],
     "datasets": [
       {
@@ -23472,7 +23547,8 @@ window.BENCHMARK_DATA = {
           180.86298430882968,
           213.60745930671692,
           167.304328753398,
-          242.36123204231262
+          242.36123204231262,
+          275.539402621133
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23507,6 +23583,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24095,7 +24172,8 @@ window.BENCHMARK_DATA = {
           428.8706473937401,
           472.33360290527344,
           402.16801146098544,
-          599.6545494715373
+          599.6545494715373,
+          632.8092979284434
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24107,6 +24185,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24718,7 +24797,8 @@ window.BENCHMARK_DATA = {
           3756.1327089162974,
           4962.40820719401,
           3700.684037072318,
-          6546.551977539062
+          6546.551977539062,
+          6916.981851704915
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24802,6 +24882,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25341,7 +25422,8 @@ window.BENCHMARK_DATA = {
           290.00080370903015,
           348.35470520655315,
           255.01846878869193,
-          384.4101921081543
+          384.4101921081543,
+          420.43762197494505
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25353,6 +25435,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -25964,7 +26047,8 @@ window.BENCHMARK_DATA = {
           411.94015083994185,
           559.073273726872,
           397.3597171123211,
-          801.5906909306844
+          801.5906909306844,
+          764.5977710996356
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25976,6 +26060,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
