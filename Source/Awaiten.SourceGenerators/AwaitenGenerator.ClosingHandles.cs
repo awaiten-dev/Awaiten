@@ -233,6 +233,11 @@ partial class AwaitenGenerator
 					.FirstOrDefault();
 				if (kept is null)
 				{
+					if (open.Any(candidate => candidate is { Dropped: false, Key: null, WhenInjectedInto: not null, } && UnboundDisplay(candidate.Service) == definition))
+					{
+						faults[handleType] = $"'{Display(definition)}' is registered only with WhenInjectedInto, and the container builds such a closing only from an unconditional open registration of '{Display(definition)}' in the module '{moduleName}'; register it there without WhenInjectedInto, or import it from the host with [ImportService(typeof({Display(definition)}))]";
+					}
+
 					continue;
 				}
 

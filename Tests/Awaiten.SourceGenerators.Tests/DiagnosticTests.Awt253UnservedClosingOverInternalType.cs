@@ -117,6 +117,25 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("full")]
+		[Arguments("reference")]
+		[Arguments("compilation")]
+		public async Task OnlyAConditionalRegistrationOfTheDefinition_ReportsAwt253(string reference)
+		{
+			string library = Library(registrations: "[Singleton(typeof(Log<>), typeof(ILog<>), WhenInjectedInto = typeof(LoggedLog<>))]");
+			GeneratorResult result = reference switch
+			{
+				"reference" => Generator.RunWithGeneratedReferenceAssembly(library, Consumer()),
+				"compilation" => Generator.RunWithGeneratedCompilationReference(library, Consumer()),
+				_ => Generator.RunWithGeneratedReferencedAssembly(library, Consumer()),
+			};
+
+			await That(result.Diagnostics).HasSingle().Which.Contains(
+				$"*{Prefix}'Lib.ILog<>' is registered only with WhenInjectedInto, and the container builds such a closing only from an unconditional open registration of 'Lib.ILog<>' in the module 'Lib.CoffeeModule'; register it there without WhenInjectedInto, or import it from the host with [ImportService(typeof(Lib.ILog<>))]{Suffix}").AsWildcard()
+				.Because("the conditional registration does not serve the closing, so the container names it instead of claiming nothing registers the definition");
+		}
+
+		[Test]
 		public async Task TheContainerImportsTheDefinition_DoesNotReportAwt253()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library(), Consumer("[ImportService(typeof(Lib.ILog<>))]"));
