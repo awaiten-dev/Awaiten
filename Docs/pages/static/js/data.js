@@ -1710,6 +1710,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:28:25 2026 \u002B0100",
         "message": "fix: let another registration of a public implementation that a module of another assembly builds through its generated factory call that factory too (#393)"
+      },
+      {
+        "sha": "1d79291b53546e022a4263e32b989bdb5730b00f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:31:02 2026 \u002B0100",
+        "message": "fix: let a container\u0027s WhenInjectedInto binding reach an implementation a module of another assembly builds through a handle, a scan factory or a deferred setter (#391)"
       }
     ],
     "labels": [
@@ -1997,7 +2003,8 @@ window.BENCHMARK_DATA = {
       "4ba6f678",
       "a60c39f3",
       "e6e6ef6a",
-      "7de755a9"
+      "7de755a9",
+      "1d79291b"
     ],
     "datasets": [
       {
@@ -2288,7 +2295,8 @@ window.BENCHMARK_DATA = {
           6.357532496963229,
           3.1384932309389115,
           3.2592487797141074,
-          4.6295954287052155
+          4.6295954287052155,
+          5.078262385725975
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2300,6 +2308,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2883,7 +2892,8 @@ window.BENCHMARK_DATA = {
           7.269329816102982,
           4.227070654077189,
           4.382670057316621,
-          6.714144401825392
+          6.714144401825392,
+          10.114786507685979
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2895,6 +2905,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3478,7 +3489,8 @@ window.BENCHMARK_DATA = {
           137.25265340805055,
           58.92312007745107,
           71.83644655545552,
-          86.40624153614044
+          86.40624153614044,
+          84.87249032088688
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3490,6 +3502,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4069,7 +4082,8 @@ window.BENCHMARK_DATA = {
           8.542281686266262,
           5.0427367428938545,
           5.52214155288843,
-          7.103266820311546
+          7.103266820311546,
+          7.068444192409515
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4081,6 +4095,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4656,7 +4671,8 @@ window.BENCHMARK_DATA = {
           11.205870043238004,
           6.500400451819102,
           6.488900598670755,
-          8.730206049978733
+          8.730206049978733,
+          8.503545660773913
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4668,6 +4684,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6672,6 +6689,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:28:25 2026 \u002B0100",
         "message": "fix: let another registration of a public implementation that a module of another assembly builds through its generated factory call that factory too (#393)"
+      },
+      {
+        "sha": "1d79291b53546e022a4263e32b989bdb5730b00f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:31:02 2026 \u002B0100",
+        "message": "fix: let a container\u0027s WhenInjectedInto binding reach an implementation a module of another assembly builds through a handle, a scan factory or a deferred setter (#391)"
       }
     ],
     "labels": [
@@ -6959,7 +6982,8 @@ window.BENCHMARK_DATA = {
       "4ba6f678",
       "a60c39f3",
       "e6e6ef6a",
-      "7de755a9"
+      "7de755a9",
+      "1d79291b"
     ],
     "datasets": [
       {
@@ -7250,7 +7274,8 @@ window.BENCHMARK_DATA = {
           6.799358519415061,
           3.2524077610245774,
           3.3745072404188767,
-          5.215921892651489
+          5.215921892651489,
+          5.361481161912282
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7262,6 +7287,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7845,7 +7871,8 @@ window.BENCHMARK_DATA = {
           7.368357919156551,
           4.113212288490364,
           4.153423052813325,
-          6.510384636123975
+          6.510384636123975,
+          6.8044650458863805
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7857,6 +7884,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8440,7 +8468,8 @@ window.BENCHMARK_DATA = {
           130.48801694597518,
           61.06955904620035,
           58.96051316994887,
-          86.48267342363086
+          86.48267342363086,
+          84.56546711921692
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8452,6 +8481,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9031,7 +9061,8 @@ window.BENCHMARK_DATA = {
           8.504601187507312,
           5.046418905258179,
           5.473196189318385,
-          7.084830126592091
+          7.084830126592091,
+          6.835013265411059
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9043,6 +9074,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9618,7 +9650,8 @@ window.BENCHMARK_DATA = {
           14.424258438746135,
           6.485480271776518,
           6.585546483950956,
-          8.502661064267159
+          8.502661064267159,
+          8.50854913038867
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9630,6 +9663,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11634,6 +11668,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:28:25 2026 \u002B0100",
         "message": "fix: let another registration of a public implementation that a module of another assembly builds through its generated factory call that factory too (#393)"
+      },
+      {
+        "sha": "1d79291b53546e022a4263e32b989bdb5730b00f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:31:02 2026 \u002B0100",
+        "message": "fix: let a container\u0027s WhenInjectedInto binding reach an implementation a module of another assembly builds through a handle, a scan factory or a deferred setter (#391)"
       }
     ],
     "labels": [
@@ -11921,7 +11961,8 @@ window.BENCHMARK_DATA = {
       "4ba6f678",
       "a60c39f3",
       "e6e6ef6a",
-      "7de755a9"
+      "7de755a9",
+      "1d79291b"
     ],
     "datasets": [
       {
@@ -12212,7 +12253,8 @@ window.BENCHMARK_DATA = {
           21.769106660286585,
           21.397937925656638,
           22.652274149656296,
-          22.48820370634397
+          22.48820370634397,
+          12.056393227974574
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12484,6 +12526,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12807,7 +12850,8 @@ window.BENCHMARK_DATA = {
           1542.2316566467284,
           1429.630593079787,
           1549.9739187558491,
-          1395.903124745687
+          1395.903124745687,
+          858.3328734397888
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12819,6 +12863,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13402,7 +13447,8 @@ window.BENCHMARK_DATA = {
           31121.54963378906,
           29670.144881184897,
           31145.888079833985,
-          19194.04303917518
+          19194.04303917518,
+          18006.26173048753
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13698,7 +13744,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32477,
-          32474
+          32474,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13993,7 +14040,8 @@ window.BENCHMARK_DATA = {
           729.1367007573446,
           693.8861024220785,
           732.1201538721721,
-          550.4507327079773
+          550.4507327079773,
+          436.70985237757367
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14023,6 +14071,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14580,7 +14629,8 @@ window.BENCHMARK_DATA = {
           12595.56137746175,
           12265.60683186849,
           12178.012446085611,
-          9556.839626857212
+          9556.839626857212,
+          7348.271180289133
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14865,6 +14915,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -16596,6 +16647,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:28:25 2026 \u002B0100",
         "message": "fix: let another registration of a public implementation that a module of another assembly builds through its generated factory call that factory too (#393)"
+      },
+      {
+        "sha": "1d79291b53546e022a4263e32b989bdb5730b00f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:31:02 2026 \u002B0100",
+        "message": "fix: let a container\u0027s WhenInjectedInto binding reach an implementation a module of another assembly builds through a handle, a scan factory or a deferred setter (#391)"
       }
     ],
     "labels": [
@@ -16883,7 +16940,8 @@ window.BENCHMARK_DATA = {
       "4ba6f678",
       "a60c39f3",
       "e6e6ef6a",
-      "7de755a9"
+      "7de755a9",
+      "1d79291b"
     ],
     "datasets": [
       {
@@ -17174,7 +17232,8 @@ window.BENCHMARK_DATA = {
           190.19635038375856,
           205.76495444774628,
           183.44456083433968,
-          248.02184969584147
+          248.02184969584147,
+          82.48458672563235
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17446,6 +17505,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -17769,7 +17829,8 @@ window.BENCHMARK_DATA = {
           15541.204475911458,
           15835.222729492187,
           15505.474245198568,
-          12336.88778483073
+          12336.88778483073,
+          8158.400577545166
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -17781,6 +17842,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -18364,7 +18426,8 @@ window.BENCHMARK_DATA = {
           769965.6658203125,
           748355.1879882812,
           747036.8886067708,
-          440132.3209635417
+          440132.3209635417,
+          462918.0396158854
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18660,7 +18723,8 @@ window.BENCHMARK_DATA = {
           740197,
           740471,
           737145,
-          720432
+          720432,
+          741104
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18955,7 +19019,8 @@ window.BENCHMARK_DATA = {
           44517.35473225911,
           44344.6630452474,
           44498.11613769531,
-          30926.629934457633
+          30926.629934457633,
+          24611.990987141926
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19247,7 +19312,8 @@ window.BENCHMARK_DATA = {
           80508,
           80005,
           79366,
-          80959
+          80959,
+          80306
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19542,7 +19608,8 @@ window.BENCHMARK_DATA = {
           363669.52275390626,
           384236.80810546875,
           388209.52415364585,
-          257922.27794471153
+          257922.27794471153,
+          209899.1421875
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19834,7 +19901,8 @@ window.BENCHMARK_DATA = {
           573169,
           573253,
           573105,
-          571193
+          571193,
+          573054
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21534,6 +21602,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:28:25 2026 \u002B0100",
         "message": "fix: let another registration of a public implementation that a module of another assembly builds through its generated factory call that factory too (#393)"
+      },
+      {
+        "sha": "1d79291b53546e022a4263e32b989bdb5730b00f",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:31:02 2026 \u002B0100",
+        "message": "fix: let a container\u0027s WhenInjectedInto binding reach an implementation a module of another assembly builds through a handle, a scan factory or a deferred setter (#391)"
       }
     ],
     "labels": [
@@ -21817,7 +21891,8 @@ window.BENCHMARK_DATA = {
       "4ba6f678",
       "a60c39f3",
       "e6e6ef6a",
-      "7de755a9"
+      "7de755a9",
+      "1d79291b"
     ],
     "datasets": [
       {
@@ -22104,7 +22179,8 @@ window.BENCHMARK_DATA = {
           399.6787350654602,
           246.98568859100342,
           181.07877033097404,
-          175.39294339929307
+          175.39294339929307,
+          210.71675288677216
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -22139,6 +22215,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -22691,7 +22768,8 @@ window.BENCHMARK_DATA = {
           588.7973795731863,
           550.9879857472012,
           434.77578960146224,
-          406.3035115877787
+          406.3035115877787,
+          464.2076938311259
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -22703,6 +22781,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -23278,7 +23357,8 @@ window.BENCHMARK_DATA = {
           6525.075712076823,
           4165.627890450613,
           3989.693291590764,
-          3598.6709171295165
+          3598.6709171295165,
+          5002.926874287923
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23362,6 +23442,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -23865,7 +23946,8 @@ window.BENCHMARK_DATA = {
           398.8961518727816,
           348.57420552571614,
           278.8882144519261,
-          251.13995416959128
+          251.13995416959128,
+          347.69412949879967
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23877,6 +23959,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -24452,7 +24535,8 @@ window.BENCHMARK_DATA = {
           711.9923654964992,
           617.5849662144979,
           443.880597337087,
-          378.1760669435774
+          378.1760669435774,
+          551.8412367502848
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24464,6 +24548,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
