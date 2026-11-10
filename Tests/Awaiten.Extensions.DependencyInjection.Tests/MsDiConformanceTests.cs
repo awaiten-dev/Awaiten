@@ -192,6 +192,20 @@ public sealed partial class MsDiConformanceTests
 		}
 
 		[Test]
+		public async Task AnEnumerableOfRelationshipsOverARegisteredTypeIsEmpty()
+		{
+			using ConformanceContainer.Root container = new();
+			using AwaitenServiceProvider provider = new(container, false);
+
+			object? resolved = provider.GetService(typeof(IEnumerable<Lazy<IService>>));
+
+			await That(resolved).IsNotNull()
+				.Because("MS.DI guarantees IEnumerable<T> resolves for any T, also a relationship type");
+			await That((IEnumerable<Lazy<IService>>)resolved!).IsEmpty()
+				.Because("the element type is Lazy<IService>, which neither the container nor MS.DI registers, so MS.DI hands back the empty sequence too; inside the container's graph the same dependency is AWT254");
+		}
+
+		[Test]
 		public async Task AnEnumerableOfAnUnmentionedValueTypeReturnsNull_AotConstraint()
 		{
 			using ConformanceContainer.Root container = new();

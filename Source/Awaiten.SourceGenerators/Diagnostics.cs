@@ -2430,4 +2430,19 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A dependency on a collection or keyed dictionary of relationships (<c>IEnumerable&lt;Lazy&lt;T&gt;&gt;</c>,
+	///     <c>Func&lt;T&gt;[]</c>, <c>IReadOnlyDictionary&lt;string, Owned&lt;T&gt;&gt;</c> and the like) whose element type
+	///     has no registration of its own. A collection holds the registrations of its element type, and relationships
+	///     wrap one level only, so the relationship would count as a service of its own and the collection would stay
+	///     empty however many registrations of <c>T</c> exist. Reported instead of that empty collection.
+	/// </summary>
+	public static readonly DiagnosticDescriptor CollectionOfRelationships = new(
+		"AWT254",
+		"Collection of relationships",
+		"'{0}' cannot be resolved: '{1}' requires '{2}', a collection of the relationship '{3}', which the container does not build; inject '{4}' to get every registration of '{5}', or '{3}' to get a single one",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

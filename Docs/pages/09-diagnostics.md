@@ -290,7 +290,7 @@ root.Resolve<IMilk>("Soy");   // nothing is registered under "Soy"
 
 **Fix:** Register the service under that key, such as `[Singleton<SoyMilk, IMilk>(Key = "Soy")]`, or pass a key a registration declares.
 
-A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task. The bare type of a service with [runtime arguments](./05-resolution/06-runtime-arguments.md) is reported with its factory, such as `Func<string, Cup>`, as the remedy. A `Task<Owned<T>>` or `Func<Task<Owned<T>>>` over a service whose async factory takes a `[RequestingType]` parameter is reported with `Task<T>` or `Func<Task<T>>` as the remedy, because such a factory has no `Owned<T>` form ([AWT186](#awt186)).
+A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task. The bare type of a service with [runtime arguments](./05-resolution/06-runtime-arguments.md) is reported with its factory, such as `Func<string, Cup>`, as the remedy. A `Task<Owned<T>>` or `Func<Task<Owned<T>>>` over a service whose async factory takes a `[RequestingType]` parameter is reported with `Task<T>` or `Func<Task<T>>` as the remedy, because such a factory has no `Owned<T>` form ([AWT186](#awt186)). A collection of relationships, such as `IEnumerable<Lazy<T>>`, is reported with the collection of the service itself, `IEnumerable<T>`, as the remedy ([AWT254](#awt254)).
 
 Only a call on the generated `Root` or `Scope` that names a closed type in source is checked. These stay run-time checks:
 
@@ -300,6 +300,24 @@ Only a call on the generated `Root` or `Scope` that names a closed type in sourc
 - a service the host provides (`[ImportService]`, `[ImportServices]`),
 - a closed variant generic interface, such as `IHandler<Cat>`, when the container registers a variant interface that the run-time variance fallback may route it to,
 - a container declared in a referenced assembly.
+
+### AWT254
+
+:::danger[Error]
+A dependency is a collection or keyed dictionary of relationships, such as `IEnumerable<Lazy<T>>`, `Func<T>[]`, `IReadOnlyList<Owned<T>>` or `IReadOnlyDictionary<string, Func<T>>`. A collection holds the registrations of its element type, and a relationship wraps a single service, so the container does not build one relationship per member. It is reported instead of an empty collection, unless the relationship type itself is registered as a service.
+:::
+
+```csharp expect=AWT254
+public sealed class SyrupBar(IEnumerable<Lazy<ISyrup>> syrups);   // a collection holds ISyrup registrations, not Lazy ones
+
+[Container]
+[Singleton<VanillaSyrup, ISyrup>]
+[Singleton<CaramelSyrup, ISyrup>]
+[Singleton<SyrupBar>]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Depend on the collection of the service itself, `IEnumerable<ISyrup>`, to get every registration, or on a single relationship such as `Lazy<ISyrup>` to defer the one that single resolution picks. An async-initialized member is awaited through `IAsyncEnumerable<ISyrup>` or `Task<IReadOnlyList<ISyrup>>`, see [async collections](./05-resolution/03-collections.md#async-collections).
 
 ## Async safety
 
