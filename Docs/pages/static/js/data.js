@@ -1824,6 +1824,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
         "message": "docs: shorten the requirements on the getting started page (#407)"
+      },
+      {
+        "sha": "05a7d32cea5f5072ebb45f33125a77cb36fb7b13",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 17:26:08 2026 \u002B0100",
+        "message": "fix!: report a private generic Factory member of a module\u0027s open registration in the library\u0027s build instead of AWT255 (#409)"
       }
     ],
     "labels": [
@@ -2130,7 +2136,8 @@ window.BENCHMARK_DATA = {
       "d9c60864",
       "aabdd154",
       "960833f0",
-      "e817eb93"
+      "e817eb93",
+      "05a7d32c"
     ],
     "datasets": [
       {
@@ -2440,7 +2447,8 @@ window.BENCHMARK_DATA = {
           4.898658965031306,
           4.856297322114309,
           5.652835548917452,
-          6.4454745521148045
+          6.4454745521148045,
+          6.445080806102071
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2452,6 +2460,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3073,7 +3082,8 @@ window.BENCHMARK_DATA = {
           6.9869589404417916,
           7.003430208563804,
           6.704157524307569,
-          7.318477579034292
+          7.318477579034292,
+          7.530204546451569
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3085,6 +3095,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3706,7 +3717,8 @@ window.BENCHMARK_DATA = {
           85.28057911396027,
           83.27869965632756,
           88.40025683811733,
-          122.02847677866617
+          122.02847677866617,
+          120.90929767290751
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3718,6 +3730,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4335,7 +4348,8 @@ window.BENCHMARK_DATA = {
           6.9404090712467825,
           7.082697822497441,
           7.346101135015488,
-          9.412309763332209
+          9.412309763332209,
+          8.788216279198727
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4347,6 +4361,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4960,7 +4975,8 @@ window.BENCHMARK_DATA = {
           8.637163414557774,
           8.274770711859068,
           8.9696418804427,
-          11.071410642067592
+          11.071410642067592,
+          10.548220241069794
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4972,6 +4988,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7109,6 +7126,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
         "message": "docs: shorten the requirements on the getting started page (#407)"
+      },
+      {
+        "sha": "05a7d32cea5f5072ebb45f33125a77cb36fb7b13",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 17:26:08 2026 \u002B0100",
+        "message": "fix!: report a private generic Factory member of a module\u0027s open registration in the library\u0027s build instead of AWT255 (#409)"
       }
     ],
     "labels": [
@@ -7415,7 +7438,8 @@ window.BENCHMARK_DATA = {
       "d9c60864",
       "aabdd154",
       "960833f0",
-      "e817eb93"
+      "e817eb93",
+      "05a7d32c"
     ],
     "datasets": [
       {
@@ -7725,7 +7749,8 @@ window.BENCHMARK_DATA = {
           5.654750616422722,
           5.275314815342426,
           6.027301663389573,
-          7.432137180368105
+          7.432137180368105,
+          7.222330558300018
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7737,6 +7762,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8358,7 +8384,8 @@ window.BENCHMARK_DATA = {
           6.49940995986645,
           6.819443034132322,
           6.565504011511803,
-          7.3415846735239025
+          7.3415846735239025,
+          7.409464634381807
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8370,6 +8397,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8991,7 +9019,8 @@ window.BENCHMARK_DATA = {
           84.72578719946054,
           82.81950867970785,
           90.17035367488862,
-          118.78043036460876
+          118.78043036460876,
+          119.53935468196869
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9003,6 +9032,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9620,7 +9650,8 @@ window.BENCHMARK_DATA = {
           6.847327436506748,
           6.804089862566728,
           7.335381795962651,
-          9.441650154193242
+          9.441650154193242,
+          8.7871981151402
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9632,6 +9663,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10245,7 +10277,8 @@ window.BENCHMARK_DATA = {
           11.81320329606533,
           11.414701374677511,
           12.206180542707443,
-          14.432101769106728
+          14.432101769106728,
+          13.898424118757248
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10257,6 +10290,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12394,6 +12428,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
         "message": "docs: shorten the requirements on the getting started page (#407)"
+      },
+      {
+        "sha": "05a7d32cea5f5072ebb45f33125a77cb36fb7b13",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 17:26:08 2026 \u002B0100",
+        "message": "fix!: report a private generic Factory member of a module\u0027s open registration in the library\u0027s build instead of AWT255 (#409)"
       }
     ],
     "labels": [
@@ -12700,7 +12740,8 @@ window.BENCHMARK_DATA = {
       "d9c60864",
       "aabdd154",
       "960833f0",
-      "e817eb93"
+      "e817eb93",
+      "05a7d32c"
     ],
     "datasets": [
       {
@@ -13010,7 +13051,8 @@ window.BENCHMARK_DATA = {
           29.02197804848353,
           11.815641371409098,
           15.051991778612138,
-          15.519221342603366
+          15.519221342603366,
+          19.221892208854356
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13282,6 +13324,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13643,7 +13686,8 @@ window.BENCHMARK_DATA = {
           1718.548883846828,
           761.1358243397304,
           892.9150653203328,
-          1158.2514842987061
+          1158.2514842987061,
+          1381.5789431163244
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13655,6 +13699,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14276,7 +14321,8 @@ window.BENCHMARK_DATA = {
           25095.459439958846,
           16987.624342698316,
           17848.1404683431,
-          25567.942521158853
+          25567.942521158853,
+          24553.56516810826
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14589,6 +14635,7 @@ window.BENCHMARK_DATA = {
           32478,
           32474,
           32474,
+          32478,
           32478,
           32478,
           32478
@@ -14905,7 +14952,8 @@ window.BENCHMARK_DATA = {
           705.683532851083,
           386.35295190811155,
           419.0346734046936,
-          559.6678658894131
+          559.6678658894131,
+          603.2862009048462
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14935,6 +14983,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15530,7 +15579,8 @@ window.BENCHMARK_DATA = {
           12399.423900897686,
           6363.951000213623,
           6911.6642613728845,
-          8875.194906107585
+          8875.194906107585,
+          9996.344518025717
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15841,6 +15891,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -17679,6 +17730,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
         "message": "docs: shorten the requirements on the getting started page (#407)"
+      },
+      {
+        "sha": "05a7d32cea5f5072ebb45f33125a77cb36fb7b13",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 17:26:08 2026 \u002B0100",
+        "message": "fix!: report a private generic Factory member of a module\u0027s open registration in the library\u0027s build instead of AWT255 (#409)"
       }
     ],
     "labels": [
@@ -17985,7 +18042,8 @@ window.BENCHMARK_DATA = {
       "d9c60864",
       "aabdd154",
       "960833f0",
-      "e817eb93"
+      "e817eb93",
+      "05a7d32c"
     ],
     "datasets": [
       {
@@ -18295,7 +18353,8 @@ window.BENCHMARK_DATA = {
           364.71540654500325,
           79.88588464260101,
           80.78373035589854,
-          121.91440677642822
+          121.91440677642822,
+          125.81308767000834
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18567,6 +18626,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18928,7 +18988,8 @@ window.BENCHMARK_DATA = {
           14769.036908976237,
           7025.484086608887,
           7382.471024576823,
-          10827.005392456054
+          10827.005392456054,
+          11758.13661311223
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18940,6 +19001,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19561,7 +19623,8 @@ window.BENCHMARK_DATA = {
           588662.9877604167,
           416450.51927083335,
           432318.16998697916,
-          643494.5221121652
+          643494.5221121652,
+          646613.1810825893
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19876,7 +19939,8 @@ window.BENCHMARK_DATA = {
           719414,
           735423,
           738692,
-          740789
+          740789,
+          740464
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20190,7 +20254,8 @@ window.BENCHMARK_DATA = {
           40813.885681152344,
           22303.146776471818,
           22956.337223597937,
-          37862.306388346355
+          37862.306388346355,
+          38211.43512369792
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20501,7 +20566,8 @@ window.BENCHMARK_DATA = {
           80317,
           79672,
           81089,
-          80297
+          80297,
+          80014
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20815,7 +20881,8 @@ window.BENCHMARK_DATA = {
           346058.7358022836,
           186965.29064127605,
           196796.92210286457,
-          272954.5664813702
+          272954.5664813702,
+          316808.66324869794
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21126,7 +21193,8 @@ window.BENCHMARK_DATA = {
           571195,
           572943,
           573009,
-          573023
+          573023,
+          573108
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22940,6 +23008,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 16:02:21 2026 \u002B0100",
         "message": "docs: shorten the requirements on the getting started page (#407)"
+      },
+      {
+        "sha": "05a7d32cea5f5072ebb45f33125a77cb36fb7b13",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 17:26:08 2026 \u002B0100",
+        "message": "fix!: report a private generic Factory member of a module\u0027s open registration in the library\u0027s build instead of AWT255 (#409)"
       }
     ],
     "labels": [
@@ -23242,7 +23316,8 @@ window.BENCHMARK_DATA = {
       "d9c60864",
       "aabdd154",
       "960833f0",
-      "e817eb93"
+      "e817eb93",
+      "05a7d32c"
     ],
     "datasets": [
       {
@@ -23548,7 +23623,8 @@ window.BENCHMARK_DATA = {
           213.60745930671692,
           167.304328753398,
           242.36123204231262,
-          275.539402621133
+          275.539402621133,
+          268.9508735656738
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23583,6 +23659,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24173,7 +24250,8 @@ window.BENCHMARK_DATA = {
           472.33360290527344,
           402.16801146098544,
           599.6545494715373,
-          632.8092979284434
+          632.8092979284434,
+          630.7711837768554
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24185,6 +24263,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24798,7 +24877,8 @@ window.BENCHMARK_DATA = {
           4962.40820719401,
           3700.684037072318,
           6546.551977539062,
-          6916.981851704915
+          6916.981851704915,
+          6760.0615234375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24882,6 +24962,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25423,7 +25504,8 @@ window.BENCHMARK_DATA = {
           348.35470520655315,
           255.01846878869193,
           384.4101921081543,
-          420.43762197494505
+          420.43762197494505,
+          418.9902131954829
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25435,6 +25517,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26048,7 +26131,8 @@ window.BENCHMARK_DATA = {
           559.073273726872,
           397.3597171123211,
           801.5906909306844,
-          764.5977710996356
+          764.5977710996356,
+          741.6504019419352
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26060,6 +26144,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
