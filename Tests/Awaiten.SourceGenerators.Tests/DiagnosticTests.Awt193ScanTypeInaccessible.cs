@@ -512,6 +512,45 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task DefaultOfAModuleThatCoalescingDrops_SkipsTheMatchToo(string consumer)
+			{
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IEquipment { }
+					public sealed class Roaster : IEquipment { internal Roaster() { } }
+					public sealed class Grinder : IEquipment { }
+
+					[Module]
+					[Singleton<Roaster, IEquipment>(Fallback = Fallback.Silent)]
+					public static partial class EquipmentModule;
+					""";
+				const string container = """
+					using Awaiten;
+
+					namespace MyCode;
+
+					[Container]
+					[Import(typeof(Lib.EquipmentModule))]
+					[Singleton<Lib.Grinder, Lib.IEquipment>]
+					[Scan(typeof(Lib.IEquipment), InAssembliesOf = new[] { typeof(Lib.IEquipment) }, Lifetime = Lifetime.Singleton)]
+					public static partial class MyContainer
+					{
+					}
+					""";
+				GeneratorResult result = consumer == "reference"
+					? Generator.RunWithGeneratedReferenceAssembly(library, container)
+					: Generator.RunWithGeneratedReferencedAssembly(library, container);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible")
+					.Because("the container's registration of IEquipment replaces the module's default, so no instance of Roaster is built for the match to share");
+			}
+
+			[Test]
 			public async Task FriendAssembly_RegistersTheMatch()
 			{
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(

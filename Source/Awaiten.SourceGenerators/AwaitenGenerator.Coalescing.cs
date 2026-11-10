@@ -790,7 +790,10 @@ partial class AwaitenGenerator
 		string subject,
 		INamedTypeSymbol containerSymbol)
 	{
-		if ((release ? scan.OnRelease : scan.OnActivated) is not { } hook)
+		// An extending container cannot name the hook of its base's scan or exclude a type from that scan, so its own
+		// registration replaces the inherited scan's hook, and the base reports a registration of its own in its build.
+		if ((release ? scan.OnRelease : scan.OnActivated) is not { } hook
+		    || (scanOrigin is not null && HasAwaitenAttribute(scanOrigin.GetAttributes(), "ContainerAttribute")))
 		{
 			return null;
 		}

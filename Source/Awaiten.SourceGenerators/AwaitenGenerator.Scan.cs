@@ -1244,7 +1244,8 @@ partial class AwaitenGenerator
 	///     can call, such as a public class with only internal constructors, reporting the
 	///     <see cref="Diagnostics.ScanTypePrivate">AWT193</see> warning instead of the AWT104 error, as the scan does for
 	///     a type it cannot name. A match whose implementation another registration names too is kept: it shares that
-	///     registration's instance, which a module's generated factory may build.
+	///     registration's instance, which a module's generated factory may build. An overridable default that
+	///     coalescing drops shares nothing, so it keeps no match.
 	/// </summary>
 	private static void DropScanMatchesWithoutAccessibleConstructor(
 		List<RawRegistration> raw,
@@ -1252,6 +1253,7 @@ partial class AwaitenGenerator
 		Compilation compilation,
 		List<DiagnosticInfo> diagnostics)
 	{
+		HashSet<int> droppedDefaults = DroppedOverridableDefaults(raw);
 		HashSet<string> checkedImplementations = new(StringComparer.Ordinal);
 		foreach (RawRegistration match in raw.FindAll(IsContainerScanConstruction))
 		{
@@ -1259,7 +1261,8 @@ partial class AwaitenGenerator
 			if (!checkedImplementations.Add(match.ImplementationType)
 			    || SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, containerSymbol.ContainingAssembly)
 			    || type.InstanceConstructors.Any(constructor => compilation.IsSymbolAccessibleWithin(constructor, containerSymbol))
-			    || raw.Exists(registration => registration.ImplementationType == match.ImplementationType && !IsContainerScanConstruction(registration)))
+			    || raw.Where((registration, index) => !droppedDefaults.Contains(index))
+				    .Any(registration => registration.ImplementationType == match.ImplementationType && !IsContainerScanConstruction(registration)))
 			{
 				continue;
 			}

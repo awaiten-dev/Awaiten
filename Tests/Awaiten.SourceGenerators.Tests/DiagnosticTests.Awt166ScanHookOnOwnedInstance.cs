@@ -231,6 +231,71 @@ public partial class DiagnosticTests
 			}
 		}
 
+		public class ThroughExtends
+		{
+			private const string Library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IPlugin { }
+				public sealed class AlphaPlugin : IPlugin { }
+
+				[Container]
+				[Scan<IPlugin>(Lifetime = Lifetime.Singleton, As = ScanAs.Marker, OnActivated = nameof(Started))]
+				public static partial class BaseContainer
+				{
+				    public static void Started(IPlugin plugin) { }
+				}
+				""";
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task RegistrationOfTheExtendingContainer_DoesNotReportTheBasesScanHook(string consumer)
+			{
+				GeneratorResult result = Run(Library, """
+					[Container(Extends = typeof(BaseContainer))]
+					[Singleton<AlphaPlugin>]
+					public static partial class {0};
+					""", consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the extending container can neither name the base's hook nor exclude the type from the base's scan, so its registration replaces the inherited scan's hook");
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ScanOfTheExtendingContainer_ReportsARegistrationOfTheBase(string consumer)
+			{
+				GeneratorResult result = Run("""
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IPlugin { }
+					public sealed class AlphaPlugin : IPlugin { }
+
+					[Container]
+					[Singleton<AlphaPlugin, IPlugin>]
+					public static partial class BaseContainer;
+					""", """
+					[Container(Extends = typeof(BaseContainer))]
+					[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, Lifetime = Lifetime.Singleton, As = ScanAs.Marker, OnActivated = nameof(Started))]
+					public static partial class {0}
+					{
+					    private static void Started(IPlugin plugin) { }
+					}
+					""", consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT166").And.Contains("whose OnActivated hook is unset")
+					.Because("the extending container's own scan can still name its hook on a registration that replaces the base's");
+			}
+		}
+
 		public class AcrossAssemblies
 		{
 			private const string Library = """

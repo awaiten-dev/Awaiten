@@ -785,7 +785,7 @@ The library's build reports this too for an implementation a module builds throu
 
 **Fix:** Declare one hook for the implementation: set it on one registration and leave it unset on the others (an unset directive merges with the winner's), or name the same method on all of them. To let the container replace a module's registration, hooks included, mark the module's registration `Fallback`.
 
-A [scan](./04-registration/06-scanning.md#lifecycle-hooks) that names a hook for a match whose instance a registration of the type owns is reported too. The scan yields to the registration, so the shared instance runs the registration's hook in that slot, or none, and the scan's hook would never run. Unlike two registrations, a registration that leaves the hook unset does not take the scan's: the scan hook is reported unless the registration names the same method. This holds for a keyed registration and for one of a module, also in a container of another assembly.
+A [scan](./04-registration/06-scanning.md#lifecycle-hooks) that names a hook for a match whose instance a registration of the type owns is reported too. The scan yields to the registration, so the shared instance runs the registration's hook in that slot, or none, and the scan's hook would never run. Unlike two registrations, a registration that leaves the hook unset does not take the scan's: the scan hook is reported unless the registration names the same method. This holds for a keyed registration and for one of a module, also in a container of another assembly. A scan an extending container inherits from its base is not reported: the extending container's registration replaces that scan's hooks.
 
 ```csharp expect=AWT166
 [Container]
@@ -2015,7 +2015,7 @@ A match from another assembly names that assembly in the message and suggests mo
 
 **Fix:** Move the scan into a `[Module]` in the type's assembly, make the type public, grant the container's assembly `InternalsVisibleTo`, or exclude it with a `NamePatterns` or `NamespacePatterns` entry.
 
-A `public` class of another assembly whose constructors are all `internal` is skipped the same way: the container can name it but cannot call a constructor, which an explicit registration reports as [AWT104](#awt104). The message names the constructors as the reason. An assembly granted `InternalsVisibleTo` calls them and registers the match, and a module scan in the type's assembly builds it through the module's generated factory. A match the container shares with another registration of the type, such as one a module of that assembly builds, is kept.
+A `public` class of another assembly whose constructors are all `internal` is skipped the same way: the container can name it but cannot call a constructor, which an explicit registration reports as [AWT104](#awt104). The message names the constructors as the reason. An assembly granted `InternalsVisibleTo` calls them and registers the match, and a module scan in the type's assembly builds it through the module's generated factory. A match the container shares with another registration of the type, such as one a module of that assembly builds, is kept, unless that registration is a `Fallback` default the container replaces.
 
 ```csharp no-compile
 // In a referenced assembly: the type is public, its only constructor is internal.

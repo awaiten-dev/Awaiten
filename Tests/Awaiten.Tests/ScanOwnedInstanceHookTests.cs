@@ -50,6 +50,38 @@ public partial class ScanOwnedInstanceHookTests
 			.Because("the module's registration and scan name one hook, which the container runs once through the generated wrapper");
 	}
 
+	[Test]
+	public async Task RegistrationOfAnExtendingContainer_ReplacesTheHookOfTheBasesScan()
+	{
+		using ReplacingContainer.Root container = new();
+
+		ReplacedHookWorker worker = container.Resolve<ReplacedHookWorker>();
+		IReplacedHookMarker marker = container.Resolve<IReplacedHookMarker>();
+
+		await That(marker).IsSameAs(worker)
+			.Because("the base's scan shares the instance the extending container's registration owns");
+		await That(worker.Activations).IsEqualTo(0)
+			.Because("the extending container's registration replaces the hook of the inherited scan");
+	}
+
+	public interface IReplacedHookMarker;
+
+	public sealed class ReplacedHookWorker : IReplacedHookMarker
+	{
+		public int Activations { get; set; }
+	}
+
+	[Container]
+	[Scan<IReplacedHookMarker>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]
+	public static partial class ScanningBaseContainer
+	{
+		internal static void Activate(IReplacedHookMarker marker) => ((ReplacedHookWorker)marker).Activations++;
+	}
+
+	[Container(Extends = typeof(ScanningBaseContainer))]
+	[Singleton<ReplacedHookWorker>]
+	public static partial class ReplacingContainer;
+
 	public interface ISameHookMarker;
 
 	public sealed class SameHookWorker : ISameHookMarker
