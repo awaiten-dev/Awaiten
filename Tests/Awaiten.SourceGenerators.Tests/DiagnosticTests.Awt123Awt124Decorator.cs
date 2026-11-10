@@ -287,6 +287,27 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			public async Task ReportsAwt123ForEmptyKeysOverAnImportedService()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public interface IService { }
+				                                       public sealed class LoggingDecorator : IService { public LoggingDecorator(IService inner) { } }
+
+				                                       [Container]
+				                                       [ImportService<IService>]
+				                                       [Decorate<LoggingDecorator, IService>(Keys = [])]
+				                                       public static partial class MyContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT123*'MyCode.IService' is decorated by 'MyCode.LoggingDecorator' with an empty Keys*name the keys to decorate in Keys*").AsWildcard()
+					.Because("an empty Keys selects no instance of the import, so the decorator would silently wrap nothing");
+			}
+
+			[Test]
 			public async Task ReportsAwt123ForAnOpenDecoratorOverAnOpenImport()
 			{
 				GeneratorResult result = Generator.Run("""

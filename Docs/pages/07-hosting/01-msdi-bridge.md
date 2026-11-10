@@ -48,6 +48,8 @@ A keyed registration is projected under its key, so `[FromKeyedServices]` and `G
 public sealed class Router([FromKeyedServices("fast")] IChannel channel);
 ```
 
+A [decorated import](./02-external-services.mdx#decorate-an-imported-service) is not projected, since the decorator wraps the host's own registration and would otherwise replace it. A host consumer that resolves the service from MS.DI gets the host's instance, and the services the container builds get the decorator.
+
 ## Use it as the host's provider factory
 
 For the generic host or `WebApplicationBuilder`, plug in `AwaitenServiceProviderFactory<TRoot>`. Host registrations and Awaiten services coexist, so a host component can inject an Awaiten service and the other way round. The factory wires the root to the host's provider as soon as it builds it, unless you set a resolver yourself, so the root resolves its [imported services](./02-external-services.mdx) from the start.

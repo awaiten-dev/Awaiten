@@ -205,7 +205,7 @@ public static partial class CoffeeShop;
 
 An imported service has no lifetime the decorator could inherit, so the chain is transient: each resolve builds the decorators again, and the innermost asks the host for its instance, as an undecorated import does. The container tracks and disposes the decorators like any transient and never disposes the host's instance. A singleton that depends on the service holds one chain, as it would hold the bare import.
 
-- **Keys.** The host decides the keys it provides a service under, so name them in `Keys`: `Keys = ["backup"]` wraps the instance the host provides under `"backup"`. `AllKeys` is a build error ([AWT123](../09-diagnostics.md#awt123)).
+- **Keys.** The host decides the keys it provides a service under, so name them in `Keys`: `Keys = ["backup"]` wraps the instance the host provides under `"backup"`. `AllKeys` and an empty `Keys` are a build error ([AWT123](../09-diagnostics.md#awt123)).
 - **Generics.** An open decorator wraps each closed `[ImportService<T>]` of its service, and a closed decorator can wrap a closing of an open import. An open decorator over an open import is a build error ([AWT123](../09-diagnostics.md#awt123)), since the container learns its closings only from the dependencies that ask for them.
 - **`[ImportServices]`.** It declares no service imported, so a decorated service needs its own `[ImportService<T>]`.
 
