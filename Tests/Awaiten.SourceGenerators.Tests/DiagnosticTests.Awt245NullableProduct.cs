@@ -5,8 +5,8 @@ namespace Awaiten.SourceGenerators.Tests;
 public partial class DiagnosticTests
 {
 	/// <summary>
-	///     AWT245 is reported by <see cref="AwaitenAnalyzer" /> rather than the generator, so it can be suppressed in
-	///     source; these tests drive the analyzer for the report and the generator for warnings in the generated code.
+	///     AWT245 is reported by <see cref="AwaitenAnalyzer" /> rather than the generator, so these tests drive the analyzer
+	///     for the report and the generator for warnings in the generated code.
 	/// </summary>
 	public class Awt245NullableProduct
 	{
@@ -192,7 +192,7 @@ public partial class DiagnosticTests
 			string[] reports = await Awt245Reports(source);
 
 			await That(reports).IsEmpty()
-				.Because("an analyzer diagnostic carries a source location, so #pragma warning disable silences it at this registration alone");
+				.Because("the diagnostic carries a source location, so #pragma warning disable silences it at this registration alone");
 		}
 
 		[Test]

@@ -46,7 +46,7 @@ public partial class DiagnosticTests
 			string[] reports = await Awt249Reports(source);
 
 			await That(result.Diagnostics).IsEmpty()
-				.Because("the generator leaves the warning to the analyzer, so it can be suppressed in source");
+				.Because("the generator leaves the warning to the analyzer");
 			await That(reports).HasSingle().Which.Satisfies(report => report.Contains("warning AWT249") && report.Contains(subject) && report.Contains("'MyCode.IHandler<T>'"));
 		}
 

@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Awaiten.SourceGenerators.Tests;
 
@@ -198,6 +201,59 @@ public partial class DiagnosticTests
 						"error AWT255: Awaiten cannot generate the container 'MyCode.MyContainer': emitting it threw System.Collections.Generic.KeyNotFoundException: *" + ReportIt).AsWildcard()
 					.Because("the compiler would turn the exception into warning CS8785 and leave the container out");
 				await That(source).Contains("has registration errors");
+			}
+
+			[Test]
+			[Arguments("none")]
+			[Arguments("silent")]
+			[Arguments("suggestion")]
+			[Arguments("warning")]
+			public async Task CannotBeLoweredInAnEditorConfig(string severity)
+			{
+				string[] reported = ReportedAtTheContainer("namespace MyCode;\n\npublic static partial class MyContainer;", $"[*.cs]\ndotnet_diagnostic.AWT255.severity = {severity}", new Dictionary<string, ReportDiagnostic>());
+
+				await That(reported).HasSingle().Which.StartsWith("/src/Container.cs(3,29): error AWT255:")
+					.Because("a bug of the generator must not turn into a build that passes with a container that throws");
+			}
+
+			[Test]
+			public async Task CannotBeSuppressedThroughNoWarnOrAPragma()
+			{
+				string[] reported = ReportedAtTheContainer("#pragma warning disable AWT255\nnamespace MyCode;\n\npublic static partial class MyContainer;", "", new Dictionary<string, ReportDiagnostic> { ["AWT255"] = ReportDiagnostic.Suppress, });
+
+				await That(reported).HasSingle().Which.StartsWith("/src/Container.cs(4,29): error AWT255:");
+			}
+
+			/// <summary>
+			///     The diagnostics a generator reporting AWT255 at the container of <paramref name="source" /> leaves, as the
+			///     compiler filters them by <paramref name="editorConfig" />, <paramref name="diagnosticOptions" /> and the source's pragmas.
+			/// </summary>
+			private static string[] ReportedAtTheContainer(string source, string editorConfig, Dictionary<string, ReportDiagnostic> diagnosticOptions)
+			{
+				CSharpParseOptions parseOptions = new(LanguageVersion.Latest);
+				SyntaxTree tree = CSharpSyntaxTree.ParseText(source, parseOptions, "/src/Container.cs");
+				CSharpCompilation compilation = CSharpCompilation.Create(
+					"TestAssembly",
+					[tree,],
+					References.For([]),
+					new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, specificDiagnosticOptions: diagnosticOptions)
+						.WithSyntaxTreeOptionsProvider(new Generator.EditorConfigOptions(AnalyzerConfigSet.Create(ImmutableArray.Create(AnalyzerConfig.Parse(editorConfig, "/src/.editorconfig"))))));
+				DiagnosticDescriptor descriptor = (DiagnosticDescriptor)GeneratorAssembly.GetType("Awaiten.SourceGenerators.Diagnostics", true)!.GetField("GeneratorInconsistency")!.GetValue(null)!;
+				int container = source.IndexOf("MyContainer", StringComparison.Ordinal);
+				Diagnostic diagnostic = Diagnostic.Create(descriptor, Location.Create(tree, new TextSpan(container, "MyContainer".Length)), "MyCode.MyContainer", "a test");
+
+				return CSharpGeneratorDriver.Create([new Reporter(diagnostic).AsSourceGenerator(),], [], parseOptions, null)
+					.RunGenerators(compilation)
+					.GetRunResult().Diagnostics
+					.Where(reported => !reported.IsSuppressed)
+					.Select(reported => reported.ToString())
+					.ToArray();
+			}
+
+			private sealed class Reporter(Diagnostic diagnostic) : IIncrementalGenerator
+			{
+				public void Initialize(IncrementalGeneratorInitializationContext context)
+					=> context.RegisterSourceOutput(context.CompilationProvider, (output, _) => output.ReportDiagnostic(diagnostic));
 			}
 		}
 	}

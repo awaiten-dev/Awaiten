@@ -7,7 +7,11 @@ toc_max_heading_level: 3
 
 Awaiten checks your wiring while it builds. A mistake that other containers would surface at startup, or on the first resolve in production, is a compile error here. The barista never reaches for a cup that is not there.
 
-Every diagnostic has an `AWT###` id. Errors stop the build. You configure an id like any compiler diagnostic: set its severity per file in `.editorconfig` (`dotnet_diagnostic.AWT141.severity = suggestion`) or for the project with `<NoWarn>` and `<WarningsAsErrors>`, or suppress it at one place with `#pragma warning disable` or `[SuppressMessage]`. Lowering an error to a warning does not make the container usable: Awaiten generates no wiring for a container with an error, so resolving from it throws an `InvalidOperationException` that points at the build diagnostics. Fix the cause instead. Warnings point at something that is legal but probably not what you meant. This page is the full catalog, one entry per id with a concrete example that triggers it. The feature pages link here for the codes they mention.
+Every diagnostic has an `AWT###` id. Errors stop the build. You configure an id like any compiler diagnostic: set its severity per file in `.editorconfig` (`dotnet_diagnostic.AWT141.severity = suggestion`) or for the project with `<NoWarn>` and `<WarningsAsErrors>`, or suppress it at one place with `#pragma warning disable` or `[SuppressMessage]`. [AWT118](#awt118) under strict lifetime safety and [AWT255](#awt255) cannot be configured.
+
+Lowering or suppressing an error lets the build pass, but it does not make the container usable unless Awaiten can still wire it. A container with an error gets no wiring, so resolving from it throws an `InvalidOperationException` that points at the build diagnostics. The exception is an error that a module of the container's assembly reports about one of its registrations: lowered, or disabled with `#pragma` where it is reported, it only leaves that registration out, and the container is wired without it. Suppressed with `[SuppressMessage]`, it still leaves the container without wiring. Fix the cause instead.
+
+Warnings point at something that is legal but probably not what you meant. This page is the full catalog, one entry per id with a concrete example that triggers it. The feature pages link here for the codes they mention.
 
 The examples reuse a few coffee-shop types (`Grinder`, `EspressoMachine`, `Order`, `Cup`, `IMilk`, `IBrewer`, and so on). Only the detail that trips the diagnostic is spelled out in each snippet. Each entry ends with a **Fix:** that names the change that resolves it.
 
@@ -702,7 +706,7 @@ public static partial class CoffeeShop
 A `Factory` or `Instance` member is declared nullable, such as `Grinder?`, `Task<Grinder?>`, a nullable value type boxed to the service or a member marked `[MaybeNull]`, so it may produce `null`, while the container hands the value to every consumer of the service as non-nullable. The warning is reported once at the registration, and the generated code compiles without nullable warnings of its own.
 :::
 
-A container reports it for its own members and for those of the modules it imports, and for the generic `Factory` of an open generic registration once at that registration, whatever closings it injects. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle. This is an analyzer diagnostic, so it can be suppressed at a single registration with `#pragma warning disable AWT245` or `[SuppressMessage]`.
+A container reports it for its own members and for those of the modules it imports, and for the generic `Factory` of an open generic registration once at that registration, whatever closings it injects. For a member of an internal service that a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), the library's own build reports it, since a container in another assembly only sees the handle. It is reported at the registration, so you can suppress it there alone with `#pragma warning disable AWT245` or `[SuppressMessage]`.
 
 ```csharp expect=AWT245
 [Container]
@@ -1259,7 +1263,7 @@ An unkeyed open generic `[Decorate]` or `[Composite]` that a container declares 
 public static partial class CoffeeShop;
 ```
 
-It is not reported for an open decorator or composite that a module or an extended base declares, since the containers that import or extend them register the closings, nor when a closing of the service was left out for another error, such as a constraint violation ([AWT126](#awt126)). A closed decorator without a registration is [AWT123](#awt123), and a key no closing has is [AWT210](#awt210) or [AWT212](#awt212). This is an analyzer diagnostic, so it can be suppressed at the attribute with `#pragma warning disable AWT249` or `[SuppressMessage]`.
+It is not reported for an open decorator or composite that a module or an extended base declares, since the containers that import or extend them register the closings, nor when a closing of the service was left out for another error, such as a constraint violation ([AWT126](#awt126)). A closed decorator without a registration is [AWT123](#awt123), and a key no closing has is [AWT210](#awt210) or [AWT212](#awt212). It is reported at the attribute, so you can suppress it there with `#pragma warning disable AWT249` or `[SuppressMessage]`.
 
 **Fix:** Register or consume a closing, or correct the service type. On a base container meant only for extension, suppress the warning at the attribute:
 
@@ -1652,7 +1656,7 @@ A type that a module or base of another assembly builds through its [generated f
 ### AWT179
 
 :::warning[Warning]
-Two `[InjectProperty]` entries name the same property of the same implementation, both closed or both open-generic. The property is filled once; the duplicate is ignored. A closed entry and an open-generic `typeof` entry that meet on one closing are reported only when the closed entry repeats the open entry's `Key`, `Optional` and `Deferred`: the closed entry wins on its closing either way, so one that changes an option is a deliberate [specialization of that closing](./05-resolution/05-property-injection.md#open-generics-with-the-typeof-form) and is not reported. This is an analyzer diagnostic, so a deliberate duplicate can be suppressed in source with `#pragma warning disable AWT179` or `[SuppressMessage]`.
+Two `[InjectProperty]` entries name the same property of the same implementation, both closed or both open-generic. The property is filled once; the duplicate is ignored. A closed entry and an open-generic `typeof` entry that meet on one closing are reported only when the closed entry repeats the open entry's `Key`, `Optional` and `Deferred`: the closed entry wins on its closing either way, so one that changes an option is a deliberate [specialization of that closing](./05-resolution/05-property-injection.md#open-generics-with-the-typeof-form) and is not reported. A deliberate duplicate can be suppressed at the ignored entry with `#pragma warning disable AWT179` or with `[SuppressMessage]`.
 :::
 
 ```csharp expect=AWT179
@@ -3180,14 +3184,14 @@ This reports a bug in Awaiten itself, not a mistake in your wiring.
 ### AWT255
 
 :::danger[Error]
-Awaiten cannot generate the wiring of a container that reports no other error: a dependency resolves to no registration of the graph Awaiten built, or generating the code threw an exception, which the message names. This indicates a bug in Awaiten. The container keeps only a placeholder `Root` whose members throw, so the build fails at the container instead of passing without it.
+Awaiten cannot generate the wiring of a container that reports no other error: a dependency resolves to no registration of the graph Awaiten built, or generating the code threw an exception, which the message names. This indicates a bug in Awaiten. The container keeps only a placeholder `Root` whose members throw, so the build fails at the container instead of passing without it. It cannot be configured: neither `.editorconfig`, `<NoWarn>` nor `#pragma warning disable` lowers or suppresses it, so the bug never turns into a build that passes with a container that throws.
 :::
 
 **Fix:** Please [report it](https://github.com/awaiten-dev/Awaiten/issues) with the message, the container's registrations and the modules or base container it imports or extends.
 
 ## Composition boundary
 
-These guard the line between your domain and the container. They are suppressible warnings, reported by the analyzer rather than the generator, so a deliberate exception can opt out in source.
+These guard the line between your domain and the container. They are warnings, so a deliberate exception can opt out in source.
 
 ### AWT134
 
@@ -3220,7 +3224,7 @@ public sealed class Barista(IAwaitenResolver resolver)   // locates dependencies
 
 Dispatching by a type known only at run time, like a mediator looking up the handler for `message.GetType()`, needs no resolver either: inject a [dispatch dictionary](./05-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type).
 
-One kind of type is meant to hold a resolver: an adapter that bridges the container to a host's own dependency-injection surface, where holding it *is* the adaptation rather than a hidden run-time dependency. `AwaitenServiceProvider` is one, and anything you write against a framework's own registrar is another. This is an analyzer diagnostic, so suppress it in source, with the justification saying which adapter it is.
+One kind of type is meant to hold a resolver: an adapter that bridges the container to a host's own dependency-injection surface, where holding it *is* the adaptation rather than a hidden run-time dependency. `AwaitenServiceProvider` is one, and anything you write against a framework's own registrar is another. Suppress the warning there, with the justification saying which adapter it is.
 
 Below, `IServiceLocator` stands for whatever single-method resolution interface your framework declares, where returning `null` is how an adapter says "not mine". Both answers that are not a plain instance carry their weight: the [collection convention](./07-hosting/01-msdi-bridge.md#feature-detection) every framework expects, and the withheld reason that keeps a container's own failure from being reported as absence.
 

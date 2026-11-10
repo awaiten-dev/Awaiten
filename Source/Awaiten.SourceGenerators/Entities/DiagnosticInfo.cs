@@ -36,9 +36,7 @@ internal sealed record DiagnosticInfo(
 			return Create(Microsoft.CodeAnalysis.Location.None);
 		}
 
-		SyntaxTree? tree = compilation.SyntaxTrees.FirstOrDefault(candidate => candidate.FilePath == source.FilePath
-		                                                                       && source.TextSpan.End <= candidate.Length
-		                                                                       && candidate.GetLineSpan(source.TextSpan, cancellationToken).Span == source.LineSpan);
+		SyntaxTree? tree = source.TreeIn(compilation, cancellationToken);
 		return Create(tree is null ? source.ToLocation() : Microsoft.CodeAnalysis.Location.Create(tree, source.TextSpan));
 	}
 

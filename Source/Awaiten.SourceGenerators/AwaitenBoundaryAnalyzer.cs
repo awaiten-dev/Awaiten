@@ -21,9 +21,11 @@ namespace Awaiten.SourceGenerators;
 ///     <c>Owned&lt;T&gt;</c> handle that only the container should create.
 /// </summary>
 /// <remarks>
-///     All three are analyzer (rather than generator) diagnostics so they can be suppressed in source with
-///     <c>#pragma warning disable</c> or <c>[SuppressMessage]</c> (a legitimate seam such as the MS.DI bridge
-///     adapter does exactly that), or turned into errors per project through editorconfig. AWT134 is a
+///     All three are analyzer (rather than generator) diagnostics because they look at user code outside the composition
+///     root: the members of any type, an attribute in an assembly without a container and a constructor call, which
+///     the generator, reading only the containers and modules, does not walk. Like every Awaiten diagnostic, they can
+///     be suppressed in source with <c>#pragma warning disable</c> or <c>[SuppressMessage]</c> (a legitimate seam such
+///     as the MS.DI bridge adapter does exactly that), or turned into errors through editorconfig. AWT134 is a
 ///     best-effort boundary lint: it fires only in an assembly that declares no <c>[Container]</c>, so it stays
 ///     silent for a single-project app that mixes the root and its domain in one assembly (the cross-assembly
 ///     boundary is better enforced by an architecture test). AWT135 fires in every assembly, because a service

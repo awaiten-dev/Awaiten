@@ -2920,6 +2920,76 @@ public class ModuleHiddenServiceTests
 		}
 
 		[Test]
+		[Arguments("#pragma warning disable AWT216\n")]
+		[Arguments("#pragma warning disable AWT101, AWT216 // deliberate\n")]
+		[Arguments("#pragma warning disable\n")]
+		[Arguments("#pragma warning disable AWT216\n#pragma warning restore AWT101\n")]
+		[Arguments("#pragma warning disable AWT216\n#if NEVER\n#pragma warning restore AWT216\n#endif\n")]
+		[Arguments("#pragma warning restore\n#pragma warning disable AWT216\n")]
+		public async Task RegisteredType_DisabledByAPragma_LeavesTheContainerInTheModulesAssemblyNoShell(string pragma)
+		{
+			GeneratorResult result = Generator.Run(pragma + RegisteredTypeLibrary + Container);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"]).DoesNotContain("has registration errors")
+				.Because("the pragma suppresses the error where it is reported, so the build passes and a shell would throw only at run time");
+		}
+
+		[Test]
+		[Arguments("#pragma warning disable AWT216\n#pragma warning restore AWT216\n")]
+		[Arguments("#pragma warning disable\n#pragma warning restore\n")]
+		[Arguments("#pragma warning disable AWT216\n#pragma warning restore\n")]
+		[Arguments("#pragma warning disable\n#pragma warning restore AWT216\n")]
+		[Arguments("#pragma warning disable AWT101, AWT2160\n")]
+		[Arguments("#pragma warning disable awt216\n")]
+		[Arguments("#if NEVER\n#pragma warning disable AWT216\n#endif\n")]
+		public async Task RegisteredType_NotDisabledByAPragma_LeavesTheContainerInTheModulesAssemblyAShell(string pragma)
+		{
+			GeneratorResult result = Generator.Run(pragma + RegisteredTypeLibrary + Container);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT216*").AsWildcard();
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains("has registration errors")
+				.Because("no pragma disables the error where it is reported, so it still fails the build");
+		}
+
+		[Test]
+		public async Task RegisteredType_DisabledByAPragmaAfterTheError_LeavesTheContainerInTheModulesAssemblyAShell()
+		{
+			GeneratorResult result = Generator.Run(RegisteredTypeLibrary + Container + "\n#pragma warning disable AWT216\n");
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT216*").AsWildcard();
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains("has registration errors")
+				.Because("a pragma applies only to the lines after it");
+		}
+
+		[Test]
+		public async Task RegisteredType_DisabledByAPragmaInAnotherFile_LeavesTheContainerInTheModulesAssemblyAShell()
+		{
+			GeneratorResult result = Generator.Run(
+				new Dictionary<string, string> { ["Module.cs"] = RegisteredTypeLibrary, ["Container.cs"] = "#pragma warning disable AWT216\nusing Awaiten;\n\nnamespace Lib;\n\n" + Container, },
+				"");
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("/src/Module.cs(*): error AWT216:*").AsWildcard();
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"]).Contains("has registration errors")
+				.Because("a pragma applies only to its own file, so the error in the module's file still fails the build");
+		}
+
+		[Test]
+		public async Task RegisteredType_DisabledByAPragmaInTheModulesFile_LeavesTheContainerInAnotherFileNoShell()
+		{
+			GeneratorResult result = Generator.Run(
+				new Dictionary<string, string> { ["Module.cs"] = "#pragma warning disable AWT216\n" + RegisteredTypeLibrary, ["Container.cs"] = "using Awaiten;\n\nnamespace Lib;\n\n" + Container, },
+				"");
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.Lib.MyContainer.g.cs"]).DoesNotContain("has registration errors")
+				.Because("the pragma in the module's file suppresses the error where it is reported");
+		}
+
+		private static string RegisteredTypeLibrary => Library("Singleton<CoffeeModule.Impl, IKettle>(Factory = nameof(Make))", "private static Impl Make() => new Impl();")
+			.Replace("[Singleton<User, IUser>]", "");
+
+		[Test]
 		public async Task Parameter_IsReportedInTheLibraryBuildWhetherOrNotItGrantsInternalsVisibleTo()
 		{
 			const string registration = "Singleton<IKettle>(Factory = nameof(Make))";

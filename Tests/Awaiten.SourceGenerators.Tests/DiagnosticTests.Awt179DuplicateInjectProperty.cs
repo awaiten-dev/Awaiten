@@ -5,8 +5,7 @@ namespace Awaiten.SourceGenerators.Tests;
 public partial class DiagnosticTests
 {
 	/// <summary>
-	///     AWT179 is reported by <see cref="AwaitenAnalyzer" /> rather than the generator, so it can be suppressed in
-	///     source; these tests drive the analyzer.
+	///     AWT179 is reported by <see cref="AwaitenAnalyzer" /> rather than the generator, so these tests drive the analyzer.
 	/// </summary>
 	public class Awt179DuplicateInjectProperty
 	{
@@ -134,7 +133,7 @@ public partial class DiagnosticTests
 			string[] reports = await Awt179Reports(source);
 
 			await That(reports).IsEmpty()
-				.Because("an analyzer diagnostic carries a source location, so #pragma warning disable silences it");
+				.Because("the diagnostic carries a source location, so #pragma warning disable silences it");
 		}
 
 		[Test]
@@ -149,7 +148,7 @@ public partial class DiagnosticTests
 			string[] reports = await Awt179Reports(source);
 
 			await That(reports).IsEmpty()
-				.Because("an analyzer diagnostic carries a source location, so [SuppressMessage] on the container silences it");
+				.Because("the diagnostic carries a source location, so [SuppressMessage] on the container silences it");
 		}
 
 		private static async Task<string[]> Awt179Reports(string source)

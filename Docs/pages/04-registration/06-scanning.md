@@ -129,6 +129,8 @@ If you build with `TreatWarningsAsErrors` and the skips are intended, keep AWT14
 </PropertyGroup>
 ```
 
+To lower it for one file only, set `dotnet_diagnostic.AWT141.severity = suggestion` in an `.editorconfig` section for that file. To silence it at one scan, put `#pragma warning disable AWT141` before the `[Scan]` and `#pragma warning restore AWT141` after it.
+
 ## Scan without a marker
 
 Some conventions have no shared marker at all: every `Foo` has its own `IFoo` and nothing else in common. The parameterless `[Scan]` matches every concrete type instead of a marker, narrowed by the same filters.

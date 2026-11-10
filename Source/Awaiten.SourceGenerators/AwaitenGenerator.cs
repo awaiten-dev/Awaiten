@@ -340,10 +340,13 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	/// <summary>
 	///     Whether <paramref name="diagnostic" />, an error by default, still fails the build of
 	///     <paramref name="compilation" /> once the severity the user sets for its id applies: in an <c>.editorconfig</c> or
-	///     global config, or through <c>NoWarn</c> and <c>WarningsAsErrors</c>. A warning fails it under
-	///     <c>TreatWarningsAsErrors</c>.
+	///     global config, or through <c>NoWarn</c> and <c>WarningsAsErrors</c>, and unless a <c>#pragma warning disable</c>
+	///     suppresses it where it is reported. A warning fails it under <c>TreatWarningsAsErrors</c>.
 	/// </summary>
-	private static bool FailsBuild(DiagnosticInfo diagnostic, Compilation compilation)
+	/// <remarks>
+	///     A <c>[SuppressMessage]</c> is not taken into account: the build passes, but the container keeps only its shell.
+	/// </remarks>
+	private static bool FailsBuild(DiagnosticInfo diagnostic, Compilation compilation, CancellationToken cancellationToken)
 	{
 		if (diagnostic.EffectiveSeverity != DiagnosticSeverity.Error)
 		{
@@ -352,17 +355,53 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		CompilationOptions options = compilation.Options;
 		string id = diagnostic.Descriptor.Id;
-		SyntaxTree? tree = diagnostic.Location is { } location ? compilation.SyntaxTrees.FirstOrDefault(candidate => candidate.FilePath == location.FilePath) : null;
+		SyntaxTree? tree = diagnostic.Location?.TreeIn(compilation, cancellationToken);
 		ReportDiagnostic report = ReportDiagnostic.Default;
-		_ = (tree is not null && options.SyntaxTreeOptionsProvider?.TryGetDiagnosticValue(tree, id, CancellationToken.None, out report) == true)
-		    || options.SyntaxTreeOptionsProvider?.TryGetGlobalDiagnosticValue(id, CancellationToken.None, out report) == true
+		_ = (tree is not null && options.SyntaxTreeOptionsProvider?.TryGetDiagnosticValue(tree, id, cancellationToken, out report) == true)
+		    || options.SyntaxTreeOptionsProvider?.TryGetGlobalDiagnosticValue(id, cancellationToken, out report) == true
 		    || options.SpecificDiagnosticOptions.TryGetValue(id, out report);
-		return report switch
+		bool fails = report switch
 		{
 			ReportDiagnostic.Default or ReportDiagnostic.Error => true,
 			ReportDiagnostic.Warn => options.GeneralDiagnosticOption == ReportDiagnostic.Error,
 			_ => false,
 		};
+		return fails && !(tree is not null && DisabledByPragma(tree, id, diagnostic.Location!.TextSpan.Start, cancellationToken));
+	}
+
+	/// <summary>
+	///     Whether the <c>#pragma warning</c> directives of <paramref name="tree" /> before <paramref name="position" /> disable
+	///     <paramref name="id" /> there, as the compiler reads them: the last <c>disable</c> or <c>restore</c> that names the id,
+	///     or names no id and so applies to all, decides. Roslyn exposes no API for this state.
+	/// </summary>
+	private static bool DisabledByPragma(SyntaxTree tree, string id, int position, CancellationToken cancellationToken)
+	{
+		SyntaxNode root = tree.GetRoot(cancellationToken);
+		if (!root.ContainsDirectives)
+		{
+			return false;
+		}
+
+		bool disabled = false;
+		foreach (SyntaxTrivia trivia in root.DescendantTrivia())
+		{
+			if (trivia.Span.End > position)
+			{
+				break;
+			}
+
+			if (trivia.GetStructure() is not PragmaWarningDirectiveTriviaSyntax { IsActive: true, } pragma)
+			{
+				continue;
+			}
+
+			if (pragma.ErrorCodes.Count == 0 || pragma.ErrorCodes.Any(code => code is IdentifierNameSyntax name && name.Identifier.ValueText == id))
+			{
+				disabled = pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword);
+			}
+		}
+
+		return disabled;
 	}
 
 	/// <summary>
@@ -609,7 +648,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				List<DiagnosticInfo> moduleDiagnostics = new();
 				ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
 				ReportPrivateMembersWithoutWrapper(module, compilation, moduleDiagnostics);
-				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation));
+				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation, cancellationToken));
 			});
 
 		ContainerModel model = new(

@@ -310,7 +310,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			Analyses analyses = await AnalyzeEverywhere(Module, clock: true);
 
 			await That(containers.AllDiagnostics).IsEmpty()
-				.Because("the analyzer reports the warning, so it can be suppressed in source");
+				.Because("the analyzer reports the warning, so the generator does not report it a second time");
 			await That(analyses.Same).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"));
 			await That(analyses.Other).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT158"))
 				.Because("a container in another assembly warns about the init-only optional property like one that sees it");
