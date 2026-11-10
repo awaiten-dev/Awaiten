@@ -896,7 +896,9 @@ partial class AwaitenGenerator
 			}
 			else
 			{
-				ReportNotSelfCompiled(context, origin, implementation, "factory", reason, $"change the module so its [Scan] can generate a factory for '{Display(implementation.ToDisplayString(FullyQualified))}'");
+				ReportNotSelfCompiled(context, origin, implementation, "factory", reason, reason.StartsWith(SeveralExposuresPrefix, StringComparison.Ordinal)
+					? ScanSingleExposureRemedy
+					: $"change the module so its [Scan] can generate a factory for '{Display(implementation.ToDisplayString(FullyQualified))}'");
 			}
 
 			return true;
