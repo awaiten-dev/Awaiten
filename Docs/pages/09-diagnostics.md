@@ -1001,7 +1001,7 @@ public sealed class LoggingTerminal : IPaymentTerminal;   // no IPaymentTerminal
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Give the decorator a constructor parameter that accepts the decorated service, which receives the inner instance: `LoggingTerminal(IPaymentTerminal inner)`. The parameter can also be of a type the service converts to, such as a base interface. When several parameters accept the service, the most derived one receives the inner instance, so take the service in one parameter only or make that one the most derived.
+**Fix:** Give the decorator a constructor parameter that accepts the decorated service, which receives the inner instance: `LoggingTerminal(IPaymentTerminal inner)`. The parameter can also be of a type the service converts to, such as a base interface; a `[FromKey]` parameter does not count. When several parameters accept the service, the one whose type converts to the types of all the others receives the inner instance, so take the service in one parameter only or make one of them more derived than all the others.
 
 ### AWT130
 
