@@ -763,6 +763,83 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     AWT257 for each collection a built instance takes that a registration served through the alias of a generated
+	///     handle would join, had the container been able to read the handle: an alias of a module registration (see
+	///     <see cref="ThroughHandle" />) whose service the alias type replaced, of the element type under the collection's
+	///     key, or unkeyed of a service an unkeyed collection holds through variance, and that is no <c>WhenInjectedInto</c>
+	///     registration. A container that can read the handle registers the service itself, so the collection would hold it.
+	///     Reported at the import of the module, or else at the dependency.
+	/// </summary>
+	private static void ReportCollectionsMissingHandledRegistrations(
+		List<RawRegistration> raw,
+		List<InstanceModel> instances,
+		List<LocationInfo?> instanceLocations,
+		Dictionary<string, int> implToIndex,
+		VarianceState variance,
+		List<ImportedModule> modules,
+		List<DiagnosticInfo> diagnostics)
+	{
+		List<RawRegistration> held = raw
+			.Where(registration => registration.Aliased is { ServiceSymbol: not null, WhenInjectedInto: null, } aliased
+			                       && registration.ServiceType != aliased.ServiceType
+			                       && implToIndex.ContainsKey(registration.ImplementationType))
+			.ToList();
+		if (held.Count == 0)
+		{
+			return;
+		}
+
+		HashSet<DiagnosticInfo> reported = new();
+		for (int i = 0; i < instances.Count; i++)
+		{
+			InstanceModel instance = instances[i];
+			foreach (ParameterModel dependency in instance.ConstructorParameters.AsArray()
+				         .Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+				         .Concat(instance.HookParameters()))
+			{
+				bool keyed = dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection;
+				if (!keyed && dependency.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable))
+				{
+					continue;
+				}
+
+				INamedTypeSymbol? element = keyed || dependency.Key is not null
+					? null
+					: variance.CollectionElements.FirstOrDefault(requested => requested.ServiceType == dependency.ServiceType).Symbol;
+				foreach (RawRegistration registration in held)
+				{
+					RawRegistration aliased = registration.Aliased!;
+					bool member = keyed
+						? aliased.Key is not null && aliased.ServiceType == dependency.ServiceType
+						: aliased.Key == dependency.Key
+						  && (aliased.ServiceType == dependency.ServiceType
+						      || (element is { TypeKind: TypeKind.Interface, } && aliased.Key is null && VarianceCompatible(aliased.ServiceSymbol!, element, variance.Compilation)));
+					if (!member)
+					{
+						continue;
+					}
+
+					INamedTypeSymbol module = registration.Origin!;
+					DiagnosticInfo diagnostic = new(
+						Diagnostics.CollectionMissesHandledRegistration,
+						LocationInfo.From(modules.FirstOrDefault(import => SymbolEqualityComparer.Default.Equals(import.Symbol, module))?.ImportLocation) ?? dependency.Location ?? instanceLocations[i],
+						new EquatableArray<string>([
+							DisplayInstance(instance.ImplementationType),
+							DisplayKeyed(dependency.ServiceType, dependency.Key),
+							Display(aliased.Implementation.ToDisplayString(FullyQualified)),
+							Display(module.ToDisplayString(FullyQualified)),
+							Display(aliased.ServiceType),
+						]));
+					if (reported.Add(diagnostic))
+					{
+						diagnostics.Add(diagnostic);
+					}
+				}
+			}
+		}
+	}
+
+	/// <summary>
 	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers
 	///     <paramref name="implementation" /> other than through a member that names only its service, or scans it, so a
 	///     container of that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).

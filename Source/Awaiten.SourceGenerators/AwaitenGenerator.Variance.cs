@@ -58,15 +58,15 @@ partial class AwaitenGenerator
 	///     members can later be unioned with every variance-compatible registration (a collection of
 	///     <c>IHandler&lt;OrderPlaced&gt;</c> includes a registered <c>IHandler&lt;DomainEvent&gt;</c>). All shapes
 	///     (sync, async, awaited) share one membership per (element type, key). Keyed collections are left untouched,
-	///     since every variance candidate is unkeyed.
+	///     since every variance candidate is unkeyed. Recorded without candidates too, since a registration served through a
+	///     generated handle is none but still joins the collection through variance in its module's assembly (AWT257).
 	/// </summary>
 	private static void RecordRequestedCollectionElement(
 		ParameterModel parameterModel,
 		ITypeSymbol declaredType,
 		VarianceState variance)
 	{
-		if (variance.Candidates.Count == 0
-		    || parameterModel.Key is not null
+		if (parameterModel.Key is not null
 		    || parameterModel.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable)
 		    || CollectionElementSymbol(declaredType) is not { } element
 		    || !variance.CollectionSeen.Add(parameterModel.ServiceType))
@@ -366,7 +366,7 @@ partial class AwaitenGenerator
 	///     unkeyed closed-generic-interface registration, from coalescing), the compilation (whose conversion
 	///     classification decides variance compatibility), and the accumulators the redirect fills (the top-level
 	///     dispatch aliases (Part B) and the requested collection elements (Part C)), drained after the instance
-	///     loop. Empty <see cref="Candidates" /> short-circuits every variance step.
+	///     loop. Empty <see cref="Candidates" /> short-circuits every variance step but the recording of the collection elements.
 	/// </summary>
 	private sealed class VarianceState
 	{

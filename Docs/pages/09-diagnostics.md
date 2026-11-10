@@ -2629,9 +2629,9 @@ internal sealed class Grinder(Task<BeanStore> beans) : IGrinder;   // Task<T> of
 public static partial class CoffeeModule;
 ```
 
-The factory takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
+The factory takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. An unkeyed collection of a variant interface, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, holds every registration of a service that converts to its element type, so the factory takes it through the handle of the one internal service of the module's assembly it holds, such as `IHandler<Message>`. A collection that would hold the registrations of several internal services, such as `IHandler<Order>` and `IHandler<Message>`, is reported too, since one parameter takes the handles of one service. A decorator or composite that takes such a collection gets no factory instead, so a container in another assembly reports [AWT230](#awt230). Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
 
-**Fix:** Take the internal service in one of the supported shapes, or make the service public.
+**Fix:** Take the internal service in one of the supported shapes, or make the service public. For a collection of several services, take a collection of each service, or make the element type public.
 
 ### AWT238
 
@@ -2776,6 +2776,42 @@ public static partial class CoffeeShop;
 ```
 
 **Fix:** Make the element type public, so the module's factory takes the collection from the container instead of passing it empty. Or grant the container's assembly `InternalsVisibleTo` in both libraries, so the container builds the decorator or composite itself and passes every registration of the element type.
+
+### AWT257
+
+:::danger[Error]
+A collection the container builds itself would miss a registration that an imported module of another assembly serves only through a generated handle the container can't read.
+:::
+
+A module registers a service that is internal to another assembly through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), when its own assembly grants the container no `InternalsVisibleTo`. The container serves the registration through that handle, so it never registers it under the service itself. A container that can name the service anyway, because the service's assembly grants it `InternalsVisibleTo`, builds a collection of the service, such as the one of a decorator of that assembly, from its own registrations, and the collection would lack the module's registration. A container that both assemblies grant `InternalsVisibleTo`, or one in the module's assembly, passes it. So the container reports this error at the `[Import]` of the module that registers the element. A registration counts whenever the collection would hold it: one under the collection's key, a keyed one for a keyed dictionary, and an unkeyed one of a variant service. A `WhenInjectedInto` registration doesn't count.
+
+```csharp no-compile
+// In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras and the application InternalsVisibleTo:
+internal interface IFlavor;
+internal sealed class FlavoredBrewer(IBrewer inner, IEnumerable<IFlavor> flavors) : IBrewer;
+
+[Module]
+[Singleton<DripBrewer, IBrewer>]
+[Decorate<FlavoredBrewer, IBrewer>]
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Extras, which grants the application nothing:
+public sealed class Vanilla : IFlavor;
+
+[Module]
+[Singleton<Vanilla, IFlavor>]   // served through a handle, since IFlavor is internal to CoffeeShop.Brewing
+public static partial class ExtrasModule;
+
+// In the application:
+[Container]
+[Import(typeof(BrewingModule))]
+[Import(typeof(ExtrasModule))]   // FlavoredBrewer would get no Vanilla here
+public static partial class CoffeeShop;
+```
+
+When the decorator's assembly grants the container nothing either, the container calls the module's factory, and the collection it passes empty is reported as [AWT252](#awt252) instead.
+
+**Fix:** Grant the container's assembly `InternalsVisibleTo` in the library that registers the element, so the container registers it under the service itself. Or make the service public, so the library registers it without a handle.
 
 ### AWT253
 
@@ -3145,6 +3181,25 @@ public static partial class CoffeeShop;
 It is not reported when a variance match or a registered closing of an open import gives the collection a member. A warning, not an error, because an empty collection still works. It is reported at the parameter or property that takes the collection, so where an empty collection is intended, suppress it there with `#pragma warning disable AWT250`.
 
 **Fix:** Depend on the imported service directly (`Checkout(IPaymentGateway gateway)`) to receive the host's instance. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
+
+### AWT258
+
+:::danger[Error]
+An `[ImportService]` names a collection shape: `IEnumerable<T>`, `T[]`, `IReadOnlyList<T>`, `IReadOnlyCollection<T>`, `IList<T>`, `ICollection<T>`, `IAsyncEnumerable<T>`, a keyed dictionary such as `IReadOnlyDictionary<string, T>`, or a `Task` of one. The container always builds a collection from its own registrations, so the external resolver is never asked for it.
+:::
+
+```csharp expect=AWT258
+public sealed class Checkout(IEnumerable<IPaymentGateway> gateways);
+
+[Container]
+[ImportService<IEnumerable<IPaymentGateway>>]   // a collection is never routed to the host
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+It is reported at the `[ImportService]`, for the `typeof` form and an unbound collection definition such as `typeof(IEnumerable<>)` too. An import that a module declares is reported at the module's attribute, or at the container's `[Import]` when the module is in another assembly. A container that extends a base leaves the base's imports to the base. A dependency on the collection resolves the container's own collection and is not reported again. A collection of an imported element type is still reported as [AWT250](#awt250).
+
+**Fix:** Import the element type (`[ImportService<IPaymentGateway>]`) and depend on it directly, or register the members of the collection. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
 
 ## Project setup
 
