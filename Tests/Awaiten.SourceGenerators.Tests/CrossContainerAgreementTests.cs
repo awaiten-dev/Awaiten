@@ -431,6 +431,70 @@ public class CrossContainerAgreementTests
 		}
 
 		[Test]
+		public async Task SharedThroughAnInstanceHandleAndImportedAlone_NamesTheOtherModuleAsTheReason()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface IKettle { }\ninternal sealed class Kettle : IKettle { }")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "[Inject] internal IClock Clock { get; set; } = null!;\n    public IClock Backup { get; set; } = null!;")
+				.Replace("public static partial class CoffeeModule", "[Singleton<Kettle, IKettle>]\npublic static partial class CoffeeModule");
+			string consumer = Consumer
+				.Replace("[Import(typeof(OtherModule))]", string.Empty)
+				.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(external.Diagnostics).HasSingle().Which.EndsWith("error AWT178: 'Lib.Greeter' is built by the generated factory of 'Lib.CoffeeModule' because the module 'Lib.OtherModule' of its assembly registers it too, and the modules share one instance of it through a generated handle, so its property 'Backup' cannot be filled by [InjectProperty], which applies only to a container-constructed instance; grant this assembly InternalsVisibleTo in the assembly of 'Lib.CoffeeModule', so the container constructs 'Lib.Greeter' itself")
+				.Because("the container imports only the one module, so the reason names the other module that makes its assembly share the instance");
+		}
+
+		[Test]
+		public async Task RegisteredUnderSeveralPublicServicesAndSharedWithAnotherModule_NamesTheOtherModuleAsTheReason()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface ISecret { }")
+				.Replace("public sealed class Greeter : IGreeter, IOther", "public sealed class Greeter : IGreeter, IOther, ISecret")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "[Inject] internal IClock Clock { get; set; } = null!;\n    public IClock Backup { get; set; } = null!;")
+				.Replace("[Singleton<Greeter, IOther>]", "[Singleton<Greeter, ISecret>]")
+				.Replace("[Singleton<Greeter, IGreeter>]", "[Singleton<Greeter, IGreeter>]\n[Singleton<Greeter, IOther>]");
+			string consumer = Consumer
+				.Replace("[Import(typeof(OtherModule))]", string.Empty)
+				.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(external.Diagnostics).HasSingle().Which.Contains("because the module 'Lib.OtherModule' of its assembly registers it too, and the modules share one instance of it through a generated handle")
+				.Because("a factory returning the public implementation would serve both services, so the module builds it into a handle only because the other module registers it under an internal service");
+		}
+
+		[Test]
+		public async Task ProducedThroughAMemberAndSharedWithAnotherModule_IsAFactoryProducedTypeInEveryContainer()
+		{
+			string library = Library()
+				.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface ISecret { }")
+				.Replace("public sealed class Greeter : IGreeter, IOther", "public sealed class Greeter : IGreeter, IOther, ISecret")
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "public IClock Backup { get; set; } = null!;")
+				.Replace("[Singleton<Greeter, IOther>]", "[Singleton<Greeter, ISecret>]")
+				.Replace("[Singleton<Greeter, IGreeter>]", "[Singleton<Greeter, IGreeter>(Factory = nameof(Make))]")
+				.Replace("public static partial class CoffeeModule { }", "public static partial class CoffeeModule { public static Greeter Make() => new(); }");
+			const string expected = "error AWT178: 'Lib.Greeter' is produced by a Factory or Instance registration, so its property 'Backup' cannot be filled by [InjectProperty]; property injection applies only to a container-constructed instance";
+
+			GeneratorResult same = Generator.Run(library + """
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[InjectProperty<Greeter>(nameof(Greeter.Backup))]
+				public static partial class SameContainer;
+				""");
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer
+				.Replace("[Import(typeof(OtherModule))]", string.Empty)
+				.Replace("public static partial class MyContainer;", "[InjectProperty<Greeter>(nameof(Greeter.Backup))]\npublic static partial class MyContainer;"));
+
+			await That(same.Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(external.Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module's member builds the instance whole in every assembly, so neither the handle nor an InternalsVisibleTo grant is the reason");
+		}
+
+		[Test]
 		public async Task HandledForAnInternalServiceOfOneModule_NamesThatServiceAsTheReason()
 		{
 			string library = Library()

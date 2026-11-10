@@ -111,7 +111,7 @@ partial class AwaitenGenerator
 
 			// A [FromKey] and a decorator's inner redirect already carry a key, so both take precedence; the
 			// redirect also keeps the parameter off the [ImportServices] fall-through below.
-			parameterModel = RedirectContextualBinding(parameterModel, info, context.ServiceToImpl, context.ConsumedConditionals);
+			parameterModel = RedirectContextualBinding(parameterModel, info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation);
 
 			parameterModel = SuppressRegisteredCollectionSynthesis(parameterModel, parameter.Type, context.ServiceToImpl);
 			parameterModel = ResolveTypeDispatch(parameterModel, parameter.Type, info, context.DispatchCandidates, context.Diagnostics);
@@ -221,7 +221,7 @@ partial class AwaitenGenerator
 		    || IsSynthesizedCollection(parameterModel.Kind)
 		    || context.ServiceToImpl.ContainsKey(KeyOf(parameterModel))
 		    || context.ConstraintRejected.Contains(parameterModel.ServiceType)
-		    || ReportDeferredRejection(parameterModel, info, context.DeferredRejections, context.Diagnostics))
+		    || ReportDeferredRejection(parameterModel, info, context.DeferredRejections, context.Diagnostics, context.Compilation))
 		{
 			return;
 		}
@@ -352,9 +352,10 @@ partial class AwaitenGenerator
 		ParameterModel dependency,
 		ImplInfo info,
 		Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections,
-		List<DiagnosticInfo> diagnostics)
+		List<DiagnosticInfo> diagnostics,
+		Compilation compilation)
 	{
-		if (!(dependency.Key is null && deferredRejections.TryGetValue(new ServiceKey(dependency.ServiceType, ContextKey(RegisteredType(info.ImplementationType))), out List<DiagnosticInfo>? deferred))
+		if (!(dependency.Key is null && deferredRejections.TryGetValue(new ServiceKey(dependency.ServiceType, ContextKey(ContextConsumer(info, compilation))), out List<DiagnosticInfo>? deferred))
 		    && !deferredRejections.TryGetValue(KeyOf(dependency), out deferred))
 		{
 			return false;
@@ -623,7 +624,7 @@ partial class AwaitenGenerator
 
 		ReportUnsupportedFromKey(property.GetAttributes(), location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
-		dependency = RedirectContextualBinding(dependency, info, context.ServiceToImpl, context.ConsumedConditionals);
+		dependency = RedirectContextualBinding(dependency, info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation);
 
 		// A collection member is always filled (an unregistered collection yields an empty one), so it is never
 		// omitted from the object initializer: Optional has no effect on it, and neither the Optional shape rules
@@ -672,7 +673,7 @@ partial class AwaitenGenerator
 		    && dependency.Kind != DependencyKind.External
 		    && !context.ServiceToImpl.ContainsKey(KeyOf(dependency))
 		    && !context.ConstraintRejected.Contains(dependency.ServiceType)
-		    && !ReportDeferredRejection(dependency, info, context.DeferredRejections, context.Diagnostics))
+		    && !ReportDeferredRejection(dependency, info, context.DeferredRejections, context.Diagnostics, context.Compilation))
 		{
 			// An optional member with a merely missing registration is dropped so the property is left at its
 			// default. Dropping it (rather than yielding a member) also keeps the absent edge out of cycle, captive
@@ -1028,20 +1029,22 @@ partial class AwaitenGenerator
 	///     Redirects an unkeyed direct dependency to the synthetic context key of a <c>WhenInjectedInto</c>
 	///     registration that targets this consumer, so the consumer resolves the contextual implementation while
 	///     every other resolution keeps the unconditional one. Consuming the key marks the binding applied (else
-	///     AWT167). Shared by the constructor-parameter and <c>[Inject]</c>-property paths.
+	///     AWT167). Shared by the constructor-parameter, hook-parameter, <c>[Inject]</c>-property and generated
+	///     deferred-setter paths.
 	/// </summary>
 	private static ParameterModel RedirectContextualBinding(
 		ParameterModel model,
 		ImplInfo info,
 		Dictionary<ServiceKey, string> serviceToImpl,
-		HashSet<ServiceKey> consumedConditionals)
+		HashSet<ServiceKey> consumedConditionals,
+		Compilation compilation)
 	{
 		if (model is not { Kind: DependencyKind.Direct, Key: null, })
 		{
 			return model;
 		}
 
-		ServiceKey contextKey = new(model.ServiceType, ContextKey(RegisteredType(info.ImplementationType)));
+		ServiceKey contextKey = new(model.ServiceType, ContextKey(ContextConsumer(info, compilation)));
 		if (!serviceToImpl.ContainsKey(contextKey))
 		{
 			return model;
@@ -1049,6 +1052,23 @@ partial class AwaitenGenerator
 
 		consumedConditionals.Add(contextKey);
 		return model with { Key = contextKey.Key, };
+	}
+
+	/// <summary>
+	///     The type a <c>WhenInjectedInto</c> consumer is matched against for the dependencies of <paramref name="info" />:
+	///     the implementation it builds, as a container in the module's own assembly names it, also when a module of
+	///     another assembly builds it through an instance handle or a scan factory, whose identities name the handle's
+	///     module or the scanned service instead.
+	/// </summary>
+	private static string ContextConsumer(ImplInfo info, Compilation compilation)
+	{
+		if (info.ScanImplementation is { } scanned)
+		{
+			return TypeIdentity(scanned, compilation);
+		}
+
+		int handle = info.ImplementationType.IndexOf(HiddenKeyMarker, StringComparison.Ordinal);
+		return RegisteredType(handle < 0 ? info.ImplementationType : info.ImplementationType.Substring(0, handle));
 	}
 
 	private static ServiceKey KeyOf(ParameterModel parameter) => new(parameter.ServiceType, parameter.Key);

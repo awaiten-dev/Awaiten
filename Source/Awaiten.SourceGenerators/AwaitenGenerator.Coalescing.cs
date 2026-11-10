@@ -690,6 +690,7 @@ partial class AwaitenGenerator
 			Unlisted = reg.Unlisted,
 			Hidden = reg.Hidden,
 			HiddenProduction = reg.HiddenProduction,
+			ScanImplementation = reg.ScanImplementation,
 		};
 		info.OnActivatedMarkers.AddRange(reg.OnActivatedMarkers ?? []);
 		info.OnReleaseMarkers.AddRange(reg.OnReleaseMarkers ?? []);
