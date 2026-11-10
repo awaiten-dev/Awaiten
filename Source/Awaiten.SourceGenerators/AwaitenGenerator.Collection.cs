@@ -1509,7 +1509,7 @@ partial class AwaitenGenerator
 					INamedTypeSymbol decorated = handle ?? service;
 					closed.Add(new DecorateRegistration(
 						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, handle is not null, when,
-						leftToModule && NoConstructorReceivesInner(decorator, service, compilation)));
+						leftToModule && ReportsMissingInner(module!, decorator, service, compilation)));
 				}
 			}
 			else if (attribute.ConstructorArguments.Length == 2

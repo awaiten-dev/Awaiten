@@ -960,13 +960,14 @@ partial class AwaitenGenerator
 	///     Reports, in the module's own build, the mistakes of its <c>[Decorate]</c> attributes that are wrong for every
 	///     importer: <c>Keys</c> together with <c>AllKeys</c> (AWT211), an empty <c>Keys</c> (AWT123), an unsupported key
 	///     type (AWT170) and a closed decorator none of whose constructors has a single inner parameter (AWT124, see
-	///     <see cref="NoConstructorReceivesInner" />). Returns whether it reported any, which the module records (see
-	///     <see cref="DecoratorMistakesMarkerName" />) so a container leaves them to the module (see
-	///     <see cref="ReportsOwnDecoratorMistakes" />).
+	///     <see cref="NoConstructorReceivesInner" />). Returns the full metadata names of the types the module emits to
+	///     record them, so a container leaves them to the module (see <see cref="ReportsOwnDecoratorMistakes" /> and
+	///     <see cref="ReportsMissingInner" />): the marker of the module when it reported any, and one per AWT124.
 	/// </summary>
-	private static bool ReportModuleDecoratorMistakes(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static List<string> ReportModuleDecoratorMistakes(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		int before = diagnostics.Count;
+		List<string> markers = new();
 		foreach (AttributeData attribute in module.GetAttributes())
 		{
 			if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
@@ -984,10 +985,20 @@ partial class AwaitenGenerator
 					Diagnostics.DecoratorMissingInnerParameter,
 					location,
 					new EquatableArray<string>([Display(decorator.ToDisplayString(FullyQualified)), Display(service.ToDisplayString(FullyQualified)),])));
+				string marker = MarkerMetadataName(module, MissingInnerMarkerName(module, decorator, service));
+				if (!markers.Contains(marker))
+				{
+					markers.Add(marker);
+				}
 			}
 		}
 
-		return diagnostics.Count > before;
+		if (diagnostics.Count > before)
+		{
+			markers.Insert(0, MarkerMetadataName(module, DecoratorMistakesMarkerName(module)));
+		}
+
+		return markers;
 	}
 
 	/// <summary>
@@ -1006,18 +1017,23 @@ partial class AwaitenGenerator
 	///     nothing, so its consumers still report them.
 	/// </summary>
 	private static bool ReportsOwnDecoratorMistakes(INamedTypeSymbol module, Compilation compilation)
-	{
-		if (SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
-		{
-			return true;
-		}
+		=> SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		   || module.ContainingAssembly.GetTypeByMetadataName(MarkerMetadataName(module, DecoratorMistakesMarkerName(module.OriginalDefinition))) is not null;
 
-		INamedTypeSymbol definition = module.OriginalDefinition;
-		string name = definition.ContainingNamespace is { IsGlobalNamespace: false, } ns
-			? $"{ns.ToDisplayString()}.{DecoratorMistakesMarkerName(definition)}"
-			: DecoratorMistakesMarkerName(definition);
-		return module.ContainingAssembly.GetTypeByMetadataName(name) is not null;
-	}
+	/// <summary>
+	///     Whether the build of <paramref name="module" /> reports AWT124 for its closed <c>[Decorate]</c> of
+	///     <paramref name="decorator" /> over <paramref name="service" />. A module of this compilation is judged as in its
+	///     own build. One of another assembly is judged by its record alone: metadata leaves out the constructors this
+	///     assembly cannot access, and one of them may receive the inner instance, which keeps the module from reporting.
+	/// </summary>
+	private static bool ReportsMissingInner(INamedTypeSymbol module, INamedTypeSymbol decorator, INamedTypeSymbol service, Compilation compilation)
+		=> SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+			? NoConstructorReceivesInner(decorator, service, compilation)
+			: module.ContainingAssembly.GetTypeByMetadataName(MarkerMetadataName(module, MissingInnerMarkerName(module.OriginalDefinition, decorator, service))) is not null;
+
+	/// <summary>The full metadata name of the marker type <paramref name="name" /> in the namespace of <paramref name="module" />.</summary>
+	private static string MarkerMetadataName(INamedTypeSymbol module, string name)
+		=> module.ContainingNamespace is { IsGlobalNamespace: false, } ns ? $"{ns.ToDisplayString()}.{name}" : name;
 
 	/// <summary>
 	///     A deterministic name for the internal type, in the module's namespace, that records that the module's own build
@@ -1026,4 +1042,11 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string DecoratorMistakesMarkerName(INamedTypeSymbol module)
 		=> $"Awaiten__ModuleDecoratorMistakes_{module.Name}_{Fnv1a(module.ToDisplayString(FullyQualified)):x8}";
+
+	/// <summary>
+	///     A deterministic name for the internal type, in the module's namespace, that records that the module's own build
+	///     reported AWT124 for its <c>[Decorate]</c> of <paramref name="decorator" /> over <paramref name="service" />.
+	/// </summary>
+	private static string MissingInnerMarkerName(INamedTypeSymbol module, INamedTypeSymbol decorator, INamedTypeSymbol service)
+		=> $"Awaiten__ModuleDecoratorWithoutInner_{decorator.Name}_{Fnv1a($"{module.ToDisplayString(FullyQualified)}\0{decorator.ToDisplayString(FullyQualified)}\0{service.ToDisplayString(FullyQualified)}"):x8}";
 }

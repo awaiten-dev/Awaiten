@@ -129,6 +129,44 @@ public class ModuleDecoratorMistakeTests
 	}
 
 	[Test]
+	public async Task OfTheSameDecoratorUnderSeveralKeys_IsReportedForEachAttribute()
+	{
+		string library = Library(
+			"[Singleton<Kettle, IKettle>(Key = \"a\")]\n[Singleton<Kettle, IKettle>(Key = \"b\")]\n[Decorate<LoggingKettle, IKettle>(Keys = new object[] { \"a\" })]\n[Decorate<LoggingKettle, IKettle>(Keys = new object[] { \"b\" })]",
+			"public sealed class LoggingKettle : IKettle { }");
+
+		GeneratorResult alone = Generator.Run(library);
+		GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer);
+
+		await That(alone.Diagnostics).HasCount(2).And.All().Satisfy(diagnostic => diagnostic.Contains("AWT124"))
+			.Because("each attribute is reported, and the module records the decorator once");
+		await That(external.Diagnostics).IsEmpty();
+	}
+
+	[Test]
+	[Arguments("private", true)]
+	[Arguments("internal", false)]
+	public async Task WithTheInnerOnlyInAConstructorAnImporterCannotSee_IsReportedByThatImporter(string accessibility, bool friendReports)
+	{
+		string library = Library(
+			"[Decorate<Bad, IKettle>(Keys = new object[0])]\n[Decorate<LoggingKettle, IKettle>]",
+			$"public sealed class Bad : IKettle {{ }}\npublic sealed class LoggingKettle : IKettle {{ {accessibility} LoggingKettle(IKettle inner) {{ }} public LoggingKettle() {{ }} }}");
+
+		GeneratorResult alone = Generator.Run(library);
+		GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(library), ExternalContainer);
+		GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer);
+		GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer);
+
+		await That(alone.Diagnostics).HasSingle().Which.Contains("AWT123")
+			.Because("a container that sees the constructor taking the inner instance may select it, so the module leaves the decorator to its importers");
+		await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT124") && diagnostic.StartsWith("(7,2)"))
+			.Because("the importer does not see that constructor, and the module recorded no AWT124 for the decorator, only for the other mistake");
+		await That(reference.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT124") && diagnostic.StartsWith("(7,2)"));
+		await That(Array.Exists(friend.Diagnostics, diagnostic => diagnostic.Contains("AWT124"))).IsEqualTo(friendReports)
+			.Because("a friend sees an internal constructor but not a private one");
+	}
+
+	[Test]
 	[Arguments("public sealed class LoggingKettle : IKettle { public LoggingKettle() { } public LoggingKettle(IKettle inner) { } }")]
 	[Arguments("public sealed class LoggingKettle : IKettle { public LoggingKettle(object inner) { } }")]
 	public async Task WithAConstructorThatReceivesTheInner_IsNotReportedByTheModule(string decorator)

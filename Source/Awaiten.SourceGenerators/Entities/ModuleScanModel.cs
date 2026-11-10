@@ -15,8 +15,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="DeclaresScan" /> decides whether the <c>[GeneratedScanExpansion]</c> marker is emitted.
 ///     <see cref="Skipped" /> records each implementation whose factory the module leaves out.
 ///     <see cref="NotPartialMarker" /> names the internal type that records a module left to the assemblies granted
-///     <c>InternalsVisibleTo</c> because it is not partial. <see cref="DecoratorMistakesMarker" /> is the full metadata name
-///     of the internal type that records that the module reported its <c>[Decorate]</c> mistakes itself.
+///     <c>InternalsVisibleTo</c> because it is not partial. <see cref="DecoratorMistakesMarkers" /> are the full metadata
+///     names of the internal types that record that the module reported its <c>[Decorate]</c> mistakes itself.
 /// </summary>
 internal sealed record ModuleScanModel(
 	string? Namespace,
@@ -36,7 +36,7 @@ internal sealed record ModuleScanModel(
 	EquatableArray<HiddenInitializer> Initializers = default,
 	EquatableArray<ConventionWrapper> ConventionWrappers = default,
 	EquatableArray<ClosingHandle> Closings = default,
-	string? DecoratorMistakesMarker = null);
+	EquatableArray<string> DecoratorMistakesMarkers = default);
 
 /// <summary>
 ///     A generated wrapper that runs one <c>[AsyncInitializer&lt;T&gt;]</c> convention of the module or base container

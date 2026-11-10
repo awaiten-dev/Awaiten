@@ -379,16 +379,15 @@ internal static partial class Sources
 			"granted InternalsVisibleTo constructs its implementations and calls its members itself, and a consuming container that cannot reports why.");
 
 	/// <summary>
-	///     Emits the internal type that records that the module's own build reported the mistakes of its
-	///     <c>[Decorate]</c> attributes that are wrong for every importer, so a consuming container does not repeat them.
+	///     Emits the internal type <paramref name="marker" /> that records that the module's own build reported a mistake
+	///     of its <c>[Decorate]</c> attributes that is wrong for every importer, so a consuming container does not repeat it.
 	/// </summary>
-	public static string EmitModuleDecoratorMistakesMarker(ModuleScanModel model)
+	public static string EmitModuleDecoratorMistakesMarker(ModuleScanModel model, string marker)
 	{
-		string marker = model.DecoratorMistakesMarker!;
 		int separator = marker.LastIndexOf('.');
 		return EmitModuleMarker(separator < 0 ? null : marker.Substring(0, separator), marker.Substring(separator + 1),
-			$"Generated for the module {model.TypeName}, whose build reports the mistakes of its [Decorate] attributes that are",
-			"wrong for every importer, so a consuming container does not report them again.");
+			$"Generated for the module {model.TypeName}, whose build reports a mistake of its [Decorate] attributes that is",
+			"wrong for every importer, so a consuming container does not report it again.");
 	}
 
 	private static string EmitModuleMarker(string? ns, string name, params string[] summary)

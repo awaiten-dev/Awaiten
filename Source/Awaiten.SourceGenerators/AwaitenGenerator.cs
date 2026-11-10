@@ -87,9 +87,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				spc.AddSource(model.HintName, SourceText.From(Sources.EmitModuleNotPartialMarker(model), Encoding.UTF8));
 			}
 
-			if (model.DecoratorMistakesMarker is { } marker)
+			foreach (string marker in model.DecoratorMistakesMarkers)
 			{
-				spc.AddSource($"Awaiten.{marker}.g.cs", SourceText.From(Sources.EmitModuleDecoratorMistakesMarker(model), Encoding.UTF8));
+				spc.AddSource($"Awaiten.{marker}.g.cs", SourceText.From(Sources.EmitModuleDecoratorMistakesMarker(model, marker), Encoding.UTF8));
 			}
 		});
 		// AWT245 is reported by AwaitenAnalyzer from its own module build.
@@ -145,8 +145,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	///     <see cref="CollectModuleRegistrationFactories" />). A module that self-compiles nothing still gets a model
 	///     when one of its <c>[AsyncInitializer&lt;T&gt;]</c> conventions is unusable (AWT233) or a hook gets no wrapper
 	///     (AWT164, AWT190, AWT203, AWT204), which carries only those diagnostics, or when a <c>[Decorate]</c> of it is wrong
-	///     for every importer (see <see cref="ReportModuleDecoratorMistakes" />), which also emits the marker of
-	///     <see cref="DecoratorMistakesMarkerName" />. A public module that is not
+	///     for every importer (see <see cref="ReportModuleDecoratorMistakes" />), which also emits the markers of
+	///     <see cref="DecoratorMistakesMarkerName" /> and <see cref="MissingInnerMarkerName" />. A public module that is not
 	///     <c>partial</c> but names a member only a wrapper would serve (see <see cref="HasMemberNeedingWrapper" />), has
 	///     a contribution only a generated factory would build (see <see cref="HasContributionNeedingFactory" />), or a
 	///     convention only a wrapper would run (see <see cref="HasConventionNeedingWrapper" />), gets a model that emits
@@ -173,15 +173,11 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
 		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
 		ReportModuleDecoratorPredicates(moduleSymbol, compilation, diagnostics);
-		string? decoratorMistakesMarker = ReportModuleDecoratorMistakes(moduleSymbol, compilation, diagnostics)
-			? moduleSymbol.ContainingNamespace is { IsGlobalNamespace: false, } markerNamespace
-				? $"{markerNamespace.ToDisplayString()}.{DecoratorMistakesMarkerName(moduleSymbol)}"
-				: DecoratorMistakesMarkerName(moduleSymbol)
-			: null;
+		EquatableArray<string> decoratorMistakesMarkers = new(ReportModuleDecoratorMistakes(moduleSymbol, compilation, diagnostics).ToArray());
 
 		if (ReportReservedInternals(moduleSymbol, diagnostics))
 		{
-			return new ModuleScanModel(null, default, moduleSymbol.Name, string.Empty, false, default, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()), false, default, default, null, DecoratorMistakesMarker: decoratorMistakesMarker);
+			return new ModuleScanModel(null, default, moduleSymbol.Name, string.Empty, false, default, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()), false, default, default, null, DecoratorMistakesMarkers: decoratorMistakesMarkers);
 		}
 
 		bool declaresScan = HasAwaitenAttribute(moduleSymbol.GetAttributes(), "ScanAttribute");
@@ -219,7 +215,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		{
 			return diagnostics.Count == 0
 				? null
-				: new ModuleScanModel(null, default, moduleSymbol.Name, string.Empty, false, default, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()), false, default, default, null, DecoratorMistakesMarker: decoratorMistakesMarker);
+				: new ModuleScanModel(null, default, moduleSymbol.Name, string.Empty, false, default, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()), false, default, default, null, DecoratorMistakesMarkers: decoratorMistakesMarkers);
 		}
 
 		// Under a grant a registration-only module builds anyway, so the message says why a scan module does not.
@@ -335,7 +331,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 					.OfType<ClosingHandle>(),
 				moduleSymbol,
 				compilation).ToArray()),
-			decoratorMistakesMarker);
+			decoratorMistakesMarkers);
 	}
 
 	/// <summary>
