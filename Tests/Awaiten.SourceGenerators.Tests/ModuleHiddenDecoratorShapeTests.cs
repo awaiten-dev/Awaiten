@@ -189,17 +189,18 @@ public partial class ModuleHiddenDecoratorShapeTests
 		}
 
 		[Test]
-		public async Task Ambiguous_ReportsAwt124InEveryContainer()
+		public async Task Ambiguous_IsReportedAsAwt124ByTheLibraryOnce()
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult friend) = RunAll(Library(
 				"public interface IStore { }",
 				"internal sealed class LoggingStore : IBeanStore { public LoggingStore(IStore first, IStore second) { } }"));
 
-			await That(library.Diagnostics).IsEmpty();
+			await That(Ids(library)).IsEqualTo(["AWT124",])
+				.Because("neither parameter is the inner one whichever container builds the decorator, so the library reports it");
 			await That(Ids(same)).IsEqualTo(["AWT124",]);
-			await That(Ids(external)).IsEqualTo(["AWT124",])
-				.Because("neither parameter is the inner one, so the factory takes neither as the handle");
-			await That(Ids(friend)).IsEqualTo(["AWT124",]);
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the module recorded that it reports the decorator itself");
+			await That(friend.Diagnostics).IsEmpty();
 		}
 	}
 

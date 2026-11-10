@@ -104,6 +104,7 @@ internal sealed record ImportedModule(INamedTypeSymbol Symbol, Location? ImportL
 ///     <see langword="null" /> for the container's own. <see cref="ThroughHandle" /> marks a decorator a module of
 ///     another assembly builds into the handle of a service it registers under an internal type, which decorates that handle.
 ///     <see cref="When" /> is the predicate that decides whether the decorator is applied, or <see langword="null" />.
+///     <see cref="InnerReportedByModule" /> marks a decorator without an inner parameter whose module reports it in its own build.
 /// </summary>
 /// <remarks>An intermediate type carrying a live Roslyn <see cref="Location" />; see <see cref="RawRegistration" />.</remarks>
 internal sealed record DecorateRegistration(
@@ -118,7 +119,8 @@ internal sealed record DecorateRegistration(
 	OwnerFactoryCall? Via = null,
 	INamedTypeSymbol? Owner = null,
 	bool ThroughHandle = false,
-	DecoratorPredicate? When = null);
+	DecoratorPredicate? When = null,
+	bool InnerReportedByModule = false);
 
 /// <summary>
 ///     The <c>When</c> predicate of a <c>[Decorate]</c>: the fully qualified static <see cref="Member" /> the root reads,

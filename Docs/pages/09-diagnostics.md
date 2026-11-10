@@ -1048,7 +1048,7 @@ public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;
 public static partial class CoffeeShop;
 ```
 
-It is not reported for a closed `[Decorate]` when the service's registration was left out for another error, such as an inherited registration the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once.
+It is not reported for a closed `[Decorate]` when the service's registration was left out for another error, such as an inherited registration the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once. An empty `Keys` on a module's `[Decorate]` is wrong for every container that imports the module, so the module's own build reports it and a container that imports the module doesn't repeat it. A container still reports it at its `[Import]` for a module built by an older version of Awaiten.
 
 **Fix:** Register the service before decorating it, for example `[Singleton<CardTerminal, IPaymentTerminal>]`, or declare it with `[ImportService<IPaymentTerminal>]` when the host provides it. If it is registered only under keys, add `Keys` or `AllKeys = true` to the `[Decorate]`. Name at least one key in a `Keys` you set, or remove `Keys` to decorate the unkeyed registrations. Over an import, name the keys in `Keys` instead of `AllKeys`, and declare each closing of an open import that an open decorator should wrap with `[ImportService<T>]`.
 
@@ -1066,6 +1066,8 @@ public sealed class LoggingTerminal : IPaymentTerminal;   // no IPaymentTerminal
 [Decorate<LoggingTerminal, IPaymentTerminal>]
 public static partial class CoffeeShop;
 ```
+
+For a closed `[Decorate]` of a module whose decorator has no constructor with such a parameter, whatever the constructor's accessibility, the module's own build reports it, and a container that imports the module doesn't repeat it. When only some constructors lack it, the container that selects one reports it. A container still reports it at its `[Import]` for a module built by an older version of Awaiten.
 
 **Fix:** Give the decorator a constructor parameter that accepts the decorated service, which receives the inner instance: `LoggingTerminal(IPaymentTerminal inner)`. The parameter can also be of a type the service converts to, such as a base interface; a `[FromKey]` parameter does not count. When several parameters accept the service, the one whose type converts to the types of all the others receives the inner instance, so take the service in one parameter only or make one of them more derived than all the others.
 
@@ -1165,6 +1167,8 @@ A `[Decorate]` sets both `Keys` and `AllKeys`. `AllKeys` already selects every k
 [Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { null }, AllKeys = true)]
 public static partial class CoffeeShop;
 ```
+
+For a module's `[Decorate]`, the module's own build reports it, and a container that imports the module doesn't repeat it. A container still reports it at its `[Import]` for a module built by an older version of Awaiten.
 
 **Fix:** Set `Keys` to decorate selected keys, or `AllKeys = true` to decorate every key, not both.
 
@@ -3049,6 +3053,8 @@ public sealed class LatteRecipe([FromKey(5)] IMilk milk);   // int is not a supp
 [Singleton<LatteRecipe>]
 public static partial class CoffeeShop;
 ```
+
+An unsupported key in the `Keys` of a module's `[Decorate]` is reported by the module's own build, and a container that imports the module doesn't repeat it. A container still reports it at its `[Import]` for a module built by an older version of Awaiten.
 
 **Fix:** Use a `string`, an enum value or a `typeof(...)` as the key: `[FromKey("Oat")]`.
 
