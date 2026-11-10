@@ -1866,6 +1866,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
         "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
+      },
+      {
+        "sha": "fdae2a1919f236e20a12d12ddf0a347ae4710bc4",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
+        "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
       }
     ],
     "labels": [
@@ -2179,7 +2185,8 @@ window.BENCHMARK_DATA = {
       "b5c83863",
       "d8bac02e",
       "52a71095",
-      "95161ba2"
+      "95161ba2",
+      "fdae2a19"
     ],
     "datasets": [
       {
@@ -2496,7 +2503,8 @@ window.BENCHMARK_DATA = {
           6.757366170103733,
           3.4132429510354996,
           5.5973863410098215,
-          4.503108434379101
+          4.503108434379101,
+          4.765556267820871
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2508,6 +2516,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3143,7 +3152,8 @@ window.BENCHMARK_DATA = {
           6.695313321550687,
           4.182680657009284,
           5.545253348137651,
-          6.5862445922998285
+          6.5862445922998285,
+          6.845570071385457
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3155,6 +3165,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3790,7 +3801,8 @@ window.BENCHMARK_DATA = {
           127.79357104301452,
           62.88186379273733,
           132.23012913068135,
-          84.33598634401957
+          84.33598634401957,
+          83.71864045517785
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3802,6 +3814,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4433,7 +4446,8 @@ window.BENCHMARK_DATA = {
           9.107129331145968,
           4.976306225572314,
           8.267077020804088,
-          6.192252900203069
+          6.192252900203069,
+          7.580440338452657
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4445,6 +4459,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5072,7 +5087,8 @@ window.BENCHMARK_DATA = {
           11.540314421057701,
           6.37540391087532,
           11.547120290994645,
-          8.834342211484909
+          8.834342211484909,
+          8.485756463060776
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5084,6 +5100,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7270,6 +7287,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
         "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
+      },
+      {
+        "sha": "fdae2a1919f236e20a12d12ddf0a347ae4710bc4",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
+        "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
       }
     ],
     "labels": [
@@ -7583,7 +7606,8 @@ window.BENCHMARK_DATA = {
       "b5c83863",
       "d8bac02e",
       "52a71095",
-      "95161ba2"
+      "95161ba2",
+      "fdae2a19"
     ],
     "datasets": [
       {
@@ -7900,7 +7924,8 @@ window.BENCHMARK_DATA = {
           6.816932302713394,
           3.3276499681747875,
           6.208043794546809,
-          5.589116765984467
+          5.589116765984467,
+          5.598641973275405
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7912,6 +7937,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8547,7 +8573,8 @@ window.BENCHMARK_DATA = {
           6.77188468667177,
           4.0995806604623795,
           5.91299176911513,
-          6.580817718307177
+          6.580817718307177,
+          6.813170473162945
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8559,6 +8586,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9194,7 +9222,8 @@ window.BENCHMARK_DATA = {
           128.49380480448406,
           61.01889252662659,
           131.48539803709303,
-          100.115842461586
+          100.115842461586,
+          121.55029014746349
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9206,6 +9235,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9837,7 +9867,8 @@ window.BENCHMARK_DATA = {
           9.018629960219066,
           4.993574793636799,
           8.32251436050449,
-          6.285342859534117
+          6.285342859534117,
+          7.411619037389755
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9849,6 +9880,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10476,7 +10508,8 @@ window.BENCHMARK_DATA = {
           11.567813004766192,
           6.4013731777668,
           11.400160962343216,
-          8.671765572258405
+          8.671765572258405,
+          8.177762573155073
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10488,6 +10521,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12674,6 +12708,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
         "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
+      },
+      {
+        "sha": "fdae2a1919f236e20a12d12ddf0a347ae4710bc4",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
+        "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
       }
     ],
     "labels": [
@@ -12987,7 +13027,8 @@ window.BENCHMARK_DATA = {
       "b5c83863",
       "d8bac02e",
       "52a71095",
-      "95161ba2"
+      "95161ba2",
+      "fdae2a19"
     ],
     "datasets": [
       {
@@ -13304,7 +13345,8 @@ window.BENCHMARK_DATA = {
           19.685137575864793,
           15.965986266732216,
           19.38641125758489,
-          10.700797637658459
+          10.700797637658459,
+          16.31837822596232
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13576,6 +13618,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13951,7 +13994,8 @@ window.BENCHMARK_DATA = {
           1482.8013188680013,
           1201.7093800136022,
           1461.2798653920493,
-          737.9018931388855
+          737.9018931388855,
+          1212.2784813472203
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13963,6 +14007,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14598,7 +14643,8 @@ window.BENCHMARK_DATA = {
           33477.21045735677,
           26352.368054199218,
           29806.09082845052,
-          16968.41570638021
+          16968.41570638021,
+          26121.24791608538
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14920,6 +14966,7 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32482,
+          32478,
           32478
         ],
         "borderColor": "#5E2750",
@@ -15241,7 +15288,8 @@ window.BENCHMARK_DATA = {
           711.4499312082927,
           565.6097396850586,
           753.5389819463094,
-          380.6068897587912
+          380.6068897587912,
+          567.7784696420034
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15271,6 +15319,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15880,7 +15929,8 @@ window.BENCHMARK_DATA = {
           11414.651120503744,
           9953.945464070637,
           11586.48605448405,
-          6103.492326463972
+          6103.492326463972,
+          9072.808615112304
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16198,7 +16248,8 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24761,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18078,6 +18129,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
         "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
+      },
+      {
+        "sha": "fdae2a1919f236e20a12d12ddf0a347ae4710bc4",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
+        "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
       }
     ],
     "labels": [
@@ -18391,7 +18448,8 @@ window.BENCHMARK_DATA = {
       "b5c83863",
       "d8bac02e",
       "52a71095",
-      "95161ba2"
+      "95161ba2",
+      "fdae2a19"
     ],
     "datasets": [
       {
@@ -18708,7 +18766,8 @@ window.BENCHMARK_DATA = {
           149.27300153459822,
           129.05652453218187,
           197.2232696533203,
-          76.41208406005588
+          76.41208406005588,
+          116.13193451563517
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18980,6 +19039,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19355,7 +19415,8 @@ window.BENCHMARK_DATA = {
           13629.864998372395,
           11864.136309814454,
           14317.778718058269,
-          7064.867193603515
+          7064.867193603515,
+          11381.098443603516
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19367,6 +19428,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20002,7 +20064,8 @@ window.BENCHMARK_DATA = {
           816227.3568638393,
           661173.6964285715,
           738664.0919471154,
-          403701.157156808
+          403701.157156808,
+          637195.4979771206
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20324,7 +20387,8 @@ window.BENCHMARK_DATA = {
           741779,
           739163,
           741784,
-          718407
+          718407,
+          741781
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20645,7 +20709,8 @@ window.BENCHMARK_DATA = {
           46857.05039876302,
           38238.38661702474,
           43923.82186686198,
-          22088.281960623604
+          22088.281960623604,
+          36589.27655843099
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20963,7 +21028,8 @@ window.BENCHMARK_DATA = {
           80301,
           80860,
           80303,
-          79819
+          79819,
+          80298
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21284,7 +21350,8 @@ window.BENCHMARK_DATA = {
           352081.00959660456,
           326626.1856770833,
           352633.2625651042,
-          181879.99916992188
+          181879.99916992188,
+          281545.6508138021
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21602,7 +21669,8 @@ window.BENCHMARK_DATA = {
           573074,
           573057,
           573153,
-          573073
+          573073,
+          573105
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23458,6 +23526,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
         "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
+      },
+      {
+        "sha": "fdae2a1919f236e20a12d12ddf0a347ae4710bc4",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
+        "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
       }
     ],
     "labels": [
@@ -23767,7 +23841,8 @@ window.BENCHMARK_DATA = {
       "b5c83863",
       "d8bac02e",
       "52a71095",
-      "95161ba2"
+      "95161ba2",
+      "fdae2a19"
     ],
     "datasets": [
       {
@@ -24080,7 +24155,8 @@ window.BENCHMARK_DATA = {
           169.20086812973022,
           271.2630590756734,
           211.50062402884166,
-          210.3924697807857
+          210.3924697807857,
+          164.09405477841696
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -24115,6 +24191,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24719,7 +24796,8 @@ window.BENCHMARK_DATA = {
           410.27340926442827,
           631.2596435546875,
           454.6767617384593,
-          455.5255063863901
+          455.5255063863901,
+          385.7991503079732
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24731,6 +24809,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -25358,7 +25437,8 @@ window.BENCHMARK_DATA = {
           3697.0315144856772,
           6942.2471043904625,
           5139.9616132463725,
-          4797.1550149184
+          4797.1550149184,
+          3321.173528943743
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25442,6 +25522,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25997,7 +26078,8 @@ window.BENCHMARK_DATA = {
           262.276526927948,
           425.93246304194133,
           347.96452945073446,
-          346.56193814958846
+          346.56193814958846,
+          246.8318595152635
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -26009,6 +26091,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26636,7 +26719,8 @@ window.BENCHMARK_DATA = {
           414.63128692763195,
           755.9604560852051,
           533.926207610539,
-          554.4216316223144
+          554.4216316223144,
+          405.9204834938049
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26648,6 +26732,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
