@@ -929,6 +929,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// A scan match a module's generated factory builds shares the instance of every other registration of its
 		// implementation, as it would in the module's own assembly.
 		ShareHandledInstances(raw, containerSymbol, compilation, diagnostics);
+		ShareGeneratedRegistrationFactories(raw, containerSymbol, compilation);
 		List<string> sharedScanImplementations = ShareScannedInstances(raw, compilation);
 
 		// A scanned private nested type the resolvers cannot stand in for is skipped with AWT193, not the AWT216 error.
@@ -1004,7 +1005,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// dependency actually redirects to. A binding whose key stays absent is reported (AWT167) below, unless it is
 		// inherited: the base reports its own, and one whose consumer the extending container replaced falls away.
 		List<ConditionalRegistration> conditionals = CollectConditionalRegistrations(
-			inheritance is null ? raw : raw.FindAll(registration => !inheritance.Owns(registration.Origin)));
+			inheritance is null ? raw : raw.FindAll(registration => !inheritance.Owns(registration.Declarer ?? registration.Origin)));
 		HashSet<ServiceKey> consumedConditionals = new();
 
 		// AWT175: a closed type declared [ImportService] must not also be registered on the container - it is either

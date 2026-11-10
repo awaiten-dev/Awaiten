@@ -1167,14 +1167,16 @@ partial class AwaitenGenerator
 		Compilation compilation,
 		List<CrossModuleDuplicate> duplicates)
 	{
+		INamedTypeSymbol? origin = DeclaringOwner(registration);
+		INamedTypeSymbol? winnerOrigin = DeclaringOwner(winner);
 		if (registration.Key is not null
 		    || registration.IsScan
 		    || registration.Weak
-		    || registration.Origin is null
-		    || winner.Origin is null
-		    || HasAwaitenAttribute(winner.Origin.GetAttributes(), "ContainerAttribute")
+		    || origin is null
+		    || winnerOrigin is null
+		    || HasAwaitenAttribute(winnerOrigin.GetAttributes(), "ContainerAttribute")
 		    || PrecedenceRank(registration) != PrecedenceRank(winner)
-		    || SymbolEqualityComparer.Default.Equals(registration.Origin, winner.Origin)
+		    || SymbolEqualityComparer.Default.Equals(origin, winnerOrigin)
 		    || winner.ImplementationType == registration.ImplementationType)
 		{
 			return;
@@ -1183,9 +1185,14 @@ partial class AwaitenGenerator
 		duplicates.Add(new CrossModuleDuplicate(
 			registration.ServiceType,
 			LocationInfo.From(registration.Location),
-			Display(winner.Origin.ToDisplayString(FullyQualified)),
-			Display(registration.Origin.ToDisplayString(FullyQualified)),
+			Display(winnerOrigin.ToDisplayString(FullyQualified)),
+			Display(origin.ToDisplayString(FullyQualified)),
 			Reregistrable(winner) && Reregistrable(registration)));
+
+		INamedTypeSymbol? DeclaringOwner(RawRegistration contribution)
+			=> contribution.Declarer is not { } declarer ? contribution.Origin
+				: SymbolEqualityComparer.Default.Equals(declarer, containerSymbol) ? null
+				: declarer;
 
 		bool Reregistrable(RawRegistration contribution)
 			=> contribution is { Production: ProductionKind.Constructor, Hidden: null, ConstructVia: null, }

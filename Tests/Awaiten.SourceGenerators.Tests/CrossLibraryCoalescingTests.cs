@@ -108,7 +108,7 @@ public class CrossLibraryCoalescingTests
 	}
 
 	[Test]
-	public async Task AnImplementationOnlyItsOwnLibraryCanBuild_ReportsAwt111InsteadOfBuildingASecondInstance()
+	public async Task AnImplementationOnlyItsOwnLibraryCanBuild_IsBuiltOnceThroughItsFactory()
 	{
 		const string libA = """
 			using Awaiten;
@@ -134,7 +134,9 @@ public class CrossLibraryCoalescingTests
 			[libA, Library("LibB", "Singleton<LibA.Clock, LibA.IClock>").Replace("using Clocks;", ""),],
 			Consumer.Replace("using Clocks;", ""));
 
-		await That(result.Diagnostics).HasCount(1).And.Contains("*AWT111*'LibA.Clock'*").AsWildcard()
-			.Because("only the first library's factory sets the internal property, so the second library's registration cannot share its instance and must not build another");
+		await That(result.Diagnostics).IsEmpty();
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::LibA.LibAModule.Internals.Registration_Clock_")
+			.And.DoesNotContain("new global::LibA.Clock(")
+			.Because("only the first library's factory sets the internal property, so the second library's registration calls it too and shares its instance");
 	}
 }

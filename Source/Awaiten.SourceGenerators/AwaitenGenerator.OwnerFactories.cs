@@ -593,6 +593,47 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Lets every other registration that constructs an implementation a module of another assembly builds through its
+	///     generated registration factory (see <see cref="ThroughGeneratedFactory" />) call that factory too, so coalescing
+	///     keeps one instance, as a container in the module's assembly or a friend constructs one for both. This container
+	///     could not construct it as they do: the module generates the factory because the implementation's constructor is
+	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A registration with a lifecycle hook
+	///     keeps its constructor, since its hook binds on its own owner, not on the module that owns the factory.
+	/// </summary>
+	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation)
+	{
+		Dictionary<string, RawRegistration> factories = new(StringComparer.Ordinal);
+		foreach (RawRegistration registration in raw)
+		{
+			if (registration is { Production: ProductionKind.Factory, Origin: { } module, Hidden: null, }
+			    && IsGeneratedRegistrationFactory(registration.ProductionMember)
+			    && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+			    && !factories.ContainsKey(registration.ImplementationType))
+			{
+				factories.Add(registration.ImplementationType, registration);
+			}
+		}
+
+		for (int index = 0; index < raw.Count && factories.Count > 0; index++)
+		{
+			if (raw[index] is { Production: ProductionKind.Constructor, IsScan: false, ConstructVia: null, Hidden: null, OnActivated: null, OnRelease: null, } registration
+			    && factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory))
+			{
+				raw[index] = registration with
+				{
+					Implementation = factory.Implementation,
+					Origin = factory.Origin,
+					Production = factory.Production,
+					ProductionMember = factory.ProductionMember,
+					Traits = factory.Traits,
+					TraitsExact = factory.TraitsExact,
+					Declarer = registration.Origin ?? container,
+				};
+			}
+		}
+	}
+
+	/// <summary>
 	///     The factory <paramref name="owner" />, a module or a base container, generated for
 	///     <paramref name="implementation" /> in its own build, read from its metadata, or <see langword="null" /> when the
 	///     container cannot see one: the owner carries none, or it is internal and the owner's assembly does not grant

@@ -158,6 +158,35 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Transient<Greeter>]")]
+		[Arguments("[Transient<Greeter, IGreeter>]")]
+		public async Task ARegistrationBesideTheModulesOwn_SharesTheModulesFactoryInEveryAssembly(string registration)
+		{
+			string library = Library("[Inject] internal IClock Clock { get; set; } = null!;");
+			string registrations = "[Import(typeof(GreetingModule))]\n" + registration;
+
+			GeneratorResult same = Generator.Run(SameAssembly(library, registrations));
+			GeneratorResult friend = Run(Reference.ImplementationAssembly, Granted(library), Consumer(registrations));
+			GeneratorResult other = Run(Reference.ImplementationAssembly, library, Consumer(registrations));
+			GeneratorResult reference = Run(Reference.ReferenceAssembly, library, Consumer(registrations));
+
+			foreach (GeneratorResult result in new[] { same, friend, other, reference, })
+			{
+				await That(result.Diagnostics).IsEmpty()
+					.Because("both registrations construct the one implementation, as they do in the module's own assembly");
+			}
+
+			foreach (GeneratorResult result in new[] { other, reference, })
+			{
+				string container = result.Sources.Single(source => source.Key.Contains("AppContainer")).Value;
+				await That(container).Contains("global::Lib.GreetingModule.Internals.Registration_Greeter_")
+					.Because("the container's registration calls the module's generated factory, which sets the internal property");
+				await That(container).DoesNotContain("new global::Lib.Greeter(")
+					.Because("the container never builds the implementation without the property it cannot see");
+			}
+		}
+
+		[Test]
 		[Arguments(Reference.ImplementationAssembly, "[Inject] public IClock Clock { get; set; } = null!;")]
 		[Arguments(Reference.ImplementationAssembly, "internal IClock Clock { get; set; } = null!;")]
 		[Arguments(Reference.ReferenceAssembly, "[Inject] public IClock Clock { get; set; } = null!;")]
