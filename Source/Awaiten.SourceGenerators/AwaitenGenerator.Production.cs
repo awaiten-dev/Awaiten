@@ -1416,14 +1416,19 @@ partial class AwaitenGenerator
 	///     constraint satisfaction - notably <em>not</em> a user-defined implicit operator, which
 	///     <c>HasImplicitConversion</c> would accept and which would leak CS0311 into the generated source.
 	///     <c>notnull</c> is not checked: violating it is only a compiler warning, so the constructed call still
-	///     compiles.
+	///     compiles. With <paramref name="boundOnly" />, an argument that contains a type parameter, and a constraint type
+	///     that does once substituted, stand for every closing and are not checked.
 	/// </summary>
-	private static bool SatisfiesConstraints(IMethodSymbol method, ImmutableArray<ITypeSymbol> arguments, Compilation compilation)
+	private static bool SatisfiesConstraints(IMethodSymbol method, ImmutableArray<ITypeSymbol> arguments, Compilation compilation, bool boundOnly = false)
 	{
 		for (int index = 0; index < method.TypeParameters.Length; index++)
 		{
 			ITypeParameterSymbol parameter = method.TypeParameters[index];
 			ITypeSymbol argument = arguments[index];
+			if (boundOnly && ContainsTypeParameter(argument))
+			{
+				continue;
+			}
 
 			if ((parameter.HasReferenceTypeConstraint && !argument.IsReferenceType)
 			    || (parameter.HasValueTypeConstraint && (!argument.IsValueType || argument.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T))
@@ -1433,8 +1438,8 @@ partial class AwaitenGenerator
 				return false;
 			}
 
-			if (parameter.ConstraintTypes.Any(constraint =>
-				    !SatisfiesConstraintType(argument, SubstituteTypeParameters(constraint, method, arguments, compilation), compilation)))
+			if (parameter.ConstraintTypes.Select(constraint => SubstituteTypeParameters(constraint, method, arguments, compilation)).Any(constraint =>
+				    !(boundOnly && ContainsTypeParameter(constraint)) && !SatisfiesConstraintType(argument, constraint, compilation)))
 			{
 				return false;
 			}

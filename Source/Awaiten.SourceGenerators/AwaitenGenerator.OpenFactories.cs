@@ -483,9 +483,11 @@ partial class AwaitenGenerator
 				{
 					ITypeSymbol[] arguments = definition.TypeParameters.Select(parameter => bindings.TryGetValue(parameter, out ITypeSymbol? argument) ? argument : parameter).ToArray();
 					INamedTypeSymbol closing = definition.Construct(arguments);
-					// A type parameter the binding leaves open stands for every closing, so there only constraints no closing meets reject the overload.
+					// A type parameter the binding leaves open stands for every closing, so there only constraints no closing meets reject the
+					// overload, while a bound one is checked against its constraints.
+					bool open = arguments.Any(ContainsTypeParameter);
 					bool accepts = method.Arity > 0
-						? (arguments.Any(ContainsTypeParameter) ? !ExcludesEveryClosing(method) : SatisfiesConstraints(method, arguments.ToImmutableArray(), compilation))
+						? (!open || !ExcludesEveryClosing(method)) && SatisfiesConstraints(method, arguments.ToImmutableArray(), compilation, boundOnly: open)
 						  && compilation.HasImplicitConversion(closing, method.Construct(arguments).Parameters[0].Type)
 						: compilation.HasImplicitConversion(closing, instance);
 					if (accepts && ConstraintsSatisfied(definition, arguments, compilation))
