@@ -519,6 +519,25 @@ partial class AwaitenGenerator
 		HashSet<string> reportedDirectiveConflicts = new(StringComparer.Ordinal);
 		HashSet<string> reportedHookConflicts = new(StringComparer.Ordinal);
 
+		// The instance handles of a module of another assembly whose implementation an earlier check reported the
+		// conflict of already (see ShareHandleWithRegistrations), which a container in the module's own assembly reports once.
+		foreach (RawRegistration handle in raw.Where(registration => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker)))
+		{
+			string implementation = DisplayInstance(handle.ImplementationType);
+			if (Reported(Diagnostics.ConflictingLifetime))
+			{
+				reportedConflicts.Add(handle.ImplementationType);
+			}
+
+			if (Reported(Diagnostics.ConflictingProduction))
+			{
+				reportedProductionConflicts.Add(handle.ImplementationType);
+			}
+
+			bool Reported(DiagnosticDescriptor descriptor)
+				=> diagnostics.Exists(diagnostic => diagnostic.Descriptor == descriptor && diagnostic.MessageArgs.AsArray()[0] == implementation);
+		}
+
 		// Collection membership: every registration of a service, keyed by (service type, key) and deduped by
 		// implementation, in registration order. serviceMemberOrder preserves first-seen order for emission.
 		Dictionary<ServiceKey, List<string>> serviceMembers = new();

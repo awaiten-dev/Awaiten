@@ -508,9 +508,12 @@ partial class AwaitenGenerator
 	///     a generated handle share the handle's instance, as a container in the module's own assembly coalesces both into
 	///     one instance: a registration of the container, or of a module that can name the implementation. It is served
 	///     through the alias that returns the implementation from its instance handle, with the handle's lifetime. The two
-	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166).
+	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166):
+	///     every registration that shares a handle and every handle of the implementation is compared with the first of
+	///     them in precedence order, once per implementation, as a container in the module's own assembly compares them.
 	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
-	///     which therefore comes first. A directive of the registration that the handle cannot run, or a missing alias, is AWT241.
+	///     which therefore comes first, and is compared with the registration alone. A directive of the registration that
+	///     the handle cannot run, or a missing alias, is AWT241, unless the two produce the implementation differently (AWT111).
 	///     A scan match takes the handle's lifetime too, which it decided itself when it precedes the scan of a scan handle
 	///     (see <see cref="YieldScanHandles" />), and a hook it sets on a scan handle's instance is AWT241 (see
 	///     <see cref="UnappliedScanHooks" />).
@@ -522,7 +525,7 @@ partial class AwaitenGenerator
 	///     A handle that runs a module's <c>Factory</c> or <c>Instance</c> member (its traits are not exact, see
 	///     <see cref="ThroughHandle" />) shares nothing once every registration of its module that it serves is replaced
 	///     or a dropped overridable default, since the registration then stands alone and running the member would build
-	///     what the container replaced.
+	///     what the container replaced; the registration shares the next handle of the implementation instead.
 	/// </summary>
 	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
@@ -536,17 +539,14 @@ partial class AwaitenGenerator
 				.Select(registration => registration.ImplementationType),
 			StringComparer.Ordinal);
 		HashSet<int> dropped = DroppedOverridableDefaults(raw);
+		List<(RawRegistration Registration, int Index)> sharing = new();
 		for (int index = 0; index < raw.Count; index++)
 		{
 			RawRegistration registration = raw[index];
 			if (registration.Hidden is not null
 			    || registration.ScanImplementation is not null
 			    || (NamesOnlyItsService(registration, compilation) && !implementations.Contains(registration.ImplementationType))
-			    || handles.FirstOrDefault(entry => entry.Identity == registration.ImplementationType) is not ({ } handle, int handleIndex, _)
-			    || (!handle.TraitsExact && !raw.Where((alias, aliasIndex) => alias.Aliased is not null
-			                                                               && !dropped.Contains(aliasIndex)
-			                                                               && SymbolEqualityComparer.Default.Equals(alias.Origin, handle.Origin)
-			                                                               && alias.ImplementationType.EndsWith(AliasKeyMarker + HandledIdentity(handle), StringComparison.Ordinal)).Any()))
+			    || handles.FirstOrDefault(entry => entry.Identity == registration.ImplementationType && Shares(entry.Handle)) is not ({ } handle, int handleIndex, _))
 			{
 				continue;
 			}
@@ -559,8 +559,17 @@ partial class AwaitenGenerator
 				bool registrationFirst = scan
 					? yieldedTo.TryGetValue(registration.ImplementationType, out RawRegistration? winner) && ReferenceEquals(winner, registration)
 					: (PrecedenceRank(registration), index).CompareTo((PrecedenceRank(handle), handleIndex)) < 0;
-				ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle, container), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
-				if (registrationFirst)
+				if (scan)
+				{
+					ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle, container), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
+				}
+				else
+				{
+					sharing.Add((plain, index));
+				}
+
+				// A directive matters only once both produce the implementation alike, which AWT111 asks for first.
+				if (registrationFirst && !ConflictsWith(NewImplInfo(plain, container), handle))
 				{
 					HashSet<string> conflicting = new(ConflictingDirectives(NewImplInfo(plain, container), handle, container).Select(directive => directive.Directive), StringComparer.Ordinal);
 					foreach ((string directive, string _, string _) in ConflictingDirectives(NewImplInfo(handle, container), registration, container)
@@ -604,6 +613,28 @@ partial class AwaitenGenerator
 						remedy,
 					])));
 		}
+
+		// As in the module's own assembly, every producer of the implementation is compared with the first in precedence
+		// order, so the conflicts are reported once and between the same pair there.
+		foreach (IGrouping<string, (RawRegistration Registration, int Index)> group in sharing.GroupBy(entry => entry.Registration.ImplementationType, StringComparer.Ordinal))
+		{
+			List<RawRegistration> producers = group
+				.Concat(handles.Where(entry => entry.Identity == group.Key && !IsScanHandle(entry.Handle) && Shares(entry.Handle)).Select(entry => (Registration: entry.Handle, entry.Index)))
+				.OrderBy(entry => (PrecedenceRank(entry.Registration), entry.Index))
+				.Select(entry => entry.Registration with { ImplementationType = group.Key, })
+				.ToList();
+			foreach (RawRegistration later in producers.Skip(1))
+			{
+				ReportCoalescingConflicts(NewImplInfo(producers[0], container), later, container, lifetimes, productions, directives, diagnostics);
+			}
+		}
+
+		bool Shares(RawRegistration handle)
+			=> handle.TraitsExact
+			   || raw.Where((alias, aliasIndex) => alias.Aliased is not null
+			                                     && !dropped.Contains(aliasIndex)
+			                                     && SymbolEqualityComparer.Default.Equals(alias.Origin, handle.Origin)
+			                                     && alias.ImplementationType.EndsWith(AliasKeyMarker + HandledIdentity(handle), StringComparison.Ordinal)).Any();
 	}
 
 	/// <summary>
