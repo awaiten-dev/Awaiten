@@ -449,7 +449,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		skipped.AddRange(distinct);
 		registrations.AddRange(contributions);
 		bool friends = hidden is { Friends: true, };
-		if (factories.Any(factory => factory.Skip is null && (TakesHandles(factory.Parameters) || (friends && HooksTakeHandles(factory)))))
+		if (factories.Any(factory => (factory.Skip is null && TakesHandles(factory.Parameters)) || (friends && HooksTakeHandles(factory))))
 		{
 			registrations.AddRange(InternalScanMembers(module, compilation, factories, friends, cancellationToken));
 		}

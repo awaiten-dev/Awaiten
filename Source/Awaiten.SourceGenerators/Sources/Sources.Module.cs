@@ -135,11 +135,19 @@ internal static partial class Sources
 			}
 
 			first = false;
-			EmitRegistrationFactory(builder, depth + 2, registration);
-			EmitDeferredSetters(builder, depth + 2, registration);
-			foreach (RegistrationHook hook in registration.Hooks.AsArray())
+			if (!registration.HooksOnly)
 			{
-				builder.AppendLine();
+				EmitRegistrationFactory(builder, depth + 2, registration);
+				EmitDeferredSetters(builder, depth + 2, registration);
+			}
+
+			foreach ((RegistrationHook hook, int index) in registration.Hooks.AsArray().Select((hook, index) => (hook, index)))
+			{
+				if (!registration.HooksOnly || index > 0)
+				{
+					builder.AppendLine();
+				}
+
 				EmitModuleHook(builder, depth + 2, registration.ReturnType, hook.Hook, hook.Release, RegistrationOrigin, registration.Handle is not null, registration.IsInternal);
 			}
 		}

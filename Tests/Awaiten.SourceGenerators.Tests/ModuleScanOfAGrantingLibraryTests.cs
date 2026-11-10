@@ -21,7 +21,9 @@ public class ModuleScanOfAGrantingLibraryTests
 			"library" => Generator.Run(Grant(library, grant)),
 			"same" => Generator.Run(Grant(library, grant) + "\n" + container.Replace("{0}", "SameContainer")),
 			"friend" => Generator.RunWithGeneratedReferencedAssembly(Grant(library, "TestAssembly"), Usings + container.Replace("{0}", "MyContainer")),
+			"friendReference" => Generator.RunWithGeneratedReferenceAssembly(Grant(library, "TestAssembly"), Usings + container.Replace("{0}", "MyContainer")),
 			"reference" => Generator.RunWithGeneratedReferenceAssembly(Grant(library, grant), Usings + container.Replace("{0}", "MyContainer")),
+			"compilation" => Generator.RunWithGeneratedCompilationReference(Grant(library, grant), Usings + container.Replace("{0}", "MyContainer")),
 			_ => Generator.RunWithGeneratedReferencedAssembly(Grant(library, grant), Usings + container.Replace("{0}", "MyContainer")),
 		};
 
@@ -65,10 +67,13 @@ public class ModuleScanOfAGrantingLibraryTests
 		[Arguments("same", null)]
 		[Arguments("same", "Other")]
 		[Arguments("friend", null)]
+		[Arguments("friendReference", null)]
 		[Arguments("full", null)]
 		[Arguments("full", "Other")]
 		[Arguments("reference", null)]
 		[Arguments("reference", "Other")]
+		[Arguments("compilation", null)]
+		[Arguments("compilation", "Other")]
 		public async Task BuildsInEveryContainer(string consumer, string? grant)
 		{
 			GeneratorResult result = Run(Library, Container, consumer, grant);
@@ -80,6 +85,7 @@ public class ModuleScanOfAGrantingLibraryTests
 		[Test]
 		[Arguments("full")]
 		[Arguments("reference")]
+		[Arguments("compilation")]
 		public async Task AContainerOfAnAssemblyTheLibraryGrantsNothing_BuildsTheGraphOfALibraryWithoutTheGrant(string consumer)
 		{
 			string? granted = ContainerSource(Run(Library, Container, consumer, "Other"));
@@ -99,9 +105,11 @@ public class ModuleScanOfAGrantingLibraryTests
 				.And.Contains("new global::Lib.BeanStore(")
 				.And.DoesNotContain("Hidden_BeanStore_")
 				.Because("a container granted InternalsVisibleTo builds the internal service itself and registers no handles, as for a registration");
-			await That(Run(Library, Container, "library", "TestAssembly").Sources.Single(source => source.Key == "Awaiten.ModuleScan.Lib.PluginModule.g.cs").Value)
+			await That(Run(Library, Container, "library", "Other").Sources.Single(source => source.Key == "Awaiten.ModuleScan.Lib.PluginModule.g.cs").Value)
 				.Contains("internal static void InternalScanHook_OnActivated_Roaster_")
-				.And.Contains("public static void ScanHook_OnActivated_Roaster_");
+				.And.Contains("public static void ScanHook_OnActivated_Roaster_")
+				.And.DoesNotContain("InternalScan_Roaster_")
+				.Because("the public factory takes no handle, so a container in a granted assembly calls it and the module generates no internal one");
 		}
 	}
 
@@ -137,10 +145,13 @@ public class ModuleScanOfAGrantingLibraryTests
 		[Arguments("same", null)]
 		[Arguments("same", "Other")]
 		[Arguments("friend", null)]
+		[Arguments("friendReference", null)]
 		[Arguments("full", null)]
 		[Arguments("full", "Other")]
 		[Arguments("reference", null)]
 		[Arguments("reference", "Other")]
+		[Arguments("compilation", null)]
+		[Arguments("compilation", "Other")]
 		public async Task BuildsInEveryContainer(string consumer, string? grant)
 		{
 			GeneratorResult result = Run(Library, Container, consumer, grant);
@@ -150,11 +161,14 @@ public class ModuleScanOfAGrantingLibraryTests
 		}
 
 		[Test]
-		public async Task AContainerOfAnAssemblyTheLibraryGrantsNothing_BuildsTheGraphOfALibraryWithoutTheGrant()
+		[Arguments("full")]
+		[Arguments("reference")]
+		[Arguments("compilation")]
+		public async Task AContainerOfAnAssemblyTheLibraryGrantsNothing_BuildsTheGraphOfALibraryWithoutTheGrant(string consumer)
 		{
-			string? granted = ContainerSource(Run(Library, Container, "full", "Other"));
+			string? granted = ContainerSource(Run(Library, Container, consumer, "Other"));
 
-			await That(granted).IsEqualTo(ContainerSource(Run(Library, Container, "full")))
+			await That(granted).IsEqualTo(ContainerSource(Run(Library, Container, consumer)))
 				.Because("granting InternalsVisibleTo to one assembly must not change what the library serves any other");
 		}
 
@@ -216,25 +230,85 @@ public class ModuleScanOfAGrantingLibraryTests
 		[Arguments("same", null)]
 		[Arguments("same", "Other")]
 		[Arguments("friend", null)]
-		public async Task BuildsInTheLibraryAndAGrantedAssembly(string consumer, string? grant)
+		[Arguments("friendReference", null)]
+		[Arguments("full", null)]
+		[Arguments("full", "Other")]
+		[Arguments("reference", null)]
+		[Arguments("reference", "Other")]
+		[Arguments("compilation", null)]
+		[Arguments("compilation", "Other")]
+		public async Task BuildsInEveryContainer(string consumer, string? grant)
 		{
 			GeneratorResult result = Run(Library, Container, consumer, grant);
 
-			await That(result.Diagnostics).IsEmpty();
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the scan builds the match through the handle of the internal service, as without the grant, instead of leaving it to the granted assemblies");
 		}
 
 		[Test]
 		[Arguments("full")]
 		[Arguments("reference")]
+		[Arguments("compilation")]
 		public async Task AContainerOfAnAssemblyTheLibraryGrantsNothing_BuildsTheGraphOfALibraryWithoutTheGrant(string consumer)
 		{
-			GeneratorResult granted = Run(Library, Container, consumer, "Other");
-			GeneratorResult plain = Run(Library, Container, consumer);
+			await That(ContainerSource(Run(Library, Container, consumer, "Other"))).IsEqualTo(ContainerSource(Run(Library, Container, consumer)))
+				.Because("granting InternalsVisibleTo to one assembly must not change what the library serves any other");
+		}
+	}
 
-			await That(granted.Diagnostics).IsEqualTo(plain.Diagnostics)
-				.Because("the scan builds the match through the handle of the internal service, as without the grant, instead of leaving it to the granted assemblies");
-			await That(granted.Diagnostics).DoesNotContain("*AWT231*").AsWildcard();
-			await That(ContainerSource(granted)).IsEqualTo(ContainerSource(plain));
+	public class AHookOfAMatchTheModuleGeneratesNoFactoryFor
+	{
+		private const string Library = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IPlugin { }
+			public interface IRoaster { }
+			internal sealed class Roaster(BeanStore store) : IPlugin, IRoaster { public BeanStore Store { get; } = store; }
+			internal sealed class BeanStore { }
+
+			[Module]
+			[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
+			public static partial class PluginModule
+			{
+				internal static void Wire(Roaster roaster, BeanStore store) { }
+			}
+
+			[Module][Singleton<BeanStore>] public static partial class StoreModule;
+			""";
+
+		private const string Container = """
+			[Container][Import(typeof(PluginModule))][Import(typeof(StoreModule))]
+			public static partial class {0};
+			""";
+
+		[Test]
+		[Arguments("library")]
+		[Arguments("same")]
+		[Arguments("friend")]
+		[Arguments("friendReference")]
+		public async Task BuildsInTheLibraryAndAGrantedAssembly(string consumer)
+		{
+			GeneratorResult result = Run(Library, Container, consumer, "Other");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a container granted InternalsVisibleTo constructs the match itself and calls the internal hook wrapper, which takes the store it builds rather than its handle");
+		}
+
+		[Test]
+		public async Task AContainerOfAGrantedAssembly_CallsTheInternalWrapperThatTakesTheServiceDirectly()
+		{
+			GeneratorResult result = Run(Library, Container, "friend");
+
+			await That(ContainerSource(result)).Contains("Internals.InternalScanHook_OnActivated_Roaster_")
+				.And.Contains("new global::Lib.Roaster(")
+				.And.DoesNotContain("Hidden_BeanStore_");
+			await That(Run(Library, Container, "library", "Other").Sources.Single(source => source.Key == "Awaiten.ModuleScan.Lib.PluginModule.g.cs").Value)
+				.Contains("public const string ScanSkipped_Roaster_")
+				.And.Contains("internal static void InternalScanHook_OnActivated_Roaster_")
+				.And.DoesNotContain("InternalScan_Roaster_")
+				.Because("the module generates no factory for the match, so it generates only the hook wrapper that takes the store directly");
 		}
 	}
 }

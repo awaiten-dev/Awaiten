@@ -839,6 +839,15 @@ partial class AwaitenGenerator
 			new EquatableArray<string>(asyncInitializerMethods));
 
 		string serviceType = service.ToDisplayString(FullyQualified);
+		bool friend = origin is not null
+		              && !SymbolEqualityComparer.Default.Equals(origin.ContainingAssembly, context.Compilation.Assembly)
+		              && origin.ContainingAssembly.GivesAccessTo(context.Compilation.Assembly);
+		if (friend)
+		{
+			onActivated = onActivated is null ? null : FriendScanMember(origin!, onActivated);
+			onRelease = onRelease is null ? null : FriendScanMember(origin!, onRelease);
+		}
+
 		if (origin is not null && SkippedScanMatch(origin, factory) is var (implementation, reason))
 		{
 			if (context.Inherited || CanConstruct(implementation, context.Compilation))
@@ -871,13 +880,9 @@ partial class AwaitenGenerator
 			return true;
 		}
 
-		if (origin is not null
-		    && !SymbolEqualityComparer.Default.Equals(origin.ContainingAssembly, context.Compilation.Assembly)
-		    && origin.ContainingAssembly.GivesAccessTo(context.Compilation.Assembly))
+		if (friend)
 		{
-			factory = FriendScanMember(origin, factory);
-			onActivated = onActivated is null ? null : FriendScanMember(origin, onActivated);
-			onRelease = onRelease is null ? null : FriendScanMember(origin, onRelease);
+			factory = FriendScanMember(origin!, factory);
 		}
 
 		string qualifiedFactory = origin is null ? factory : $"{TypeIdentity(origin, context.Compilation)}.{factory}";

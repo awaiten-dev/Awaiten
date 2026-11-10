@@ -1995,23 +1995,24 @@ partial class AwaitenGenerator
 	///     match private to the module, which a container in the module's own assembly calls, and, when the module's
 	///     assembly grants <c>InternalsVisibleTo</c> (<paramref name="friends" />), the internal factory and hook wrappers of
 	///     any other match, which a container in a granted assembly calls instead (see <see cref="FriendScanMember" />).
-	///     Each is named like its public member with an <c>Internal</c> prefix.
+	///     Each is named like its public member with an <c>Internal</c> prefix. A match whose public factory takes no
+	///     handle, or that the module generates no factory for, gets only the internal hook wrappers.
 	/// </summary>
 	private static IEnumerable<RegistrationFactory> InternalScanMembers(INamedTypeSymbol module, Compilation compilation, List<ModuleFactory> factories, bool friends, CancellationToken cancellationToken)
 	{
 		foreach (ModuleScanExpansion expansion in InternalScanFactories(module, compilation, cancellationToken))
 		{
 			ModuleFactory direct = expansion.Factory;
-			if (factories.Find(factory => factory.Skip is null && factory.ImplementationType == direct.ImplementationType) is not { } exposed)
+			if (factories.Find(factory => factory.ImplementationType == direct.ImplementationType) is not { } exposed)
 			{
 				continue;
 			}
 
-			if (direct.FactoryName == "Internal" + exposed.FactoryName)
+			if (exposed.Skip is null && direct.FactoryName == "Internal" + exposed.FactoryName)
 			{
 				yield return new RegistrationFactory(direct.FactoryName, direct.ServiceType, direct.ImplementationType, direct.Parameters, default, IsInternal: true);
 			}
-			else if (friends && (TakesHandles(exposed.Parameters) || HooksTakeHandles(exposed)))
+			else if (friends && ((exposed.Skip is null && TakesHandles(exposed.Parameters)) || HooksTakeHandles(exposed)))
 			{
 				List<RegistrationHook> hooks = new();
 				foreach ((ModuleHook? hook, ModuleHook? directHook, bool release) in new[] { (exposed.OnActivated, direct.OnActivated, false), (exposed.OnRelease, direct.OnRelease, true), })
@@ -2022,7 +2023,11 @@ partial class AwaitenGenerator
 					}
 				}
 
-				yield return new RegistrationFactory("Internal" + exposed.FactoryName, direct.ServiceType, direct.ImplementationType, direct.Parameters, new EquatableArray<RegistrationHook>(hooks.ToArray()), IsInternal: true);
+				bool hooksOnly = exposed.Skip is not null || !TakesHandles(exposed.Parameters);
+				if (!hooksOnly || hooks.Count > 0)
+				{
+					yield return new RegistrationFactory("Internal" + exposed.FactoryName, direct.ServiceType, direct.ImplementationType, direct.Parameters, new EquatableArray<RegistrationHook>(hooks.ToArray()), IsInternal: true, HooksOnly: hooksOnly);
+				}
 			}
 		}
 	}
