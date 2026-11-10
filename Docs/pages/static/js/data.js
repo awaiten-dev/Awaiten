@@ -1764,6 +1764,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
@@ -2060,7 +2066,8 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
@@ -2360,7 +2367,8 @@ window.BENCHMARK_DATA = {
           6.548656642436981,
           6.521912140341906,
           5.775131902098655,
-          4.450600648423036
+          4.450600648423036,
+          4.873906595366342
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2372,6 +2380,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2973,7 +2982,8 @@ window.BENCHMARK_DATA = {
           8.244261731704077,
           7.397376200982502,
           7.259319060123884,
-          6.992311848203341
+          6.992311848203341,
+          6.58147020637989
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2985,6 +2995,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3586,7 +3597,8 @@ window.BENCHMARK_DATA = {
           127.46344637870789,
           111.89372821648915,
           134.40190279483795,
-          82.01765375932058
+          82.01765375932058,
+          88.54239027500152
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3598,6 +3610,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4195,7 +4208,8 @@ window.BENCHMARK_DATA = {
           8.786192470788956,
           9.017092248797416,
           8.792338166099329,
-          6.983292210102081
+          6.983292210102081,
+          6.2062579164902365
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4207,6 +4221,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4800,7 +4815,8 @@ window.BENCHMARK_DATA = {
           11.032033746441206,
           11.460336261987687,
           10.861475057899952,
-          8.664843387405078
+          8.664843387405078,
+          8.378528677920501
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4812,6 +4828,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6879,6 +6896,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
@@ -7175,7 +7198,8 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
@@ -7475,7 +7499,8 @@ window.BENCHMARK_DATA = {
           6.827638457928385,
           6.807349735072681,
           6.804768294095993,
-          5.216705909619729
+          5.216705909619729,
+          5.119235810178977
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7487,6 +7512,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8088,7 +8114,8 @@ window.BENCHMARK_DATA = {
           8.154115958015124,
           7.311314771572749,
           7.336752681859902,
-          6.5211620809776445
+          6.5211620809776445,
+          6.5100541317037175
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8100,6 +8127,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8701,7 +8729,8 @@ window.BENCHMARK_DATA = {
           128.95174657503765,
           110.74178948402405,
           135.8047717412313,
-          82.46291610399882
+          82.46291610399882,
+          88.34174400170645
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8713,6 +8742,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9310,7 +9340,8 @@ window.BENCHMARK_DATA = {
           8.802481403308255,
           8.97908839583397,
           8.780185304582119,
-          7.116367216904958
+          7.116367216904958,
+          6.3008042344680195
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9322,6 +9353,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9915,7 +9947,8 @@ window.BENCHMARK_DATA = {
           14.6186617399965,
           14.90526368121306,
           14.155925347254826,
-          11.65871397192989
+          11.65871397192989,
+          11.492693759004275
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9927,6 +9960,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11994,6 +12028,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
@@ -12290,7 +12330,8 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
@@ -12590,7 +12631,8 @@ window.BENCHMARK_DATA = {
           15.856938873018537,
           17.210004693695478,
           11.355789773662885,
-          11.948181760098253
+          11.948181760098253,
+          16.002887023346766
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12862,6 +12904,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13203,7 +13246,8 @@ window.BENCHMARK_DATA = {
           1160.960160191854,
           1378.822917175293,
           756.774569443294,
-          789.140913327535
+          789.140913327535,
+          1209.8488957722982
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13215,6 +13259,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13816,7 +13861,8 @@ window.BENCHMARK_DATA = {
           25370.002144949776,
           26703.86502511161,
           17963.49279315655,
-          18286.056832449776
+          18286.056832449776,
+          26564.365462239584
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14121,7 +14167,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14425,7 +14472,8 @@ window.BENCHMARK_DATA = {
           616.2078762735639,
           606.8067962964376,
           392.3377999578203,
-          399.55577427546183
+          399.55577427546183,
+          603.0380295239962
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14455,6 +14503,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15030,7 +15079,8 @@ window.BENCHMARK_DATA = {
           8975.595078604561,
           10846.294733683268,
           6496.906109946115,
-          6431.167266845703
+          6431.167266845703,
+          10261.483468119304
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15331,6 +15381,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -17109,6 +17160,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
@@ -17405,7 +17462,8 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
@@ -17705,7 +17763,8 @@ window.BENCHMARK_DATA = {
           115.91868620259422,
           129.9867902823857,
           79.93580618699391,
-          78.85371221814837
+          78.85371221814837,
+          120.54474376042684
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17977,6 +18036,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18318,7 +18378,8 @@ window.BENCHMARK_DATA = {
           10815.49388478597,
           12162.541552225748,
           7051.084931509836,
-          7343.2852366129555
+          7343.2852366129555,
+          11806.962111409504
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18330,6 +18391,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -18931,7 +18993,8 @@ window.BENCHMARK_DATA = {
           640086.6211588542,
           646589.6358173077,
           415662.7752685547,
-          431242.5265950521
+          431242.5265950521,
+          642586.4630998884
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19236,7 +19299,8 @@ window.BENCHMARK_DATA = {
           740033,
           719056,
           739741,
-          738684
+          738684,
+          740075
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19540,7 +19604,8 @@ window.BENCHMARK_DATA = {
           38302.58962140764,
           37605.20837402344,
           23624.480237688338,
-          23294.43122427804
+          23294.43122427804,
+          36770.80592128209
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19841,7 +19906,8 @@ window.BENCHMARK_DATA = {
           81193,
           80355,
           80005,
-          80174
+          80174,
+          80008
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20145,7 +20211,8 @@ window.BENCHMARK_DATA = {
           263089.0813927284,
           319969.7874348958,
           201012.80314127603,
-          195366.51264299665
+          195366.51264299665,
+          299409.31233723956
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20446,7 +20513,8 @@ window.BENCHMARK_DATA = {
           573120,
           573128,
           572994,
-          573073
+          573073,
+          573026
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22200,6 +22268,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
@@ -22492,7 +22566,8 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
@@ -22788,7 +22863,8 @@ window.BENCHMARK_DATA = {
           253.48829164505005,
           386.9695495446523,
           270.68413615226746,
-          311.09230405943737
+          311.09230405943737,
+          173.46318972110748
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -22823,6 +22899,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -23393,7 +23470,8 @@ window.BENCHMARK_DATA = {
           596.2519153448252,
           602.007378578186,
           631.0310197194417,
-          608.2099921886737
+          608.2099921886737,
+          415.8773260116577
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -23405,6 +23483,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -23998,7 +24077,8 @@ window.BENCHMARK_DATA = {
           6554.1670018514,
           6593.193232218425,
           6762.296631949289,
-          6651.838255818685
+          6651.838255818685,
+          3637.188513619559
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24082,6 +24162,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -24603,7 +24684,8 @@ window.BENCHMARK_DATA = {
           392.00403475761414,
           443.43413117726647,
           422.56473077138264,
-          398.9099724292755
+          398.9099724292755,
+          258.95505294799807
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24615,6 +24697,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -25208,7 +25291,8 @@ window.BENCHMARK_DATA = {
           713.798678334554,
           702.8311220169068,
           750.3718147913615,
-          736.2486159642538
+          736.2486159642538,
+          388.4252785682678
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25220,6 +25304,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
