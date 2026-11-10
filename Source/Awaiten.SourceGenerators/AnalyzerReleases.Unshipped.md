@@ -143,6 +143,7 @@
  AWT248  | Awaiten   | Error    | A decorator predicate takes a parameter the root cannot supply: an [Arg], a by-reference parameter, a relationship, a collection, or a service that is not a synchronously built singleton, Instance or imported service
  AWT249  | Awaiten   | Warning  | An unkeyed open generic decorator or composite of a container applies to no closing of its service in the container's graph
  AWT254  | Awaiten   | Error    | A dependency is a collection or keyed dictionary of relationships, such as IEnumerable<Lazy<T>>, whose element type has no registration of its own, so it would stay empty
+ AWT255  | Awaiten   | Error    | The generator cannot emit the wiring of a container that reports no error, because a dependency resolves to no instance or the emission throws, which is a bug in Awaiten
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

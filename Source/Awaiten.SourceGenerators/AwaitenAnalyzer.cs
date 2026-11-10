@@ -155,7 +155,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 
 		List<DiagnosticInfo> detected = Detect(built.Graph, strict).ToList();
 
-		// A base reports its own problems; a container that extends it reports only what it changes.
+		// A base reports its own problems; a container that extends it reports only what it changes, and the errors of a
+		// base in another assembly, whose build did not fail on them (see RemoveBaseDiagnostics).
 		if (AwaitenGenerator.ReadExtends(type) is { } baseContainer)
 		{
 			AwaitenGenerator.RemoveBaseDiagnostics(detected, Detect(CachedGraph(graphByContainer, baseContainer, compilation, cancellationToken).Graph, strict), type, baseContainer);

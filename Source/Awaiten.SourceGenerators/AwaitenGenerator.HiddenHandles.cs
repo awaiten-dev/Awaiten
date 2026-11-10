@@ -28,14 +28,14 @@ partial class AwaitenGenerator
 	///     argument, such as a type argument, is named by the service alone. A generated hook wrapper is named by the
 	///     hook the module declares. <paramref name="produced" /> holds the production members the container's graph calls.
 	/// </summary>
-	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics)
+	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
 	{
 		List<ImportedModule> imported = CollectImportedModules(container, new List<DiagnosticInfo>());
 		if (ReadExtends(container) is { } baseContainer)
 		{
 			// An import of a base read from metadata has no syntax, so it reports at the container's Extends, like InheritBase.
 			ExtendsTarget(container, out AttributeData? extends);
-			Location? location = NamedArgumentLocation(extends!, "Extends");
+			Location? location = NamedArgumentLocation(extends!, "Extends", cancellationToken);
 			imported.AddRange(CollectImportedModules(baseContainer, new List<DiagnosticInfo>())
 				.Select(module => module with { ImportLocation = module.ImportLocation ?? location, }));
 		}

@@ -3030,6 +3030,18 @@ The project compiles with a C# version older than the code Awaiten generates nee
 
 On .NET Framework and netstandard2.0 without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
 
+## Generator bugs
+
+This reports a bug in Awaiten itself, not a mistake in your wiring.
+
+### AWT255
+
+:::danger[Error]
+Awaiten cannot generate the wiring of a container that reports no other error: a dependency resolves to no registration of the graph Awaiten built, or generating the code threw an exception, which the message names. This indicates a bug in Awaiten. The container keeps only a placeholder `Root` whose members throw, so the build fails at the container instead of passing without it.
+:::
+
+**Fix:** Please [report it](https://github.com/awaiten-dev/Awaiten/issues) with the message, the container's registrations and the modules or base container it imports or extends.
+
 ## Composition boundary
 
 These guard the line between your domain and the container. They are suppressible warnings, reported by the analyzer rather than the generator, so a deliberate exception can opt out in source.
