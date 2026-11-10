@@ -21,6 +21,7 @@
 		<ProjectReference Include="..\..\Source\Awaiten\Awaiten.csproj" />
 		<ProjectReference Include="..\Support\Awaiten.Tests.Support\Awaiten.Tests.Support.csproj" />
 		<ProjectReference Include="..\Support\Awaiten.Tests.ContainerSupport\Awaiten.Tests.ContainerSupport.csproj" />
+		<ProjectReference Include="..\Support\Awaiten.Tests.Elsewhere\Awaiten.Tests.Elsewhere.csproj" />
 		<ProjectReference Include="..\Support\Awaiten.Tests.GrantingSupport\Awaiten.Tests.GrantingSupport.csproj" />
 		<ProjectReference Include="..\Support\Awaiten.Tests.PolyfillFreeSupport\Awaiten.Tests.PolyfillFreeSupport.csproj" />
 	</ItemGroup>

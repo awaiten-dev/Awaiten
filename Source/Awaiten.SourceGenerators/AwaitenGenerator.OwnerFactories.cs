@@ -600,18 +600,18 @@ partial class AwaitenGenerator
 	///     generated registration factory (see <see cref="ThroughGeneratedFactory" />) call that factory too, so coalescing
 	///     keeps one instance, as a container in the module's assembly or a friend constructs one for both. This container
 	///     could not construct it as they do: the module generates the factory because the implementation's constructor is
-	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A lifecycle hook of the registration
-	///     still binds on its declarer (see <see cref="DeclaringOrigin" />), not on the module that owns the factory.
+	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A registration that another module
+	///     of another assembly builds through a generated registration factory of its own, such as a friend of the
+	///     implementation's assembly, calls the first factory too, since both mirror the one constructor. A lifecycle hook
+	///     of the registration still binds on its declarer (see <see cref="DeclaringOrigin" />), not on the module that owns
+	///     the factory.
 	/// </summary>
 	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation)
 	{
 		Dictionary<string, RawRegistration> factories = new(StringComparer.Ordinal);
 		foreach (RawRegistration registration in raw)
 		{
-			if (registration is { Production: ProductionKind.Factory, Origin: { } module, Hidden: null, }
-			    && IsGeneratedRegistrationFactory(registration.ProductionMember)
-			    && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
-			    && !factories.ContainsKey(registration.ImplementationType))
+			if (registration.Hidden is null && IsOtherAssemblysFactory(registration) && !factories.ContainsKey(registration.ImplementationType))
 			{
 				factories.Add(registration.ImplementationType, registration);
 			}
@@ -619,8 +619,10 @@ partial class AwaitenGenerator
 
 		for (int index = 0; index < raw.Count && factories.Count > 0; index++)
 		{
-			if (raw[index] is { Production: ProductionKind.Constructor, IsScan: false, ConstructVia: null, Hidden: null, } registration
-			    && factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory))
+			if (raw[index] is { IsScan: false, ConstructVia: null, Hidden: null, } registration
+			    && (registration.Production == ProductionKind.Constructor || IsOtherAssemblysFactory(registration))
+			    && factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory)
+			    && !ReferenceEquals(factory, registration))
 			{
 				raw[index] = registration with
 				{
@@ -634,6 +636,11 @@ partial class AwaitenGenerator
 				};
 			}
 		}
+
+		bool IsOtherAssemblysFactory(RawRegistration registration)
+			=> registration is { Production: ProductionKind.Factory, Origin: { } module, }
+			   && IsGeneratedRegistrationFactory(registration.ProductionMember)
+			   && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly);
 	}
 
 	/// <summary>

@@ -1,4 +1,6 @@
 using Awaiten.Tests.ContainerSupport;
+using Awaiten.Tests.Elsewhere;
+using Awaiten.Tests.GrantingSupport;
 using Awaiten.Tests.Support;
 
 namespace Awaiten.Tests;
@@ -6,7 +8,8 @@ namespace Awaiten.Tests;
 /// <summary>
 ///     Registrations of a container in another assembly of an implementation that a module of Awaiten.Tests.Support builds
 ///     through its generated factory, which the container calls for every registration, as a container in the module's
-///     own assembly constructs one instance for all of them, and an extending container that inherits such a registration.
+///     own assembly constructs one instance for all of them, a friend module of another assembly that builds it through a
+///     generated factory of its own, and an extending container that inherits such a registration.
 /// </summary>
 public class ModuleFactorySharingTests
 {
@@ -65,6 +68,17 @@ public class ModuleFactorySharingTests
 
 		await That(greeter.Steps).IsEqualTo(["activate", "convention", "release", "dispose",])
 			.Because("the container's release hook runs once, before the instance is disposed");
+	}
+
+	[Test]
+	public async Task AModuleBesideAFriendModuleThatBuildsTheImplementationThroughItsOwnFactory_RunsTheFriendsHookOnEveryInstance()
+	{
+		using KettleOfAFriendAndTheModuleContainer.Root container = new();
+
+		await That(container.Resolve<GrantingKettle>()).IsNotSameAs(container.Resolve<GrantingKettle>());
+		await That(container.Resolve<GrantingKettle>().Activations).IsEqualTo(1);
+		await That(((GrantingKettle)container.Resolve<IGrantingKettle>()).Activations).IsEqualTo(1)
+			.Because("the module's registration calls the generated factory of the friend module, which comes first, so its instances take the friend module's activation hook once");
 	}
 
 	[Test]
@@ -137,6 +151,11 @@ public static partial class GreeterBesideFriendModuleContainer;
 [Import(typeof(LocalFactorySharingModule))]
 [Singleton<LocalFactorySharingGreeter>]
 public static partial class GreeterBesideLocalModuleContainer;
+
+[Container]
+[Import(typeof(ElsewhereKettleModule))]
+[Import(typeof(GrantingKettleModule))]
+public static partial class KettleOfAFriendAndTheModuleContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyFactorySharingModule))]

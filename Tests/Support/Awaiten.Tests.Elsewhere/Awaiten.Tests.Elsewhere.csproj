@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>library</OutputType>
+		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<!-- A plain support library referenced by Awaiten.Tests that Awaiten.Tests.GrantingSupport grants InternalsVisibleTo,
+	     so its modules register the granting library's types with internal constructors and build them through generated
+	     factories of their own, which a container in Awaiten.Tests, granted nothing, calls. Not a test project. -->
+	<ItemGroup>
+		<PackageReference Remove="TUnit.Engine" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Remove="aweXpect" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Source\Awaiten.SourceGenerators\Awaiten.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\..\Source\Awaiten\Awaiten.csproj" />
+		<ProjectReference Include="..\Awaiten.Tests.GrantingSupport\Awaiten.Tests.GrantingSupport.csproj" />
+	</ItemGroup>
+
+</Project>

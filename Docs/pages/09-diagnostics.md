@@ -167,7 +167,7 @@ Registrations that name the same implementation type are one implementation. A `
 
 The library's build reports this too for an implementation a module builds through a [generated handle](./04-registration/07-modules.md#services-only-the-module-uses), since a container in another assembly serves all its registrations from one instance.
 
-A module of another assembly constructs an implementation through a generated factory when the container can't, for example because the constructor or an `[Inject]` property is internal. Another registration of the implementation calls that factory too. When modules of two other assemblies each build it through a generated factory of their own, the message names the module whose factory calls each constructor.
+A module of another assembly constructs an implementation through a generated factory when the container can't, for example because the constructor or an `[Inject]` property is internal. Another registration of the implementation calls that factory too, also one that a module of a third assembly builds through a generated factory of its own, so all of them share one instance, as in the implementation's own assembly.
 
 **Fix:** Produce the implementation one way only: keep either the `Factory` registration or the constructor registration, or name the same `Factory` on both.
 

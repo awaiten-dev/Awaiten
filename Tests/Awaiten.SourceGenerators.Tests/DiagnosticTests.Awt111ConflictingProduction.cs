@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Awaiten.SourceGenerators.Tests;
 
 public partial class DiagnosticTests
@@ -656,26 +658,354 @@ public partial class DiagnosticTests
 			await That(reference.Diagnostics).IsEmpty();
 		}
 
-		[Test]
-		public async Task NamesEachModuleWhenModulesOfTwoOtherAssembliesConstructAnImplementationThroughTheirGeneratedFactories()
+		private static GeneratorResult RunWithFriendModule(string registration, string setup)
 		{
-			const string friendModule = """
+			const string hook = "internal static void Wire(Kettle kettle) { }";
+			if (setup == "same")
+			{
+				return Generator.Run(KettleLibrary + $"\n[Module]\n{registration}\npublic static partial class FriendModule {{ {hook} }}\n\n[Container]\n[Import(typeof(KettleModule))]\n[Import(typeof(FriendModule))]\npublic static partial class SameContainer;");
+			}
+
+			string grants = setup == "friend" ? "\"Library2\")]\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]" : "\"Library2\")]";
+			string library = KettleLibrary.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(" + grants);
+			string friendModule = $"using Awaiten;\nusing Lib;\n\nnamespace Friend;\n\n[Module]\n{registration}\npublic static partial class FriendModule {{ {hook} }}";
+			return Generator.RunWithGeneratedReferencedAssemblyChain([library, friendModule,], KettleContainer("[Import(typeof(Friend.FriendModule))]"), setup == "reference");
+		}
+
+		[Test]
+		[Arguments("friend")]
+		[Arguments("full")]
+		[Arguments("reference")]
+		public async Task ModulesOfTwoOtherAssembliesConstructingAnImplementationThroughTheirGeneratedFactories_ShareTheFirstFactory(string setup)
+		{
+			GeneratorResult result = RunWithFriendModule("[Transient<Kettle>]", setup);
+
+			await That(RunWithFriendModule("[Transient<Kettle>]", "same").Diagnostics).IsEmpty();
+			await That(result.Diagnostics).IsEmpty()
+				.Because("both modules' generated factories mirror the one constructor, so the container calls the first module's factory for both registrations, as a container in the implementation's assembly constructs one instance");
+			if (setup != "friend")
+			{
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.KettleModule.Internals.Registration_")
+					.And.DoesNotContain("global::Friend.FriendModule.Internals.Registration_")
+					.Because("the friend module's registration shares the factory of the module that comes first");
+			}
+		}
+
+		[Test]
+		[Arguments("[Singleton<Kettle>]", "friend")]
+		[Arguments("[Singleton<Kettle>]", "full")]
+		[Arguments("[Singleton<Kettle>]", "reference")]
+		[Arguments("[Transient<Kettle>(OnActivated = nameof(Wire))]", "friend")]
+		[Arguments("[Transient<Kettle>(OnActivated = nameof(Wire))]", "full")]
+		[Arguments("[Transient<Kettle>(OnActivated = nameof(Wire))]", "reference")]
+		public async Task ModulesOfTwoOtherAssembliesSharingAGeneratedFactory_ReportAsInTheImplementationsAssembly(string registration, string setup)
+		{
+			string[] expected = RunWithFriendModule(registration, "same").Diagnostics.Select(Message).ToArray();
+
+			string[] result = RunWithFriendModule(registration, setup).Diagnostics.Select(Message).ToArray();
+
+			await That(result).IsEqualTo(expected)
+				.Because("sharing the factory keeps the friend module's lifetime and hooks, so they meet the other module's registration as in the implementation's assembly");
+
+			static string Message(string diagnostic)
+				=> diagnostic.Substring(diagnostic.IndexOf("AWT", StringComparison.Ordinal)).Replace("Friend.FriendModule", "Lib.FriendModule");
+		}
+
+		public class BesideTheHandleOfAModuleOfAnotherAssembly
+		{
+			private const string OneFactory = """
 				using Awaiten;
 
-				namespace Friend;
+				namespace Lib;
+
+				internal sealed class TimeSource { }
+				public sealed class Clock { public Clock() { } }
 
 				[Module]
-				[Transient<Lib.Kettle>]
-				public static partial class FriendModule { }
+				[Singleton<TimeSource>]
+				[Singleton<Clock>(Factory = nameof(CreateA))]{0}
+				public static partial class ClockModule
+				{
+				    internal static Clock CreateA(TimeSource source) => new();
+				    internal static Clock CreateB(TimeSource source) => new();
+				}
+
+				[Module]
+				[Singleton<Clock>]
+				public static partial class OtherModule;
 				""";
 
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
-				[KettleLibrary.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Library2\")]"), friendModule,],
-				KettleContainer("[Import(typeof(Friend.FriendModule))]"));
+			private const string ThreeModules = """
+				using Awaiten;
 
-			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains(
-					"AWT111: 'Lib.Kettle' is registered with conflicting production strategies (the constructor that module 'Lib.KettleModule' calls through its generated factory and the constructor that module 'Friend.FriendModule' calls through its generated factory)"))
-				.Because("each module's generated factory calls the constructor, so the message tells them apart by module instead of naming 'a constructor' twice");
+				namespace Lib;
+
+				internal sealed class TimeSource { }
+				public sealed class Clock { {0} Clock() { } }
+
+				[Module]
+				[Singleton<TimeSource>]
+				[Singleton<Clock>(Factory = nameof(CreateA){1})]
+				public static partial class AModule
+				{
+				    internal static Clock CreateA(TimeSource source) => new();
+				}
+
+				[Module]
+				[{2}<Clock>(Factory = nameof(CreateB))]
+				public static partial class BModule
+				{
+				    internal static Clock CreateB(TimeSource source) => new();
+				}
+
+				[Module]
+				[Singleton<Clock>]
+				public static partial class CModule;
+				""";
+
+			private static GeneratorResult Run(string library, string container, string setup)
+			{
+				const string usings = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n";
+				return setup switch
+				{
+					"same" => Generator.Run(library + "\n" + container.Replace("{0}", "SameContainer")),
+					"friend" => Generator.RunWithGeneratedReferencedAssembly(
+						library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Lib;"),
+						usings + container.Replace("{0}", "MyContainer")),
+					"reference" => Generator.RunWithGeneratedReferenceAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+					_ => Generator.RunWithGeneratedReferencedAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+				};
+			}
+
+			/// <summary>The message of <paramref name="diagnostic" />, naming the container as the container of the module's own assembly is named.</summary>
+			private static string Message(string diagnostic)
+				=> diagnostic.Substring(diagnostic.IndexOf("AWT", StringComparison.Ordinal)).Replace("MyCode.MyContainer", "Lib.SameContainer");
+
+			/// <summary>
+			///     Asserts that <paramref name="setup" /> reports what a container in the module's own assembly reports, at the
+			///     registration a container granted <c>InternalsVisibleTo</c> reports it at, and returns those diagnostics.
+			/// </summary>
+			private static async Task<string[]> ReportsAsInTheModulesOwnAssembly(string library, string container, string setup)
+			{
+				string[] same = Run(library, container, "same").Diagnostics;
+				string[] friend = Run(library, container, "friend").Diagnostics;
+				string[] result = Run(library, container, setup).Diagnostics;
+
+				await That(result.Select(Message)).IsEqualTo(same.Select(Message))
+					.Because("the handle's instance is one instance with every registration of the implementation, so its producers conflict once and between the same pair as in the module's own assembly");
+				await That(result).IsEqualTo(friend)
+					.Because("the conflict is reported at the registration that a container granted InternalsVisibleTo reports it at");
+				return result;
+			}
+
+			[Test]
+			[Arguments("", "friend")]
+			[Arguments("", "full")]
+			[Arguments("", "reference")]
+			[Arguments("\n[Singleton<Clock>(Factory = nameof(CreateB))]", "friend")]
+			[Arguments("\n[Singleton<Clock>(Factory = nameof(CreateB))]", "full")]
+			[Arguments("\n[Singleton<Clock>(Factory = nameof(CreateB))]", "reference")]
+			public async Task AHookOfARegistrationThatProducesTheImplementationOtherwise_IsNotReportedAsUnapplied(string second, string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<Clock>(OnActivated = nameof(Act))]
+					public static partial class {0}
+					{
+					    private static void Act(Clock clock) { }
+					}
+					""";
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(OneFactory.Replace("{0}", second), container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("a constructor and factory 'Lib.ClockModule.CreateA'")
+					.Because("the registration constructs what the module's factory produces, so AWT111 asks to produce it one way first, and the hook the handle would not run (AWT241) does not matter until then");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task TwoFactoriesOfOneModule_BesideAModuleThatConstructsTheImplementation_NameBothFactories(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Import(typeof(OtherModule))]
+					public static partial class {0};
+					""";
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(OneFactory.Replace("{0}", "\n[Singleton<Clock>(Factory = nameof(CreateB))]"), container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("factory 'Lib.ClockModule.CreateA' and factory 'Lib.ClockModule.CreateB'");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task TwoRegistrationsOfTheContainer_ConflictWithEachOtherFirst(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(ClockModule))]
+					[Singleton<Clock>]
+					[Singleton<Clock>(Factory = nameof(Make))]
+					public static partial class {0}
+					{
+					    private static Clock Make() => new();
+					}
+					""";
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(OneFactory.Replace("{0}", ""), container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("a constructor and factory 'MyCode.MyContainer.Make'")
+					.Because("the container's registrations precede the module's, so their own conflict is the first");
+			}
+
+			[Test]
+			[Arguments("public", "friend")]
+			[Arguments("public", "full")]
+			[Arguments("public", "reference")]
+			[Arguments("internal", "friend")]
+			[Arguments("internal", "full")]
+			[Arguments("internal", "reference")]
+			public async Task AFallbackFactory_YieldsToTheFactoryOfAnotherModule(string constructor, string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", constructor).Replace("{1}", ", Fallback = Fallback.Warn").Replace("{2}", "Singleton");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("factory 'Lib.BModule.CreateB' and a constructor")
+					.Because("the other modules replace the Fallback factory, so CModule's constructor shares the handle of BModule's factory and conflicts with it, even when the container can call the constructor itself");
+			}
+
+			[Test]
+			[Arguments("public", "friend")]
+			[Arguments("public", "full")]
+			[Arguments("public", "reference")]
+			[Arguments("internal", "friend")]
+			[Arguments("internal", "full")]
+			[Arguments("internal", "reference")]
+			public async Task ARegistrationOfTheContainer_ConflictsWithEveryProducerOfTheImplementation(string constructor, string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Singleton<Clock>]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", constructor).Replace("{1}", "").Replace("{2}", "Scoped");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasCount(2)
+					.And.Contains("*AWT111*a constructor and factory 'Lib.AModule.CreateA'*").AsWildcard()
+					.And.Contains("*AWT107*Singleton and Scoped*").AsWildcard()
+					.Because("the container's registration names the implementation, so both modules' factories are productions of its one instance and BModule's lifetime contradicts it too");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task AModuleThatConstructsAnImplementationTheContainerCanConstruct_ReportsTheConflictOnce(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", "").Replace("{2}", "Singleton");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("factory 'Lib.AModule.CreateA' and factory 'Lib.BModule.CreateB'")
+					.Because("CModule's constructor shares the handle the modules' factories coalesce into, so the one conflict of the implementation is the first pair in precedence order");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task FactoriesWithOtherLifetimesAndHooks_BesideAModuleThatConstructsTheImplementation_ReportEachConflictOnce(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", ", OnActivated = nameof(ReadyA)").Replace("{2}", "Scoped")
+					.Replace("Factory = nameof(CreateB))]", "Factory = nameof(CreateB), OnActivated = nameof(ReadyB))]")
+					.Replace("internal static Clock CreateA(TimeSource source) => new();", "internal static Clock CreateA(TimeSource source) => new();\n    internal static void ReadyA(Clock clock) { }")
+					.Replace("internal static Clock CreateB(TimeSource source) => new();", "internal static Clock CreateB(TimeSource source) => new();\n    internal static void ReadyB(Clock clock) { }");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasCount(3)
+					.And.Contains("*AWT107*Singleton and Scoped*").AsWildcard()
+					.And.Contains("*AWT111*factory 'Lib.AModule.CreateA' and factory 'Lib.BModule.CreateB'*").AsWildcard()
+					.And.Contains("*AWT166*'Lib.AModule.ReadyA' and 'Lib.BModule.ReadyB'*").AsWildcard()
+					.Because("the modules' factories and CModule's constructor produce one instance, so each of BModule's contradictions of AModule is reported once, as in the module's own assembly");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ARegistrationOfTheContainerThatComesFirst_IsTheProducerTheHandlesAreComparedWith(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					[Singleton<Clock>(Key = "c", Eager = true)]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", "").Replace("{2}", "Singleton")
+					.Replace("Factory = nameof(CreateB))]", "Factory = nameof(CreateB), Key = \"b\", Eager = true)]");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("a constructor and factory 'Lib.AModule.CreateA'")
+					.Because("the container's eager registration comes first, so BModule's eager factory agrees with it, even though AModule's factory is not eager");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ADroppedFallbackDefault_DoesNotConflictWithTheHandle(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", "").Replace("{2}", "Singleton")
+					.Replace("[Singleton<Clock>]\npublic static partial class CModule;", "[Scoped<Clock>(Fallback = Fallback.Warn)]\npublic static partial class CModule;")
+					.Replace("[Singleton<Clock>]\r\npublic static partial class CModule;", "[Scoped<Clock>(Fallback = Fallback.Warn)]\r\npublic static partial class CModule;");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).IsEmpty()
+					.Because("AModule's registration replaces CModule's Fallback default, which is dropped and so produces nothing that could conflict");
+			}
 		}
 	}
 }
