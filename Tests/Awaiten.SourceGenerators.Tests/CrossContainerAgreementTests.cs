@@ -835,5 +835,97 @@ public class CrossContainerAgreementTests
 			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
 			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*Spare = *").AsWildcard();
 		}
+
+		[Test]
+		[Arguments(true)]
+		[Arguments(false)]
+		public async Task ForAnInjectPropertyOfADefinitionWithAClosingAFactoryBuildsIntoAHandle_ReportsThatClosingToo(bool deferred)
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib
+				{
+					public interface IClock { }
+					public sealed class SystemClock : IClock { }
+					internal interface ISecret<T> { }
+					public sealed class Brew<T> : ISecret<T> { [Inject] public IClock Clock { get; set; } = null!; }
+
+					[Module]
+					[Singleton<Brew<int>, ISecret<int>>]
+					[Singleton<Brew<string>, ISecret<string>>(Factory = nameof(Make))]
+					[Singleton<SystemClock, IClock>]
+					public static partial class CoffeeModule { internal static Brew<string> Make() => new(); }
+				}
+				""";
+			string entry = $"[InjectProperty(typeof(Brew<>), nameof(Brew<int>.Clock), Deferred = {(deferred ? "true" : "false")})]";
+
+			foreach (GeneratorResult result in new[]
+			         {
+				         Same(library, entry),
+				         Generator.RunWithGeneratedReferencedAssembly(Granting(library), Consumer(entry)),
+				         Generator.RunWithGeneratedReferencedAssembly(library, Consumer(entry)),
+				         Generator.RunWithGeneratedReferenceAssembly(library, Consumer(entry)),
+			         })
+			{
+				await That(result.Diagnostics).HasCount(2);
+				await That(result.Diagnostics).Contains("*warning AWT181: The property 'Clock' on 'Lib.Brew<int>' carries [Inject]*").AsWildcard();
+				await That(result.Diagnostics).Contains("*error AWT178: 'Lib.Brew<string>' is produced by a Factory or Instance registration, so its property 'Clock' cannot be filled by [InjectProperty]*").AsWildcard()
+					.Because("the closing the module's factory produces gets no entry, although the handle of the other closing reported it as a duplicate of its [Inject] property");
+			}
+		}
+
+		[Test]
+		public async Task ThatIsDeferredOnABaseOfTheModulesAssembly_IsReportedInTheExtendingContainer()
+		{
+			string library = Library + """
+
+				namespace Lib
+				{
+					[Container]
+					[Import(typeof(CoffeeModule))]
+					[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]
+					public static partial class Shop;
+				}
+				""";
+			const string extending = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container(Extends = typeof(Shop))]
+				public static partial class MyContainer;
+				""";
+
+			await That(Generator.Run(library + "\nnamespace Lib { [Container(Extends = typeof(Shop))] public static partial class MyContainer; }").Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(library), extending).Diagnostics).IsEmpty();
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, extending).Diagnostics).HasSingle().Which
+				.Contains("*error AWT178: 'Lib.Greeter' is built by the generated factory of 'Lib.CoffeeModule'*, and the container sets no Deferred entry on the instance a generated handle holds, so its property 'Backup'*").AsWildcard()
+				.Because("the base constructs the implementation and sets the entry, while the extending container builds it through the handle, which sets no Deferred entry");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, extending).Diagnostics).HasSingle().Which.Contains("*AWT178*'Backup'*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ThatIsDeferredOnABaseOfTheContainersAssembly_IsReportedOnce()
+		{
+			const string consumer = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[InjectProperty<Greeter>(nameof(Greeter.Backup), Deferred = true)]
+				public static partial class Shop;
+
+				[Container(Extends = typeof(Shop))]
+				public static partial class MyContainer;
+				""";
+
+			await That(Generator.RunWithGeneratedReferencedAssembly(Library, consumer).Diagnostics).HasSingle().Which.Contains("*AWT178*'Backup'*").AsWildcard()
+				.Because("the base reports its own entry, so the extending container does not report it again");
+		}
 	}
 }

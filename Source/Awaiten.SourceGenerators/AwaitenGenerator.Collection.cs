@@ -1950,11 +1950,11 @@ partial class AwaitenGenerator
 	///     as unmatched. (Property injection is not applied to a decorator wrapper; see the <c>[InjectProperty]</c>
 	///     XML doc.) It also carries each impl's generic definition, the key of an open-generic entry, so such an
 	///     entry is unmatched only when no closing of its definition is constructed. An entry inherited from an
-	///     extended base is not reported: the base reports its own, and one whose implementation the extending
-	///     container replaced is meant to fall away. An implementation a module of another assembly builds into an
+	///     extended base is not reported, but for a <c>Deferred</c> one a handle cannot take (below): the base reports
+	///     its own, and one whose implementation the extending container replaced is meant to fall away. An implementation a module of another assembly builds into an
 	///     instance handle takes the entries through the handle (see <see cref="WithHandleEntries" />), all but a
-	///     <c>Deferred</c> one, which is AWT178 unless the handle reported it as AWT181 or AWT177
-	///     (<paramref name="reportedHandleEntries" />), as is every entry when the handle cannot take them (see
+	///     <c>Deferred</c> one, which is AWT178, an inherited one too, unless a handle that takes the entries reported it as
+	///     AWT181 or AWT177 (<paramref name="reportedHandleEntries" />), as is every entry when the handle cannot take them (see
 	///     <see cref="HandleAssignment" />), with the reason the module handles it (see <see cref="InstanceHandleReason" />)
 	///     and why the entry cannot reach it. So is an entry for its generic definition that no constructed closing
 	///     matches, which then names the closing the handle builds. The handle of one of several producers of a service
@@ -2014,7 +2014,8 @@ partial class AwaitenGenerator
 
 			bool isHandled = handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment) owner);
 			// A handle that takes the entries sets them through its alias (see WithHandleEntries), all but a Deferred one,
-			// which is AWT178 unless it already reported the entry as AWT181 or AWT177.
+			// which is AWT178 unless it already reported the entry as AWT181 or AWT177. An entry the handle of one closing
+			// reported is still reported for a closing whose handle cannot take the entries.
 			bool assigned = isHandled && owner.Assignment.Alias is not null;
 			List<ModuleRegistration> registrations = isHandled && !owner.Scan
 				? ConstructedModuleRegistrations(owner.Module, compilation, members: true)
@@ -2024,7 +2025,9 @@ partial class AwaitenGenerator
 			string target = isHandled && owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
 				? Display(closed.ToDisplayString(FullyQualified))
 				: DisplayInstance(implementation.Key);
-			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited && (!assigned || entry.Deferred) && !reportedHandleEntries.Contains(entry)))
+			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => assigned
+				         ? entry.Deferred && !reportedHandleEntries.Contains(entry)
+				         : !entry.Inherited))
 			{
 				// A Factory or Instance member builds the instance whole in every assembly, so the entry is the plain AWT178
 				// a container of the module's own assembly reports, which no InternalsVisibleTo grant would change.

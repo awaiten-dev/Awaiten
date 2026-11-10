@@ -274,7 +274,8 @@ partial class AwaitenGenerator
 	///     <c>[Inject]</c> property, which the factory takes as a parameter or sets through a setter wrapper, is AWT181, and
 	///     one that names no settable property is AWT177, also when it is <c>Deferred</c>, as in the module's own assembly.
 	///     Any other <c>Deferred</c> entry is left to <see cref="ReportUnmatchedInjectProperties" />, which reports it as
-	///     AWT178. An inherited one is left to the base, which reports its own.
+	///     AWT178, an inherited one too: a base of another assembly may construct the implementation and set the entry, and
+	///     a base of this one reports the same diagnostics, which <see cref="RemoveBaseDiagnostics" /> then drops here.
 	/// </summary>
 	private static string? WithHandleEntries(List<MemberModel> members, ImplInfo info, IMethodSymbol producer, BuildContext context)
 	{
@@ -293,7 +294,6 @@ partial class AwaitenGenerator
 			entries = MergeOpenInjectProperties(info, entries, open, context.Diagnostics);
 		}
 
-		entries = entries.Where(entry => !entry.Deferred || !entry.Inherited).ToList();
 		if (entries.Count == 0)
 		{
 			return null;
