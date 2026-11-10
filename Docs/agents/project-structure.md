@@ -38,6 +38,7 @@ The test projects sit directly under `Tests/`. The assemblies they reference but
 - `Tests/Awaiten.Api.Tests`: public API snapshots of both packages for each target framework.
 - `Tests/Support/Awaiten.Tests.Support`: a referenced assembly without `InternalsVisibleTo` for cross-assembly scans, modules and internal services.
 - `Tests/Support/Awaiten.Tests.ContainerSupport`: a referenced assembly that declares a `[Container]` to extend across the boundary and grants `Awaiten.Tests` `InternalsVisibleTo`.
+- `Tests/Support/Awaiten.Tests.GrantingSupport`: a referenced assembly that grants `InternalsVisibleTo` to an assembly other than `Awaiten.Tests`, whose modules a container there consumes as one the library grants nothing.
 - `Tests/Support/Awaiten.Tests.PolyfillFreeSupport`: a net48 and netstandard2.0 consumer without the Nullable polyfills, whose generated container must compile without them.
 - `Tests/Support/CoffeeShop.Domain`: the coffee-shop domain the examples compose, in an assembly of its own so the architecture test checks it whole. Only its `CoffeeShop.Composition` namespace, a `[Module]`, references Awaiten.
 - `Tests/Awaiten.AotTests` (net10.0): a console app, not a TUnit project, that the `AotTests` target publishes with native AOT and runs; a non-zero exit code fails it. It proves the generated code, a module of another assembly and the MS.DI bridge reflection-free.

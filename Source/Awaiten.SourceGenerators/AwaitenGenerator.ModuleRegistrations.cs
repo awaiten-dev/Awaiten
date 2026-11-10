@@ -113,8 +113,8 @@ partial class AwaitenGenerator
 		{
 			if (!_scans.TryGetValue(module, out List<ModuleScanExpansion>? scans))
 			{
-				// Without a grant, the module's scans take internal services through handles, which this container builds itself.
-				_scans[module] = scans = IsExternallyAccessible(module) && ReceivesGeneratedMembers(module) && !GrantsInternalsVisibleTo(_compilation.Assembly)
+				// The module's scans take internal services through handles, which this container builds itself.
+				_scans[module] = scans = IsExternallyAccessible(module) && ReceivesGeneratedMembers(module)
 					? InternalScanFactories(module, _compilation, CancellationToken.None)
 					: CollectModuleScanFactories(module, _compilation, new List<DiagnosticInfo>(), CancellationToken.None);
 			}
@@ -1988,6 +1988,65 @@ partial class AwaitenGenerator
 				? expansion with { Factory = expansion.Factory with { FactoryName = "Internal" + expansion.Factory.FactoryName, }, }
 				: expansion)
 			.ToList();
+
+	/// <summary>
+	///     The internal members that take the internal services directly, beside the public scan <paramref name="factories" />
+	///     that take them through handles, for the containers that build the services themselves: the internal factory of a
+	///     match private to the module, which a container in the module's own assembly calls, and, when the module's
+	///     assembly grants <c>InternalsVisibleTo</c> (<paramref name="friends" />), the internal factory and hook wrappers of
+	///     any other match, which a container in a granted assembly calls instead (see <see cref="FriendScanMember" />).
+	///     Each is named like its public member with an <c>Internal</c> prefix.
+	/// </summary>
+	private static IEnumerable<RegistrationFactory> InternalScanMembers(INamedTypeSymbol module, Compilation compilation, List<ModuleFactory> factories, bool friends, CancellationToken cancellationToken)
+	{
+		foreach (ModuleScanExpansion expansion in InternalScanFactories(module, compilation, cancellationToken))
+		{
+			ModuleFactory direct = expansion.Factory;
+			if (factories.Find(factory => factory.Skip is null && factory.ImplementationType == direct.ImplementationType) is not { } exposed)
+			{
+				continue;
+			}
+
+			if (direct.FactoryName == "Internal" + exposed.FactoryName)
+			{
+				yield return new RegistrationFactory(direct.FactoryName, direct.ServiceType, direct.ImplementationType, direct.Parameters, default, IsInternal: true);
+			}
+			else if (friends && (TakesHandles(exposed.Parameters) || HooksTakeHandles(exposed)))
+			{
+				List<RegistrationHook> hooks = new();
+				foreach ((ModuleHook? hook, ModuleHook? directHook, bool release) in new[] { (exposed.OnActivated, direct.OnActivated, false), (exposed.OnRelease, direct.OnRelease, true), })
+				{
+					if (hook is { SkipReason: null, } && TakesHandles(hook.Parameters) && directHook is { SkipReason: null, })
+					{
+						hooks.Add(new RegistrationHook(directHook with { WrapperName = "Internal" + hook.WrapperName, }, release));
+					}
+				}
+
+				yield return new RegistrationFactory("Internal" + exposed.FactoryName, direct.ServiceType, direct.ImplementationType, direct.Parameters, new EquatableArray<RegistrationHook>(hooks.ToArray()), IsInternal: true);
+			}
+		}
+	}
+
+	/// <summary>Whether a generated member with <paramref name="parameters" /> takes an internal service through its handle.</summary>
+	private static bool TakesHandles(EquatableArray<FactoryParameter> parameters)
+		=> parameters.AsArray().Any(parameter => parameter.Argument is not null);
+
+	/// <summary>Whether a lifecycle-hook wrapper of the scan <paramref name="factory" /> takes an internal service through its handle.</summary>
+	private static bool HooksTakeHandles(ModuleFactory factory)
+		=> (factory.OnActivated is { SkipReason: null, } activation && TakesHandles(activation.Parameters))
+		   || (factory.OnRelease is { SkipReason: null, } release && TakesHandles(release.Parameters));
+
+	/// <summary>
+	///     The member a container granted <c>InternalsVisibleTo</c> by the assembly of <paramref name="module" /> calls in
+	///     place of the generated scan factory or hook wrapper <paramref name="name" />: its internal counterpart that takes
+	///     the internal services directly, since such a container builds them itself and registers no handles, or
+	///     <paramref name="name" /> when the module generated none (see <see cref="InternalScanMembers" />).
+	/// </summary>
+	private static string FriendScanMember(INamedTypeSymbol module, string name)
+		=> name.StartsWith(InternalsClass + ".", StringComparison.Ordinal)
+		   && InternalsMembers(module, "Internal" + name.Substring(InternalsClass.Length + 1)) is { IsEmpty: false, }
+			? InInternals("Internal" + name.Substring(InternalsClass.Length + 1))
+			: name;
 
 	/// <summary>A deterministic name for the internal factory of an implementation private to the module (see <see cref="InternalRegistrationFactory" />).</summary>
 	private static string InternalRegistrationFactoryName(INamedTypeSymbol implementation)

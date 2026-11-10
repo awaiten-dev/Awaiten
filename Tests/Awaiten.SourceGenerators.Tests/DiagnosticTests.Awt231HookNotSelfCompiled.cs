@@ -107,12 +107,9 @@ public partial class DiagnosticTests
 					internal sealed class OrderHandler : IHandler<int> { }
 
 					[Module]
-					[Singleton<Log>(Factory = nameof(CreateLog))]
 					[Scan(typeof(IHandler<>), As = ScanAs.Marker, OnActivated = nameof(Activate))]
 					public static partial class HandlerModule
 					{
-					    internal static Log CreateLog() => new();
-
 					    internal static void Activate<T>(IHandler<T> handler, Log log) { }
 					}
 					""");

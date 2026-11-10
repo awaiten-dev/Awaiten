@@ -871,6 +871,15 @@ partial class AwaitenGenerator
 			return true;
 		}
 
+		if (origin is not null
+		    && !SymbolEqualityComparer.Default.Equals(origin.ContainingAssembly, context.Compilation.Assembly)
+		    && origin.ContainingAssembly.GivesAccessTo(context.Compilation.Assembly))
+		{
+			factory = FriendScanMember(origin, factory);
+			onActivated = onActivated is null ? null : FriendScanMember(origin, onActivated);
+			onRelease = onRelease is null ? null : FriendScanMember(origin, onRelease);
+		}
+
 		string qualifiedFactory = origin is null ? factory : $"{TypeIdentity(origin, context.Compilation)}.{factory}";
 
 		RawRegistration match = new(

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>library</OutputType>
+		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<!-- A plain support library referenced by Awaiten.Tests that grants InternalsVisibleTo to another assembly than
+	     Awaiten.Tests, so a container there consumes the modules of a granting library as any assembly the library grants
+	     nothing does. Kept apart from Awaiten.Tests.Support, which grants nothing, and Awaiten.Tests.ContainerSupport,
+	     which grants Awaiten.Tests. Not a test project. -->
+	<ItemGroup>
+		<PackageReference Remove="TUnit.Engine" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Remove="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Remove="aweXpect" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Source\Awaiten.SourceGenerators\Awaiten.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\..\Source\Awaiten\Awaiten.csproj" />
+	</ItemGroup>
+
+</Project>

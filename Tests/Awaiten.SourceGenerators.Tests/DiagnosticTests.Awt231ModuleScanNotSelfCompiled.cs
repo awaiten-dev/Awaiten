@@ -187,12 +187,11 @@ public partial class DiagnosticTests
 
 					[Module]
 					[Scan<IPlugin>(As = ScanAs.Marker, OnActivated = nameof(Activate))]
-					[Singleton<Secret>]
 					public static partial class PluginModule
 					{
 					    internal static void Activate(Roaster roaster) { }
 					}
-					""", Consumer);
+					""", Consumer.Replace("[Import(typeof(PluginModule))]", "[Import(typeof(PluginModule))][Singleton<Secret>]"));
 
 				await That(result.Diagnostics).IsEmpty()
 					.Because("the module still emits the public hook wrapper, which takes the service the consumer's instance converts to");
