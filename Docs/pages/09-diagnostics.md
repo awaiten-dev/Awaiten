@@ -2824,7 +2824,7 @@ When the decorator's assembly grants the container nothing either, the container
 ### AWT253
 
 :::danger[Error]
-An implementation that an imported module of another assembly builds takes a public generic service closed over a type internal to the module's assembly, and the container can neither ask its host for that closing nor build it from the module's own registration.
+An implementation that an imported module of another assembly builds, or a hook, decorator predicate or async initializer of that module, takes a public generic service closed over a type internal to the module's assembly, and the container can neither ask its host for that closing nor build it from the module's own registration.
 :::
 
 ```csharp no-compile
@@ -2842,9 +2842,9 @@ public static partial class BrewingModule;
 public static partial class CoffeeShop;
 ```
 
-The container can't name a [closing over an internal type](./04-registration/07-modules.md#closings-over-internal-types) such as `ILogger<PourOver>`, so it serves the closing only in two ways: it asks its host when it imports the definition, or it builds the closing through the factory the module generated from its own open registration of the definition. The message says why neither applies: nothing provides the definition, the closing is keyed, which only the host serves, the container or another module registers it, which would have to close it over a type it can't name, the container decorates or composes it, which couldn't apply to that closing, or the module registers it but generated no factory for the closing, for example because the registration names a hook, which the message names.
+The container can't name a [closing over an internal type](./04-registration/07-modules.md#closings-over-internal-types) such as `ILogger<PourOver>`, so it serves the closing only in two ways: it asks its host when it imports the definition, or it builds the closing through the factory the module generated from its own open registration of the definition. The message says why neither applies: nothing provides the definition, the closing is keyed, which only the host serves, the module registers it only with `WhenInjectedInto`, which can't select that closing, the container or another module registers it, which would have to close it over a type it can't name, the container decorates or composes it, which couldn't apply to that closing, or the module registers it but generated no factory for the closing, for example because the registration names a hook, which the message names.
 
-**Fix:** Import the definition from the host with `[ImportService(typeof(ILogger<>))]`, or register it as an open generic in the module whose implementation takes the closing, without a hook, a generic factory or a decorator. Granting the container's assembly `InternalsVisibleTo` in the library lets the container close the definition itself.
+**Fix:** Import the definition from the host with `[ImportService(typeof(ILogger<>))]`, or register it as an open generic in the module whose implementation takes the closing, without `WhenInjectedInto`, a hook, a generic factory or a decorator. Granting the container's assembly `InternalsVisibleTo` in the library lets the container close the definition itself.
 
 ## Extending containers
 

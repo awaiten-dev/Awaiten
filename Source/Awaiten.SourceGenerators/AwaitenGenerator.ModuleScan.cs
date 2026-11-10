@@ -843,8 +843,10 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in hook.Parameters.Skip(1))
 		{
 			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out INamedTypeSymbol? unbuildable);
-			if (HookParameterMirrorError(subject, parameter, release, location, context) is { } error
-			    && (handle is null || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
+			DiagnosticInfo? error = HookParameterMirrorError(subject, parameter, release, location, context);
+			FactoryParameter? closing = handle is null && error?.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible ? ClosingParameter(parameter, context) : null;
+			if (error is not null
+			    && ((handle is null && closing is null) || error.Descriptor != Diagnostics.ModuleScanHookParameterInaccessible))
 			{
 				if (handle is null && error.Descriptor == Diagnostics.ModuleScanHookParameterInaccessible && context.Hidden is { } services)
 				{
@@ -877,7 +879,7 @@ partial class AwaitenGenerator
 				return false;
 			}
 
-			mirrored.Add(handle?.Parameter ?? new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name));
+			mirrored.Add(handle?.Parameter ?? closing ?? new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name));
 		}
 
 		parameters = new EquatableArray<FactoryParameter>(mirrored.ToArray());
@@ -1466,9 +1468,9 @@ partial class AwaitenGenerator
 
 		if (!FitsFactorySignature(parameter.Type, context))
 		{
-			if (!argument && ClosingOverInternal(parameter.Type, context) is { } closing)
+			if (ClosingParameter(parameter, context) is { } closing)
 			{
-				mirrored = new FactoryParameter(ClosingHandleType(context.Module, closing), parameter.Name, KeyAttribute(FromKey(parameterAttributes)), $"@{parameter.Name}.Value", Closing: closing);
+				mirrored = closing;
 				return true;
 			}
 

@@ -136,6 +136,45 @@ public class ModuleClosingOverInternalTypeTests
 		}
 
 		[Test]
+		[Arguments("public Pot(ILog<Pot<T>> log) { }", "", "its constructor parameter 'log'")]
+		[Arguments("[Inject] public ILog<Pot<T>> Journal { get; set; } = null!;", "", "its property 'Journal'")]
+		[Arguments("", "internal static void Fill<T>(Pot<T> pot, ILog<Pot<T>> log) { }", "its OnActivated hook 'Fill'")]
+		public async Task AClosingOverATypeParameter_TakesNoHandle(string members, string hook, string cause)
+		{
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface ILog<T> { }
+				public interface IPot<T> { }
+				internal sealed class Pot<T> : IPot<T> { {{members}} }
+
+				[Module]
+				[Transient(typeof(Pot<>), typeof(IPot<>){{(hook.Length > 0 ? ", OnActivated = nameof(Fill)" : "")}})]
+				public static partial class CoffeeModule { {{hook}} }
+				""";
+			GeneratorResult built = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+				using Awaiten;
+
+				namespace App;
+
+				public sealed class Kitchen { public Kitchen(Lib.IPot<int> pot) { } }
+
+				[Container]
+				[Import(typeof(Lib.CoffeeModule))]
+				[ImportService(typeof(Lib.ILog<>))]
+				[Transient<Kitchen>]
+				public static partial class Shop;
+				""");
+
+			await That(built.Diagnostics).IsEmpty()
+				.Because("a handle cannot hold a closing over a type parameter of the generic factory, so the module generates none");
+			await That(result.Diagnostics).HasSingle().Which.Contains($"*error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Pot<T>', which this container cannot construct, and the module's assembly generated no factory for it because {cause}*").AsWildcard();
+		}
+
+		[Test]
 		public async Task AClosingOverATypePrivateToTheModule_StillReportsAwt195()
 		{
 			GeneratorResult result = Generator.Run("""
@@ -312,6 +351,119 @@ public class ModuleClosingOverInternalTypeTests
 
 			await That(result.Diagnostics).HasSingle().Which.Contains("*AWT105*'Lib.ILog<Lib.Brew> (internal to module Lib.CoffeeModule)'*'Lib.IClock'*").AsWildcard()
 				.Because("the handle has the lifetime of the open registration, so its dependencies are checked against it and named by the closing");
+		}
+	}
+
+	public class TakingMembers
+	{
+		[Test]
+		[Arguments("OnActivated")]
+		[Arguments("OnRelease")]
+		public async Task AHookTakingTheClosing_TakesItsHandle(string hook)
+		{
+			string library = Library(members: "internal static void Ready(Brew brew, ILog<Brew> log) { }")
+				.Replace("[Transient<Brew, IBrew>]", $"[Transient<Brew, IBrew>({hook} = nameof(Ready))]");
+
+			await AssertTakesTheHandleEverywhere(library, $"(global::Lib.IBrew @awaiten__instance, {QualifiedHandle} @log) => Ready((global::Lib.Brew)@awaiten__instance, @log.Value);");
+		}
+
+		[Test]
+		public async Task AHookOfAPublicImplementationTakingTheClosing_TakesItsHandle()
+		{
+			string library = Library(members: "internal static void Fill(Mug mug, ILog<Brew> log) { }")
+				.Replace("[Transient<Brew, IBrew>]", "[Transient<Brew, IBrew>][Transient<Mug, IMug>(OnActivated = nameof(Fill))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { }\npublic interface IMug { }\npublic sealed class Mug : IMug { }");
+
+			await AssertTakesTheHandleEverywhere(library, $"(global::Lib.Mug @awaiten__instance, {QualifiedHandle} @log) => Fill(@awaiten__instance, @log.Value);");
+		}
+
+		[Test]
+		public async Task AConventionOfAnInternalServiceTakingTheClosing_TakesItsHandle()
+		{
+			string library = Library(registrations: "[Singleton(typeof(Log<>), typeof(ILog<>))][Singleton<Kettle, IKettle>][AsyncInitializer<Kettle>(nameof(Kettle.WarmUpAsync))]")
+				.Replace("internal sealed class Cup : ICup { public Cup(ILog<Brew> log) { } }",
+					"""
+					internal sealed class Cup : ICup { public Cup(ILog<Brew> log, IKettle kettle) { } }
+					internal interface IKettle { }
+					internal sealed class Kettle : IKettle { internal System.Threading.Tasks.Task WarmUpAsync(ILog<Brew> log) => System.Threading.Tasks.Task.CompletedTask; }
+					""");
+
+			await AssertTakesTheHandleEverywhere(library, $"{QualifiedHandle} @log) => ((global::Lib.Kettle)");
+		}
+
+		[Test]
+		public async Task APredicateTakingTheClosing_TakesItsHandle()
+		{
+			string library = Library(members: "internal static bool IsFancy(ILog<Brew> log) => true;")
+				.Replace("[Transient<Brew, IBrew>]", "[Transient<Brew, IBrew>][Decorate<FancyBrew, IBrew>(When = nameof(IsFancy))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { }\npublic sealed class FancyBrew : IBrew { public FancyBrew(IBrew inner) { } }");
+
+			await AssertTakesTheHandleEverywhere(library, $"({QualifiedHandle} @log) => IsFancy(@log.Value);");
+		}
+
+		[Test]
+		public async Task AConventionTakingTheClosing_TakesItsHandle()
+		{
+			string library = Library(registrations: "[Singleton(typeof(Log<>), typeof(ILog<>))][AsyncInitializer<Brew>(nameof(Brew.WarmUpAsync))]")
+				.Replace("internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } }",
+					"internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } internal System.Threading.Tasks.Task WarmUpAsync(ILog<Brew> log) => System.Threading.Tasks.Task.CompletedTask; }");
+
+			await AssertTakesTheHandleEverywhere(library, $"{QualifiedHandle} @log) => ((global::Lib.Brew)@awaiten__instance).WarmUpAsync(@log.Value);");
+		}
+
+		[Test]
+		public async Task AnInjectedProperty_TakesTheHandle()
+		{
+			string library = Library().Replace("internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } }",
+				"internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } [Inject] public ILog<Brew> Journal { get; init; } = null!; }");
+
+			await AssertTakesTheHandleEverywhere(library, $"({QualifiedHandle} @log, {QualifiedHandle} @Journal) => new global::Lib.Brew(@log.Value) {{ Journal = @Journal.Value }};");
+		}
+
+		[Test]
+		public async Task ADeferredInjectedProperty_TakesTheHandle()
+		{
+			string library = Library().Replace("internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } }",
+				"internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } [Inject(Deferred = true)] public ILog<Brew> Journal { get; set; } = null!; }");
+
+			await AssertTakesTheHandleEverywhere(library, $"{QualifiedHandle} @Journal) => ((global::Lib.Brew)");
+		}
+
+		[Test]
+		public async Task AnOptionalInjectedProperty_StillReportsAwt200()
+		{
+			GeneratorResult result = Generator.Run(Library().Replace("internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } }",
+				"internal sealed class Brew : IBrew { public Brew(ILog<Brew> log) { } [Inject(Optional = true)] public ILog<Brew> Journal { get; set; } = null!; }"));
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT200: 'Lib.Brew' is self-compiled from a module registration, but its property 'Journal' has the type 'Lib.ILog<Lib.Brew>', which is not accessible outside the module's assembly*").AsWildcard()
+				.Because("a container cannot tell whether it serves an optional closing it cannot name");
+		}
+
+		private static async Task AssertTakesTheHandleEverywhere(string library, string wrapper)
+		{
+			GeneratorResult built = Generator.Run(library);
+
+			await That(built.Diagnostics).IsEmpty()
+				.Because("a container in another assembly decides who closes ILog<>, so the library build rejects nothing");
+			await That(ModuleSource(built)).Contains(wrapper)
+				.Because("the wrapper takes the closing through its handle and passes on the instance it holds");
+			await That(ModuleSource(built)).Contains($"public static {Handle} Registration_{Handle}()");
+			foreach (string reference in new[] { "full", "reference", "compilation", })
+			{
+				GeneratorResult result = Run(reference, library, Consumer());
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because($"the container builds the closing through the module's factory ({reference})");
+				await That(ContainerSource(result)).Contains($"global::Lib.CoffeeModule.Internals.Registration_{Handle}()");
+			}
+
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(
+				library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;"),
+				Consumer());
+
+			await That(friend.Diagnostics).IsEmpty()
+				.Because("an assembly the library grants InternalsVisibleTo closes ILog<> itself");
+			await That(ContainerSource(friend)).DoesNotContain(Handle);
 		}
 	}
 

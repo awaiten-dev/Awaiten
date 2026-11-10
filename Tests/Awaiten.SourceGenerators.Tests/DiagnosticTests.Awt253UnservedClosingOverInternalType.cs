@@ -105,6 +105,22 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("", "neither the container nor an imported module registers or imports 'Lib.ILog<>'")]
+		[Arguments("[Singleton(typeof(Lib.Log<>), typeof(Lib.ILog<>))]", "'Lib.ILog<>' is registered by the container, which cannot close it over that type")]
+		public async Task ADecoratorPredicateTakingAnUnservedClosing_ReportsAwt253(string registrations, string reason)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+				Library(parameter: "", members: "internal static bool IsFancy(ILog<Brew> log) => true;")
+					.Replace("[Transient<Brew, IBrew>]", "[Transient<Brew, IBrew>][Decorate<FancyBrew, IBrew>(When = nameof(IsFancy))]")
+					.Replace("public interface IBrew { }", "public interface IBrew { }\npublic sealed class FancyBrew : IBrew { public FancyBrew(IBrew inner) { } }"),
+				Consumer(registrations));
+
+			await That(result.Diagnostics).HasSingle().Which.Contains(
+				$"*error AWT253: 'Lib.IBrew' cannot be resolved: 'Lib.CoffeeModule.IsFancy' requires 'Lib.ILog<Lib.Brew>', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and {reason}*").AsWildcard()
+				.Because("the predicate takes the closing through its handle, so the container names why it cannot serve it, as for a constructor (AWT101)");
+		}
+
+		[Test]
 		public async Task AKeyedClosingTheContainerDoesNotImport_ReportsAwt253()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
@@ -114,6 +130,25 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).HasSingle().Which.Contains(
 				"*error AWT253: 'Lib.IBrew' cannot be resolved: 'Lib.Brew' requires 'Lib.ILog<Lib.Brew> (key: audit)', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and the container builds such a closing only from the module's unkeyed open registration of 'Lib.ILog<>', so it serves a keyed one only from its host; import 'Lib.ILog<>' from the host with [ImportService(typeof(Lib.ILog<>))]" + Suffix).AsWildcard()
 				.Because("the module's unkeyed registration does not serve a keyed closing");
+		}
+
+		[Test]
+		[Arguments("full")]
+		[Arguments("reference")]
+		[Arguments("compilation")]
+		public async Task OnlyAConditionalRegistrationOfTheDefinition_ReportsAwt253(string reference)
+		{
+			string library = Library(registrations: "[Singleton(typeof(Log<>), typeof(ILog<>), WhenInjectedInto = typeof(LoggedLog<>))]");
+			GeneratorResult result = reference switch
+			{
+				"reference" => Generator.RunWithGeneratedReferenceAssembly(library, Consumer()),
+				"compilation" => Generator.RunWithGeneratedCompilationReference(library, Consumer()),
+				_ => Generator.RunWithGeneratedReferencedAssembly(library, Consumer()),
+			};
+
+			await That(result.Diagnostics).HasSingle().Which.Contains(
+				$"*{Prefix}'Lib.ILog<>' is registered only with WhenInjectedInto, and the container builds such a closing only from an unconditional open registration of 'Lib.ILog<>' in the module 'Lib.CoffeeModule'; register it there without WhenInjectedInto, or import it from the host with [ImportService(typeof(Lib.ILog<>))]{Suffix}").AsWildcard()
+				.Because("the conditional registration does not serve the closing, so the container names it instead of claiming nothing registers the definition");
 		}
 
 		[Test]

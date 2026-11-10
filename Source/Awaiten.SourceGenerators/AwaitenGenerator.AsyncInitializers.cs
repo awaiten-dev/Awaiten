@@ -545,6 +545,12 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			if (handle is null && HasAwaitenAttribute(context.Module.GetAttributes(), "ModuleAttribute") && ClosingParameter(parameter, context) is { } closing)
+			{
+				mirrored.Add(closing);
+				continue;
+			}
+
 			if (snapshot is { } taken)
 			{
 				context.Hidden!.Restore(taken);

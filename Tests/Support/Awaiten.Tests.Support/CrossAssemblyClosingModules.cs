@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Awaiten.Tests.Support;
 
@@ -81,3 +82,82 @@ internal sealed class ImportedClosingTea(IClosingLog<ImportedClosingTea> log) : 
 [Module]
 [Transient<ImportedClosingTea, IImportedClosingTea>]
 public static partial class CrossAssemblyImportedClosingModule;
+
+/// <summary>An espresso whose implementation is internal and whose hook, async initializer and injected property take a log closed over it.</summary>
+public interface IClosingEspresso
+{
+	/// <summary>The log the <c>OnActivated</c> hook received.</summary>
+	IClosingLog? Activated { get; }
+
+	/// <summary>The log the async initializer received.</summary>
+	IClosingLog? WarmedUp { get; }
+
+	/// <summary>The log injected into an <c>[Inject]</c> property.</summary>
+	IClosingLog? Injected { get; }
+}
+
+internal sealed class ClosingEspresso : IClosingEspresso
+{
+	[Inject]
+	public IClosingLog<ClosingEspresso> Journal { get; set; } = null!;
+
+	public IClosingLog? Injected => Journal;
+
+	public IClosingLog? Activated { get; set; }
+
+	public IClosingLog? WarmedUp { get; private set; }
+
+	internal Task WarmUpAsync(IClosingLog<ClosingEspresso> log)
+	{
+		WarmedUp = log;
+		return Task.CompletedTask;
+	}
+}
+
+/// <summary>The decorator of <see cref="IClosingEspresso" /> that a predicate taking the log closed over the espresso applies.</summary>
+public sealed class DecoratedClosingEspresso(IClosingEspresso inner) : IClosingEspresso
+{
+	/// <summary>The decorated espresso.</summary>
+	public IClosingEspresso Inner { get; } = inner;
+
+	/// <inheritdoc />
+	public IClosingLog? Activated => Inner.Activated;
+
+	/// <inheritdoc />
+	public IClosingLog? WarmedUp => Inner.WarmedUp;
+
+	/// <inheritdoc />
+	public IClosingLog? Injected => Inner.Injected;
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose hook, decorator predicate, async initializer convention and injected property take a closing of
+///     <see cref="IClosingLog{T}" /> over an internal type, which a container in another assembly passes through the
+///     handle the module generated.
+/// </summary>
+[Module]
+[Singleton(typeof(ClosingLog<>), typeof(IClosingLog<>))]
+[Transient<ClosingEspresso, IClosingEspresso>(OnActivated = nameof(Activate))]
+[Decorate<DecoratedClosingEspresso, IClosingEspresso>(When = nameof(Decorates))]
+[AsyncInitializer<ClosingEspresso>(nameof(ClosingEspresso.WarmUpAsync))]
+public static partial class CrossAssemblyClosingMembersModule
+{
+	internal static void Activate(ClosingEspresso espresso, IClosingLog<ClosingEspresso> log) => espresso.Activated = log;
+
+	internal static bool Decorates(IClosingLog<ClosingEspresso> log) => log.Category == typeof(ClosingEspresso);
+}
+
+/// <summary>
+///     The members of <see cref="CrossAssemblyClosingMembersModule" /> without its registration of
+///     <see cref="IClosingLog{T}" />, so a container in another assembly asks its host for each closing they take.
+/// </summary>
+[Module]
+[Transient<ClosingEspresso, IClosingEspresso>(OnActivated = nameof(Activate))]
+[Decorate<DecoratedClosingEspresso, IClosingEspresso>(When = nameof(Decorates))]
+[AsyncInitializer<ClosingEspresso>(nameof(ClosingEspresso.WarmUpAsync))]
+public static partial class CrossAssemblyImportedClosingMembersModule
+{
+	internal static void Activate(ClosingEspresso espresso, IClosingLog<ClosingEspresso> log) => espresso.Activated = log;
+
+	internal static bool Decorates(IClosingLog<ClosingEspresso> log) => log.Category == typeof(ClosingEspresso);
+}

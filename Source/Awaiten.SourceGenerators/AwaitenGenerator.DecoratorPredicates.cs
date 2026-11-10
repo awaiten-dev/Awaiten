@@ -263,10 +263,12 @@ partial class AwaitenGenerator
 
 			if (model.Kind == DependencyKind.Direct && !context.ServiceToImpl.ContainsKey(KeyOf(model)))
 			{
-				context.Diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.MissingDependency,
-					model.Location,
-					new EquatableArray<string>([Display(service), display, DisplayKeyed(model.ServiceType, model.Key),])));
+				context.Diagnostics.Add(model.ClosingHandle
+					? UnservedClosing(model, parameter.Type, Display(service), display, model.Location, context.ClosingFaults)
+					: new DiagnosticInfo(
+						Diagnostics.MissingDependency,
+						model.Location,
+						new EquatableArray<string>([Display(service), display, DisplayKeyed(model.ServiceType, model.Key),])));
 				continue;
 			}
 

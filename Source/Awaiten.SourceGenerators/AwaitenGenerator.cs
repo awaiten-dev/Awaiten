@@ -325,14 +325,30 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<HiddenInitializer>(initializers.ToArray()),
 			new EquatableArray<ConventionWrapper>(expanded ? conventionWrappers.ToArray() : []),
 			new EquatableArray<ClosingHandle>(CompleteClosings(
-				factories.SelectMany(factory => factory.Parameters.AsArray())
-					.Concat(registrations.SelectMany(registration => registration.Parameters.AsArray()))
+				GeneratedParameters(factories, registrations, expanded ? wrappers : [], initializers, expanded ? conventionWrappers : [])
 					.Select(parameter => parameter.Closing)
 					.OfType<ClosingHandle>(),
 				moduleSymbol,
 				compilation).ToArray()),
 			decoratorMistakesMarkers);
 	}
+
+	/// <summary>The parameters of every member a module generates, which may take a closing handle (see <see cref="ClosingHandle" />).</summary>
+	private static IEnumerable<FactoryParameter> GeneratedParameters(
+		List<ModuleFactory> factories,
+		List<RegistrationFactory> registrations,
+		List<MemberWrapper> wrappers,
+		List<HiddenInitializer> initializers,
+		List<ConventionWrapper> conventionWrappers)
+		=> factories.SelectMany(factory => factory.Parameters.AsArray()
+				.Concat(new[] { factory.OnActivated, factory.OnRelease, }.SelectMany(hook => hook?.Parameters.AsArray() ?? []))
+				.Concat(factory.Shared?.Initializers.AsArray().SelectMany(initializer => initializer.Parameters.AsArray()) ?? []))
+			.Concat(registrations.SelectMany(registration => registration.Parameters.AsArray()
+				.Concat(registration.DeferredMembers.AsArray())
+				.Concat(registration.Hooks.AsArray().SelectMany(hook => hook.Hook.Parameters.AsArray()))))
+			.Concat(wrappers.SelectMany(wrapper => wrapper.Parameters.AsArray()))
+			.Concat(initializers.SelectMany(initializer => initializer.Parameters.AsArray()))
+			.Concat(conventionWrappers.SelectMany(wrapper => wrapper.Parameters.AsArray()));
 
 	/// <summary>
 	///     The distinct <paramref name="diagnostics" /> of a module, keeping only the first report of a parameter type
