@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "c53c03a13e148bc512f6714a2654df3b4ea74bd1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:14:05 2026 \u002B0100",
-        "message": "fix: let several handle-backed producers of one service reach a container in another assembly (#360)"
-      },
-      {
         "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
         "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
+      },
+      {
+        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
+        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
       }
     ],
     "labels": [
-      "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "d8bac02e",
       "52a71095",
       "95161ba2",
-      "fdae2a19"
+      "fdae2a19",
+      "4ff14319"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          9.021765273596559,
           8.410147752080645,
           5.6252589122607155,
           3.1781767984231313,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           3.4132429510354996,
           5.5973863410098215,
           4.503108434379101,
-          4.765556267820871
+          4.765556267820871,
+          3.4165409992138547
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.530216293839308,
           8.009043975671132,
           9.034505256666588,
           4.165271706346955,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           4.182680657009284,
           5.545253348137651,
           6.5862445922998285,
-          6.845570071385457
+          6.845570071385457,
+          4.517427754721472
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          123.99669589996338,
           121.55810548464457,
           105.8507758470682,
           70.14324264866966,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           62.88186379273733,
           132.23012913068135,
           84.33598634401957,
-          83.71864045517785
+          83.71864045517785,
+          61.169273201624556
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.537649073771068,
           9.286914279063543,
           9.308832441767057,
           5.271602862079939,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           4.976306225572314,
           8.267077020804088,
           6.192252900203069,
-          7.580440338452657
+          7.580440338452657,
+          4.7492339462041855
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          10.928194963683685,
           11.194190442562103,
           10.898004936320442,
           6.588703354554517,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           6.37540391087532,
           11.547120290994645,
           8.834342211484909,
-          8.485756463060776
+          8.485756463060776,
+          5.914621799190839
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "c53c03a13e148bc512f6714a2654df3b4ea74bd1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:14:05 2026 \u002B0100",
-        "message": "fix: let several handle-backed producers of one service reach a container in another assembly (#360)"
-      },
-      {
         "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
         "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
+      },
+      {
+        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
+        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
       }
     ],
     "labels": [
-      "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "d8bac02e",
       "52a71095",
       "95161ba2",
-      "fdae2a19"
+      "fdae2a19",
+      "4ff14319"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          10.021910636470867,
           9.765964990854263,
           6.733922401299844,
           3.2985996875379766,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           3.3276499681747875,
           6.208043794546809,
           5.589116765984467,
-          5.598641973275405
+          5.598641973275405,
+          3.2680617873867353
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.884757070740064,
           7.872277247054236,
           8.336239863719259,
           4.218575139343739,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           4.0995806604623795,
           5.91299176911513,
           6.580817718307177,
-          6.813170473162945
+          6.813170473162945,
+          4.032714696334941
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          121.03836520512898,
           124.5044670899709,
           109.37445321877797,
           68.02762233293973,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           61.01889252662659,
           131.48539803709303,
           100.115842461586,
-          121.55029014746349
+          121.55029014746349,
+          60.94717906202589
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.329074828823407,
           9.321945255994796,
           9.306884950399398,
           5.146115201392344,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           4.993574793636799,
           8.32251436050449,
           6.285342859534117,
-          7.411619037389755
+          7.411619037389755,
+          4.694003797535386
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.34063483402133,
           14.758640643954276,
           14.834315475076437,
           6.530886283942631,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           6.4013731777668,
           11.400160962343216,
           8.671765572258405,
-          8.177762573155073
+          8.177762573155073,
+          6.109184411168099
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "c53c03a13e148bc512f6714a2654df3b4ea74bd1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:14:05 2026 \u002B0100",
-        "message": "fix: let several handle-backed producers of one service reach a container in another assembly (#360)"
-      },
-      {
         "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
         "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
+      },
+      {
+        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
+        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
       }
     ],
     "labels": [
-      "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "d8bac02e",
       "52a71095",
       "95161ba2",
-      "fdae2a19"
+      "fdae2a19",
+      "4ff14319"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          24.43364462455114,
           25.794940121968587,
           31.3170676444258,
           20.189720977629936,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           15.965986266732216,
           19.38641125758489,
           10.700797637658459,
-          16.31837822596232
+          16.31837822596232,
+          11.808953966697057
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1693.190038172404,
           1698.0383867899577,
           1812.8252599080404,
           1394.0626440684,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1201.7093800136022,
           1461.2798653920493,
           737.9018931388855,
-          1212.2784813472203
+          1212.2784813472203,
+          804.2227521260579
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          31144.06512044271,
           31065.75565011161,
           25491.347737630207,
           28924.994596354165,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           26352.368054199218,
           29806.09082845052,
           16968.41570638021,
-          26121.24791608538
+          26121.24791608538,
+          19004.872647798977
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32482,
           32482,
           32476,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32482,
           32478,
-          32478
+          32478,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          786.7764767328898,
           777.4957644144694,
           706.8918061937604,
           701.4829897085825,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           565.6097396850586,
           753.5389819463094,
           380.6068897587912,
-          567.7784696420034
+          567.7784696420034,
+          414.9904132229941
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12590.531173706055,
           12174.94017791748,
           12648.298657226562,
           11658.820182213416,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           9953.945464070637,
           11586.48605448405,
           6103.492326463972,
-          9072.808615112304
+          9072.808615112304,
+          6540.898446219308
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2886,7 +2886,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          24761,
           24760,
           24760,
           24760,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "c53c03a13e148bc512f6714a2654df3b4ea74bd1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:14:05 2026 \u002B0100",
-        "message": "fix: let several handle-backed producers of one service reach a container in another assembly (#360)"
-      },
       {
         "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
         "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
+      },
+      {
+        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
+        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
       }
     ],
     "labels": [
-      "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "d8bac02e",
       "52a71095",
       "95161ba2",
-      "fdae2a19"
+      "fdae2a19",
+      "4ff14319"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          218.12429305712382,
           177.5605443318685,
           406.5752867698669,
           177.5243011542729,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           129.05652453218187,
           197.2232696533203,
           76.41208406005588,
-          116.13193451563517
+          116.13193451563517,
+          82.82254164417584
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          15574.256378173828,
           16093.015236409505,
           16044.088948567709,
           14501.666290283203,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           11864.136309814454,
           14317.778718058269,
           7064.867193603515,
-          11381.098443603516
+          11381.098443603516,
+          7508.414882914225
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          746658.2487444197,
           736809.2450474331,
           611951.3041666667,
           709321.6667829241,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           661173.6964285715,
           738664.0919471154,
           403701.157156808,
-          637195.4979771206
+          637195.4979771206,
+          450677.1612079327
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740010,
           736978,
           735938,
           738518,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           739163,
           741784,
           718407,
-          741781
+          741781,
+          719042
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          46491.65418419471,
           47028.901676432295,
           40833.57213541667,
           44097.17397460937,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           38238.38661702474,
           43923.82186686198,
           22088.281960623604,
-          36589.27655843099
+          36589.27655843099,
+          24771.5873819987
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80640,
           81576,
           79663,
           80085,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80860,
           80303,
           79819,
-          80298
+          80298,
+          80967
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          385005.5725911458,
           360908.5953776042,
           348269.4754464286,
           350246.33283342636,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           326626.1856770833,
           352633.2625651042,
           181879.99916992188,
-          281545.6508138021
+          281545.6508138021,
+          188520.31978665866
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573072,
           573058,
           571202,
           573025,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573057,
           573153,
           573073,
-          573105
+          573105,
+          573011
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "c53c03a13e148bc512f6714a2654df3b4ea74bd1",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:14:05 2026 \u002B0100",
-        "message": "fix: let several handle-backed producers of one service reach a container in another assembly (#360)"
-      },
       {
         "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:54:20 2026 \u002B0100",
         "message": "fix: honor #pragma in the shell decision for module errors and make AWT255 not configurable (#410)"
+      },
+      {
+        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
+        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
       }
     ],
     "labels": [
-      "c53c03a1",
       "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "d8bac02e",
       "52a71095",
       "95161ba2",
-      "fdae2a19"
+      "fdae2a19",
+      "4ff14319"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          260.2770937760671,
           217.89570474624634,
           465.88870385487877,
           154.28339212735494,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           271.2630590756734,
           211.50062402884166,
           210.3924697807857,
-          164.09405477841696
+          164.09405477841696,
+          296.38644273464496
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          614.2237078984579,
           477.1922259012858,
           618.9872041066487,
           367.1279403613164,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           631.2596435546875,
           454.6767617384593,
           455.5255063863901,
-          385.7991503079732
+          385.7991503079732,
+          713.4027742658343
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6428.4692459106445,
           5226.451495107015,
           6544.357175445557,
           3227.5620529174803,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6942.2471043904625,
           5139.9616132463725,
           4797.1550149184,
-          3321.173528943743
+          3321.173528943743,
+          6525.125470297678
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          402.44254802068076,
           353.10874707358226,
           415.9029161135356,
           237.23565520559038,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           425.93246304194133,
           347.96452945073446,
           346.56193814958846,
-          246.8318595152635
+          246.8318595152635,
+          443.08358507156373
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          708.1472159703573,
           553.3421475728353,
           763.7152400970459,
           365.9220316960261,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           755.9604560852051,
           533.926207610539,
           554.4216316223144,
-          405.9204834938049
+          405.9204834938049,
+          778.2687403996786
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
