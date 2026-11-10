@@ -2645,4 +2645,20 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A dependency on a relationship shape (<c>Func&lt;T&gt;</c>, <c>Func&lt;TArg…, T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
+	///     <c>Owned&lt;T&gt;</c>, <c>Task&lt;T&gt;</c> and their combinations) that the container also registers or imports as
+	///     a service under the dependency's key. Injection always builds the relationship over <c>T</c>, so the
+	///     dependency would silently get a different object than the registration, or AWT101 when <c>T</c> is not
+	///     registered. Reported in place of that, so a registered relationship type is only reached by type, through a
+	///     collection of it or through the MS.DI bridge.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RegisteredRelationshipType = new(
+		"AWT259",
+		"Relationship type registered as a service",
+		"'{0}' cannot be resolved: '{1}' requires '{2}', which the container {3} as a service, but it injects '{2}' as the relationship over '{4}' and never hands out that service; {5}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

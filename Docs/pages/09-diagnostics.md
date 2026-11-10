@@ -359,6 +359,28 @@ public sealed class SyrupBar(Lazy<SyrupShelf> shelf);   // the syrups are built 
 public static partial class CoffeeShop;
 ```
 
+### AWT259
+
+:::danger[Error]
+A dependency is a relationship, such as `Func<T>`, `Func<TArg..., T>`, `Lazy<T>`, `Owned<T>` or `Task<T>`, whose type the container also registers as a service under the same key, or imports with `[ImportService]`. The container builds every relationship it injects itself, over `T`, so the dependency would never get the registered or imported instance. It is reported instead of quietly injecting a relationship over a registered `T`, or of a missing registration of `T`.
+:::
+
+```csharp expect=AWT259
+public sealed class Barista(Func<Cup> cups);   // gets a Func over Cup, never the registered Func<Cup>
+
+[Container]
+[Singleton<Func<Cup>>(Factory = nameof(CreateCupFactory))]
+[Singleton<Barista>]
+public static partial class CoffeeShop
+{
+    private static Func<Cup> CreateCupFactory() => () => new Cup();
+}
+```
+
+It is reported at the dependency. A registration that nothing injects is not reported, because a typed resolve such as `Resolve<Func<Cup>>()`, a collection such as `IEnumerable<Func<Cup>>` and the [MS.DI bridge](./07-hosting/01-msdi-bridge.md) hand out the registration. A relationship over the registered type, such as `Task<Func<Cup>>`, resolves the registration and is not reported either.
+
+**Fix:** Register `Cup` and let the container build the `Func<Cup>`. When the factory does more than build a `Cup`, give it a name: register a small interface such as `ICupDispenser` in place of the relationship type and depend on that. For an import, import the named type instead. See [relationships are built, not registered](./05-resolution/02-relationships.md#relationships-are-built-not-registered).
+
 ## Async safety
 
 These keep async-initialized services from being reached before they are ready.

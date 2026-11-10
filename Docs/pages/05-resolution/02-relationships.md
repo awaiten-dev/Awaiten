@@ -52,6 +52,34 @@ A synchronous shape over an async-initialized service cannot await the initializ
 
 Resolving a relationship directly works without a key only. A [keyed resolve](./01-resolving-services.md#keyed-resolution) serves plain services, so `Resolve<Func<IMilk>>("Oat")` throws even when an `IMilk` is registered under `"Oat"`. Inject the keyed relationship instead, through a `[FromKey("Oat")] Func<IMilk>` parameter or property.
 
+## Relationships are built, not registered
+
+The container builds every relationship it injects, over the service the relationship wraps. Registering a relationship type as a service of its own, such as `[Singleton<Func<Cup>>(Factory = ...)]`, does not change that: a `Func<Cup>` parameter still gets the relationship over `Cup` and never the registered `Func<Cup>`, so the dependency is an error ([AWT259](../09-diagnostics.md#awt259)). The same holds for `Lazy<T>`, `Owned<T>`, `Task<T>` and `Func<TArg..., T>`, with or without a key.
+
+Register the service and let the container build the relationship. When the factory does more than build the service, give it a name: register a small interface and depend on that instead.
+
+```csharp
+public interface ICupDispenser
+{
+    Cup Next();
+}
+
+public sealed class CupDispenser : ICupDispenser
+{
+    public Cup Next() => new();
+}
+
+public sealed class CupStation(ICupDispenser cups)
+{
+    public Cup ServeNext() => cups.Next();
+}
+
+[Container]
+[Singleton<CupDispenser, ICupDispenser>]
+[Singleton<CupStation>]
+public static partial class CoffeeShop;
+```
+
 ## Relationships wrap a single service
 
 A relationship wraps one service, not a [collection](./03-collections.md). A dependency on `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` is an error ([AWT256](../09-diagnostics.md#awt256)), and so is a collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` ([AWT254](../09-diagnostics.md#awt254)). Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
