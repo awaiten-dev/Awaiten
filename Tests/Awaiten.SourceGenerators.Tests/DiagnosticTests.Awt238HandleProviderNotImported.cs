@@ -78,6 +78,54 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("same")]
+		[Arguments("friend")]
+		[Arguments("full")]
+		[Arguments("reference")]
+		public async Task ACompositeOfAServiceWithoutMembers_NeedsNoModuleForItsHandle(string consumer)
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IBarista { }
+				internal interface IKettle { }
+				internal sealed class Kettle : IKettle { }
+				internal sealed class All : IKettle { public All(IKettle[] kettles) { } }
+				internal sealed class Barista : IBarista { public Barista(IKettle kettle) { } }
+
+				[Module]
+				[Singleton<Kettle, IKettle>]
+				public static partial class KettleModule { }
+
+				[Module]
+				[Composite<All, IKettle>]
+				[Singleton<Barista, IBarista>]
+				public static partial class AllModule { }
+				""";
+			const string container = """
+
+				[Container]
+				[Import(typeof(AllModule))]
+				public static partial class {0};
+				""";
+			const string usings = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n";
+			GeneratorResult result = consumer switch
+			{
+				"same" => Generator.Run(library + container.Replace("{0}", "SameContainer")),
+				"friend" => Generator.RunWithGeneratedReferencedAssembly(
+					library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Lib;"),
+					usings + container.Replace("{0}", "MyContainer")),
+				"reference" => Generator.RunWithGeneratedReferenceAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+				_ => Generator.RunWithGeneratedReferencedAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+			};
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the imported module builds the composite into the handle itself, which fronts no members, as in the modules' own assembly");
+		}
+
+		[Test]
 		public async Task ARelationshipOverTheHandleUnderImportServices_ReportsAwt238Alone()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""

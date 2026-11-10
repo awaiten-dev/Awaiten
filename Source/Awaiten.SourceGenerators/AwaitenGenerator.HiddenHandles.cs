@@ -180,7 +180,8 @@ partial class AwaitenGenerator
 				if (!needed.Contains(handle)
 				    || modules.Contains(provider, SymbolEqualityComparer.Default)
 				    || modules.Any(registering => SymbolEqualityComparer.Default.Equals(registering.ContainingAssembly, provider.ContainingAssembly)
-				                                  && ConstructedModuleRegistrations(registering, compilation, members: true).Any(registration => HiddenHandleName(registration.Service) == handle.Name)))
+				                                  && (ConstructedModuleRegistrations(registering, compilation, members: true).Any(registration => HiddenHandleName(registration.Service) == handle.Name)
+				                                      || ComposesHandle(registering, handle))))
 				{
 					continue;
 				}
@@ -207,6 +208,13 @@ partial class AwaitenGenerator
 		}
 
 		return providers;
+
+		// A closed [Composite] of the module registers its service too: its factory builds the handle, fronting no members when no module registers any.
+		static bool ComposesHandle(INamedTypeSymbol module, INamedTypeSymbol handle)
+			=> module.GetAttributes().Any(attribute => attribute.AttributeClass is { Name: "CompositeAttribute", } attributeClass
+			                                           && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+			                                           && ContributedPair(attribute, attributeClass) is (not null, { } service)
+			                                           && HiddenHandleName(service) == handle.Name);
 
 		static IEnumerable<INamedTypeSymbol> TypesOf(IMethodSymbol method)
 			=> method.Parameters.Select(parameter => parameter.Type).Concat([method.ReturnType,]).SelectMany(TypesIn);
