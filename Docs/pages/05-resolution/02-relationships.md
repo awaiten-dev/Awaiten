@@ -50,6 +50,10 @@ EspressoMachine machine = await machines();
 
 A synchronous shape over an async-initialized service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task.
 
+## Relationships wrap a single service
+
+A relationship wraps one service, not a [collection](./03-collections.md). A dependency on `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` is an error ([AWT256](../09-diagnostics.md#awt256)), and so is a collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` ([AWT254](../09-diagnostics.md#awt254)). Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
+
 ## Relationships bind to their owner
 
 A relationship resolves from the scope that built the consumer, not from wherever it is later called. A singleton that holds a `Func<Order>` resolves that `Order` from the root, always. It is never rebound to some child scope that happens to call it later. This keeps lifetimes predictable.

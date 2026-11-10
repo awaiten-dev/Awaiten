@@ -133,7 +133,7 @@ partial class AwaitenGenerator
 			// [ImportServices] fall-through below does not fill.
 			if (parameter.HasExplicitDefaultValue
 			    && IsGeneratedOwnerFactory(producer)
-			    && IsMissingOptional(parameterModel, context.ServiceToImpl, context.External.ServiceTypes))
+			    && IsMissingOptional(parameterModel, parameter.Type, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				parameterModel = parameterModel with { Kind = DependencyKind.Absent, };
 			}
@@ -187,11 +187,11 @@ partial class AwaitenGenerator
 	///     itself. A runtime argument, a forwarded token, an external service and a collection are never missing, and an
 	///     <see cref="IsUnsatisfiable" /> request is reported rather than left out.
 	/// </summary>
-	private static bool IsMissingOptional(ParameterModel dependency, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
+	private static bool IsMissingOptional(ParameterModel dependency, ITypeSymbol declaredType, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
 		=> dependency.Kind is not (DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External)
 		   && !IsSynthesizedCollection(dependency.Kind)
 		   && !serviceToImpl.ContainsKey(KeyOf(dependency))
-		   && !IsUnsatisfiable(dependency, externalServiceTypes);
+		   && !IsUnsatisfiable(dependency, declaredType, externalServiceTypes);
 
 	/// <summary>
 	///     The single predicate every gate uses to treat all collection kinds alike (AWT101/AWT141 exemption,
@@ -371,8 +371,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The diagnostic for a dependency of <paramref name="declaredType" /> whose service type has no registration:
 	///     <see cref="Diagnostics.MissingDependency">AWT101</see>, or the more specific
-	///     <see cref="Diagnostics.OwnedThroughLazy">AWT121</see> or
-	///     <see cref="Diagnostics.RelationshipOverImportedService">AWT242</see>.
+	///     <see cref="Diagnostics.OwnedThroughLazy">AWT121</see>,
+	///     <see cref="Diagnostics.RelationshipOverImportedService">AWT242</see> or
+	///     <see cref="Diagnostics.RelationshipOverCollection">AWT256</see>.
 	/// </summary>
 	private static DiagnosticInfo UnregisteredDependency(ParameterModel dependency, ITypeSymbol declaredType, ImplInfo info, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
 	{
@@ -388,20 +389,67 @@ partial class AwaitenGenerator
 			return new DiagnosticInfo(Diagnostics.OwnedThroughLazy, location, new EquatableArray<string>([owner, implementation, service,]));
 		}
 
-		return IsRelationshipOverImportedService(dependency, externalServiceTypes)
-			? new DiagnosticInfo(
+		if (IsRelationshipOverImportedService(dependency, externalServiceTypes))
+		{
+			return new DiagnosticInfo(
 				Diagnostics.RelationshipOverImportedService,
 				location,
-				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), service,]))
+				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), service,]));
+		}
+
+		return CollectionUnderRelationship(declaredType) is { } collection
+			? new DiagnosticInfo(
+				Diagnostics.RelationshipOverCollection,
+				dependency.Location ?? location,
+				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), Display(collection.ToDisplayString(FullyQualified)),]))
 			: new DiagnosticInfo(Diagnostics.MissingDependency, location, new EquatableArray<string>([owner, implementation, service,]));
 	}
 
 	/// <summary>
-	///     Whether no registration could ever satisfy <paramref name="dependency" />: an <c>Owned&lt;T&gt;</c> through
-	///     <c>Lazy</c> (AWT121) or a relationship over an imported service (AWT242). <c>Optional</c> does not drop it.
+	///     The collection shape or keyed dictionary that the relationship <paramref name="type" /> wraps at any depth,
+	///     such as the <c>IEnumerable&lt;T&gt;</c> of <c>Func&lt;IEnumerable&lt;T&gt;&gt;</c> or the
+	///     <c>Task&lt;IReadOnlyList&lt;T&gt;&gt;</c> of <c>Lazy&lt;Task&lt;IReadOnlyList&lt;T&gt;&gt;&gt;</c>; otherwise
+	///     <see langword="null" />. An awaited collection is a collection shape itself, not a relationship over one.
 	/// </summary>
-	private static bool IsUnsatisfiable(ParameterModel dependency, ExternalServiceTypes externalServiceTypes)
-		=> IsOwnedThroughLazy(dependency) || IsRelationshipOverImportedService(dependency, externalServiceTypes);
+	internal static ITypeSymbol? CollectionUnderRelationship(ITypeSymbol type)
+	{
+		if (IsCollectionShape(type))
+		{
+			return null;
+		}
+
+		for (ITypeSymbol? target = RelationshipTarget(type); target is not null; target = RelationshipTarget(target))
+		{
+			if (IsCollectionShape(target))
+			{
+				return target;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>Whether <paramref name="type" /> is a shape the container synthesizes from registrations of its element type.</summary>
+	private static bool IsCollectionShape(ITypeSymbol type)
+		=> IsElementCollection(type)
+		   || TryGetTypeDispatch(type, out _)
+		   || TryGetKeyedCollectionElement(type, out _, out _)
+		   || TryGetAwaitedKeyedCollection(type, out _, out _, out _);
+
+	/// <summary>
+	///     Whether <paramref name="type" /> is a collection of the registrations of its element type under one key: a
+	///     synchronous, async or awaited collection shape, but not a keyed dictionary.
+	/// </summary>
+	internal static bool IsElementCollection(ITypeSymbol type)
+		=> TryGetCollectionElement(type, out _) || IsAsyncEnumerable(type, out _) || TryGetAwaitedCollection(type, out _, out _);
+
+	/// <summary>
+	///     Whether no registration could ever satisfy <paramref name="dependency" /> of <paramref name="declaredType" />: an
+	///     <c>Owned&lt;T&gt;</c> through <c>Lazy</c> (AWT121), a relationship over an imported service (AWT242) or one over an
+	///     unregistered collection (AWT256). <c>Optional</c> does not drop it.
+	/// </summary>
+	private static bool IsUnsatisfiable(ParameterModel dependency, ITypeSymbol declaredType, ExternalServiceTypes externalServiceTypes)
+		=> IsOwnedThroughLazy(dependency) || IsRelationshipOverImportedService(dependency, externalServiceTypes) || CollectionUnderRelationship(declaredType) is not null;
 
 	private static bool IsOwnedThroughLazy(ParameterModel dependency)
 		=> dependency.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
@@ -688,8 +736,9 @@ partial class AwaitenGenerator
 			// and async-taint analysis: there is nothing to assign, so nothing to analyze. A structurally
 			// impossible request is not a missing registration, though: Owned<T> can never be produced through
 			// Lazy, and a relationship over an imported service never reaches the external resolver, so AWT121 and
-			// AWT242 are reported (and the edge kept) regardless of Optional, as for a required one.
-			if (spec.Optional && !IsUnsatisfiable(dependency, externalServiceTypes))
+			// AWT242 are reported (and the edge kept) regardless of Optional, as for a required one. A relationship over a
+			// collection (AWT256) is reported too, as a collection member is never omitted either.
+			if (spec.Optional && !IsUnsatisfiable(dependency, property.Type, externalServiceTypes))
 			{
 				return null;
 			}

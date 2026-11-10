@@ -62,6 +62,8 @@ IMilk soy = await shop.ResolveAsync<IMilk>("Soy", cancellationToken);
 
 The key is an `object`, so a string, an `enum` constant, or a `typeof(...)` all work, matching the key the registration carries. A `null` key resolves the unkeyed registration, exactly like the keyless overload. An unknown key follows the same miss rules as above: `Resolve` throws, `TryResolve` reports `false`. See [Keyed services](../04-registration/04-keyed-services.md).
 
+A keyed resolve hands out the registration under the key, not a collection of the registrations. `Resolve<IEnumerable<IMilk>>("Oat")` throws even when several `IMilk` are registered under `"Oat"`, because the container builds a collection under a key only for injection: take it through a `[FromKey("Oat")] IEnumerable<IMilk>` parameter or property.
+
 ## Prefer constructor injection
 
 You rarely call these methods deep in your code. You call them once at the composition root to pull out the top-level service, and everything below is wired by its constructors. A `Barista` that needs a `Grinder` just declares it:

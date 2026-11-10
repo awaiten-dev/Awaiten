@@ -101,6 +101,24 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("IEnumerable<IMilk>")]
+		[Arguments("IMilk[]")]
+		[Arguments("IReadOnlyList<IMilk>")]
+		[Arguments("IAsyncEnumerable<IMilk>")]
+		[Arguments("Task<IReadOnlyList<IMilk>>")]
+		public async Task ReportsAKeyedCollectionAsServedOnlyToInjection(string collection)
+		{
+			string[] diagnostics = await Run($"""
+			                                  		root.Resolve<{collection}>("Oat");
+			                                  """);
+
+			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
+			await That(reports).HasSingle().Which
+				.Contains("*has no registration under the key \"Oat\"*the container builds a collection under a key only for injection, not for a typed resolve; inject it through a [FromKey] parameter or property instead").AsWildcard()
+				.Because("IMilk is registered under \"Oat\", so registering it under that key would not help: the keyed by-type dispatch serves registrations, never a collection of them");
+		}
+
+		[Test]
 		public async Task ReportsAnUnregisteredKeyOnEveryKeyedOverload()
 		{
 			string[] diagnostics = await Run("""

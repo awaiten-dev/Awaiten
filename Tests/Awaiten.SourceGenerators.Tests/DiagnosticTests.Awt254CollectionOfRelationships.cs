@@ -276,8 +276,8 @@ public partial class DiagnosticTests
 
 			string[] reports = diagnostics.Where(d => d.Contains("AWT218")).ToArray();
 			await That(reports).HasSingle().Which
-				.Contains("*has no registration under the key \"test\"*register it under that key on the [Container]*").AsWildcard()
-				.Because("a [FromKey(\"test\")] collection of the registered Func<IClock> has a member, so the relationship is not what keeps a typed resolve from it");
+				.Contains("*has no registration under the key \"test\"*the container builds a collection under a key only for injection, not for a typed resolve*").AsWildcard()
+				.Because("a [FromKey(\"test\")] collection of the registered Func<IClock> has a member, so the relationship is not what keeps a typed resolve from it, the key is");
 		}
 	}
 }

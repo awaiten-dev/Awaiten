@@ -712,11 +712,26 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	// declaration order.
 	private static string UnprovidedRemedy(ITypeSymbol service, string display, string? key, GraphModel graph, Sources.ByTypeSurface surface)
 	{
+		// The keyed by-type dispatch serves the registrations under a key, never a collection synthesized from them.
+		if (key is not null && AwaitenGenerator.IsElementCollection(service))
+		{
+			return "the container builds a collection under a key only for injection, not for a typed resolve; inject it through a [FromKey] parameter or property instead";
+		}
+
 		// AWT254 for injection: a collection holds registrations, so one of relationships is never synthesized.
 		if (AwaitenGenerator.RelationshipCollection(service) is { } shape
 		    && !AwaitenGenerator.HasCollectionElementRegistration(service, key, graph.ServiceToImpl))
 		{
 			return $"the container does not build a collection of the relationship '{shape.Element}'; resolve '{shape.Remedy}' to get every registration of '{shape.Target}', or '{shape.Element}' to get a single one";
+		}
+
+		// AWT256 for injection: a relationship wraps a single service, so one over a collection is never built.
+		if (AwaitenGenerator.CollectionUnderRelationship(service) is { } collection)
+		{
+			string shown = AwaitenGenerator.Display(collection.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+			return key is null
+				? $"the container does not build a relationship over the collection '{shown}'; resolve '{shown}' itself"
+				: $"the container does not build a relationship over the collection '{shown}', and builds a collection under a key only for injection; inject '{shown}' through a [FromKey] parameter or property instead";
 		}
 
 		if (key is not null)
