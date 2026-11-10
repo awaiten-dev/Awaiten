@@ -571,14 +571,14 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// A base reports its own problems; the extending container re-checks the whole graph but reports only what it
 		// changes, so an unchanged base problem is not reported twice. A base with errors leaves the inherited graph
 		// broken, so the extending container then emits only its shell, like a container with errors of its own. A base
-		// in a referenced assembly compiled, so what fails it here is only what this assembly cannot see (AWT226).
+		// in a referenced assembly compiled anyway, so the errors its check finds stay reported here (see RemoveBaseDiagnostics).
 		bool hasBaseErrors = false;
 		if (ReadExtends(containerSymbol) is { } baseContainer)
 		{
 			List<DiagnosticInfo> baseDiagnostics = Analyze(baseContainer, compilation, cancellationToken).Diagnostics;
 			hasBaseErrors = SymbolEqualityComparer.Default.Equals(baseContainer.ContainingAssembly, containerSymbol.ContainingAssembly)
 			                && baseDiagnostics.Exists(diagnostic => diagnostic.EffectiveSeverity == DiagnosticSeverity.Error);
-			RemoveBaseDiagnostics(diagnostics, baseDiagnostics);
+			RemoveBaseDiagnostics(diagnostics, baseDiagnostics, containerSymbol, baseContainer);
 		}
 
 		// A module of this assembly reports a member producing a type private to it in its own build, which leaves the

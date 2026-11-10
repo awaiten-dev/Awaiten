@@ -81,7 +81,7 @@ public static partial class Shop;
 public static partial class TestShop;
 ```
 
-The whole graph is validated again. A replacement that breaks a dependency is reported like any other mistake: replacing a singleton's dependency with a scoped one is a [captive dependency](../09-diagnostics.md#awt105). A problem that the base already has is reported only on the base.
+The whole graph is validated again. A replacement that breaks a dependency is reported like any other mistake: replacing a singleton's dependency with a scoped one is a [captive dependency](../09-diagnostics.md#awt105). A problem that the base already has is reported only on the base. An error of a base in another assembly is the exception: that assembly built although its graph is broken, because the error was suppressed there or its generator did not check for it yet, so the extending container reports the error on its `Extends` argument too.
 
 ## Switch an inherited decorator off
 
