@@ -1919,6 +1919,315 @@ public class ModuleHiddenServiceTests
 						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
 				}
 			}
+
+			public class ScannedByItsOwnModule
+			{
+				private const string Library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IAppliance { }
+					internal sealed class TimeSource { }
+					public sealed class Clock : IAppliance { internal Clock(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					public static partial class AModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateS))]
+					[Scan<IAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+					public static partial class SModule
+					{
+					    internal static Clock CreateS(TimeSource source) => new(source);
+					}
+					""";
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task SharesTheInstanceOfItsFactory(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+
+					await That(result.Diagnostics).IsEmpty()
+						.Because("the scan match yields to the module's registration of the class, so the factory produces its one instance, as in the module's own assembly");
+					if (consumer is "full" or "reference")
+					{
+						await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.SModule.Internals.HiddenRegistration_Clock_").And.DoesNotContain("Internals.Scan_Clock_")
+							.Because("the match is served from the instance handle the factory builds, not by the scan's own factory");
+					}
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithAnotherProducer_ConflictsAsInTheModulesOwnAssembly(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(AModule))]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+					string expected = Run(Library, container, "same").Diagnostics.Single();
+
+					await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT111") && Message(diagnostic) == Message(expected))
+						.Because("the scan names the class, so both factories are productions of its one instance, as in the modules' own assembly");
+
+					static string Message(string diagnostic)
+						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
+				}
+
+				[Test]
+				public async Task WithAnotherFactoryOfTheModule_ConflictsInTheLibrary()
+				{
+					string library = Library
+						.Replace("[Singleton<Clock>(Factory = nameof(CreateS))]", "[Singleton<Clock>(Factory = nameof(CreateS))]\n[Singleton<Clock>(Factory = nameof(CreateT))]")
+						.Replace("internal static Clock CreateS(TimeSource source) => new(source);", "internal static Clock CreateS(TimeSource source) => new(source);\n    internal static Clock CreateT(TimeSource source) => new(source);");
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					string expected = Run(library, container, "same").Diagnostics.Single();
+
+					GeneratorResult result = Generator.Run(library);
+
+					await That(result.Diagnostics).HasSingle().Which.IsEqualTo(expected)
+						.Because("the scan names the class, so both factories are productions of the one instance a container in another assembly shares through a handle, which a container of the module's own assembly reports");
+				}
+			}
+
+			public class SharedWithTheScanOfAnotherModule
+			{
+				private const string Library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IAppliance { }
+					internal sealed class TimeSource { }
+					public sealed class Clock : IAppliance { internal Clock(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					public static partial class AModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Singleton<Clock>({{production}})]
+					public static partial class BModule
+					{
+					    public static readonly Clock Field = new(new TimeSource());
+					    public static Clock CreateB() => Field;
+					}
+
+					[Module]
+					[Scan<IAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+					public static partial class SModule;
+					""";
+
+				[Test]
+				[Arguments("Instance = nameof(Field)", "same")]
+				[Arguments("Instance = nameof(Field)", "friend")]
+				[Arguments("Instance = nameof(Field)", "full")]
+				[Arguments("Instance = nameof(Field)", "reference")]
+				[Arguments("Factory = nameof(CreateB)", "same")]
+				[Arguments("Factory = nameof(CreateB)", "friend")]
+				[Arguments("Factory = nameof(CreateB)", "full")]
+				[Arguments("Factory = nameof(CreateB)", "reference")]
+				public async Task NeedsNoModuleForTheServicesOfTheScansFactory(string production, string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(BModule))]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library.Replace("{{production}}", production), container, consumer);
+
+					await That(result.Diagnostics).IsEmpty()
+						.Because("the match shares the instance of the module's registration and never calls the scan's factory, which takes the internal service, as in the modules' own assembly");
+				}
+
+				[Test]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithoutARegistrationOfTheClass_NeedsTheModuleOfTheScansServices(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library.Replace("{{production}}", "Instance = nameof(Field)"), container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.SModule' needs the internal service 'Lib.TimeSource'")
+						.Because("the scan's own factory builds the match and takes the internal service another module registers");
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithoutARegistrationOfTheClass_SkipsAnUnconstructableMatchAsInTheModulesOwnAssembly(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					string library = Library.Replace("{{production}}", "Instance = nameof(Field)")
+						.Replace("Lifetime = Lifetime.Singleton)]", "Lifetime = Lifetime.Singleton, SkipUnconstructable = true)]");
+					GeneratorResult result = Run(library, container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT141").And.Contains("requires 'Lib.TimeSource").And.DoesNotContain("Hidden_")
+						.Because("the match is skipped with the warning of the module's own assembly, which names the internal service, not its generated handle");
+				}
+			}
+
+			public class ProducedByAModuleThatIsNotPartial
+			{
+				private const string Library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					internal sealed class TimeSource { }
+					public sealed class Clock { internal Clock(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<Clock>(Factory = nameof(CreateA))]
+					public static partial class AModule
+					{
+					    internal static Clock CreateA(TimeSource source) => new(source);
+					}
+
+					[Module]
+					[Singleton<Clock>(Factory = nameof(CreateB))]
+					public static class BModule
+					{
+					    internal static Clock CreateB(TimeSource source) => new(source);
+					}
+					""";
+
+				private const string Container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					public static partial class {0};
+					""";
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				public async Task ContainerThatReachesTheMember_CallsIt(string consumer)
+				{
+					GeneratorResult result = Run(Library, Container, consumer);
+
+					await That(result.Diagnostics).IsEmpty();
+				}
+
+				[Test]
+				public async Task Library_BuildsWithoutAnError()
+				{
+					GeneratorResult result = Generator.Run(Library);
+
+					await That(result.Diagnostics).IsEmpty()
+						.Because("a container of the library or of an assembly it grants InternalsVisibleTo calls the internal member itself");
+				}
+
+				[Test]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task ContainerInAnotherAssembly_NamesTheModuleThatIsNotPartial(string consumer)
+				{
+					GeneratorResult result = Run(Library, Container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Contains("AWT108").And.Contains("the module 'Lib.BModule' has no accessible method 'CreateB'")
+						.And.Contains("because the module, or a class that contains it, is not partial")
+						.Because("a module that is not partial carries no generated member, so nothing can call the internal member from another assembly");
+				}
+			}
+
+			public class ScannedByTheContainer
+			{
+				private const string Library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					public interface IPlugin { }
+					internal sealed class TimeSource { }
+					public sealed class Roaster : IPlugin { internal Roaster(TimeSource source) { } }
+
+					[Module]
+					[Singleton<TimeSource>]
+					[Singleton<IPlugin>(Factory = nameof(CreateA))]
+					[Singleton<IPlugin>(Factory = nameof(CreateB))]
+					public static partial class PluginModule
+					{
+					    internal static IPlugin CreateA(TimeSource source) => new Roaster(source);
+					    internal static IPlugin CreateB(TimeSource source) => new Roaster(source);
+					}
+					""";
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				public async Task ContainerThatReachesTheConstructor_ConstructsTheMatch(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(PluginModule))]
+						[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, As = ScanAs.Marker)]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+
+					await That(result.Diagnostics).IsEmpty();
+				}
+
+				[Test]
+				[Arguments(true, "full")]
+				[Arguments(true, "reference")]
+				[Arguments(false, "full")]
+				[Arguments(false, "reference")]
+				public async Task ContainerInAnotherAssembly_CannotConstructTheMatch(bool imported, string consumer)
+				{
+					string container = $$"""
+						[Container]{{(imported ? "\n[Import(typeof(PluginModule))]" : "")}}
+						[Scan<IPlugin>(InAssembliesOf = new[] { typeof(IPlugin) }, As = ScanAs.Marker)]
+						public static partial class {0};
+						""";
+					GeneratorResult result = Run(Library, container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Contains("AWT104").And.Contains("'Lib.Roaster' has no accessible constructor")
+						.Because("the container's own scan constructs the match, and no module builds a Roaster it could share: the factories produce services of their own");
+				}
+			}
 		}
 
 		[Test]

@@ -155,8 +155,11 @@ public class ModuleHandleSharingTests
 		await That(clocks.Select(clock => clock.Name)).IsEqualTo(["a", "b",])
 			.Because("neither imported module constructs the class, so each factory is a producer of its own, as in a container of the modules' own assembly that imports the same modules");
 		await That(clocks[0]).IsNotSameAs(clocks[1]);
+		// AWT155 warns of exactly this single resolution, as in a container of the modules' own assembly.
+#pragma warning disable AWT155
 		await That(container.Resolve<ImportedProducerClock>()).IsSameAs(clocks[0])
 			.Because("the first producer wins the single resolution");
+#pragma warning restore AWT155
 	}
 
 	[Test]
@@ -168,7 +171,39 @@ public class ModuleHandleSharingTests
 			.Because("the scan names the class, so the factory produces its one instance and the scan match shares it, as in a container of the modules' own assembly that imports the same modules");
 		await That(container.Resolve<IEnumerable<IScannedProducerAppliance>>()).HasSingle();
 	}
+
+	[Test]
+	public async Task FactoryOfAClassItsOwnModuleScans_IsOneInstance()
+	{
+		using SelfScannedContainer.Root container = new();
+
+		SelfScannedClock clock = container.Resolve<SelfScannedClock>();
+
+		await That(clock.FromFactory).IsTrue()
+			.Because("the scan match yields to the module's registration of the class, as in a container of the module's own assembly");
+		await That(container.Resolve<ISelfScannedAppliance>()).IsSameAs(clock);
+		await That(container.Resolve<IEnumerable<ISelfScannedAppliance>>()).HasSingle();
+	}
+
+	[Test]
+	public async Task InstanceOfAClassAnotherModuleScans_IsSharedWithoutTheModuleOfTheScansServices()
+	{
+		using SharedScanContainer.Root container = new();
+
+		await That(container.Resolve<SharedScanClock>()).IsSameAs(CrossAssemblySharedScanInstanceModule.Default);
+		await That(container.Resolve<ISharedScanAppliance>()).IsSameAs(CrossAssemblySharedScanInstanceModule.Default)
+			.Because("the scan match shares the registered instance and never builds the clock with the internal service another module registers");
+	}
 }
+
+[Container]
+[Import(typeof(CrossAssemblySelfScannedModule))]
+public static partial class SelfScannedContainer;
+
+[Container]
+[Import(typeof(CrossAssemblySharedScanInstanceModule))]
+[Import(typeof(CrossAssemblySharedScanScanModule))]
+public static partial class SharedScanContainer;
 
 [Container]
 [Import(typeof(CrossAssemblyScannedProducerAModule))]
