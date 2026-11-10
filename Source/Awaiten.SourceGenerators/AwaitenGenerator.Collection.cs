@@ -1920,11 +1920,23 @@ partial class AwaitenGenerator
 			{
 				bool scan = info.Hidden is { } hidden && info.ProductionMember == InInternals(ModuleFactoryName(hidden));
 				(IMethodSymbol? Alias, string? Gap) assignment = HandleAssignment(info, compilation);
-				handled[RegisteredType(info.ImplementationType.Substring(0, marker))] = (module, info.Hidden, scan, assignment);
+				Handle(RegisteredType(info.ImplementationType.Substring(0, marker)), (module, info.Hidden, scan, assignment));
 				if (info.Hidden is { IsGenericType: true, } closed)
 				{
-					handled[TypeIdentity(closed.OriginalDefinition, compilation)] = (module, closed, scan, assignment);
+					Handle(TypeIdentity(closed.OriginalDefinition, compilation), (module, closed, scan, assignment));
 				}
+			}
+		}
+
+		// The closings of a definition may be built by several handles: one that cannot take the entries is not replaced
+		// by one that can, so they are reported for it even when another closing's handle sets them.
+		void Handle(string key, (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment) owner)
+		{
+			if (!handled.TryGetValue(key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan, (IMethodSymbol? Alias, string? Gap) Assignment) kept)
+			    || kept.Assignment.Alias is not null
+			    || owner.Assignment.Alias is null)
+			{
+				handled[key] = owner;
 			}
 		}
 

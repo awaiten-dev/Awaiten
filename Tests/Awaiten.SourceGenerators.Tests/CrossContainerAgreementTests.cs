@@ -731,5 +731,38 @@ public class CrossContainerAgreementTests
 				.Because("each module's member produces the service whole, also when it builds it into a handle of its own");
 			await That(external.Diagnostics).DoesNotContain("*AWT180*").AsWildcard();
 		}
+
+		[Test]
+		[Arguments(true)]
+		[Arguments(false)]
+		public async Task OfADefinitionWithAClosingAFactoryBuildsIntoAHandle_ReportsThatClosingWhateverTheOrder(bool factoryFirst)
+		{
+			const string constructed = "[Singleton<Brew<int>, ISecret<int>>]";
+			const string produced = "[Singleton<Brew<string>, ISecret<string>>(Factory = nameof(Make))]";
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib
+				{
+					public interface IClock { }
+					public sealed class SystemClock : IClock { }
+					internal interface ISecret<T> { }
+					public sealed class Brew<T> : ISecret<T> { public IClock Backup { get; set; } = null!; }
+
+					[Module]
+					{{(factoryFirst ? produced : constructed)}}
+					{{(factoryFirst ? constructed : produced)}}
+					[Singleton<SystemClock, IClock>]
+					public static partial class CoffeeModule { internal static Brew<string> Make() => new(); }
+				}
+				""";
+			const string entry = "[InjectProperty(typeof(Brew<>), nameof(Brew<int>.Backup))]";
+			const string expected = "error AWT178: 'Lib.Brew<string>' is produced by a Factory or Instance registration, so its property 'Backup' cannot be filled by [InjectProperty]; property injection applies only to a container-constructed instance";
+
+			await That(Same(library, entry).Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the closing the module's factory builds into its handle gets no entry, even when the other closing's handle takes it");
+			await That(Generator.RunWithGeneratedReferenceAssembly(library, Consumer(entry)).Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
 	}
 }
