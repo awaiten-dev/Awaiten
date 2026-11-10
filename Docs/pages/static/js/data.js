@@ -1806,6 +1806,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
         "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
+      },
+      {
+        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
+        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
       }
     ],
     "labels": [
@@ -2109,7 +2115,8 @@ window.BENCHMARK_DATA = {
       "3cde5b3e",
       "4ffb3551",
       "e3a0e8a5",
-      "d9c60864"
+      "d9c60864",
+      "aabdd154"
     ],
     "datasets": [
       {
@@ -2416,7 +2423,8 @@ window.BENCHMARK_DATA = {
           4.833898941675822,
           6.651882083370135,
           3.363661684716741,
-          4.898658965031306
+          4.898658965031306,
+          4.856297322114309
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2428,6 +2436,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3043,7 +3052,8 @@ window.BENCHMARK_DATA = {
           6.703540325164795,
           8.458894013116756,
           4.076065678436023,
-          6.9869589404417916
+          6.9869589404417916,
+          7.003430208563804
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3055,6 +3065,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3670,7 +3681,8 @@ window.BENCHMARK_DATA = {
           108.94789396013532,
           128.2282097706428,
           61.6760619242986,
-          85.28057911396027
+          85.28057911396027,
+          83.27869965632756
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3682,6 +3694,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4293,7 +4306,8 @@ window.BENCHMARK_DATA = {
           7.253670232494672,
           8.115483460823695,
           4.925912924607595,
-          6.9404090712467825
+          6.9404090712467825,
+          7.082697822497441
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4305,6 +4319,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4912,7 +4927,8 @@ window.BENCHMARK_DATA = {
           8.63169890542825,
           11.463056210676829,
           6.211242971511988,
-          8.637163414557774
+          8.637163414557774,
+          8.274770711859068
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4924,6 +4940,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7040,6 +7057,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
         "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
+      },
+      {
+        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
+        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
       }
     ],
     "labels": [
@@ -7343,7 +7366,8 @@ window.BENCHMARK_DATA = {
       "3cde5b3e",
       "4ffb3551",
       "e3a0e8a5",
-      "d9c60864"
+      "d9c60864",
+      "aabdd154"
     ],
     "datasets": [
       {
@@ -7650,7 +7674,8 @@ window.BENCHMARK_DATA = {
           5.362752124667168,
           7.097307593623797,
           3.3359888419508934,
-          5.654750616422722
+          5.654750616422722,
+          5.275314815342426
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7662,6 +7687,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8277,7 +8303,8 @@ window.BENCHMARK_DATA = {
           6.737210959196091,
           8.448261767625809,
           3.9960171326994898,
-          6.49940995986645
+          6.49940995986645,
+          6.819443034132322
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8289,6 +8316,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8904,7 +8932,8 @@ window.BENCHMARK_DATA = {
           90.9442755540212,
           128.31042706171672,
           57.012191402060644,
-          84.72578719946054
+          84.72578719946054,
+          82.81950867970785
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8916,6 +8945,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9527,7 +9557,8 @@ window.BENCHMARK_DATA = {
           7.3463912119468056,
           8.075121656060219,
           5.060589847465356,
-          6.847327436506748
+          6.847327436506748,
+          6.804089862566728
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9539,6 +9570,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10146,7 +10178,8 @@ window.BENCHMARK_DATA = {
           11.48006220261256,
           15.485244640282222,
           6.430826219228598,
-          11.81320329606533
+          11.81320329606533,
+          11.414701374677511
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10158,6 +10191,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12274,6 +12308,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
         "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
+      },
+      {
+        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
+        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
       }
     ],
     "labels": [
@@ -12577,7 +12617,8 @@ window.BENCHMARK_DATA = {
       "3cde5b3e",
       "4ffb3551",
       "e3a0e8a5",
-      "d9c60864"
+      "d9c60864",
+      "aabdd154"
     ],
     "datasets": [
       {
@@ -12884,7 +12925,8 @@ window.BENCHMARK_DATA = {
           15.263687151670457,
           11.468443551233836,
           22.096539863518306,
-          29.02197804848353
+          29.02197804848353,
+          11.815641371409098
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13156,6 +13198,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13511,7 +13554,8 @@ window.BENCHMARK_DATA = {
           1200.6747740336828,
           790.6562194188435,
           1343.840008799235,
-          1718.548883846828
+          1718.548883846828,
+          761.1358243397304
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13523,6 +13567,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14138,7 +14183,8 @@ window.BENCHMARK_DATA = {
           26062.37773844401,
           18073.73465837751,
           19098.30012003581,
-          25095.459439958846
+          25095.459439958846,
+          16987.624342698316
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14450,7 +14496,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32474,
-          32474
+          32474,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14761,7 +14808,8 @@ window.BENCHMARK_DATA = {
           570.277759552002,
           398.9922874768575,
           556.2869133631389,
-          705.683532851083
+          705.683532851083,
+          386.35295190811155
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14791,6 +14839,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15380,7 +15429,8 @@ window.BENCHMARK_DATA = {
           9370.254640432504,
           6789.6760001549355,
           9741.68173828125,
-          12399.423900897686
+          12399.423900897686,
+          6363.951000213623
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15687,6 +15737,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -17508,6 +17559,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
         "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
+      },
+      {
+        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
+        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
       }
     ],
     "labels": [
@@ -17811,7 +17868,8 @@ window.BENCHMARK_DATA = {
       "3cde5b3e",
       "4ffb3551",
       "e3a0e8a5",
-      "d9c60864"
+      "d9c60864",
+      "aabdd154"
     ],
     "datasets": [
       {
@@ -18118,7 +18176,8 @@ window.BENCHMARK_DATA = {
           118.57021641731262,
           83.180823802948,
           260.33723481496173,
-          364.71540654500325
+          364.71540654500325,
+          79.88588464260101
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18390,6 +18449,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18745,7 +18805,8 @@ window.BENCHMARK_DATA = {
           10708.895836463342,
           7740.74032236735,
           12057.956342569987,
-          14769.036908976237
+          14769.036908976237,
+          7025.484086608887
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18757,6 +18818,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19372,7 +19434,8 @@ window.BENCHMARK_DATA = {
           622867.7613002232,
           448409.7353190104,
           451211.3259277344,
-          588662.9877604167
+          588662.9877604167,
+          416450.51927083335
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19684,7 +19747,8 @@ window.BENCHMARK_DATA = {
           719488,
           741068,
           718752,
-          719414
+          719414,
+          735423
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19995,7 +20059,8 @@ window.BENCHMARK_DATA = {
           34914.1299626277,
           23842.600900503305,
           30597.61916879507,
-          40813.885681152344
+          40813.885681152344,
+          22303.146776471818
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20303,7 +20368,8 @@ window.BENCHMARK_DATA = {
           80320,
           80306,
           80316,
-          80317
+          80317,
+          79672
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20614,7 +20680,8 @@ window.BENCHMARK_DATA = {
           263101.334891183,
           206956.40029672475,
           251248.5345740685,
-          346058.7358022836
+          346058.7358022836,
+          186965.29064127605
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20922,7 +20989,8 @@ window.BENCHMARK_DATA = {
           573155,
           573071,
           571199,
-          571195
+          571195,
+          572943
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22718,6 +22786,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
         "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
+      },
+      {
+        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
+        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
       }
     ],
     "labels": [
@@ -23017,7 +23091,8 @@ window.BENCHMARK_DATA = {
       "3cde5b3e",
       "4ffb3551",
       "e3a0e8a5",
-      "d9c60864"
+      "d9c60864",
+      "aabdd154"
     ],
     "datasets": [
       {
@@ -23320,7 +23395,8 @@ window.BENCHMARK_DATA = {
           275.1795209737924,
           169.40454427401224,
           180.86298430882968,
-          213.60745930671692
+          213.60745930671692,
+          167.304328753398
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23355,6 +23431,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -23939,7 +24016,8 @@ window.BENCHMARK_DATA = {
           590.1946370942252,
           399.92640024820963,
           428.8706473937401,
-          472.33360290527344
+          472.33360290527344,
+          402.16801146098544
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -23951,6 +24029,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24558,7 +24637,8 @@ window.BENCHMARK_DATA = {
           6473.398515319825,
           3584.2331416790303,
           3756.1327089162974,
-          4962.40820719401
+          4962.40820719401,
+          3700.684037072318
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24642,6 +24722,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25177,7 +25258,8 @@ window.BENCHMARK_DATA = {
           431.02507638931274,
           270.06353359956006,
           290.00080370903015,
-          348.35470520655315
+          348.35470520655315,
+          255.01846878869193
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25189,6 +25271,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -25796,7 +25879,8 @@ window.BENCHMARK_DATA = {
           699.70275293986,
           419.74965725626265,
           411.94015083994185,
-          559.073273726872
+          559.073273726872,
+          397.3597171123211
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25808,6 +25892,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
