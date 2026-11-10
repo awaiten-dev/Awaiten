@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
-        "message": "fix: name why a module of another assembly carries no wrapper for an internal instance, a hook or an open generic (#361)"
-      },
-      {
         "sha": "f3f5d5f9ac602d6107c959b3e1cbe27cc71f2986",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
         "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
+      },
+      {
+        "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
+        "message": "fix: pass a closing over an internal type through its handle to module hooks, decorator predicates, async initializer conventions and [Inject] properties (#418)"
       }
     ],
     "labels": [
-      "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
       "2a7e1b70",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "52a71095",
       "95161ba2",
       "fdae2a19",
-      "4ff14319"
+      "4ff14319",
+      "9819d480"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.410147752080645,
           5.6252589122607155,
           3.1781767984231313,
           2.9940283437569937,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           5.5973863410098215,
           4.503108434379101,
           4.765556267820871,
-          3.4165409992138547
+          3.4165409992138547,
+          4.5963264014571905
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.009043975671132,
           9.034505256666588,
           4.165271706346955,
           4.0607187430063885,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           5.545253348137651,
           6.5862445922998285,
           6.845570071385457,
-          4.517427754721472
+          4.517427754721472,
+          4.945658499995868
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          121.55810548464457,
           105.8507758470682,
           70.14324264866966,
           59.38939729531606,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           132.23012913068135,
           84.33598634401957,
           83.71864045517785,
-          61.169273201624556
+          61.169273201624556,
+          95.074138991038
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.286914279063543,
           9.308832441767057,
           5.271602862079939,
           4.399175313434431,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.267077020804088,
           6.192252900203069,
           7.580440338452657,
-          4.7492339462041855
+          4.7492339462041855,
+          6.930765362886282
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.194190442562103,
           10.898004936320442,
           6.588703354554517,
           6.084432356556257,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.547120290994645,
           8.834342211484909,
           8.485756463060776,
-          5.914621799190839
+          5.914621799190839,
+          8.414764946469894
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
-        "message": "fix: name why a module of another assembly carries no wrapper for an internal instance, a hook or an open generic (#361)"
-      },
-      {
         "sha": "f3f5d5f9ac602d6107c959b3e1cbe27cc71f2986",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
         "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
+      },
+      {
+        "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
+        "message": "fix: pass a closing over an internal type through its handle to module hooks, decorator predicates, async initializer conventions and [Inject] properties (#418)"
       }
     ],
     "labels": [
-      "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
       "2a7e1b70",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "52a71095",
       "95161ba2",
       "fdae2a19",
-      "4ff14319"
+      "4ff14319",
+      "9819d480"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          9.765964990854263,
           6.733922401299844,
           3.2985996875379766,
           3.351104906698068,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.208043794546809,
           5.589116765984467,
           5.598641973275405,
-          3.2680617873867353
+          3.2680617873867353,
+          5.216412094732125
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.872277247054236,
           8.336239863719259,
           4.218575139343739,
           4.16335051965255,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           5.91299176911513,
           6.580817718307177,
           6.813170473162945,
-          4.032714696334941
+          4.032714696334941,
+          4.979012201038691
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          124.5044670899709,
           109.37445321877797,
           68.02762233293973,
           62.19555695851644,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           131.48539803709303,
           100.115842461586,
           121.55029014746349,
-          60.94717906202589
+          60.94717906202589,
+          98.84719137350719
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.321945255994796,
           9.306884950399398,
           5.146115201392344,
           4.686877440661192,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.32251436050449,
           6.285342859534117,
           7.411619037389755,
-          4.694003797535386
+          4.694003797535386,
+          6.923169678875378
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.758640643954276,
           14.834315475076437,
           6.530886283942631,
           6.21930137849771,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           11.400160962343216,
           8.671765572258405,
           8.177762573155073,
-          6.109184411168099
+          6.109184411168099,
+          8.322915487564527
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
-        "message": "fix: name why a module of another assembly carries no wrapper for an internal instance, a hook or an open generic (#361)"
-      },
-      {
         "sha": "f3f5d5f9ac602d6107c959b3e1cbe27cc71f2986",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 17:59:49 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
         "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
+      },
+      {
+        "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
+        "message": "fix: pass a closing over an internal type through its handle to module hooks, decorator predicates, async initializer conventions and [Inject] properties (#418)"
       }
     ],
     "labels": [
-      "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
       "2a7e1b70",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "52a71095",
       "95161ba2",
       "fdae2a19",
-      "4ff14319"
+      "4ff14319",
+      "9819d480"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          25.794940121968587,
           31.3170676444258,
           20.189720977629936,
           11.18777190844218,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           19.38641125758489,
           10.700797637658459,
           16.31837822596232,
-          11.808953966697057
+          11.808953966697057,
+          10.44590131342411
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1698.0383867899577,
           1812.8252599080404,
           1394.0626440684,
           785.212169011434,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1461.2798653920493,
           737.9018931388855,
           1212.2784813472203,
-          804.2227521260579
+          804.2227521260579,
+          734.9772127151489
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          31065.75565011161,
           25491.347737630207,
           28924.994596354165,
           17477.29008178711,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           29806.09082845052,
           16968.41570638021,
           26121.24791608538,
-          19004.872647798977
+          19004.872647798977,
+          16701.950929768882
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32482,
           32476,
           32482,
           32477,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32478,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          777.4957644144694,
           706.8918061937604,
           701.4829897085825,
           410.3091636657715,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           753.5389819463094,
           380.6068897587912,
           567.7784696420034,
-          414.9904132229941
+          414.9904132229941,
+          376.33048669497174
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12174.94017791748,
           12648.298657226562,
           11658.820182213416,
           6739.870621744792,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11586.48605448405,
           6103.492326463972,
           9072.808615112304,
-          6540.898446219308
+          6540.898446219308,
+          6021.6035761515295
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2892,7 +2892,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24760,
           24760,
@@ -2934,6 +2933,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
-        "message": "fix: name why a module of another assembly carries no wrapper for an internal instance, a hook or an open generic (#361)"
-      },
       {
         "sha": "f3f5d5f9ac602d6107c959b3e1cbe27cc71f2986",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
         "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
+      },
+      {
+        "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
+        "message": "fix: pass a closing over an internal type through its handle to module hooks, decorator predicates, async initializer conventions and [Inject] properties (#418)"
       }
     ],
     "labels": [
-      "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
       "2a7e1b70",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "52a71095",
       "95161ba2",
       "fdae2a19",
-      "4ff14319"
+      "4ff14319",
+      "9819d480"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          177.5605443318685,
           406.5752867698669,
           177.5243011542729,
           81.86421142305646,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           197.2232696533203,
           76.41208406005588,
           116.13193451563517,
-          82.82254164417584
+          82.82254164417584,
+          77.00042856534323
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          16093.015236409505,
           16044.088948567709,
           14501.666290283203,
           7452.948784964426,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14317.778718058269,
           7064.867193603515,
           11381.098443603516,
-          7508.414882914225
+          7508.414882914225,
+          6998.672753470285
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          736809.2450474331,
           611951.3041666667,
           709321.6667829241,
           432106.91692708334,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           738664.0919471154,
           403701.157156808,
           637195.4979771206,
-          450677.1612079327
+          450677.1612079327,
+          405089.9648786272
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          736978,
           735938,
           738518,
           718405,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           741784,
           718407,
           741781,
-          719042
+          719042,
+          739753
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          47028.901676432295,
           40833.57213541667,
           44097.17397460937,
           23484.690748948316,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           43923.82186686198,
           22088.281960623604,
           36589.27655843099,
-          24771.5873819987
+          24771.5873819987,
+          22128.722208658855
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          81576,
           79663,
           80085,
           80349,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80303,
           79819,
           80298,
-          80967
+          80967,
+          80001
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          360908.5953776042,
           348269.4754464286,
           350246.33283342636,
           193755.47859700522,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           352633.2625651042,
           181879.99916992188,
           281545.6508138021,
-          188520.31978665866
+          188520.31978665866,
+          178665.31946614583
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573058,
           571202,
           573025,
           573039,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573153,
           573073,
           573105,
-          573011
+          573011,
+          573102
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "c5eaf9c63fedb083f13ded00a6f7db134e19874d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 17:19:55 2026 \u002B0100",
-        "message": "fix: name why a module of another assembly carries no wrapper for an internal instance, a hook or an open generic (#361)"
-      },
       {
         "sha": "f3f5d5f9ac602d6107c959b3e1cbe27cc71f2986",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
         "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
+      },
+      {
+        "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
+        "message": "fix: pass a closing over an internal type through its handle to module hooks, decorator predicates, async initializer conventions and [Inject] properties (#418)"
       }
     ],
     "labels": [
-      "c5eaf9c6",
       "f3f5d5f9",
       "b6fbf584",
       "2a7e1b70",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "52a71095",
       "95161ba2",
       "fdae2a19",
-      "4ff14319"
+      "4ff14319",
+      "9819d480"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          217.89570474624634,
           465.88870385487877,
           154.28339212735494,
           270.82263746261594,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           211.50062402884166,
           210.3924697807857,
           164.09405477841696,
-          296.38644273464496
+          296.38644273464496,
+          180.8727978547414
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          477.1922259012858,
           618.9872041066487,
           367.1279403613164,
           607.2651880809238,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           454.6767617384593,
           455.5255063863901,
           385.7991503079732,
-          713.4027742658343
+          713.4027742658343,
+          397.41793060302734
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          5226.451495107015,
           6544.357175445557,
           3227.5620529174803,
           6643.22431400844,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           5139.9616132463725,
           4797.1550149184,
           3321.173528943743,
-          6525.125470297678
+          6525.125470297678,
+          3493.996276537577
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          353.10874707358226,
           415.9029161135356,
           237.23565520559038,
           407.77374127932956,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           347.96452945073446,
           346.56193814958846,
           246.8318595152635,
-          443.08358507156373
+          443.08358507156373,
+          265.21666701634723
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          553.3421475728353,
           763.7152400970459,
           365.9220316960261,
           734.5950366338094,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           533.926207610539,
           554.4216316223144,
           405.9204834938049,
-          778.2687403996786
+          778.2687403996786,
+          461.1343176205953
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
