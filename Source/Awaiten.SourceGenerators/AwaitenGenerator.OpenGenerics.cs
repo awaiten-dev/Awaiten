@@ -720,7 +720,7 @@ partial class AwaitenGenerator
 			}
 			else if (candidate.Factory is null)
 			{
-				registration = ThroughOpenHookWrappers(registration, context.Inputs.Compilation);
+				registration = ThroughOpenHookWrappers(registration, candidate, dropped, context);
 			}
 
 			context.Raw.Add(registration);
@@ -861,10 +861,13 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     A closing the container constructs itself of an open registration of a module in another assembly that does not
 	///     grant it access, rewritten to run each hook it cannot call through the generic wrapper the module generated for
-	///     it, which the ordinary hook binding closes with the closing's marker.
+	///     it, which the ordinary hook binding closes with the closing's marker. A hook the module recorded a skip for,
+	///     because an overload this compilation does not see accepts some closing too, is left out with AWT231 unless the
+	///     closing is <paramref name="dropped" />.
 	/// </summary>
-	private static RawRegistration ThroughOpenHookWrappers(RawRegistration registration, Compilation compilation)
+	private static RawRegistration ThroughOpenHookWrappers(RawRegistration registration, OpenRegistration candidate, bool dropped, ExpansionContext context)
 	{
+		Compilation compilation = context.Inputs.Compilation;
 		if (registration.Origin is not { } owner
 		    || SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
 		    || owner.ContainingAssembly.GivesAccessTo(compilation.Assembly))
@@ -886,6 +889,12 @@ partial class AwaitenGenerator
 				return null;
 			}
 
+			if (!dropped && SkippedHookReason(owner, definition, release, hook) is { } skipped)
+			{
+				ReportUnseenHookOverload(owner, definition.ToDisplayString(FullyQualified), release, hook, skipped, candidate.Location, context);
+				return null;
+			}
+
 			string wrapper = InInternals(RegistrationHookWrapperName(definition, release, hook));
 			return MembersNamed(owner, wrapper).Any(member => member is IMethodSymbol { IsGenericMethod: true, } && compilation.IsSymbolAccessibleWithin(member, compilation.Assembly)) ? wrapper : hook;
 		}
@@ -896,7 +905,8 @@ partial class AwaitenGenerator
 	///     owner accepts for this closing, reporting AWT190 as for a closing the container builds itself: the owner bound
 	///     the wrapper for the open definition, which an overload for one closing does not accept. The bound overload
 	///     counts even where this compilation does not see it. A hook the owner of another assembly recorded a skip for,
-	///     because an overload this compilation does not see may accept the closing too, is left out with AWT231.
+	///     because an overload this compilation does not see may accept the closing too, is left out with AWT231, or AWT226
+	///     for an extended base.
 	/// </summary>
 	private static RawRegistration WithoutAmbiguousOpenHooks(RawRegistration registration, OpenRegistration candidate, string closedImplName, ExpansionContext context)
 	{
@@ -918,19 +928,7 @@ partial class AwaitenGenerator
 			if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
 			    && SkippedHookReason(owner, registration.Implementation.OriginalDefinition, release, hookName) is { } skipped)
 			{
-				string slot = release ? "OnRelease" : "OnActivated";
-				DiagnosticInfo diagnostic = new(
-					Diagnostics.ModuleRegistrationNotSelfCompiled,
-					candidate.Location,
-					new EquatableArray<string>([
-						AwaitenGenerator.Display(owner.ToDisplayString(FullyQualified)), AwaitenGenerator.Display(closedImplName), $"{slot} hook wrapper", skipped,
-						$"give the hook method '{hookName}' a unique name",
-					]));
-				if (!context.Diagnostics.Contains(diagnostic))
-				{
-					context.Diagnostics.Add(diagnostic);
-				}
-
+				ReportUnseenHookOverload(owner, closedImplName, release, hookName, skipped, candidate.Location, context);
 				return null;
 			}
 
@@ -953,6 +951,33 @@ partial class AwaitenGenerator
 			}
 
 			return null;
+		}
+	}
+
+	/// <summary>
+	///     Reports a hook of an open registration of <paramref name="owner" /> in another assembly that this container does
+	///     not run, because the owner recorded another overload of it this container does not see that accepts some
+	///     closing too (<paramref name="reason" />): AWT226 for an extended base, else AWT231.
+	/// </summary>
+	private static void ReportUnseenHookOverload(INamedTypeSymbol owner, string implementation, bool release, string hookName, string reason, LocationInfo? location, ExpansionContext context)
+	{
+		DiagnosticInfo diagnostic = HasAwaitenAttribute(owner.GetAttributes(), "ContainerAttribute")
+			? new DiagnosticInfo(
+				Diagnostics.InheritedPrivateImplementation,
+				location,
+				new EquatableArray<string>([
+					$"The type '{AwaitenGenerator.Display(implementation)}'", AwaitenGenerator.Display(context.Inputs.ContainerSymbol.ToDisplayString(FullyQualified)),
+					AwaitenGenerator.Display(owner.ToDisplayString(FullyQualified)), reason, "give the hook methods distinct names",
+				]))
+			: new DiagnosticInfo(
+				Diagnostics.ModuleHookOverloadUnseen,
+				location,
+				new EquatableArray<string>([
+					AwaitenGenerator.Display(owner.ToDisplayString(FullyQualified)), AwaitenGenerator.Display(implementation), release ? "OnRelease" : "OnActivated", hookName, reason,
+				]));
+		if (!context.Diagnostics.Contains(diagnostic))
+		{
+			context.Diagnostics.Add(diagnostic);
 		}
 	}
 

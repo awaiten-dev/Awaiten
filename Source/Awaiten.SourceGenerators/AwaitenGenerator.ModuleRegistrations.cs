@@ -671,9 +671,23 @@ partial class AwaitenGenerator
 			// A public overload for another type does not serve the registration, so without any hook for it the module reports it as every container would.
 			if (!IsExternallyAccessible(produced)
 			    || wrappers.Any(existing => existing.Name == name)
-			    || skipped.Any(existing => existing.MarkerName == skippedName)
-			    || HookCandidates(module, hookName, produced, compilation).Any(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
+			    || skipped.Any(existing => existing.MarkerName == skippedName))
 			{
+				return null;
+			}
+
+			List<IMethodSymbol> candidates = HookCandidates(module, hookName, produced, compilation).ToList();
+			if (candidates.Exists(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
+			{
+				// Another assembly calls the public overload, while a container in the module's assembly also sees one that is not and reports AWT190.
+				if (candidates.Find(candidate => candidate.DeclaredAccessibility != Accessibility.Public && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)) is { } unseen)
+				{
+					skipped.Add(new SkippedRegistration(
+						skippedName,
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload that is not public, taking '{Display(unseen.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts '{Display(produced.ToDisplayString(FullyQualified))}' too, so a container that does not see it would call the wrong overload where a container in the module's assembly reports AWT190",
+						Hook: true));
+				}
+
 				return null;
 			}
 
@@ -727,17 +741,47 @@ partial class AwaitenGenerator
 		// A public open definition another assembly constructs runs a hook it cannot call through a generic wrapper the
 		// consumer closes per closing, bound like the wrapper of a generic factory. The module reports nothing, as before it
 		// generated the wrapper, and generates none when another overload accepts some closing, which the consumer could not
-		// tell apart.
+		// tell apart, but records the hook when it or a competing overload is not public, since another assembly would call
+		// the overload it sees for every closing.
 		MemberWrapper? OpenHookWrapper(OpenContribution contribution, string hookName, bool release)
 		{
 			INamedTypeSymbol definition = contribution.Definition;
 			ModuleScanContext scope = context with { Diagnostics = new List<DiagnosticInfo>(), Hidden = null, };
 			string name = RegistrationHookWrapperName(definition, release, hookName);
+			string skippedName = RegistrationHookSkippedName(definition, release, hookName);
 			(List<IMethodSymbol> matches, List<IReadOnlyList<INamedTypeSymbol>> ambiguous) = CollectModuleHookOverloads(definition, hookName, [contribution.Service,], scope);
-			if (matches.Count != 1
-			    || ambiguous.Count > 0
-			    || matches[0].DeclaredAccessibility == Accessibility.Public
-			    || ClosingOnlyHookOverload(definition, hookName, matches[0], scope) is not null
+			if (matches.Count != 1 || ambiguous.Count > 0)
+			{
+				// Another assembly calls the public overload for every closing, while the module's assembly reports each as AWT190.
+				if (matches.Exists(match => match.DeclaredAccessibility == Accessibility.Public)
+				    && matches.Find(match => match.DeclaredAccessibility != Accessibility.Public) is { } unseen
+				    && skipped.TrueForAll(existing => existing.MarkerName != skippedName))
+				{
+					skipped.Add(new SkippedRegistration(
+						skippedName,
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload that is not public, taking '{Display(unseen.OriginalDefinition.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts every closing of '{Display(definition.ToDisplayString(FullyQualified))}' too, so a container that does not see it would call the wrong overload where a container in the module's assembly reports AWT190",
+						Hook: true));
+				}
+
+				return null;
+			}
+
+			List<(IMethodSymbol Overload, string Closings)> competing = ClosingOnlyHookOverloads(definition, hookName, matches[0], scope).ToList();
+			if (competing.Count > 0)
+			{
+				if ((matches[0].DeclaredAccessibility == Accessibility.Public ? competing.Find(other => other.Overload.DeclaredAccessibility != Accessibility.Public) : competing[0]) is (Overload: { } overload, Closings: { } closings)
+				    && skipped.TrueForAll(existing => existing.MarkerName != skippedName))
+				{
+					skipped.Add(new SkippedRegistration(
+						skippedName,
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so a container that sees only one of them would call it where a container in the module's assembly reports AWT190",
+						Hook: true));
+				}
+
+				return null;
+			}
+
+			if (matches[0].DeclaredAccessibility == Accessibility.Public
 			    || ResolveModuleHookCore(new ModuleHookRequest(definition, hookName, contribution.Location, release, name, RegistrationSubject(definition)), [contribution.Service,], scope) is not { Wrapper: { SkipReason: null, } hook, })
 			{
 				return null;

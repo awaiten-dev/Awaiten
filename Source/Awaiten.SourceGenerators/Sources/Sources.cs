@@ -148,7 +148,7 @@ internal static partial class Sources
 		}
 
 		EmitAfterFactoryAssigners(builder, depth, context.Instances, names);
-		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray());
+		EmitBaseFactories(builder, depth, model.Factories.AsArray(), model.Wrappers.AsArray(), model.Faults.AsArray(), model.HiddenProperties.AsArray(), model.HookSkips.AsArray());
 	}
 
 	/// <summary>
@@ -190,14 +190,15 @@ internal static partial class Sources
 	///     Emits the <c>internal</c> factory and hook wrappers of each implementation private to the container, which a
 	///     container that extends it calls because its own generated code cannot name the private type, and the
 	///     <c>internal</c> wrapper of each private member its registrations name, and the constants that record why it
-	///     generates no factory for another private implementation, all in an <c>internal</c> nested
+	///     generates no factory for another private implementation or why a hook of a generic factory may run the wrong
+	///     overload, all in an <c>internal</c> nested
 	///     <c>Internals</c> class: an extending container in another assembly reaches it through <c>InternalsVisibleTo</c>,
 	///     and a public class would only add an empty type to a public container's API. The class is public only when it
 	///     holds a record of a type whose <c>[Inject]</c> property another assembly cannot see, which an extending
 	///     container without <c>InternalsVisibleTo</c> reads to report the type instead of building it without the property,
 	///     or the public wrapper of an internal decorator predicate, which such a container calls.
 	/// </summary>
-	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties)
+	private static void EmitBaseFactories(StringBuilder builder, int outerDepth, RegistrationFactory[] factories, MemberWrapper[] wrappers, RecordedFactoryFault[] faults, SkippedRegistration[] hiddenProperties, SkippedRegistration[] hookSkips)
 	{
 		if (factories.Length == 0 && wrappers.Length == 0 && faults.Length == 0 && hiddenProperties.Length == 0)
 		{
@@ -280,6 +281,14 @@ internal static partial class Sources
 			EmitSkipReason(builder, depth, hidden.MarkerName, hidden.Reason,
 				"Generated for a container that extends this one: names the [Inject] property of a type this container builds",
 				"that an extending container in another assembly does not see, so it reports the type instead of leaving the property out.");
+		}
+
+		foreach (SkippedRegistration hook in hookSkips)
+		{
+			builder.AppendLine();
+			EmitSkipReason(builder, depth, hook.MarkerName, hook.Reason,
+				"Generated for a container that extends this one: why a hook wrapper of a generic factory may run another overload",
+				"than this container would, which an extending container in another assembly reports instead of running it.");
 		}
 
 		Indent(builder, outerDepth).AppendLine("}");

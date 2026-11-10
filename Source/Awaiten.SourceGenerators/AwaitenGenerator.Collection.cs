@@ -634,8 +634,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     <paramref name="registration" />, or <see langword="null" /> after reporting AWT231 when it names a hook of an
 	///     imported module in another assembly that this container cannot call, and the module recorded why it generated
-	///     no wrapper for it (see <see cref="CollectModuleMemberWrappers" />). Only <paramref name="applies" /> to such a
-	///     module; one inherited through <c>Extends</c> keeps the registration.
+	///     no wrapper for it (see <see cref="CollectModuleMemberWrappers" />). A public hook the module recorded because
+	///     another overload this container does not see accepts the type too is left out after reporting AWT231. Only
+	///     <paramref name="applies" /> to such a module; one inherited through <c>Extends</c> keeps the registration.
 	/// </summary>
 	private static RawRegistration? WithCallableHooks(RawRegistration registration, LifetimeCollectionContext context, bool applies)
 	{
@@ -647,12 +648,14 @@ partial class AwaitenGenerator
 		Compilation compilation = context.Compilation;
 		foreach ((string? hook, bool release) in new[] { (registration.OnActivated, false), (registration.OnRelease, true), })
 		{
+			// A hook this compilation reaches was recorded because of an overload only the module's assembly and its friends see.
+			bool reached = hook is not null && ReachesHook(module, hook, registration.Implementation, compilation);
 			if (hook is not null
-			    && !ReachesHook(module, hook, registration.Implementation, compilation)
+			    && (!reached || !module.ContainingAssembly.GivesAccessTo(compilation.Assembly))
 			    && SkippedHookReason(module, registration.Implementation, release, hook) is { } reason)
 			{
 				DiagnosticInfo diagnostic = new(
-					Diagnostics.ModuleHookNotWrapped,
+					reached ? Diagnostics.ModuleHookOverloadUnseen : Diagnostics.ModuleHookNotWrapped,
 					LocationInfo.From(context.FallbackLocation),
 					new EquatableArray<string>([
 						Display(module.ToDisplayString(FullyQualified)),
@@ -666,7 +669,13 @@ partial class AwaitenGenerator
 					context.Diagnostics.Add(diagnostic);
 				}
 
-				return null;
+				if (!reached)
+				{
+					return null;
+				}
+
+				// The container still constructs the type, so only the hook is left out, which keeps a second error off its consumers.
+				registration = release ? registration with { OnRelease = null, } : registration with { OnActivated = null, };
 			}
 		}
 

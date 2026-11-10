@@ -616,6 +616,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<MemberWrapper>(graph.Factories.Wrappers.ToArray()),
 			RecordedFaults(graph.Factories, compilation),
 			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()),
+			GrantsInternalsVisibleTo(compilation.Assembly) ? new EquatableArray<SkippedRegistration>(graph.Factories.HookSkips.ToArray()) : default,
 			DeclaresNotNullWhen: declaresNotNullWhen);
 	}
 

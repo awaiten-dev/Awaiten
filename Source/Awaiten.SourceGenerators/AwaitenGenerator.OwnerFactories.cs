@@ -26,6 +26,12 @@ partial class AwaitenGenerator
 
 		/// <summary>The records of the types whose <c>[Inject]</c> property another assembly cannot see (see <see cref="RecordHiddenInjectedProperty" />).</summary>
 		public List<SkippedRegistration> HiddenProperties { get; } = new();
+
+		/// <summary>
+		///     The records of the hooks of generic factories with a private overload that accepts some closing too, which an
+		///     extending container in another assembly does not see (see <see cref="RecordBaseOpenFactories" />).
+		/// </summary>
+		public List<SkippedRegistration> HookSkips { get; } = new();
 	}
 
 	/// <summary>

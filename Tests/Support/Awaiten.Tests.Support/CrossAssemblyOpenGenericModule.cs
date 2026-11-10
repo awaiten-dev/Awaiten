@@ -208,6 +208,58 @@ public static partial class PublicHookedOpenGenericModule
 		=> log.Entries.Add($"released {typeof(T).Name}");
 }
 
+/// <summary>A public cache per entry type whose module has an internal overload of its hook for another type.</summary>
+public sealed class OverloadedHookOpenCache<T> : IHookedOpenCache<T>
+	where T : class;
+
+/// <summary>
+///     A <c>[Module]</c> whose public open generic registration names public generic hooks beside an internal overload
+///     for another type, which accepts no closing, so a container in another assembly without <c>InternalsVisibleTo</c>
+///     calls the public hooks for every closing it builds.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(OverloadedHookOpenCache<>), typeof(IHookedOpenCache<>), OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class OverloadedHookOpenGenericModule
+{
+	public static void Activate<T>(OverloadedHookOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Activate<T>(PublicHookedOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated another cache of {typeof(T).Name}");
+
+	public static void Release<T>(OverloadedHookOpenCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"released {typeof(T).Name}");
+}
+
+/// <summary>A cache per value type, built from an internal open generic implementation whose module hooks every closing.</summary>
+public interface IHookedValueCache<T>;
+
+internal sealed class HookedValueCache<T> : IHookedValueCache<T>
+	where T : struct;
+
+/// <summary>
+///     A <c>[Module]</c> whose internal open generic registration of value type caches names an activation hook beside a
+///     generic overload for reference types, which accepts no closing, so a container in another assembly without
+///     <c>InternalsVisibleTo</c> builds every closing through the generic factory and runs the hook through its wrapper.
+/// </summary>
+[Module]
+[Singleton<OpenHookLog>]
+[Scoped(typeof(HookedValueCache<>), typeof(IHookedValueCache<>), OnActivated = nameof(Activate))]
+public static partial class ValueHookedOpenGenericModule
+{
+	internal static void Activate<T>(HookedValueCache<T> cache, OpenHookLog log)
+		where T : struct
+		=> log.Entries.Add($"activated {typeof(T).Name}");
+
+	internal static void Activate<T>(IHookedValueCache<T> cache, OpenHookLog log)
+		where T : class
+		=> log.Entries.Add($"activated a cache of the reference type {typeof(T).Name}");
+}
+
 internal sealed class AsyncHookedOpenCache<T> : IHookedOpenCache<T>
 	where T : class;
 

@@ -321,6 +321,29 @@ public sealed partial class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task AModuleInAnotherAssembly_RunsThePublicHooksBesideAnInternalOverloadNoClosingTakes()
+		{
+			await using OverloadedHookCacheContainer.Root container = new();
+
+			await That(await ResolveInScope(container)).IsEqualTo(PrivateHookCalls).InAnyOrder()
+				.Because("the internal overload takes another type, so the module records nothing and the container calls the public hooks");
+		}
+
+		[Test]
+		public async Task AModuleInAnotherAssembly_RunsTheHookBesideAnOverloadWhoseConstraintsNoClosingMeets()
+		{
+			await using ValueHookedCacheContainer.Root container = new();
+
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				scope.Resolve<ValueCacheConsumer>();
+			}
+
+			await That(container.Resolve<OpenHookLog>().Entries).HasSingle().Which.IsEqualTo("activated Int32")
+				.Because("the overload for reference types never competes with a cache of value types, so the module generates the factory and the hook's wrapper");
+		}
+
+		[Test]
 		public async Task AModuleInAnotherAssembly_AwaitsTheAsynchronousHooksOfEachClosing()
 		{
 			await using AsyncHookedCacheContainer.Root container = new();
@@ -376,6 +399,21 @@ public sealed partial class OpenGenericFactoryTests
 	[Import(typeof(PublicHookedOpenGenericModule))]
 	[Scoped<CacheConsumer>]
 	public static partial class PublicHookedCacheContainer;
+
+	[Container]
+	[Import(typeof(OverloadedHookOpenGenericModule))]
+	[Scoped<CacheConsumer>]
+	public static partial class OverloadedHookCacheContainer;
+
+	public sealed class ValueCacheConsumer(IHookedValueCache<int> numbers)
+	{
+		public IHookedValueCache<int> Numbers => numbers;
+	}
+
+	[Container]
+	[Import(typeof(ValueHookedOpenGenericModule))]
+	[Scoped<ValueCacheConsumer>]
+	public static partial class ValueHookedCacheContainer;
 
 	[Container]
 	[Import(typeof(FriendHookedOpenGenericModule))]

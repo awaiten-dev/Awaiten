@@ -2214,6 +2214,20 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a hook with another overload this
+	///     container does not see, which the module recorded because it accepts the registration or some closing too: a
+	///     container in the module's assembly reports that closing as ambiguous (AWT190), while this one would call the
+	///     overload it sees or the module's wrapper. Distinct names are the remedy that works for every container.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ModuleHookOverloadUnseen = new(
+		"AWT231",
+		ModuleRegistrationNotSelfCompiled.Title,
+		"The imported module '{0}' registers '{1}' with the {2} hook '{3}', which this container does not run, because {4}; give the hook methods distinct names",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for a public type the container could
 	///     construct, but whose <c>[Inject]</c> property it does not see: only the module's factory could set it, and the
 	///     module's build generated none for it.
