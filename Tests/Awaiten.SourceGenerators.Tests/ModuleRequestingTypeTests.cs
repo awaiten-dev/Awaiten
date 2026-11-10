@@ -10,7 +10,7 @@ namespace Awaiten.SourceGenerators.Tests;
 ///     the container sits in the module's own assembly, in a friend granted <c>InternalsVisibleTo</c> or in another
 ///     assembly, where the module's generated factory returns an accessible type in place of the implementation.
 /// </summary>
-public class ModuleRequestingTypeTests
+public partial class ModuleRequestingTypeTests
 {
 	public enum Setup
 	{
@@ -75,7 +75,7 @@ public class ModuleRequestingTypeTests
 		GeneratorResult result = Run(setup, library, consumer);
 		string container = result.Sources.Single(source => source.Key.EndsWith(".Shop.g.cs", StringComparison.Ordinal)).Value;
 		string module = string.Concat(Generator.Run(setup == Setup.Friend ? Friend(library) : library).Sources.Values);
-		return (result.Diagnostics, Regex.Matches(container, @"ResolveLog\(__s, (typeof\(.+?\)|[\w.:]+_RequestingType(?:<[^>]+>)?\(\))\)")
+		return (result.Diagnostics, LogArgument().Matches(container)
 			.Select(match => Evaluated(match.Groups[1].Value, module))
 			.ToArray());
 	}
@@ -87,7 +87,7 @@ public class ModuleRequestingTypeTests
 			return argument["typeof(".Length..^1];
 		}
 
-		Match call = Regex.Match(argument, @"\.(\w+_RequestingType)(?:<(.+)>)?\(\)$");
+		Match call = RequestingTypeCall().Match(argument);
 		Match definition = Regex.Match(module, $@"global::System\.Type {call.Groups[1].Value}(?:<(.+?)>)?\(\)[^=]*=> typeof\((.+)\);");
 		string type = definition.Groups[2].Value;
 		if (call.Groups[2].Success)
@@ -97,6 +97,18 @@ public class ModuleRequestingTypeTests
 
 		return type;
 	}
+
+	[GeneratedRegex(@"ResolveLog\(__s, (typeof\(.+?\)|[\w.:]+_RequestingType(?:<[^>]+>)?\(\))\)")]
+	private static partial Regex LogArgument();
+
+	[GeneratedRegex(@"ResolveLog\(__s, ([\w.:]+_RequestingType\(\))\)")]
+	private static partial Regex RequestingTypeLogArgument();
+
+	[GeneratedRegex(@"\.(\w+_RequestingType)(?:<(.+)>)?\(\)$")]
+	private static partial Regex RequestingTypeCall();
+
+	[GeneratedRegex(@"(?:[^\n]*///[^\n]*\n){4}[^\n]*_RequestingType\(\)[^\n]*\n\r?\n")]
+	private static partial Regex RequestingTypeMethod();
 
 	private static async Task AgreeEverywhere(string library, string consumer, params string[] expected)
 	{
@@ -244,7 +256,7 @@ public class ModuleRequestingTypeTests
 		                         """, "[Singleton<Kettle, IKettle>]");
 		(Compilation generated, _) = Generator.RunGenerator(library, [], [], "ReferencedAssembly");
 		SyntaxTree module = generated.SyntaxTrees.Single(tree => tree.FilePath.Contains("ModuleScan"));
-		string older = Regex.Replace(module.ToString(), @"(?:[^\n]*///[^\n]*\n){4}[^\n]*_RequestingType\(\)[^\n]*\n\r?\n", "");
+		string older = RequestingTypeMethod().Replace(module.ToString(), "");
 		Compilation olderLibrary = generated.ReplaceSyntaxTree(module, CSharpSyntaxTree.ParseText(older, (CSharpParseOptions)module.Options));
 
 		(Compilation output, GeneratorDriverRunResult run) = Generator.RunGenerator(Consumer(""), [Generator.EmitToReference(olderLibrary),], []);
@@ -368,7 +380,7 @@ public class ModuleRequestingTypeTests
 
 		await That(result.Diagnostics).IsEmpty();
 		await That(own).Contains("ResolveLog(__s, typeof(global::Lib.Shop.Secret))");
-		await That(Regex.Matches(container, @"ResolveLog\(__s, ([\w.:]+_RequestingType\(\))\)").Select(match => Evaluated(match.Groups[1].Value, own)))
+		await That(RequestingTypeLogArgument().Matches(container).Select(match => Evaluated(match.Groups[1].Value, own)))
 			.IsEqualTo(["global::Lib.Shop.Secret",])
 			.Because("the extending container builds the base's private implementation through the base's factory and passes the type the base passes itself");
 	}

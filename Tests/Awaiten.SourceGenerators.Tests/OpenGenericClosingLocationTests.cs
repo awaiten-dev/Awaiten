@@ -163,7 +163,7 @@ public class OpenGenericClosingLocationTests
 		                                       }
 		                                       """);
 
-		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.StartsWith("(", StringComparison.Ordinal))
+		await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT101") && diagnostic.StartsWith('('))
 			.Because("the closing the extending container's consumer needs still names a position");
 	}
 }
