@@ -604,44 +604,72 @@ partial class AwaitenGenerator
 	///     of another assembly builds through a generated registration factory of its own, such as a friend of the
 	///     implementation's assembly, calls the first factory too, since both mirror the one constructor. A lifecycle hook
 	///     of the registration still binds on its declarer (see <see cref="DeclaringOrigin" />), not on the module that owns
-	///     the factory.
+	///     the factory, and so do its async initializer conventions, which the declarer's own assembly applies too. A
+	///     closed registration of a closing of an open generic registration of such a module calls the module's generic
+	///     factory the same way, also when no dependency asks for the closing.
 	/// </summary>
-	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation)
+	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, List<OpenRegistration> open, INamedTypeSymbol container, Compilation compilation)
 	{
 		Dictionary<string, RawRegistration> factories = new(StringComparer.Ordinal);
 		foreach (RawRegistration registration in raw)
 		{
-			if (registration.Hidden is null && IsOtherAssemblysFactory(registration) && !factories.ContainsKey(registration.ImplementationType))
+			if (registration.Hidden is null && IsOtherAssemblysGeneratedFactory(registration, compilation) && !factories.ContainsKey(registration.ImplementationType))
 			{
 				factories.Add(registration.ImplementationType, registration);
 			}
 		}
 
-		for (int index = 0; index < raw.Count && factories.Count > 0; index++)
+		List<OpenRegistration> openFactories = open.FindAll(registration => registration is { Dropped: false, Via.Method: not null, });
+		for (int index = 0; index < raw.Count && (factories.Count > 0 || openFactories.Count > 0); index++)
 		{
-			if (raw[index] is { IsScan: false, ConstructVia: null, Hidden: null, } registration
-			    && (registration.Production == ProductionKind.Constructor || IsOtherAssemblysFactory(registration))
-			    && factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory)
-			    && !ReferenceEquals(factory, registration))
+			if (raw[index] is not { IsScan: false, ConstructVia: null, Hidden: null, } registration
+			    || (registration.Production != ProductionKind.Constructor && !IsOtherAssemblysGeneratedFactory(registration, compilation))
+			    || (factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory) ? factory : ThroughOpenFactoryOf(registration)) is not { } shared
+			    || ReferenceEquals(shared, registration))
 			{
-				raw[index] = registration with
-				{
-					Implementation = factory.Implementation,
-					Origin = factory.Origin,
-					Production = factory.Production,
-					ProductionMember = factory.ProductionMember,
-					Traits = factory.Traits,
-					TraitsExact = factory.TraitsExact,
-					Declarer = registration.Origin ?? container,
-				};
+				continue;
 			}
+
+			INamedTypeSymbol declarer = registration.Origin ?? container;
+			raw[index] = registration with
+			{
+				Implementation = shared.Implementation,
+				Origin = shared.Origin,
+				Production = shared.Production,
+				ProductionMember = shared.ProductionMember,
+				GenericFactory = shared.GenericFactory,
+				Traits = registration.Production == ProductionKind.Constructor
+					? TraitsOf(registration.Implementation, ScopeAsyncInitializers(declarer, compilation))
+					: registration.Traits,
+				TraitsExact = registration.Production == ProductionKind.Constructor || registration.TraitsExact,
+				Declarer = declarer,
+			};
 		}
 
-		bool IsOtherAssemblysFactory(RawRegistration registration)
-			=> registration is { Production: ProductionKind.Factory, Origin: { } module, }
-			   && IsGeneratedRegistrationFactory(registration.ProductionMember)
-			   && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly);
+		RawRegistration? ThroughOpenFactoryOf(RawRegistration registration)
+			=> registration is { Production: ProductionKind.Constructor, Implementation: { IsGenericType: true, } implementation, ServiceSymbol: { } service, }
+			   && openFactories.Find(candidate => SymbolEqualityComparer.Default.Equals(candidate.Implementation.OriginalDefinition, implementation.OriginalDefinition)) is { Via: { Owner: { } owner, Method: { } method, }, } candidate
+			   && method.Construct(implementation.TypeArguments.ToArray()) is { ReturnType: INamedTypeSymbol product, }
+			   && compilation.HasImplicitConversion(product, service)
+				? registration with
+				{
+					Implementation = product,
+					Origin = owner,
+					Production = ProductionKind.Factory,
+					ProductionMember = candidate.Factory,
+					GenericFactory = true,
+				}
+				: null;
 	}
+
+	/// <summary>
+	///     Whether <paramref name="registration" /> calls a registration factory that a module of another assembly than
+	///     <paramref name="compilation" /> generated (see <see cref="ShareGeneratedRegistrationFactories" />).
+	/// </summary>
+	private static bool IsOtherAssemblysGeneratedFactory(RawRegistration registration, Compilation compilation)
+		=> registration is { Production: ProductionKind.Factory, Origin: { } module, }
+		   && IsGeneratedRegistrationFactory(registration.ProductionMember)
+		   && !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly);
 
 	/// <summary>
 	///     The factory <paramref name="owner" />, a module or a base container, generated for

@@ -326,16 +326,21 @@ partial class AwaitenGenerator
 	///     drops it: the generated container would otherwise not compile, or silently lack a scan match its base has.
 	///     The dropped service no longer reports a missing dependency (AWT101) in its consumers, so the one cause is
 	///     reported once. A registration built through an owner's generated factory needs neither the type nor its
-	///     constructor. A constructed registration of the base whose type has an <c>[Inject]</c> property the container
-	///     does not see (see <see cref="Inheritance.HiddenPropertyFault" />) is dropped the same way, so it is never built
-	///     without the property.
+	///     constructor, and neither does a constructed one whose implementation a module of another assembly builds through
+	///     its generated factory, which <see cref="ShareGeneratedRegistrationFactories" /> lets it call. A constructed
+	///     registration of the base whose type has an <c>[Inject]</c> property the container does not see (see
+	///     <see cref="Inheritance.HiddenPropertyFault" />) is dropped the same way, so it is never built without the property.
 	/// </summary>
 	private static void DropInaccessibleInherited(
 		Inheritance inheritance,
 		List<RawRegistration> registrations,
+		Compilation compilation,
 		HashSet<string> constraintRejected,
 		List<DiagnosticInfo> diagnostics)
 	{
+		HashSet<string> sharedFactories = new(
+			registrations.Where(registration => registration.Hidden is null && IsOtherAssemblysGeneratedFactory(registration, compilation)).Select(registration => registration.ImplementationType),
+			StringComparer.Ordinal);
 		registrations.RemoveAll(registration =>
 		{
 			if (!inheritance.Owns(registration.Origin) || registration.ConstructVia is not null)
@@ -343,9 +348,11 @@ partial class AwaitenGenerator
 				return false;
 			}
 
-			if (InaccessiblePart(registration) is not { } subject)
+			bool sharesFactory = registration is { Production: ProductionKind.Constructor, IsScan: false, Hidden: null, } && sharedFactories.Contains(registration.ImplementationType);
+			if (InaccessiblePart(registration, sharesFactory) is not { } subject)
 			{
-				if (!SymbolEqualityComparer.Default.Equals(registration.Origin, inheritance.Base)
+				if (sharesFactory
+				    || !SymbolEqualityComparer.Default.Equals(registration.Origin, inheritance.Base)
 				    || registration.Production != ProductionKind.Constructor
 				    || inheritance.HiddenPropertyFault(registration.Implementation) is not { } hiddenProperty)
 				{
@@ -401,7 +408,7 @@ partial class AwaitenGenerator
 			}
 		}
 
-		string? InaccessiblePart(RawRegistration registration)
+		string? InaccessiblePart(RawRegistration registration, bool sharesFactory)
 		{
 			INamedTypeSymbol owner = registration.Origin!;
 			string? subject = inheritance.InaccessibleType(registration.Implementation, registration.IsScan)
@@ -410,6 +417,7 @@ partial class AwaitenGenerator
 			{
 				ProductionKind.Factory => inheritance.InaccessibleMember(owner, registration.ProductionMember, "factory", registration.Implementation, ProductionKind.Factory),
 				ProductionKind.Instance => inheritance.InaccessibleMember(owner, registration.ProductionMember, "instance member", registration.Implementation, ProductionKind.Instance),
+				_ when sharesFactory => null,
 				_ => inheritance.InaccessibleConstructor(registration.Implementation),
 			};
 			return subject

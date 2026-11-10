@@ -115,7 +115,7 @@ partial class AwaitenGenerator
 
 		if (inheritance is not null)
 		{
-			DropInaccessibleInherited(inheritance, result, constraintRejected, diagnostics);
+			DropInaccessibleInherited(inheritance, result, compilation, constraintRejected, diagnostics);
 		}
 
 		// ...then moved back to the end: coalescing is first-wins per service, so the explicit registrations and
@@ -404,7 +404,8 @@ partial class AwaitenGenerator
 	///     self-compiled constructor parameter is accessible, AWT195). Returns <see langword="null" /> for a dropped registration, after reporting
 	///     AWT231 once per implementation when the module recorded why it generated no factory for it or cannot carry
 	///     one (see <see cref="ModuleShapeReason" />), else AWT154
-	///     once per module when the module carries no generated factory for it. A module inherited through
+	///     once per module when the module carries no generated factory for it, unless another import builds it (see
+	///     <see cref="BuiltByAnotherImport" />). A module inherited through
 	///     <c>Extends</c> keeps such a registration instead, which the inheritance reports as inaccessible (AWT226),
 	///     except one of an implementation with an <c>[Inject]</c> property this container does not see, which it builds
 	///     through the factory like an imported module's or reports with AWT231.
@@ -460,7 +461,7 @@ partial class AwaitenGenerator
 		// calls the internal factory that takes them directly, which the module generates when the public one takes handles.
 		if ((GeneratedFactoryNamed(module, InternalRegistrationFactoryName(implementation), compilation) ?? GeneratedFactory(module, implementation, compilation)) is not { } factory)
 		{
-			if (context.Inherited && !hiddenMembers)
+			if ((context.Inherited && !hiddenMembers) || BuiltByAnotherImport(registration, context))
 			{
 				return registration;
 			}
@@ -508,6 +509,18 @@ partial class AwaitenGenerator
 
 		return ThroughGeneratedFactory(registration, factory, compilation);
 	}
+
+	/// <summary>
+	///     Whether another imported module of another assembly generated a registration factory for the implementation of
+	///     <paramref name="registration" />, which has no hooks, so <see cref="ShareGeneratedRegistrationFactories" />
+	///     builds it through that factory although its own module generated none.
+	/// </summary>
+	private static bool BuiltByAnotherImport(RawRegistration registration, LifetimeCollectionContext context)
+		=> registration is { OnActivated: null, OnRelease: null, }
+		   && context.Imports is { } imports
+		   && imports.Exists(import => !SymbolEqualityComparer.Default.Equals(import.Symbol, registration.Origin)
+		                               && !SymbolEqualityComparer.Default.Equals(import.Symbol.ContainingAssembly, context.Compilation.Assembly)
+		                               && GeneratedFactory(import.Symbol, registration.Implementation, context.Compilation) is not null);
 
 	/// <summary>
 	///     Reports AWT231 for a registration of an imported module in another assembly that this container drops because

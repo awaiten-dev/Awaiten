@@ -697,6 +697,7 @@ partial class AwaitenGenerator
 			IsScan = reg.IsScan,
 			GreedyConstructor = reg.GreedyConstructor,
 			Origin = reg.Origin,
+			DeclaredBy = reg.Declarer,
 			Eager = reg.Eager,
 			OnActivated = reg.OnActivated,
 			OnRelease = reg.OnRelease,

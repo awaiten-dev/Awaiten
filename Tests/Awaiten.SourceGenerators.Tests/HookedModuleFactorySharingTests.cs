@@ -205,7 +205,7 @@ public class HookedModuleFactorySharingTests
 
 	[Test]
 	[Arguments("[Import(typeof(LibB.OtherModule))]\n[Import(typeof(Lib.GreetingModule))]", null)]
-	[Arguments("[Import(typeof(Lib.GreetingModule))]\n[Import(typeof(LibB.OtherModule))]", "OnActivated directives (unset and '*OtherModule.Ready')")]
+	[Arguments("[Import(typeof(Lib.GreetingModule))]\n[Import(typeof(LibB.OtherModule))]", "OtherModule.Ready')")]
 	public async Task AHookOfAModuleOfAnotherLibrary_BindsOnThatModuleWhileItsRegistrationCallsTheFirstModulesFactory(string imports, string? conflict)
 	{
 		const string otherLibrary = """
@@ -246,7 +246,7 @@ public class HookedModuleFactorySharingTests
 			}
 			else
 			{
-				await That(result.Diagnostics).HasSingle().Which.IsEqualTo($"*error AWT166: 'Lib.Greeter' is registered with conflicting {conflict}*").AsWildcard()
+				await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("error AWT166: 'Lib.Greeter' is registered with conflicting OnActivated directives (unset and '") && diagnostic.Contains(conflict!))
 					.Because("the first module's registration comes first and sets no hook, wherever the modules live");
 			}
 		}
