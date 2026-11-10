@@ -154,6 +154,32 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
+			[Arguments("[Scan<IPlugin>(As = ScanAs.MatchingInterface)][Scan<IPlugin>(As = ScanAs.Marker)]")]
+			[Arguments("[Scan<IPlugin>(As = ScanAs.Marker)][Scan<IGrinder>(As = ScanAs.Marker)]")]
+			public async Task AMatchUnderSeveralServices_NamesWhyAndTheScanRemedy(string scans)
+			{
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+					using Awaiten;
+
+					[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Lib.Tests")]
+
+					namespace Lib;
+
+					public interface IPlugin { }
+					public interface IGrinder { }
+					internal sealed class Grinder : IPlugin, IGrinder { }
+
+					[Module]
+					{{scans}}
+					public static partial class PluginModule { }
+					""", Consumer);
+
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*AWT231*'Lib.Grinder'*because it is exposed under several services (*), which it leaves to the assemblies it grants InternalsVisibleTo, since the generated handle a factory needs would split the instance such an assembly shares with its own registration of it; grant this assembly InternalsVisibleTo in the module's assembly, or narrow the As to one interface or exclude the type from the scan").AsWildcard()
+					.Because("a friend constructs the match itself and shares it with its own registration, so the library builds no handle, and a container it grants nothing can only be granted access or get a single exposure");
+			}
+
+			[Test]
 			public async Task WithInternalsVisibleTo_RegistersEachSkippedMatchDirectly()
 			{
 				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library("TestAssembly"), FriendConsumer);

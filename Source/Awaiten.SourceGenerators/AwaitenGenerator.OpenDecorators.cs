@@ -192,7 +192,7 @@ partial class AwaitenGenerator
 		List<DiagnosticInfo> diagnostics)
 	{
 		// AWT210: a selected key that no closing of the service is registered under.
-		if (decorator.Keys is { Count: > 0, } selected && !(selected.Count == 1 && selected[0] is null))
+		if (decorator.Keys is { } selected && !(selected.Count == 1 && selected[0] is null))
 		{
 			foreach (string? key in selected.Where(key => !closings.Any(closed => PresentUnderKey(graph, closed.ToDisplayString(FullyQualified), key))
 			                                             && !rejected.Any(entry => RejectedClosingUnderKey(entry, decorator.Service, key))))

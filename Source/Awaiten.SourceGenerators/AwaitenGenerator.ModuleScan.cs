@@ -488,9 +488,16 @@ partial class AwaitenGenerator
 	/// <summary>The services a module-scan match is exposed under, and whether a factory it cannot have may be skipped.</summary>
 	private readonly record struct ScanExposure(string TypeName, List<INamedTypeSymbol> Services, bool Skippable);
 
-	/// <summary>Why the module generates no factory for a match its scans expose under several services.</summary>
+	/// <summary>
+	///     Why the module generates no factory for a match its scans expose under several services, when its assembly
+	///     grants <c>InternalsVisibleTo</c>: an assembly it grants constructs the match itself and shares it with its own
+	///     registration of the type, which the instance handle a factory needs would split (AWT241).
+	/// </summary>
 	private static string SeveralExposuresReason(IEnumerable<INamedTypeSymbol> services)
-		=> $"it is exposed under several services ({string.Join(", ", services.Select(service => Display(service.ToDisplayString(FullyQualified))))})";
+		=> $"{SeveralExposuresPrefix}{string.Join(", ", services.Select(service => Display(service.ToDisplayString(FullyQualified))))}), which it leaves to the assemblies it grants InternalsVisibleTo, since the generated handle a factory needs would split the instance such an assembly shares with its own registration of it";
+
+	/// <summary>The start of <see cref="SeveralExposuresReason" />, also of the shorter reason an older generator recorded.</summary>
+	private const string SeveralExposuresPrefix = "it is exposed under several services (";
 
 	/// <summary>The record of a match the module emits no factory for (see <see cref="ScanSkip" />).</summary>
 	private static ScanSkip SkipOf(INamedTypeSymbol type, string reason, IEnumerable<INamedTypeSymbol> services)

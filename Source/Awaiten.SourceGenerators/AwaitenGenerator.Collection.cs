@@ -896,7 +896,9 @@ partial class AwaitenGenerator
 			}
 			else
 			{
-				ReportNotSelfCompiled(context, origin, implementation, "factory", reason, $"change the module so its [Scan] can generate a factory for '{Display(implementation.ToDisplayString(FullyQualified))}'");
+				ReportNotSelfCompiled(context, origin, implementation, "factory", reason, reason.StartsWith(SeveralExposuresPrefix, StringComparison.Ordinal)
+					? ScanSingleExposureRemedy
+					: $"change the module so its [Scan] can generate a factory for '{Display(implementation.ToDisplayString(FullyQualified))}'");
 			}
 
 			return true;
@@ -1489,7 +1491,8 @@ partial class AwaitenGenerator
 			}
 
 			// The predicate is read even when the keys skip the decorator, so its own mistakes are reported too.
-			bool keysRead = TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), diagnostics, out IReadOnlyList<string?>? keys);
+			bool leftToModule = module is not null && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute") && ReportsOwnDecoratorMistakes(module, compilation);
+			bool keysRead = TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), leftToModule ? new List<DiagnosticInfo>() : diagnostics, out IReadOnlyList<string?>? keys);
 			if (!TryReadDecoratorPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when)
 			    || !keysRead)
 			{
@@ -1505,7 +1508,8 @@ partial class AwaitenGenerator
 					INamedTypeSymbol? handle = HandleProducedBy(via, service, compilation);
 					INamedTypeSymbol decorated = handle ?? service;
 					closed.Add(new DecorateRegistration(
-						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, handle is not null, when));
+						decorated.ToDisplayString(FullyQualified), decorated, decorator, order, declarationOrder, location, keys, inherited, via, module, handle is not null, when,
+						leftToModule && ReportsMissingInner(module!, decorator, service, compilation)));
 				}
 			}
 			else if (attribute.ConstructorArguments.Length == 2

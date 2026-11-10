@@ -210,7 +210,7 @@ partial class AwaitenGenerator
 				return any;
 			}
 
-			if (decorator.Keys is { Count: > 0, } keys && !(keys.Count == 1 && keys[0] is null))
+			if (decorator.Keys is { } keys && !(keys.Count == 1 && keys[0] is null))
 			{
 				foreach (string? key in keys.Where(key => !populated.Any(resolutionKey => SelectedBy(key, resolutionKey))))
 				{
@@ -321,8 +321,12 @@ partial class AwaitenGenerator
 				string? innerType = SingleInnerParameterType(decorator);
 				if (innerType is null)
 				{
-					Report(Diagnostics.DecoratorMissingInnerParameter, decorator.Location,
-						decorator.Decorator.ToDisplayString(FullyQualified), service);
+					if (!decorator.InnerReportedByModule)
+					{
+						Report(Diagnostics.DecoratorMissingInnerParameter, decorator.Location,
+							decorator.Decorator.ToDisplayString(FullyQualified), service);
+					}
+
 					valid = false;
 					continue;
 				}
@@ -951,4 +955,98 @@ partial class AwaitenGenerator
 
 		return parameterModel;
 	}
+
+	/// <summary>
+	///     Reports, in the module's own build, the mistakes of its <c>[Decorate]</c> attributes that are wrong for every
+	///     importer: <c>Keys</c> together with <c>AllKeys</c> (AWT211), an empty <c>Keys</c> (AWT123), an unsupported key
+	///     type (AWT170) and a closed decorator none of whose constructors has a single inner parameter (AWT124, see
+	///     <see cref="NoConstructorReceivesInner" />). Returns the full metadata names of the types the module emits to
+	///     record them, so a container leaves them to the module (see <see cref="ReportsOwnDecoratorMistakes" /> and
+	///     <see cref="ReportsMissingInner" />): the marker of the module when it reported any, and one per AWT124.
+	/// </summary>
+	private static List<string> ReportModuleDecoratorMistakes(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		int before = diagnostics.Count;
+		List<string> markers = new();
+		foreach (AttributeData attribute in module.GetAttributes())
+		{
+			if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
+			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
+			{
+				continue;
+			}
+
+			LocationInfo? location = LocationInfo.From(attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation());
+			if (TryReadDecoratorKeys(attribute, attributeClass, location, diagnostics, out _)
+			    && ContributedPair(attribute, attributeClass) is ({ } decorator, { } service)
+			    && NoConstructorReceivesInner(decorator, service, compilation))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.DecoratorMissingInnerParameter,
+					location,
+					new EquatableArray<string>([Display(decorator.ToDisplayString(FullyQualified)), Display(service.ToDisplayString(FullyQualified)),])));
+				string marker = MarkerMetadataName(module, MissingInnerMarkerName(module, decorator, service));
+				if (!markers.Contains(marker))
+				{
+					markers.Add(marker);
+				}
+			}
+		}
+
+		if (diagnostics.Count > before)
+		{
+			markers.Insert(0, MarkerMetadataName(module, DecoratorMistakesMarkerName(module)));
+		}
+
+		return markers;
+	}
+
+	/// <summary>
+	///     Whether no constructor of the <paramref name="decorator" /> class, whatever its accessibility, has a single
+	///     parameter that receives the inner <paramref name="service" /> (see <see cref="InnerParameter" />), so every
+	///     container reports AWT124 whichever constructor it selects.
+	/// </summary>
+	private static bool NoConstructorReceivesInner(INamedTypeSymbol decorator, INamedTypeSymbol service, Compilation compilation)
+		=> decorator is { TypeKind: TypeKind.Class, IsAbstract: false, IsStatic: false, }
+		   && decorator.InstanceConstructors.All(constructor => InnerParameter(constructor, service, compilation) is null);
+
+	/// <summary>
+	///     Whether the build of <paramref name="module" /> reports its <c>[Decorate]</c> mistakes that are wrong for every
+	///     importer (see <see cref="ReportModuleDecoratorMistakes" />), so a container does not repeat them: a module of
+	///     this compilation, or one of another assembly that recorded them. A module built by an older generator records
+	///     nothing, so its consumers still report them.
+	/// </summary>
+	private static bool ReportsOwnDecoratorMistakes(INamedTypeSymbol module, Compilation compilation)
+		=> SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+		   || module.ContainingAssembly.GetTypeByMetadataName(MarkerMetadataName(module, DecoratorMistakesMarkerName(module.OriginalDefinition))) is not null;
+
+	/// <summary>
+	///     Whether the build of <paramref name="module" /> reports AWT124 for its closed <c>[Decorate]</c> of
+	///     <paramref name="decorator" /> over <paramref name="service" />. A module of this compilation is judged as in its
+	///     own build. One of another assembly is judged by its record alone: metadata leaves out the constructors this
+	///     assembly cannot access, and one of them may receive the inner instance, which keeps the module from reporting.
+	/// </summary>
+	private static bool ReportsMissingInner(INamedTypeSymbol module, INamedTypeSymbol decorator, INamedTypeSymbol service, Compilation compilation)
+		=> SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+			? NoConstructorReceivesInner(decorator, service, compilation)
+			: module.ContainingAssembly.GetTypeByMetadataName(MarkerMetadataName(module, MissingInnerMarkerName(module.OriginalDefinition, decorator, service))) is not null;
+
+	/// <summary>The full metadata name of the marker type <paramref name="name" /> in the namespace of <paramref name="module" />.</summary>
+	private static string MarkerMetadataName(INamedTypeSymbol module, string name)
+		=> module.ContainingNamespace is { IsGlobalNamespace: false, } ns ? $"{ns.ToDisplayString()}.{name}" : name;
+
+	/// <summary>
+	///     A deterministic name for the internal type, in the module's namespace, that records that the module's own build
+	///     reported its <c>[Decorate]</c> mistakes (see <see cref="ReportModuleDecoratorMistakes" />). Metadata carries the
+	///     internal types of another assembly, so every consumer finds it.
+	/// </summary>
+	private static string DecoratorMistakesMarkerName(INamedTypeSymbol module)
+		=> $"Awaiten__ModuleDecoratorMistakes_{module.Name}_{Fnv1a(module.ToDisplayString(FullyQualified)):x8}";
+
+	/// <summary>
+	///     A deterministic name for the internal type, in the module's namespace, that records that the module's own build
+	///     reported AWT124 for its <c>[Decorate]</c> of <paramref name="decorator" /> over <paramref name="service" />.
+	/// </summary>
+	private static string MissingInnerMarkerName(INamedTypeSymbol module, INamedTypeSymbol decorator, INamedTypeSymbol service)
+		=> $"Awaiten__ModuleDecoratorWithoutInner_{decorator.Name}_{Fnv1a($"{module.ToDisplayString(FullyQualified)}\0{decorator.ToDisplayString(FullyQualified)}\0{service.ToDisplayString(FullyQualified)}"):x8}";
 }
