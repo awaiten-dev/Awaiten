@@ -482,12 +482,16 @@ partial class AwaitenGenerator
 	///     Removes from <paramref name="diagnostics" /> every diagnostic the base reports itself, compared by rule and
 	///     message, not by location: an inherited declaration read from metadata reports at the <c>Extends</c> argument,
 	///     not where the base reports it. A problem of the base is reported once, on the base; a problem the extending
-	///     container introduces still differs from every base diagnostic and stays.
+	///     container introduces still differs from every base diagnostic and stays. An error stays when the base is in
+	///     another assembly than <paramref name="container" />: that assembly built although its own check fails, so its
+	///     build suppressed the error or ran a generator without the check, and the error still breaks the graph here.
 	/// </summary>
-	internal static void RemoveBaseDiagnostics(List<DiagnosticInfo> diagnostics, IEnumerable<DiagnosticInfo> baseDiagnostics)
+	internal static void RemoveBaseDiagnostics(List<DiagnosticInfo> diagnostics, IEnumerable<DiagnosticInfo> baseDiagnostics, INamedTypeSymbol container, INamedTypeSymbol baseContainer)
 	{
+		bool keepErrors = !SymbolEqualityComparer.Default.Equals(baseContainer.ContainingAssembly, container.ContainingAssembly);
 		HashSet<DiagnosticInfo> inherited = new(baseDiagnostics.Select(diagnostic => diagnostic with { Location = null, }));
-		diagnostics.RemoveAll(diagnostic => inherited.Contains(diagnostic with { Location = null, }));
+		diagnostics.RemoveAll(diagnostic => !(keepErrors && diagnostic.EffectiveSeverity == DiagnosticSeverity.Error)
+		                                    && inherited.Contains(diagnostic with { Location = null, }));
 	}
 
 	/// <summary>

@@ -158,7 +158,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		// A base reports its own problems; a container that extends it reports only what it changes.
 		if (AwaitenGenerator.ReadExtends(type) is { } baseContainer)
 		{
-			AwaitenGenerator.RemoveBaseDiagnostics(detected, Detect(CachedGraph(graphByContainer, baseContainer, compilation, cancellationToken).Graph, strict));
+			AwaitenGenerator.RemoveBaseDiagnostics(detected, Detect(CachedGraph(graphByContainer, baseContainer, compilation, cancellationToken).Graph, strict), type, baseContainer);
 		}
 
 		foreach (DiagnosticInfo diagnostic in detected)
@@ -177,7 +177,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		if (AwaitenGenerator.ReadExtends(type) is { } extended)
 		{
 			AwaitenGenerator.RemoveBaseDiagnostics(fromGraph, CachedGraph(graphByContainer, extended, compilation, cancellationToken).Diagnostics
-				.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)));
+				.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)), type, extended);
 		}
 
 		foreach (DiagnosticInfo diagnostic in fromGraph.Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct) || nullableProducts.TryAdd(diagnostic, true)))

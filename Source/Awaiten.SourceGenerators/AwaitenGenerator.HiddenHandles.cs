@@ -33,7 +33,11 @@ partial class AwaitenGenerator
 		List<ImportedModule> imported = CollectImportedModules(container, new List<DiagnosticInfo>());
 		if (ReadExtends(container) is { } baseContainer)
 		{
-			imported.AddRange(CollectImportedModules(baseContainer, new List<DiagnosticInfo>()));
+			// An import of a base read from metadata has no syntax, so it reports at the container's Extends, like InheritBase.
+			ExtendsTarget(container, out AttributeData? extends);
+			Location? location = NamedArgumentLocation(extends!, "Extends");
+			imported.AddRange(CollectImportedModules(baseContainer, new List<DiagnosticInfo>())
+				.Select(module => module with { ImportLocation = module.ImportLocation ?? location, }));
 		}
 
 		List<INamedTypeSymbol> modules = imported

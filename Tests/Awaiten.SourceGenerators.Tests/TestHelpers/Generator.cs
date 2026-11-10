@@ -193,6 +193,38 @@ public static class Generator
 	}
 
 	/// <summary>
+	///     Runs the generator over <paramref name="moduleSource" /> into a library, builds <paramref name="baseSource" />
+	///     against it as <paramref name="build" /> says, and runs the generator over <paramref name="source" /> against both,
+	///     for a container that extends a base of another assembly which imports a module of a third one. The generator's
+	///     diagnostics never fail the referenced builds, as when the user suppresses them.
+	/// </summary>
+	public static GeneratorResult RunWithModuleAndBase(
+		[StringSyntax("c#-test")] string moduleSource,
+		[StringSyntax("c#-test")] string baseSource,
+		[StringSyntax("c#-test")] string source,
+		BaseBuild build)
+	{
+		(Compilation module, _) = RunGenerator(moduleSource, [], [], "ModuleAssembly");
+		MetadataReference moduleReference = EmitToReference(module);
+		MetadataReference baseReference;
+		if (build == BaseBuild.WithoutGenerator)
+		{
+			baseReference = EmitToReference(CSharpCompilation.Create(
+				"BaseAssembly",
+				[CSharpSyntaxTree.ParseText(baseSource, new CSharpParseOptions(LanguageVersion.Latest)),],
+				[..References.For([]), moduleReference,],
+				new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)));
+		}
+		else
+		{
+			(Compilation @base, _) = RunGenerator(baseSource, [moduleReference,], [], "BaseAssembly");
+			baseReference = build == BaseBuild.CompilationReference ? @base.ToMetadataReference() : EmitToReference(@base);
+		}
+
+		return Run(source, [moduleReference, baseReference,]);
+	}
+
+	/// <summary>
 	///     Like <see cref="RunPolyfillFree" />, but runs the generator over <paramref name="referencedSource" /> first and
 	///     compiles <paramref name="source" /> against that assembly.
 	/// </summary>
@@ -290,4 +322,17 @@ public static class Generator
 		public override bool TryGetGlobalDiagnosticValue(string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity)
 			=> configs.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
 	}
+}
+
+/// <summary>How <see cref="Generator.RunWithModuleAndBase" /> builds the assembly of the base container.</summary>
+public enum BaseBuild
+{
+	/// <summary>With the generator, its errors suppressed, as with <c>#pragma</c>, <c>.editorconfig</c> or <c>NoWarn</c>.</summary>
+	Suppressed,
+
+	/// <summary>Without the generator, as by an older generator that does not know the check.</summary>
+	WithoutGenerator,
+
+	/// <summary>With the generator, referenced as a compilation, as the IDE references a project whose build reports the error.</summary>
+	CompilationReference,
 }
