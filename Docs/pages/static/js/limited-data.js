@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
-        "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
-      },
-      {
         "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
         "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
+      },
+      {
+        "sha": "291cf4852b938f32087c8952c5fb7d3f9868cfa2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:56:24 2026 \u002B0100",
+        "message": "fix: set container-side [InjectProperty] entries on an implementation a module of another assembly builds through an instance handle (#398)"
       }
     ],
     "labels": [
-      "707aa9d3",
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "d5a33c56",
       "ee8564a4",
       "7a956220",
-      "bcee41a6"
+      "bcee41a6",
+      "291cf485"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.541306248732975,
           5.082547610768905,
           5.558466794235366,
           7.688635357966025,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.521912140341906,
           5.775131902098655,
           4.450600648423036,
-          4.873906595366342
+          4.873906595366342,
+          2.9457818379004794
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.444243139525255,
           5.10968748430411,
           7.530499925216039,
           8.367314628683603,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.397376200982502,
           7.259319060123884,
           6.992311848203341,
-          6.58147020637989
+          6.58147020637989,
+          3.8238707493458475
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          64.61763139565785,
           103.47543415852955,
           138.14845272210928,
           109.08154323895772,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           111.89372821648915,
           134.40190279483795,
           82.01765375932058,
-          88.54239027500152
+          88.54239027500152,
+          53.08613698681196
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.859109921256701,
           7.0694118221600855,
           8.072833123115393,
           8.603248942891756,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           9.017092248797416,
           8.792338166099329,
           6.983292210102081,
-          6.2062579164902365
+          6.2062579164902365,
+          4.304672426978747
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.3969748745361965,
           9.403942479441563,
           10.434835264315971,
           10.591305993497372,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.460336261987687,
           10.861475057899952,
           8.664843387405078,
-          8.378528677920501
+          8.378528677920501,
+          5.97646344502767
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
-        "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
-      },
-      {
         "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
         "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
+      },
+      {
+        "sha": "291cf4852b938f32087c8952c5fb7d3f9868cfa2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:56:24 2026 \u002B0100",
+        "message": "fix: set container-side [InjectProperty] entries on an implementation a module of another assembly builds through an instance handle (#398)"
       }
     ],
     "labels": [
-      "707aa9d3",
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "d5a33c56",
       "ee8564a4",
       "7a956220",
-      "bcee41a6"
+      "bcee41a6",
+      "291cf485"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.575609500209491,
           6.199101925960609,
           7.1259224495062465,
           8.229322677850723,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.807349735072681,
           6.804768294095993,
           5.216705909619729,
-          5.119235810178977
+          5.119235810178977,
+          3.191168364423972
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.336470920840899,
           5.120544544779337,
           7.533840162058671,
           8.343605825943607,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.311314771572749,
           7.336752681859902,
           6.5211620809776445,
-          6.5100541317037175
+          6.5100541317037175,
+          3.83591697536982
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          77.94411536852519,
           105.44659826755523,
           140.66918441227503,
           107.13695571252278,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           110.74178948402405,
           135.8047717412313,
           82.46291610399882,
-          88.34174400170645
+          88.34174400170645,
+          53.424855187535286
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.767391532162825,
           6.876946711769471,
           8.197971732666096,
           8.386562468750137,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.97908839583397,
           8.780185304582119,
           7.116367216904958,
-          6.3008042344680195
+          6.3008042344680195,
+          4.585012193024158
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.25977043578258,
           9.681645086407661,
           13.160191936152321,
           14.761525054063116,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.90526368121306,
           14.155925347254826,
           11.65871397192989,
-          11.492693759004275
+          11.492693759004275,
+          7.622767894218366
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
-        "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
-      },
-      {
         "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 18:09:56 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
         "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
+      },
+      {
+        "sha": "291cf4852b938f32087c8952c5fb7d3f9868cfa2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:56:24 2026 \u002B0100",
+        "message": "fix: set container-side [InjectProperty] entries on an implementation a module of another assembly builds through an instance handle (#398)"
       }
     ],
     "labels": [
-      "707aa9d3",
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "d5a33c56",
       "ee8564a4",
       "7a956220",
-      "bcee41a6"
+      "bcee41a6",
+      "291cf485"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          23.268973253667355,
           19.81194956700007,
           12.97881486586162,
           15.417523107358388,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           17.210004693695478,
           11.355789773662885,
           11.948181760098253,
-          16.002887023346766
+          16.002887023346766,
+          21.187805954615275
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2400,7 +2400,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
-          208,
+          216,
           216,
           216,
           216,
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1623.9141528265816,
           1463.9618835449219,
           912.9025975545247,
           1165.4850970904033,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1378.822917175293,
           756.774569443294,
           789.140913327535,
-          1209.8488957722982
+          1209.8488957722982,
+          1518.490240097046
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          31356.95405796596,
           29543.194970703124,
           19144.718843900242,
           25986.30417742048,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           26703.86502511161,
           17963.49279315655,
           18286.056832449776,
-          26564.365462239584
+          26564.365462239584,
+          29684.5962890625
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2637,7 +2637,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           32482,
-          32482,
           32477,
           32478,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32477,
-          32478
+          32478,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          787.4553489049275,
           704.0583344187055,
           411.9698271017808,
           589.100850718362,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           606.8067962964376,
           392.3377999578203,
           399.55577427546183,
-          603.0380295239962
+          603.0380295239962,
+          724.146023495992
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          13283.391186305455,
           11494.40445251465,
           7058.468463134765,
           9099.578902180989,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           10846.294733683268,
           6496.906109946115,
           6431.167266845703,
-          10261.483468119304
+          10261.483468119304,
+          11889.21452331543
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24761,
-          24761,
           24760,
           24760,
           24761,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
-        "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
-      },
       {
         "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
         "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
+      },
+      {
+        "sha": "291cf4852b938f32087c8952c5fb7d3f9868cfa2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:56:24 2026 \u002B0100",
+        "message": "fix: set container-side [InjectProperty] entries on an implementation a module of another assembly builds through an instance handle (#398)"
       }
     ],
     "labels": [
-      "707aa9d3",
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "d5a33c56",
       "ee8564a4",
       "7a956220",
-      "bcee41a6"
+      "bcee41a6",
+      "291cf485"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          194.80716727330133,
           180.41212045351665,
           82.3854878459658,
           112.1844208751406,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           129.9867902823857,
           79.93580618699391,
           78.85371221814837,
-          120.54474376042684
+          120.54474376042684,
+          187.10423607826232
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3383,7 +3383,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
-          4176,
+          4432,
           4432,
           4432,
           4432,
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          16379.489182692309,
           14319.290048217774,
           7741.3115964617045,
           10591.203204345704,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           12162.541552225748,
           7051.084931509836,
           7343.2852366129555,
-          11806.962111409504
+          11806.962111409504,
+          14755.798307291667
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          794303.281640625,
           725291.8731119792,
           447889.6991141183,
           637536.7946940104,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           646589.6358173077,
           415662.7752685547,
           431242.5265950521,
-          642586.4630998884
+          642586.4630998884,
+          723232.9299479167
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          736500,
           740459,
           739991,
           742568,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           719056,
           739741,
           738684,
-          740075
+          740075,
+          719727
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          49341.25580240886,
           43555.69718279158,
           25043.411218261717,
           35136.46859305246,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           37605.20837402344,
           23624.480237688338,
           23294.43122427804,
-          36770.80592128209
+          36770.80592128209,
+          43452.675728934155
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          81172,
           80011,
           80773,
           80977,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80355,
           80005,
           80174,
-          80008
+          80008,
+          80968
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          412483.72054036456,
           351065.3192313058,
           226784.47591145834,
           269305.24384765624,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           319969.7874348958,
           201012.80314127603,
           195366.51264299665,
-          299409.31233723956
+          299409.31233723956,
+          357579.4454101563
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573139,
           573072,
           573026,
           573075,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573128,
           572994,
           573073,
-          573026
+          573026,
+          573106
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
-        "message": "fix: report an [Inject] property a container cannot see on a type of another assembly (#333)"
-      },
       {
         "sha": "ac9638ce3591fefa398ed15e47d80860ea7962bb",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
         "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
+      },
+      {
+        "sha": "291cf4852b938f32087c8952c5fb7d3f9868cfa2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:56:24 2026 \u002B0100",
+        "message": "fix: set container-side [InjectProperty] entries on an implementation a module of another assembly builds through an instance handle (#398)"
       }
     ],
     "labels": [
-      "707aa9d3",
       "ac9638ce",
       "e2c70663",
       "acc6bc06",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "d5a33c56",
       "ee8564a4",
       "7a956220",
-      "bcee41a6"
+      "bcee41a6",
+      "291cf485"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          171.93412189483644,
           215.0781934091023,
           284.6343528674199,
           440.5213768005371,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           386.9695495446523,
           270.68413615226746,
           311.09230405943737,
-          173.46318972110748
+          173.46318972110748,
+          159.1125980445317
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          429.698066677366,
           496.8834877649943,
           699.241168315594,
           610.550297164917,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           602.007378578186,
           631.0310197194417,
           608.2099921886737,
-          415.8773260116577
+          415.8773260116577,
+          367.44888928958346
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4248.451327187674,
           3837.7540189302886,
           6634.936462402344,
           6730.166128976004,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6593.193232218425,
           6762.296631949289,
           6651.838255818685,
-          3637.188513619559
+          3637.188513619559,
+          3324.8055519104005
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          279.62450671195984,
           339.2960881846292,
           436.56296154430936,
           415.6545446395874,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           443.43413117726647,
           422.56473077138264,
           398.9099724292755,
-          258.95505294799807
+          258.95505294799807,
+          229.09815839620737
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          429.7898153236934,
           539.8268969609187,
           766.3444117863972,
           754.2938163121541,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           702.8311220169068,
           750.3718147913615,
           736.2486159642538,
-          388.4252785682678
+          388.4252785682678,
+          377.52228422164916
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
