@@ -228,7 +228,7 @@ partial class AwaitenGenerator
 
 		context.Diagnostics.Add(parameterModel.ClosingHandle
 			? UnservedClosing(parameterModel, declaredType, info, context.ClosingFaults)
-			: UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes));
+			: UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes, context.SkippedModuleRegistrations, context.Compilation));
 	}
 
 	/// <summary>
@@ -373,9 +373,17 @@ partial class AwaitenGenerator
 	///     <see cref="Diagnostics.MissingDependency">AWT101</see>, or the more specific
 	///     <see cref="Diagnostics.OwnedThroughLazy">AWT121</see>,
 	///     <see cref="Diagnostics.RelationshipOverImportedService">AWT242</see> or
-	///     <see cref="Diagnostics.RelationshipOverCollection">AWT256</see>.
+	///     <see cref="Diagnostics.RelationshipOverCollection">AWT256</see>. AWT101 names the registration of the service that a
+	///     module of the container's assembly declares but the container leaves out (see <c>SkipUnservedModuleMembers</c>).
 	/// </summary>
-	private static DiagnosticInfo UnregisteredDependency(ParameterModel dependency, ITypeSymbol declaredType, ImplInfo info, LocationInfo? location, ExternalServiceTypes externalServiceTypes)
+	private static DiagnosticInfo UnregisteredDependency(
+		ParameterModel dependency,
+		ITypeSymbol declaredType,
+		ImplInfo info,
+		LocationInfo? location,
+		ExternalServiceTypes externalServiceTypes,
+		Dictionary<ServiceKey, (string Module, string Reason)> skippedModuleRegistrations,
+		Compilation compilation)
 	{
 		string owner = DisplayInstance(info.OwningServiceOrImpl);
 		string implementation = DisplayInstance(info.ImplementationType);
@@ -402,7 +410,10 @@ partial class AwaitenGenerator
 				Diagnostics.RelationshipOverCollection,
 				dependency.Location ?? location,
 				new EquatableArray<string>([owner, implementation, Display(declaredType.ToDisplayString(FullyQualified)), Display(collection.ToDisplayString(FullyQualified)),]))
-			: new DiagnosticInfo(Diagnostics.MissingDependency, location, new EquatableArray<string>([owner, implementation, service,]));
+			: skippedModuleRegistrations.TryGetValue(KeyOf(dependency), out (string Module, string Reason) skipped)
+			  || (dependency.Key is null && skippedModuleRegistrations.TryGetValue(new ServiceKey(dependency.ServiceType, ContextKey(ContextConsumer(info, compilation))), out skipped))
+				? new DiagnosticInfo(Diagnostics.MissingDependencySkipped, location, new EquatableArray<string>([owner, implementation, service, skipped.Module, skipped.Reason,]))
+				: new DiagnosticInfo(Diagnostics.MissingDependency, location, new EquatableArray<string>([owner, implementation, service,]));
 	}
 
 	/// <summary>
@@ -482,7 +493,8 @@ partial class AwaitenGenerator
 		ExternalServiceTypes ExternalServiceTypes,
 		List<(string ServiceType, INamedTypeSymbol Symbol)> DispatchCandidates,
 		VarianceState Variance,
-		List<DiagnosticInfo> Diagnostics);
+		List<DiagnosticInfo> Diagnostics,
+		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations);
 
 	/// <summary>
 	///     The per-property injection flags: how the member is assigned (<see cref="Deferred" />), whether a missing
@@ -753,7 +765,7 @@ partial class AwaitenGenerator
 				return null;
 			}
 
-			context.Diagnostics.Add(UnregisteredDependency(dependency, property.Type, info, location, externalServiceTypes));
+			context.Diagnostics.Add(UnregisteredDependency(dependency, property.Type, info, location, externalServiceTypes, context.SkippedModuleRegistrations, context.Compilation));
 		}
 
 		return new MemberModel(
