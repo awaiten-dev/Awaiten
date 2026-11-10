@@ -816,9 +816,15 @@ partial class AwaitenGenerator
 		// generated the wrapper, and generates none when another overload accepts some closing, which the consumer could not
 		// tell apart, but records the hook when it or a competing overload is not public, since another assembly would call
 		// the overload it sees for every closing.
-		// A hook no container can run for any closing is reported in the module's own build, as for a closed registration.
+		// A hook no container can run for any closing is reported in the module's own build, as for a closed registration,
+		// unless a container of the assembly imports the module and reports it for each closing it constructs.
 		void ReportEveryClosingHookFault(OpenContribution contribution, string hookName, bool release)
 		{
+			if (AssemblyModuleIndex.Of(compilation).ImportedByContainer(module))
+			{
+				return;
+			}
+
 			ModuleScanContext scope = context with { Diagnostics = new List<DiagnosticInfo>(), Hidden = null, };
 			if (ResolveModuleHookCore(
 				    new ModuleHookRequest(contribution.Definition, hookName, contribution.Location, release, RegistrationHookWrapperName(contribution.Definition, release, hookName), RegistrationSubject(contribution.Definition)),

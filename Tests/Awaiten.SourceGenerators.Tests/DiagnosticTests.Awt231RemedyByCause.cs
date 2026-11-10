@@ -90,6 +90,99 @@ public partial class DiagnosticTests
 			}
 		}
 
+		public class GenericFactoryMemberOfAThirdAssemblyType
+		{
+			[Test]
+			public async Task External_IsOfferedTheModulesGrant()
+			{
+				const string third = """
+					namespace Third;
+
+					public sealed class Repository<T>
+					{
+						internal Repository() { }
+						public static Repository<T> Create() => new Repository<T>();
+					}
+					""";
+				const string library = """
+					using Awaiten;
+
+					namespace Lib;
+
+					[Module]
+					[Singleton(typeof(Third.Repository<>), Factory = nameof(Make))]
+					public static partial class DataModule
+					{
+						internal static Third.Repository<T> Make<T>() => Third.Repository<T>.Create();
+					}
+					""";
+				const string consumer = """
+					using Awaiten;
+					using Lib;
+
+					namespace App;
+
+					public sealed class Order { }
+					public sealed class Checkout { public Checkout(Third.Repository<Order> orders) { } }
+
+					[Container]
+					[Import(typeof(DataModule))]
+					[Transient<Checkout>]
+					public static partial class AppContainer;
+					""";
+
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([third, library,], consumer);
+
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*AWT231*through its Factory member 'Make'*; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Make' and the types in its signature public").AsWildcard()
+					.Because("the container calls the member rather than the constructor, so only the module's grant helps");
+			}
+		}
+
+		public class OpenHookOfAPublicType
+		{
+			private const string Library = """
+				using Awaiten;
+				using System.Threading.Tasks;
+
+				namespace Lib;
+
+				public interface IRepository<T> { }
+				public sealed class Repository<T> : IRepository<T> { }
+
+				[Module]
+				[Singleton(typeof(Repository<>), typeof(IRepository<>), OnActivated = nameof(Activate))]
+				public static partial class DataModule
+				{
+					internal static Task<int> Activate<T>(Repository<T> repository) => Task.FromResult(0);
+				}
+				""";
+
+			[Test]
+			public async Task LibraryBuild_ReportsTheHook()
+			{
+				await That(Generator.Run(Library).Diagnostics).HasSingle().Which.Contains("*AWT232*'Lib.Repository<T>'*'Activate'*").AsWildcard();
+			}
+
+			[Test]
+			public async Task LibraryBuild_LeavesItToAContainerOfItsAssembly()
+			{
+				GeneratorResult result = Generator.Run(Library + """
+
+					public sealed class Order { }
+					public sealed class Checkout { public Checkout(IRepository<Order> orders) { } }
+
+					[Container]
+					[Import(typeof(DataModule))]
+					[Transient<Checkout>]
+					public static partial class SameContainer;
+					""");
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT232*'Lib.IRepository<Lib.Order>'*'Activate'*").AsWildcard()
+					.Because("the container constructs the public type and reports the hook itself, as for a closed registration of a public type");
+			}
+		}
+
 		public class OpenHookSomeClosingsBind
 		{
 			private const string Library = """
@@ -117,12 +210,18 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			public async Task External_NamesTheConstraintFix()
+			public async Task External_NamesTheConstraintFixAndTheGrant()
 			{
-				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Library, OpenConsumer);
+				string library = Library.Replace("where T : struct", "where T : class");
 
+				GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), OpenConsumer);
+				GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, OpenConsumer);
+
+				await That(friend.Diagnostics).IsEmpty()
+					.Because("a friend binds the hook for a closing its constraints admit");
 				await That(result.Diagnostics).HasSingle().Which
-					.Contains("*AWT231*'Lib.Repository<T>'*the constraints of its generic overload do not hold for every closing of 'Lib.Repository<T>'; constrain the type parameters of 'Lib.Repository<T>' alike").AsWildcard();
+					.Contains("*AWT231*'Lib.Repository<T>'*the constraints of its generic overload do not hold for every closing of 'Lib.Repository<T>'; constrain the type parameters of 'Lib.Repository<T>' alike; grant this assembly InternalsVisibleTo in the module's assembly, or make*").AsWildcard()
+					.Because("the grant lets this container build the closings the constraints admit");
 			}
 		}
 

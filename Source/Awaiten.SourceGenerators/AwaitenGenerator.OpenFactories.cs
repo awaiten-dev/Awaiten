@@ -148,7 +148,7 @@ partial class AwaitenGenerator
 					skipped.AddRange(built.HookSkips!);
 				}
 
-				skipped.Add(new SkippedRegistration(contribution.SkippedName, foreign, Open: true, Remedy: "give the overloads distinct names"));
+				skipped.Add(new SkippedRegistration(contribution.SkippedName, $"{foreign}; give the overloads distinct names", Open: true));
 			}
 			else if (built.Factory is { } factory)
 			{
@@ -329,9 +329,10 @@ partial class AwaitenGenerator
 	///     cannot name or carrying <c>[Arg]</c>, <c>[FromKey]</c> or <c>[Inject]</c>, constraints the definition's type
 	///     parameters do not satisfy, or a parameter named like one of them). A hook that only a wrapper cannot express, a
 	///     parameter another assembly cannot name or one carrying <c>[FromKey]</c> or <c>[Inject]</c>, fails for its
-	///     reason alone, since a container granted <c>InternalsVisibleTo</c> calls the hook directly. Constraints or an
-	///     order of type parameters some closings still bind fail with the remedy for the hook, and any other fault, which
-	///     every container hits for every closing, with that diagnostic as the fault too. A wrapper runs its hook for every closing,
+	///     reason alone, since a container granted <c>InternalsVisibleTo</c> calls the hook directly, and so do constraints
+	///     or an order of type parameters that some closings still bind, which such a container binds for those closings.
+	///     Any other fault, which every container hits for every closing, fails with the remedy for the hook and that
+	///     diagnostic as the fault. A wrapper runs its hook for every closing,
 	///     so when another overload accepts some closing too (see <see cref="ClosingOnlyHookOverloads" />), for which a
 	///     container in the owner's assembly reports AWT190, the <paramref name="foreignReason" /> tells why a container
 	///     in another assembly, which does not see that overload when it is not public, may not run the wrapper, and a
@@ -376,7 +377,7 @@ partial class AwaitenGenerator
 					}
 					else if ((rejections[0].Descriptor == Diagnostics.InvalidLifecycleHook ? UnboundGenericHook(registration, hookName, context) : null) is { } unbound)
 					{
-						failure = new HookFailure($"{prefix}: {unbound.Cause}", unbound.Remedy);
+						failure = new HookFailure($"{prefix}: {unbound}");
 					}
 					else
 					{
@@ -431,18 +432,17 @@ partial class AwaitenGenerator
 		        && (UnboundGenericHook(registration, hookName, context) is not null || ClosingOnlyHookOverloads(registration.Definition, hookName, null, context).Any()));
 
 	/// <summary>
-	///     Why <see cref="OpenHookWrappers" /> wraps no hook: the <see cref="Reason" /> it records, the <see cref="Remedy" />
-	///     for a cause no grant cures, and the <see cref="Fault" /> the module reports when no container could run the hook.
+	///     Why <see cref="OpenHookWrappers" /> wraps no hook: the <see cref="Reason" /> it records, and for a hook no container
+	///     could run, the <see cref="Remedy" />, which no grant replaces, and the <see cref="Fault" /> the module reports.
 	/// </summary>
 	private readonly record struct HookFailure(string? Reason, string? Remedy = null, DiagnosticInfo? Fault = null);
 
 	/// <summary>
 	///     Why a generic overload of the hook does not bind for the open definition of <paramref name="registration" />,
-	///     although it may for a closing, and how to change the hook so it binds for every closing, or
-	///     <see langword="null" /> when the hook has no such overload: its constraints do not hold for the definition's
-	///     type parameters, or it does not take them in their order.
+	///     although it may for a closing, or <see langword="null" /> when the hook has no such overload: its constraints
+	///     do not hold for the definition's type parameters, or it does not take them in their order.
 	/// </summary>
-	private static (string Cause, string Remedy)? UnboundGenericHook(OpenContribution registration, string hookName, ModuleScanContext context)
+	private static string? UnboundGenericHook(OpenContribution registration, string hookName, ModuleScanContext context)
 	{
 		INamedTypeSymbol definition = registration.Definition;
 		string type = Display(definition.ToDisplayString(FullyQualified));
@@ -461,12 +461,12 @@ partial class AwaitenGenerator
 			{
 				if (!SatisfiesConstraints(method, typeParameters, context.Compilation))
 				{
-					return ($"the constraints of its generic overload do not hold for every closing of '{type}'", $"constrain the type parameters of '{type}' alike");
+					return $"the constraints of its generic overload do not hold for every closing of '{type}'; constrain the type parameters of '{type}' alike";
 				}
 			}
 			else if (method.Parameters[0].Type is INamedTypeSymbol instance && shapes.Contains(instance.OriginalDefinition))
 			{
-				return ($"its generic overload does not take the type parameters of '{type}' in their order", "declare them in the same order on the hook");
+				return $"its generic overload does not take the type parameters of '{type}' in their order; declare them in the same order on the hook";
 			}
 		}
 

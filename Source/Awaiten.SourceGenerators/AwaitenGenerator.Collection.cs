@@ -580,11 +580,12 @@ partial class AwaitenGenerator
 	///     The remedy an AWT231 for <paramref name="type" /> of the imported <paramref name="module" /> ends with, chosen by
 	///     the cause this container sees. No grant reaches a type private to the module, so that is made internal or
 	///     public. A class of a third assembly without a constructor this container can reach needs the grant of that
-	///     assembly instead. A container whose assembly the module's assembly grants <c>InternalsVisibleTo</c> is told what the
+	///     assembly instead, unless the module produces it through a member (<paramref name="constructed" /> false). A
+	///     container whose assembly the module's assembly grants <c>InternalsVisibleTo</c> is told what the
 	///     grant does not reach (the type, <paramref name="member" /> or the constructors) before
 	///     <paramref name="remedy" />, and any other container is offered the grant beside it.
 	/// </summary>
-	private static string NotSelfCompiledRemedy(INamedTypeSymbol module, ITypeSymbol type, Compilation compilation, string remedy, string? member = null)
+	private static string NotSelfCompiledRemedy(INamedTypeSymbol module, ITypeSymbol type, Compilation compilation, string remedy, string? member = null, bool constructed = true)
 	{
 		bool granted = module.ContainingAssembly.GivesAccessTo(compilation.Assembly);
 		if (TypeHiddenInModule(type.OriginalDefinition, module, compilation) is { } hidden)
@@ -598,7 +599,8 @@ partial class AwaitenGenerator
 		string typeName = Display(type.OriginalDefinition.ToDisplayString(FullyQualified));
 
 		// Only the implementation's own assembly can grant access to its constructors, whatever the module's assembly grants.
-		if (type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, ContainingAssembly: { } owner, } foreign
+		if (constructed
+		    && type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, ContainingAssembly: { } owner, } foreign
 		    && !SymbolEqualityComparer.Default.Equals(owner, module.ContainingAssembly)
 		    && !SymbolEqualityComparer.Default.Equals(owner, compilation.Assembly)
 		    && !CanConstruct(foreign, compilation))
@@ -613,7 +615,7 @@ partial class AwaitenGenerator
 
 		string? ungranted = !compilation.IsSymbolAccessibleWithin(type.OriginalDefinition, compilation.Assembly)
 			? $"'{typeName}'"
-			: member ?? (type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, } named && !CanConstruct(named, compilation) ? $"the constructors of '{typeName}'" : null);
+			: member ?? (constructed && type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, } named && !CanConstruct(named, compilation) ? $"the constructors of '{typeName}'" : null);
 		return ungranted is null ? remedy : $"the InternalsVisibleTo grant to this assembly reaches only internal members, not {ungranted}; {remedy}";
 	}
 

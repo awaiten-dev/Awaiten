@@ -1744,7 +1744,7 @@ partial class AwaitenGenerator
 					Display(info.Symbol.OriginalDefinition.ToDisplayString(FullyQualified)),
 					member,
 					genericReason,
-					NotSelfCompiledRemedy(module, info.Symbol, compilation, $"make '{member}' and the types in its signature public"),
+					NotSelfCompiledRemedy(module, info.Symbol, compilation, $"make '{member}' and the types in its signature public", constructed: false),
 				]));
 			if (!diagnostics.Contains(diagnostic))
 			{
