@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "9acb67d6c1e439767d784c03b45f3e43700ada93",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
-        "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
-      },
-      {
         "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
         "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
+      },
+      {
+        "sha": "95161ba28607cc2c9ebabbc024595690c5fbf706",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
+        "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
       }
     ],
     "labels": [
-      "9acb67d6",
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "e0151207",
       "b5c83863",
       "d8bac02e",
-      "52a71095"
+      "52a71095",
+      "95161ba2"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.400816798210144,
           5.20149103552103,
           9.021765273596559,
           8.410147752080645,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.447218766169889,
           6.757366170103733,
           3.4132429510354996,
-          5.5973863410098215
+          5.5973863410098215,
+          4.503108434379101
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.377010000439791,
           4.225872686753671,
           7.530216293839308,
           8.009043975671132,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.500096421975356,
           6.695313321550687,
           4.182680657009284,
-          5.545253348137651
+          5.545253348137651,
+          6.5862445922998285
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          110.64731404611042,
           61.791328242846895,
           123.99669589996338,
           121.55810548464457,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           124.33896012306214,
           127.79357104301452,
           62.88186379273733,
-          132.23012913068135
+          132.23012913068135,
+          84.33598634401957
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.087229053561504,
           5.276136915271099,
           9.537649073771068,
           9.286914279063543,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.810002580285072,
           9.107129331145968,
           4.976306225572314,
-          8.267077020804088
+          8.267077020804088,
+          6.192252900203069
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.305613294243813,
           6.474353870749473,
           10.928194963683685,
           11.194190442562103,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.965610186258951,
           11.540314421057701,
           6.37540391087532,
-          11.547120290994645
+          11.547120290994645,
+          8.834342211484909
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "9acb67d6c1e439767d784c03b45f3e43700ada93",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
-        "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
-      },
-      {
         "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
         "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
+      },
+      {
+        "sha": "95161ba28607cc2c9ebabbc024595690c5fbf706",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
+        "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
       }
     ],
     "labels": [
-      "9acb67d6",
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "e0151207",
       "b5c83863",
       "d8bac02e",
-      "52a71095"
+      "52a71095",
+      "95161ba2"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          9.40567595225114,
           5.659553093569619,
           10.021910636470867,
           9.765964990854263,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.130707523475091,
           6.816932302713394,
           3.3276499681747875,
-          6.208043794546809
+          6.208043794546809,
+          5.589116765984467
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.313285709491798,
           4.244569593171279,
           7.884757070740064,
           7.872277247054236,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.450944925347964,
           6.77188468667177,
           4.0995806604623795,
-          5.91299176911513
+          5.91299176911513,
+          6.580817718307177
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          109.13068155731473,
           69.71168947219849,
           121.03836520512898,
           124.5044670899709,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           133.39592753923856,
           128.49380480448406,
           61.01889252662659,
-          131.48539803709303
+          131.48539803709303,
+          100.115842461586
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.092772919398088,
           5.189187937549183,
           9.329074828823407,
           9.321945255994796,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.924493367473284,
           9.018629960219066,
           4.993574793636799,
-          8.32251436050449
+          8.32251436050449,
+          6.285342859534117
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.892666957775752,
           6.54805464843909,
           14.34063483402133,
           14.758640643954276,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.712151935696602,
           11.567813004766192,
           6.4013731777668,
-          11.400160962343216
+          11.400160962343216,
+          8.671765572258405
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "9acb67d6c1e439767d784c03b45f3e43700ada93",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
-        "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
-      },
-      {
         "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 16:01:47 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
         "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
+      },
+      {
+        "sha": "95161ba28607cc2c9ebabbc024595690c5fbf706",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
+        "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
       }
     ],
     "labels": [
-      "9acb67d6",
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "e0151207",
       "b5c83863",
       "d8bac02e",
-      "52a71095"
+      "52a71095",
+      "95161ba2"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          15.873865734253611,
           16.25509641766548,
           24.43364462455114,
           25.794940121968587,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           19.16673678358396,
           19.685137575864793,
           15.965986266732216,
-          19.38641125758489
+          19.38641125758489,
+          10.700797637658459
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1128.662778036935,
           1322.9963602338519,
           1693.190038172404,
           1698.0383867899577,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1478.833124923706,
           1482.8013188680013,
           1201.7093800136022,
-          1461.2798653920493
+          1461.2798653920493,
+          737.9018931388855
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          25363.69736735026,
           26611.32065993089,
           31144.06512044271,
           31065.75565011161,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           30090.764811197918,
           33477.21045735677,
           26352.368054199218,
-          29806.09082845052
+          29806.09082845052,
+          16968.41570638021
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32478,
           32478,
           32482,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32478,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          563.2767645972116,
           610.3815039952595,
           786.7764767328898,
           777.4957644144694,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           708.3776025136311,
           711.4499312082927,
           565.6097396850586,
-          753.5389819463094
+          753.5389819463094,
+          380.6068897587912
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8681.686106755184,
           10830.831926472982,
           12590.531173706055,
           12174.94017791748,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11398.01439412435,
           11414.651120503744,
           9953.945464070637,
-          11586.48605448405
+          11586.48605448405,
+          6103.492326463972
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24760,
-          24760,
           24761,
           24760,
           24760,
@@ -2932,6 +2931,7 @@ window.BENCHMARK_DATA = {
           24761,
           24761,
           24760,
+          24761,
           24761,
           24761,
           24761,
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "9acb67d6c1e439767d784c03b45f3e43700ada93",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
-        "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
-      },
       {
         "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
         "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
+      },
+      {
+        "sha": "95161ba28607cc2c9ebabbc024595690c5fbf706",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
+        "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
       }
     ],
     "labels": [
-      "9acb67d6",
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "e0151207",
       "b5c83863",
       "d8bac02e",
-      "52a71095"
+      "52a71095",
+      "95161ba2"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          115.3097060918808,
           125.3586114186507,
           218.12429305712382,
           177.5605443318685,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           176.8744782924652,
           149.27300153459822,
           129.05652453218187,
-          197.2232696533203
+          197.2232696533203,
+          76.41208406005588
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          10493.613839285714,
           10545.585482788087,
           15574.256378173828,
           16093.015236409505,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14352.705903116863,
           13629.864998372395,
           11864.136309814454,
-          14317.778718058269
+          14317.778718058269,
+          7064.867193603515
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          617008.7640206473,
           623530.4167131697,
           746658.2487444197,
           736809.2450474331,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           739809.3088727678,
           816227.3568638393,
           661173.6964285715,
-          738664.0919471154
+          738664.0919471154,
+          403701.157156808
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          721262,
           719052,
           740010,
           736978,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740460,
           741779,
           739163,
-          741784
+          741784,
+          718407
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          35620.19782802037,
           35284.97294514974,
           46491.65418419471,
           47028.901676432295,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           42988.993168131514,
           46857.05039876302,
           38238.38661702474,
-          43923.82186686198
+          43923.82186686198,
+          22088.281960623604
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80969,
           80355,
           80640,
           81576,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80009,
           80301,
           80860,
-          80303
+          80303,
+          79819
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          261367.6338936942,
           261212.2841796875,
           385005.5725911458,
           360908.5953776042,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           353805.6998046875,
           352081.00959660456,
           326626.1856770833,
-          352633.2625651042
+          352633.2625651042,
+          181879.99916992188
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573027,
           573171,
           573072,
           573058,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573026,
           573074,
           573057,
-          573153
+          573153,
+          573073
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "9acb67d6c1e439767d784c03b45f3e43700ada93",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 16:00:59 2026 \u002B0100",
-        "message": "fix: throw instead of overflowing the stack when a cached service resolves itself while it is built (#346) (#358)"
-      },
       {
         "sha": "625dd9f27f4042fdf695b5dffc945cdd3e82c7b1",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:44:51 2026 \u002B0100",
         "message": "fix!: report a module\u0027s [Decorate] mistakes in its own build, count its composite for AWT238 and name the scan remedy for AWT231 (#414)"
+      },
+      {
+        "sha": "95161ba28607cc2c9ebabbc024595690c5fbf706",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:48:20 2026 \u002B0100",
+        "message": "fix!: report collections that miss handled registrations and imported collection shapes, and pass variant collections through handles (#415)"
       }
     ],
     "labels": [
-      "9acb67d6",
       "625dd9f2",
       "c53c03a1",
       "c5eaf9c6",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "e0151207",
       "b5c83863",
       "d8bac02e",
-      "52a71095"
+      "52a71095",
+      "95161ba2"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          435.3590312639872,
           255.60729413032533,
           260.2770937760671,
           217.89570474624634,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           275.52255256359393,
           169.20086812973022,
           271.2630590756734,
-          211.50062402884166
+          211.50062402884166,
+          210.3924697807857
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          619.5660879770915,
           565.2388330868313,
           614.2237078984579,
           477.1922259012858,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           620.611712052272,
           410.27340926442827,
           631.2596435546875,
-          454.6767617384593
+          454.6767617384593,
+          455.5255063863901
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6439.631222025553,
           6120.789250946045,
           6428.4692459106445,
           5226.451495107015,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6921.489273616246,
           3697.0315144856772,
           6942.2471043904625,
-          5139.9616132463725
+          5139.9616132463725,
+          4797.1550149184
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          398.35327361424766,
           415.9466773668925,
           402.44254802068076,
           353.10874707358226,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           437.5529160499573,
           262.276526927948,
           425.93246304194133,
-          347.96452945073446
+          347.96452945073446,
+          346.56193814958846
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          757.6502473831176,
           642.0628806522915,
           708.1472159703573,
           553.3421475728353,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           754.0539578119914,
           414.63128692763195,
           755.9604560852051,
-          533.926207610539
+          533.926207610539,
+          554.4216316223144
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
