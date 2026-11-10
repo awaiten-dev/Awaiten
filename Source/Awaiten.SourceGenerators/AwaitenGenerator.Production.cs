@@ -68,6 +68,7 @@ partial class AwaitenGenerator
 		}
 
 		members = WithDeferredSetters(members, info, producer, context);
+		string? assignThrough = WithHandleEntries(members, info, producer, context);
 
 		// An async factory returns Task<T> / ValueTask<T>: the container awaits it, so the owned type is the
 		// awaited result T, not the Task. A sync factory owns its return type; a constructed impl owns info.Symbol.
@@ -173,7 +174,8 @@ partial class AwaitenGenerator
 			NullableProduct: !viaModuleFactory && info.Production == ProductionKind.Factory && IsNullableProduct(disposalType, producer, info, info.GenericFactory ? null : diagnostics),
 			When: BuildPredicate(info, context),
 			RequestingType: GeneratedRequestingType(info, producer, productionMember),
-			DecoratesImport: info.DecoratesImport);
+			DecoratesImport: info.DecoratesImport,
+			AssignThrough: assignThrough);
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{
@@ -261,6 +263,71 @@ partial class AwaitenGenerator
 		}
 
 		return members;
+	}
+
+	/// <summary>
+	///     Appends the container-side <c>[InjectProperty]</c> entries for the implementation an instance handle holds to
+	///     <paramref name="members" />, set through the module's alias on the instance the handle's factory
+	///     <paramref name="producer" /> built (see <see cref="HandleAssignment" />), before its hooks and async
+	///     initialization run, as a container of the module's own assembly sets them while it constructs the
+	///     implementation. Returns the qualified alias, or <see langword="null" /> when no entry applies. A <c>Deferred</c>
+	///     entry is left to <see cref="ReportUnmatchedInjectProperties" />, and one for an <c>[Inject]</c> property, which
+	///     the factory takes as a parameter or sets through a setter wrapper, is AWT181.
+	/// </summary>
+	private static string? WithHandleEntries(List<MemberModel> members, ImplInfo info, IMethodSymbol producer, BuildContext context)
+	{
+		if (HandleAssignment(info, context.Compilation).Alias is not { } alias)
+		{
+			return null;
+		}
+
+		INamedTypeSymbol implementation = info.Hidden!;
+		List<InjectPropertyEntry> entries = context.InjectProperties.TryGetValue(TypeIdentity(implementation, context.Compilation), out List<InjectPropertyEntry>? closed)
+			? closed
+			: new List<InjectPropertyEntry>();
+		if (!SymbolEqualityComparer.Default.Equals(implementation, implementation.OriginalDefinition)
+		    && context.InjectProperties.TryGetValue(TypeIdentity(implementation.OriginalDefinition, context.Compilation), out List<InjectPropertyEntry>? open))
+		{
+			entries = MergeOpenInjectProperties(info, entries, open, context.Diagnostics);
+		}
+
+		entries = entries.Where(entry => !entry.Deferred).ToList();
+		if (entries.Count == 0)
+		{
+			return null;
+		}
+
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
+		IEnumerable<string> filled = producer.Parameters.Skip(FirstPropertyOrdinal(producer)).Select(parameter => parameter.Name).Concat(members.Select(member => member.MemberName));
+		int count = members.Count;
+		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList());
+		return members.Count > count ? $"{alias.ContainingType.ToDisplayString(FullyQualified)}.{alias.Name}" : null;
+	}
+
+	/// <summary>
+	///     How a container sets the container-side <c>[InjectProperty]</c> entries on the implementation that the instance
+	///     handle <paramref name="info" /> of a module of another assembly constructs (see <see cref="ThroughHandle" />):
+	///     through <c>Alias</c>, the member the module generates to return the implementation from the handle, on the
+	///     instance the handle's factory returns. Otherwise <c>Gap</c> says why it cannot: the handle builds the
+	///     implementation from runtime <c>[Arg]</c> arguments, so its alias takes them and a factory of the handle rather
+	///     than a built handle, or the module, built by an older generator, generated no such alias. Neither is set for
+	///     any other registration, nor for the handle of a <c>Factory</c> or <c>Instance</c> member, which builds the
+	///     instance whole in every assembly (the plain AWT178).
+	/// </summary>
+	private static (IMethodSymbol? Alias, string? Gap) HandleAssignment(ImplInfo info, Compilation compilation)
+	{
+		if (info is not { Hidden: { } implementation, Origin: { } module, TraitsExact: true, Production: ProductionKind.Factory, }
+		    || !info.ImplementationType.Contains(HiddenKeyMarker))
+		{
+			return (null, null);
+		}
+
+		return GeneratedFactoryNamed(module, HiddenAliasName(implementation, implementation), compilation) switch
+		{
+			null => (null, "the module was built by an older Awaiten generator, which generated no member that returns it from the handle"),
+			{ Parameters.Length: not 1, } => (null, "the handle builds it from runtime [Arg] arguments, so the container reaches the instance only through a factory of the handle"),
+			{ } alias => (alias, null),
+		};
 	}
 
 	/// <summary>

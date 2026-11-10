@@ -52,6 +52,9 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     their requesting type in place of the accessible type the factory returns.
 ///     <see cref="DecoratesImport" /> marks a link of a decorator chain over an imported service, which is not advertised
 ///     for projection into a host, since it would replace the host's own registration the chain wraps.
+///     <see cref="AssignThrough" /> is the qualified alias that returns the implementation from an instance handle a
+///     module of another assembly builds, through which the container sets the members the handle's generated factory
+///     does not take (see <see cref="MemberModel.AfterFactoryType" />).
 /// </summary>
 internal sealed record InstanceModel(
 	string ImplementationType,
@@ -87,7 +90,8 @@ internal sealed record InstanceModel(
 	bool NullableProduct = false,
 	PredicateModel? When = null,
 	string? RequestingType = null,
-	bool DecoratesImport = false)
+	bool DecoratesImport = false,
+	string? AssignThrough = null)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated

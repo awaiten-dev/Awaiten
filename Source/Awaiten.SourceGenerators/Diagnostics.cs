@@ -1329,7 +1329,8 @@ internal static class Diagnostics
 	///     The form of <see cref="InjectPropertyOnNonConstructed">AWT178</see> for a type a module or base of another
 	///     assembly builds through a generated factory that returns a service rather than the type, such as a composite's,
 	///     although the user declared no <c>Factory</c>: <c>{2}</c> names the owner and <c>{3}</c> why it builds the type
-	///     (the container cannot construct it, or does not see one of its <c>[Inject]</c> properties).
+	///     (the container cannot construct it, or does not see one of its <c>[Inject]</c> properties), or, for an instance
+	///     handle, why the module builds it into the handle and why the container cannot set the entry through it.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InjectPropertyOnOwnerFactory = new(
 		"AWT178",
