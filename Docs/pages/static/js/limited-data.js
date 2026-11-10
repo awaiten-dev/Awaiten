@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
-        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
-      },
-      {
         "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
-      "85160537",
       "707aa9d3",
       "ac9638ce",
       "e2c70663",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.885323155384797,
           4.541306248732975,
           5.082547610768905,
           5.558466794235366,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.548656642436981,
           6.521912140341906,
           5.775131902098655,
-          4.450600648423036
+          4.450600648423036,
+          4.873906595366342
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.576357462085211,
           4.444243139525255,
           5.10968748430411,
           7.530499925216039,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           8.244261731704077,
           7.397376200982502,
           7.259319060123884,
-          6.992311848203341
+          6.992311848203341,
+          6.58147020637989
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          142.36944518089294,
           64.61763139565785,
           103.47543415852955,
           138.14845272210928,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           127.46344637870789,
           111.89372821648915,
           134.40190279483795,
-          82.01765375932058
+          82.01765375932058,
+          88.54239027500152
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.130574363682951,
           4.859109921256701,
           7.0694118221600855,
           8.072833123115393,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.786192470788956,
           9.017092248797416,
           8.792338166099329,
-          6.983292210102081
+          6.983292210102081,
+          6.2062579164902365
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.22900964663579,
           6.3969748745361965,
           9.403942479441563,
           10.434835264315971,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.032033746441206,
           11.460336261987687,
           10.861475057899952,
-          8.664843387405078
+          8.664843387405078,
+          8.378528677920501
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
-        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
-      },
-      {
         "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
-      "85160537",
       "707aa9d3",
       "ac9638ce",
       "e2c70663",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          8.718613616549051,
           4.575609500209491,
           6.199101925960609,
           7.1259224495062465,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.827638457928385,
           6.807349735072681,
           6.804768294095993,
-          5.216705909619729
+          5.216705909619729,
+          5.119235810178977
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.542134915788968,
           4.336470920840899,
           5.120544544779337,
           7.533840162058671,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           8.154115958015124,
           7.311314771572749,
           7.336752681859902,
-          6.5211620809776445
+          6.5211620809776445,
+          6.5100541317037175
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          144.4542724609375,
           77.94411536852519,
           105.44659826755523,
           140.66918441227503,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           128.95174657503765,
           110.74178948402405,
           135.8047717412313,
-          82.46291610399882
+          82.46291610399882,
+          88.34174400170645
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.157581228476305,
           4.767391532162825,
           6.876946711769471,
           8.197971732666096,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.802481403308255,
           8.97908839583397,
           8.780185304582119,
-          7.116367216904958
+          7.116367216904958,
+          6.3008042344680195
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.719674525352625,
           8.25977043578258,
           9.681645086407661,
           13.160191936152321,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.6186617399965,
           14.90526368121306,
           14.155925347254826,
-          11.65871397192989
+          11.65871397192989,
+          11.492693759004275
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
-        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
-      },
-      {
         "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 8 17:18:51 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
-      "85160537",
       "707aa9d3",
       "ac9638ce",
       "e2c70663",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          19.405794709920883,
           23.268973253667355,
           19.81194956700007,
           12.97881486586162,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           15.856938873018537,
           17.210004693695478,
           11.355789773662885,
-          11.948181760098253
+          11.948181760098253,
+          16.002887023346766
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2401,7 +2401,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
-          208,
+          216,
           216,
           216,
           216,
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1502.5202003479003,
           1623.9141528265816,
           1463.9618835449219,
           912.9025975545247,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1160.960160191854,
           1378.822917175293,
           756.774569443294,
-          789.140913327535
+          789.140913327535,
+          1209.8488957722982
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29986.344799804687,
           31356.95405796596,
           29543.194970703124,
           19144.718843900242,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           25370.002144949776,
           26703.86502511161,
           17963.49279315655,
-          18286.056832449776
+          18286.056832449776,
+          26564.365462239584
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2638,7 +2638,6 @@ window.BENCHMARK_DATA = {
         "data": [
           32482,
           32482,
-          32482,
           32477,
           32478,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          758.6436236699423,
           787.4553489049275,
           704.0583344187055,
           411.9698271017808,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           616.2078762735639,
           606.8067962964376,
           392.3377999578203,
-          399.55577427546183
+          399.55577427546183,
+          603.0380295239962
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12150.998370361329,
           13283.391186305455,
           11494.40445251465,
           7058.468463134765,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           8975.595078604561,
           10846.294733683268,
           6496.906109946115,
-          6431.167266845703
+          6431.167266845703,
+          10261.483468119304
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2888,7 +2888,6 @@ window.BENCHMARK_DATA = {
         "data": [
           24761,
           24761,
-          24761,
           24760,
           24760,
           24761,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
-        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
-      },
       {
         "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
-      "85160537",
       "707aa9d3",
       "ac9638ce",
       "e2c70663",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          180.51691462312425,
           194.80716727330133,
           180.41212045351665,
           82.3854878459658,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           115.91868620259422,
           129.9867902823857,
           79.93580618699391,
-          78.85371221814837
+          78.85371221814837,
+          120.54474376042684
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3384,7 +3384,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
-          4176,
+          4432,
           4432,
           4432,
           4432,
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14785.285142008464,
           16379.489182692309,
           14319.290048217774,
           7741.3115964617045,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           10815.49388478597,
           12162.541552225748,
           7051.084931509836,
-          7343.2852366129555
+          7343.2852366129555,
+          11806.962111409504
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          750553.693359375,
           794303.281640625,
           725291.8731119792,
           447889.6991141183,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           640086.6211588542,
           646589.6358173077,
           415662.7752685547,
-          431242.5265950521
+          431242.5265950521,
+          642586.4630998884
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          738521,
           736500,
           740459,
           739991,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740033,
           719056,
           739741,
-          738684
+          738684,
+          740075
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          46934.35944010417,
           49341.25580240886,
           43555.69718279158,
           25043.411218261717,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           38302.58962140764,
           37605.20837402344,
           23624.480237688338,
-          23294.43122427804
+          23294.43122427804,
+          36770.80592128209
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80083,
           81172,
           80011,
           80773,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           81193,
           80355,
           80005,
-          80174
+          80174,
+          80008
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          376631.10891927086,
           412483.72054036456,
           351065.3192313058,
           226784.47591145834,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           263089.0813927284,
           319969.7874348958,
           201012.80314127603,
-          195366.51264299665
+          195366.51264299665,
+          299409.31233723956
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573106,
           573139,
           573072,
           573026,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573120,
           573128,
           572994,
-          573073
+          573073,
+          573026
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "85160537a047fbb3bf28fac381720cf26783110b",
-        "author": "Valentin Breu\u00DF",
-        "date": "Sun Nov 8 17:00:46 2026 \u002B0100",
-        "message": "fix: report nullable Factory and Instance members as AWT245 and drop module registrations under services a container cannot name (#332)"
-      },
       {
         "sha": "707aa9d3d84050195b9a9078bd20aad0a887b94a",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
         "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
+      },
+      {
+        "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
+        "message": "fix!: report a collection a module of another assembly fixes empty although the container registers its element (AWT252) (#399)"
       }
     ],
     "labels": [
-      "85160537",
       "707aa9d3",
       "ac9638ce",
       "e2c70663",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
-      "7a956220"
+      "7a956220",
+      "bcee41a6"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          245.07016881306967,
           171.93412189483644,
           215.0781934091023,
           284.6343528674199,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           253.48829164505005,
           386.9695495446523,
           270.68413615226746,
-          311.09230405943737
+          311.09230405943737,
+          173.46318972110748
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          729.9382561047872,
           429.698066677366,
           496.8834877649943,
           699.241168315594,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           596.2519153448252,
           602.007378578186,
           631.0310197194417,
-          608.2099921886737
+          608.2099921886737,
+          415.8773260116577
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6690.71885735648,
           4248.451327187674,
           3837.7540189302886,
           6634.936462402344,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6554.1670018514,
           6593.193232218425,
           6762.296631949289,
-          6651.838255818685
+          6651.838255818685,
+          3637.188513619559
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          399.97638374964396,
           279.62450671195984,
           339.2960881846292,
           436.56296154430936,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           392.00403475761414,
           443.43413117726647,
           422.56473077138264,
-          398.9099724292755
+          398.9099724292755,
+          258.95505294799807
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          723.8585012299674,
           429.7898153236934,
           539.8268969609187,
           766.3444117863972,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           713.798678334554,
           702.8311220169068,
           750.3718147913615,
-          736.2486159642538
+          736.2486159642538,
+          388.4252785682678
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
