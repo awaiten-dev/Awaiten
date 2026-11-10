@@ -210,7 +210,7 @@ partial class AwaitenGenerator
 				return any;
 			}
 
-			if (decorator.Keys is { Count: > 0, } keys && !(keys.Count == 1 && keys[0] is null))
+			if (decorator.Keys is { } keys && !(keys.Count == 1 && keys[0] is null))
 			{
 				foreach (string? key in keys.Where(key => !populated.Any(resolutionKey => SelectedBy(key, resolutionKey))))
 				{

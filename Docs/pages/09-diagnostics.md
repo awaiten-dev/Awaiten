@@ -1055,7 +1055,7 @@ It is not reported for a closed `[Decorate]` when the service's registration was
 ### AWT124
 
 :::danger[Error]
-A decorator has no single constructor parameter assignable to the decorated service type.
+A decorator has no single constructor parameter that receives the inner instance: none accepts the decorated service, or several do and none of them converts to all the others.
 :::
 
 ```csharp expect=AWT124

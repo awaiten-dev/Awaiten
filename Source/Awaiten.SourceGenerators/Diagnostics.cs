@@ -459,7 +459,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor DecoratorMissingInnerParameter = new(
 		"AWT124",
 		"Decorator has no single inner parameter",
-		"The decorator '{0}' must have exactly one constructor parameter assignable to the decorated service '{1}'; it has none or several",
+		"The decorator '{0}' has no single constructor parameter that receives the inner '{1}': it has none that accepts it, or several with none converting to all the others; take '{1}' in one parameter, or make one parameter more derived than all the others",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

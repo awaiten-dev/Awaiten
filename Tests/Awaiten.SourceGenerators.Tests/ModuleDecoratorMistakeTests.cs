@@ -54,9 +54,9 @@ public class ModuleDecoratorMistakeTests
 	[Arguments("[Decorate<LoggingKettle, IKettle>(Keys = new object[] { null }, AllKeys = true)]", Decorator, "AWT211", "sets both Keys and AllKeys")]
 	[Arguments("[Decorate(typeof(LoggingHandler<>), typeof(IHandler<>), Keys = new object[] { null }, AllKeys = true)]", Decorator, "AWT211", "sets both Keys and AllKeys")]
 	[Arguments("[Decorate<LoggingKettle, IKettle>(Keys = new object[] { 1 })]", Decorator, "AWT170", "unsupported key type 'int'")]
-	[Arguments("[Decorate<LoggingKettle, IKettle>]", "public sealed class LoggingKettle : IKettle { }", "AWT124", "exactly one constructor parameter")]
-	[Arguments("[Decorate<LoggingKettle, IKettle>]", "public sealed class LoggingKettle : IKettle { public LoggingKettle(IKettle a, IKettle b) { } }", "AWT124", "exactly one constructor parameter")]
-	[Arguments("[Decorate<LoggingKettle, IKettle>]", "internal sealed class LoggingKettle : IKettle { internal LoggingKettle() { } }", "AWT124", "exactly one constructor parameter")]
+	[Arguments("[Decorate<LoggingKettle, IKettle>]", "public sealed class LoggingKettle : IKettle { }", "AWT124", "no single constructor parameter that receives the inner")]
+	[Arguments("[Decorate<LoggingKettle, IKettle>]", "public sealed class LoggingKettle : IKettle { public LoggingKettle(IKettle a, IKettle b) { } }", "AWT124", "no single constructor parameter that receives the inner")]
+	[Arguments("[Decorate<LoggingKettle, IKettle>]", "internal sealed class LoggingKettle : IKettle { internal LoggingKettle() { } }", "AWT124", "no single constructor parameter that receives the inner")]
 	public async Task IsReportedByTheModuleAndNotRepeatedByItsImporters(string decorate, string decorator, string id, string fragment)
 	{
 		string library = Library(decorate, decorator);

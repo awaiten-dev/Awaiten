@@ -25,7 +25,7 @@
  AWT121  | Awaiten   | Error    | An Owned<T> disposal handle is requested through a Lazy<Owned<T>> or Lazy<Task<Owned<T>>> relationship
  AWT122  | Awaiten   | Error    | A collection dependency has an async-tainted member but is materialized synchronously
  AWT123  | Awaiten   | Error    | A [Decorate] names a service with no registration to decorate, selects nothing with an empty Keys, or names an imported service it cannot decorate (AllKeys, or an open decorator over an open import)
- AWT124  | Awaiten   | Error    | A decorator has no single constructor parameter assignable to the decorated service type
+ AWT124  | Awaiten   | Error    | A decorator has no single constructor parameter that receives the inner instance (none, or several with none converting to all the others)
  AWT125  | Awaiten   | Error    | An open generic registration's implementation and service have different arity, or one of them is nested in a generic type
  AWT126  | Awaiten   | Error    | A required closed type violates the open generic implementation's type-parameter constraints, and no other registration accepts it
  AWT127  | Awaiten   | Error    | The typeof-argument form of a lifetime attribute must receive an unbound open generic type
