@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Awaiten.Tests.Support;
 
 /// <summary>The dependency every implementation of <see cref="ContextualBindingModule" /> takes.</summary>
@@ -84,6 +87,52 @@ public sealed class PlainTaster(IBrewFlavor flavor)
 	public IBrewFlavor Flavor => flavor;
 }
 
+/// <summary>A service <see cref="ContextualBindingModule" /> decorates and composes.</summary>
+public interface IFlavoredCup
+{
+	/// <summary>The flavor the decorator or composite received, or <see langword="null" /> for a plain cup.</summary>
+	IBrewFlavor? Flavor { get; }
+}
+
+/// <summary>The cup <see cref="TastingCup" /> wraps and <see cref="CupFlight" /> composes.</summary>
+public sealed class PlainCup : IFlavoredCup
+{
+	/// <inheritdoc />
+	public IBrewFlavor? Flavor => null;
+}
+
+/// <summary>A decorator with an internal constructor, which a container in another assembly builds through the factory <see cref="ContextualBindingModule" /> generates.</summary>
+public sealed class TastingCup : IFlavoredCup
+{
+	internal TastingCup(IFlavoredCup inner, IBrewFlavor flavor)
+	{
+		Inner = inner;
+		Flavor = flavor;
+	}
+
+	/// <summary>The cup it wraps.</summary>
+	public IFlavoredCup Inner { get; }
+
+	/// <inheritdoc />
+	public IBrewFlavor? Flavor { get; }
+}
+
+/// <summary>A keyed composite with an internal constructor, which a container in another assembly builds through the factory <see cref="ContextualBindingModule" /> generates.</summary>
+public sealed class CupFlight : IFlavoredCup
+{
+	internal CupFlight(IEnumerable<IFlavoredCup> cups, IBrewFlavor flavor)
+	{
+		Cups = cups.ToList();
+		Flavor = flavor;
+	}
+
+	/// <summary>The cups it composes.</summary>
+	public IReadOnlyList<IFlavoredCup> Cups { get; }
+
+	/// <inheritdoc />
+	public IBrewFlavor? Flavor { get; }
+}
+
 /// <summary>
 ///     A <c>[Module]</c> that builds its implementations through generated members, for a container in another assembly
 ///     whose <c>WhenInjectedInto</c> bindings name them.
@@ -95,6 +144,10 @@ public sealed class PlainTaster(IBrewFlavor flavor)
 [Singleton<FactoryFlavored, IFactoryFlavored>(OnActivated = nameof(SeasonFactory))]
 [Singleton<PlainTaster>]
 [Scan<IScannedFlavored>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+[Singleton<PlainCup, IFlavoredCup>]
+[Singleton<PlainCup, IFlavoredCup>(Key = "flight")]
+[Decorate<TastingCup, IFlavoredCup>]
+[Composite<CupFlight, IFlavoredCup>(Key = "flight")]
 public static partial class ContextualBindingModule
 {
 	internal static void SeasonHandled(HandledFlavored flavored, IBrewFlavor flavor) => flavored.Seasoned = flavor;
