@@ -182,6 +182,31 @@ A generic hook whose constraints the open type's type parameters don't satisfy, 
 
 The module never fails its build over an open generic. When it can't generate the factory, it records why, and a container in another assembly reports [AWT231](../09-diagnostics.md#awt231) with the reason: a lifecycle hook the wrapper can't run, a constraint or constructor parameter type another assembly can't name, a type parameter named like a constructor parameter or injected property, or a convention of the module that no wrapper can run. A module that isn't `partial` records that it isn't, and a container in another assembly reports [AWT231](../09-diagnostics.md#awt231) with that reason.
 
+### Closings over internal types
+
+An internal implementation may take a public generic service closed over itself, such as the `ILogger<PourOver>` the generic host gives every class. A container in another assembly can't name that closing, and only the container knows who provides `ILogger<>`, so the module passes the closing on through a generated closing handle and leaves the choice to the container:
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+internal sealed class PourOver(ILogger<PourOver> logger) : IBrewer;   // stays internal
+
+[Module]
+[Transient<PourOver, IBrewer>]
+public static partial class BrewingModule;
+
+// In the application:
+[Container]
+[Import(typeof(BrewingModule))]
+[ImportService(typeof(ILogger<>))]   // the host provides ILogger<PourOver>
+public static partial class CoffeeShop;
+```
+
+- A container that imports the definition from its host, with `[ImportService(typeof(ILogger<>))]` or with `[ImportServices]` when nothing registers it, asks its external resolver for the closed type the handle records and passes the host's instance on. A `[FromKey]` key is forwarded. The host owns the instance, so the container never disposes it.
+- A container that keeps the module's own open registration of the definition, such as `[Singleton(typeof(Log<>), typeof(ILog<>))]`, builds the closing through a factory the module generated from that registration. It has the registration's lifetime, and the container disposes it. Only an unkeyed closing is built this way, so a keyed one comes from the host. A container that imports the definition with `[ImportService]` and also registers it, itself or through a module, reports [AWT175](../09-diagnostics.md#awt175), as it does for a closing it can name, while `[ImportServices]` leaves the module's registration in place.
+
+Anything else is [AWT253](../09-diagnostics.md#awt253) in the container: nothing provides the definition, the container or another module registers it and would have to close it over a type it can't name, or the container decorates or composes it, which couldn't apply to that closing. The module's factory can't run a hook, a generic factory, a convention of the module or a decorator of the module on the closing either, so for such a registration the module records why, and a container that keeps the registration reports it. Only a direct constructor or factory parameter goes through a closing handle. A relationship or collection over the closing, an `[Arg]` of it and a closing over a type private to the module are still [AWT195](../09-diagnostics.md#awt195), and an injected property of it is [AWT200](../09-diagnostics.md#awt200). A container in the module's own assembly, or in one it grants `InternalsVisibleTo`, closes the definition itself.
+
 ## Services only the module uses
 
 A module can register a service under an internal type that only its own implementations depend on. A container in another assembly can't name that type, but it still builds, shares and disposes the service.

@@ -226,7 +226,9 @@ partial class AwaitenGenerator
 			return;
 		}
 
-		context.Diagnostics.Add(UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes));
+		context.Diagnostics.Add(parameterModel.ClosingHandle
+			? UnservedClosing(parameterModel, declaredType, info, context.ClosingFaults)
+			: UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes));
 	}
 
 	/// <summary>
@@ -932,6 +934,11 @@ partial class AwaitenGenerator
 		// only the direct dependency of type T is routed; every other unresolved dependency still gets the AWT101 check.
 		// A decorated import resolves its decorator chain instead, whose innermost link is redirected to the host.
 		string serviceType = type.ToDisplayString(FullyQualified);
+		if (ClosingHandleOf(type) is { } closing)
+		{
+			return new ParameterModel(serviceType, externalServiceTypes.Open.Contains(closing.Definition) ? DependencyKind.External : DependencyKind.Direct, Key: key, Location: location, ClosingHandle: true);
+		}
+
 		if (externalServiceTypes.Routes(type, serviceType) && !externalServiceTypes.Decorated.Contains(new ServiceKey(serviceType, key)))
 		{
 			return new ParameterModel(serviceType, DependencyKind.External, Key: key, Location: location);

@@ -33,7 +33,8 @@ internal sealed record ModuleScanModel(
 	EquatableArray<HiddenHandle> Handles = default,
 	EquatableArray<HiddenAlias> Aliases = default,
 	EquatableArray<HiddenInitializer> Initializers = default,
-	EquatableArray<ConventionWrapper> ConventionWrappers = default);
+	EquatableArray<ConventionWrapper> ConventionWrappers = default,
+	EquatableArray<ClosingHandle> Closings = default);
 
 /// <summary>
 ///     A generated wrapper that runs one <c>[AsyncInitializer&lt;T&gt;]</c> convention of the module whose type or method
@@ -55,6 +56,28 @@ internal sealed record ConventionWrapper(string Name, string ConventionType, str
 ///     method that picks one by the instance's runtime type.
 /// </summary>
 internal sealed record HiddenHandle(string Name, string ValueType, bool Disposable, bool AsyncDisposable, bool BothDisposable, bool Wrap = false);
+
+/// <summary>
+///     The generated public handle of a closing of a public generic service over a type internal to the module's
+///     assembly, such as <c>ILogger&lt;Brew&gt;</c> for an internal <c>Brew</c>, which a generated member takes: a class
+///     nested in the module's <c>Internals</c> that holds the instance as <see cref="ClosedType" /> behind an internal
+///     constructor and property, and records the unbound <see cref="Definition" />, so a container in another assembly
+///     decides who closes it. A container that imports the definition from its host asks its external resolver for the
+///     closed type and wraps what it returns. When the module registers the definition as an open generic itself, the
+///     handle also gets a factory that constructs the closed <see cref="Implementation" /> from <see cref="Parameters" />,
+///     which a container that keeps the module's registration calls, and implements the disposal interfaces of the
+///     implementation (<see cref="Disposable" />, <see cref="AsyncDisposable" />); or the <see cref="SkipReason" /> the
+///     module generates no such factory for, which that container reports.
+/// </summary>
+internal sealed record ClosingHandle(
+	string Name,
+	string ClosedType,
+	string Definition,
+	string? Implementation = null,
+	EquatableArray<FactoryParameter> Parameters = default,
+	bool Disposable = false,
+	bool AsyncDisposable = false,
+	string? SkipReason = null);
 
 /// <summary>
 ///     A generated factory that serves one service of an implementation the module builds through a handle: it takes
@@ -240,9 +263,10 @@ internal sealed record ScanSkip(string MarkerName, string ImplementationMetadata
 ///     <c>[FromKey]</c> or <c>[Arg]</c> attribute it carries (<c>[global::Awaiten.FromKey("utc")] </c>), so a consumer
 ///     resolves the parameter as the constructor would. <see cref="Argument" /> is the expression passed on in its
 ///     place, which unwraps a generated handle, or <see langword="null" /> to pass the parameter itself. A
-///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />.
+///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />. A
+///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it.
 /// </summary>
-internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false)
+internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null)
 {
 	/// <summary>The expression the generated member passes on for this parameter.</summary>
 	public string ArgumentExpression => Argument ?? $"@{Name}";

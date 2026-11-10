@@ -110,6 +110,8 @@ public static partial class CoffeeShop;
 
 Each closing is routed exactly as if it were imported on its own: a `[FromKey]` key is forwarded, a [relationship or collection](#relationships-and-collections) over a closing is not routed, and the closing is listed as an [external dependency](#verifying-the-wiring) of the container, so startup verification checks every closing the graph consumes. A closing that is routed to the host but also registered on the container is reported as AWT175. The argument must be a closed type or an unbound generic definition; anything in between, such as `typeof(Outer<>.Inner)`, is reported as AWT215.
 
+This includes a closing the container can't name: an internal implementation of a [module](../04-registration/07-modules.md#closings-over-internal-types) in another assembly that takes an `ILogger<>` closed over itself. The module records the closed type, and the container asks the host for it like for any other closing.
+
 ## Fall through everything with `[ImportServices]`
 
 Put `[ImportServices]` on the container and any unregistered direct dependency falls through to the external provider automatically. You trade some compile-time safety for less annotation. An injected property (`[Inject]` or `[InjectProperty]`) is the exception: it does not fall through, so an unregistered one is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)), or left at its default when it is `Optional`, unless its type is declared with `[ImportService]`.

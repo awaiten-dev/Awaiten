@@ -925,6 +925,8 @@ partial class AwaitenGenerator
 			         .Where(type => externalServiceTypes.Closings.ContainsKey(type)
 			                        && !externalServiceTypes.Closed.Contains(type)
 			                        && IsRegisteredService(type, serviceToImpl, externalServiceTypes))
+			         .Concat(routed.Select(type => externalServiceTypes.RegisteredClosingHandles.TryGetValue(type, out string? held) ? held : null).OfType<string>())
+			         .Distinct(StringComparer.Ordinal)
 			         .OrderBy(type => type, StringComparer.Ordinal))
 		{
 			diagnostics.Add(new DiagnosticInfo(

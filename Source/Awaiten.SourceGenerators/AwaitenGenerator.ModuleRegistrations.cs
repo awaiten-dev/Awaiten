@@ -1490,14 +1490,14 @@ partial class AwaitenGenerator
 			}
 
 			string?[] reasons = rejections.Select(rejection => SkipReason(rejection, services)).ToArray();
-			if (!scannedToo
-			    && friendsCanConstruct
-			    && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null
-			    && reasons.All(reason => reason is not null))
+			bool recordable = !scannedToo && TypeHiddenInModule(implementation, context.Module, context.Compilation) is null && reasons.All(reason => reason is not null);
+			if (recordable)
 			{
+				// Recorded even when reported, so a container in another assembly names the cause, not a module built without the generator.
 				skipped.Add(new SkippedRegistration(RegistrationSkippedName(implementation), reasons[0]!));
 			}
-			else
+
+			if (!recordable || !friendsCanConstruct)
 			{
 				context.Diagnostics.AddRange(rejections);
 			}

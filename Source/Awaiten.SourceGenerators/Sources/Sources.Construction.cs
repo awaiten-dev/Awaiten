@@ -470,7 +470,9 @@ internal static partial class Sources
 		// resolver, forwarding its [FromKey] key (null when unkeyed).
 		if (parameter.Kind == DependencyKind.External)
 		{
-			return $"({parameter.ServiceType})__s.__ResolveExternal(typeof({parameter.ServiceType}), {ExternalKeyLiteral(parameter.Key)})";
+			return parameter.ClosingHandle
+				? $"{parameter.ServiceType}.FromImport(__s.__ResolveExternal({ExternalTypeExpression(parameter.ServiceType, closingHandle: true)}, {ExternalKeyLiteral(parameter.Key)}))"
+				: $"({parameter.ServiceType})__s.__ResolveExternal(typeof({parameter.ServiceType}), {ExternalKeyLiteral(parameter.Key)})";
 		}
 
 		int targetIndex = serviceToIndex[new ServiceKey(parameter.ServiceType, parameter.Key)];
@@ -718,6 +720,13 @@ internal static partial class Sources
 	/// </summary>
 	private static string ExternalKeyLiteral(string? key)
 		=> key is null ? "null" : AwaitenGenerator.KeyLiteral(key);
+
+	/// <summary>
+	///     The <c>Type</c> an external dependency on <paramref name="serviceType" /> asks the resolver for: its
+	///     <c>typeof</c>, or for a closing handle the closed service type the handle records, which the container cannot name.
+	/// </summary>
+	private static string ExternalTypeExpression(string serviceType, bool closingHandle)
+		=> closingHandle ? $"{serviceType}.ServiceType" : $"typeof({serviceType})";
 
 	/// <summary>
 	///     Emits the <c>__Owned&lt;T&gt;</c> helper on the base <c>Scope</c>: it opens a throwaway child scope,
