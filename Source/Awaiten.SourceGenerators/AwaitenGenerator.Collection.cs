@@ -1891,24 +1891,36 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			bool isHandled = handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan) owner);
+			List<ModuleRegistration> registrations = isHandled && !owner.Scan
+				? ConstructedModuleRegistrations(owner.Module, compilation, members: true)
+					.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, owner.Implementation))
+					.ToList()
+				: [];
+			string target = isHandled && owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
+				? Display(closed.ToDisplayString(FullyQualified))
+				: DisplayInstance(implementation.Key);
 			foreach (InjectPropertyEntry entry in implementation.Value.Where(entry => !entry.Inherited))
 			{
-				diagnostics.Add(handled.TryGetValue(implementation.Key, out (INamedTypeSymbol Module, INamedTypeSymbol? Implementation, bool Scan) owner)
+				// A Factory or Instance member builds the instance whole in every assembly, so the entry is the plain AWT178
+				// a container of the module's own assembly reports, which no InternalsVisibleTo grant would change.
+				diagnostics.Add(!isHandled
 					? new DiagnosticInfo(
-						Diagnostics.InjectPropertyOnOwnerFactory,
-						entry.Location,
-						new EquatableArray<string>([
-							entry.PropertyName,
-							owner.Implementation is { IsGenericType: true, } closed && TypeIdentity(closed.OriginalDefinition, compilation) == implementation.Key
-								? Display(closed.ToDisplayString(FullyQualified))
-								: DisplayInstance(implementation.Key),
-							Display(owner.Module.ToDisplayString(FullyQualified)),
-							InstanceHandleReason(owner.Module, owner.Implementation, owner.Scan, compilation),
-						]))
-					: new DiagnosticInfo(
 						Diagnostics.InjectPropertyImplementationNotRegistered,
 						entry.Location,
-						new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),])));
+						new EquatableArray<string>([entry.PropertyName, DisplayInstance(implementation.Key),]))
+					: registrations.Count > 0 && registrations[0].Member is not null
+						? new DiagnosticInfo(
+							Diagnostics.InjectPropertyOnNonConstructed,
+							entry.Location,
+							new EquatableArray<string>([entry.PropertyName, target,]))
+						: new DiagnosticInfo(
+							Diagnostics.InjectPropertyOnOwnerFactory,
+							entry.Location,
+							new EquatableArray<string>([
+								entry.PropertyName, target, Display(owner.Module.ToDisplayString(FullyQualified)),
+								InstanceHandleReason(owner.Module, owner.Implementation, owner.Scan, registrations, compilation),
+							])));
 			}
 		}
 	}
@@ -1916,32 +1928,21 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Why <paramref name="module" /> of another assembly builds <paramref name="implementation" /> into an instance
 	///     handle (see <see cref="HandledShape" />), for AWT178: one of its scans exposes it under several services
-	///     (<paramref name="scan" />), it registers it under a service this compilation cannot name, under several
-	///     services, or through a member, or else other modules of its assembly register it too, so they share one instance.
+	///     (<paramref name="scan" />), one of its <paramref name="registrations" /> names a service this compilation cannot
+	///     name, or else other modules of its assembly register it too, so they share one instance. Several services alone
+	///     are no reason here, since the module's factory returns an implementation this compilation can name, which serves
+	///     them all, and an implementation the module produces through a member is the plain AWT178 instead.
 	/// </summary>
-	private static string InstanceHandleReason(INamedTypeSymbol module, INamedTypeSymbol? implementation, bool scan, Compilation compilation)
+	private static string InstanceHandleReason(INamedTypeSymbol module, INamedTypeSymbol? implementation, bool scan, List<ModuleRegistration> registrations, Compilation compilation)
 	{
 		if (scan)
 		{
 			return "a scan of the module exposes it under several services, which share one instance of it through a generated handle";
 		}
 
-		List<ModuleRegistration> registrations = ConstructedModuleRegistrations(module, compilation, members: true)
-			.Where(registration => SymbolEqualityComparer.Default.Equals(registration.Implementation, implementation))
-			.ToList();
 		if (registrations.Find(registration => !compilation.IsSymbolAccessibleWithin(registration.Service, compilation.Assembly)) is { } hidden)
 		{
 			return $"it is registered under the internal service '{Display(hidden.Service.ToDisplayString(FullyQualified))}', which a container in another assembly reaches only through a generated handle";
-		}
-
-		if (registrations.Select(registration => registration.Service).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).Count() >= 2)
-		{
-			return "it is registered under several services that share one instance of it through a generated handle";
-		}
-
-		if (registrations.Count > 0 && registrations[0].Member is { } member)
-		{
-			return $"the module produces it through its member '{member}', which a container in another assembly reaches only through a generated handle";
 		}
 
 		List<string> others = TypesWith(module.ContainingAssembly.GlobalNamespace, "ModuleAttribute")
