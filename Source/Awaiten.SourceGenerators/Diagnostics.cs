@@ -21,6 +21,19 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     The form of <see cref="MissingDependency">AWT101</see> for a service whose registration on a module of the
+	///     container's assembly the container leaves out, because the module reports in its own build that no container can
+	///     call its private member, and that error does not fail the build: <c>{3}</c> names the module and <c>{4}</c> why.
+	/// </summary>
+	public static readonly DiagnosticDescriptor MissingDependencySkipped = new(
+		"AWT101",
+		MissingDependency.Title,
+		"'{0}' cannot be resolved: '{1}' requires '{2}', which is not registered on the container; its registration on the module '{3}' is left out, because {4}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A dependency cycle exists in the object graph.
 	/// </summary>
 	public static readonly DiagnosticDescriptor DependencyCycle = new(

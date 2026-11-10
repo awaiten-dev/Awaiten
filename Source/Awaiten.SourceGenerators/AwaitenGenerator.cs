@@ -395,6 +395,19 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
+	///     Whether an error that <paramref name="module" />, of the container's own assembly, reports in its own build about a
+	///     member producing a type private to it, or about a private member no wrapper serves, still fails the build (see
+	///     <see cref="FailsBuild" />).
+	/// </summary>
+	private static bool ModuleErrorsFailBuild(INamedTypeSymbol module, Compilation compilation, CancellationToken cancellationToken)
+	{
+		List<DiagnosticInfo> moduleDiagnostics = new();
+		ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
+		ReportPrivateMembersWithoutWrapper(module, compilation, moduleDiagnostics);
+		return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation, cancellationToken));
+	}
+
+	/// <summary>
 	///     Whether the <c>#pragma warning</c> directives of <paramref name="tree" /> before <paramref name="position" /> disable
 	///     <paramref name="id" /> there, as the compiler reads them: the last <c>disable</c> or <c>restore</c> that names the id,
 	///     or names no id and so applies to all, decides. Roslyn exposes no API for this state.
@@ -663,19 +676,15 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		// A module of this assembly reports a member producing a type private to it, or a private member no wrapper serves,
-		// in its own build, which leaves the registration out of the graph here (see BuildInstance and ReportedByModule),
-		// so only the shell is emitted while that fails the build.
+		// in its own build, which leaves the registration out of the graph here (see BuildInstance, ReportedByModule and
+		// SkipUnservedModuleMembers), so only the shell is emitted while that fails the build. A base's imports count too,
+		// since the container inherits their registrations (see InheritBase).
 		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
+			.Concat(ReadExtends(containerSymbol) is { } extended ? CollectImportedModules(extended, new List<DiagnosticInfo>()) : [])
 			.Select(module => module.Symbol)
 			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
 			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
-			.Any(module =>
-			{
-				List<DiagnosticInfo> moduleDiagnostics = new();
-				ReportModuleProductionMembers(module, compilation, moduleDiagnostics, lintBodies: false);
-				ReportPrivateMembersWithoutWrapper(module, compilation, moduleDiagnostics);
-				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation, cancellationToken));
-			});
+			.Any(module => ModuleErrorsFailBuild(module, compilation, cancellationToken));
 
 		ContainerModel model = new(
 			containerNamespace,
@@ -916,7 +925,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		HiddenInjectedProperties HiddenInjectedProperties,
 		Dictionary<string, PredicateModel> Predicates,
 		Dictionary<string, string> ClosingFaults,
-		HashSet<InjectPropertyEntry> ReportedHandleEntries);
+		HashSet<InjectPropertyEntry> ReportedHandleEntries,
+		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -1016,6 +1026,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// so an explicit registration wins single resolution while every match still joins its collection.
 		(List<RawRegistration> raw, HashSet<string> constraintRejected, Dictionary<ServiceKey, List<DiagnosticInfo>> deferredRejections, List<OpenRegistration> open, Dictionary<string, string> closingFaults) = Collect(
 			containerSymbol, modules, compilation, external, injectProperties, inheritance, new WrapperRegistrations(decorators, openDecorators, composites, openComposites), diagnostics);
+		Dictionary<ServiceKey, (string Module, string Reason)> skippedModuleRegistrations = SkipUnservedModuleMembers(raw, containerSymbol, compilation, cancellationToken);
 
 		if (factories is not null)
 		{
@@ -1111,7 +1122,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>());
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>(), skippedModuleRegistrations);
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

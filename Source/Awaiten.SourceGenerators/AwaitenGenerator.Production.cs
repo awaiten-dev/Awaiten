@@ -299,7 +299,7 @@ partial class AwaitenGenerator
 			return null;
 		}
 
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations);
 		IEnumerable<string> filled = producer.Parameters.Skip(FirstPropertyOrdinal(producer)).Select(parameter => parameter.Name).Concat(members.Select(member => member.MemberName));
 		int count = members.Count;
 		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList(), context.ReportedHandleEntries);
@@ -378,7 +378,7 @@ partial class AwaitenGenerator
 		}
 
 		List<MemberModel> members = new();
-		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
+		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics, context.SkippedModuleRegistrations);
 
 		bool readFactory = info.Constructor is { MethodKind: MethodKind.Ordinary, };
 		List<InjectPropertyEntry> notTaken = injectProperties.Where(entry => !(entry.Inherited
@@ -1878,6 +1878,104 @@ partial class AwaitenGenerator
 		   && !HasOpenTypeParameters(module)
 		   && (info.GenericFactory ? GenericFactoryMembers(module, member, info.Symbol, compilation) :ProductionMemberCandidates(module, info.Production, member, info.Symbol, compilation)).ToList() is { Count: > 0, } candidates
 		   && candidates.TrueForAll(candidate => candidate.DeclaredAccessibility == Accessibility.Private);
+
+	/// <summary>
+	///     Leaves out of <paramref name="raw" /> each registration of a module of the container's assembly whose private
+	///     <c>Factory</c> or <c>Instance</c> member no container can call, which the module reports in its own build (see
+	///     <see cref="ReportedByModule" />), while the module's errors do not fail the build because they are lowered or a
+	///     <c>#pragma</c> disables them. The container is then wired as if the registration were never declared; while they
+	///     fail it, the container keeps only its shell and the registration stays. Returns, per service, the module and why it
+	///     left the registration out, which a dependency on the service names in its AWT101.
+	/// </summary>
+	private static Dictionary<ServiceKey, (string Module, string Reason)> SkipUnservedModuleMembers(List<RawRegistration> raw, INamedTypeSymbol containerSymbol, Compilation compilation, CancellationToken cancellationToken)
+	{
+		Dictionary<ServiceKey, (string Module, string Reason)> skipped = new();
+		Dictionary<INamedTypeSymbol, bool> failing = new(SymbolEqualityComparer.Default);
+		SameCompilationModules? modules = null;
+		raw.RemoveAll(registration =>
+		{
+			if (registration is not { Origin: { } module, Production: ProductionKind.Factory or ProductionKind.Instance, })
+			{
+				return false;
+			}
+
+			ImplInfo info = NewImplInfo(registration, containerSymbol);
+			if (!ReportedByModule(info, compilation) || UnservedMemberReason(info, containerSymbol, compilation, modules ??= new SameCompilationModules(compilation)) is not { } reason)
+			{
+				return false;
+			}
+
+			if (!failing.TryGetValue(module, out bool fails))
+			{
+				failing[module] = fails = ModuleErrorsFailBuild(module, compilation, cancellationToken);
+			}
+
+			if (!fails)
+			{
+				ServiceKey key = new(registration.ServiceType, registration.WhenInjectedInto is { } consumer ? ContextKey(consumer) : registration.Key);
+				if (!skipped.ContainsKey(key))
+				{
+					skipped[key] = (Display(module.ToDisplayString(FullyQualified)), reason);
+				}
+			}
+
+			return !fails;
+		});
+		return skipped;
+	}
+
+	/// <summary>
+	///     Why the module reports the private member of <paramref name="info" /> (see <see cref="ReportedByModule" />), which the
+	///     container then leaves unbuilt, naming the module's diagnostic: AWT194 for a module that cannot receive a wrapper,
+	///     AWT195 for a parameter of a type private to the module, AWT112 for overloads no wrapper can choose between, else
+	///     AWT153. <see langword="null" /> when the container calls the member itself, as a container nested in the module
+	///     does, or through a wrapper, when the module reports the registered type as private to it instead (AWT216), or, for
+	///     an <c>Instance</c> member, when no private member converts to the registered type, which the container reports
+	///     itself (AWT109).
+	/// </summary>
+	private static string? UnservedMemberReason(ImplInfo info, INamedTypeSymbol containerSymbol, Compilation compilation, SameCompilationModules modules)
+	{
+		INamedTypeSymbol module = info.Origin!;
+		string member = UserMemberName(info.ProductionMember)!;
+		if ((info.GenericFactory ? GenericFactoryMembers(module, info.ProductionMember!, info.Symbol, compilation) : ProductionMemberCandidates(module, info.Production, info.ProductionMember!, info.Symbol, compilation))
+		    .Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, containerSymbol)))
+		{
+			return null;
+		}
+
+		if (info.GenericFactory)
+		{
+			return $"its Factory member '{member}' is generic and private, and the module generates no wrapper for a generic member (AWT153)";
+		}
+
+		List<ISymbol> candidates = ProductionMemberCandidates(module, info.Production, info.ProductionMember!, info.Symbol, compilation).ToList();
+		if (SameCompilationMemberWrapper(info, compilation, modules) is not null
+		    || IsHiddenInModule(info.Symbol.OriginalDefinition, module, compilation)
+		    || (info.Production == ProductionKind.Instance && !candidates.Exists(candidate => ProducesInstanceOf(candidate, info.Symbol, compilation))))
+		{
+			return null;
+		}
+
+		string kind = info.Production == ProductionKind.Factory ? "Factory" : "Instance";
+		if (!ReceivesGeneratedMembers(module))
+		{
+			return $"its {kind} member '{member}' is private, and the module is not partial, so it cannot receive the wrapper a container would call (AWT194)";
+		}
+
+		return candidates.OfType<IMethodSymbol>().Select(method => HiddenParameter(method, module, compilation)).FirstOrDefault(parameter => parameter is not null) is { } hidden
+			? $"its Factory member '{member}' is private, and its parameter '{hidden.Name}' has a type private to the module, which no container can resolve (AWT195)"
+			: candidates.Count > 1
+				? $"its Factory member '{member}' is private and overloaded, so no wrapper can choose between the overloads (AWT112)"
+				: $"its {kind} member '{member}' is private, and the module can generate no wrapper for it (AWT153)";
+
+		static bool ProducesInstanceOf(ISymbol candidate, ITypeSymbol produced, Compilation compilation)
+			=> candidate switch
+			{
+				IFieldSymbol field => compilation.HasImplicitConversion(field.Type, produced),
+				IPropertySymbol property => compilation.HasImplicitConversion(property.Type, produced),
+				_ => false,
+			};
+	}
 
 	/// <summary>
 	///     Whether <paramref name="within" /> reaches a <c>Factory</c> member named <paramref name="member" /> that produces
