@@ -249,7 +249,7 @@ partial class AwaitenGenerator
 			HashSet<string> directives = new(StringComparer.Ordinal);
 			foreach (RawRegistration later in own.Skip(1).Where(later => later.Weak || own[0].Weak))
 			{
-				ReportCoalescingConflicts(NewImplInfo(own[0]), later, container, lifetimes, productions, directives, diagnostics);
+				ReportCoalescingConflicts(NewImplInfo(own[0], container), later, container, lifetimes, productions, directives, diagnostics);
 			}
 
 			raw[index] = handle with
@@ -310,7 +310,7 @@ partial class AwaitenGenerator
 			List<RawRegistration> coalesced = handles.FindAll(handle => handle.ImplementationType == shared);
 			foreach (RawRegistration later in coalesced.Skip(1))
 			{
-				ReportCoalescingConflicts(NewImplInfo(coalesced[0]), later, container, lifetimes, productions, directives, new List<DiagnosticInfo>());
+				ReportCoalescingConflicts(NewImplInfo(coalesced[0], container), later, container, lifetimes, productions, directives, new List<DiagnosticInfo>());
 			}
 
 			if (Reported(Diagnostics.ConflictingLifetime))
@@ -325,7 +325,7 @@ partial class AwaitenGenerator
 
 			foreach (RawRegistration later in handles.Skip(1).Where(later => later.ImplementationType != handles[0].ImplementationType))
 			{
-				ReportCoalescingConflicts(NewImplInfo(handles[0]), later with { ImplementationType = shared, }, container, lifetimes, productions, directives, diagnostics);
+				ReportCoalescingConflicts(NewImplInfo(handles[0], container), later with { ImplementationType = shared, }, container, lifetimes, productions, directives, diagnostics);
 			}
 
 			bool Reported(DiagnosticDescriptor descriptor)
@@ -522,11 +522,11 @@ partial class AwaitenGenerator
 				bool registrationFirst = scan
 					? yieldedTo.TryGetValue(registration.ImplementationType, out RawRegistration? winner) && ReferenceEquals(winner, registration)
 					: (PrecedenceRank(registration), index).CompareTo((PrecedenceRank(handle), handleIndex)) < 0;
-				ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
+				ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle, container), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
 				if (registrationFirst)
 				{
-					HashSet<string> conflicting = new(ConflictingDirectives(NewImplInfo(plain), handle, container).Select(directive => directive.Directive), StringComparer.Ordinal);
-					foreach ((string directive, string _, string _) in ConflictingDirectives(NewImplInfo(handle), registration, container)
+					HashSet<string> conflicting = new(ConflictingDirectives(NewImplInfo(plain, container), handle, container).Select(directive => directive.Directive), StringComparer.Ordinal);
+					foreach ((string directive, string _, string _) in ConflictingDirectives(NewImplInfo(handle, container), registration, container)
 						         .Where(directive => directive.Directive != "Eager" && !conflicting.Contains(directive.Directive)))
 					{
 						Report($"it sets {directive}, which the handle cannot apply to the instance it builds", scan
@@ -550,7 +550,11 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			raw[index] = ThroughAlias(registration with { Lifetime = handle.Lifetime, }, owner, implementation, alias, compilation, producer is null ? null : handled) with { Eager = registration.Eager, };
+			raw[index] = ThroughAlias(registration with { Lifetime = handle.Lifetime, }, owner, implementation, alias, compilation, producer is null ? null : handled) with
+			{
+				Eager = registration.Eager,
+				Declarer = registration.Declarer ?? registration.Origin ?? container,
+			};
 
 			void Report(string reason, string remedy)
 				=> diagnostics.Add(new DiagnosticInfo(

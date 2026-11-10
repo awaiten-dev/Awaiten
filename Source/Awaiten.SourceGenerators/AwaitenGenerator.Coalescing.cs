@@ -622,7 +622,7 @@ partial class AwaitenGenerator
 			// Every registration is a member of the collection for its (service type, key), built even when it
 			// loses the single-resolution slot, since it is reachable through the collection.
 			AddCollectionMember(serviceMembers, serviceMemberOrder, serviceKey, registration.ImplementationType);
-			MergeScanHooks(EnsureImpl(implInfos, implOrder, registration), registration, reportedHookConflicts, diagnostics);
+			MergeScanHooks(EnsureImpl(implInfos, implOrder, registration, containerSymbol), registration, reportedHookConflicts, diagnostics);
 
 			// A keyed registration is also a member of its service's keyed collection, indexed by its Key.
 			AddKeyedMember(keyedMembers, keyedMemberOrder, registration, alreadyChosen);
@@ -641,7 +641,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			ImplInfo chosen = EnsureImpl(implInfos, implOrder, registration);
+			ImplInfo chosen = EnsureImpl(implInfos, implOrder, registration, containerSymbol);
 			serviceToImpl[serviceKey] = registration.ImplementationType;
 			winners[serviceKey] = registration;
 			chosen.Services.Add(serviceKey);
@@ -652,11 +652,11 @@ partial class AwaitenGenerator
 		// Creates the single ImplInfo for a registration's implementation (idempotent): the first registration
 		// fixes its lifetime/production, shared by every registration of that implementation. Takes implInfos and
 		// implOrder as parameters so the caller's pre-loop lookup sees the Add across a call boundary.
-		static ImplInfo EnsureImpl(Dictionary<string, ImplInfo> implInfos, List<ImplInfo> implOrder, RawRegistration reg)
+		static ImplInfo EnsureImpl(Dictionary<string, ImplInfo> implInfos, List<ImplInfo> implOrder, RawRegistration reg, INamedTypeSymbol container)
 		{
 			if (!implInfos.TryGetValue(reg.ImplementationType, out ImplInfo? info))
 			{
-				info = NewImplInfo(reg);
+				info = NewImplInfo(reg, container);
 				implInfos.Add(reg.ImplementationType, info);
 				implOrder.Add(info);
 			}
@@ -665,8 +665,8 @@ partial class AwaitenGenerator
 		}
 	}
 
-	/// <summary>The coalesced info of an implementation whose first registration is <paramref name="reg" />.</summary>
-	private static ImplInfo NewImplInfo(RawRegistration reg)
+	/// <summary>The coalesced info of an implementation whose first registration is <paramref name="reg" /> in <paramref name="container" />.</summary>
+	private static ImplInfo NewImplInfo(RawRegistration reg, INamedTypeSymbol container)
 	{
 		ImplInfo info = new(
 			reg.ImplementationType, reg.Implementation, reg.Lifetime,
@@ -678,8 +678,8 @@ partial class AwaitenGenerator
 			Eager = reg.Eager,
 			OnActivated = reg.OnActivated,
 			OnRelease = reg.OnRelease,
-			OnActivatedOrigin = reg.OnActivated is null ? null : reg.Origin,
-			OnReleaseOrigin = reg.OnRelease is null ? null : reg.Origin,
+			OnActivatedOrigin = reg.OnActivated is null ? null : DeclaringOrigin(reg, container),
+			OnReleaseOrigin = reg.OnRelease is null ? null : DeclaringOrigin(reg, container),
 			SuppressDisposal = reg.SuppressDisposal,
 			GenericFactory = reg.GenericFactory,
 			Traits = reg.Traits,
@@ -1101,14 +1101,15 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static IEnumerable<(string Directive, string Winner, string Loser)> ConflictingDirectives(ImplInfo info, RawRegistration registration, INamedTypeSymbol containerSymbol)
 	{
+		INamedTypeSymbol? hookOrigin = DeclaringOrigin(registration, containerSymbol);
 		if (IsDifferentHook(registration.OnActivated, info.OnActivated, info.OnActivatedOrigin))
 		{
-			yield return ("OnActivated", DescribeHook(info.OnActivated, info.OnActivatedOrigin), DescribeHook(registration.OnActivated, registration.Origin));
+			yield return ("OnActivated", DescribeHook(info.OnActivated, info.OnActivatedOrigin), DescribeHook(registration.OnActivated, hookOrigin));
 		}
 
 		if (IsDifferentHook(registration.OnRelease, info.OnRelease, info.OnReleaseOrigin))
 		{
-			yield return ("OnRelease", DescribeHook(info.OnRelease, info.OnReleaseOrigin), DescribeHook(registration.OnRelease, registration.Origin));
+			yield return ("OnRelease", DescribeHook(info.OnRelease, info.OnReleaseOrigin), DescribeHook(registration.OnRelease, hookOrigin));
 		}
 
 		if (registration.Eager && !info.Eager)
@@ -1124,7 +1125,7 @@ partial class AwaitenGenerator
 		bool IsDifferentHook(string? hook, string? winnerHook, INamedTypeSymbol? winnerOrigin)
 			=> hook is not null
 			   && (!string.Equals(hook, winnerHook, StringComparison.Ordinal)
-			       || !SymbolEqualityComparer.Default.Equals(registration.Origin, winnerOrigin));
+			       || !SymbolEqualityComparer.Default.Equals(hookOrigin, winnerOrigin));
 
 		string DescribeHook(string? hook, INamedTypeSymbol? origin)
 			=> hook is null ? "unset" : $"'{Display(QualifiedMember(origin ?? containerSymbol, hook))}'";
@@ -1168,8 +1169,8 @@ partial class AwaitenGenerator
 		Compilation compilation,
 		List<CrossModuleDuplicate> duplicates)
 	{
-		INamedTypeSymbol? origin = DeclaringOwner(registration);
-		INamedTypeSymbol? winnerOrigin = DeclaringOwner(winner);
+		INamedTypeSymbol? origin = DeclaringOrigin(registration, containerSymbol);
+		INamedTypeSymbol? winnerOrigin = DeclaringOrigin(winner, containerSymbol);
 		if (registration.Key is not null
 		    || registration.IsScan
 		    || registration.Weak
@@ -1190,15 +1191,20 @@ partial class AwaitenGenerator
 			Display(origin.ToDisplayString(FullyQualified)),
 			Reregistrable(winner) && Reregistrable(registration)));
 
-		INamedTypeSymbol? DeclaringOwner(RawRegistration contribution)
-			=> contribution.Declarer is not { } declarer ? contribution.Origin
-				: SymbolEqualityComparer.Default.Equals(declarer, containerSymbol) ? null
-				: declarer;
-
 		bool Reregistrable(RawRegistration contribution)
 			=> contribution is { Production: ProductionKind.Constructor, Hidden: null, ConstructVia: null, }
 			   && compilation.IsSymbolAccessibleWithin(contribution.Implementation, containerSymbol);
 	}
+
+	/// <summary>
+	///     The owner that declares <paramref name="registration" />, like its <c>Origin</c> <see langword="null" /> for
+	///     <paramref name="container" /> itself: its <c>Declarer</c> when it calls the generated member of another owner,
+	///     else its <c>Origin</c>. Its lifecycle hooks bind on this owner.
+	/// </summary>
+	private static INamedTypeSymbol? DeclaringOrigin(RawRegistration registration, INamedTypeSymbol container)
+		=> registration.Declarer is not { } declarer ? registration.Origin
+			: SymbolEqualityComparer.Default.Equals(declarer, container) ? null
+			: declarer;
 
 	/// <summary>
 	///     AWT155 for each recorded <paramref name="duplicates" /> entry whose service a dependency in the graph resolves

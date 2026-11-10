@@ -49,6 +49,25 @@ public class ModuleFactorySharingTests
 	}
 
 	[Test]
+	public async Task AHookedContainerRegistrationBesideTheModule_RunsTheContainersHooksOnceOnTheSharedInstance()
+	{
+		HookedFactorySharingGreeter greeter;
+		await using (HookedGreeterBesideModuleContainer.Root container = new())
+		{
+			greeter = await container.ResolveAsync<HookedFactorySharingGreeter>();
+
+			await That(await container.ResolveAsync<IHookedFactorySharingGreeter>()).IsSameAs(greeter)
+				.Because("the hooked registration calls the module's generated factory, so both coalesce into one singleton");
+			await That(greeter.ClockAssignments).IsEqualTo(1);
+			await That(greeter.Steps).IsEqualTo(["activate", "convention",])
+				.Because("the container's activation hook runs once, before the module's async initializer convention");
+		}
+
+		await That(greeter.Steps).IsEqualTo(["activate", "convention", "release", "dispose",])
+			.Because("the container's release hook runs once, before the instance is disposed");
+	}
+
+	[Test]
 	public async Task AnExtendingContainerOfABaseInThisAssembly_BuildsTheInternalImplementation()
 	{
 		using ExtendingFactorySharingContainer.Root container = new();
@@ -98,6 +117,16 @@ public static partial class LocalFactorySharingModule;
 [Import(typeof(CrossAssemblyFactorySharingModule))]
 [Singleton<FactorySharingGreeter>]
 public static partial class GreeterBesideModuleContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyHookedFactorySharingModule))]
+[Singleton<HookedFactorySharingGreeter>(OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+public static partial class HookedGreeterBesideModuleContainer
+{
+	private static void Activate(HookedFactorySharingGreeter greeter) => greeter.Steps.Add("activate");
+
+	private static void Release(HookedFactorySharingGreeter greeter) => greeter.Steps.Add("release");
+}
 
 [Container]
 [Import(typeof(CrossAssemblyFriendFactorySharingModule))]

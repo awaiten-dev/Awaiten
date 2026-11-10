@@ -628,7 +628,7 @@ public partial class DiagnosticTests
 			public static partial class KettleModule { }
 			""";
 
-		private static string KettleContainer(string registration, string body = "")
+		private static string KettleContainer(string registration)
 			=> $$"""
 			     using Awaiten;
 			     using Lib;
@@ -638,10 +638,7 @@ public partial class DiagnosticTests
 			     [Container]
 			     [Import(typeof(KettleModule))]
 			     {{registration}}
-			     public static partial class MyContainer
-			     {
-			         {{body}}
-			     }
+			     public static partial class MyContainer;
 			     """;
 
 		[Test]
@@ -660,16 +657,25 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task NamesTheModuleWhenAContainerOfAnotherAssemblyConstructsWhatAModuleConstructsThroughItsGeneratedFactory()
+		public async Task NamesEachModuleWhenModulesOfTwoOtherAssembliesConstructAnImplementationThroughTheirGeneratedFactories()
 		{
-			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(
-				KettleLibrary,
-				KettleContainer("[Transient<Kettle>(OnActivated = nameof(Ready))]", "private static void Ready(Kettle kettle) { }"));
+			const string friendModule = """
+				using Awaiten;
 
-			await That(external.Diagnostics).HasCount(2);
-			await That(external.Diagnostics).Contains("*AWT111*(a constructor and the constructor that module 'Lib.KettleModule' calls through its generated factory)*").AsWildcard()
-				.Because("a registration with a hook of the container keeps its constructor, and the message tells the two constructors apart instead of naming 'a constructor' twice");
-			await That(external.Diagnostics).Contains("*AWT104*'Lib.Kettle'*").AsWildcard();
+				namespace Friend;
+
+				[Module]
+				[Transient<Lib.Kettle>]
+				public static partial class FriendModule { }
+				""";
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[KettleLibrary.Replace("using Awaiten;", "using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Library2\")]"), friendModule,],
+				KettleContainer("[Import(typeof(Friend.FriendModule))]"));
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains(
+					"AWT111: 'Lib.Kettle' is registered with conflicting production strategies (the constructor that module 'Lib.KettleModule' calls through its generated factory and the constructor that module 'Friend.FriendModule' calls through its generated factory)"))
+				.Because("each module's generated factory calls the constructor, so the message tells them apart by module instead of naming 'a constructor' twice");
 		}
 	}
 }
