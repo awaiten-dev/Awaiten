@@ -2189,6 +2189,40 @@ partial class AwaitenGenerator
 			.Select(field => field.ConstantValue as string)
 			.FirstOrDefault(reason => reason is not null);
 
+	/// <summary>
+	///     A deterministic name for the constant that records that a factory of the module passes an empty collection of
+	///     <paramref name="element" /> under <paramref name="key" />, so a consumer that registers that element type under
+	///     that key finds the record (AWT252).
+	/// </summary>
+	private static string EmptyCollectionRecordName(INamedTypeSymbol element, string? key)
+	{
+		string identity = element.ToDisplayString(FullyQualified);
+		return $"EmptyCollection_{element.Name}_{Fnv1a(key is null ? identity : $"{identity}\0{key}"):x8}";
+	}
+
+	/// <summary>
+	///     The element types whose collection a factory of the imported <paramref name="module" /> of another assembly
+	///     passes empty, as the module records them (see <see cref="RecordEmptyCollections" />), each with the name of its
+	///     record, which also encodes the key, and the type that receives the collection. A record whose element type this
+	///     compilation cannot find is left out.
+	/// </summary>
+	private static List<(INamedTypeSymbol Element, string Name, string Receiver)> EmptyCollectionRecords(INamedTypeSymbol module, Compilation compilation)
+	{
+		List<(INamedTypeSymbol Element, string Name, string Receiver)> records = new();
+		foreach (IFieldSymbol field in module.GetTypeMembers(InternalsClass).SelectMany(internals => internals.GetMembers()).OfType<IFieldSymbol>())
+		{
+			if (field.Name.StartsWith("EmptyCollection_", StringComparison.Ordinal)
+			    && field.ConstantValue is string value
+			    && value.IndexOf('\n') is var separator and > 0
+			    && DocumentationCommentId.GetFirstSymbolForReferenceId(value.Substring(separator + 1), compilation) is INamedTypeSymbol element)
+			{
+				records.Add((element, field.Name, value.Substring(0, separator)));
+			}
+		}
+
+		return records;
+	}
+
 	private static uint Fnv1a(string text)
 	{
 		uint hash = 2166136261;

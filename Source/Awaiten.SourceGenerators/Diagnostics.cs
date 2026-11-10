@@ -2509,6 +2509,23 @@ internal static class Diagnostics
 		isEnabledByDefault: true);
 
 	/// <summary>
+	///     An imported module of another assembly passes a decorator or composite an empty collection of an internal
+	///     element type, fixed in the module's own build because no module of its assembly registers the element, while
+	///     another imported module, of an assembly granted <c>InternalsVisibleTo</c>, or the container itself registers it,
+	///     or a variant service the collection holds. A container in the
+	///     module's assembly, or one that builds the type itself, would pass that registration, so the graph would differ
+	///     from the one it declares. Reported at the import of the module, which records the element types it fixed
+	///     empty; a module built by an older generator records none.
+	/// </summary>
+	public static readonly DiagnosticDescriptor CollectionFixedEmptyInModule = new(
+		"AWT252",
+		"Collection fixed empty by a module of another assembly",
+		"'{0}' passes '{1}' an empty collection of '{2}', fixed in the module's own build since no module of its assembly registers it, although '{3}' registers it in this container; make '{4}' public so the module's factory takes the collection from the container, or grant this assembly InternalsVisibleTo from the assemblies of '{0}' and '{3}' so the container builds '{1}' itself",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
 	///     A generated member of an imported module of another assembly takes a closing of a public generic service over a
 	///     type internal to the module's assembly, such as <c>ILogger&lt;Brew&gt;</c> for an internal <c>Brew</c>, which the
 	///     container can neither name nor close itself. It serves the closing only when it imports the definition from its

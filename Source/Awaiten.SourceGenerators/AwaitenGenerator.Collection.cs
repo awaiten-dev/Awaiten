@@ -1005,6 +1005,66 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reports AWT252 at the import of each module of another assembly whose factory passes an empty collection of an
+	///     element type that another of the <paramref name="modules" />, or the container itself, registers under the same
+	///     key, or unkeyed under a service that a collection of the element holds through variance, as the module records
+	///     it (see <see cref="EmptyCollectionRecords" />), when the module's assembly grants this one no
+	///     <c>InternalsVisibleTo</c>, so the container calls that factory instead of building the receiving type itself. A
+	///     <c>WhenInjectedInto</c> registration is no member of a collection. A module and a registration both inherited
+	///     through <c>Extends</c> are the base's to report.
+	/// </summary>
+	private static void ReportEmptyCollectionsOfModules(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
+		foreach (ImportedModule receiving in modules)
+		{
+			INamedTypeSymbol module = receiving.Symbol;
+			if (receiving.IsBase
+			    || SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly)
+			    || module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
+			    || EmptyCollectionRecords(module, compilation) is not { Count: > 0, } records)
+			{
+				continue;
+			}
+
+			HashSet<string> reported = new(StringComparer.Ordinal);
+			foreach (ImportedModule providing in modules.Append(new ImportedModule(containerSymbol, null)).Where(providing => !(receiving.Inherited && providing.Inherited)))
+			{
+				foreach (ModuleRegistration registration in ConstructedModuleRegistrations(providing.Symbol, compilation, members: true))
+				{
+					string? key = NamedKeyArgument(registration.Attribute);
+					if (NamedTypeArgument(registration.Attribute, "WhenInjectedInto", compilation) is not null)
+					{
+						continue;
+					}
+
+					foreach ((INamedTypeSymbol element, string name, string receiver) in records)
+					{
+						if (name != EmptyCollectionRecordName(element, key)
+						    || !(SymbolEqualityComparer.Default.Equals(registration.Service, element)
+						         || (key is null && element.TypeKind == TypeKind.Interface && VarianceCompatible(registration.Service, element, compilation)))
+						    || !reported.Add(name))
+						{
+							continue;
+						}
+
+						string service = element.ToDisplayString(FullyQualified);
+						diagnostics.Add(new DiagnosticInfo(
+							Diagnostics.CollectionFixedEmptyInModule,
+							LocationInfo.From(receiving.ImportLocation),
+							new EquatableArray<string>([
+								Display(module.ToDisplayString(FullyQualified)),
+								receiver,
+								DisplayKeyed(service, key),
+								Display(providing.Symbol.ToDisplayString(FullyQualified)),
+								Display(service),
+							])));
+					}
+				}
+			}
+		}
+	}
+
+	/// <summary>
 	///     Reads the modules a container pulls in with <c>[Import(typeof(Module))]</c>, in declaration order,
 	///     validating each as it goes: the target must be a <c>[Module]</c> (AWT149, else skipped), a module's
 	///     own <c>[Import]</c> is reported as not-followed (AWT150), and a module declaring no registrations is

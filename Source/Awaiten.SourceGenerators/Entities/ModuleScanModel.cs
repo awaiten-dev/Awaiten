@@ -127,8 +127,10 @@ internal sealed record MemberWrapper(
 ///     consumer reports instead. <see cref="Member" /> marks a <c>Factory</c> member the module neither wraps nor builds
 ///     through a handle, whose constant holds why, which a consumer that cannot call the member reports (AWT108).
 ///     <see cref="Predicate" /> marks an internal decorator predicate the module generates no wrapper for (AWT247).
+///     <see cref="EmptyCollection" /> marks an element type whose collection a factory of the module passes empty, whose
+///     constant holds the type that receives it, which a consumer that registers the element type reports (AWT252).
 /// </summary>
-internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false, bool Predicate = false);
+internal sealed record SkippedRegistration(string MarkerName, string Reason, bool Hook = false, bool Open = false, bool Contribution = false, bool Member = false, bool Predicate = false, bool EmptyCollection = false);
 
 /// <summary>
 ///     The generated factory of an implementation that only its owner can construct: a self-compiled module
@@ -264,9 +266,11 @@ internal sealed record ScanSkip(string MarkerName, string ImplementationMetadata
 ///     resolves the parameter as the constructor would. <see cref="Argument" /> is the expression passed on in its
 ///     place, which unwraps a generated handle, or <see langword="null" /> to pass the parameter itself. A
 ///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />. A
-///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it.
+///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it,
+///     <see cref="EmptyCollectionRecord" /> names the constant that records an empty collection it passes (AWT252), and
+///     <see cref="EmptyCollectionElement" /> is the documentation id of its element type.
 /// </summary>
-internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null)
+internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null, string? EmptyCollectionRecord = null, string? EmptyCollectionElement = null)
 {
 	/// <summary>The expression the generated member passes on for this parameter.</summary>
 	public string ArgumentExpression => Argument ?? $"@{Name}";
