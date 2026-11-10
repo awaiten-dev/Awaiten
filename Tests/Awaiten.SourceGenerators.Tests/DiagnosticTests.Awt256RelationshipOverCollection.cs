@@ -91,6 +91,46 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("[Inject(Optional = true)]", "Func<IEnumerable<IClock>>")]
+		[Arguments("[Inject(Deferred = true, Optional = true)]", "Lazy<IReadOnlyList<IClock>>")]
+		public async Task ReportsAnOptionalPropertyOfAnotherAssemblysModule(string inject, string relationship)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly($$"""
+			                                                                        using System;
+			                                                                        using System.Collections.Generic;
+			                                                                        using Awaiten;
+
+			                                                                        namespace Lib;
+
+			                                                                        public interface IGreeter { }
+			                                                                        public interface IClock { }
+			                                                                        public sealed class SystemClock : IClock { }
+
+			                                                                        internal sealed class Greeter : IGreeter
+			                                                                        {
+			                                                                            {{inject}} public {{relationship}} Clocks { get; set; } = null!;
+			                                                                        }
+
+			                                                                        [Module]
+			                                                                        [Singleton<SystemClock, IClock>]
+			                                                                        [Transient<Greeter, IGreeter>]
+			                                                                        public static partial class GreetingModule { }
+			                                                                        """, """
+			                                                                             using Awaiten;
+
+			                                                                             namespace App;
+
+			                                                                             [Container]
+			                                                                             [Import(typeof(Lib.GreetingModule))]
+			                                                                             public static partial class MyContainer;
+			                                                                             """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains($"*error AWT256*'Lib.Greeter' requires 'System.*', a relationship over the collection*").AsWildcard()
+				.Because("the module's generated factory or setter fills the property, so it is reported exactly as when the container builds the implementation itself, instead of leaving it unset");
+		}
+
+		[Test]
 		public async Task DoesNotReportARegisteredCollection()
 		{
 			GeneratorResult result = Generator.Run("""

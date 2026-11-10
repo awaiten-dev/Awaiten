@@ -253,7 +253,7 @@ partial class AwaitenGenerator
 				RedirectContextualBinding(ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation),
 				setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
 			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
-			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, context.ServiceToImpl, context.External.ServiceTypes))
+			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, setter.Parameters[1].Type, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				continue;
 			}

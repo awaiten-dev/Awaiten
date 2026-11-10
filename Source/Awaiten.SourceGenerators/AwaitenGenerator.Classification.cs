@@ -133,7 +133,7 @@ partial class AwaitenGenerator
 			// [ImportServices] fall-through below does not fill.
 			if (parameter.HasExplicitDefaultValue
 			    && IsGeneratedOwnerFactory(producer)
-			    && IsMissingOptional(parameterModel, context.ServiceToImpl, context.External.ServiceTypes))
+			    && IsMissingOptional(parameterModel, parameter.Type, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				parameterModel = parameterModel with { Kind = DependencyKind.Absent, };
 			}
@@ -187,11 +187,11 @@ partial class AwaitenGenerator
 	///     itself. A runtime argument, a forwarded token, an external service and a collection are never missing, and an
 	///     <see cref="IsUnsatisfiable" /> request is reported rather than left out.
 	/// </summary>
-	private static bool IsMissingOptional(ParameterModel dependency, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
+	private static bool IsMissingOptional(ParameterModel dependency, ITypeSymbol declaredType, Dictionary<ServiceKey, string> serviceToImpl, ExternalServiceTypes externalServiceTypes)
 		=> dependency.Kind is not (DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External)
 		   && !IsSynthesizedCollection(dependency.Kind)
 		   && !serviceToImpl.ContainsKey(KeyOf(dependency))
-		   && !IsUnsatisfiable(dependency, externalServiceTypes);
+		   && !IsUnsatisfiable(dependency, declaredType, externalServiceTypes);
 
 	/// <summary>
 	///     The single predicate every gate uses to treat all collection kinds alike (AWT101/AWT141 exemption,
@@ -444,11 +444,12 @@ partial class AwaitenGenerator
 		=> TryGetCollectionElement(type, out _) || IsAsyncEnumerable(type, out _) || TryGetAwaitedCollection(type, out _, out _);
 
 	/// <summary>
-	///     Whether no registration could ever satisfy <paramref name="dependency" />: an <c>Owned&lt;T&gt;</c> through
-	///     <c>Lazy</c> (AWT121) or a relationship over an imported service (AWT242). <c>Optional</c> does not drop it.
+	///     Whether no registration could ever satisfy <paramref name="dependency" /> of <paramref name="declaredType" />: an
+	///     <c>Owned&lt;T&gt;</c> through <c>Lazy</c> (AWT121), a relationship over an imported service (AWT242) or one over an
+	///     unregistered collection (AWT256). <c>Optional</c> does not drop it.
 	/// </summary>
-	private static bool IsUnsatisfiable(ParameterModel dependency, ExternalServiceTypes externalServiceTypes)
-		=> IsOwnedThroughLazy(dependency) || IsRelationshipOverImportedService(dependency, externalServiceTypes);
+	private static bool IsUnsatisfiable(ParameterModel dependency, ITypeSymbol declaredType, ExternalServiceTypes externalServiceTypes)
+		=> IsOwnedThroughLazy(dependency) || IsRelationshipOverImportedService(dependency, externalServiceTypes) || CollectionUnderRelationship(declaredType) is not null;
 
 	private static bool IsOwnedThroughLazy(ParameterModel dependency)
 		=> dependency.Kind is DependencyKind.Lazy or DependencyKind.LazyTask
@@ -737,7 +738,7 @@ partial class AwaitenGenerator
 			// Lazy, and a relationship over an imported service never reaches the external resolver, so AWT121 and
 			// AWT242 are reported (and the edge kept) regardless of Optional, as for a required one. A relationship over a
 			// collection (AWT256) is reported too, as a collection member is never omitted either.
-			if (spec.Optional && !IsUnsatisfiable(dependency, externalServiceTypes) && CollectionUnderRelationship(property.Type) is null)
+			if (spec.Optional && !IsUnsatisfiable(dependency, property.Type, externalServiceTypes))
 			{
 				return null;
 			}
