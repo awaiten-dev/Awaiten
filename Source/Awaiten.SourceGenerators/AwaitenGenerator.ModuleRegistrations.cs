@@ -680,7 +680,13 @@ partial class AwaitenGenerator
 			if (candidates.Exists(candidate => candidate.DeclaredAccessibility == Accessibility.Public))
 			{
 				// Another assembly calls the public overload, while a container in the module's assembly also sees one that is not and reports AWT190.
-				if (candidates.Find(candidate => candidate.DeclaredAccessibility != Accessibility.Public && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)) is { } unseen)
+				if ((candidates.Find(candidate => candidate.DeclaredAccessibility != Accessibility.Public && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly))
+				     ?? AccessibleMembers(module, hookName, compilation).OfType<IMethodSymbol>().FirstOrDefault(candidate =>
+					     candidate is { MethodKind: MethodKind.Ordinary, IsStatic: true, IsGenericMethod: true, Parameters.Length: >= 1, }
+					     && candidate.DeclaredAccessibility != Accessibility.Public
+					     && compilation.IsSymbolAccessibleWithin(candidate, module.ContainingAssembly)
+					     && IsHookReturn(candidate, compilation)
+					     && InfersHook(candidate, produced, compilation))) is { } unseen)
 				{
 					skipped.Add(new SkippedRegistration(
 						skippedName,
@@ -774,7 +780,7 @@ partial class AwaitenGenerator
 				{
 					skipped.Add(new SkippedRegistration(
 						skippedName,
-						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so a container that sees only one of them would call it where a container in the module's assembly reports AWT190",
+						$"its {(release ? "OnRelease" : "OnActivated")} hook '{hookName}' has another overload, taking '{Display(overload.Parameters[0].Type.ToDisplayString(FullyQualified))}', that accepts {closings} too, so {(matches[0].DeclaredAccessibility == Accessibility.Public || overload.DeclaredAccessibility == Accessibility.Public ? "a container that sees only the public one would call it" : "a generated wrapper would run the wrong overload")} where a container in the module's assembly reports AWT190",
 						Hook: true));
 				}
 

@@ -55,6 +55,29 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsWhenTheCallInfersAGenericOverloadBesideANonGenericOne()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Service { }
+
+			                                       [Container]
+			                                       [Singleton<Service>(OnActivated = nameof(Started))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static void Started(object instance) { }
+			                                       	private static void Started<T>(T instance) { }
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo("*AWT190*'Started'*").AsWildcard()
+				.Because("the generated call has no type arguments, so C# infers the generic overload for the service and prefers it to the one for objects");
+		}
+
+		[Test]
 		public async Task DoesNotReportWhenOnlyOneOverloadAcceptsTheInstance()
 		{
 			GeneratorResult result = Generator.Run("""

@@ -344,6 +344,20 @@ public sealed partial class OpenGenericFactoryTests
 		}
 
 		[Test]
+		public async Task AModuleInAnotherAssembly_RunsTheHookBesideAnOverloadForValueTypesOfAClassConstrainedType()
+		{
+			await using EntryHookedCacheContainer.Root container = new();
+
+			await using (IAwaitenScope scope = await container.CreateScopeAsync())
+			{
+				scope.Resolve<EntryCacheConsumer>();
+			}
+
+			await That(container.Resolve<OpenHookLog>().Entries).HasSingle().Which.IsEqualTo("activated CacheEntry")
+				.Because("a type parameter constrained to a class type admits only reference types, so the overload for value types never competes");
+		}
+
+		[Test]
 		public async Task AModuleInAnotherAssembly_AwaitsTheAsynchronousHooksOfEachClosing()
 		{
 			await using AsyncHookedCacheContainer.Root container = new();
@@ -414,6 +428,16 @@ public sealed partial class OpenGenericFactoryTests
 	[Import(typeof(ValueHookedOpenGenericModule))]
 	[Scoped<ValueCacheConsumer>]
 	public static partial class ValueHookedCacheContainer;
+
+	public sealed class EntryCacheConsumer(IHookedEntryCache<CacheEntry> entries)
+	{
+		public IHookedEntryCache<CacheEntry> Entries => entries;
+	}
+
+	[Container]
+	[Import(typeof(EntryHookedOpenGenericModule))]
+	[Scoped<EntryCacheConsumer>]
+	public static partial class EntryHookedCacheContainer;
 
 	[Container]
 	[Import(typeof(FriendHookedOpenGenericModule))]

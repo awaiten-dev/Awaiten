@@ -1084,7 +1084,9 @@ partial class AwaitenGenerator
 	///     to a single closed marker form), and separately the closed-form sets of any generic overload that several
 	///     forms could bind, which stay usable (an AWT190 collision when a sibling also matches) yet cannot be
 	///     dispatched (AWT198 when they are the only candidate). The forms of each ambiguous overload are kept so the
-	///     AWT198 message can name them. Open generic expansion uses it too, so it seeds from the hook that is dispatched.
+	///     AWT198 message can name them. Beside a non-generic match, a generic overload no form binds that the call infers
+	///     from the instance matches too (see <see cref="InfersHook" />). Open generic expansion uses it too, so it seeds
+	///     from the hook that is dispatched.
 	/// </summary>
 	private static (List<IMethodSymbol> Matches, List<IReadOnlyList<INamedTypeSymbol>> AmbiguousMethods) CollectHookOverloads(
 		INamedTypeSymbol implementation,
@@ -1096,6 +1098,7 @@ partial class AwaitenGenerator
 	{
 		List<IMethodSymbol> matches = new();
 		List<IReadOnlyList<INamedTypeSymbol>> ambiguousMethods = new();
+		List<IMethodSymbol> inferred = new();
 		foreach (ISymbol member in AccessibleMembers(origin ?? containerSymbol, hookName, compilation))
 		{
 			// A module hook must also be accessible from the generated container (its own private members are
@@ -1133,6 +1136,16 @@ partial class AwaitenGenerator
 			{
 				ambiguousMethods.Add(bindable.Select(candidate => candidate.Form).ToList());
 			}
+			else if (InfersHook(method, implementation, compilation))
+			{
+				inferred.Add(method);
+			}
+		}
+
+		// The call of a non-generic hook names no type arguments, so C# may bind an inferred generic overload instead.
+		if (matches.Exists(match => !match.IsGenericMethod))
+		{
+			matches.AddRange(inferred);
 		}
 
 		return (matches, ambiguousMethods);
@@ -1802,7 +1815,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The non-generic static methods named <paramref name="hook" /> of <paramref name="owner" /> that could run as the
 	///     lifecycle hook of <paramref name="produced" />, whatever their accessibility, so a same-named overload for
-	///     another type does not count when the module decides on a hook wrapper and a container on calling it.
+	///     another type does not count when the module decides on a hook wrapper and a container on calling it. A generic
+	///     overload does not count: nothing binds its type parameters for a closed registration (AWT164), but a call
+	///     without type arguments may still infer it (see <see cref="InfersHook" />).
 	/// </summary>
 	private static IEnumerable<IMethodSymbol> HookCandidates(INamedTypeSymbol owner, string hook, ITypeSymbol produced, Compilation compilation)
 		=> AccessibleMembers(owner, hook, compilation)
@@ -1810,6 +1825,53 @@ partial class AwaitenGenerator
 			.Where(method => method is { MethodKind: MethodKind.Ordinary, IsStatic: true, Arity: 0, Parameters.Length: >= 1, }
 			                 && IsHookReturn(method, compilation)
 			                 && compilation.HasImplicitConversion(produced, method.Parameters[0].Type));
+
+	/// <summary>
+	///     Whether C# infers the generic <paramref name="method" /> from an argument of type <paramref name="produced" />, so
+	///     the generated call of a non-generic hook, which names no type arguments, may bind it instead, as it prefers
+	///     <c>Ready&lt;Order&gt;(Order)</c> to <c>Ready(object)</c>. Only the instance parameter is unified, with
+	///     <paramref name="produced" /> or a type it derives from or implements.
+	/// </summary>
+	private static bool InfersHook(IMethodSymbol method, ITypeSymbol produced, Compilation compilation)
+	{
+		foreach (ITypeSymbol target in new[] { produced, }.Concat(BaseTypes(produced)).Concat(produced.AllInterfaces))
+		{
+			Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings = new(SymbolEqualityComparer.Default);
+			if (Unify(method.Parameters[0].Type, target, bindings) && bindings.Count == method.Arity)
+			{
+				ImmutableArray<ITypeSymbol> arguments = method.TypeParameters.Select(parameter => bindings[parameter]).ToImmutableArray();
+				if (SatisfiesConstraints(method, arguments, compilation) && compilation.HasImplicitConversion(produced, method.Construct(arguments.ToArray()).Parameters[0].Type))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+
+		bool Unify(ITypeSymbol pattern, ITypeSymbol type, Dictionary<ITypeParameterSymbol, ITypeSymbol> bindings)
+		{
+			if (pattern is ITypeParameterSymbol parameter && SymbolEqualityComparer.Default.Equals(parameter.DeclaringMethod, method))
+			{
+				if (bindings.TryGetValue(parameter, out ITypeSymbol? bound))
+				{
+					return SymbolEqualityComparer.Default.Equals(bound, type);
+				}
+
+				bindings[parameter] = type;
+				return true;
+			}
+
+			return pattern switch
+			{
+				IArrayTypeSymbol array => type is IArrayTypeSymbol other && array.Rank == other.Rank && Unify(array.ElementType, other.ElementType, bindings),
+				INamedTypeSymbol { IsGenericType: true, } named => type is INamedTypeSymbol other
+				                                                   && SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, other.OriginalDefinition)
+				                                                   && named.TypeArguments.Zip(other.TypeArguments, (argument, otherArgument) => (argument, otherArgument)).All(pair => Unify(pair.argument, pair.otherArgument, bindings)),
+				_ => SymbolEqualityComparer.Default.Equals(pattern, type),
+			};
+		}
+	}
 
 	/// <summary>Whether the container's compilation reaches one of the <see cref="HookCandidates" />.</summary>
 	private static bool ReachesHook(INamedTypeSymbol owner, string hook, ITypeSymbol produced, Compilation compilation)

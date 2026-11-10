@@ -774,7 +774,7 @@ public static partial class CoffeeShop
 A lifecycle hook (`OnActivated` / `OnRelease`) names an overloaded method, so there is no way to choose which one to call.
 :::
 
-A hook is looked up by simple name on its owner (the container, or a module whose `[Scan]` names it), so two accepting overloads leave the choice (and the graph dependencies the extra parameters resolve) order-dependent. Give the hook a unique name, exactly as a factory method must be unambiguous.
+A hook is looked up by simple name on its owner (the container, or a module whose `[Scan]` names it), so two accepting overloads leave the choice (and the graph dependencies the extra parameters resolve) order-dependent. A generic overload counts beside a non-generic one when the call infers its type arguments from the instance, as `Calibrate<T>(T machine)` does, since the generated call names no type arguments and C# could pick it. Give the hook a unique name, exactly as a factory method must be unambiguous.
 
 ```csharp expect=AWT190
 [Container]
@@ -2781,7 +2781,7 @@ An implementation nested privately in the base, or in a class that contains the 
 - **No access to the factory.** The base is in another assembly that does not grant the extending container's assembly `InternalsVisibleTo`. Grant it.
 - **A shape the factory cannot express.** The closed type has an `Optional` or `Deferred` injected property, a hook parameter marked `[Arg]`, `[FromKey]` or `[Inject]`, or a parameter type private to the base. Make the type `internal`.
 - **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing. The generic factory fills `Optional` and `Deferred` `[Inject]` properties, and runs its lifecycle hooks through generic wrappers, but not when a type parameter is constrained to a type private to the base, a hook can't be wrapped, or an `[InjectProperty]` entry of the base for it is `Optional` or `Deferred` or names one of its closings. Make the type `internal`.
-- **A hook overload the extending container doesn't see.** A lifecycle hook of a private open generic registration has a `private` overload that accepts some closing too, which a container in the base's assembly reports as ambiguous ([AWT190](#awt190)). An extending container in another assembly doesn't see the overload, so it can't tell which closings the generic wrapper would run the wrong overload for, and reports every closing. Give the hook methods distinct names.
+- **A hook overload the extending container doesn't see.** A lifecycle hook of a private open generic registration has a `private` overload that accepts some closing too, which a container in the base's assembly reports as ambiguous ([AWT190](#awt190)). An extending container in another assembly doesn't see the overload, so it can't tell which closings the generic wrapper would run the wrong overload for, and reports every closing. The same goes for a public hook of a module the base imports beside an `internal` overload that accepts the registered type too: an extending container in another assembly that doesn't see the overload reports the type instead of calling the public one. Give the hook methods distinct names.
 
 ```csharp expect=AWT226
 [Container]

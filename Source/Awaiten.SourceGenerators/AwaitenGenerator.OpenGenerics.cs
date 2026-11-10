@@ -165,6 +165,7 @@ partial class AwaitenGenerator
 			OnActivated = NamedArgument(attribute, "OnActivated"),
 			OnRelease = NamedArgument(attribute, "OnRelease"),
 			SuppressDisposal = NamedFlag(attribute, "SuppressDisposal"),
+			Inheritance = context.Inherited ? context.Inheritance : null,
 		});
 
 		void ReportNeedsClosedType(string option)
@@ -891,7 +892,7 @@ partial class AwaitenGenerator
 
 			if (!dropped && SkippedHookReason(owner, definition, release, hook) is { } skipped)
 			{
-				ReportUnseenHookOverload(owner, definition.ToDisplayString(FullyQualified), release, hook, skipped, candidate.Location, context);
+				ReportUnseenHookOverload(owner, definition.ToDisplayString(FullyQualified), release, hook, skipped, candidate, context);
 				return null;
 			}
 
@@ -928,7 +929,7 @@ partial class AwaitenGenerator
 			if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
 			    && SkippedHookReason(owner, registration.Implementation.OriginalDefinition, release, hookName) is { } skipped)
 			{
-				ReportUnseenHookOverload(owner, closedImplName, release, hookName, skipped, candidate.Location, context);
+				ReportUnseenHookOverload(owner, closedImplName, release, hookName, skipped, candidate, context);
 				return null;
 			}
 
@@ -957,11 +958,23 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reports a hook of an open registration of <paramref name="owner" /> in another assembly that this container does
 	///     not run, because the owner recorded another overload of it this container does not see that accepts some
-	///     closing too (<paramref name="reason" />): AWT226 for an extended base, else AWT231.
+	///     closing too (<paramref name="reason" />): AWT226 for an extended base or a module inherited from a base in
+	///     another assembly, else AWT231.
 	/// </summary>
-	private static void ReportUnseenHookOverload(INamedTypeSymbol owner, string implementation, bool release, string hookName, string reason, LocationInfo? location, ExpansionContext context)
+	private static void ReportUnseenHookOverload(INamedTypeSymbol owner, string implementation, bool release, string hookName, string reason, OpenRegistration candidate, ExpansionContext context)
 	{
-		DiagnosticInfo diagnostic = HasAwaitenAttribute(owner.GetAttributes(), "ContainerAttribute")
+		bool fromBase = HasAwaitenAttribute(owner.GetAttributes(), "ContainerAttribute");
+
+		// The extending container checks the base's graph from its own view, which reports the same AWT231, so only AWT226
+		// tells it apart from what the base reports.
+		if (!fromBase && candidate.Inheritance is { } inheritance && !SymbolEqualityComparer.Default.Equals(inheritance.Base.ContainingAssembly, context.Inputs.Compilation.Assembly))
+		{
+			inheritance.ReportPrivate($"The type '{AwaitenGenerator.Display(implementation)}'", new FactoryFault(reason, "give the hook methods distinct names"), context.Diagnostics);
+			return;
+		}
+
+		LocationInfo? location = candidate.Location;
+		DiagnosticInfo diagnostic = fromBase
 			? new DiagnosticInfo(
 				Diagnostics.InheritedPrivateImplementation,
 				location,
@@ -1397,6 +1410,9 @@ partial class AwaitenGenerator
 		///     None of its closings is synthesized.
 		/// </summary>
 		public FactoryFault? ViaFault { get; init; }
+
+		/// <summary>The inheritance of a module imported by an extended base, which reports what this container cannot build of it (AWT226).</summary>
+		public Inheritance? Inheritance { get; init; }
 
 		/// <summary>
 		///     Left out after AWT230 or AWT231 (see <see cref="ResolveOpenVia" />): none of its closings is synthesized, and

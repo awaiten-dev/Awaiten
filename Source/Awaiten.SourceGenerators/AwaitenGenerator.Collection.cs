@@ -64,7 +64,7 @@ partial class AwaitenGenerator
 			// The base sees the [Inject] property of a type this container cannot build without the module's factory.
 			if (module.Inherited)
 			{
-				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet));
+				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet || diagnostic.Descriptor == Diagnostics.InheritedPrivateImplementation));
 			}
 		}
 
@@ -636,11 +636,13 @@ partial class AwaitenGenerator
 	///     imported module in another assembly that this container cannot call, and the module recorded why it generated
 	///     no wrapper for it (see <see cref="CollectModuleMemberWrappers" />). A public hook the module recorded because
 	///     another overload this container does not see accepts the type too is left out after reporting AWT231. Only
-	///     <paramref name="applies" /> to such a module; one inherited through <c>Extends</c> keeps the registration.
+	///     <paramref name="applies" /> to such a module; one inherited through <c>Extends</c> keeps the registration, and
+	///     leaves out such a public hook after reporting AWT226, unless the base shares this container's assembly and
+	///     reports it itself.
 	/// </summary>
 	private static RawRegistration? WithCallableHooks(RawRegistration registration, LifetimeCollectionContext context, bool applies)
 	{
-		if (!applies || context.Inherited || registration.Origin is not { } module)
+		if (!applies || registration.Origin is not { } module)
 		{
 			return registration;
 		}
@@ -651,9 +653,23 @@ partial class AwaitenGenerator
 			// A hook this compilation reaches was recorded because of an overload only the module's assembly and its friends see.
 			bool reached = hook is not null && ReachesHook(module, hook, registration.Implementation, compilation);
 			if (hook is not null
+			    && (reached || !context.Inherited)
 			    && (!reached || !module.ContainingAssembly.GivesAccessTo(compilation.Assembly))
 			    && SkippedHookReason(module, registration.Implementation, release, hook) is { } reason)
 			{
+				if (context.Inherited)
+				{
+					// The extending container checks the base's graph from its own view, which reports AWT231 for this hook too, so
+					// only AWT226 tells it apart from what the base reports.
+					if (!SymbolEqualityComparer.Default.Equals(context.Inheritance!.Base.ContainingAssembly, compilation.Assembly))
+					{
+						context.Inheritance.ReportPrivate($"The type '{DisplayInstance(registration.ImplementationType)}'", new FactoryFault(reason, "give the hook methods distinct names"), context.Diagnostics);
+					}
+
+					registration = release ? registration with { OnRelease = null, } : registration with { OnActivated = null, };
+					continue;
+				}
+
 				DiagnosticInfo diagnostic = new(
 					reached ? Diagnostics.ModuleHookOverloadUnseen : Diagnostics.ModuleHookNotWrapped,
 					LocationInfo.From(context.FallbackLocation),
