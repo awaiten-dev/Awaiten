@@ -615,41 +615,60 @@ public partial class DiagnosticTests
 				.Because("coalescing one implementation across services keeps the first factory, so a second, different one must not be silently dropped");
 		}
 
+		private const string KettleLibrary = """
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IKettle { }
+			public sealed class Kettle : IKettle { internal Kettle() { } }
+
+			[Module]
+			[Transient<Kettle, IKettle>]
+			public static partial class KettleModule { }
+			""";
+
+		private static string KettleContainer(string registration, string body = "")
+			=> $$"""
+			     using Awaiten;
+			     using Lib;
+
+			     namespace MyCode;
+
+			     [Container]
+			     [Import(typeof(KettleModule))]
+			     {{registration}}
+			     public static partial class MyContainer
+			     {
+			         {{body}}
+			     }
+			     """;
+
 		[Test]
 		[Arguments("[Transient<Kettle>]")]
 		[Arguments("[Transient<Kettle, IKettle>]")]
-		public async Task NamesTheModuleWhenAContainerOfAnotherAssemblyConstructsWhatAModuleConstructsThroughItsGeneratedFactory(string registration)
+		public async Task AContainerOfAnotherAssemblyConstructingWhatAModuleConstructsThroughItsGeneratedFactory_SharesTheFactory(string registration)
 		{
-			const string library = """
-				using Awaiten;
-
-				namespace Lib;
-
-				public interface IKettle { }
-				public sealed class Kettle : IKettle { internal Kettle() { } }
-
-				[Module]
-				[Transient<Kettle, IKettle>]
-				public static partial class KettleModule { }
-				""";
-			string container = $$"""
-				using Awaiten;
-				using Lib;
-
-				namespace MyCode;
-
-				[Container]
-				[Import(typeof(KettleModule))]
-				{{registration}}
-				public static partial class MyContainer;
-				""";
-
-			GeneratorResult same = Generator.Run(library + "\n[Container]\n[Import(typeof(KettleModule))]\n" + registration + "\npublic static partial class SameContainer;");
-			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, container);
+			GeneratorResult same = Generator.Run(KettleLibrary + "\n[Container]\n[Import(typeof(KettleModule))]\n" + registration + "\npublic static partial class SameContainer;");
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(KettleLibrary, KettleContainer(registration));
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(KettleLibrary, KettleContainer(registration));
 
 			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the container's registration calls the module's generated factory for the constructor it cannot reach, so both registrations are one production");
+			await That(reference.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task NamesTheModuleWhenAContainerOfAnotherAssemblyConstructsWhatAModuleConstructsThroughItsGeneratedFactory()
+		{
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(
+				KettleLibrary,
+				KettleContainer("[Transient<Kettle>(OnActivated = nameof(Ready))]", "private static void Ready(Kettle kettle) { }"));
+
+			await That(external.Diagnostics).HasCount(2);
 			await That(external.Diagnostics).Contains("*AWT111*(a constructor and the constructor that module 'Lib.KettleModule' calls through its generated factory)*").AsWildcard()
-				.Because("the module's generated factory can call what the container cannot, so the message tells the two constructors apart instead of naming 'a constructor' twice");
+				.Because("a registration with a hook of the container keeps its constructor, and the message tells the two constructors apart instead of naming 'a constructor' twice");
 			await That(external.Diagnostics).Contains("*AWT104*'Lib.Kettle'*").AsWildcard();
 		}
 	}

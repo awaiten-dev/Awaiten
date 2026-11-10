@@ -1113,4 +1113,72 @@ public class ContainerExtendsTests
 			}
 		}
 	}
+
+	public class ImportedModuleImplementations
+	{
+		private const string Library = """
+		                               using Awaiten;
+
+		                               namespace Lib;
+
+		                               public interface IKettle { }
+		                               public interface IClock { }
+		                               internal sealed class Kettle : IKettle { }
+		                               public sealed class SystemClock : IClock { }
+
+		                               [Module]
+		                               [Singleton<Kettle, IKettle>]
+		                               [Singleton<SystemClock, IClock>]
+		                               public static partial class CoffeeModule { }
+		                               """;
+
+		private const string BaseContainer = """
+		                                     using Awaiten;
+
+		                                     namespace App;
+
+		                                     [Container]
+		                                     [Import(typeof(Lib.CoffeeModule))]
+		                                     public static partial class BaseContainer;
+		                                     """;
+
+		private const string Extending = """
+		                                 using Awaiten;
+
+		                                 namespace Tests;
+
+		                                 [Container(Extends = typeof(App.BaseContainer))]
+		                                 public static partial class MyContainer;
+		                                 """;
+
+		private static string Granted(string library, string assembly)
+			=> library.Replace("using Awaiten;", $"using Awaiten;\n\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{assembly}\")]");
+
+		private static string WithoutHeader(string source)
+			=> source.Replace("using Awaiten;", string.Empty).Replace("namespace App;", string.Empty).Replace("namespace Tests;", string.Empty);
+
+		[Test]
+		public async Task AnInternalImplementation_IsBuiltLikeInTheModulesAssembly()
+		{
+			GeneratorResult same = Generator.Run(Library + "\n" + WithoutHeader(BaseContainer).Replace("App.", string.Empty) + "\n" + WithoutHeader(Extending).Replace("App.", string.Empty));
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(Library, "TestAssembly"), BaseContainer + "\n" + WithoutHeader(Extending));
+			GeneratorResult other = Generator.RunWithGeneratedReferencedAssembly(Library, BaseContainer + "\n" + WithoutHeader(Extending));
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(Library, BaseContainer + "\n" + WithoutHeader(Extending));
+			GeneratorResult third = Generator.RunWithGeneratedReferencedAssemblyChain([Library, BaseContainer,], Extending);
+			GeneratorResult friendlyBase = Generator.RunWithGeneratedReferencedAssemblyChain([Granted(Library, "Library2"), BaseContainer,], Extending);
+
+			foreach (GeneratorResult result in new[] { same, friend, other, reference, third, friendlyBase, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources.Single(source => source.Key.Contains("MyContainer")).Value).Contains("IKettle")
+					.Because("the extending container serves the inherited internal implementation, wherever the base and the module live");
+			}
+
+			foreach (GeneratorResult result in new[] { other, reference, third, friendlyBase, })
+			{
+				await That(result.Sources.Single(source => source.Key.Contains("MyContainer")).Value).Contains("global::Lib.CoffeeModule.Internals.Registration_Kettle_")
+					.Because("an extending container that cannot construct the implementation calls the module's generated factory for the inherited import");
+			}
+		}
+	}
 }
