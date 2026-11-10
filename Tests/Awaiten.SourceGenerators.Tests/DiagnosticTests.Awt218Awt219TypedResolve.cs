@@ -307,6 +307,52 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Func<Mug>", "System.Func<int, MyCode.Mug>")]
+		[Arguments("Lazy<Mug>", "System.Func<int, MyCode.Mug>")]
+		[Arguments("Owned<Mug>", "System.Func<int, Awaiten.Owned<MyCode.Mug>>")]
+		[Arguments("Func<Owned<Mug>>", "System.Func<int, Awaiten.Owned<MyCode.Mug>>")]
+		[Arguments("Lazy<Brew>", "System.Func<int, System.Threading.Tasks.Task<MyCode.Brew>>")]
+		[Arguments("Task<Owned<Brew>>", "System.Func<int, System.Threading.Tasks.Task<Awaiten.Owned<MyCode.Brew>>>")]
+		public async Task ReportsARelationshipOverAParameterizedServiceWithItsFactory(string relationship, string factory)
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>($$"""
+			                                                             using Awaiten;
+			                                                             using System;
+			                                                             using System.Threading;
+			                                                             using System.Threading.Tasks;
+
+			                                                             namespace MyCode;
+
+			                                                             public interface IInitializable { Task InitializeAsync(CancellationToken cancellationToken); }
+			                                                             public sealed class Mug { public Mug([Arg] int size) { } }
+			                                                             public sealed class Brew : IInitializable
+			                                                             {
+			                                                             	public Brew([Arg] int size) { }
+			                                                             	public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+			                                                             }
+
+			                                                             [Container]
+			                                                             [AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+			                                                             [Transient<Mug>]
+			                                                             [Transient<Brew>]
+			                                                             public static partial class MyContainer;
+
+			                                                             public static class Usage
+			                                                             {
+			                                                             	public static void Use()
+			                                                             	{
+			                                                             		using MyContainer.Root root = new();
+			                                                             		root.Resolve<{{relationship}}>();
+			                                                             	}
+			                                                             }
+			                                                             """);
+
+			await That(diagnostics).HasSingle().Which
+				.Contains($"*AWT218*is built from runtime arguments, so resolve its factory '{factory}' instead*").AsWildcard()
+				.Because("the container serves a parameterized service only through its factories, so the remedy names the one that fits the request");
+		}
+
+		[Test]
 		[Arguments("")]
 		[Arguments("(AsyncSafety = AsyncSafety.SyncAfterInit)")]
 		public async Task ReportsAnOwnedTaskShapeOfAnAsyncRequestingTypeFactoryWithoutTheTaskShapeRemedy(string options)

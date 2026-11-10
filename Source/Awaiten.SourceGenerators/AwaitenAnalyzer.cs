@@ -736,7 +736,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 
 		if (key is not null)
 		{
-			return "register it under that key on the [Container], or call TryResolve if it is optional";
+			return KeyedRemedy(service, display, key, graph);
 		}
 
 		// The container serves no Lazy over an Owned<T> handle, whatever it registers (AWT121 for injection).
@@ -747,17 +747,16 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		}
 
 		// A parameterized service is reached only through its factory, whose runtime arguments a by-type call cannot pass.
+		(ITypeSymbol wrapped, bool owned) = Unwrapped(service);
+		string wrappedDisplay = wrapped.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+		if (InstanceOf(graph, wrappedDisplay) is { IsParameterized: true, } parameterized)
+		{
+			return Sources.ParameterizedFactoryRemedy(parameterized, wrappedDisplay, owned);
+		}
+
 		ITypeSymbol? target = TaskShapeTarget(service);
 		string subjectDisplay = target?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? display;
 		InstanceModel? subject = InstanceOf(graph, subjectDisplay);
-		if (subject is { IsParameterized: true, })
-		{
-			string shown = AwaitenGenerator.Display(subjectDisplay);
-			string argumentTypes = AwaitenGenerator.Display(string.Join(", ", subject.ArgTypes()));
-			string result = subject.IsAsyncTainted ? $"System.Threading.Tasks.Task<{shown}>" : shown;
-			return $"'{shown}' is built from runtime arguments, so resolve its factory 'System.Func<{argumentTypes}, {result}>' instead";
-		}
-
 		if (target is not null)
 		{
 			string shown = AwaitenGenerator.Display(subjectDisplay);
@@ -794,8 +793,50 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 		return $"register this closing explicitly next to the open generic registration, such as {registration}, {reason}";
 	}
 
-	private static InstanceModel? InstanceOf(GraphModel graph, string service)
-		=> graph.ServiceToImpl.TryGetValue(new ServiceKey(service, null), out string? implementation)
+	// The keyed by-type dispatch serves the plain services registered under a key, never a relationship over one or the
+	// factory of a parameterized one, which only [FromKey] injection reaches.
+	private static string KeyedRemedy(ITypeSymbol service, string display, string key, GraphModel graph)
+	{
+		ITypeSymbol produced = service is INamedTypeSymbol { Name: "Func", TypeArguments.Length: > 1, } factory && factory.ContainingNamespace?.ToDisplayString() == "System"
+			? factory.TypeArguments[factory.TypeArguments.Length - 1]
+			: service;
+		(ITypeSymbol wrapped, bool owned) = Unwrapped(produced);
+		string wrappedDisplay = wrapped.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+		string shown = AwaitenGenerator.Display(wrappedDisplay);
+		InstanceModel? keyed = InstanceOf(graph, wrappedDisplay, key);
+		if (keyed is { IsParameterized: true, })
+		{
+			return $"'{shown}' is built from runtime arguments, and a keyed resolve serves only plain services, not their factories; inject its factory '{Sources.ParameterizedFactory(keyed, wrappedDisplay, owned)}' through a [FromKey] parameter or property instead";
+		}
+
+		if (SymbolEqualityComparer.Default.Equals(wrapped, service))
+		{
+			return "register it under that key on the [Container], or call TryResolve if it is optional";
+		}
+
+		string requested = AwaitenGenerator.Display(display);
+		return keyed is null
+			? $"a keyed resolve serves only plain services, not the relationships over them; register '{shown}' under that key, then resolve '{shown}' or inject '{requested}' through a [FromKey] parameter or property"
+			: $"a keyed resolve serves only plain services, not the relationships over them; resolve '{shown}' under that key, or inject '{requested}' through a [FromKey] parameter or property instead";
+	}
+
+	// The service a Func<T>, Lazy<T>, Task<T> or Owned<T> wraps, peeled through every such layer, and whether one of them
+	// is an Owned<T>; the type itself for any other shape. The generated __ParameterizedGuidance peels the same layers.
+	private static (ITypeSymbol Service, bool Owned) Unwrapped(ITypeSymbol type)
+	{
+		bool owned = false;
+		while (type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, } named
+		       && named.ConstructedFrom.ToDisplayString() is "System.Func<TResult>" or "System.Lazy<T>" or "System.Threading.Tasks.Task<TResult>" or "Awaiten.Owned<T>")
+		{
+			owned |= named.ConstructedFrom.ToDisplayString() == "Awaiten.Owned<T>";
+			type = named.TypeArguments[0];
+		}
+
+		return (type, owned);
+	}
+
+	private static InstanceModel? InstanceOf(GraphModel graph, string service, string? key = null)
+		=> graph.ServiceToImpl.TryGetValue(new ServiceKey(service, key), out string? implementation)
 		   && graph.ImplToIndex.TryGetValue(implementation, out int index)
 			? graph.Instances[index]
 			: null;

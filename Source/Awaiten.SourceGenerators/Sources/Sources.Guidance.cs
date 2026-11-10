@@ -35,6 +35,23 @@ internal static partial class Sources
 		   && AwaitenGenerator.BuildsFreshDisposable(instances, serviceToIndex, membership, index);
 
 	/// <summary>
+	///     The remedy for a by-type request of the parameterized <paramref name="subject" /> registered as
+	///     <paramref name="service" />, or of a relationship over it, which AWT218 and the generated miss share: its
+	///     factory <c>Func&lt;TArg…, T&gt;</c>, over a <c>Task</c> for an async-initialized service and over
+	///     <c>Owned&lt;T&gt;</c> when the request asked for an <paramref name="owned" /> handle.
+	/// </summary>
+	internal static string ParameterizedFactoryRemedy(InstanceModel subject, string service, bool owned)
+		=> $"'{AwaitenGenerator.Display(service)}' is built from runtime arguments, so resolve its factory '{ParameterizedFactory(subject, service, owned)}' instead";
+
+	/// <summary>The factory of <see cref="ParameterizedFactoryRemedy" />, as a diagnostic displays it.</summary>
+	internal static string ParameterizedFactory(InstanceModel subject, string service, bool owned)
+	{
+		string result = owned ? $"Awaiten.Owned<{service}>" : service;
+		result = subject.IsAsyncTainted ? $"System.Threading.Tasks.Task<{result}>" : result;
+		return AwaitenGenerator.Display($"System.Func<{string.Join(", ", subject.ArgTypes())}, {result}>");
+	}
+
+	/// <summary>
 	///     The guidance (a quoted string literal) a synchronous <c>Dispose</c> collects for a tracked instance that
 	///     implements <c>IAsyncDisposable</c> but not <c>IDisposable</c>, which only <c>DisposeAsync</c> can tear down.
 	/// </summary>

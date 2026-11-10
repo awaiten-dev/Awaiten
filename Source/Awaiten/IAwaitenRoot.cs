@@ -65,6 +65,12 @@ public interface IAwaitenRoot : IAwaitenScope, IAwaitenExternalResolverHost
 	///         <see cref="AwaitenResolvabilityStatus.External" />.
 	///     </para>
 	///     <para>
+	///         Under a non-<see langword="null" /> <paramref name="key" /> it answers like the keyed <c>Resolve</c>, which
+	///         serves plain services only: a relationship shape or collection under a key, and a service with runtime
+	///         arguments or its factory, report <see cref="AwaitenResolvabilityStatus.NotRegistered" />, because only
+	///         <c>[FromKey]</c> injection builds those.
+	///     </para>
+	///     <para>
 	///         The answer belongs to the root: a child scope builds a service the root withholds
 	///         (<see cref="AwaitenResolvabilityStatus.WithheldOnRoot" />) normally.
 	///     </para>

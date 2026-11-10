@@ -604,8 +604,10 @@ public class GeneralTests
 		await That(source).Contains("new global::MyCode.Robot(Root.ResolveEngine(__s.__root), a0)");
 		await That(source).Contains("new global::System.Func<string, global::MyCode.Robot>((a0) => ResolveRobot(__s, a0))");
 		await That(source).Contains("typeof(global::System.Func<string, global::MyCode.Robot>)");
-		await That(source).DoesNotContain("typeof(global::MyCode.Robot)")
+		await That(source).DoesNotContain("new __Bucket(typeof(global::MyCode.Robot)")
 			.Because("the bare parameterized service type is not dispatchable");
+		await That(source).Contains("if (serviceType == typeof(global::MyCode.Robot))")
+			.Because("only the miss of a by-type resolve compares the request with it, to name its factory");
 		await That(source).DoesNotContain("global::Awaiten.IAwaitenResolver<global::MyCode.Robot>")
 			.Because("a parameterized service has no typed resolution fast path");
 	}

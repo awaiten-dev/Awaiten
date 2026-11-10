@@ -133,6 +133,79 @@ public partial class RuntimeArgumentTests
 			.Because("a tool built through a singleton's root-bound Func accumulates on the root and is disposed with the container");
 	}
 
+	public sealed partial class ByTypeMiss
+	{
+		private const string RobotFactory = "System.Func<string, Awaiten.Tests.RuntimeArgumentTests.Robot>";
+
+		[Test]
+		[Arguments(typeof(Robot), RobotFactory)]
+		[Arguments(typeof(Func<Robot>), RobotFactory)]
+		[Arguments(typeof(Lazy<Robot>), RobotFactory)]
+		[Arguments(typeof(Task<Robot>), RobotFactory)]
+		[Arguments(typeof(Owned<Robot>), "System.Func<string, Awaiten.Owned<Awaiten.Tests.RuntimeArgumentTests.Robot>>")]
+		[Arguments(typeof(Func<Owned<Robot>>), "System.Func<string, Awaiten.Owned<Awaiten.Tests.RuntimeArgumentTests.Robot>>")]
+		[Arguments(typeof(Gadget), "System.Func<string, int, Awaiten.Tests.RuntimeArgumentTests.Gadget>")]
+		public async Task OfAParameterizedService_NamesItsFactory(Type serviceType, string factory)
+		{
+			using RuntimeArgumentContainer.Root container = new();
+
+			await That(() => container.Resolve(serviceType)).Throws<InvalidOperationException>()
+				.WithMessage($"No registration for type '{serviceType}' on this container: *is built from runtime arguments, so resolve its factory '{factory}' instead.").AsWildcard()
+				.Because("a by-type call cannot pass the runtime arguments, so the miss names the factory that can, as AWT218 does");
+			await That(() => container.ResolveAsync(serviceType)).Throws<InvalidOperationException>()
+				.WithMessage($"*resolve its factory '{factory}' instead.").AsWildcard()
+				.Because("ResolveAsync falls back to the same miss");
+		}
+
+		[Test]
+		public async Task OfAParameterizedService_StaysReasonFreeInTheResolvability()
+		{
+			using RuntimeArgumentContainer.Root container = new();
+
+			await That(container.GetResolvability(typeof(Robot), null)).IsEqualTo(default(AwaitenResolvability))
+				.Because("the container does not serve the bare type, and the MS.DI bridge answers null for a resolvability without a reason");
+		}
+
+		[Test]
+		[Arguments(typeof(Brew), "System.Func<int, System.Threading.Tasks.Task<Awaiten.Tests.RuntimeArgumentTests.ByTypeMiss.Brew>>")]
+		[Arguments(typeof(Owned<Brew>), "System.Func<int, System.Threading.Tasks.Task<Awaiten.Owned<Awaiten.Tests.RuntimeArgumentTests.ByTypeMiss.Brew>>>")]
+		public async Task OfAnAsyncInitializedParameterizedService_NamesItsAsyncFactory(Type serviceType, string factory)
+		{
+			using BrewContainer.Root container = new();
+
+			await That(() => container.Resolve(serviceType)).Throws<InvalidOperationException>()
+				.WithMessage($"*'Awaiten.Tests.RuntimeArgumentTests.ByTypeMiss.Brew' is built from runtime arguments, so resolve its factory '{factory}' instead.").AsWildcard()
+				.Because("the factory of an async-initialized service hands out a task");
+		}
+
+		[Test]
+		public async Task OfAServiceWithoutRuntimeArguments_KeepsThePlainMessage()
+		{
+			using RuntimeArgumentContainer.Root container = new();
+
+			await That(() => container.Resolve(typeof(Lazy<Badge>))).Throws<InvalidOperationException>()
+				.WithMessage($"No registration for type '{typeof(Lazy<Badge>)}' on this container.")
+				.Because("only a service built from runtime arguments gets the factory remedy");
+		}
+
+		public interface IBrewInitializable
+		{
+			Task InitializeAsync(System.Threading.CancellationToken cancellationToken);
+		}
+
+		public sealed class Brew([Arg] int size) : IBrewInitializable
+		{
+			public int Size { get; } = size;
+
+			public Task InitializeAsync(System.Threading.CancellationToken cancellationToken) => Task.CompletedTask;
+		}
+
+		[Container]
+		[AsyncInitializer<IBrewInitializable>(nameof(IBrewInitializable.InitializeAsync))]
+		[Transient<Brew>]
+		public static partial class BrewContainer;
+	}
+
 	public sealed class Engine;
 
 	public sealed class Robot

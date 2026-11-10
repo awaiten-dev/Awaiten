@@ -61,7 +61,27 @@ internal static partial class Sources
 	private static List<T> WithoutUnlisted<T>(List<T> entries, InstanceModel[] instances, Func<T, string> type)
 	{
 		string[] unlisted = instances.Where(instance => instance.Unlisted).SelectMany(instance => instance.Services.AsArray()).Select(service => service.Service).Distinct().ToArray();
-		return unlisted.Length == 0 ? entries : entries.Where(entry => !unlisted.Any(type(entry).Contains)).ToList();
+		return unlisted.Length == 0 ? entries : entries.Where(entry => !unlisted.Any(service => NamesType(type(entry), service))).ToList();
+	}
+
+	/// <summary>
+	///     Whether the fully qualified <paramref name="type" /> is <paramref name="name" /> or names it whole as an array
+	///     element, a nullable or a generic argument at any depth, so a type whose name merely extends it, such as
+	///     <c>IBrewerFactory</c> for <c>IBrewer</c> or a type nested in it, does not count.
+	/// </summary>
+	private static bool NamesType(string type, string name)
+	{
+		for (int at = type.IndexOf(name, StringComparison.Ordinal); at >= 0; at = type.IndexOf(name, at + 1, StringComparison.Ordinal))
+		{
+			int end = at + name.Length;
+			if ((at == 0 || type[at - 1] is '<' or ',' or ' ' or '(')
+			    && (end == type.Length || type[end] is '>' or ',' or '[' or '?' or ')' or ' '))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/// <summary>
@@ -466,6 +486,19 @@ internal static partial class Sources
 		}
 
 		EmitImportedMiss(builder, depth + 1, imports, "null");
+		// A parameterized service is dispatched only as its factories, so a miss over the service or a relationship over
+		// it names the factory, as AWT218 does. Like the Task shapes it keeps no resolvability reason, so the MS.DI bridge
+		// answers null.
+		if (EmitParameterizedGuidance(helpers, depth, instances, serviceToIndex))
+		{
+			Indent(builder, depth + 1).AppendLine("if (__ParameterizedGuidance(serviceType) is string __parameterized)");
+			Indent(builder, depth + 1).AppendLine("{");
+			Indent(builder, depth + 2).AppendLine(
+				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: {__parameterized}.\");");
+			Indent(builder, depth + 1).AppendLine("}");
+			builder.AppendLine();
+		}
+
 		if (entries.Count > 0)
 		{
 			// The Task shapes over a synchronous, non-parameterized service are not dispatched, so the miss names the
@@ -687,6 +720,62 @@ internal static partial class Sources
 		Indent(helpers, depth + 2).AppendLine("|| __definition == typeof(global::Awaiten.Owned<>)");
 		Indent(helpers, depth + 2).AppendLine("|| (__definition.Namespace == \"System\" && __definition.Name.StartsWith(\"Func`\", global::System.StringComparison.Ordinal));");
 		Indent(helpers, depth).AppendLine("}");
+	}
+
+	/// <summary>
+	///     Emits <c>__ParameterizedGuidance</c>, which unwraps a requested <c>Func&lt;T&gt;</c>, <c>Lazy&lt;T&gt;</c>,
+	///     <c>Task&lt;T&gt;</c> or <c>Owned&lt;T&gt;</c> down to its service and returns the factory remedy (see
+	///     <see cref="ParameterizedFactoryRemedy" />) when that service is an unkeyed parameterized registration, or
+	///     null otherwise. Only a failed <c>Resolve</c> calls it, so the runtime type inspection stays off the hot path.
+	/// </summary>
+	/// <returns>Whether the container has such a registration, and so the helper.</returns>
+	private static bool EmitParameterizedGuidance(StringBuilder helpers, int depth, InstanceModel[] instances, Dictionary<ServiceKey, int> serviceToIndex)
+	{
+		List<(string Service, InstanceModel Subject)> parameterized = instances
+			.SelectMany(instance => instance.ListedServices)
+			.Where(service => service.Key is null)
+			.Select(service => service.Service)
+			.Distinct(StringComparer.Ordinal)
+			.Select(service => (Service: service, Subject: instances[serviceToIndex[new ServiceKey(service, null)]]))
+			.Where(entry => entry.Subject.IsParameterized)
+			.ToList();
+		if (parameterized.Count == 0)
+		{
+			return false;
+		}
+
+		Separate(helpers);
+		Indent(helpers, depth).AppendLine("private static string? __ParameterizedGuidance(global::System.Type serviceType)");
+		Indent(helpers, depth).AppendLine("{");
+		Indent(helpers, depth + 1).AppendLine("bool __owned = false;");
+		Indent(helpers, depth + 1).AppendLine("while (serviceType.IsConstructedGenericType)");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("global::System.Type __definition = serviceType.GetGenericTypeDefinition();");
+		Indent(helpers, depth + 2).AppendLine("if (__definition == typeof(global::Awaiten.Owned<>))");
+		Indent(helpers, depth + 2).AppendLine("{");
+		Indent(helpers, depth + 3).AppendLine("__owned = true;");
+		Indent(helpers, depth + 2).AppendLine("}");
+		Indent(helpers, depth + 2).AppendLine("else if (__definition != typeof(global::System.Func<>) && __definition != typeof(global::System.Lazy<>) && __definition != typeof(global::System.Threading.Tasks.Task<>))");
+		Indent(helpers, depth + 2).AppendLine("{");
+		Indent(helpers, depth + 3).AppendLine("break;");
+		Indent(helpers, depth + 2).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 2).AppendLine("serviceType = serviceType.GenericTypeArguments[0];");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		foreach ((string service, InstanceModel subject) in parameterized)
+		{
+			Indent(helpers, depth + 1).Append("if (serviceType == typeof(").Append(service).AppendLine("))");
+			Indent(helpers, depth + 1).AppendLine("{");
+			Indent(helpers, depth + 2).Append("return __owned ? \"").Append(ParameterizedFactoryRemedy(subject, service, owned: true))
+				.Append("\" : \"").Append(ParameterizedFactoryRemedy(subject, service, owned: false)).AppendLine("\";");
+			Indent(helpers, depth + 1).AppendLine("}");
+			helpers.AppendLine();
+		}
+
+		Indent(helpers, depth + 1).AppendLine("return null;");
+		Indent(helpers, depth).AppendLine("}");
+		return true;
 	}
 
 	/// <summary>
