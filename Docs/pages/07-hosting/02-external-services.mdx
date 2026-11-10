@@ -153,6 +153,8 @@ public static partial class CoffeeShop;
 
 For an open import, a relationship or collection over a closing resolves the closings the container registers, because the closing is routed to the host only where a direct dependency asks for it.
 
+For the same reason, a collection can't be imported itself. An `[ImportService]` of a collection shape, such as `IEnumerable<IPaymentGateway>`, an array, a keyed dictionary or a `Task` of one, is an error ([AWT258](../09-diagnostics.md#awt258)). Import the element type and depend on it directly, or register the members of the collection.
+
 ## Decorate an imported service
 
 A [decorator](../04-registration/02-decorators.md#decorate-an-imported-service) wraps an imported service like a registered one. Every dependency of the service and every resolve of it then gets the decorator, and only the innermost decorator asks the host.

@@ -501,18 +501,22 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     Whether a module of the assembly may provide <paramref name="service" /> under <paramref name="key" />: a
-		///     closed registration of it, an import from the host, or, through a <c>[Scan]</c> or an open generic
-		///     registration, a class of the assembly that converts to it.
+		///     closed registration of it, or unkeyed of a service that converts to it through variance as a container
+		///     resolves it, an import from the host, or, through a <c>[Scan]</c> or an open generic registration, a class
+		///     of the assembly that converts to it.
 		/// </summary>
 		public bool MayProvide(ITypeSymbol service, string? key)
 		{
 			string serviceType = service.ToDisplayString(FullyQualified);
+			INamedTypeSymbol? variant = key is null && service is INamedTypeSymbol { TypeKind: TypeKind.Interface, IsGenericType: true, } generic && HasDeclaredVariance(generic) ? generic : null;
 			return Registrations.Any(entry =>
 			{
 				ImmutableArray<AttributeData> attributes = entry.Key.GetAttributes();
 				return HasAwaitenAttribute(attributes, "ImportServicesAttribute")
 				       || CollectExternalServiceTypes(entry.Key, new List<ImportedModule>(), _compilation, new List<DiagnosticInfo>()).Routes(serviceType)
-				       || entry.Value.Any(registration => registration.Service.ToDisplayString(FullyQualified) == serviceType && NamedKeyArgument(registration.Attribute) == key);
+				       || entry.Value.Any(registration => NamedKeyArgument(registration.Attribute) == key
+				                                          && (registration.Service.ToDisplayString(FullyQualified) == serviceType
+				                                              || (variant is not null && VarianceCompatible(registration.Service, variant, _compilation))));
 			}) || (_scansOrOpenRegistrations.Value && _classes.Value.Any(type => Provides(type, service)));
 		}
 
@@ -1893,6 +1897,18 @@ partial class AwaitenGenerator
 		ITypeSymbol[] arguments = shape is HiddenShape.FuncWithArguments or HiddenShape.FuncWithArgumentsOwned
 			? ((INamedTypeSymbol)type).TypeArguments.Take(((INamedTypeSymbol)type).TypeArguments.Length - 1).ToArray()
 			: [];
+		string? element = null;
+		if (shape is HiddenShape.Collection && FromKey(attributes) is null && inner is INamedTypeSymbol collected && VariantHiddenServices(collected, hidden) is { Count: > 0, } variants)
+		{
+			if (variants.Count > 1 || hidden.Services.ContainsKey(collected) || hidden.ProvidedElsewhere(collected))
+			{
+				return new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display(variants[0].ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]));
+			}
+
+			element = collected.ToDisplayString(FullyQualifiedWithNullability);
+			inner = variants[0];
+		}
+
 		if (shape is { } known && inner is INamedTypeSymbol service && (hidden.Services.ContainsKey(service) || hidden.ProvidedElsewhere(service))
 		    && arguments.All(argument => FitsFactorySignature(argument, context)))
 		{
@@ -1920,7 +1936,7 @@ partial class AwaitenGenerator
 				HiddenShape.FuncWithArgumentsOwned => ($"global::System.Func<{argumentTypes}global::Awaiten.Owned<{handle}>>",
 					$"({lambdaArguments}) => global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}({lambdaArguments}), {unwrap})"),
 				HiddenShape.Collection => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
-					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(@{name}, {unwrap}))"),
+					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select{(element is null ? "" : $"<{handle}, {element}>")}(@{name}, {unwrap}))"),
 				_ => (handle, $"@{name}.Value"),
 			};
 			return new HiddenMirror(new FactoryParameter(parameterType, name, KeyAttribute(FromKey(attributes)), argument), null);
@@ -1930,6 +1946,25 @@ partial class AwaitenGenerator
 			? new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display(referenced.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]))
 			: null;
 	}
+
+	/// <summary>
+	///     The internal services other than <paramref name="element" /> that the module, or another module of its assembly,
+	///     registers and that an unkeyed collection of <paramref name="element" /> holds through variance in a container of
+	///     the module's own assembly, so a generated member takes the collection through their handles. A service registered
+	///     only with <c>WhenInjectedInto</c> joins no collection, so it does not count.
+	/// </summary>
+	private static List<INamedTypeSymbol> VariantHiddenServices(INamedTypeSymbol element, HiddenServices hidden)
+		=> element is { TypeKind: TypeKind.Interface, IsGenericType: true, } && HasDeclaredVariance(element)
+			? hidden.Services.Keys
+				.Concat(hidden.Assembly.ServiceProviders.Keys.Where(hidden.ProvidedElsewhere))
+				.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
+				.Where(service => !SymbolEqualityComparer.Default.Equals(service, element)
+				                  && VarianceCompatible(service, element, hidden.Compilation)
+				                  && hidden.Assembly.Registrations.Values.Any(registrations => registrations.Exists(registration =>
+					                  SymbolEqualityComparer.Default.Equals(registration.Service, service)
+					                  && NamedTypeArgument(registration.Attribute, "WhenInjectedInto", hidden.Compilation) is null)))
+				.ToList()
+			: [];
 
 	/// <summary>
 	///     The reason a consumer reports for an implementation whose <paramref name="member" /> takes the internal

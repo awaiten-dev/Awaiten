@@ -2325,7 +2325,8 @@ internal static class Diagnostics
 
 	/// <summary>
 	///     In a module's own build, a generated factory needs an internal service the module registers, but in a shape
-	///     it cannot pass on from the service's handle, such as <c>Task&lt;T&gt;</c> or a keyed dictionary.
+	///     it cannot pass on from the service's handle, such as <c>Task&lt;T&gt;</c> or a keyed dictionary, or a collection
+	///     that holds the registrations of several internal services through variance.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleHiddenServiceShape = new(
 		"AWT237",
@@ -2596,6 +2597,34 @@ internal static class Diagnostics
 		"AWT256",
 		"Relationship over a collection",
 		"'{0}' cannot be resolved: '{1}' requires '{2}', a relationship over the collection '{3}', which the container does not build, because a relationship wraps a single service; inject '{3}' to get every registration, or register a service that takes '{3}' and inject the relationship over that service",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A collection the container builds itself, such as the <c>IEnumerable&lt;T&gt;</c> of a decorator it constructs
+	///     because the decorator's assembly grants it <c>InternalsVisibleTo</c>, would hold a registration of an imported
+	///     module of another assembly that grants it none, which the module serves only through a generated handle of a
+	///     service internal to a third assembly. The container cannot read the handle, so the collection would lack the
+	///     registration, unlike in a container that can. Reported at the import of the module that registers it.
+	/// </summary>
+	public static readonly DiagnosticDescriptor CollectionMissesHandledRegistration = new(
+		"AWT257",
+		"Collection misses a registration served through a handle",
+		"'{0}' takes a collection of '{1}', which would miss '{2}': '{3}' registers it under '{4}' through a generated handle this container cannot read; grant this assembly InternalsVisibleTo in the assembly of '{3}', or make '{4}' public",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	/// <summary>
+	///     An <c>[ImportService]</c> names a collection shape (<c>IEnumerable&lt;T&gt;</c>, <c>T[]</c>,
+	///     <c>IReadOnlyList&lt;T&gt;</c>, <c>IAsyncEnumerable&lt;T&gt;</c>, a keyed dictionary or a <c>Task</c> of one). A
+	///     collection is always built from the container's own registrations, so the import would never be asked.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ImportedCollection = new(
+		"AWT258",
+		"Collection imported from the external resolver",
+		"'{0}' imports the collection '{1}', but a collection is always built from the container's own registrations, so the external resolver is never asked for it; import '{2}' and depend on it directly, or register the members of the collection",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);

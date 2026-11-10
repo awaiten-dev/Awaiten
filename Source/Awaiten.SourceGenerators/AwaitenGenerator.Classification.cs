@@ -1519,7 +1519,7 @@ partial class AwaitenGenerator
 	private static ExternalServiceTypes CollectExternalServiceTypes(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		ExternalServiceTypes types = new();
-		foreach ((AttributeData attribute, Location? fallbackLocation, _, _) in AttributesOf(containerSymbol, modules))
+		foreach ((AttributeData attribute, Location? fallbackLocation, bool inherited, INamedTypeSymbol? module) in AttributesOf(containerSymbol, modules))
 		{
 			if (attribute.AttributeClass is not { Name: "ImportServiceAttribute", } attributeClass
 			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
@@ -1527,13 +1527,35 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (attributeClass is { IsGenericType: true, TypeArguments.Length: 1, })
+			ITypeSymbol? service = attributeClass is { IsGenericType: true, TypeArguments.Length: 1, }
+				? attributeClass.TypeArguments[0]
+				: attribute.ConstructorArguments.Length == 1
+					? attribute.ConstructorArguments[0].Value as ITypeSymbol
+					: null;
+			if (service is not null && ImportedCollectionElement(service) is { } element)
 			{
-				Add(types.Closed, attributeClass.TypeArguments[0], attributeClass.TypeArguments[0].ToDisplayString(FullyQualified));
+				// An inherited import is the base's to report, in its own build.
+				if (!inherited)
+				{
+					diagnostics.Add(new DiagnosticInfo(
+						Diagnostics.ImportedCollection,
+						LocationInfo.From(attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? fallbackLocation),
+						new EquatableArray<string>([
+							Display((module ?? containerSymbol).ToDisplayString(FullyQualified)),
+							Display(service.ToDisplayString(FullyQualified)),
+							Display(element.ToDisplayString(FullyQualified)),
+						])));
+				}
+
 				continue;
 			}
 
-			ITypeSymbol? service = attribute.ConstructorArguments.Length == 1 ? attribute.ConstructorArguments[0].Value as ITypeSymbol : null;
+			if (attributeClass is { IsGenericType: true, TypeArguments.Length: 1, })
+			{
+				Add(types.Closed, service!, service!.ToDisplayString(FullyQualified));
+				continue;
+			}
+
 			if (!IsClosedOrOpenDefinition(service, attribute, "service"))
 			{
 				diagnostics.Add(TypeofArgumentNotClosedOrOpen(
@@ -1550,6 +1572,24 @@ partial class AwaitenGenerator
 		}
 
 		return types;
+
+		// A collection holds only the container's own registrations, so an import of one would never be routed (AWT258).
+		static ITypeSymbol? ImportedCollectionElement(ITypeSymbol type)
+		{
+			ITypeSymbol shape = type is INamedTypeSymbol named && IsOpenGenericDefinition(named) ? named.OriginalDefinition : type;
+			if (!IsCollectionShape(shape))
+			{
+				return null;
+			}
+
+			ITypeSymbol collection = IsTask(shape, out ITypeSymbol awaited) ? awaited : shape;
+			if (TryGetTypeDispatch(collection, out ITypeSymbol? value))
+			{
+				return DispatchBase(value!) ?? value;
+			}
+
+			return collection is IArrayTypeSymbol array ? array.ElementType : ((INamedTypeSymbol)collection).TypeArguments.Last();
+		}
 
 		void Add(HashSet<string> set, ITypeSymbol type, string display)
 		{

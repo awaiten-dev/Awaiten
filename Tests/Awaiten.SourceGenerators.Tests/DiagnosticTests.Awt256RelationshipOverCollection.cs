@@ -158,13 +158,14 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task ReportsARelationshipOverAnImportedCollectionAsAwt242()
+		public async Task ReportsARelationshipOverAnImportedCollectionBesideTheImport()
 		{
 			GeneratorResult result = RunWithParameter("Func<IEnumerable<IClock>>", "[ImportService<IEnumerable<IClock>>]");
 
-			await That(result.Diagnostics).HasSingle().Which
-				.Contains("*error AWT242*").AsWildcard()
-				.Because("the host owns the imported collection, which is the more precise cause");
+			await That(result.Diagnostics).HasCount(2);
+			await That(result.Diagnostics).Contains("*error AWT258*").AsWildcard();
+			await That(result.Diagnostics).Contains("*error AWT256*").AsWildcard()
+				.Because("a collection cannot be imported (AWT258), so the relationship is over the container's own collection, which it does not build, and no AWT242");
 		}
 
 		[Test]
