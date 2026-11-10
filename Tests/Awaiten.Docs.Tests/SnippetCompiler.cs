@@ -139,12 +139,20 @@ internal static partial class SnippetCompiler
 		return driver.GetRunResult().Diagnostics
 			.Concat(output.GetDiagnostics())
 			.Concat(analyzerDiagnostics)
-			.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error ||
-			                     (diagnostic.Id.StartsWith("AWT") && diagnostic.Severity != DiagnosticSeverity.Hidden))
+			.Where(IsReported)
 			.Select(Format)
 			.Distinct()
 			.ToList();
 	}
+
+	/// <summary>
+	///     Whether a page reports <paramref name="diagnostic" />: an error, an Awaiten diagnostic, or the warning the compiler
+	///     leaves when the generator (CS8785) or an analyzer (AD0001) throws, which drops what it would emit or report.
+	/// </summary>
+	internal static bool IsReported(Diagnostic diagnostic)
+		=> diagnostic.Severity == DiagnosticSeverity.Error ||
+		   diagnostic.Id is "CS8785" or "AD0001" ||
+		   (diagnostic.Id.StartsWith("AWT") && diagnostic.Severity != DiagnosticSeverity.Hidden);
 
 	private static Reported Format(Diagnostic diagnostic)
 	{

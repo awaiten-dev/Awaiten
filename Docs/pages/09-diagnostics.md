@@ -379,7 +379,7 @@ public static partial class CoffeeShop
 }
 ```
 
-For a module's factory, the library's build reports it, since a container in another assembly or in one the library grants `InternalsVisibleTo` sees no body. A container in the library's own assembly leaves it to that build, so every container agrees. When the concrete type is private to the module, no container can name it as the return type ([AWT234](#awt234)), so the message suggests only the async factory or making the type `internal`.
+For a module's factory, the library's build reports it, since a container in another assembly or in one the library grants `InternalsVisibleTo` sees no body. A container in the library's own assembly leaves it to that build, so every container agrees. Likewise, the factory of a base container in another assembly is checked only in the base's own build, with the conventions the base declares. When the concrete type is private to the module, no container can name it as the return type ([AWT234](#awt234)), so the message suggests only the async factory or making the type `internal`.
 
 **Fix:** Declare the concrete type as the factory's return type (here `AsyncBrewer`), so the container sees the initialization, or make the factory `async Task<IBrewer>` and initialize the instance inside it.
 

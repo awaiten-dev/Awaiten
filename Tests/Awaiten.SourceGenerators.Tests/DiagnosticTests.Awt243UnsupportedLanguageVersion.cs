@@ -76,7 +76,7 @@ public partial class DiagnosticTests
 				driver = driver.WithUpdatedParseOptions(raised).RunGenerators(compilation
 					.RemoveAllSyntaxTrees()
 					.AddSyntaxTrees(compilation.SyntaxTrees.Select(tree => tree.WithRootAndOptions(tree.GetRoot(), raised))));
-				GeneratorRunResult result = driver.GetRunResult().Results.Single();
+				GeneratorRunResult result = Generator.FailOnGeneratorException(driver.GetRunResult()).Results.Single();
 
 				await That(result.Diagnostics).IsEmpty()
 					.Because("a changed language version re-parses every tree, so the cached AWT243 model is not reused");

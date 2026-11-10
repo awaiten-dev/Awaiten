@@ -505,5 +505,61 @@ public partial class DiagnosticTests
 					.Because("returning the private type would only trade this warning for AWT234, since no container can name it");
 			}
 		}
+
+		public class InABaseContainer
+		{
+			private const string Library = """
+				using System.Threading.Tasks;
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IInitializable { Task InitializeAsync(); }
+				public interface IBrew { }
+				public sealed class Brew : IBrew, IInitializable { public Task InitializeAsync() => Task.CompletedTask; }
+
+				[Container]
+				[AsyncInitializer<IInitializable>(nameof(IInitializable.InitializeAsync))]
+				[Singleton<IBrew>(Factory = nameof(Make))]
+				public static partial class Shop
+				{
+				    public static IBrew Make() => new Brew();
+				}
+				""";
+
+			private const string ExtendingContainer = """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container(Extends = typeof(Lib.Shop))]
+				public static partial class TestShop;
+				""";
+
+			[Test]
+			public async Task IsReportedOnlyInTheBasesOwnBuild()
+			{
+				await That(Generator.Run(Library).Diagnostics).HasSingle().Which.Contains("*AWT106*'Make'*").AsWildcard()
+					.Because("the base's own build reads the body of its factory");
+				foreach (GeneratorResult result in new[]
+				         {
+					         Generator.RunWithGeneratedReferencedAssembly(Library, ExtendingContainer),
+					         Generator.RunWithGeneratedReferenceAssembly(Library, ExtendingContainer),
+					         Generator.RunWithGeneratedCompilationReference(Library, ExtendingContainer),
+				         })
+				{
+					await That(result.Diagnostics).IsEmpty()
+						.Because("an extending container in another assembly leaves the body of the base's factory to the base's build, also when the IDE references the base as a compilation whose syntax trees are not part of the extending one");
+					await That(result.Sources).ContainsKey("Awaiten.MyCode.TestShop.g.cs");
+				}
+			}
+
+			[Test]
+			public async Task IsNotReportedByTheAnalyzerOfAnExtendingContainer()
+			{
+				await That(await Analyzer.RunWithCompilationReference<AwaitenAnalyzer>(Library, ExtendingContainer)).IsEmpty()
+					.Because("the analyzer builds the graph of the base in the extending container's compilation too, and must not read the base's body there");
+			}
+		}
 	}
 }

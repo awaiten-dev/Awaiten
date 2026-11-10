@@ -122,10 +122,10 @@ public class DiagnosticConfigurationTests
 			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 		GeneratorDriver driver = CSharpGeneratorDriver.Create([new AwaitenGenerator().AsSourceGenerator(),], [], parseOptions, null)
 			.RunGenerators(compilation);
-		GeneratorRunResult first = driver.GetRunResult().Results.Single();
+		GeneratorRunResult first = Generator.FailOnGeneratorException(driver.GetRunResult()).Results.Single();
 
 		CSharpCompilation edited = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText("namespace MyCode; public class Other { }", parseOptions, "/src/Other.cs"));
-		GeneratorRunResult second = driver.RunGenerators(edited).GetRunResult().Results.Single();
+		GeneratorRunResult second = Generator.FailOnGeneratorException(driver.RunGenerators(edited).GetRunResult()).Results.Single();
 
 		await That(second.GeneratedSources.Single().SourceText).IsSameAs(first.GeneratedSources.Single().SourceText)
 			.Because("the container's model is unchanged, so its source is not emitted again although the compilation changed");

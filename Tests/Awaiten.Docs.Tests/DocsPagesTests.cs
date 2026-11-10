@@ -142,6 +142,18 @@ public sealed class DocsPagesTests
 	}
 
 	[Test]
+	[Arguments("CS8785")]
+	[Arguments("AD0001")]
+	public async Task IsReported_ShouldReportTheWarningOfAThrowingGeneratorOrAnalyzer(string id)
+	{
+		Microsoft.CodeAnalysis.Diagnostic warning = Microsoft.CodeAnalysis.Diagnostic.Create(
+			id, "Compiler", "threw", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, true, 1);
+
+		await That(SnippetCompiler.IsReported(warning)).IsTrue()
+			.Because("the compiler only warns when the generator or an analyzer throws, and leaves out what it would emit or report, so a page would pass without its checks");
+	}
+
+	[Test]
 	public async Task GetErrors_ShouldShareTypesAndUsingsBetweenTheBlocksOfAPage()
 	{
 		CodeBlock first = new("page.md", 1, """
