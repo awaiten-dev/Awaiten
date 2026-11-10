@@ -43,6 +43,16 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ATypeDispatch_NamesItsBaseInterface()
+		{
+			GeneratorResult result = Run("[ImportService<IReadOnlyDictionary<System.Type, System.Func<IClock>>>]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("imports the collection 'System.Collections.Generic.IReadOnlyDictionary<System.Type, System.Func<MyCode.IClock>>', * import 'MyCode.IClock' and depend on it directly").AsWildcard()
+				.Because("a type dispatch holds the registrations of its base interface, which is the service to import");
+		}
+
+		[Test]
 		[Arguments("typeof(IEnumerable<IClock>)")]
 		[Arguments("typeof(IEnumerable<>)")]
 		[Arguments("typeof(IReadOnlyDictionary<,>)")]

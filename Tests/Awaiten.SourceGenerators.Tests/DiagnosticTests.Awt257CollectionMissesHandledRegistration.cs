@@ -226,6 +226,103 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task AFallbackTheContainerReplaces_IsNotReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[Library1(), Library2(registration: "[Singleton<Thing, Lib.IThing>(Fallback = Fallback.Silent)]"),],
+				"""
+				using Awaiten;
+
+				namespace MyCode;
+
+				internal sealed class Mine : Lib.IThing { }
+
+				[Container]
+				[Import(typeof(Lib.BrewModule))]
+				[Import(typeof(Lib2.ThingModule))]
+				[Singleton<Mine, Lib.IThing>]
+				public static partial class MyContainer;
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container's own registration replaces the default, which a collection then never holds");
+			await That(Container(result)).Contains("new global::Lib.Counting(Root.ResolveBrew(__s.__root), new global::Lib.IThing[] { Root.ResolveMine(__s.__root) })");
+		}
+
+		[Test]
+		public async Task AFallbackAModuleOfTheElementsAssemblyReplaces_IsNotReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[
+					Library1(types: "internal interface IThing { } internal sealed class Own : IThing { }").Replace("[Decorate<Counting, IBrew>]", "[Decorate<Counting, IBrew>]\n[Singleton<Own, IThing>]"),
+					Library2(registration: "[Singleton<Thing, Lib.IThing>(Fallback = Fallback.Warn)]"),
+				],
+				App);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a registration of another module without Fallback replaces the default");
+		}
+
+		[Test]
+		public async Task AnInheritedRegistrationTheExtendingContainerReplaces_IsNotReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[Library1(), Library2(),],
+				"""
+				using Awaiten;
+
+				namespace MyCode;
+
+				internal sealed class Mine : Lib.IThing { }
+
+				[Container]
+				[Import(typeof(Lib2.ThingModule))]
+				public static partial class BaseContainer;
+
+				[Container(Extends = typeof(BaseContainer))]
+				[Import(typeof(Lib.BrewModule))]
+				[Singleton<Mine, Lib.IThing>]
+				public static partial class MyContainer;
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a registration on the extending container replaces the inherited one, which a collection then never holds");
+			await That(Container(result)).Contains("new global::Lib.Counting(Root.ResolveBrew(__s.__root), new global::Lib.IThing[] { Root.ResolveMine(__s.__root) })");
+		}
+
+		[Test]
+		public async Task AnInheritedRegistration_IsReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[Library1(), Library2(),],
+				"""
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(Lib2.ThingModule))]
+				public static partial class BaseContainer;
+
+				[Container(Extends = typeof(BaseContainer))]
+				[Import(typeof(Lib.BrewModule))]
+				public static partial class MyContainer;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("error AWT257: 'Lib.Counting' takes a collection of 'Lib.IThing', which would miss 'Lib2.Thing'")
+				.Because("the extending container builds 'Counting' with the inherited registrations, which miss the one served through the handle");
+		}
+
+		[Test]
+		public async Task AFallbackNothingReplaces_IsReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Library1(), Library2(registration: "[Singleton<Thing, Lib.IThing>(Fallback = Fallback.Silent)]"),], App);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected)
+				.Because("a default that nothing replaces is a member of the collection");
+		}
+
+		[Test]
 		public async Task AConsumerOfTheContainersAssembly_IsReported()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(

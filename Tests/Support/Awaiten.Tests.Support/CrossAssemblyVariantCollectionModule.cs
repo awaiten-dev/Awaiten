@@ -24,6 +24,11 @@ internal sealed class GeneralVariantCollectionHandler : IVariantCollectionHandle
 	public string Name => "general";
 }
 
+internal sealed class OtherGeneralVariantCollectionHandler : IVariantCollectionHandler<VariantCollectionEvent>
+{
+	public string Name => "other general";
+}
+
 internal sealed class VariantCollectionBrew : IVariantCollectionBrew
 {
 	public IReadOnlyList<string> Handlers => [];
@@ -36,11 +41,13 @@ internal sealed class HandlingVariantCollectionBrew(IVariantCollectionBrew inner
 
 /// <summary>
 ///     A <c>[Module]</c> whose decorator takes a collection of an internal contravariant handler of a specific event,
-///     while the module registers a handler of the general event, which the collection holds through variance in a
-///     container of this assembly and, through the handle of the general handler, in one of another assembly.
+///     while the module registers two handlers of the general event, which the collection holds in registration order,
+///     through variance in a container of this assembly and through the handle of the general handler in one of another
+///     assembly.
 /// </summary>
 [Module]
 [Singleton<VariantCollectionBrew, IVariantCollectionBrew>]
 [Singleton<GeneralVariantCollectionHandler, IVariantCollectionHandler<VariantCollectionEvent>>]
+[Transient<OtherGeneralVariantCollectionHandler, IVariantCollectionHandler<VariantCollectionEvent>>]
 [Decorate<HandlingVariantCollectionBrew, IVariantCollectionBrew>]
 public static partial class CrossAssemblyVariantCollectionModule;

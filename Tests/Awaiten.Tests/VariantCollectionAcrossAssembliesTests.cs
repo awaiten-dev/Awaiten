@@ -15,8 +15,8 @@ public class VariantCollectionAcrossAssembliesTests
 	{
 		using VariantCollectionContainer.Root container = new();
 
-		await That(container.Resolve<IVariantCollectionBrew>().Handlers).IsEqualTo(["general",])
-			.Because("a collection of handlers of the specific event holds the handler of the general event through contravariance");
+		await That(container.Resolve<IVariantCollectionBrew>().Handlers).IsEqualTo(["general", "other general",])
+			.Because("a collection of handlers of the specific event holds the handlers of the general event through contravariance, in registration order as in the module's own assembly");
 	}
 }
 

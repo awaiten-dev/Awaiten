@@ -1950,14 +1950,19 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The internal services other than <paramref name="element" /> that the module, or another module of its assembly,
 	///     registers and that an unkeyed collection of <paramref name="element" /> holds through variance in a container of
-	///     the module's own assembly, so a generated member takes the collection through their handles.
+	///     the module's own assembly, so a generated member takes the collection through their handles. A service registered
+	///     only with <c>WhenInjectedInto</c> joins no collection, so it does not count.
 	/// </summary>
 	private static List<INamedTypeSymbol> VariantHiddenServices(INamedTypeSymbol element, HiddenServices hidden)
 		=> element is { TypeKind: TypeKind.Interface, IsGenericType: true, } && HasDeclaredVariance(element)
 			? hidden.Services.Keys
 				.Concat(hidden.Assembly.ServiceProviders.Keys.Where(hidden.ProvidedElsewhere))
 				.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
-				.Where(service => !SymbolEqualityComparer.Default.Equals(service, element) && VarianceCompatible(service, element, hidden.Compilation))
+				.Where(service => !SymbolEqualityComparer.Default.Equals(service, element)
+				                  && VarianceCompatible(service, element, hidden.Compilation)
+				                  && hidden.Assembly.Registrations.Values.Any(registrations => registrations.Exists(registration =>
+					                  SymbolEqualityComparer.Default.Equals(registration.Service, service)
+					                  && NamedTypeArgument(registration.Attribute, "WhenInjectedInto", hidden.Compilation) is null)))
 				.ToList()
 			: [];
 

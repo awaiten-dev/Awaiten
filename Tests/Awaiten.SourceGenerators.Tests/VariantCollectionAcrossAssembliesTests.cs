@@ -134,6 +134,36 @@ public class VariantCollectionAcrossAssembliesTests
 	}
 
 	[Test]
+	public async Task APublicVariantService_GetsNoFactory()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+			[
+				Library()
+					.Replace("internal interface IHandler<in T> { }", "public interface IHandler<in T> { }")
+					.Replace("internal class Base { }", "public class Base { }"),
+			],
+			App);
+
+		await That(result.Diagnostics).HasSingle().Which.Contains("error AWT230: The imported module 'Lib.BrewModule' declares the decorator 'Lib.Counting'")
+			.Because("the collection holds the public 'IHandler<Base>' through variance, which the factory has no handle of, so the module generates no factory instead of passing the collection empty");
+	}
+
+	[Test]
+	public async Task AContextualVariantRegistration_KeepsTheExactHandle()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+			[
+				Library(registrations: "[Singleton<DerivedHandler, IHandler<Derived>>]\n[Singleton<BaseHandler, IHandler<Base>>(WhenInjectedInto = typeof(Other))]\n[Singleton<Other>]")
+					.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Other { internal Other(IHandler<Base> handler) { } }"),
+			],
+			App);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a contextual registration is no member of a collection, so the collection holds only the exact service");
+		await That(Container(result)).Contains("Decorator_Counting_").And.Contains("new global::Lib.BrewModule.Internals.Hidden_IHandler_");
+	}
+
+	[Test]
 	public async Task ARegistrationOfAnExactAndAVariantService_IsReportedInTheModulesBuild()
 	{
 		GeneratorResult result = Generator.Run(Library(registrations: """

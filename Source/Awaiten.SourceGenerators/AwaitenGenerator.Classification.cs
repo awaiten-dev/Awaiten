@@ -1573,6 +1573,11 @@ partial class AwaitenGenerator
 			}
 
 			ITypeSymbol collection = IsTask(shape, out ITypeSymbol awaited) ? awaited : shape;
+			if (TryGetTypeDispatch(collection, out ITypeSymbol? value))
+			{
+				return DispatchBase(value!) ?? value;
+			}
+
 			return collection is IArrayTypeSymbol array ? array.ElementType : ((INamedTypeSymbol)collection).TypeArguments.Last();
 		}
 
