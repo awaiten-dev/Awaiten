@@ -1561,8 +1561,9 @@ partial class AwaitenGenerator
 		foreach (SyntaxReference reference in producer.DeclaringSyntaxReferences)
 		{
 			// A factory must be a method on the container; anything else (or metadata-only, no syntax) is
-			// not analyzable and is left silent.
-			if (reference.GetSyntax() is not MethodDeclarationSyntax method)
+			// not analyzable and is left silent. So is the body of a base container in a project the IDE references
+			// as a compilation: its tree is not part of this compilation, and the base's own build reports it.
+			if (reference.GetSyntax() is not MethodDeclarationSyntax method || !compilation.ContainsSyntaxTree(method.SyntaxTree))
 			{
 				continue;
 			}

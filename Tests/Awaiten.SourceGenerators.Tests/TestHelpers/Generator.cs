@@ -63,7 +63,7 @@ public static class Generator
 
 		GeneratorDriver driver = CSharpGeneratorDriver.Create([new AwaitenGenerator().AsSourceGenerator(),], [], parseOptions, null);
 		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation, out _);
-		return Collect((outputCompilation, driver.GetRunResult()));
+		return Collect((outputCompilation, FailOnGeneratorException(driver.GetRunResult())));
 	}
 
 	/// <summary>
@@ -292,7 +292,21 @@ public static class Generator
 			parseOptions,
 			null);
 		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation, out _);
-		return (outputCompilation, driver.GetRunResult());
+		return (outputCompilation, FailOnGeneratorException(driver.GetRunResult()));
+	}
+
+	/// <summary>
+	///     Throws when a generator of <paramref name="result" /> threw, which the compiler only reports as warning CS8785 while it
+	///     leaves out everything the generator would emit, so that a test fails on it whatever it asserts.
+	/// </summary>
+	internal static GeneratorDriverRunResult FailOnGeneratorException(GeneratorDriverRunResult result)
+	{
+		if (result.Results.FirstOrDefault(generator => generator.Exception is not null) is { Exception: { } exception, })
+		{
+			throw new InvalidOperationException($"The generator threw: {exception}", exception);
+		}
+
+		return result;
 	}
 
 	/// <summary>

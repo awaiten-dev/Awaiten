@@ -36,6 +36,19 @@ public static class Analyzer
 	}
 
 	/// <summary>
+	///     Like <see cref="RunWithReferencedAssembly{TAnalyzer}" />, but references the generated assembly as a compilation, as
+	///     the IDE references another project of the solution, so its symbols keep their syntax trees.
+	/// </summary>
+	public static Task<string[]> RunWithCompilationReference<TAnalyzer>(
+		[StringSyntax("c#-test")] string referencedSource,
+		[StringSyntax("c#-test")] string source)
+		where TAnalyzer : DiagnosticAnalyzer, new()
+	{
+		(Compilation referenced, _) = Generator.RunGenerator(referencedSource, [], [], "ReferencedAssembly");
+		return Run<TAnalyzer>(source, [referenced.ToMetadataReference(),], []);
+	}
+
+	/// <summary>
 	///     Like <see cref="Run{TAnalyzer}(string, Type[])" />, but compiles <paramref name="source" /> at
 	///     <paramref name="languageVersion" />, where the generator may report AWT243 instead of generating a container.
 	/// </summary>
@@ -85,6 +98,12 @@ public static class Analyzer
 		CompilationWithAnalyzers withAnalyzers = outputCompilation.WithAnalyzers(
 			ImmutableArray.Create<DiagnosticAnalyzer>(new TAnalyzer()));
 		ImmutableArray<Diagnostic> diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync();
+
+		// An analyzer that throws only leaves warning AD0001, which a test asserting a single diagnostic or the absence of one would miss.
+		if (diagnostics.FirstOrDefault(d => d.Id == "AD0001") is { } exception)
+		{
+			throw new InvalidOperationException($"The analyzer threw: {exception}");
+		}
 
 		// GetAnalyzerDiagnosticsAsync includes in-source-suppressed diagnostics; drop them to mirror a real build.
 		return diagnostics.Where(d => !d.IsSuppressed).Select(d => d.ToString()).ToArray();
