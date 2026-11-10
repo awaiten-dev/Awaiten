@@ -139,5 +139,201 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).IsEmpty()
 				.Because("the tea module registers the internal service itself, though the storage module declares its handle");
 		}
+
+		public class OnlyForMembersTheGraphCalls
+		{
+			private const string Storage = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGrinder { }
+				internal sealed class BeanStore { }
+
+				[Module]
+				[Singleton<BeanStore>]
+				public static partial class StorageModule { }
+
+				""";
+
+			private const string ReplacingContainer = """
+				public sealed class HandGrinder : IGrinder { }
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Singleton<HandGrinder, IGrinder>]
+				public static partial class {0};
+				""";
+
+			private const string CoffeeContainer = """
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				public static partial class {0};
+				""";
+
+			private const string ScanLibrary = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IAppliance { }
+				internal sealed class TimeSource { }
+				public sealed class Clock : IAppliance { internal Clock() { } }
+
+				[Module]
+				[Singleton<TimeSource>]
+				public static partial class AModule;
+
+				[Module]
+				[Singleton<Clock>(Factory = nameof(Create))]
+				public static partial class BModule
+				{
+				    public static Clock Create() => new();
+				}
+
+				[Module]
+				[Scan<IAppliance>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton, OnActivated = nameof(Start))]
+				public static partial class SModule
+				{
+				    internal static void Start(Clock clock, TimeSource source) { }
+				}
+				""";
+
+			private const string FactoryModule = """
+				internal sealed class Grinder : IGrinder { public Grinder(BeanStore store) { } }
+
+				[Module]
+				[Singleton<Grinder, IGrinder>(Fallback = Fallback.Warn)]
+				public static partial class CoffeeModule { }
+				""";
+
+			private const string HookModule = """
+				public sealed class Grinder : IGrinder { }
+
+				[Module]
+				[Singleton<Grinder, IGrinder>(Fallback = Fallback.Warn, OnActivated = nameof(Activate))]
+				public static partial class CoffeeModule
+				{
+				    internal static void Activate(Grinder grinder, BeanStore store) { }
+				}
+				""";
+
+			private static GeneratorResult Run(string library, string container, string consumer)
+			{
+				const string usings = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n\n";
+				return consumer switch
+				{
+					"same" => Generator.Run(library + "\n" + container.Replace("{0}", "SameContainer")),
+					"friend" => Generator.RunWithGeneratedReferencedAssembly(
+						library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\n\nnamespace Lib;"),
+						usings + container.Replace("{0}", "MyContainer")),
+					"reference" => Generator.RunWithGeneratedReferenceAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+					_ => Generator.RunWithGeneratedReferencedAssembly(library, usings + container.Replace("{0}", "MyContainer")),
+				};
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task AReplacedRegistration_NeedsNoModuleForTheServicesOfItsFactory(string consumer)
+			{
+				GeneratorResult result = Run(Storage + FactoryModule, ReplacingContainer, consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container replaces the module's default, so it never calls the factory that takes the internal service, as in the modules' own assembly");
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task AReplacedRegistration_NeedsNoModuleForTheServicesOfItsHook(string consumer)
+			{
+				GeneratorResult result = Run(Storage + HookModule, ReplacingContainer, consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the container replaces the module's default, so it never calls the hook wrapper that takes the internal service, as in the modules' own assembly");
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task AScanMatchThatSharesARegistration_NeedsNoModuleForTheServicesOfItsHook(string consumer)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(BModule))]
+					[Import(typeof(SModule))]
+					public static partial class {0};
+					""";
+				GeneratorResult result = Run(ScanLibrary, container, consumer);
+
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the match shares the instance of the module's registration, so the container never calls the scan's hook wrapper that takes the internal service, as in the modules' own assembly");
+			}
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ARegistrationNotReplaced_NeedsTheModuleOfTheServicesOfItsFactory(string consumer)
+			{
+				GeneratorResult result = Run(Storage + FactoryModule, CoffeeContainer, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.CoffeeModule' needs the internal service 'Lib.BeanStore'")
+					.Because("the container calls the module's factory, which takes the internal service another module registers");
+			}
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ARegistrationNotReplaced_NeedsTheModuleOfTheServicesOfItsHook(string consumer)
+			{
+				GeneratorResult result = Run(Storage + HookModule, CoffeeContainer, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.CoffeeModule' needs the internal service 'Lib.BeanStore'")
+					.Because("the container calls the hook wrapper, which takes the internal service another module registers");
+			}
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task AScanMatchWithoutARegistration_NeedsTheModuleOfTheServicesOfItsHook(string consumer)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(SModule))]
+					public static partial class {0};
+					""";
+				GeneratorResult result = Run(ScanLibrary, container, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.SModule' needs the internal service 'Lib.TimeSource'")
+					.Because("the scan's factory builds the match, so the container calls its hook wrapper, which takes the internal service another module registers");
+			}
+
+			[Test]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ADecorator_NeedsTheModuleOfTheServicesOfItsFactory(string consumer)
+			{
+				const string library = Storage + """
+					public sealed class Grinder : IGrinder { }
+					internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, BeanStore store) { } }
+
+					[Module]
+					[Singleton<Grinder, IGrinder>]
+					[Decorate<LoggingGrinder, IGrinder>]
+					public static partial class CoffeeModule { }
+					""";
+				GeneratorResult result = Run(library, CoffeeContainer, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.CoffeeModule' needs the internal service 'Lib.BeanStore'")
+					.Because("the container calls the decorator's factory, which takes the internal service another module registers");
+			}
+		}
 	}
 }

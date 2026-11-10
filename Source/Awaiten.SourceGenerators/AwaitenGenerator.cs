@@ -688,7 +688,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			DetectEagerAsyncSingletons(graph.Instances, graph.InstanceLocations, diagnostics);
 		}
 
-		NameHiddenServices(containerSymbol, compilation, new HashSet<string>(graph.Instances.Select(instance => instance.ProductionMember).OfType<string>(), StringComparer.Ordinal), diagnostics, cancellationToken);
+		NameHiddenServices(containerSymbol, compilation, CalledMembers(graph.Instances), diagnostics, cancellationToken);
 		return (graph, diagnostics);
 	}
 
