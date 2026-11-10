@@ -400,6 +400,42 @@ public class ModuleInternalConventionTests
 		}
 
 		[Test]
+		public async Task OnAnInternalOpenGenericImplementation_RunsOnceInEveryContainer()
+		{
+			string library = Library(
+				"""
+				internal sealed class Settings { }
+				internal interface IStartable { Task StartAsync(Settings settings); }
+				public interface IRepo<T> { }
+				internal sealed class Repo<T> : IRepo<T>, IStartable { public Task StartAsync(Settings settings) => Task.CompletedTask; }
+				public sealed class Order { }
+				public sealed class Needs { public Needs(IRepo<Order> repo) { } }
+				""",
+				"[AsyncInitializer<IStartable>(nameof(IStartable.StartAsync))][Singleton<Settings>][Singleton(typeof(Repo<>), typeof(IRepo<>))]");
+			const string consumer = """
+				using Awaiten;
+				using Lib;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Singleton<Needs>]
+				public static partial class MyContainer;
+				""";
+			(GeneratorResult built, GeneratorResult _, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(library, consumer);
+
+			await That(built.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { external, reference, compilation, })
+			{
+				await That(result.Diagnostics).IsEmpty()
+					.Because("the module generates the open factory, since the convention's wrapper takes the internal service through its handle");
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.Initializer_IStartable_").Exactly(1);
+			}
+		}
+
+		[Test]
 		public async Task AServiceOfAnotherModule_IsTakenThroughThatModulesHandle()
 		{
 			string library = """

@@ -245,9 +245,11 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task NamesTheRemedyAModuleRecordedForAConventionTypePrivateToIt()
+		[Arguments(false)]
+		[Arguments(true)]
+		public async Task NamesTheRemedyAModuleRecordedForAConventionTypePrivateToIt(bool friend)
 		{
-			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly("""
+			string library = """
 				using Awaiten;
 				using System.Threading.Tasks;
 
@@ -262,7 +264,9 @@ public partial class DiagnosticTests
 
 					public sealed class Terminal : IStartable { Task IStartable.StartAsync() => Task.CompletedTask; }
 				}
-				""", """
+				""";
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+				friend ? library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;") : library, """
 				using Awaiten;
 				using Lib;
 
@@ -274,8 +278,8 @@ public partial class DiagnosticTests
 				""");
 
 			await That(result.Diagnostics).HasSingle().Which.EndsWith(
-					"error AWT234: 'Lib.TerminalModule.Terminal' is initialized by the async initializer 'Lib.TerminalModule.IStartable.StartAsync', but 'Lib.TerminalModule.IStartable' is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.TerminalModule' generated no wrapper for it because 'Lib.TerminalModule.IStartable' is private to the module; make 'Lib.TerminalModule.IStartable' internal or public, or grant this assembly InternalsVisibleTo in the module's assembly")
-				.Because("the remedy follows the cause the module recorded, and InternalsVisibleTo alone would not let the container cast to a private type");
+					"error AWT234: 'Lib.TerminalModule.Terminal' is initialized by the async initializer 'Lib.TerminalModule.IStartable.StartAsync', but 'Lib.TerminalModule.IStartable' is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.TerminalModule' generated no wrapper for it because 'Lib.TerminalModule.IStartable' is private to the module; make 'Lib.TerminalModule.IStartable' internal or public")
+				.Because("the remedy follows the cause the module recorded, and InternalsVisibleTo would not let any container cast to a private type");
 		}
 
 		[Test]

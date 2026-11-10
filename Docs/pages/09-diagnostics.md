@@ -2543,7 +2543,7 @@ internal sealed class EspressoMachine : IMachine
 public static partial class EquipmentModule;
 ```
 
-**Fix:** Make the parameter types of the convention's method public or register the internal services in a module of the library, and make a convention type nested in the module `internal`. Or grant the container's assembly `InternalsVisibleTo` in the library: the module then builds no factory for the implementation, and that assembly constructs and initializes it itself.
+**Fix:** Make the parameter types of the convention's method public or register the internal services in a module of the library, and make a convention type nested in the module `internal`. Or grant the container's assembly `InternalsVisibleTo` in the library: the module then builds no factory for the implementation, and that assembly constructs and initializes it itself. A convention type nested privately stays out of reach even then, so for it the message asks only to make it `internal` or `public`.
 
 ### AWT235
 

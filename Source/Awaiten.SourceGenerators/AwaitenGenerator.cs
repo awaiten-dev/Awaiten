@@ -199,7 +199,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
-		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
+		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation, hidden) : (new(), new());
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
 		List<ConventionWrapper> conventionWrappers = receives ? CollectConventionWrappers(moduleSymbol, compilation, hidden) : new();

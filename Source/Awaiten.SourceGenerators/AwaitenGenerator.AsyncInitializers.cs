@@ -368,7 +368,8 @@ partial class AwaitenGenerator
 	///     in the container's assembly hides the convention from it, so it has to be internal or public. The build of an
 	///     owner in another assembly records why it generated no wrapper and what lets it (see
 	///     <see cref="CollectConventionWrappers" />), a module that is not partial records only that, and an owner built
-	///     without the generator records nothing.
+	///     without the generator records nothing. Granting <c>InternalsVisibleTo</c> is offered only when it would let the
+	///     container reach the convention's type.
 	/// </summary>
 	private static string[] UnwrappedConventionFault(AsyncInitializerConvention convention, string reason, Compilation compilation)
 	{
@@ -388,10 +389,18 @@ partial class AwaitenGenerator
 		}
 
 		string kind = module ? "module" : "container";
+		// A type private to the owner stays out of reach of every other type, so InternalsVisibleTo does not help.
+		bool grantHelps = compilation.IsSymbolAccessibleWithin(convention.Type, owner.ContainingAssembly);
 		return
 		[
 			$"{reason}, and the {kind} '{Display(owner.ToDisplayString(FullyQualified))}' generated no wrapper for it" + (cause is null ? string.Empty : $" because {cause}"),
-			remedy is null ? "make it public, or grant this assembly InternalsVisibleTo in its assembly" : $"{remedy}, or grant this assembly InternalsVisibleTo in the {kind}'s assembly",
+			(remedy, grantHelps) switch
+			{
+				(null, true) => "make it public, or grant this assembly InternalsVisibleTo in its assembly",
+				(null, false) => "make it public",
+				(_, true) => $"{remedy}, or grant this assembly InternalsVisibleTo in the {kind}'s assembly",
+				_ => remedy,
+			},
 		];
 
 		string? Recorded(string constant)

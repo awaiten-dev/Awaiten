@@ -15,7 +15,29 @@ public sealed partial class ModuleInternalConventionTests
 
 	[Container]
 	[Import(typeof(ServiceConventionModule))]
+	[Singleton<RepositoryReader>]
 	public static partial class ServiceConventionShop;
+
+	public sealed class RepositoryReader(IServiceConventionRepository<string> repository)
+	{
+		public IServiceConventionRepository<string> Repository => repository;
+	}
+
+	[Container(Extends = typeof(ConventionBaseContainer))]
+	public static partial class ExtendingConventionShop;
+
+	[Test]
+	public async Task OfABaseContainer_TheConventionRunsOnceInTheExtendingContainer()
+	{
+		await using ExtendingConventionShop.Root container = new();
+
+		ConventionBaseTerminal terminal = await container.ResolveAsync<ConventionBaseTerminal>();
+
+		await That(terminal.Runs).IsEqualTo(1)
+			.Because("the extending container runs the inherited internal convention through the wrapper the base generates");
+		await That(terminal.Clock).IsSameAs(await container.ResolveAsync<ConventionBaseClock>())
+			.Because("the wrapper forwards the parameter the extending container resolves");
+	}
 
 	[Test]
 	public async Task TakingAnInternalService_TheConventionRunsOnceWithTheModulesInstance()
@@ -34,6 +56,19 @@ public sealed partial class ModuleInternalConventionTests
 			.Because("the recipe is a singleton of the module, which the container builds once through its handle");
 		await That(brewer.Token).IsEqualTo(cancellation.Token)
 			.Because("the wrapper forwards the resolve-time token to the convention");
+	}
+
+	[Test]
+	public async Task TakingAnInternalService_TheConventionRunsOnceOnAnInternalOpenGenericImplementation()
+	{
+		await using ServiceConventionShop.Root container = new();
+
+		IServiceConventionRepository<string> repository = (await container.ResolveAsync<RepositoryReader>()).Repository;
+		ServiceConventionBrewer brewer = await container.ResolveAsync<ServiceConventionBrewer>();
+
+		await That(repository.Runs).IsEqualTo(1)
+			.Because("the module generates the open factory, and the container runs the convention through the wrapper that takes the internal recipe through its handle");
+		await That(repository.Recipe).IsSameAs(brewer.Recipe);
 	}
 
 	[Test]
