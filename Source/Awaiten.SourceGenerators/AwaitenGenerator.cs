@@ -199,10 +199,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
-		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation) : (new(), new());
+		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation, hidden) : (new(), new());
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
-		List<ConventionWrapper> conventionWrappers = receives ? CollectConventionWrappers(moduleSymbol, compilation) : new();
+		List<ConventionWrapper> conventionWrappers = receives ? CollectConventionWrappers(moduleSymbol, compilation, hidden) : new();
 
 		// A container in another assembly that misses a wrapper or a factory cannot see that the module is not partial, so the module records it (AWT108, AWT109, AWT164, AWT231, AWT234).
 		bool recordsNotPartial = !receives && moduleSymbol.IsStatic && !HasOpenTypeParameters(moduleSymbol) && IsExternallyAccessible(moduleSymbol)
@@ -639,7 +639,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			RecordedFaults(graph.Factories, compilation),
 			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()),
 			GrantsInternalsVisibleTo(compilation.Assembly) ? new EquatableArray<SkippedRegistration>(graph.Factories.HookSkips.ToArray()) : default,
-			DeclaresNotNullWhen: declaresNotNullWhen);
+			DeclaresNotNullWhen: declaresNotNullWhen,
+			ConventionWrappers: new EquatableArray<ConventionWrapper>(graph.Factories.ConventionWrappers.ToArray()));
 		return model.HasErrors ? model : VerifyDependencies(model, LocationInfo.From(containerSymbol.Locations.FirstOrDefault()));
 	}
 
@@ -906,6 +907,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		{
 			RecordBaseOpenFactories(containerSymbol, compilation, factories);
 			RecordBasePredicateWrappers(containerSymbol, compilation, factories);
+			factories.ConventionWrappers.AddRange(CollectConventionWrappers(containerSymbol, compilation));
 		}
 
 		// [ImportServices]: any otherwise-unresolved direct dependency falls through to the external provider

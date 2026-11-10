@@ -2007,9 +2007,12 @@ partial class AwaitenGenerator
 			? $"{ns.ToDisplayString()}.{ModuleNotPartialName(definition)}"
 			: ModuleNotPartialName(definition);
 		return module.ContainingAssembly.GetTypeByMetadataName(name) is not null
-			? "the module, or a class that contains it, is not partial"
+			? ModuleNotPartialReason
 			: null;
 	}
+
+	/// <summary>The reason <see cref="ModuleShapeReason" /> gives for a module that recorded that it is not partial.</summary>
+	private const string ModuleNotPartialReason = "the module, or a class that contains it, is not partial";
 
 	/// <summary>Whether <paramref name="assembly" /> grants <c>InternalsVisibleTo</c> to any assembly.</summary>
 	private static bool GrantsInternalsVisibleTo(IAssemblySymbol assembly)

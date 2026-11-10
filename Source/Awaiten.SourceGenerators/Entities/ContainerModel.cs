@@ -16,6 +16,7 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="HiddenProperties" /> record the public types it constructs whose
 ///     <c>[Inject]</c> property another assembly cannot see, and <see cref="HookSkips" /> the hooks of its generic
 ///     factories with a private overload an extending container in another assembly does not see.
+///     <see cref="ConventionWrappers" /> run its conventions such a container cannot call.
 ///     <see cref="SkipsGeneration" /> marks a container the project's
 ///     language version is too old for, which only reports its <see cref="Diagnostics" />. <see cref="HasNotNullWhen" />
 ///     tells whether the generated code can apply <c>NotNullWhenAttribute</c>, which .NET Framework and netstandard2.0 have
@@ -46,7 +47,8 @@ internal sealed record ContainerModel(
 	EquatableArray<SkippedRegistration> HiddenProperties = default,
 	EquatableArray<SkippedRegistration> HookSkips = default,
 	bool SkipsGeneration = false,
-	bool DeclaresNotNullWhen = false)
+	bool DeclaresNotNullWhen = false,
+	EquatableArray<ConventionWrapper> ConventionWrappers = default)
 {
 	public bool Imports => ImportServices || ImportedServices.Count > 0 || ImportedDefinitions.Count > 0;
 

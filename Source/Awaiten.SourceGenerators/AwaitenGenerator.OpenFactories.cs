@@ -113,9 +113,11 @@ partial class AwaitenGenerator
 	///     factory whose hook wrapper only a container in the module's assembly may run (see
 	///     <see cref="OpenFactory.ForeignReason" />) is internal and kept only for a type private to the module, whose
 	///     closings that container builds through it, and carries the skip record too, which a container in another
-	///     assembly reports, a friend only for a hook it records a skip of its own for.
+	///     assembly reports, a friend only for a hook it records a skip of its own for. A convention whose wrapper takes an
+	///     internal service through its handle does not keep a factory from being generated in the module's own build, which
+	///     passes <paramref name="hidden" />.
 	/// </summary>
-	private static (List<RegistrationFactory> Factories, List<SkippedRegistration> Skipped) CollectModuleOpenFactories(INamedTypeSymbol module, Compilation compilation)
+	private static (List<RegistrationFactory> Factories, List<SkippedRegistration> Skipped) CollectModuleOpenFactories(INamedTypeSymbol module, Compilation compilation, HiddenServices? hidden = null)
 	{
 		List<RegistrationFactory> factories = new();
 		List<SkippedRegistration> skipped = new();
@@ -129,7 +131,7 @@ partial class AwaitenGenerator
 			}
 
 			ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal));
-			OpenFactory built = BuildOpenFactory(contribution, ServicesOf(contribution, module), context, module: true);
+			OpenFactory built = BuildOpenFactory(contribution, ServicesOf(contribution, module), context, module: true, hidden);
 			if (built.Factory is { IsInternal: true, } && !IsHiddenInModule(contribution.Definition, module, compilation))
 			{
 				// Every assembly that could call an internal factory constructs the type itself.
@@ -221,9 +223,10 @@ partial class AwaitenGenerator
 	///     (see <see cref="OpenHookWrappers" />). A factory of a module that could return only an internal type is
 	///     internal. What it cannot express gets no factory but a reason: a lifecycle hook it cannot wrap, a constraint or
 	///     parameter type a caller cannot name, a type parameter named like a parameter, or, for a
-	///     <paramref name="module" />, a convention of the module a consumer cannot call.
+	///     <paramref name="module" />, a convention of the module a consumer cannot call, judged with the module's
+	///     <paramref name="conventionHandles" /> (see <see cref="MirrorConventionParameters" />).
 	/// </summary>
-	private static OpenFactory BuildOpenFactory(OpenContribution contribution, List<INamedTypeSymbol> services, ModuleScanContext context, bool module)
+	private static OpenFactory BuildOpenFactory(OpenContribution contribution, List<INamedTypeSymbol> services, ModuleScanContext context, bool module, HiddenServices? conventionHandles = null)
 	{
 		INamedTypeSymbol definition = contribution.Definition;
 		string typeName = definition.ToDisplayString(FullyQualified);
@@ -255,7 +258,7 @@ partial class AwaitenGenerator
 		SelfCompiledSubject subject = RegistrationSubject(definition);
 		List<DiagnosticInfo> rejections = new();
 		MirroredMembers members = default;
-		if (module && ModuleAsyncInitializerFault(definition, signature, subject, contribution.Location) is { } initializerFault)
+		if (module && ModuleAsyncInitializerFault(definition, signature with { Hidden = conventionHandles, }, subject, contribution.Location) is { } initializerFault)
 		{
 			rejections.Add(initializerFault);
 		}

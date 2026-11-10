@@ -9,11 +9,11 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     One usable <c>[AsyncInitializer&lt;T&gt;(method)]</c> of a container or module: the convention
 	///     <see cref="Type" /> and the instance <see cref="Method" /> of it named <see cref="Name" /> that initializes an
-	///     implementation. <see cref="Method" /> is <see langword="null" /> for a convention of another assembly whose
-	///     method this compilation does not see because it is not public, which a container runs only through the
-	///     wrapper the module generates for it (see <see cref="ConventionWrapperName" />).
+	///     implementation, declared on <see cref="Owner" />. <see cref="Method" /> is <see langword="null" /> for a
+	///     convention of another assembly whose method this compilation does not see because it is not public, which a
+	///     container runs only through the wrapper its owner generates for it (see <see cref="ConventionWrapperName" />).
 	/// </summary>
-	private sealed record AsyncInitializerConvention(INamedTypeSymbol Type, IMethodSymbol? Method, string Name)
+	private sealed record AsyncInitializerConvention(INamedTypeSymbol Owner, INamedTypeSymbol Type, IMethodSymbol? Method, string Name)
 	{
 		/// <summary>The convention as a diagnostic names it, <c>Type.Method</c>.</summary>
 		public string Display => $"{AwaitenGenerator.Display(Type.ToDisplayString(FullyQualified))}.{Name}";
@@ -80,7 +80,7 @@ partial class AwaitenGenerator
 			if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly)
 			    && !ConventionTypeAndBases(type).Any(declaring => declaring.GetMembers(name).OfType<IMethodSymbol>().Any()))
 			{
-				conventions.Add(new AsyncInitializerConvention(type, null, name));
+				conventions.Add(new AsyncInitializerConvention(owner, type, null, name));
 				continue;
 			}
 
@@ -93,7 +93,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			conventions.Add(new AsyncInitializerConvention(type, method!, name));
+			conventions.Add(new AsyncInitializerConvention(owner, type, method!, name));
 		}
 
 		return conventions;
@@ -300,9 +300,10 @@ partial class AwaitenGenerator
 	///     implementation behind a generated factory or an implementation a module's public <c>Factory</c> wrapper returns
 	///     as its public service, the conventions its owner recorded. Their parameters are classified
 	///     like those of an asynchronous <c>OnActivated</c> hook, so they take part in every graph check. A convention the
-	///     container cannot call runs through the wrapper its module in another assembly generates for it (see
-	///     <see cref="CollectConventionWrappers" />); without one it is reported as
-	///     <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> and left out.
+	///     container cannot call runs through the wrapper its owner, a module or base container in another assembly,
+	///     generates for it (see <see cref="CollectConventionWrappers" />); without one it is reported as
+	///     <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see> with the remedy for the cause (see
+	///     <see cref="UnwrappedConventionFault" />) and left out.
 	/// </summary>
 	private static EquatableArray<AsyncInitializerModel> BuildAsyncInitializers(ImplInfo info, ITypeSymbol ownedType, BuildContext context)
 	{
@@ -328,22 +329,16 @@ partial class AwaitenGenerator
 		{
 			if (InaccessibleAsyncInitializerPart(convention, context.ContainerSymbol, context.Compilation) is { } reason)
 			{
-				if (InternalsMembers(scope, ConventionWrapperName(convention)).OfType<IMethodSymbol>()
+				INamedTypeSymbol owner = convention.Owner;
+				if (InternalsMembers(owner, ConventionWrapperName(convention)).OfType<IMethodSymbol>()
 					    .FirstOrDefault(method => method.Parameters.Length > 0 && context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly)) is { } wrapper)
 				{
 					models.Add(new AsyncInitializerModel(
-						$"{scope.ToDisplayString(FullyQualified)}.{InternalsClass}",
+						$"{owner.ToDisplayString(FullyQualified)}.{InternalsClass}",
 						wrapper.Name,
 						ClassifyHookParameterSymbols(wrapper.Parameters.Skip(1), asynchronous: true, release: false, info, context),
 						Wrapper: true));
 					continue;
-				}
-
-				if (!SymbolEqualityComparer.Default.Equals(scope.ContainingAssembly, context.Compilation.Assembly) && HasAwaitenAttribute(scope.GetAttributes(), "ModuleAttribute"))
-				{
-					string? cause = InternalsMembers(scope, ConventionSkippedName(convention)).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(skipped => skipped is not null)
-					                ?? ModuleShapeReason(scope);
-					reason += $", and the module '{Display(scope.ToDisplayString(FullyQualified))}' generated no wrapper for it" + (cause is null ? string.Empty : $" because {cause}");
 				}
 
 				context.Diagnostics.Add(new DiagnosticInfo(
@@ -353,8 +348,7 @@ partial class AwaitenGenerator
 						$"'{DisplayInstance(info.ImplementationType)}'",
 						Display(convention.Type.ToDisplayString(FullyQualified)),
 						convention.Name,
-						reason,
-						"make it public, or grant this assembly InternalsVisibleTo in its assembly",
+						..UnwrappedConventionFault(convention, reason, context.Compilation),
 					])));
 				continue;
 			}
@@ -366,6 +360,51 @@ partial class AwaitenGenerator
 		}
 
 		return new EquatableArray<AsyncInitializerModel>(models.ToArray());
+	}
+
+	/// <summary>
+	///     The <paramref name="reason" /> and remedy of <see cref="Diagnostics.InaccessibleAsyncInitializer">AWT234</see>
+	///     for a <paramref name="convention" /> a container cannot call and whose owner generated no wrapper for it. An owner
+	///     in the container's assembly hides the convention from it, so it has to be internal or public. The build of an
+	///     owner in another assembly records why it generated no wrapper and what lets it (see
+	///     <see cref="CollectConventionWrappers" />), a module that is not partial records only that, and an owner built
+	///     without the generator records nothing. Granting <c>InternalsVisibleTo</c> is offered only when it would let the
+	///     container reach the convention's type.
+	/// </summary>
+	private static string[] UnwrappedConventionFault(AsyncInitializerConvention convention, string reason, Compilation compilation)
+	{
+		INamedTypeSymbol owner = convention.Owner;
+		if (SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly))
+		{
+			return [reason, "make it internal or public",];
+		}
+
+		bool module = HasAwaitenAttribute(owner.GetAttributes(), "ModuleAttribute");
+		string? cause = Recorded(ConventionSkippedName(convention));
+		string? remedy = cause is null ? null : Recorded(ConventionRemedyName(convention));
+		if (cause is null && module && ModuleShapeReason(owner) is { } shape)
+		{
+			cause = shape;
+			remedy = shape == ModuleNotPartialReason ? "make the module and every class that contains it partial" : null;
+		}
+
+		string kind = module ? "module" : "container";
+		// A type private to the owner stays out of reach of every other type, so InternalsVisibleTo does not help.
+		bool grantHelps = compilation.IsSymbolAccessibleWithin(convention.Type, owner.ContainingAssembly);
+		return
+		[
+			$"{reason}, and the {kind} '{Display(owner.ToDisplayString(FullyQualified))}' generated no wrapper for it" + (cause is null ? string.Empty : $" because {cause}"),
+			(remedy, grantHelps) switch
+			{
+				(null, true) => "make it public, or grant this assembly InternalsVisibleTo in its assembly",
+				(null, false) => "make it public",
+				(_, true) => $"{remedy}, or grant this assembly InternalsVisibleTo in the {kind}'s assembly",
+				_ => remedy,
+			},
+		];
+
+		string? Recorded(string constant)
+			=> InternalsMembers(owner, constant).OfType<IFieldSymbol>().Select(field => field.ConstantValue as string).FirstOrDefault(value => value is not null);
 	}
 
 	/// <summary>
@@ -444,9 +483,9 @@ partial class AwaitenGenerator
 			{
 				fault = ("the method is not accessible in the module's assembly, so no container can call it", "make the method internal or public");
 			}
-			else if (NeedsConventionWrapper(convention, context) && ConventionWrapperFault(method) is { } parameter)
+			else if (NeedsConventionWrapper(convention, context) && MirrorConventionParameters(method, context, out _) is { } parameter)
 			{
-				fault = ($"{parameter}, so the module can generate no wrapper through which a container in another assembly runs it", "make the parameter type public");
+				fault = ($"{parameter.Reason}, so the module can generate no wrapper through which a container in another assembly runs it", parameter.Remedy);
 			}
 
 			if (fault is { } found)
@@ -469,8 +508,9 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether a container in another assembly runs <paramref name="convention" /> of a module it builds an
-	///     implementation for only through the module's wrapper: the module is public, the generated member is public
-	///     (not one of <see cref="ModuleScanContext.Internal" />), and the convention's type or method is not.
+	///     implementation for, or of a base container it extends, only through the owner's wrapper: the owner is public,
+	///     the generated member is public (not one of <see cref="ModuleScanContext.Internal" />), and the convention's type
+	///     or method is not.
 	/// </summary>
 	private static bool NeedsConventionWrapper(AsyncInitializerConvention convention, ModuleScanContext context)
 		=> !context.Internal
@@ -478,30 +518,85 @@ partial class AwaitenGenerator
 		   && (!IsExternallyAccessible(convention.Type) || convention.Method!.DeclaredAccessibility != Accessibility.Public);
 
 	/// <summary>
-	///     Why the module cannot generate the public wrapper of a convention <paramref name="method" />, or
-	///     <see langword="null" />: a parameter type that is not public, which the wrapper would have to take.
+	///     The parameters of the public wrapper of a convention <paramref name="method" /> (see
+	///     <see cref="CollectConventionWrappers" />), or why its owner cannot generate the wrapper and what lets it. A
+	///     parameter of a public type is passed on as it is, and one that takes an internal service the module or another
+	///     module of its assembly registers takes the service's handle (see <see cref="MirrorHiddenService" />), as the
+	///     wrappers of hooks and of the conventions of handles do. When the wrapper cannot be generated, nothing the
+	///     parameters before recorded of the module's handles is kept.
 	/// </summary>
-	private static string? ConventionWrapperFault(IMethodSymbol method)
-		=> method.Parameters.FirstOrDefault(parameter => !IsExternallyAccessible(parameter.Type)) is { } parameter
-			? $"its parameter '{parameter.Name}' has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public"
-			: null;
+	private static (string Reason, string Remedy)? MirrorConventionParameters(IMethodSymbol method, ModuleScanContext context, out FactoryParameter[] parameters)
+	{
+		parameters = [];
+		(int, INamedTypeSymbol[])? snapshot = context.Hidden?.Snapshot();
+		List<FactoryParameter> mirrored = new();
+		foreach (IParameterSymbol parameter in method.Parameters)
+		{
+			HiddenMirror? handle = MirrorHiddenService(parameter.Type, parameter.Name, parameter.GetAttributes(), context, out INamedTypeSymbol? unbuildable);
+			if (handle is { Error: null, })
+			{
+				mirrored.Add(handle.Parameter);
+				continue;
+			}
+
+			if (handle is null && IsExternallyAccessible(parameter.Type))
+			{
+				mirrored.Add(new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name));
+				continue;
+			}
+
+			if (snapshot is { } taken)
+			{
+				context.Hidden!.Restore(taken);
+			}
+
+			string member = $"its parameter '{parameter.Name}'";
+			if (handle?.Error is { } shape)
+			{
+				return ($"{member} takes the internal service '{shape.Arguments[0]}' as '{shape.Arguments[1]}', which the wrapper cannot pass on",
+					$"take '{shape.Arguments[0]}' directly, or as Func<T>, Lazy<T>, Owned<T>, Func<Owned<T>>, Func<TArg..., T>, Func<TArg..., Owned<T>> or a collection of T");
+			}
+
+			if (unbuildable is not null)
+			{
+				return (UnbuildableNeed(member, unbuildable, context.Hidden!.Rejection(unbuildable)),
+					$"let the module build '{Display(unbuildable.ToDisplayString(FullyQualified))}', or make the parameter type public");
+			}
+
+			return ($"{member} has the type '{Display(parameter.Type.ToDisplayString(FullyQualified))}', which is not public",
+				HasAwaitenAttribute(context.Module.GetAttributes(), "ModuleAttribute") ? "make the parameter type public or register it in the module" : "make the parameter type public");
+		}
+
+		parameters = mirrored.ToArray();
+		return null;
+	}
 
 	/// <summary>
-	///     The public wrappers a module another assembly can name generates for its conventions that such an assembly
-	///     cannot call, because their type or method is not public: each takes the instance as <c>object</c>, casts it to
-	///     the convention's type and runs the method, so a container in another assembly initializes everything the
-	///     module registers, scans, decorates or builds through a generated factory without naming the convention. The
-	///     instance parameter takes any instance, so one wrapper serves every implementation the convention initializes.
-	///     A convention whose type is private to the module or that takes a parameter of a type that is not public gets
-	///     a record of why instead (see <see cref="ConventionSkippedName" />); the module reports it for what it builds
-	///     itself (see <see cref="ModuleAsyncInitializerFault" />), and a container in another assembly for what it
-	///     constructs, with that reason.
+	///     The public wrappers a module or a container another assembly can name generates for its conventions that such
+	///     an assembly cannot call, because their type or method is not public: each takes the instance as
+	///     <c>object</c>, casts it to the convention's type and runs the method, so a container in another assembly
+	///     initializes everything the module registers, scans, decorates or builds through a generated factory, or
+	///     everything it inherits from the container, without naming the convention. The instance parameter takes any
+	///     instance, so one wrapper serves every implementation the convention initializes. A parameter that takes an
+	///     internal service of the module goes through the service's handle (see <see cref="MirrorConventionParameters" />),
+	///     whose use <paramref name="hidden" /> records. A convention whose type is private to the owner or whose
+	///     parameter the wrapper cannot take gets a record of why and of what lets it instead (see
+	///     <see cref="ConventionSkippedName" /> and <see cref="ConventionRemedyName" />); a module reports it for what it
+	///     builds itself (see <see cref="ModuleAsyncInitializerFault" />), and a container in another assembly for what it
+	///     constructs, with that reason. Only the owner's own build generates them; a base container of another assembly
+	///     is analyzed by an extending container's build too, which emits none of them.
 	/// </summary>
-	private static List<ConventionWrapper> CollectConventionWrappers(INamedTypeSymbol module, Compilation compilation)
+	private static List<ConventionWrapper> CollectConventionWrappers(INamedTypeSymbol owner, Compilation compilation, HiddenServices? hidden = null)
 	{
 		List<ConventionWrapper> wrappers = new();
-		ModuleScanContext context = new(module, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal));
-		foreach (AsyncInitializerConvention convention in DeclaredAsyncInitializers(module, compilation, null))
+		if (!SymbolEqualityComparer.Default.Equals(owner.ContainingAssembly, compilation.Assembly))
+		{
+			return wrappers;
+		}
+
+		ModuleScanContext context = new(owner, compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal), hidden);
+		string kind = HasAwaitenAttribute(owner.GetAttributes(), "ModuleAttribute") ? "module" : "container";
+		foreach (AsyncInitializerConvention convention in DeclaredAsyncInitializers(owner, compilation, null))
 		{
 			string name = ConventionWrapperName(convention);
 			if (!NeedsConventionWrapper(convention, context) || wrappers.Exists(wrapper => wrapper.Name == name || wrapper.Name == ConventionSkippedName(convention)))
@@ -510,17 +605,19 @@ partial class AwaitenGenerator
 			}
 
 			IMethodSymbol method = convention.Method!;
-			string? skipReason = TypeHiddenInModule(convention.Type, module, compilation) is not null
-				? $"'{Display(convention.Type.ToDisplayString(FullyQualified))}' is private to the module"
-				: ConventionWrapperFault(method);
-			wrappers.Add(skipReason is null
+			string conventionType = Display(convention.Type.ToDisplayString(FullyQualified));
+			FactoryParameter[] parameters = [];
+			(string Reason, string Remedy)? fault = TypeHiddenInModule(convention.Type, owner, compilation) is not null
+				? ($"'{conventionType}' is private to the {kind}", $"make '{conventionType}' internal or public")
+				: MirrorConventionParameters(method, context, out parameters);
+			wrappers.Add(fault is not { } skipped
 				? new ConventionWrapper(
 					name,
 					convention.Type.ToDisplayString(FullyQualified),
 					convention.Name,
 					method.ReturnType.ToDisplayString(FullyQualified),
-					new EquatableArray<FactoryParameter>(method.Parameters.Select(parameter => new FactoryParameter(parameter.Type.ToDisplayString(FullyQualifiedWithNullability), parameter.Name)).ToArray()))
-				: new ConventionWrapper(ConventionSkippedName(convention), string.Empty, convention.Name, string.Empty, default, skipReason));
+					new EquatableArray<FactoryParameter>(parameters))
+				: new ConventionWrapper(ConventionSkippedName(convention), string.Empty, convention.Name, string.Empty, default, skipped.Reason, ConventionRemedyName(convention), skipped.Remedy));
 		}
 
 		return wrappers;
@@ -544,8 +641,8 @@ partial class AwaitenGenerator
 		=> $"Initializer_{convention.Type.Name}_{Fnv1a($"{convention.Type.ToDisplayString(FullyQualified)}\0{convention.Name}"):x8}";
 
 	/// <summary>
-	///     A deterministic name for the constant that records why the module generates no wrapper for a convention,
-	///     derived like <see cref="ConventionWrapperName" />.
+	///     A deterministic name for the constant that records why the module or container generates no wrapper for a
+	///     convention, derived like <see cref="ConventionWrapperName" />.
 	/// </summary>
 	private static string ConventionSkippedName(AsyncInitializerConvention convention)
 		=> "InitializerSkipped_" + ConventionWrapperName(convention).Substring("Initializer_".Length);
@@ -576,4 +673,11 @@ partial class AwaitenGenerator
 		bool Recorded(AsyncInitializerConvention convention) => !InternalsMembers(owner, MemberInitializerName(wrapper, convention)).IsEmpty;
 		return conventions.Exists(Recorded) ? Recorded : null;
 	}
+
+	/// <summary>
+	///     A deterministic name for the constant that records what lets the module or container generate the wrapper of a
+	///     convention it generates none for (see <see cref="ConventionSkippedName" />).
+	/// </summary>
+	private static string ConventionRemedyName(AsyncInitializerConvention convention)
+		=> "InitializerRemedy_" + ConventionWrapperName(convention).Substring("Initializer_".Length);
 }

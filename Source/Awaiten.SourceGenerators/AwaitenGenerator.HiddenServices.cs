@@ -730,6 +730,7 @@ partial class AwaitenGenerator
 		hidden.Demand = demand;
 		List<MemberWrapper> wrappers = CollectModuleMemberWrappers(module, compilation, diagnostics, skipped, hidden);
 		List<RegistrationFactory> contributions = CollectModuleContributionFactories(module, compilation, hidden, diagnostics);
+		CollectConventionWrappers(module, compilation, hidden);
 		ModuleExpansion expansion = ExpandModule(module, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
 		next.Services.UnionWith(hidden.Used);
 		next.Scanned.UnionWith(hidden.ScanAliased);
@@ -842,12 +843,14 @@ partial class AwaitenGenerator
 	///     <c>[Scan]</c>, whose matches may take internal services, or a registration, decorator or composite that names an
 	///     internal service, or a type a container in another assembly cannot construct or that converts to an internal
 	///     type, or whose <c>Factory</c> member or hook takes a parameter of a type that is not public, which its wrapper
-	///     takes through a handle. A module that declares none of these never reads the modules of its assembly.
+	///     takes through a handle, as the wrapper of an async initializer convention with such a parameter does. A module
+	///     that declares none of these never reads the modules of its assembly.
 	/// </summary>
 	private static bool MayBuildThroughHandles(INamedTypeSymbol module, Compilation compilation)
 	{
 		ImmutableArray<AttributeData> attributes = module.GetAttributes();
 		return HasAwaitenAttribute(attributes, "ScanAttribute")
+		       || DeclaredAsyncInitializers(module, compilation, null).Exists(convention => convention.Method?.Parameters.Any(parameter => !IsExternallyAccessible(parameter.Type)) == true)
 		       || ConstructedModuleRegistrations(module, compilation, members: true).Any(registration => !IsExternallyAccessible(registration.Service) || Concealed(registration.Implementation) || TakesConcealedParameter(registration))
 		       || attributes.Any(attribute => attribute.AttributeClass is { Name: "DecorateAttribute" or "CompositeAttribute", } attributeClass
 		                                      && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
