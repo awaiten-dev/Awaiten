@@ -138,7 +138,7 @@ public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // AWT242: take I
 public static partial class CoffeeShop;
 ```
 
-A collection (`IEnumerable<T>`, `IReadOnlyList<T>`, `T[]` and the like) is built from the container's own registrations of `T`, never from the host, so it contains only the container's own registrations, including variance matches. A closed imported type cannot be registered ([AWT175](../09-diagnostics.md#awt175)), so a collection of it gets members only through variance, such as a registered `IHandler<object>` in a collection of an imported `IHandler<string>`. A collection of an imported service that has no member is always empty, so it is reported as a warning ([AWT250](../09-diagnostics.md#awt250)). Under `[ImportServices]` alone, an empty collection of an unregistered type is not reported.
+A collection (`IEnumerable<T>`, `IReadOnlyList<T>`, `T[]` and the like) contains only the container's own registrations of `T`, including variance matches, never the host's instance. A closed imported type cannot be registered ([AWT175](../09-diagnostics.md#awt175)), so a collection of it gets members only through variance, such as a registered `IHandler<object>` in a collection of an imported `IHandler<string>`. A collection of an imported service without such a member is always empty and is reported as a warning ([AWT250](../09-diagnostics.md#awt250)). Under `[ImportServices]` alone, an empty collection of an unregistered type is not reported.
 
 ```csharp expect=AWT250
 public sealed class Checkout(IEnumerable<IPaymentGateway> gateways);   // AWT250: always empty, take IPaymentGateway directly
