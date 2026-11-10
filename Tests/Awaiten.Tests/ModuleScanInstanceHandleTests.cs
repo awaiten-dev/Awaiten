@@ -338,13 +338,13 @@ public partial class ModuleScanInstanceHandleTests
 		[Singleton<PublicMultiRoaster, IPublicMultiRoaster>(SuppressDisposal = true)]
 		public static partial class UndisposedPublicMatchContainer;
 
-		// AWT142: the container's scan takes the module's match with another lifetime on purpose, to pin that its lifetime wins.
-#pragma warning disable AWT142
+		// AWT142: the container's scan takes the module's match with another lifetime on purpose, to pin that its lifetime wins; the warning lands on the import of the later scan.
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
+#pragma warning disable AWT142
 		[Import(typeof(PublicMultiExposureScanModule))]
+#pragma warning restore AWT142
 		[Scan<IPublicMultiPlugin>(InAssembliesOf = new[] { typeof(IPublicMultiPlugin) }, Lifetime = Lifetime.Scoped)]
 		public static partial class ScannedPublicMatchContainer;
-#pragma warning restore AWT142
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
 		[Import(typeof(PublicMultiExposureScanModule))]

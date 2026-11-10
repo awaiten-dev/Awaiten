@@ -140,11 +140,12 @@ partial class AwaitenGenerator
 					.OfType<string>()
 					.Where(factory => !produced.Contains($"{module.ToDisplayString(FullyQualified)}.{factory}")),
 				StringComparer.Ordinal);
-			IEnumerable<ITypeSymbol> types = (module.GetTypeMembers(InternalsClass).FirstOrDefault()?.GetMembers() ?? ImmutableArray<ISymbol>.Empty)
+			List<IMethodSymbol> methods = (module.GetTypeMembers(InternalsClass).FirstOrDefault()?.GetMembers() ?? ImmutableArray<ISymbol>.Empty)
 				.OfType<IMethodSymbol>()
-				.Where(method => !uncalledScanFactories.Contains(InInternals(method.Name)))
-				.SelectMany(method => method.Parameters.Select(parameter => parameter.Type).Concat([method.ReturnType,]));
-			foreach (INamedTypeSymbol handle in types.SelectMany(TypesIn).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
+				.ToList();
+			// An uncalled scan factory still names its handles, as in the AWT141 of a match it skips.
+			HashSet<INamedTypeSymbol> needed = new(methods.Where(method => !uncalledScanFactories.Contains(InInternals(method.Name))).SelectMany(TypesOf), SymbolEqualityComparer.Default);
+			foreach (INamedTypeSymbol handle in methods.SelectMany(TypesOf).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
 			{
 				if (handle is not { ContainingType: { Name: InternalsClass, ContainingType: { } provider, }, }
 				    || !handle.Name.StartsWith("Hidden_", StringComparison.Ordinal)
@@ -158,7 +159,8 @@ partial class AwaitenGenerator
 					providers.Add(provider);
 				}
 
-				if (modules.Contains(provider, SymbolEqualityComparer.Default)
+				if (!needed.Contains(handle)
+				    || modules.Contains(provider, SymbolEqualityComparer.Default)
 				    || modules.Any(registering => SymbolEqualityComparer.Default.Equals(registering.ContainingAssembly, provider.ContainingAssembly)
 				                                  && ConstructedModuleRegistrations(registering, compilation, members: true).Any(registration => HiddenHandleName(registration.Service) == handle.Name)))
 				{
@@ -186,6 +188,9 @@ partial class AwaitenGenerator
 		}
 
 		return providers;
+
+		static IEnumerable<INamedTypeSymbol> TypesOf(IMethodSymbol method)
+			=> method.Parameters.Select(parameter => parameter.Type).Concat([method.ReturnType,]).SelectMany(TypesIn);
 
 		static IEnumerable<INamedTypeSymbol> TypesIn(ITypeSymbol type)
 			=> type switch

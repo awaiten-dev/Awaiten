@@ -1423,7 +1423,9 @@ partial class AwaitenGenerator
 	///     it themselves. One produced by a <c>Factory</c> or <c>Instance</c> member keeps its handles, since nothing else
 	///     can call the member, and a consuming container serves the match from its instance handle (see
 	///     <c>ShareHandledInstances</c>), as a container in the module's own assembly lets the match yield to the registration.
-	///     One under an internal service is no longer viable, so nothing takes its handle; it is reported unless the
+	///     The scan makes several producers of such an implementation productions of its one instance, so the module
+	///     reports their conflicts (AWT111) as a container of its assembly does, apart from those within one producer,
+	///     which <see cref="CompleteHiddenServices" /> reports. One under an internal service is no longer viable, so nothing takes its handle; it is reported unless the
 	///     module's assembly grants <c>InternalsVisibleTo</c>, whose assemblies construct it once for both, or unless a
 	///     self-compiled registration of it reports it already.
 	/// </summary>
@@ -1432,6 +1434,22 @@ partial class AwaitenGenerator
 		INamedTypeSymbol module = hidden.Module;
 		Compilation compilation = hidden.Compilation;
 		hidden.Implementations.RemoveAll(candidate => candidate is { Shared: true, Production: ProductionKind.Constructor, } && scanFactories.Any(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)));
+		foreach (IGrouping<INamedTypeSymbol, HiddenImplementation> producers in hidden.Implementations
+			         .Where(candidate => candidate is { Shared: true, Producer: not null, } && scanFactories.Any(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)))
+			         .GroupBy<HiddenImplementation, INamedTypeSymbol>(candidate => candidate.Implementation, SymbolEqualityComparer.Default)
+			         .Where(group => group.Count() > 1))
+		{
+			List<DiagnosticInfo> together = new();
+			List<DiagnosticInfo> apart = new();
+			ReportHandledConflicts(producers.Key, null, module, compilation, together);
+			foreach (HiddenImplementation producer in producers)
+			{
+				ReportHandledConflicts(producers.Key, producer.Producer, module, compilation, apart);
+			}
+
+			diagnostics.AddRange(together.Except(apart));
+		}
+
 		foreach (HiddenImplementation candidate in hidden.Implementations.Where(candidate => candidate is { Viable: true, Shared: false, }))
 		{
 			if (scanFactories.FirstOrDefault(factory => factory.ImplementationType == candidate.Implementation.ToDisplayString(FullyQualified)) is not { } scanned)

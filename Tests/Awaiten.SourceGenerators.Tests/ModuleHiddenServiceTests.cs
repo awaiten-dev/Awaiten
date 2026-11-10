@@ -1994,6 +1994,25 @@ public class ModuleHiddenServiceTests
 					static string Message(string diagnostic)
 						=> diagnostic.Substring(diagnostic.IndexOf("AWT111", StringComparison.Ordinal));
 				}
+
+				[Test]
+				public async Task WithAnotherFactoryOfTheModule_ConflictsInTheLibrary()
+				{
+					string library = Library
+						.Replace("[Singleton<Clock>(Factory = nameof(CreateS))]", "[Singleton<Clock>(Factory = nameof(CreateS))]\n[Singleton<Clock>(Factory = nameof(CreateT))]")
+						.Replace("internal static Clock CreateS(TimeSource source) => new(source);", "internal static Clock CreateS(TimeSource source) => new(source);\n    internal static Clock CreateT(TimeSource source) => new(source);");
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					string expected = Run(library, container, "same").Diagnostics.Single();
+
+					GeneratorResult result = Generator.Run(library);
+
+					await That(result.Diagnostics).HasSingle().Which.IsEqualTo(expected)
+						.Because("the scan names the class, so both factories are productions of the one instance a container in another assembly shares through a handle, which a container of the module's own assembly reports");
+				}
 			}
 
 			public class SharedWithTheScanOfAnotherModule
@@ -2065,6 +2084,26 @@ public class ModuleHiddenServiceTests
 
 					await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.SModule' needs the internal service 'Lib.TimeSource'")
 						.Because("the scan's own factory builds the match and takes the internal service another module registers");
+				}
+
+				[Test]
+				[Arguments("same")]
+				[Arguments("friend")]
+				[Arguments("full")]
+				[Arguments("reference")]
+				public async Task WithoutARegistrationOfTheClass_SkipsAnUnconstructableMatchAsInTheModulesOwnAssembly(string consumer)
+				{
+					const string container = """
+						[Container]
+						[Import(typeof(SModule))]
+						public static partial class {0};
+						""";
+					string library = Library.Replace("{{production}}", "Instance = nameof(Field)")
+						.Replace("Lifetime = Lifetime.Singleton)]", "Lifetime = Lifetime.Singleton, SkipUnconstructable = true)]");
+					GeneratorResult result = Run(library, container, consumer);
+
+					await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT141").And.Contains("requires 'Lib.TimeSource").And.DoesNotContain("Hidden_")
+						.Because("the match is skipped with the warning of the module's own assembly, which names the internal service, not its generated handle");
 				}
 			}
 
