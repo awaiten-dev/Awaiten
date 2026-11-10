@@ -223,6 +223,32 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task DoesNotReportACollectionOfAnImportedRelationship()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using System;
+			                                       using System.Collections.Generic;
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IClock { }
+			                                       public sealed class Clock : IClock { }
+			                                       public sealed class Reader { public Reader(IEnumerable<Func<IClock>> clocks) { } }
+
+			                                       [Container]
+			                                       [Singleton<Clock, IClock>]
+			                                       [ImportService<Func<IClock>>]
+			                                       [Singleton<Reader>]
+			                                       public static partial class MyContainer;
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.IsEqualTo("*error AWT254*").AsWildcard()
+				.Because("a collection of a relationship is already the AWT254 error, so the warning about the import would only repeat it");
+		}
+
+		[Test]
 		public async Task DoesNotReportADecoratorPredicate()
 		{
 			GeneratorResult result = Generator.Run("""

@@ -963,6 +963,10 @@ partial class AwaitenGenerator
 		HashSet<ServiceKey> collected = new(collections.Select(collection => new ServiceKey(collection.Service, collection.Key)));
 		HashSet<string> keyedCollected = new(keyedCollections.Select(keyed => keyed.Service), StringComparer.Ordinal);
 		HashSet<DiagnosticInfo> reported = new();
+		// A collection of relationships is already the AWT254 error at its dependency, which this warning would only repeat.
+		HashSet<LocationInfo> relationshipCollections = new(diagnostics
+			.Where(diagnostic => diagnostic.Descriptor == Diagnostics.CollectionOfRelationships && diagnostic.Location is not null)
+			.Select(diagnostic => diagnostic.Location!));
 		for (int i = 0; i < instances.Count; i++)
 		{
 			// Not the decorator predicate's parameters, which take no collection at all (AWT248).
@@ -977,7 +981,9 @@ partial class AwaitenGenerator
 					DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection => !keyedCollected.Contains(dependency.ServiceType),
 					_ => false,
 				};
-				if (!empty || !externalServiceTypes.Routes(dependency.ServiceType))
+				if (!empty
+				    || !externalServiceTypes.Routes(dependency.ServiceType)
+				    || (dependency.Location is { } at && relationshipCollections.Contains(at)))
 				{
 					continue;
 				}
