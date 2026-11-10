@@ -212,6 +212,11 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static void ReportWhenUnregistered(ParameterModel parameterModel, ITypeSymbol declaredType, ImplInfo info, BuildContext context)
 	{
+		if (ReportCollectionOfRelationships(parameterModel, declaredType, info, context.ServiceToImpl, context.Diagnostics))
+		{
+			return;
+		}
+
 		if (parameterModel.Kind is DependencyKind.Arg or DependencyKind.CancellationToken or DependencyKind.External or DependencyKind.Absent or DependencyKind.Present
 		    || IsSynthesizedCollection(parameterModel.Kind)
 		    || context.ServiceToImpl.ContainsKey(KeyOf(parameterModel))
@@ -222,6 +227,119 @@ partial class AwaitenGenerator
 		}
 
 		context.Diagnostics.Add(UnregisteredDependency(parameterModel, declaredType, info, info.Location, context.External.ServiceTypes));
+	}
+
+	/// <summary>
+	///     Reports <see cref="Diagnostics.CollectionOfRelationships">AWT254</see> for a synthesized collection or keyed
+	///     dictionary whose element is a relationship (<c>Func</c>, <c>Lazy</c>, <c>Owned</c> or <c>Task</c>) with no
+	///     registration of its own, which would otherwise synthesize empty. Returns whether it reported.
+	/// </summary>
+	private static bool ReportCollectionOfRelationships(
+		ParameterModel dependency,
+		ITypeSymbol declaredType,
+		ImplInfo info,
+		Dictionary<ServiceKey, string> serviceToImpl,
+		List<DiagnosticInfo> diagnostics)
+	{
+		if (dependency.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable or DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection)
+		    || RelationshipCollection(declaredType) is not { } shape
+		    || HasElementRegistration(dependency.ServiceType, dependency.Key, dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection, serviceToImpl))
+		{
+			return false;
+		}
+
+		diagnostics.Add(new DiagnosticInfo(
+			Diagnostics.CollectionOfRelationships,
+			dependency.Location ?? info.Location,
+			new EquatableArray<string>([
+				DisplayInstance(info.OwningServiceOrImpl),
+				DisplayInstance(info.ImplementationType),
+				Display(declaredType.ToDisplayString(FullyQualified)),
+				shape.Element,
+				shape.Remedy,
+				shape.Target,
+			])));
+		return true;
+	}
+
+	/// <summary>
+	///     For a collection shape or keyed dictionary whose element is a relationship, the displayed element, the same
+	///     shape over the type the relationship wraps (unwrapped through every level) and that type; otherwise
+	///     <see langword="null" />. A <c>Type</c>-keyed dispatch dictionary of <c>Func</c> values is no such shape.
+	/// </summary>
+	internal static (string Element, string Remedy, string Target)? RelationshipCollection(ITypeSymbol type)
+	{
+		if (TryGetTypeDispatch(type, out _)
+		    || !(IsAsyncEnumerable(type, out _)
+		         || TryGetCollectionElement(type, out _)
+		         || TryGetKeyedCollectionElement(type, out _, out _)
+		         || TryGetAwaitedCollection(type, out _, out _)
+		         || TryGetAwaitedKeyedCollection(type, out _, out _, out _))
+		    || CollectionElement(type) is not { } element
+		    || RelationshipTarget(element) is null)
+		{
+			return null;
+		}
+
+		ITypeSymbol target = element;
+		while (RelationshipTarget(target) is { } inner)
+		{
+			target = inner;
+		}
+
+		string elementDisplay = element.ToDisplayString(FullyQualified);
+		string targetDisplay = target.ToDisplayString(FullyQualified);
+		return (Display(elementDisplay), Display(type.ToDisplayString(FullyQualified).Replace(elementDisplay, targetDisplay)), Display(targetDisplay));
+	}
+
+	// A keyed dictionary collects every keyed registration of its value type, the other shapes the registrations under
+	// the dependency's own key.
+	private static bool HasElementRegistration(string element, string? key, bool keyedDictionary, Dictionary<ServiceKey, string> serviceToImpl)
+		=> keyedDictionary
+			? serviceToImpl.Keys.Any(registered => registered.Service == element && IsUserKey(registered.Key))
+			: serviceToImpl.ContainsKey(new ServiceKey(element, key));
+
+	/// <summary>
+	///     Whether the element type of the collection shape or keyed dictionary <paramref name="collection" />, requested
+	///     under <paramref name="key" />, has a registration, so a dependency on the shape has members.
+	/// </summary>
+	internal static bool HasCollectionElementRegistration(ITypeSymbol collection, string? key, Dictionary<ServiceKey, string> serviceToImpl)
+		=> CollectionElement(collection) is { } element
+		   && HasElementRegistration(
+			   element.ToDisplayString(FullyQualified),
+			   key,
+			   TryGetKeyedCollectionElement(collection, out _, out _) || TryGetAwaitedKeyedCollection(collection, out _, out _, out _),
+			   serviceToImpl);
+
+	/// <summary>
+	///     The element type of a collection shape (<c>T[]</c>, <c>IEnumerable&lt;T&gt;</c> and its siblings,
+	///     <c>IAsyncEnumerable&lt;T&gt;</c>, the value type of <c>IReadOnlyDictionary&lt;TKey, T&gt;</c>), also inside an
+	///     awaited <c>Task&lt;?&gt;</c>.
+	/// </summary>
+	private static ITypeSymbol? CollectionElement(ITypeSymbol type)
+		=> type switch
+		{
+			IArrayTypeSymbol array => array.ElementType,
+			_ when IsTask(type, out ITypeSymbol awaited) => CollectionElement(awaited),
+			INamedTypeSymbol { IsGenericType: true, } named => named.TypeArguments[named.TypeArguments.Length - 1],
+			_ => null,
+		};
+
+	/// <summary>
+	///     The type a relationship wraps: the produced type of a <c>Func</c>, the value of a <c>Lazy</c>, the result of a
+	///     <c>Task</c> or the inner type of an <c>Owned</c>; <see langword="null" /> for any other type.
+	/// </summary>
+	private static ITypeSymbol? RelationshipTarget(ITypeSymbol type)
+	{
+		if (IsTask(type, out ITypeSymbol inner) || IsOwned(type, out inner))
+		{
+			return inner;
+		}
+
+		return type is INamedTypeSymbol { IsGenericType: true, Name: "Func" or "Lazy", } named
+		       && named.ContainingNamespace?.ToDisplayString() == "System"
+			? named.TypeArguments[named.Name == "Lazy" ? 0 : named.TypeArguments.Length - 1]
+			: null;
 	}
 
 	/// <summary>
@@ -540,6 +658,7 @@ partial class AwaitenGenerator
 		// explicitly registered dictionary was rewritten to Direct above and resolves that registration.
 		ReportUnsupportedKeyedCollectionKey(dependency, property.Type, info, context.ServiceToImpl, context.Diagnostics);
 		ReportFromKeyOnKeyedCollection(dependency, property.Type, info, context.Diagnostics);
+		ReportCollectionOfRelationships(dependency, property.Type, info, context.ServiceToImpl, context.Diagnostics);
 
 		dependency = RedirectVariance(dependency, property.Type, context.ServiceToImpl, context.Variance);
 		RecordRequestedCollectionElement(dependency, property.Type, context.Variance);
