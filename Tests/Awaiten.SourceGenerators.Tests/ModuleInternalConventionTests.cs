@@ -187,22 +187,23 @@ public class ModuleInternalConventionTests
 		}
 
 		[Test]
-		public async Task OfAFactoryMemberReturningAnInternalImplementation_WithAConventionParameterOfAnInternalType_IsReportedByAContainerInAnotherAssembly()
+		public async Task OfAFactoryMemberReturningAnInternalImplementation_WithAConventionParameterOfAnInternalServiceOfTheModule_RunsInAContainerInAnotherAssembly()
 		{
 			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(Library(
 				"internal sealed class Settings { }\ninternal sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }",
 				MethodConvention + "[Singleton<Settings>][Singleton<IBrew>(Factory = nameof(Make))]",
 				"public static partial class CoffeeModule { private static Brew Make() => new(); }"));
-			const string expected = "error AWT234: 'Lib.IBrew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but 'Lib.Brew' is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because its parameter 'settings' has the type 'Lib.Settings', which is not public; make it public, or grant this assembly InternalsVisibleTo in its assembly";
 
 			await That(library.Diagnostics).IsEmpty()
 				.Because("a container in the module's assembly calls the factory and the convention itself");
 			await That(same.Diagnostics).IsEmpty();
 			await That(friend.Diagnostics).IsEmpty();
-			await That(external.Diagnostics).HasSingle().Which.EndsWith(expected)
-				.Because("the module recorded that the convention initializes what its factory returns, and why it generated no wrapper for it");
-			await That(reference.Diagnostics).HasSingle().Which.EndsWith(expected);
-			await That(compilation.Diagnostics).HasSingle().Which.EndsWith(expected);
+			foreach (GeneratorResult result in new[] { external, reference, compilation, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.Initializer_Brew_").Exactly(1)
+					.Because("the module recorded that the convention initializes what its factory returns, and its wrapper takes the internal service it registers through its handle");
+			}
 		}
 
 		[Test]
