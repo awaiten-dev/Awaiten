@@ -71,6 +71,12 @@ public partial class DiagnosticTests
 		[GeneratedRegex("public const string EmptyCollection_IThing_[0-9a-f]{8} = \"Lib\\.Counting\\\\nLib\\.IThing\";")]
 		private static partial Regex Record();
 
+		[GeneratedRegex("public const string EmptyCollection_[^;]*;")]
+		private static partial Regex AnyRecord();
+
+		[GeneratedRegex(@"Decorator_Counting_[0-9a-f]{8}\(Root\.ResolveIBrew\(__s\.__root\), new global::Lib\.IThing\[\] \{ Root\.Resolve\w+\(__s\.__root\) \}\)")]
+		private static partial Regex DecoratorWithPassedCollection();
+
 		[Test]
 		public async Task TheModuleRecordsTheElementTypeItPassesEmpty()
 		{
@@ -315,7 +321,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Library1().Replace("internal interface IThing", "public interface IThing"), Library2(),], App);
 
 			await That(result.Diagnostics).IsEmpty();
-			await That(Regex.IsMatch(Container(result), @"Decorator_Counting_[0-9a-f]{8}\(Root\.ResolveIBrew\(__s\.__root\), new global::Lib\.IThing\[\] \{ Root\.Resolve\w+\(__s\.__root\) \}\)")).IsTrue()
+			await That(DecoratorWithPassedCollection().IsMatch(Container(result))).IsTrue()
 				.Because("the module's factory takes a collection of a public element type from the container, which passes the other module's registration, the remedy the diagnostic names");
 		}
 
@@ -381,7 +387,7 @@ public partial class DiagnosticTests
 		{
 			(Compilation generated, _) = Generator.RunGenerator(Library1(), [], [], "Library1");
 			SyntaxTree[] olderOutput = generated.SyntaxTrees
-				.Select(tree => tree.WithChangedText(Microsoft.CodeAnalysis.Text.SourceText.From(Regex.Replace(tree.GetText().ToString(), "public const string EmptyCollection_[^;]*;", ""))))
+				.Select(tree => tree.WithChangedText(Microsoft.CodeAnalysis.Text.SourceText.From(AnyRecord().Replace(tree.GetText().ToString(), ""))))
 				.ToArray();
 			MetadataReference library1 = Generator.EmitToReference(CSharpCompilation.Create(
 				"Library1", olderOutput, References.For([]), new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)));

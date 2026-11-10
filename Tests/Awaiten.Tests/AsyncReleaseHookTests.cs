@@ -87,8 +87,10 @@ public sealed partial class AsyncReleaseHookTests
 		InitializedShop.Scope scope = shop.CreateScope();
 		await scope.ResolveAsync<Boiler>();
 
+#pragma warning disable AWT156 // the test checks that the synchronous Dispose throws
 		await That(() => scope.Dispose()).Throws<InvalidOperationException>().WithMessage("*OnRelease*asynchronous*DisposeAsync*").AsWildcard()
 			.Because("being async-initialized does not let a synchronous Dispose await the release hook");
+#pragma warning restore AWT156
 		await That(journal.Events).IsEqualTo(["boiler warmed", "boiler disposed",])
 			.Because("the synchronous Dispose skips only the asynchronous hook and still disposes the instance");
 	}
@@ -185,7 +187,9 @@ public sealed partial class AsyncReleaseHookTests
 		scope.Resolve<Till>();
 		scope.Resolve<Kettle>();
 
+#pragma warning disable AWT156 // the test checks that the synchronous Dispose throws
 		AggregateException thrown = await That(() => scope.Dispose()).Throws<AggregateException>();
+#pragma warning restore AWT156
 
 		await That(thrown.InnerExceptions).HasCount(2)
 			.Because("a synchronous Dispose cannot await either asynchronous hook, so it reports each one, like each async-only disposable");
@@ -237,9 +241,11 @@ public sealed partial class AsyncReleaseHookTests
 		ModuleShop.Scope scope = shop.CreateScope();
 		scope.Resolve<IAsyncReleasedTill>();
 
+#pragma warning disable AWT156 // the test checks that the synchronous Dispose throws
 		await That(() => scope.Dispose()).Throws<InvalidOperationException>()
 			.WithMessage("*OnRelease hook of 'Awaiten.Tests.Support.AsyncReleasedTill' is asynchronous*DisposeAsync*").AsWildcard()
 			.Because("the consumer calls the module's generated wrapper, whose name means nothing to the user, so the guidance names the service alone");
+#pragma warning restore AWT156
 	}
 
 	[Test]
