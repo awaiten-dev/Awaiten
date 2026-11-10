@@ -135,7 +135,7 @@ public static class Generator
 		[StringSyntax("c#-test")] string source)
 	{
 		(Compilation referencedOutput, _) = RunGenerator(referencedSource, [], [], "ReferencedAssembly");
-		return Run(source, [referencedOutput.ToMetadataReference(),]);
+		return Run(source, [ToCompilationReference(referencedOutput),]);
 	}
 
 	/// <summary>
@@ -220,7 +220,7 @@ public static class Generator
 		else
 		{
 			(Compilation @base, _) = RunGenerator(baseSource, [moduleReference,], [], "BaseAssembly");
-			baseReference = build == BaseBuild.CompilationReference ? @base.ToMetadataReference() : EmitToReference(@base);
+			baseReference = build == BaseBuild.CompilationReference ? ToCompilationReference(@base) : EmitToReference(@base);
 		}
 
 		return Run(source, [moduleReference, baseReference,]);
@@ -325,6 +325,23 @@ public static class Generator
 		}
 
 		return MetadataReference.CreateFromImage(stream.ToArray());
+	}
+
+	/// <summary>
+	///     Returns a compilation reference to <paramref name="compilation" />, failing loudly (with the offending diagnostics) when it
+	///     does not compile, as <see cref="EmitToReference" /> does.
+	/// </summary>
+	internal static MetadataReference ToCompilationReference(Compilation compilation)
+	{
+		Diagnostic[] errors = compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+		if (errors.Length > 0)
+		{
+			throw new InvalidOperationException(
+				"The referenced assembly does not compile: "
+				+ string.Join(Environment.NewLine, errors.Select(d => d.ToString())));
+		}
+
+		return compilation.ToMetadataReference();
 	}
 
 	/// <summary>The severities of an <c>.editorconfig</c>, which the compiler reads per syntax tree.</summary>
