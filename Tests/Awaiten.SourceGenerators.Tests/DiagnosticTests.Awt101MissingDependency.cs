@@ -135,7 +135,7 @@ public partial class DiagnosticTests
 			                                       namespace MyCode;
 
 			                                       public interface IMissing { }
-			                                       public sealed class Service { public Service(IMissing? missing = null) { } }
+			                                       public sealed class Service { public Service(IMissing missing = null) { } }
 
 			                                       [Container]
 			                                       [Transient<Service>]
@@ -144,7 +144,7 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("error AWT101") && diagnostic.Contains("'MyCode.IMissing'"))
 				.Because("a C# default value does not make a constructor parameter optional");
 		}
 
@@ -163,11 +163,11 @@ public partial class DiagnosticTests
 			                                       [Singleton<Service>(OnActivated = nameof(Activate))]
 			                                       public static partial class MyContainer
 			                                       {
-			                                       	private static void Activate(Service service, IMissing? missing = null) { }
+			                                       	private static void Activate(Service service, IMissing missing = null) { }
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("error AWT101") && diagnostic.Contains("'MyCode.IMissing'"))
 				.Because("a C# default value does not make a hook parameter optional");
 		}
 
@@ -181,8 +181,8 @@ public partial class DiagnosticTests
 			                                       namespace MyCode;
 
 			                                       public interface IMissing { }
-			                                       public interface IWarmUp { Task WarmUpAsync(IMissing? missing = null); }
-			                                       public sealed class Service : IWarmUp { public Task WarmUpAsync(IMissing? missing = null) => Task.CompletedTask; }
+			                                       public interface IWarmUp { Task WarmUpAsync(IMissing missing = null); }
+			                                       public sealed class Service : IWarmUp { public Task WarmUpAsync(IMissing missing = null) => Task.CompletedTask; }
 
 			                                       [Container]
 			                                       [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
@@ -192,8 +192,36 @@ public partial class DiagnosticTests
 			                                       }
 			                                       """);
 
-			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("error AWT101") && diagnostic.Contains("'MyCode.IMissing'"))
 				.Because("a C# default value does not make an async initializer convention parameter optional");
+		}
+
+		[Test]
+		public async Task DoesNotReportAHookOrConventionCollectionOfAnUnregisteredService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Collections.Generic;
+			                                       using System.Threading.Tasks;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public interface IWarmUp { Task WarmUpAsync(IEnumerable<IMissing> missing); }
+			                                       public sealed class Service : IWarmUp { public Task WarmUpAsync(IEnumerable<IMissing> missing) => Task.CompletedTask; }
+
+			                                       [Container]
+			                                       [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+			                                       [Singleton<Service>(OnActivated = nameof(Activate), OnRelease = nameof(Release))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static void Activate(Service service, IEnumerable<IMissing> missing) { }
+			                                       	private static void Release(Service service, IReadOnlyList<IMissing> missing) { }
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a collection of an unregistered service is empty, so a hook or convention can take a dependency it does without");
 		}
 
 		[Test]

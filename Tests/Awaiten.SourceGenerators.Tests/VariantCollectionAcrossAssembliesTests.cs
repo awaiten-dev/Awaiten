@@ -186,6 +186,17 @@ public class VariantCollectionAcrossAssembliesTests
 	}
 
 	[Test]
+	public async Task ADecoratorOfAVariantImplementationRegisteredUnderTheExactServiceNextToItsOwn_GetsNoFactory()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+			[Library(registrations: "[Singleton<DerivedHandler, IHandler<Derived>>]\n[Singleton<BaseHandler, IHandler<Base>>]\n[Singleton<BaseHandler, IHandler<Derived>>]"),],
+			App);
+
+		await That(result.Diagnostics).HasSingle().Which.Contains("error AWT230")
+			.Because("the collection still holds the variant registration of 'IHandler<Base>' next to the exact service");
+	}
+
+	[Test]
 	public async Task ADecoratorOfAnExactAndAVariantServiceThatArePublic_GetsAFactory()
 	{
 		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(

@@ -57,7 +57,7 @@ public static partial class CoffeeShop
 }
 ```
 
-To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. A dependency of the service itself can be an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead.
+To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
 
 ```csharp
 [Container]
