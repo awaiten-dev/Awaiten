@@ -275,6 +275,161 @@ public class CrossContainerAgreementTests
 				.Because("a friend constructs the implementation itself and fills the entry");
 		}
 
+		/// <summary>The library with an internal service in <c>CoffeeModule</c> only, so only that module builds the implementation through a handle.</summary>
+		private static string OneModuleWithAHandle() => Library()
+			.Replace("public interface IClock { }", "public interface IClock { }\ninternal interface IKettle { }\ninternal sealed class Kettle : IKettle { }")
+			.Replace("public static partial class CoffeeModule", "[Singleton<Kettle, IKettle>]\npublic static partial class CoffeeModule");
+
+		[Test]
+		public async Task SharedThroughTheHandleOfOneModule_HasItsInjectedPropertySetByTheHandle()
+		{
+			string library = OneModuleWithAHandle();
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, Consumer);
+
+			await That(Generator.Run(library).Sources.Values).Contains("*HiddenRegistration_Greeter_*(global::Lib.IClock @Clock) => new *(new global::Lib.Greeter() { Clock = @Clock });*").AsWildcard()
+				.Because("the factory of the handle sets the internal property on the instance it builds");
+			await That(external.Diagnostics).IsEmpty();
+			await That(reference.Diagnostics).IsEmpty();
+			await That(ContainerSource(external, "MyContainer")).Contains("Internals.Alias_Greeter_").And.DoesNotContain(" Clock = ").And.DoesNotContain(".Clock = ")
+				.Because("the other module's registration shares the handle's instance through an alias, and the container sets nothing on it, so the property is set once");
+		}
+
+		[Test]
+		[Arguments("[Import(typeof(OtherModule))]")]
+		[Arguments("[Singleton<Greeter, IOther>]")]
+		[Arguments("[Singleton<Greeter>]")]
+		[Arguments("[Scan<IOther>(InAssembliesOf = new[] { typeof(IOther) }, As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]")]
+		public async Task SharedThroughTheHandleOfOneModule_ReportsAContainerSideEntryInsteadOfDroppingIt(string registration)
+		{
+			string library = OneModuleWithAHandle()
+				.Replace("[Inject] internal IClock Clock { get; set; } = null!;", "[Inject] internal IClock Clock { get; set; } = null!;\n    public IClock Backup { get; set; } = null!;");
+			string container = $$"""
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				{{registration}}
+				[InjectProperty<Greeter>(nameof(Greeter.Backup))]
+				public static partial class MyContainer;
+				""";
+			string consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n" + container;
+
+			GeneratorResult same = Generator.Run(library + container);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(library), consumer);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(ContainerSource(same, "MyContainer")).Contains("Backup = ");
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(friend, "MyContainer")).Contains("Backup = ")
+				.Because("a friend constructs the implementation itself and fills the entry");
+			await That(ContainerSource(Generator.RunWithGeneratedReferencedAssembly(library, consumer.Replace("[InjectProperty<Greeter>(nameof(Greeter.Backup))]", string.Empty)), "MyContainer")).Contains("Internals.Alias_Greeter_")
+				.Because("only the module that declares something internal builds the implementation into an instance handle, which the other registration shares through an alias");
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'") && diagnostic.Contains("share one instance of it through a generated handle"))
+				.Because("the alias returns the implementation, but the handle builds it inside the module, where no container-side entry reaches");
+			await That(reference.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'") && diagnostic.Contains("share one instance of it through a generated handle"));
+		}
+
+		[Test]
+		[Arguments("")]
+		[Arguments("[Import(typeof(OtherModule))]")]
+		[Arguments("[Singleton<Brew<int>>]")]
+		public async Task AClosingSharedThroughTheHandleOfOneModule_ReportsAnOpenGenericEntryForTheHandle(string registration)
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IClock { }
+				public sealed class SystemClock : IClock { }
+				public interface IBrew { }
+				public interface IOtherBrew { }
+				internal interface IKettle { }
+				internal sealed class Kettle : IKettle { }
+				public sealed class Brew<T> : IBrew, IOtherBrew
+				{
+					[Inject] internal IClock Clock { get; set; } = null!;
+					public IClock Backup { get; set; } = null!;
+				}
+
+				[Module]
+				[Singleton<Kettle, IKettle>]
+				[Singleton<Brew<int>, IBrew>]
+				[Singleton<SystemClock, IClock>]
+				public static partial class CoffeeModule { }
+
+				[Module]
+				[Singleton<Brew<int>, IOtherBrew>]
+				public static partial class OtherModule { }
+				""";
+			string container = $$"""
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				{{registration}}
+				[InjectProperty(typeof(Brew<>), nameof(Brew<int>.Backup))]
+				public static partial class MyContainer;
+				""";
+			string consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n" + container;
+
+			GeneratorResult same = Generator.Run(library + container);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(ContainerSource(same, "MyContainer")).Contains("Backup = ");
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Lib.Brew<int>' is built") && diagnostic.Contains("'Backup'") && diagnostic.Contains("through a generated handle"))
+				.Because("the closing the entry's definition reaches is built inside the module by its handle, so the entry is reported as one the handle cannot apply rather than as one without a registration");
+			await That(reference.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Lib.Brew<int>' is built") && diagnostic.Contains("'Backup'") && diagnostic.Contains("through a generated handle"));
+		}
+
+		[Test]
+		public async Task SharedThroughTheScanHandleOfAModule_ReportsAContainerSideEntryInsteadOfDroppingIt()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IGreeter { }
+				public interface IOther { }
+				public interface IClock { }
+				public sealed class SystemClock : IClock { }
+				public sealed class Greeter : IGreeter, IOther
+				{
+					public IClock Backup { get; set; } = null!;
+				}
+
+				[Module]
+				[Scan<IOther>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+				[Singleton<SystemClock, IClock>]
+				public static partial class CoffeeModule { }
+				""";
+			const string container = """
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Singleton<Greeter>]
+				[InjectProperty<Greeter>(nameof(Greeter.Backup))]
+				public static partial class MyContainer;
+				""";
+			string consumer = "using Awaiten;\nusing Lib;\n\nnamespace MyCode;\n" + container;
+
+			GeneratorResult same = Generator.Run(library + container);
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(library), consumer);
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(ContainerSource(Generator.RunWithGeneratedReferencedAssembly(library, consumer.Replace("[InjectProperty<Greeter>(nameof(Greeter.Backup))]", string.Empty)), "MyContainer")).Contains("Internals.Alias_Greeter_")
+				.Because("the module's scan builds the match it exposes under two services into an instance handle, which the container's registration shares through an alias");
+			await That(external.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT178") && diagnostic.Contains("'Backup'"))
+				.Because("the alias returns the implementation, but the scan handle builds it inside the module, where no container-side entry reaches");
+		}
+
 		[Test]
 		public async Task HandledForAnInternalServiceOfOneModule_NamesThatServiceAsTheReason()
 		{
