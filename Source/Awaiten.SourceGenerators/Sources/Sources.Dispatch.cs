@@ -498,7 +498,16 @@ internal static partial class Sources
 				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: the Task shapes are served only over a service that needs asynchronous initialization or runtime arguments, and '{__target}' needs neither; resolve '{__target}' directly, or through ResolveAsync to get it as a task.\");");
 			Indent(builder, depth + 1).AppendLine("}");
 			builder.AppendLine();
+			// A collection of relationships is never synthesized (AWT254 for injection), so the miss names the collection
+			// of the service instead. Like the Task shapes it keeps no resolvability reason, so the MS.DI bridge answers null.
+			Indent(builder, depth + 1).AppendLine("if (__RelationshipElement(serviceType) is global::System.Type __element)");
+			Indent(builder, depth + 1).AppendLine("{");
+			Indent(builder, depth + 2).AppendLine(
+				"throw new global::System.InvalidOperationException($\"No registration for type '{serviceType}' on this container: a collection holds the registrations of its element type, and its element '{__element}' is a relationship, which the container does not build per member; resolve the same collection over '{__RelationshipService(__element)}' to get every registration, or '{__element}' to get a single one.\");");
+			Indent(builder, depth + 1).AppendLine("}");
+			builder.AppendLine();
 			EmitTaskShapeTarget(helpers, depth);
+			EmitRelationshipElement(helpers, depth);
 		}
 
 		Indent(builder, depth + 1).AppendLine(
@@ -611,6 +620,72 @@ internal static partial class Sources
 		helpers.AppendLine();
 		Indent(helpers, depth + 1).AppendLine("static bool __IsClosing(global::System.Type type, global::System.Type definition)");
 		Indent(helpers, depth + 2).AppendLine("=> type.IsConstructedGenericType && type.GetGenericTypeDefinition() == definition;");
+		Indent(helpers, depth).AppendLine("}");
+	}
+
+	/// <summary>
+	///     Emits <c>__RelationshipElement</c>, which returns the relationship element (<c>Func</c>, <c>Lazy</c>, <c>Owned</c>
+	///     or <c>Task</c>) of a requested collection shape or <c>string</c>- or enum-keyed dictionary, also inside an awaited
+	///     <c>Task</c>, or null for any other type, and <c>__RelationshipService</c>, which unwraps such an element down
+	///     to the service it wraps. Only a failed <c>Resolve</c> calls them, so the runtime type inspection stays off the
+	///     hot path. <c>IAsyncEnumerable&lt;T&gt;</c> is matched by name, since it is not part of every framework.
+	/// </summary>
+	private static void EmitRelationshipElement(StringBuilder helpers, int depth)
+	{
+		Separate(helpers);
+		Indent(helpers, depth).AppendLine("private static global::System.Type? __RelationshipElement(global::System.Type serviceType)");
+		Indent(helpers, depth).AppendLine("{");
+		Indent(helpers, depth + 1).AppendLine("global::System.Type __type = serviceType.IsConstructedGenericType && serviceType.GetGenericTypeDefinition() == typeof(global::System.Threading.Tasks.Task<>)");
+		Indent(helpers, depth + 2).AppendLine("? serviceType.GenericTypeArguments[0]");
+		Indent(helpers, depth + 2).AppendLine(": serviceType;");
+		Indent(helpers, depth + 1).AppendLine("global::System.Type? __element = null;");
+		Indent(helpers, depth + 1).AppendLine("if (__type.IsArray && __type.GetArrayRank() == 1)");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("__element = __type.GetElementType();");
+		Indent(helpers, depth + 1).AppendLine("}");
+		Indent(helpers, depth + 1).AppendLine("else if (__type.IsConstructedGenericType)");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("global::System.Type __definition = __type.GetGenericTypeDefinition();");
+		Indent(helpers, depth + 2).AppendLine("global::System.Type[] __arguments = __type.GenericTypeArguments;");
+		Indent(helpers, depth + 2).AppendLine("if (__definition == typeof(global::System.Collections.Generic.IEnumerable<>)");
+		Indent(helpers, depth + 2).AppendLine("    || __definition == typeof(global::System.Collections.Generic.IReadOnlyList<>)");
+		Indent(helpers, depth + 2).AppendLine("    || __definition == typeof(global::System.Collections.Generic.IReadOnlyCollection<>)");
+		Indent(helpers, depth + 2).AppendLine("    || __definition == typeof(global::System.Collections.Generic.IList<>)");
+		Indent(helpers, depth + 2).AppendLine("    || __definition == typeof(global::System.Collections.Generic.ICollection<>)");
+		Indent(helpers, depth + 2).AppendLine("    || (__definition.Namespace == \"System.Collections.Generic\" && __definition.Name == \"IAsyncEnumerable`1\")");
+		Indent(helpers, depth + 2).AppendLine("    || (__definition == typeof(global::System.Collections.Generic.IReadOnlyDictionary<,>) && (__arguments[0] == typeof(string) || __arguments[0].IsEnum)))");
+		Indent(helpers, depth + 2).AppendLine("{");
+		Indent(helpers, depth + 3).AppendLine("__element = __arguments[__arguments.Length - 1];");
+		Indent(helpers, depth + 2).AppendLine("}");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("return __element is not null && __IsRelationship(__element) ? __element : null;");
+		Indent(helpers, depth).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth).AppendLine("private static global::System.Type __RelationshipService(global::System.Type relationship)");
+		Indent(helpers, depth).AppendLine("{");
+		Indent(helpers, depth + 1).AppendLine("global::System.Type __type = relationship;");
+		Indent(helpers, depth + 1).AppendLine("while (__IsRelationship(__type))");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("global::System.Type[] __arguments = __type.GenericTypeArguments;");
+		Indent(helpers, depth + 2).AppendLine("__type = __arguments[__arguments.Length - 1];");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("return __type;");
+		Indent(helpers, depth).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth).AppendLine("private static bool __IsRelationship(global::System.Type type)");
+		Indent(helpers, depth).AppendLine("{");
+		Indent(helpers, depth + 1).AppendLine("if (!type.IsConstructedGenericType)");
+		Indent(helpers, depth + 1).AppendLine("{");
+		Indent(helpers, depth + 2).AppendLine("return false;");
+		Indent(helpers, depth + 1).AppendLine("}");
+		helpers.AppendLine();
+		Indent(helpers, depth + 1).AppendLine("global::System.Type __definition = type.GetGenericTypeDefinition();");
+		Indent(helpers, depth + 1).AppendLine("return __definition == typeof(global::System.Lazy<>)");
+		Indent(helpers, depth + 2).AppendLine("|| __definition == typeof(global::System.Threading.Tasks.Task<>)");
+		Indent(helpers, depth + 2).AppendLine("|| __definition == typeof(global::Awaiten.Owned<>)");
+		Indent(helpers, depth + 2).AppendLine("|| (__definition.Namespace == \"System\" && __definition.Name.StartsWith(\"Func`\", global::System.StringComparison.Ordinal));");
 		Indent(helpers, depth).AppendLine("}");
 	}
 

@@ -147,6 +147,7 @@
  AWT253  | Awaiten   | Error    | An imported module of another assembly takes a closing over a type internal to its assembly that the container neither imports from its host nor builds from the module's own open registration
  AWT254  | Awaiten   | Error    | A dependency is a collection or keyed dictionary of relationships, such as IEnumerable<Lazy<T>>, whose element type has no registration of its own, so it would stay empty
  AWT255  | Awaiten   | Error    | The generator cannot emit the wiring of a container that reports no error, because a dependency resolves to no instance or the emission throws, which is a bug in Awaiten
+ AWT256  | Awaiten   | Error    | A dependency is a relationship over a collection or keyed dictionary, such as Func<IEnumerable<T>>, which the container does not build, because a relationship wraps a single service
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

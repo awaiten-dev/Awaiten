@@ -2568,4 +2568,19 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     A dependency on a relationship over a collection shape or keyed dictionary (<c>Func&lt;IEnumerable&lt;T&gt;&gt;</c>,
+	///     <c>Lazy&lt;IReadOnlyList&lt;T&gt;&gt;</c>, <c>Owned&lt;T[]&gt;</c>, <c>Func&lt;Task&lt;IEnumerable&lt;T&gt;&gt;&gt;</c> and
+	///     the like) that is not registered as a service of its own. A relationship wraps a single service, and the
+	///     container synthesizes a collection only as a dependency of its own, so it builds no relationship over one.
+	///     Reported instead of AWT101, which would claim the collection is not registered although it resolves directly.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RelationshipOverCollection = new(
+		"AWT256",
+		"Relationship over a collection",
+		"'{0}' cannot be resolved: '{1}' requires '{2}', a relationship over the collection '{3}', which the container does not build, because a relationship wraps a single service; inject '{3}' to get every registration, or register a service that takes '{3}' and inject the relationship over that service",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

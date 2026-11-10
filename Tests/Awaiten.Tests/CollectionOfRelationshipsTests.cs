@@ -19,11 +19,44 @@ public sealed partial class CollectionOfRelationshipsTests
 	{
 		using ClockContainer.Root root = new();
 
-		await That(root.GetResolvability(shape, null).Status).IsEqualTo(AwaitenResolvabilityStatus.NotRegistered)
-			.Because("the container builds no collection of relationships, so it does not claim the shape");
+		await That(root.GetResolvability(shape, null)).IsEqualTo(default(AwaitenResolvability))
+			.Because("the container builds no collection of relationships, so it does not claim the shape, and the MS.DI bridge answers null for it");
 		await That(() => root.Resolve(shape)).Throws<InvalidOperationException>()
 			.WithMessage("*No registration*").AsWildcard()
 			.Because("resolving the shape throws instead of handing back an empty collection while IClock is registered");
+	}
+
+	[Test]
+	[Arguments(typeof(IEnumerable<Lazy<IClock>>), "System.Lazy`1[Awaiten.Tests.CollectionOfRelationshipsTests+IClock]")]
+	[Arguments(typeof(Func<IClock>[]), "System.Func`1[Awaiten.Tests.CollectionOfRelationshipsTests+IClock]")]
+	[Arguments(typeof(IReadOnlyList<Owned<IClock>>), "Awaiten.Owned`1[Awaiten.Tests.CollectionOfRelationshipsTests+IClock]")]
+	[Arguments(typeof(IAsyncEnumerable<Func<string, IClock>>), "System.Func`2[System.String,Awaiten.Tests.CollectionOfRelationshipsTests+IClock]")]
+	[Arguments(typeof(Task<IReadOnlyList<Lazy<Task<IClock>>>>), "System.Lazy`1[System.Threading.Tasks.Task`1[Awaiten.Tests.CollectionOfRelationshipsTests+IClock]]")]
+	[Arguments(typeof(IReadOnlyDictionary<string, Func<IClock>>), "System.Func`1[Awaiten.Tests.CollectionOfRelationshipsTests+IClock]")]
+	public async Task ByType_MissNamesTheCollectionOfTheService(Type shape, string element)
+	{
+		using ClockContainer.Root root = new();
+
+		await That(() => root.Resolve(shape)).Throws<InvalidOperationException>()
+			.WithMessage($"*its element '{element}' is a relationship*resolve the same collection over 'Awaiten.Tests.CollectionOfRelationshipsTests+IClock' to get every registration, or '{element}' to get a single one.").AsWildcard()
+			.Because("the miss names the collection of the wrapped service as the remedy, as AWT254 does for injection");
+		await That(() => root.ResolveAsync(shape)).Throws<InvalidOperationException>()
+			.WithMessage($"*its element '{element}' is a relationship*").AsWildcard()
+			.Because("ResolveAsync falls back to the same miss");
+	}
+
+	[Test]
+	[Arguments(typeof(IEnumerable<IClock[]>))]
+	[Arguments(typeof(List<Lazy<IClock>>))]
+	[Arguments(typeof(IReadOnlyDictionary<int, Lazy<IClock>>))]
+	[Arguments(typeof(Lazy<IClock>[,]))]
+	public async Task ByType_MissOfAnotherShapeKeepsThePlainMessage(Type shape)
+	{
+		using ClockContainer.Root root = new();
+
+		await That(() => root.Resolve(shape)).Throws<InvalidOperationException>()
+			.WithMessage($"No registration for type '{shape}' on this container.")
+			.Because("only a shape the container synthesizes over a relationship element gets the collection remedy");
 	}
 
 	[Test]

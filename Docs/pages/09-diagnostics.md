@@ -290,7 +290,7 @@ root.Resolve<IMilk>("Soy");   // nothing is registered under "Soy"
 
 **Fix:** Register the service under that key, such as `[Singleton<SoyMilk, IMilk>(Key = "Soy")]`, or pass a key a registration declares.
 
-A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task. The bare type of a service with [runtime arguments](./05-resolution/06-runtime-arguments.md) is reported with its factory, such as `Func<string, Cup>`, as the remedy. A `Task<Owned<T>>` or `Func<Task<Owned<T>>>` over a service whose async factory takes a `[RequestingType]` parameter is reported with `Task<T>` or `Func<Task<T>>` as the remedy, because such a factory has no `Owned<T>` form ([AWT186](#awt186)). A collection of relationships, such as `IEnumerable<Lazy<T>>`, is reported with the collection of the service itself, `IEnumerable<T>`, as the remedy ([AWT254](#awt254)).
+A `Lazy<Owned<T>>` or `Lazy<Task<Owned<T>>>` is reported too, because no container produces an `Owned<T>` handle through `Lazy` ([AWT121](#awt121)). Its message names the shapes that do instead of a registration. An async shape such as `Task<T>` or `Func<Task<T>>` over a service that needs neither asynchronous initialization nor runtime arguments is reported as well, with the remedy to resolve the service directly, or through `ResolveAsync` for a task. The bare type of a service with [runtime arguments](./05-resolution/06-runtime-arguments.md) is reported with its factory, such as `Func<string, Cup>`, as the remedy. A `Task<Owned<T>>` or `Func<Task<Owned<T>>>` over a service whose async factory takes a `[RequestingType]` parameter is reported with `Task<T>` or `Func<Task<T>>` as the remedy, because such a factory has no `Owned<T>` form ([AWT186](#awt186)). A collection of relationships, such as `IEnumerable<Lazy<T>>`, is reported with the collection of the service itself, `IEnumerable<T>`, as the remedy ([AWT254](#awt254)), and a relationship over a collection, such as `Func<IEnumerable<T>>`, with the collection itself ([AWT256](#awt256)). A keyed resolve of a collection, such as `Resolve<IEnumerable<IMilk>>("Oat")`, is reported even when registrations exist under the key, because the container builds a collection under a key only for injection: take it through a `[FromKey("Oat")]` parameter or property.
 
 Only a call on the generated `Root` or `Scope` that names a closed type in source is checked. These stay run-time checks:
 
@@ -318,6 +318,40 @@ public static partial class CoffeeShop;
 ```
 
 **Fix:** Depend on the collection of the service itself, `IEnumerable<ISyrup>`, to get every registration, or on a single relationship such as `Lazy<ISyrup>` to defer the one that single resolution picks. An async-initialized member is awaited through `IAsyncEnumerable<ISyrup>` or `Task<IReadOnlyList<ISyrup>>`, see [async collections](./05-resolution/03-collections.md#async-collections).
+
+### AWT256
+
+:::danger[Error]
+A dependency is a relationship over a collection or keyed dictionary, such as `Func<IEnumerable<T>>`, `Lazy<IReadOnlyList<T>>`, `Owned<T[]>` or `Func<Task<IReadOnlyList<T>>>`. A relationship wraps a single service, and the container builds a collection only as a dependency of its own, so it does not build a relationship over one. It is reported instead of a missing registration of the collection, which resolves directly, unless the collection type itself is registered as a service.
+:::
+
+```csharp expect=AWT256
+public sealed class SyrupBar(Lazy<IEnumerable<ISyrup>> syrups);   // a Lazy wraps one service, not a collection
+
+[Container]
+[Singleton<VanillaSyrup, ISyrup>]
+[Singleton<CaramelSyrup, ISyrup>]
+[Singleton<SyrupBar>]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Depend on the collection itself, `IEnumerable<ISyrup>`. Where the relationship awaits, as in `Func<Task<IReadOnlyList<ISyrup>>>`, depend on the awaited collection `Task<IReadOnlyList<ISyrup>>`. To defer building the members, or to own them, register a service that takes the collection and depend on the relationship over that service:
+
+```csharp
+public sealed class SyrupShelf(IEnumerable<ISyrup> syrups)
+{
+    public IEnumerable<ISyrup> Syrups { get; } = syrups;
+}
+
+public sealed class SyrupBar(Lazy<SyrupShelf> shelf);   // the syrups are built on first use
+
+[Container]
+[Singleton<VanillaSyrup, ISyrup>]
+[Singleton<CaramelSyrup, ISyrup>]
+[Singleton<SyrupShelf>]
+[Singleton<SyrupBar>]
+public static partial class CoffeeShop;
+```
 
 ## Async safety
 
