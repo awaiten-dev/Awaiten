@@ -146,3 +146,18 @@ public static partial class CrossAssemblyClosingMembersModule
 
 	internal static bool Decorates(IClosingLog<ClosingEspresso> log) => log.Category == typeof(ClosingEspresso);
 }
+
+/// <summary>
+///     The members of <see cref="CrossAssemblyClosingMembersModule" /> without its registration of
+///     <see cref="IClosingLog{T}" />, so a container in another assembly asks its host for each closing they take.
+/// </summary>
+[Module]
+[Transient<ClosingEspresso, IClosingEspresso>(OnActivated = nameof(Activate))]
+[Decorate<DecoratedClosingEspresso, IClosingEspresso>(When = nameof(Decorates))]
+[AsyncInitializer<ClosingEspresso>(nameof(ClosingEspresso.WarmUpAsync))]
+public static partial class CrossAssemblyImportedClosingMembersModule
+{
+	internal static void Activate(ClosingEspresso espresso, IClosingLog<ClosingEspresso> log) => espresso.Activated = log;
+
+	internal static bool Decorates(IClosingLog<ClosingEspresso> log) => log.Category == typeof(ClosingEspresso);
+}

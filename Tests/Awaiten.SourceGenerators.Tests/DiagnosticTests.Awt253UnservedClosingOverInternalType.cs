@@ -105,6 +105,22 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("", "neither the container nor an imported module registers or imports 'Lib.ILog<>'")]
+		[Arguments("[Singleton(typeof(Lib.Log<>), typeof(Lib.ILog<>))]", "'Lib.ILog<>' is registered by the container, which cannot close it over that type")]
+		public async Task ADecoratorPredicateTakingAnUnservedClosing_ReportsAwt253(string registrations, string reason)
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(
+				Library(parameter: "", members: "internal static bool IsFancy(ILog<Brew> log) => true;")
+					.Replace("[Transient<Brew, IBrew>]", "[Transient<Brew, IBrew>][Decorate<FancyBrew, IBrew>(When = nameof(IsFancy))]")
+					.Replace("public interface IBrew { }", "public interface IBrew { }\npublic sealed class FancyBrew : IBrew { public FancyBrew(IBrew inner) { } }"),
+				Consumer(registrations));
+
+			await That(result.Diagnostics).HasSingle().Which.Contains(
+				$"*error AWT253: 'Lib.IBrew' cannot be resolved: 'Lib.CoffeeModule.IsFancy' requires 'Lib.ILog<Lib.Brew>', a closing over a type internal to the assembly of the module 'Lib.CoffeeModule', which this container cannot close itself, and {reason}*").AsWildcard()
+				.Because("the predicate takes the closing through its handle, so the container names why it cannot serve it, as for a constructor (AWT101)");
+		}
+
+		[Test]
 		public async Task AKeyedClosingTheContainerDoesNotImport_ReportsAwt253()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(

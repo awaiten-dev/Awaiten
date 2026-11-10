@@ -2824,7 +2824,7 @@ When the decorator's assembly grants the container nothing either, the container
 ### AWT253
 
 :::danger[Error]
-An implementation that an imported module of another assembly builds takes a public generic service closed over a type internal to the module's assembly, and the container can neither ask its host for that closing nor build it from the module's own registration.
+An implementation that an imported module of another assembly builds, or a hook, decorator predicate or async initializer of that module, takes a public generic service closed over a type internal to the module's assembly, and the container can neither ask its host for that closing nor build it from the module's own registration.
 :::
 
 ```csharp no-compile

@@ -136,6 +136,45 @@ public class ModuleClosingOverInternalTypeTests
 		}
 
 		[Test]
+		[Arguments("public Pot(ILog<Pot<T>> log) { }", "", "its constructor parameter 'log'")]
+		[Arguments("[Inject] public ILog<Pot<T>> Journal { get; set; } = null!;", "", "its property 'Journal'")]
+		[Arguments("", "internal static void Fill<T>(Pot<T> pot, ILog<Pot<T>> log) { }", "its OnActivated hook 'Fill'")]
+		public async Task AClosingOverATypeParameter_TakesNoHandle(string members, string hook, string cause)
+		{
+			string library = $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface ILog<T> { }
+				public interface IPot<T> { }
+				internal sealed class Pot<T> : IPot<T> { {{members}} }
+
+				[Module]
+				[Transient(typeof(Pot<>), typeof(IPot<>){{(hook.Length > 0 ? ", OnActivated = nameof(Fill)" : "")}})]
+				public static partial class CoffeeModule { {{hook}} }
+				""";
+			GeneratorResult built = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+				using Awaiten;
+
+				namespace App;
+
+				public sealed class Kitchen { public Kitchen(Lib.IPot<int> pot) { } }
+
+				[Container]
+				[Import(typeof(Lib.CoffeeModule))]
+				[ImportService(typeof(Lib.ILog<>))]
+				[Transient<Kitchen>]
+				public static partial class Shop;
+				""");
+
+			await That(built.Diagnostics).IsEmpty()
+				.Because("a handle cannot hold a closing over a type parameter of the generic factory, so the module generates none");
+			await That(result.Diagnostics).HasSingle().Which.Contains($"*error AWT231: The imported module 'Lib.CoffeeModule' registers 'Lib.Pot<T>', which this container cannot construct, and the module's assembly generated no factory for it because {cause}*").AsWildcard();
+		}
+
+		[Test]
 		public async Task AClosingOverATypePrivateToTheModule_StillReportsAwt195()
 		{
 			GeneratorResult result = Generator.Run("""
