@@ -187,21 +187,19 @@ public partial class ModuleScanInstanceHandleTests
 			await using ScopedPublicMatchContainer.Root container = new();
 			await container.InitializeAsync();
 
-			IPublicMultiRoaster first;
+			IPlainPublicMultiRoaster first;
 			await using (IAwaitenScope scope = await container.CreateScopeAsync())
 			{
-				first = scope.Resolve<IPublicMultiRoaster>();
-				await That((object)scope.Resolve<IPublicMultiPlugin>()).IsSameAs(first)
+				first = scope.Resolve<IPlainPublicMultiRoaster>();
+				await That((object)scope.Resolve<IPlainPublicMultiPlugin>()).IsSameAs(first)
 					.Because("the scan's exposure shares the instance of the explicit registration, which the scan yields to");
-				await That(first.Activations).IsEqualTo(0)
-					.Because("the explicit registration sets no hook, so the scan's hook yields with the scan, as in the module's assembly");
 			}
 
 			await That(first.Disposals).IsEqualTo(1)
 				.Because("the scoped instance is disposed once with its scope");
 			await using (IAwaitenScope scope = await container.CreateScopeAsync())
 			{
-				await That((object)scope.Resolve<IPublicMultiPlugin>()).IsNotSameAs(first)
+				await That((object)scope.Resolve<IPlainPublicMultiPlugin>()).IsNotSameAs(first)
 					.Because("the shared instance takes the scoped lifetime of the explicit registration, not the scan's singleton");
 			}
 		}
@@ -209,12 +207,12 @@ public partial class ModuleScanInstanceHandleTests
 		[Test]
 		public async Task ARegistrationOfAPublicMatchWithSuppressDisposal_LeavesTheSharedInstanceUndisposed()
 		{
-			IPublicMultiRoaster roaster;
+			IPlainPublicMultiRoaster roaster;
 			await using (UndisposedPublicMatchContainer.Root container = new())
 			{
 				await container.InitializeAsync();
-				roaster = container.Resolve<IPublicMultiRoaster>();
-				await That((object)container.Resolve<IPublicMultiPlugin>()).IsSameAs(roaster);
+				roaster = container.Resolve<IPlainPublicMultiRoaster>();
+				await That((object)container.Resolve<IPlainPublicMultiPlugin>()).IsSameAs(roaster);
 			}
 
 			await That(roaster.Disposals).IsEqualTo(0)
@@ -271,19 +269,19 @@ public partial class ModuleScanInstanceHandleTests
 		[Test]
 		public async Task ARegistrationOfAPublicMatchUnderItsMarker_IsOneCollectionMember()
 		{
-			IPublicMultiPlugin plugin;
+			IPlainPublicMultiPlugin plugin;
 			await using (MarkerRegisteredPublicMatchContainer.Root container = new())
 			{
 				await container.InitializeAsync();
-				IPublicMultiPlugin[] plugins = container.Resolve<IEnumerable<IPublicMultiPlugin>>().ToArray();
+				IPlainPublicMultiPlugin[] plugins = container.Resolve<IEnumerable<IPlainPublicMultiPlugin>>().ToArray();
 
-				await That(plugins).HasSingle().Which.IsSameAs(container.Resolve<IPublicMultiPlugin>())
+				await That(plugins).HasSingle().Which.IsSameAs(container.Resolve<IPlainPublicMultiPlugin>())
 					.Because("the explicit registration and the module's scan share one instance, which the collection holds once, as in the module's assembly");
 				plugin = plugins[0];
-				await That((object)container.Resolve<IPublicMultiRoaster>()).IsSameAs(plugin);
+				await That((object)container.Resolve<IPlainPublicMultiRoaster>()).IsSameAs(plugin);
 			}
 
-			await That(((IPublicMultiRoaster)plugin).Disposals).IsEqualTo(1)
+			await That(((IPlainPublicMultiRoaster)plugin).Disposals).IsEqualTo(1)
 				.Because("the container disposes the shared instance once");
 		}
 
@@ -329,13 +327,13 @@ public partial class ModuleScanInstanceHandleTests
 		}
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
-		[Import(typeof(PublicMultiExposureScanModule))]
-		[Scoped<PublicMultiRoaster, IPublicMultiRoaster>]
+		[Import(typeof(PlainPublicMultiExposureScanModule))]
+		[Scoped<PlainPublicMultiRoaster, IPlainPublicMultiRoaster>]
 		public static partial class ScopedPublicMatchContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
-		[Import(typeof(PublicMultiExposureScanModule))]
-		[Singleton<PublicMultiRoaster, IPublicMultiRoaster>(SuppressDisposal = true)]
+		[Import(typeof(PlainPublicMultiExposureScanModule))]
+		[Singleton<PlainPublicMultiRoaster, IPlainPublicMultiRoaster>(SuppressDisposal = true)]
 		public static partial class UndisposedPublicMatchContainer;
 
 		// AWT142: the container's scan takes the module's match with another lifetime on purpose, to pin that its lifetime wins; the warning lands on the import of the later scan.
@@ -352,8 +350,8 @@ public partial class ModuleScanInstanceHandleTests
 		public static partial class MarkerScannedPublicMatchContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
-		[Import(typeof(PublicMultiExposureScanModule))]
-		[Singleton<PublicMultiRoaster, IPublicMultiPlugin>]
+		[Import(typeof(PlainPublicMultiExposureScanModule))]
+		[Singleton<PlainPublicMultiRoaster, IPlainPublicMultiPlugin>]
 		public static partial class MarkerRegisteredPublicMatchContainer;
 
 		[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]
@@ -388,18 +386,17 @@ public partial class ModuleScanInstanceHandleTests
 		{
 			await using ScopedLocalMatchContainer.Root container = new();
 
-			ILocalRoaster first;
+			ILocalPlainRoaster first;
 			await using (IAwaitenScope scope = await container.CreateScopeAsync())
 			{
-				first = scope.Resolve<ILocalRoaster>();
-				await That((object)scope.Resolve<ILocalPlugin>()).IsSameAs(first);
-				await That(first.Activations).IsEqualTo(0)
-					.Because("the scan yields to the explicit registration, hooks included");
+				first = scope.Resolve<ILocalPlainRoaster>();
+				await That((object)scope.Resolve<ILocalPlainPlugin>()).IsSameAs(first)
+					.Because("the scan yields to the explicit registration, which owns the instance");
 			}
 
 			await using (IAwaitenScope scope = await container.CreateScopeAsync())
 			{
-				await That((object)scope.Resolve<ILocalPlugin>()).IsNotSameAs(first);
+				await That((object)scope.Resolve<ILocalPlainPlugin>()).IsNotSameAs(first);
 			}
 		}
 
@@ -438,7 +435,7 @@ public partial class ModuleScanInstanceHandleTests
 		{
 			await using MarkerRegisteredLocalMatchContainer.Root container = new();
 
-			await That(container.Resolve<IEnumerable<ILocalPlugin>>().ToArray()).HasSingle().Which.IsSameAs(container.Resolve<ILocalPlugin>())
+			await That(container.Resolve<IEnumerable<ILocalPlainPlugin>>().ToArray()).HasSingle().Which.IsSameAs(container.Resolve<ILocalPlainPlugin>())
 				.Because("the explicit registration and the module's scan coalesce into one instance of the match");
 		}
 
@@ -452,8 +449,8 @@ public partial class ModuleScanInstanceHandleTests
 		internal static partial class MarkerScannedLocalMatchContainer;
 
 		[Container]
-		[Import(typeof(LocalMultiExposureScanModule))]
-		[Singleton<LocalRoaster, ILocalPlugin>]
+		[Import(typeof(LocalPlainMultiExposureScanModule))]
+		[Singleton<LocalPlainRoaster, ILocalPlainPlugin>]
 		internal static partial class MarkerRegisteredLocalMatchContainer;
 
 		[Container]
@@ -462,8 +459,8 @@ public partial class ModuleScanInstanceHandleTests
 		internal static partial class ScannedLocalMatchContainer;
 
 		[Container]
-		[Import(typeof(LocalMultiExposureScanModule))]
-		[Scoped<LocalRoaster, ILocalRoaster>]
+		[Import(typeof(LocalPlainMultiExposureScanModule))]
+		[Scoped<LocalPlainRoaster, ILocalPlainRoaster>]
 		internal static partial class ScopedLocalMatchContainer;
 	}
 
@@ -495,6 +492,22 @@ internal sealed class LocalRoaster : ILocalPlugin, ILocalRoaster
 {
 	public int Activations { get; set; }
 }
+
+/// <summary>The marker of the match of <see cref="LocalPlainMultiExposureScanModule" />.</summary>
+public interface ILocalPlainPlugin;
+
+/// <summary>The matching interface of the match of <see cref="LocalPlainMultiExposureScanModule" />.</summary>
+public interface ILocalPlainRoaster;
+
+internal sealed class LocalPlainRoaster : ILocalPlainPlugin, ILocalPlainRoaster;
+
+/// <summary>
+///     A <c>[Module]</c> of this assembly whose scan without hooks exposes its internal match under two interfaces, so a
+///     container's registration of the match can own the instance.
+/// </summary>
+[Module]
+[Scan<ILocalPlainPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
+public static partial class LocalPlainMultiExposureScanModule;
 
 /// <summary>A <c>[Module]</c> of this assembly whose scan exposes its internal match under two interfaces.</summary>
 // AWT142: ScannedLocalMatchContainer scans the match with another lifetime on purpose, which is reported at this later scan.

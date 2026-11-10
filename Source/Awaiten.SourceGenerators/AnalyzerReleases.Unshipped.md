@@ -66,7 +66,7 @@
  AWT163  | Awaiten   | Error    | A factory has both a [RequestingType] parameter and an [Arg] runtime-argument parameter
  AWT164  | Awaiten   | Error    | An OnActivated/OnRelease registration names a member that is not a usable lifecycle hook, such as a generic method whose type parameters nothing binds
  AWT165  | Awaiten   | Error    | An OnActivated/OnRelease lifecycle hook is set on a pre-built Instance registration, which the container does not own
- AWT166  | Awaiten   | Error    | An implementation is registered with conflicting OnActivated/OnRelease/Eager directives that coalescing would silently drop
+ AWT166  | Awaiten   | Error    | An implementation is registered with conflicting OnActivated/OnRelease/Eager directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not
  AWT167  | Awaiten   | Warning  | A WhenInjectedInto contextual binding never applies because the named consumer has no unkeyed direct constructor parameter to redirect
  AWT168  | Awaiten   | Error    | A registration sets both WhenInjectedInto and Key, which claim the same resolution slot, so the Key is silently dropped
  AWT169  | Awaiten   | Error    | Two implementations set WhenInjectedInto for the same service and consumer, so the contextual resolution would be ambiguous
@@ -92,7 +92,7 @@
  AWT190  | Awaiten   | Error    | A lifecycle hook (OnActivated / OnRelease) names an overloaded method, so there is no way to choose which one to call
  AWT191  | Awaiten   | Error    | An OnRelease hook parameter is a Func/Lazy relationship, which would defer resolution past the owner's teardown
  AWT192  | Awaiten   | Error    | SuppressDisposal is set on a pre-built Instance, which the container does not own or dispose, so it has no effect
- AWT193  | Awaiten   | Warning  | A [Scan] matched a type that is inaccessible to the generated container, or a private nested type it cannot stand in for with an accessible type, so it is not registered
+ AWT193  | Awaiten   | Warning  | A [Scan] matched a type that is inaccessible to the generated container, a type of another assembly whose constructors it cannot call, or a private nested type it cannot stand in for with an accessible type, so it is not registered
  AWT194  | Awaiten   | Error    | A [Module] that declares a [Scan] or a registration another assembly cannot construct is not partial (or is nested in a non-partial type), so it cannot be self-compiled
  AWT195  | Awaiten   | Error    | A self-compiled module [Scan] match or registration has a constructor or factory parameter type inaccessible outside the module's assembly or private to the module or a class containing it
  AWT196  | Awaiten   | Warning  | A self-compiled module [Scan] match has no exposure interface accessible outside the module's assembly, so it is skipped

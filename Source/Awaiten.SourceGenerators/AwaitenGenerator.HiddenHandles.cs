@@ -574,7 +574,7 @@ partial class AwaitenGenerator
 			}
 			else
 			{
-				diagnostics.AddRange(UnappliedScanHooks(registration, handle, yieldedTo, compilation));
+				diagnostics.AddRange(UnappliedScanHooks(registration, handle, yieldedTo, container, compilation));
 			}
 
 			string handled = HandledIdentity(handle);
@@ -611,13 +611,25 @@ partial class AwaitenGenerator
 	///     handle <paramref name="handle" /> (see <see cref="IsScanHandle" />), which serves the match through an alias that
 	///     runs no hook: a container of the module's own assembly merges the hooks of the scan matches that share the
 	///     instance (AWT199 keeps the first of two in one slot), unless an explicit registration wins over the scans (see
-	///     <see cref="YieldScanHandles" />).
+	///     <see cref="YieldScanHandles" />). The instance of a registration's handle, or of a scan handle an explicit
+	///     registration wins, is owned by that registration, so a hook of the match it does not name too is AWT166 instead,
+	///     as in a container of the module's own assembly (see <see cref="ScanHookOnOwnedInstance" />).
 	/// </summary>
-	private static IEnumerable<DiagnosticInfo> UnappliedScanHooks(RawRegistration match, RawRegistration handle, Dictionary<string, RawRegistration> yieldedTo, Compilation compilation)
+	private static IEnumerable<DiagnosticInfo> UnappliedScanHooks(RawRegistration match, RawRegistration handle, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation)
 	{
-		if (!IsScanHandle(handle) || (yieldedTo.TryGetValue(TypeIdentity(handle.Hidden!, compilation), out RawRegistration? winner) && !winner.IsScan))
+		bool explicitWinner = yieldedTo.TryGetValue(TypeIdentity(handle.Hidden!, compilation), out RawRegistration? winner) && !winner.IsScan;
+		if (!IsScanHandle(handle) || explicitWinner)
 		{
-			return [];
+			RawRegistration owner = explicitWinner ? winner! : handle;
+			INamedTypeSymbol? origin = explicitWinner ? DeclaringOrigin(owner, container) : owner.Origin;
+			INamedTypeSymbol? scanOrigin = DeclaringOrigin(match, container);
+			string subject = Display(handle.Hidden!.ToDisplayString(FullyQualified));
+			return new[]
+				{
+					ScanHookOnOwnedInstance(match, scanOrigin, (owner.OnActivated, origin), handle.Hidden!, release: false, subject, container),
+					ScanHookOnOwnedInstance(match, scanOrigin, (owner.OnRelease, origin), handle.Hidden!, release: true, subject, container),
+				}
+				.OfType<DiagnosticInfo>();
 		}
 
 		return new[] { (Directive: "OnActivated", Hook: match.OnActivated), (Directive: "OnRelease", Hook: match.OnRelease), }

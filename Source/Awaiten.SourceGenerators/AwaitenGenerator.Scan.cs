@@ -1240,6 +1240,50 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Drops the container's own scan matches of a type from another assembly that has no constructor the container
+	///     can call, such as a public class with only internal constructors, reporting the
+	///     <see cref="Diagnostics.ScanTypePrivate">AWT193</see> warning instead of the AWT104 error, as the scan does for
+	///     a type it cannot name. A match whose implementation another registration names too is kept: it shares that
+	///     registration's instance, which a module's generated factory may build.
+	/// </summary>
+	private static void DropScanMatchesWithoutAccessibleConstructor(
+		List<RawRegistration> raw,
+		INamedTypeSymbol containerSymbol,
+		Compilation compilation,
+		List<DiagnosticInfo> diagnostics)
+	{
+		HashSet<string> checkedImplementations = new(StringComparer.Ordinal);
+		foreach (RawRegistration match in raw.FindAll(IsContainerScanConstruction))
+		{
+			INamedTypeSymbol type = match.Implementation;
+			if (!checkedImplementations.Add(match.ImplementationType)
+			    || SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, containerSymbol.ContainingAssembly)
+			    || type.InstanceConstructors.Any(constructor => compilation.IsSymbolAccessibleWithin(constructor, containerSymbol))
+			    || raw.Exists(registration => registration.ImplementationType == match.ImplementationType && !IsContainerScanConstruction(registration)))
+			{
+				continue;
+			}
+
+			string display = Display(type.ToDisplayString(FullyQualified));
+			string assembly = type.ContainingAssembly.Name;
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.ScanTypePrivate,
+				LocationInfo.From(match.Location),
+				new EquatableArray<string>([
+					display,
+					$"'{display}' has no constructor accessible outside its assembly '{assembly}'",
+					$"make a constructor public, move the scan into a [Module] in '{assembly}', whose generated factories build such types for any container that imports it, or grant this assembly InternalsVisibleTo",
+				])));
+			raw.RemoveAll(registration => registration.ImplementationType == match.ImplementationType);
+			diagnostics.RemoveAll(diagnostic => diagnostic.Descriptor == Diagnostics.ScanAmbiguousMatchingInterfaces
+			                                    && diagnostic.MessageArgs.AsArray()[0] == display);
+		}
+
+		static bool IsContainerScanConstruction(RawRegistration registration)
+			=> registration is { IsScan: true, Origin: null, Production: ProductionKind.Constructor, ConstructVia: null, ScanImplementation: null, };
+	}
+
+	/// <summary>
 	///     Drops every implementation from a <c>[Scan(SkipUnconstructable = true)]</c> that the container cannot
 	///     construct, reporting AWT141 where the default keeps the AWT101 error, so an incidentally-matched helper
 	///     type does not break the build. An implementation also registered explicitly, or by a scan without the

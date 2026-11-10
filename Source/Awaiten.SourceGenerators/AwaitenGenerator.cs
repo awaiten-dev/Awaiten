@@ -966,8 +966,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		ShareGeneratedRegistrationFactories(raw, containerSymbol, compilation);
 		List<string> sharedScanImplementations = ShareScannedInstances(raw, compilation);
 
-		// A scanned private nested type the resolvers cannot stand in for is skipped with AWT193, not the AWT216 error.
+		// A scanned private nested type the resolvers cannot stand in for is skipped with AWT193, not the AWT216 error,
+		// and so is a scanned type of another assembly whose constructors the container cannot call, not AWT104.
 		DropUnsupportedPrivateScanMatches(raw, containerSymbol, compilation, diagnostics);
+		DropScanMatchesWithoutAccessibleConstructor(raw, containerSymbol, compilation, diagnostics);
 
 		// [Scan(SkipUnconstructable = true)] trades the AWT101 error for a skip-with-warning (AWT141) on matches
 		// the container cannot construct. Scans without the opt-in, and explicit registrations, keep the error.

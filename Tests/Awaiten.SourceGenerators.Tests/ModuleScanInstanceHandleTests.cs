@@ -225,10 +225,12 @@ public class ModuleScanInstanceHandleTests
 
 	public class AConsumerRegistrationOfAPublicMatch
 	{
-		private const string Scans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]";
+		private const string Scans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]";
 
-		private static string PublicLibrary(string? friend = null)
-			=> Library(friend, Scans).Replace("internal sealed class Roaster", "public sealed class Roaster");
+		private const string HookedScans = "[Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton, OnActivated = nameof(Activate))]";
+
+		private static string PublicLibrary(string? friend = null, string scans = Scans)
+			=> Library(friend, scans).Replace("internal sealed class Roaster", "public sealed class Roaster");
 
 		private static string Container(string registration, string ns) => $$"""
 			using Awaiten;
@@ -248,10 +250,10 @@ public class ModuleScanInstanceHandleTests
 			}
 			""";
 
-		private static (GeneratorResult SameAssembly, GeneratorResult External, GeneratorResult Friend) RunEverywhere(string registration)
-			=> (Generator.Run(PublicLibrary() + Container(registration, "Lib").Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace Lib;", "")),
-				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary(), Container(registration, "MyCode")),
-				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary("TestAssembly"), Container(registration, "MyCode")));
+		private static (GeneratorResult SameAssembly, GeneratorResult External, GeneratorResult Friend) RunEverywhere(string registration, string scans = Scans)
+			=> (Generator.Run(PublicLibrary(scans: scans) + Container(registration, "Lib").Replace("using Awaiten;", "").Replace("using Lib;", "").Replace("namespace Lib;", "")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary(scans: scans), Container(registration, "MyCode")),
+				Generator.RunWithGeneratedReferencedAssembly(PublicLibrary("TestAssembly", scans), Container(registration, "MyCode")));
 
 		[Test]
 		public async Task WithADifferentLifetime_YieldsTheScanAsInTheModulesAssembly()
@@ -296,6 +298,18 @@ public class ModuleScanInstanceHandleTests
 			await That(friend.Diagnostics).IsEmpty();
 			await That(external.Diagnostics).HasSingle().Matching(diagnostic => diagnostic.Contains("error AWT241") && diagnostic.Contains("it sets OnActivated"))
 				.Because("the handle runs only hooks the module generated wrappers for, so it cannot run the container's hook on the instance it builds");
+		}
+
+		[Test]
+		public async Task ScanWithAHook_ReportsAwt166Everywhere()
+		{
+			(GeneratorResult sameAssembly, GeneratorResult external, GeneratorResult friend) = RunEverywhere("[Singleton<Roaster, IRoaster>]", HookedScans);
+
+			await That(sameAssembly.Diagnostics).HasSingle().Which.Contains("error AWT166").And.Contains("'Lib.PluginModule.Activate'").And.Contains("hook is unset")
+				.Because("the explicit registration owns the instance the scan matches, so the scan's hook would never run");
+			await That(friend.Diagnostics).HasSingle().Which.Contains("error AWT166").And.Contains("'Lib.PluginModule.Activate'");
+			await That(external.Diagnostics).HasSingle().Which.Contains("error AWT166").And.Contains("'Lib.PluginModule.Activate'")
+				.Because("the scan's handle yields to the explicit registration, which owns the instance as in the module's assembly");
 		}
 
 		[Test]

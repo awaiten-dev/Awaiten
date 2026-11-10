@@ -273,8 +273,8 @@ public partial class DiagnosticTests
 					""";
 				GeneratorResult result = Run(ScanLibrary, container, consumer);
 
-				await That(result.Diagnostics).IsEmpty()
-					.Because("the match shares the instance of the module's registration, so the container never calls the scan's hook wrapper that takes the internal service, as in the modules' own assembly");
+				await That(result.Diagnostics).HasSingle().Which.Contains("error AWT166").And.DoesNotContain("AWT238")
+					.Because("the match shares the instance of the module's registration, so the container never calls the scan's hook wrapper that takes the internal service, as in the modules' own assembly, and reports the hook that never runs instead");
 			}
 
 			[Test]

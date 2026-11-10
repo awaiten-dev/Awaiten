@@ -2215,7 +2215,7 @@ public class ModuleHiddenServiceTests
 				[Arguments(true, "reference")]
 				[Arguments(false, "full")]
 				[Arguments(false, "reference")]
-				public async Task ContainerInAnotherAssembly_CannotConstructTheMatch(bool imported, string consumer)
+				public async Task ContainerInAnotherAssembly_SkipsTheMatch(bool imported, string consumer)
 				{
 					string container = $$"""
 						[Container]{{(imported ? "\n[Import(typeof(PluginModule))]" : "")}}
@@ -2224,8 +2224,8 @@ public class ModuleHiddenServiceTests
 						""";
 					GeneratorResult result = Run(Library, container, consumer);
 
-					await That(result.Diagnostics).HasSingle().Which.Contains("AWT104").And.Contains("'Lib.Roaster' has no accessible constructor")
-						.Because("the container's own scan constructs the match, and no module builds a Roaster it could share: the factories produce services of their own");
+					await That(result.Diagnostics).HasSingle().Which.Contains("warning AWT193").And.Contains("'Lib.Roaster' has no constructor accessible outside its assembly")
+						.Because("the container's own scan would construct the match, and no module builds a Roaster it could share: the factories produce services of their own");
 				}
 			}
 		}
