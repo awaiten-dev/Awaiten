@@ -197,6 +197,14 @@ internal static partial class Sources
 					"Generated from a module registration: forwards to the module's own member, which a consuming container in",
 					"another assembly cannot call.");
 			}
+
+			foreach (MemberInitializer initializer in wrapper.Initializers.AsArray())
+			{
+				builder.AppendLine();
+				EmitSkipReason(builder, depth + 2, initializer.Name, initializer.Convention,
+					"Generated from a module [AsyncInitializer]: records that this convention initializes what the wrapper above",
+					"returns, so a consuming container that cannot see the returned implementation runs it.");
+			}
 		}
 
 		foreach (SkippedRegistration skipped in model.Skipped.AsArray())

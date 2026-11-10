@@ -112,6 +112,119 @@ public class ModuleInternalConventionTests
 				"public static partial class CoffeeModule { public static Brew Create() => new(); }"));
 
 		[Test]
+		[Arguments(false, "private static Brew Make() => new();")]
+		[Arguments(true, "private static Brew Make() => new();")]
+		[Arguments(false, "internal static Brew Make() => new();")]
+		[Arguments(true, "internal static Brew Make() => new();")]
+		public async Task OfAFactoryMemberReturningAnInternalImplementation_RunsOnceInEveryContainer(bool interfaceConvention, string factory)
+			=> await AssertRunsOnceEverywhere(Library(
+				Brew(publicImplementation: false, interfaceConvention),
+				(interfaceConvention ? InterfaceConvention : MethodConvention) + "[Singleton<IBrew>(Factory = nameof(Make))]",
+				$"public static partial class CoffeeModule {{ {factory} }}"));
+
+		[Test]
+		[Arguments("[Singleton<Brew, IBrew>(Factory = nameof(Make))]")]
+		[Arguments("[Singleton<IBrew>(Factory = nameof(Make))]")]
+		public async Task OfAFactoryMemberReturningADerivedInternalImplementation_RunsOnceInEveryContainer(string registration)
+			=> await AssertRunsOnceEverywhere(Library(
+				"internal class Brew : IBrew { }\ninternal sealed class Special : Brew { internal Task WarmUpAsync() => Task.CompletedTask; }",
+				"[AsyncInitializer<Special>(nameof(Special.WarmUpAsync))]" + registration,
+				"public static partial class CoffeeModule { private static Special Make() => new(); }"));
+
+		[Test]
+		[Arguments(false, "private static Task<Brew> Make() => Task.FromResult(new Brew());")]
+		[Arguments(true, "private static ValueTask<Brew> Make() => new(new Brew());")]
+		public async Task OfAnAsyncFactoryMemberReturningAnInternalImplementation_RunsOnceInEveryContainer(bool interfaceConvention, string factory)
+		{
+			(GeneratorResult built, GeneratorResult same, GeneratorResult other, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(Library(
+				Brew(publicImplementation: false, interfaceConvention),
+				(interfaceConvention ? InterfaceConvention : MethodConvention) + "[Singleton<IBrew>(Factory = nameof(Make))]",
+				$"public static partial class CoffeeModule {{ {factory} }}"));
+
+			await That(built.Diagnostics).IsEmpty();
+			await That(same.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { other, reference, compilation, })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await global::Lib.CoffeeModule.Internals.Initializer_").Exactly(1)
+					.Because("the module records the convention of the brew its wrapper awaits and returns as the public service");
+			}
+
+			await That(same.Sources["Awaiten.Lib.SameContainer.g.cs"]).Contains(").WarmUpAsync()").Exactly(1);
+			await That(friend.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains(").WarmUpAsync()").Exactly(1);
+		}
+
+		[Test]
+		public async Task OfAFactoryMemberReturningAnInternalImplementation_WithAPublicConvention_CallsItDirectly()
+		{
+			string library = Library(
+				"public interface ICheck { Task CheckAsync(); }\ninternal sealed class Brew : IBrew, ICheck { public Task CheckAsync() => Task.CompletedTask; }",
+				"[AsyncInitializer<ICheck>(nameof(ICheck.CheckAsync))][Singleton<IBrew>(Factory = nameof(Make))]",
+				"public static partial class CoffeeModule { private static Brew Make() => new(); }");
+
+			foreach (GeneratorResult result in new[] { Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer), Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer), Generator.RunWithGeneratedCompilationReference(library, ExternalContainer), })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("await ((global::Lib.ICheck)created).CheckAsync()").Exactly(1)
+					.Because("the container casts the public service the wrapper returns to the public convention the module recorded");
+			}
+		}
+
+		[Test]
+		public async Task OfAFactoryMemberReturningAnInternalImplementation_WithParameters_ForwardsThemThroughTheWrapper()
+		{
+			string library = Library(
+				"public sealed class Drink : IDrink { }\ninternal sealed class Brew : IBrew { internal ValueTask WarmUpAsync(IDrink drink, CancellationToken cancellationToken) => default; }",
+				MethodConvention + "[Singleton<Drink, IDrink>][Transient<IBrew>(Factory = nameof(Make))]",
+				"public static partial class CoffeeModule { private static Brew Make() => new(); }");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer);
+
+			await That(result.Diagnostics).IsEmpty();
+			await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("Initializer_Brew_").Exactly(1).And.Contains("(created, Root.ResolveDrink(__s.__root), cancellationToken)")
+				.Because("the container resolves the wrapper's parameters like the convention's, passing the resolve-time token");
+		}
+
+		[Test]
+		public async Task OfAFactoryMemberReturningAnInternalImplementation_WithAConventionParameterOfAnInternalType_IsReportedByAContainerInAnotherAssembly()
+		{
+			(GeneratorResult library, GeneratorResult same, GeneratorResult external, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(Library(
+				"internal sealed class Settings { }\ninternal sealed class Brew : IBrew { internal Task WarmUpAsync(Settings settings) => Task.CompletedTask; }",
+				MethodConvention + "[Singleton<Settings>][Singleton<IBrew>(Factory = nameof(Make))]",
+				"public static partial class CoffeeModule { private static Brew Make() => new(); }"));
+			const string expected = "error AWT234: 'Lib.IBrew' is initialized by the async initializer 'Lib.Brew.WarmUpAsync', but 'Lib.Brew' is not accessible from the container 'MyCode.MyContainer', and the module 'Lib.CoffeeModule' generated no wrapper for it because its parameter 'settings' has the type 'Lib.Settings', which is not public; make it public, or grant this assembly InternalsVisibleTo in its assembly";
+
+			await That(library.Diagnostics).IsEmpty()
+				.Because("a container in the module's assembly calls the factory and the convention itself");
+			await That(same.Diagnostics).IsEmpty();
+			await That(friend.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).HasSingle().Which.EndsWith(expected)
+				.Because("the module recorded that the convention initializes what its factory returns, and why it generated no wrapper for it");
+			await That(reference.Diagnostics).HasSingle().Which.EndsWith(expected);
+			await That(compilation.Diagnostics).HasSingle().Which.EndsWith(expected);
+		}
+
+		[Test]
+		[Arguments(false, "private static Brew Current { get; } = new();")]
+		[Arguments(true, "internal static readonly Brew Current = new();")]
+		public async Task OfAnInstanceMemberOfAnInternalImplementation_RunsNowhere(bool interfaceConvention, string instance)
+		{
+			(GeneratorResult built, GeneratorResult same, GeneratorResult other, GeneratorResult reference, GeneratorResult compilation, GeneratorResult friend) = RunAll(Library(
+				Brew(publicImplementation: false, interfaceConvention),
+				(interfaceConvention ? InterfaceConvention : MethodConvention) + "[Singleton<IBrew>(Instance = nameof(Current))]",
+				$"public static partial class CoffeeModule {{ {instance} }}"));
+
+			await That(built.Diagnostics).IsEmpty();
+			foreach ((GeneratorResult result, string container) in new[] { (same, "Awaiten.Lib.SameContainer.g.cs"), (other, "Awaiten.MyCode.MyContainer.g.cs"), (reference, "Awaiten.MyCode.MyContainer.g.cs"), (compilation, "Awaiten.MyCode.MyContainer.g.cs"), (friend, "Awaiten.MyCode.MyContainer.g.cs"), })
+			{
+				await That(result.Diagnostics).IsEmpty();
+				await That(result.Sources[container]).DoesNotContain("Initializer_").And.DoesNotContain(").WarmUpAsync(")
+					.Because("a pre-built instance belongs to its owner, which initializes it, so no container runs a convention on it");
+			}
+		}
+
+		[Test]
 		public async Task ReachingOneMethodThroughTwoConventions_RunsItOnce()
 		{
 			string library = Library(

@@ -839,14 +839,30 @@ partial class AwaitenGenerator
 			}
 
 			bool awaited = IsAsyncFactoryReturn(method.ReturnType, compilation, out ITypeSymbol result);
+			string name = MemberWrapperName("Factory", member, produced);
 			return Exposed(member, produced, result, method) is { } exposed
 				? new MemberWrapper(
-					MemberWrapperName("Factory", member, produced),
+					name,
 					awaited ? $"{((INamedTypeSymbol)method.ReturnType).ConstructedFrom.ContainingNamespace.ToDisplayString(FullyQualified)}.{method.ReturnType.Name}<{exposed}>" : exposed,
 					member,
 					MirroredParameters(method.Parameters),
-					Awaited: awaited)
+					Awaited: awaited,
+					Initializers: MemberInitializers(name, result))
 				: null;
+		}
+
+		// A container in another assembly matches the conventions against the public service the wrapper returns, so the
+		// module records those of the implementation it returns in its place, as a container in its assembly sees it.
+		EquatableArray<MemberInitializer> MemberInitializers(string wrapper, ITypeSymbol result)
+		{
+			if (!compilation.IsSymbolAccessibleWithin(result, module.ContainingAssembly))
+			{
+				return default;
+			}
+
+			return new EquatableArray<MemberInitializer>(MatchingAsyncInitializers(DeclaredAsyncInitializers(module, compilation, null), result, convention => IsOfConventionType(result, convention.Type))
+				.Select(convention => new MemberInitializer(MemberInitializerName(wrapper, convention), convention.Display))
+				.ToArray());
 		}
 
 		// A member that produces a type another assembly cannot name is exposed as the public type it is registered as,

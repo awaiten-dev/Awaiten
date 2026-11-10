@@ -297,7 +297,8 @@ partial class AwaitenGenerator
 	///     The async initializers of an instance: the conventions of the scope that declares its winning registration,
 	///     decorator or composite (the module or base container it comes from, else the container) that match its owned
 	///     type, or, for a self-compiled
-	///     implementation behind a generated factory, the conventions its owner recorded. Their parameters are classified
+	///     implementation behind a generated factory or an implementation a module's public <c>Factory</c> wrapper returns
+	///     as its public service, the conventions its owner recorded. Their parameters are classified
 	///     like those of an asynchronous <c>OnActivated</c> hook, so they take part in every graph check. A convention the
 	///     container cannot call runs through the wrapper its module in another assembly generates for it (see
 	///     <see cref="CollectConventionWrappers" />); without one it is reported as
@@ -318,10 +319,12 @@ partial class AwaitenGenerator
 		}
 
 		ImplementationTraits? traits = info.Traits;
+		Func<AsyncInitializerConvention, bool>? recorded = RecordedMemberInitializers(info, conventions);
 		List<AsyncInitializerModel> models = new();
-		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(conventions, traits is null ? ownedType : null, convention => traits is { } known
-			         ? known.Runs(convention.Type.ToDisplayString(FullyQualified), convention.Name)
-			         : IsOfConventionType(ownedType, convention.Type)))
+		foreach (AsyncInitializerConvention convention in MatchingAsyncInitializers(conventions, traits is null && recorded is null ? ownedType : null, convention => recorded?.Invoke(convention)
+			         ?? (traits is { } known
+				         ? known.Runs(convention.Type.ToDisplayString(FullyQualified), convention.Name)
+				         : IsOfConventionType(ownedType, convention.Type))))
 		{
 			if (InaccessibleAsyncInitializerPart(convention, context.ContainerSymbol, context.Compilation) is { } reason)
 			{
@@ -546,4 +549,31 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string ConventionSkippedName(AsyncInitializerConvention convention)
 		=> "InitializerSkipped_" + ConventionWrapperName(convention).Substring("Initializer_".Length);
+
+	/// <summary>
+	///     A deterministic name for the constant that records that <paramref name="convention" /> initializes what the
+	///     <c>Factory</c> wrapper <paramref name="wrapper" /> returns (see <see cref="MemberWrapper.Initializers" />),
+	///     derived like <see cref="ConventionWrapperName" />.
+	/// </summary>
+	private static string MemberInitializerName(string wrapper, AsyncInitializerConvention convention)
+		=> $"Initializes_{wrapper}_{ConventionWrapperName(convention).Substring("Initializer_".Length)}";
+
+	/// <summary>
+	///     The conventions among <paramref name="conventions" /> that the module of <paramref name="info" />, in another
+	///     assembly, recorded as initializing what the public <c>Factory</c> wrapper the container calls returns, because the
+	///     wrapper returns the public service in place of an implementation the container cannot see (see
+	///     <see cref="MemberWrapper.Initializers" />), or <see langword="null" /> when it recorded none.
+	/// </summary>
+	private static Func<AsyncInitializerConvention, bool>? RecordedMemberInitializers(ImplInfo info, List<AsyncInitializerConvention> conventions)
+	{
+		if (info is not { Production: ProductionKind.Factory, Origin: { } owner, ProductionMember: { } member, }
+		    || !member.StartsWith(InInternals("Factory_"), StringComparison.Ordinal))
+		{
+			return null;
+		}
+
+		string wrapper = member.Substring(InternalsClass.Length + 1);
+		bool Recorded(AsyncInitializerConvention convention) => !InternalsMembers(owner, MemberInitializerName(wrapper, convention)).IsEmpty;
+		return conventions.Exists(Recorded) ? Recorded : null;
+	}
 }
