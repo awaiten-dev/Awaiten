@@ -33,8 +33,9 @@ namespace Awaiten.SourceGenerators;
 ///     registrations of one implementation are compared by (AWT111). <c>Aliased</c> is the module registration an
 ///     alias of such a handle stands for, with its hooks named by their generated wrappers, whose directives the
 ///     handle takes when it is the first registration that survives coalescing. <c>Declarer</c> is the container or module
-///     that declares a registration whose <c>Origin</c> became the module whose generated factory it calls (see
-///     <c>ShareGeneratedRegistrationFactories</c>), which AWT155 and AWT167 judge it by.
+///     that declares a registration whose <c>Origin</c> became the module whose generated factory or alias it calls (see
+///     <c>ShareGeneratedRegistrationFactories</c> and <c>ShareHandleWithRegistrations</c>), which AWT155 and AWT167 judge
+///     it by and its lifecycle hooks bind on.
 /// </summary>
 /// <remarks>
 ///     <see cref="Location" /> is the live Roslyn location (with its syntax tree), not an equatable

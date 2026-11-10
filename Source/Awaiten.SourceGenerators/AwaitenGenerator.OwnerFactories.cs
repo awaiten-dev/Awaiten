@@ -597,8 +597,8 @@ partial class AwaitenGenerator
 	///     generated registration factory (see <see cref="ThroughGeneratedFactory" />) call that factory too, so coalescing
 	///     keeps one instance, as a container in the module's assembly or a friend constructs one for both. This container
 	///     could not construct it as they do: the module generates the factory because the implementation's constructor is
-	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A registration with a lifecycle hook
-	///     keeps its constructor, since its hook binds on its own owner, not on the module that owns the factory.
+	///     not public or it has an <c>[Inject]</c> property this assembly does not see. A lifecycle hook of the registration
+	///     still binds on its declarer (see <see cref="DeclaringOrigin" />), not on the module that owns the factory.
 	/// </summary>
 	private static void ShareGeneratedRegistrationFactories(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation)
 	{
@@ -616,7 +616,7 @@ partial class AwaitenGenerator
 
 		for (int index = 0; index < raw.Count && factories.Count > 0; index++)
 		{
-			if (raw[index] is { Production: ProductionKind.Constructor, IsScan: false, ConstructVia: null, Hidden: null, OnActivated: null, OnRelease: null, } registration
+			if (raw[index] is { Production: ProductionKind.Constructor, IsScan: false, ConstructVia: null, Hidden: null, } registration
 			    && factories.TryGetValue(registration.ImplementationType, out RawRegistration? factory))
 			{
 				raw[index] = registration with

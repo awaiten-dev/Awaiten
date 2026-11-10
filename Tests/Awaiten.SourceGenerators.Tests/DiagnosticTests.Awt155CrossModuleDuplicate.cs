@@ -712,6 +712,53 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task DoesNotReportWhenAContainerRegistersAnImplementationAModuleOfAnotherAssemblyBuildsThroughAHandle()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       internal interface IHiddenClock { }
+			                       public interface IFoo { }
+			                       public sealed class Clock : IHiddenClock, IFoo { }
+			                       public sealed class OtherFoo : IFoo { }
+
+			                       [Module]
+			                       [Singleton<Clock, IHiddenClock>]
+			                       public static partial class ClockModule { }
+
+			                       [Module]
+			                       [Singleton<OtherFoo, IFoo>]
+			                       public static partial class FooModule { }
+			                       """;
+			const string consumer = """
+			                        using Awaiten;
+			                        using Lib;
+
+			                        namespace MyCode;
+
+			                        public sealed class Cafe { public Cafe(IFoo foo) { } }
+
+			                        [Container]
+			                        [Import(typeof(ClockModule))]
+			                        [Import(typeof(FooModule))]
+			                        [Singleton<Clock, IFoo>]
+			                        [Singleton<Cafe>]
+			                        public static partial class MyContainer;
+			                        """;
+
+			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(same.Diagnostics).IsEmpty();
+			await That(external.Diagnostics).IsEmpty()
+				.Because("the container declares the registration that serves the module's instance handle, so it overrides the other module as it does in the library's assembly");
+			await That(external.Sources.Single(source => source.Key.Contains("MyContainer")).Value).Contains("global::Lib.ClockModule.Internals.")
+				.Because("the container's registration still shares the instance the module's handle builds");
+		}
+
+		[Test]
 		public async Task DoesNotSuggestAnOverridableDefaultWhenAVarianceCollectionHoldsTheService()
 		{
 			GeneratorResult result = Generator.Run("""
