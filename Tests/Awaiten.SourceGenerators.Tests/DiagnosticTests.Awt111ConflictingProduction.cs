@@ -934,6 +934,78 @@ public partial class DiagnosticTests
 				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("factory 'Lib.AModule.CreateA' and factory 'Lib.BModule.CreateB'")
 					.Because("CModule's constructor shares the handle the modules' factories coalesce into, so the one conflict of the implementation is the first pair in precedence order");
 			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task FactoriesWithOtherLifetimesAndHooks_BesideAModuleThatConstructsTheImplementation_ReportEachConflictOnce(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", ", OnActivated = nameof(ReadyA)").Replace("{2}", "Scoped")
+					.Replace("Factory = nameof(CreateB))]", "Factory = nameof(CreateB), OnActivated = nameof(ReadyB))]")
+					.Replace("internal static Clock CreateA(TimeSource source) => new();", "internal static Clock CreateA(TimeSource source) => new();\n    internal static void ReadyA(Clock clock) { }")
+					.Replace("internal static Clock CreateB(TimeSource source) => new();", "internal static Clock CreateB(TimeSource source) => new();\n    internal static void ReadyB(Clock clock) { }");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasCount(3)
+					.And.Contains("*AWT107*Singleton and Scoped*").AsWildcard()
+					.And.Contains("*AWT111*factory 'Lib.AModule.CreateA' and factory 'Lib.BModule.CreateB'*").AsWildcard()
+					.And.Contains("*AWT166*'Lib.AModule.ReadyA' and 'Lib.BModule.ReadyB'*").AsWildcard()
+					.Because("the modules' factories and CModule's constructor produce one instance, so each of BModule's contradictions of AModule is reported once, as in the module's own assembly");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ARegistrationOfTheContainerThatComesFirst_IsTheProducerTheHandlesAreComparedWith(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(BModule))]
+					[Import(typeof(CModule))]
+					[Singleton<Clock>(Key = "c", Eager = true)]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", "").Replace("{2}", "Singleton")
+					.Replace("Factory = nameof(CreateB))]", "Factory = nameof(CreateB), Key = \"b\", Eager = true)]");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).HasSingle().Which.Contains("AWT111").And.Contains("a constructor and factory 'Lib.AModule.CreateA'")
+					.Because("the container's eager registration comes first, so BModule's eager factory agrees with it, even though AModule's factory is not eager");
+			}
+
+			[Test]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ADroppedFallbackDefault_DoesNotConflictWithTheHandle(string setup)
+			{
+				const string container = """
+					[Container]
+					[Import(typeof(AModule))]
+					[Import(typeof(CModule))]
+					public static partial class {0};
+					""";
+				string library = ThreeModules.Replace("{0}", "public").Replace("{1}", "").Replace("{2}", "Singleton")
+					.Replace("[Singleton<Clock>]\npublic static partial class CModule;", "[Scoped<Clock>(Fallback = Fallback.Warn)]\npublic static partial class CModule;")
+					.Replace("[Singleton<Clock>]\r\npublic static partial class CModule;", "[Scoped<Clock>(Fallback = Fallback.Warn)]\r\npublic static partial class CModule;");
+
+				string[] result = await ReportsAsInTheModulesOwnAssembly(library, container, setup);
+
+				await That(result).IsEmpty()
+					.Because("AModule's registration replaces CModule's Fallback default, which is dropped and so produces nothing that could conflict");
+			}
 		}
 	}
 }

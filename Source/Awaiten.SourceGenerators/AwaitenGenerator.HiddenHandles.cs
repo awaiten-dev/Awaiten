@@ -510,7 +510,9 @@ partial class AwaitenGenerator
 	///     through the alias that returns the implementation from its instance handle, with the handle's lifetime. The two
 	///     no longer share an identity, so the checks coalescing would run between them run here (AWT107, AWT111, AWT166):
 	///     every registration that shares a handle and every handle of the implementation is compared with the first of
-	///     them in precedence order, once per implementation, as a container in the module's own assembly compares them.
+	///     them in precedence order, once per implementation, as a container in the module's own assembly compares them,
+	///     and coalescing skips those handles (<paramref name="checkedHandles" />). A dropped overridable default is not
+	///     compared, since it produces nothing.
 	///     A scan's handle yields to the registration in <paramref name="yieldedTo" /> (see <see cref="YieldScanHandles" />),
 	///     which therefore comes first, and is compared with the registration alone. A directive of the registration that
 	///     the handle cannot run, or a missing alias, is AWT241, unless the two produce the implementation differently (AWT111).
@@ -527,7 +529,7 @@ partial class AwaitenGenerator
 	///     or a dropped overridable default, since the registration then stands alone and running the member would build
 	///     what the container replaced; the registration shares the next handle of the implementation instead.
 	/// </summary>
-	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static void ShareHandleWithRegistrations(List<RawRegistration> raw, List<(RawRegistration Handle, int Index, string Identity)> handles, Dictionary<string, RawRegistration> yieldedTo, INamedTypeSymbol container, Compilation compilation, HashSet<string> checkedHandles, List<DiagnosticInfo> diagnostics)
 	{
 		HashSet<string> lifetimes = new(StringComparer.Ordinal);
 		HashSet<string> productions = new(StringComparer.Ordinal);
@@ -563,7 +565,7 @@ partial class AwaitenGenerator
 				{
 					ReportCoalescingConflicts(NewImplInfo(registrationFirst ? plain : handle, container), registrationFirst ? handle : plain, container, lifetimes, productions, directives, diagnostics);
 				}
-				else
+				else if (!dropped.Contains(index))
 				{
 					sharing.Add((plain, index));
 				}
@@ -615,11 +617,16 @@ partial class AwaitenGenerator
 		}
 
 		// As in the module's own assembly, every producer of the implementation is compared with the first in precedence
-		// order, so the conflicts are reported once and between the same pair there.
+		// order, so the conflicts are reported once and between the same pair there, and coalescing skips the handles.
 		foreach (IGrouping<string, (RawRegistration Registration, int Index)> group in sharing.GroupBy(entry => entry.Registration.ImplementationType, StringComparer.Ordinal))
 		{
+			List<(RawRegistration Registration, int Index)> shared = handles
+				.Where(entry => entry.Identity == group.Key && !IsScanHandle(entry.Handle) && Shares(entry.Handle))
+				.Select(entry => (Registration: entry.Handle, entry.Index))
+				.ToList();
+			checkedHandles.UnionWith(shared.Select(entry => entry.Registration.ImplementationType));
 			List<RawRegistration> producers = group
-				.Concat(handles.Where(entry => entry.Identity == group.Key && !IsScanHandle(entry.Handle) && Shares(entry.Handle)).Select(entry => (Registration: entry.Handle, entry.Index)))
+				.Concat(shared)
 				.OrderBy(entry => (PrecedenceRank(entry.Registration), entry.Index))
 				.Select(entry => entry.Registration with { ImplementationType = group.Key, })
 				.ToList();

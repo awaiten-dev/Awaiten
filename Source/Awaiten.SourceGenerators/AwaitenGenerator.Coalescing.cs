@@ -47,8 +47,10 @@ partial class AwaitenGenerator
 	///     <see cref="UnappliedScanHooks" />). Without such an alias the match's
 	///     factory would build a second instance, so the match is dropped after reporting AWT240. Two modules that each
 	///     build a scan match through a handle of their own are AWT240 first (see <see cref="DropDuplicateScanHandles" />).
+	///     Returns the identities of the instance handles whose conflicts <see cref="ShareHandleWithRegistrations" /> checked
+	///     already, which coalescing therefore skips.
 	/// </summary>
-	private static void ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static HashSet<string> ShareHandledInstances(List<RawRegistration> raw, INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
 		DropDuplicateScanHandles(raw, compilation, diagnostics);
 		Dictionary<string, RawRegistration> yieldedTo = YieldScanHandles(raw, container, compilation, diagnostics);
@@ -57,9 +59,10 @@ partial class AwaitenGenerator
 			.Where(entry => entry.registration.Hidden is not null && entry.registration.ImplementationType.Contains(HiddenKeyMarker))
 			.Select(entry => (entry.registration, entry.index, TypeIdentity(entry.registration.Hidden!, compilation)))
 			.ToList();
+		HashSet<string> checkedHandles = new(StringComparer.Ordinal);
 		if (indexed.Count > 0)
 		{
-			ShareHandleWithRegistrations(raw, indexed, yieldedTo, container, compilation, diagnostics);
+			ShareHandleWithRegistrations(raw, indexed, yieldedTo, container, compilation, checkedHandles, diagnostics);
 		}
 
 		List<RawRegistration> handles = indexed.Select(entry => entry.Handle).ToList();
@@ -119,6 +122,8 @@ partial class AwaitenGenerator
 				])));
 			raw.RemoveAt(index);
 		}
+
+		return checkedHandles;
 	}
 
 	/// <summary>
@@ -509,6 +514,7 @@ partial class AwaitenGenerator
 		INamedTypeSymbol containerSymbol,
 		Compilation compilation,
 		List<CrossModuleDuplicate> duplicates,
+		HashSet<string> checkedHandles,
 		List<DiagnosticInfo> diagnostics)
 	{
 		List<ImplInfo> implOrder = new();
@@ -518,25 +524,6 @@ partial class AwaitenGenerator
 		HashSet<string> reportedProductionConflicts = new(StringComparer.Ordinal);
 		HashSet<string> reportedDirectiveConflicts = new(StringComparer.Ordinal);
 		HashSet<string> reportedHookConflicts = new(StringComparer.Ordinal);
-
-		// The instance handles of a module of another assembly whose implementation an earlier check reported the
-		// conflict of already (see ShareHandleWithRegistrations), which a container in the module's own assembly reports once.
-		foreach (RawRegistration handle in raw.Where(registration => registration.Hidden is not null && registration.ImplementationType.Contains(HiddenKeyMarker)))
-		{
-			string implementation = DisplayInstance(handle.ImplementationType);
-			if (Reported(Diagnostics.ConflictingLifetime))
-			{
-				reportedConflicts.Add(handle.ImplementationType);
-			}
-
-			if (Reported(Diagnostics.ConflictingProduction))
-			{
-				reportedProductionConflicts.Add(handle.ImplementationType);
-			}
-
-			bool Reported(DiagnosticDescriptor descriptor)
-				=> diagnostics.Exists(diagnostic => diagnostic.Descriptor == descriptor && diagnostic.MessageArgs.AsArray()[0] == implementation);
-		}
 
 		// Collection membership: every registration of a service, keyed by (service type, key) and deduped by
 		// implementation, in registration order. serviceMemberOrder preserves first-seen order for emission.
@@ -605,10 +592,14 @@ partial class AwaitenGenerator
 			// with different lifetimes are AWT142. An overridable default losing its key yields transparently; every
 			// other default is checked like an explicit registration. The instance handle of a module of another
 			// assembly shares its key with the handles of the other modules that build the implementation, so it is
-			// checked whenever it is kept, which it is only while one of its aliases survives (see SettleHandleDirectives).
+			// checked whenever it is kept, which it is only while one of its aliases survives (see SettleHandleDirectives),
+			// unless ShareHandleWithRegistrations compared it with every producer of its implementation already.
 			if (!registration.IsScan && (!registration.Weak || !alreadyChosen || winner!.Weak || registration.Hidden is not null))
 			{
-				ReportCoalescingConflicts(info, registration, containerSymbol, reportedConflicts, reportedProductionConflicts, reportedDirectiveConflicts, diagnostics);
+				if (!checkedHandles.Contains(registration.ImplementationType))
+				{
+					ReportCoalescingConflicts(info, registration, containerSymbol, reportedConflicts, reportedProductionConflicts, reportedDirectiveConflicts, diagnostics);
+				}
 			}
 			else if (registration.IsScan && info is { IsScan: true, } && info.Lifetime != registration.Lifetime
 			         && reportedConflicts.Add(registration.ImplementationType))
@@ -1253,11 +1244,6 @@ partial class AwaitenGenerator
 		{
 			string winner = info.HiddenProduction ?? DescribeProduction(info.Production, info.ProductionMember, info.Origin ?? containerSymbol);
 			string loser = registration.HiddenProduction ?? DescribeProduction(registration.Production, registration.ProductionMember, registration.Origin ?? containerSymbol);
-			if (winner == loser)
-			{
-				winner = DescribeGeneratedConstruction(info.HiddenProduction, info.ProductionMember, info.Origin) ?? winner;
-				loser = DescribeGeneratedConstruction(registration.HiddenProduction, registration.ProductionMember, registration.Origin) ?? loser;
-			}
 
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.ConflictingProduction,
@@ -1554,14 +1540,4 @@ partial class AwaitenGenerator
 			ProductionKind.Instance => $"instance '{Display(QualifiedMember(owner, UserMemberName(member)))}'",
 			_ => "a constructor",
 		};
-
-	/// <summary>
-	///     Names the constructor that <paramref name="module" /> of another assembly calls through its generated registration
-	///     factory, for an AWT111 message whose two strategies <see cref="DescribeProduction" /> would both name "a
-	///     constructor", or <see langword="null" /> for any other production.
-	/// </summary>
-	private static string? DescribeGeneratedConstruction(string? hiddenProduction, string? member, INamedTypeSymbol? module)
-		=> hiddenProduction is null && module is not null && IsGeneratedRegistrationFactory(member)
-			? $"the constructor that module '{Display(module.ToDisplayString(FullyQualified))}' calls through its generated factory"
-			: null;
 }

@@ -959,7 +959,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// A scan match a module's generated factory builds shares the instance of every other registration of its
 		// implementation, as it would in the module's own assembly.
-		ShareHandledInstances(raw, containerSymbol, compilation, diagnostics);
+		HashSet<string> checkedHandles = ShareHandledInstances(raw, containerSymbol, compilation, diagnostics);
 		ShareGeneratedRegistrationFactories(raw, containerSymbol, compilation);
 		List<string> sharedScanImplementations = ShareScannedInstances(raw, compilation);
 
@@ -988,7 +988,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		AssignMemberIdentities(raw, containerSymbol, compilation);
 		List<CrossModuleDuplicate> duplicates = new();
 		(List<ImplInfo> implOrder, Dictionary<ServiceKey, string> serviceToImpl, Dictionary<ServiceKey, List<string>> serviceMembers, List<ServiceKey> serviceMemberOrder, List<(string ServiceType, INamedTypeSymbol Symbol)> varianceCandidates, Dictionary<string, List<KeyedMember>> keyedMembers, List<string> keyedMemberOrder) =
-			CoalesceByImplementation(raw, containerSymbol, compilation, duplicates, diagnostics);
+			CoalesceByImplementation(raw, containerSymbol, compilation, duplicates, checkedHandles, diagnostics);
 		CoalescedGraph graph = new(serviceToImpl, implOrder, serviceMembers);
 
 		// The closed generic service symbols the coalesced graph holds (recovered from the raw registrations,
