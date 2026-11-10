@@ -36,14 +36,14 @@ partial class AwaitenGenerator
 	///     does not extend a container itself (AWT224): extending is one level deep. A container with a base must not set
 	///     the options that decide validation, which it inherits (AWT225).
 	/// </summary>
-	private static ExtendedBase? ResolveExtends(INamedTypeSymbol containerSymbol, List<DiagnosticInfo> diagnostics)
+	private static ExtendedBase? ResolveExtends(INamedTypeSymbol containerSymbol, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
 	{
 		if (ExtendsTarget(containerSymbol, out AttributeData? attribute) is not { } target)
 		{
 			return null;
 		}
 
-		Location? location = NamedArgumentLocation(attribute!, "Extends");
+		Location? location = NamedArgumentLocation(attribute!, "Extends", cancellationToken);
 		if (ExtendsFault(containerSymbol, target, LocationInfo.From(location)) is { } fault)
 		{
 			diagnostics.Add(fault);
@@ -56,7 +56,7 @@ partial class AwaitenGenerator
 			{
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.ExtendsOverridesOption,
-					LocationInfo.From(NamedArgumentLocation(attribute, argument.Key)),
+					LocationInfo.From(NamedArgumentLocation(attribute, argument.Key, cancellationToken)),
 					new EquatableArray<string>([
 						Display(containerSymbol.ToDisplayString(FullyQualified)),
 						argument.Key,
@@ -114,9 +114,9 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>The location of the named argument <paramref name="name" /> of an attribute, else of the attribute itself.</summary>
-	private static Location? NamedArgumentLocation(AttributeData attribute, string name)
+	private static Location? NamedArgumentLocation(AttributeData attribute, string name, CancellationToken cancellationToken)
 	{
-		SyntaxNode? syntax = attribute.ApplicationSyntaxReference?.GetSyntax();
+		SyntaxNode? syntax = attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken);
 		return (syntax as AttributeSyntax)?.ArgumentList?.Arguments
 		       .FirstOrDefault(argument => argument.NameEquals?.Name.Identifier.Text == name)?.GetLocation()
 		       ?? syntax?.GetLocation();

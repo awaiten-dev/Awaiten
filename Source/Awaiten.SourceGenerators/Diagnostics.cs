@@ -2522,4 +2522,17 @@ internal static class Diagnostics
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
+
+	/// <summary>
+	///     The generator cannot emit the wiring of a container that reports no error: a dependency resolves to no instance
+	///     of the graph, or the emission throws. Only a bug of the generator gets here; the container then emits only its
+	///     shell, instead of the compiler turning the exception into warning CS8785 and leaving the container out.
+	/// </summary>
+	public static readonly DiagnosticDescriptor GeneratorInconsistency = new(
+		"AWT255",
+		"Generator inconsistency",
+		"Awaiten cannot generate the container '{0}': {1}; this is a bug in Awaiten, please report it at https://github.com/awaiten-dev/Awaiten/issues",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
 }

@@ -56,7 +56,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		{
 			if (!model.SkipsGeneration)
 			{
-				spc.AddSource(model.HintName, SourceText.From(Sources.Emit(model), Encoding.UTF8));
+				spc.AddSource(model.HintName, SourceText.From(EmitContainer(model, spc.ReportDiagnostic), Encoding.UTF8));
 			}
 		});
 		ReportDiagnostics(context, models.Select(static (model, _) => model.Diagnostics));
@@ -589,7 +589,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 				return moduleDiagnostics.Exists(diagnostic => FailsBuild(diagnostic, compilation));
 			});
 
-		return new ContainerModel(
+		ContainerModel model = new(
 			containerNamespace,
 			new EquatableArray<TypeDeclaration>(containingTypes.ToArray()),
 			containerSymbol.Name,
@@ -613,6 +613,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			new EquatableArray<SkippedRegistration>(graph.Factories.HiddenProperties.ToArray()),
 			GrantsInternalsVisibleTo(compilation.Assembly) ? new EquatableArray<SkippedRegistration>(graph.Factories.HookSkips.ToArray()) : default,
 			DeclaresNotNullWhen: declaresNotNullWhen);
+		return model.HasErrors ? model : VerifyDependencies(model, LocationInfo.From(containerSymbol.Locations.FirstOrDefault()));
 	}
 
 	/// <summary>
@@ -687,7 +688,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			DetectEagerAsyncSingletons(graph.Instances, graph.InstanceLocations, diagnostics);
 		}
 
-		NameHiddenServices(containerSymbol, compilation, new HashSet<string>(graph.Instances.Select(instance => instance.ProductionMember).OfType<string>(), StringComparer.Ordinal), diagnostics);
+		NameHiddenServices(containerSymbol, compilation, new HashSet<string>(graph.Instances.Select(instance => instance.ProductionMember).OfType<string>(), StringComparer.Ordinal), diagnostics, cancellationToken);
 		return (graph, diagnostics);
 	}
 
@@ -856,7 +857,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// [Container(Extends = typeof(Base))]: the base and its imports join as inherited contributions, read like
 		// modules qualified on their owner, and the container's own registrations replace theirs (see ReplaceInherited).
 		Inheritance? inheritance = null;
-		if (ResolveExtends(containerSymbol, diagnostics) is { } extended)
+		if (ResolveExtends(containerSymbol, diagnostics, cancellationToken) is { } extended)
 		{
 			modules = InheritBase(extended, modules);
 			inheritance = new Inheritance(containerSymbol, extended, modules, compilation, cancellationToken);
