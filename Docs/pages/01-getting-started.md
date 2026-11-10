@@ -12,22 +12,18 @@ This page opens a coffee shop from scratch. By the end you have a working contai
 
 ## Requirements
 
-:::info[.NET SDK 10.0.300 and C# 11]
-- Build with the .NET SDK 10.0.300 or later. The source generator needs the C# compiler that ships with it.
-- Write C# 11 or later, as the examples on these pages do. They use generic attributes, such as `[Singleton<T>]`, and so does the code Awaiten generates for a `[Module]` that declares a `[Scan]`.
-- C# 9 and 10 work too, as long as no module of the project declares a `[Scan]`: use the `typeof` forms, such as `[Singleton(typeof(Espresso))]`, which every generic attribute except `[AsyncInitializer<T>]` also has. On an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
-- Target `net10.0`, `net8.0` or any framework that supports `netstandard2.0`, including .NET Framework 4.8.
-:::
+- The .NET SDK 10.0.300 or later, for the C# compiler the source generator needs.
+- C# 11 or later. Projects that target .NET Framework or netstandard2.0 default to C# 7.3, so set `<LangVersion>latest</LangVersion>` in the project file.
+- Any target framework from .NET Framework 4.8 and netstandard2.0 up to `net10.0`.
 
-:::tip[.NET Framework and netstandard2.0 projects]
-Projects that target .NET Framework or netstandard2.0 default to C# 7.3, which is too old for Awaiten. Raise the language version in the project file; no polyfill package is needed:
+<details>
+<summary>Older C# versions and polyfills</summary>
 
-```xml
-<LangVersion>latest</LangVersion>
-```
+C# 9 and 10 work too, as long as no module of the project declares a `[Scan]`: use the `typeof` forms, such as `[Singleton(typeof(Espresso))]`, which every generic attribute except `[AsyncInitializer<T>]` also has. On an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
 
-Without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
-:::
+The generated code needs no polyfill package. Without one, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
+
+</details>
 
 ## Install the package
 
