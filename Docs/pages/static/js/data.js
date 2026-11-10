@@ -1800,6 +1800,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
         "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
+      },
+      {
+        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
+        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
       }
     ],
     "labels": [
@@ -2102,7 +2108,8 @@ window.BENCHMARK_DATA = {
       "54f5274d",
       "3cde5b3e",
       "4ffb3551",
-      "e3a0e8a5"
+      "e3a0e8a5",
+      "d9c60864"
     ],
     "datasets": [
       {
@@ -2408,7 +2415,8 @@ window.BENCHMARK_DATA = {
           6.770831393344062,
           4.833898941675822,
           6.651882083370135,
-          3.363661684716741
+          3.363661684716741,
+          4.898658965031306
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2420,6 +2428,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3033,7 +3042,8 @@ window.BENCHMARK_DATA = {
           7.584012808708044,
           6.703540325164795,
           8.458894013116756,
-          4.076065678436023
+          4.076065678436023,
+          6.9869589404417916
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3045,6 +3055,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3658,7 +3669,8 @@ window.BENCHMARK_DATA = {
           138.00487294197083,
           108.94789396013532,
           128.2282097706428,
-          61.6760619242986
+          61.6760619242986,
+          85.28057911396027
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3670,6 +3682,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4279,7 +4292,8 @@ window.BENCHMARK_DATA = {
           8.839598982532818,
           7.253670232494672,
           8.115483460823695,
-          4.925912924607595
+          4.925912924607595,
+          6.9404090712467825
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4291,6 +4305,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4896,7 +4911,8 @@ window.BENCHMARK_DATA = {
           11.287941343017987,
           8.63169890542825,
           11.463056210676829,
-          6.211242971511988
+          6.211242971511988,
+          8.637163414557774
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4908,6 +4924,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7017,6 +7034,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
         "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
+      },
+      {
+        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
+        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
       }
     ],
     "labels": [
@@ -7319,7 +7342,8 @@ window.BENCHMARK_DATA = {
       "54f5274d",
       "3cde5b3e",
       "4ffb3551",
-      "e3a0e8a5"
+      "e3a0e8a5",
+      "d9c60864"
     ],
     "datasets": [
       {
@@ -7625,7 +7649,8 @@ window.BENCHMARK_DATA = {
           7.644117609659831,
           5.362752124667168,
           7.097307593623797,
-          3.3359888419508934
+          3.3359888419508934,
+          5.654750616422722
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7637,6 +7662,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8250,7 +8276,8 @@ window.BENCHMARK_DATA = {
           7.5561093756785755,
           6.737210959196091,
           8.448261767625809,
-          3.9960171326994898
+          3.9960171326994898,
+          6.49940995986645
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8262,6 +8289,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8875,7 +8903,8 @@ window.BENCHMARK_DATA = {
           137.85095125834147,
           90.9442755540212,
           128.31042706171672,
-          57.012191402060644
+          57.012191402060644,
+          84.72578719946054
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8887,6 +8916,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9496,7 +9526,8 @@ window.BENCHMARK_DATA = {
           8.956692815820377,
           7.3463912119468056,
           8.075121656060219,
-          5.060589847465356
+          5.060589847465356,
+          6.847327436506748
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9508,6 +9539,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10113,7 +10145,8 @@ window.BENCHMARK_DATA = {
           13.821164477329988,
           11.48006220261256,
           15.485244640282222,
-          6.430826219228598
+          6.430826219228598,
+          11.81320329606533
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10125,6 +10158,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12234,6 +12268,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
         "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
+      },
+      {
+        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
+        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
       }
     ],
     "labels": [
@@ -12536,7 +12576,8 @@ window.BENCHMARK_DATA = {
       "54f5274d",
       "3cde5b3e",
       "4ffb3551",
-      "e3a0e8a5"
+      "e3a0e8a5",
+      "d9c60864"
     ],
     "datasets": [
       {
@@ -12842,7 +12883,8 @@ window.BENCHMARK_DATA = {
           15.418529229504722,
           15.263687151670457,
           11.468443551233836,
-          22.096539863518306
+          22.096539863518306,
+          29.02197804848353
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13114,6 +13156,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13467,7 +13510,8 @@ window.BENCHMARK_DATA = {
           1186.745524597168,
           1200.6747740336828,
           790.6562194188435,
-          1343.840008799235
+          1343.840008799235,
+          1718.548883846828
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13479,6 +13523,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14092,7 +14137,8 @@ window.BENCHMARK_DATA = {
           25778.082755533855,
           26062.37773844401,
           18073.73465837751,
-          19098.30012003581
+          19098.30012003581,
+          25095.459439958846
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14403,6 +14449,7 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
+          32474,
           32474
         ],
         "borderColor": "#5E2750",
@@ -14713,7 +14760,8 @@ window.BENCHMARK_DATA = {
           573.2673449516296,
           570.277759552002,
           398.9922874768575,
-          556.2869133631389
+          556.2869133631389,
+          705.683532851083
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14743,6 +14791,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15330,7 +15379,8 @@ window.BENCHMARK_DATA = {
           8748.149718064527,
           9370.254640432504,
           6789.6760001549355,
-          9741.68173828125
+          9741.68173828125,
+          12399.423900897686
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15637,6 +15687,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -17451,6 +17502,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
         "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
+      },
+      {
+        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
+        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
       }
     ],
     "labels": [
@@ -17753,7 +17810,8 @@ window.BENCHMARK_DATA = {
       "54f5274d",
       "3cde5b3e",
       "4ffb3551",
-      "e3a0e8a5"
+      "e3a0e8a5",
+      "d9c60864"
     ],
     "datasets": [
       {
@@ -18059,7 +18117,8 @@ window.BENCHMARK_DATA = {
           115.21089958293098,
           118.57021641731262,
           83.180823802948,
-          260.33723481496173
+          260.33723481496173,
+          364.71540654500325
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18331,6 +18390,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18684,7 +18744,8 @@ window.BENCHMARK_DATA = {
           10376.999211992535,
           10708.895836463342,
           7740.74032236735,
-          12057.956342569987
+          12057.956342569987,
+          14769.036908976237
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18696,6 +18757,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19309,7 +19371,8 @@ window.BENCHMARK_DATA = {
           644957.576953125,
           622867.7613002232,
           448409.7353190104,
-          451211.3259277344
+          451211.3259277344,
+          588662.9877604167
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19620,7 +19683,8 @@ window.BENCHMARK_DATA = {
           742568,
           719488,
           741068,
-          718752
+          718752,
+          719414
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19930,7 +19994,8 @@ window.BENCHMARK_DATA = {
           34953.855377197266,
           34914.1299626277,
           23842.600900503305,
-          30597.61916879507
+          30597.61916879507,
+          40813.885681152344
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20237,7 +20302,8 @@ window.BENCHMARK_DATA = {
           80973,
           80320,
           80306,
-          80316
+          80316,
+          80317
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20547,7 +20613,8 @@ window.BENCHMARK_DATA = {
           270134.17755998886,
           263101.334891183,
           206956.40029672475,
-          251248.5345740685
+          251248.5345740685,
+          346058.7358022836
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20854,7 +20921,8 @@ window.BENCHMARK_DATA = {
           573122,
           573155,
           573071,
-          571199
+          571199,
+          571195
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22644,6 +22712,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 14:32:50 2026 \u002B0100",
         "message": "fix: let a WhenInjectedInto binding name a decorator or a composite as its consumer (#403)"
+      },
+      {
+        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
+        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
       }
     ],
     "labels": [
@@ -22942,7 +23016,8 @@ window.BENCHMARK_DATA = {
       "54f5274d",
       "3cde5b3e",
       "4ffb3551",
-      "e3a0e8a5"
+      "e3a0e8a5",
+      "d9c60864"
     ],
     "datasets": [
       {
@@ -23244,7 +23319,8 @@ window.BENCHMARK_DATA = {
           477.56817887624106,
           275.1795209737924,
           169.40454427401224,
-          180.86298430882968
+          180.86298430882968,
+          213.60745930671692
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23279,6 +23355,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -23861,7 +23938,8 @@ window.BENCHMARK_DATA = {
           637.5130145390829,
           590.1946370942252,
           399.92640024820963,
-          428.8706473937401
+          428.8706473937401,
+          472.33360290527344
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -23873,6 +23951,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24478,7 +24557,8 @@ window.BENCHMARK_DATA = {
           6910.902172342936,
           6473.398515319825,
           3584.2331416790303,
-          3756.1327089162974
+          3756.1327089162974,
+          4962.40820719401
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24562,6 +24642,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25095,7 +25176,8 @@ window.BENCHMARK_DATA = {
           431.36748530069985,
           431.02507638931274,
           270.06353359956006,
-          290.00080370903015
+          290.00080370903015,
+          348.35470520655315
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25107,6 +25189,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -25712,7 +25795,8 @@ window.BENCHMARK_DATA = {
           784.5602609770639,
           699.70275293986,
           419.74965725626265,
-          411.94015083994185
+          411.94015083994185,
+          559.073273726872
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25724,6 +25808,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
