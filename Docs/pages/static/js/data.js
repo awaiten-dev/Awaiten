@@ -1890,6 +1890,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:26:26 2026 \u002B0100",
         "message": "fix!: report hook overloads a generated call may bind instead (inferred generic or params), ignore by-reference ones, and check the bound type arguments of a partly bound overload (#417)"
+      },
+      {
+        "sha": "c37f6b3980c45c6c4bf1e5d2e3dd06cf3c6cfb9c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 23:09:39 2026 \u002B0100",
+        "message": "fix: leave out a module registration whose private member no container can call while the module\u0027s error does not fail the build (#419)"
       }
     ],
     "labels": [
@@ -2207,7 +2213,8 @@ window.BENCHMARK_DATA = {
       "fdae2a19",
       "4ff14319",
       "9819d480",
-      "86ec5fa3"
+      "86ec5fa3",
+      "c37f6b39"
     ],
     "datasets": [
       {
@@ -2528,7 +2535,8 @@ window.BENCHMARK_DATA = {
           4.765556267820871,
           3.4165409992138547,
           4.5963264014571905,
-          6.4518549084663395
+          6.4518549084663395,
+          6.410465348225373
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2540,6 +2548,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3183,7 +3192,8 @@ window.BENCHMARK_DATA = {
           6.845570071385457,
           4.517427754721472,
           4.945658499995868,
-          7.348202620561306
+          7.348202620561306,
+          7.3835196026733945
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3195,6 +3205,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3838,7 +3849,8 @@ window.BENCHMARK_DATA = {
           83.71864045517785,
           61.169273201624556,
           95.074138991038,
-          115.46278628281185
+          115.46278628281185,
+          118.02654321193695
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3850,6 +3862,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4489,7 +4502,8 @@ window.BENCHMARK_DATA = {
           7.580440338452657,
           4.7492339462041855,
           6.930765362886282,
-          8.77653970917066
+          8.77653970917066,
+          8.160058703805719
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4501,6 +4515,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5136,7 +5151,8 @@ window.BENCHMARK_DATA = {
           8.485756463060776,
           5.914621799190839,
           8.414764946469894,
-          10.471442191551128
+          10.471442191551128,
+          10.815988838672638
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5148,6 +5164,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7362,6 +7379,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:26:26 2026 \u002B0100",
         "message": "fix!: report hook overloads a generated call may bind instead (inferred generic or params), ignore by-reference ones, and check the bound type arguments of a partly bound overload (#417)"
+      },
+      {
+        "sha": "c37f6b3980c45c6c4bf1e5d2e3dd06cf3c6cfb9c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 23:09:39 2026 \u002B0100",
+        "message": "fix: leave out a module registration whose private member no container can call while the module\u0027s error does not fail the build (#419)"
       }
     ],
     "labels": [
@@ -7679,7 +7702,8 @@ window.BENCHMARK_DATA = {
       "fdae2a19",
       "4ff14319",
       "9819d480",
-      "86ec5fa3"
+      "86ec5fa3",
+      "c37f6b39"
     ],
     "datasets": [
       {
@@ -8000,7 +8024,8 @@ window.BENCHMARK_DATA = {
           5.598641973275405,
           3.2680617873867353,
           5.216412094732125,
-          7.470406376322111
+          7.470406376322111,
+          7.1187488448161345
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8012,6 +8037,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8655,7 +8681,8 @@ window.BENCHMARK_DATA = {
           6.813170473162945,
           4.032714696334941,
           4.979012201038691,
-          7.450334317982197
+          7.450334317982197,
+          7.415997161315038
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8667,6 +8694,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9310,7 +9338,8 @@ window.BENCHMARK_DATA = {
           121.55029014746349,
           60.94717906202589,
           98.84719137350719,
-          115.90498822927475
+          115.90498822927475,
+          118.54704763208117
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9322,6 +9351,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9961,7 +9991,8 @@ window.BENCHMARK_DATA = {
           7.411619037389755,
           4.694003797535386,
           6.923169678875378,
-          8.755137924637113
+          8.755137924637113,
+          8.179793765502316
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9973,6 +10004,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10608,7 +10640,8 @@ window.BENCHMARK_DATA = {
           8.177762573155073,
           6.109184411168099,
           8.322915487564527,
-          14.460491799314816
+          14.460491799314816,
+          14.236101270715396
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10620,6 +10653,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12834,6 +12868,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:26:26 2026 \u002B0100",
         "message": "fix!: report hook overloads a generated call may bind instead (inferred generic or params), ignore by-reference ones, and check the bound type arguments of a partly bound overload (#417)"
+      },
+      {
+        "sha": "c37f6b3980c45c6c4bf1e5d2e3dd06cf3c6cfb9c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 23:09:39 2026 \u002B0100",
+        "message": "fix: leave out a module registration whose private member no container can call while the module\u0027s error does not fail the build (#419)"
       }
     ],
     "labels": [
@@ -13151,7 +13191,8 @@ window.BENCHMARK_DATA = {
       "fdae2a19",
       "4ff14319",
       "9819d480",
-      "86ec5fa3"
+      "86ec5fa3",
+      "c37f6b39"
     ],
     "datasets": [
       {
@@ -13472,7 +13513,8 @@ window.BENCHMARK_DATA = {
           16.31837822596232,
           11.808953966697057,
           10.44590131342411,
-          19.71780617747988
+          19.71780617747988,
+          11.52754828929901
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13744,6 +13786,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14127,7 +14170,8 @@ window.BENCHMARK_DATA = {
           1212.2784813472203,
           804.2227521260579,
           734.9772127151489,
-          1486.9857045491538
+          1486.9857045491538,
+          768.4238410790762
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14139,6 +14183,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14782,7 +14827,8 @@ window.BENCHMARK_DATA = {
           26121.24791608538,
           19004.872647798977,
           16701.950929768882,
-          29752.48732910156
+          29752.48732910156,
+          18211.298185076033
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15108,7 +15154,8 @@ window.BENCHMARK_DATA = {
           32478,
           32477,
           32478,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15433,7 +15480,8 @@ window.BENCHMARK_DATA = {
           567.7784696420034,
           414.9904132229941,
           376.33048669497174,
-          731.805255762736
+          731.805255762736,
+          400.63640257517494
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15463,6 +15511,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16080,7 +16129,8 @@ window.BENCHMARK_DATA = {
           9072.808615112304,
           6540.898446219308,
           6021.6035761515295,
-          11476.777734375
+          11476.777734375,
+          6702.440636189779
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16402,7 +16452,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18306,6 +18357,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:26:26 2026 \u002B0100",
         "message": "fix!: report hook overloads a generated call may bind instead (inferred generic or params), ignore by-reference ones, and check the bound type arguments of a partly bound overload (#417)"
+      },
+      {
+        "sha": "c37f6b3980c45c6c4bf1e5d2e3dd06cf3c6cfb9c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 23:09:39 2026 \u002B0100",
+        "message": "fix: leave out a module registration whose private member no container can call while the module\u0027s error does not fail the build (#419)"
       }
     ],
     "labels": [
@@ -18623,7 +18680,8 @@ window.BENCHMARK_DATA = {
       "fdae2a19",
       "4ff14319",
       "9819d480",
-      "86ec5fa3"
+      "86ec5fa3",
+      "c37f6b39"
     ],
     "datasets": [
       {
@@ -18944,7 +19002,8 @@ window.BENCHMARK_DATA = {
           116.13193451563517,
           82.82254164417584,
           77.00042856534323,
-          206.57615625858307
+          206.57615625858307,
+          82.75009784331688
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19216,6 +19275,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19599,7 +19659,8 @@ window.BENCHMARK_DATA = {
           11381.098443603516,
           7508.414882914225,
           6998.672753470285,
-          17313.10478922526
+          17313.10478922526,
+          7951.057633463542
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19611,6 +19672,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20254,7 +20316,8 @@ window.BENCHMARK_DATA = {
           637195.4979771206,
           450677.1612079327,
           405089.9648786272,
-          760093.9734235491
+          760093.9734235491,
+          440933.144921875
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20580,7 +20643,8 @@ window.BENCHMARK_DATA = {
           741781,
           719042,
           739753,
-          736997
+          736997,
+          718986
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20905,7 +20969,8 @@ window.BENCHMARK_DATA = {
           36589.27655843099,
           24771.5873819987,
           22128.722208658855,
-          48470.235347493486
+          48470.235347493486,
+          25241.117407226564
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21227,7 +21292,8 @@ window.BENCHMARK_DATA = {
           80298,
           80967,
           80001,
-          81576
+          81576,
+          80306
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21552,7 +21618,8 @@ window.BENCHMARK_DATA = {
           281545.6508138021,
           188520.31978665866,
           178665.31946614583,
-          374819.1278971354
+          374819.1278971354,
+          228469.2885091146
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21874,7 +21941,8 @@ window.BENCHMARK_DATA = {
           573105,
           573011,
           573102,
-          573059
+          573059,
+          573057
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23754,6 +23822,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:26:26 2026 \u002B0100",
         "message": "fix!: report hook overloads a generated call may bind instead (inferred generic or params), ignore by-reference ones, and check the bound type arguments of a partly bound overload (#417)"
+      },
+      {
+        "sha": "c37f6b3980c45c6c4bf1e5d2e3dd06cf3c6cfb9c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 23:09:39 2026 \u002B0100",
+        "message": "fix: leave out a module registration whose private member no container can call while the module\u0027s error does not fail the build (#419)"
       }
     ],
     "labels": [
@@ -24067,7 +24141,8 @@ window.BENCHMARK_DATA = {
       "fdae2a19",
       "4ff14319",
       "9819d480",
-      "86ec5fa3"
+      "86ec5fa3",
+      "c37f6b39"
     ],
     "datasets": [
       {
@@ -24384,7 +24459,8 @@ window.BENCHMARK_DATA = {
           164.09405477841696,
           296.38644273464496,
           180.8727978547414,
-          280.94428649315466
+          280.94428649315466,
+          213.5381868839264
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -24419,6 +24495,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25031,7 +25108,8 @@ window.BENCHMARK_DATA = {
           385.7991503079732,
           713.4027742658343,
           397.41793060302734,
-          620.5625213214329
+          620.5625213214329,
+          458.56047808329265
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25043,6 +25121,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -25678,7 +25757,8 @@ window.BENCHMARK_DATA = {
           3321.173528943743,
           6525.125470297678,
           3493.996276537577,
-          7038.988597361246
+          7038.988597361246,
+          4880.887506757464
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25762,6 +25842,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -26325,7 +26406,8 @@ window.BENCHMARK_DATA = {
           246.8318595152635,
           443.08358507156373,
           265.21666701634723,
-          431.88220472335814
+          431.88220472335814,
+          338.6951224644979
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -26337,6 +26419,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26972,7 +27055,8 @@ window.BENCHMARK_DATA = {
           405.9204834938049,
           778.2687403996786,
           461.1343176205953,
-          731.5424861907959
+          731.5424861907959,
+          551.8118749459585
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26984,6 +27068,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
