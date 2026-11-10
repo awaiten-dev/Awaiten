@@ -1836,6 +1836,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
         "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
+      },
+      {
+        "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
+        "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
       }
     ],
     "labels": [
@@ -2144,7 +2150,8 @@ window.BENCHMARK_DATA = {
       "960833f0",
       "e817eb93",
       "05a7d32c",
-      "009f7ed0"
+      "009f7ed0",
+      "e0151207"
     ],
     "datasets": [
       {
@@ -2456,7 +2463,8 @@ window.BENCHMARK_DATA = {
           5.652835548917452,
           6.4454745521148045,
           6.445080806102071,
-          6.828966619712966
+          6.828966619712966,
+          6.447218766169889
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2468,6 +2476,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3093,7 +3102,8 @@ window.BENCHMARK_DATA = {
           6.704157524307569,
           7.318477579034292,
           7.530204546451569,
-          6.560703294475873
+          6.560703294475873,
+          7.500096421975356
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3105,6 +3115,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3730,7 +3741,8 @@ window.BENCHMARK_DATA = {
           88.40025683811733,
           122.02847677866617,
           120.90929767290751,
-          145.16703917298997
+          145.16703917298997,
+          124.33896012306214
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3742,6 +3754,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4363,7 +4376,8 @@ window.BENCHMARK_DATA = {
           7.346101135015488,
           9.412309763332209,
           8.788216279198727,
-          9.295375420578889
+          9.295375420578889,
+          8.810002580285072
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4375,6 +4389,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4992,7 +5007,8 @@ window.BENCHMARK_DATA = {
           8.9696418804427,
           11.071410642067592,
           10.548220241069794,
-          12.703755187136787
+          12.703755187136787,
+          10.965610186258951
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5004,6 +5020,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7155,6 +7172,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
         "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
+      },
+      {
+        "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
+        "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
       }
     ],
     "labels": [
@@ -7463,7 +7486,8 @@ window.BENCHMARK_DATA = {
       "960833f0",
       "e817eb93",
       "05a7d32c",
-      "009f7ed0"
+      "009f7ed0",
+      "e0151207"
     ],
     "datasets": [
       {
@@ -7775,7 +7799,8 @@ window.BENCHMARK_DATA = {
           6.027301663389573,
           7.432137180368105,
           7.222330558300018,
-          7.355308528129871
+          7.355308528129871,
+          7.130707523475091
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7787,6 +7812,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8412,7 +8438,8 @@ window.BENCHMARK_DATA = {
           6.565504011511803,
           7.3415846735239025,
           7.409464634381807,
-          6.623251500725746
+          6.623251500725746,
+          7.450944925347964
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8424,6 +8451,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9049,7 +9077,8 @@ window.BENCHMARK_DATA = {
           90.17035367488862,
           118.78043036460876,
           119.53935468196869,
-          144.71617903312048
+          144.71617903312048,
+          133.39592753923856
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9061,6 +9090,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9682,7 +9712,8 @@ window.BENCHMARK_DATA = {
           7.335381795962651,
           9.441650154193242,
           8.7871981151402,
-          9.315972051450185
+          9.315972051450185,
+          8.924493367473284
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9694,6 +9725,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10311,7 +10343,8 @@ window.BENCHMARK_DATA = {
           12.206180542707443,
           14.432101769106728,
           13.898424118757248,
-          12.644412888930393
+          12.644412888930393,
+          14.712151935696602
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10323,6 +10356,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12474,6 +12508,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
         "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
+      },
+      {
+        "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
+        "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
       }
     ],
     "labels": [
@@ -12782,7 +12822,8 @@ window.BENCHMARK_DATA = {
       "960833f0",
       "e817eb93",
       "05a7d32c",
-      "009f7ed0"
+      "009f7ed0",
+      "e0151207"
     ],
     "datasets": [
       {
@@ -13094,7 +13135,8 @@ window.BENCHMARK_DATA = {
           15.051991778612138,
           15.519221342603366,
           19.221892208854356,
-          12.246485344568889
+          12.246485344568889,
+          19.16673678358396
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13366,6 +13408,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13731,7 +13774,8 @@ window.BENCHMARK_DATA = {
           892.9150653203328,
           1158.2514842987061,
           1381.5789431163244,
-          848.9520992914836
+          848.9520992914836,
+          1478.833124923706
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13743,6 +13787,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14368,7 +14413,8 @@ window.BENCHMARK_DATA = {
           17848.1404683431,
           25567.942521158853,
           24553.56516810826,
-          18974.952052815755
+          18974.952052815755,
+          30090.764811197918
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14685,7 +14731,8 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
-          32477
+          32477,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15001,7 +15048,8 @@ window.BENCHMARK_DATA = {
           419.0346734046936,
           559.6678658894131,
           603.2862009048462,
-          418.7236991564433
+          418.7236991564433,
+          708.3776025136311
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15031,6 +15079,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -15630,7 +15679,8 @@ window.BENCHMARK_DATA = {
           6911.6642613728845,
           8875.194906107585,
           9996.344518025717,
-          6601.49125289917
+          6601.49125289917,
+          11398.01439412435
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15943,7 +15993,8 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17793,6 +17844,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
         "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
+      },
+      {
+        "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
+        "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
       }
     ],
     "labels": [
@@ -18101,7 +18158,8 @@ window.BENCHMARK_DATA = {
       "960833f0",
       "e817eb93",
       "05a7d32c",
-      "009f7ed0"
+      "009f7ed0",
+      "e0151207"
     ],
     "datasets": [
       {
@@ -18413,7 +18471,8 @@ window.BENCHMARK_DATA = {
           80.78373035589854,
           121.91440677642822,
           125.81308767000834,
-          82.41390550931295
+          82.41390550931295,
+          176.8744782924652
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -18685,6 +18744,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19050,7 +19110,8 @@ window.BENCHMARK_DATA = {
           7382.471024576823,
           10827.005392456054,
           11758.13661311223,
-          7591.001345498221
+          7591.001345498221,
+          14352.705903116863
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19062,6 +19123,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -19687,7 +19749,8 @@ window.BENCHMARK_DATA = {
           432318.16998697916,
           643494.5221121652,
           646613.1810825893,
-          454625.4781901042
+          454625.4781901042,
+          739809.3088727678
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20004,7 +20067,8 @@ window.BENCHMARK_DATA = {
           738692,
           740789,
           740464,
-          718356
+          718356,
+          740460
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20320,7 +20384,8 @@ window.BENCHMARK_DATA = {
           22956.337223597937,
           37862.306388346355,
           38211.43512369792,
-          24812.39584350586
+          24812.39584350586,
+          42988.993168131514
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20633,7 +20698,8 @@ window.BENCHMARK_DATA = {
           81089,
           80297,
           80014,
-          80348
+          80348,
+          80009
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -20949,7 +21015,8 @@ window.BENCHMARK_DATA = {
           196796.92210286457,
           272954.5664813702,
           316808.66324869794,
-          196908.29109700522
+          196908.29109700522,
+          353805.6998046875
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21262,7 +21329,8 @@ window.BENCHMARK_DATA = {
           573009,
           573023,
           573108,
-          572961
+          572961,
+          573026
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23088,6 +23156,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
         "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
+      },
+      {
+        "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
+        "message": "fix: name the factory when a by-type resolve misses a service with runtime arguments, and say that a keyed resolve serves plain services only (#411)"
       }
     ],
     "labels": [
@@ -23392,7 +23466,8 @@ window.BENCHMARK_DATA = {
       "960833f0",
       "e817eb93",
       "05a7d32c",
-      "009f7ed0"
+      "009f7ed0",
+      "e0151207"
     ],
     "datasets": [
       {
@@ -23700,7 +23775,8 @@ window.BENCHMARK_DATA = {
           242.36123204231262,
           275.539402621133,
           268.9508735656738,
-          282.3499278655419
+          282.3499278655419,
+          275.52255256359393
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -23735,6 +23811,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -24329,7 +24406,8 @@ window.BENCHMARK_DATA = {
           599.6545494715373,
           632.8092979284434,
           630.7711837768554,
-          713.5978768666586
+          713.5978768666586,
+          620.611712052272
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -24341,6 +24419,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -24958,7 +25037,8 @@ window.BENCHMARK_DATA = {
           6546.551977539062,
           6916.981851704915,
           6760.0615234375,
-          6853.560237121582
+          6853.560237121582,
+          6921.489273616246
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25042,6 +25122,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -25587,7 +25668,8 @@ window.BENCHMARK_DATA = {
           384.4101921081543,
           420.43762197494505,
           418.9902131954829,
-          432.6525168759482
+          432.6525168759482,
+          437.5529160499573
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -25599,6 +25681,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -26216,7 +26299,8 @@ window.BENCHMARK_DATA = {
           801.5906909306844,
           764.5977710996356,
           741.6504019419352,
-          751.8187510808309
+          751.8187510808309,
+          754.0539578119914
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26228,6 +26312,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
