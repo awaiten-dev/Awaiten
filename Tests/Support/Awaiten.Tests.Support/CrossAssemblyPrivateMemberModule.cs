@@ -201,7 +201,9 @@ public static partial class CrossAssemblyPrivateMemberModule
 		return new PrivateMemberKettlePart();
 	}
 
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static IPrivateMemberCup MakeCup(IPrivateMemberKettle kettle) => new PrivateMemberPart { Kettle = kettle, };
 
 	private static IPrivateMemberScale MakeScale() => new PrivateMemberPart();
+#pragma warning restore CA1859
 }

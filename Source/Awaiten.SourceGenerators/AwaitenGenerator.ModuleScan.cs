@@ -715,7 +715,9 @@ partial class AwaitenGenerator
 		if (!TryMirrorHookParameters(request.Subject, hook, release, location, context with { Diagnostics = rejections, }, out EquatableArray<FactoryParameter> parameters))
 		{
 			// A parameter of an internal service the module cannot build fails for the service's cause, which the module reports.
+#pragma warning disable S2583 // the list is filled through the context copy the mirror call receives
 			string? needReason = request.SkipsUnbuildableNeeds && context.Hidden is { } services && rejections.Count == 1 && services.UnbuildableNeeds.TryGetValue(rejections[0], out string? need) ? need : null;
+#pragma warning restore S2583
 			if ((needReason ?? (request.Skippable ? HookSkipReason(rejections[0], hook, release) : null)) is { } skipReason)
 			{
 				return new ResolvedModuleHook(hookName, new ModuleHook(hookName, hookName, instanceCast, default, returnType, skipReason));
@@ -1315,11 +1317,13 @@ partial class AwaitenGenerator
 		{
 			IParameterSymbol parameter = constructor.Parameters[index];
 			List<DiagnosticInfo> rejections = new();
+#pragma warning disable S2583 // the list is filled through the context copy the mirror call receives
 			if (TryMirrorParameter(parameter, context with { Diagnostics = rejections, }, location, subject, $"its constructor parameter '{parameter.Name}'", out _)
 			    || rejections.FirstOrDefault() is not { } rejection)
 			{
 				continue;
 			}
+#pragma warning restore S2583
 
 			if (!hidden.Takes.ContainsKey(rejection))
 			{
@@ -1345,10 +1349,12 @@ partial class AwaitenGenerator
 			alternatives.Add(propertyRejection);
 		}
 
+#pragma warning disable S2583 // the alternatives are rejections the mirror call adds through the context copy
 		if (alternatives.Count > 0)
 		{
 			hidden.Alternatives[diagnostics[diagnostics.Count - 1]] = alternatives;
 		}
+#pragma warning restore S2583
 	}
 
 	/// <summary>

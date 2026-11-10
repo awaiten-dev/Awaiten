@@ -84,7 +84,7 @@ public sealed partial class AsyncReleaseHookTests
 	{
 		await using InitializedShop.Root shop = new();
 		Journal journal = shop.Resolve<Journal>();
-		IAwaitenScope scope = shop.CreateScope();
+		InitializedShop.Scope scope = shop.CreateScope();
 		await scope.ResolveAsync<Boiler>();
 
 		await That(() => scope.Dispose()).Throws<InvalidOperationException>().WithMessage("*OnRelease*asynchronous*DisposeAsync*").AsWildcard()
@@ -180,7 +180,7 @@ public sealed partial class AsyncReleaseHookTests
 	{
 		await using Shop.Root shop = new();
 		Journal journal = shop.Resolve<Journal>();
-		IAwaitenScope scope = shop.CreateScope();
+		Shop.Scope scope = shop.CreateScope();
 		scope.Resolve<Tray>();
 		scope.Resolve<Till>();
 		scope.Resolve<Kettle>();
@@ -234,7 +234,7 @@ public sealed partial class AsyncReleaseHookTests
 	public async Task AModuleHookInAnotherAssembly_IsNamedByItsServiceWhenASynchronousDisposeRefusesIt()
 	{
 		await using ModuleShop.Root shop = new();
-		IAwaitenScope scope = shop.CreateScope();
+		ModuleShop.Scope scope = shop.CreateScope();
 		scope.Resolve<IAsyncReleasedTill>();
 
 		await That(() => scope.Dispose()).Throws<InvalidOperationException>()

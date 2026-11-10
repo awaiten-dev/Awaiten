@@ -138,7 +138,9 @@ public sealed partial class ExternalServiceResolveTests
 			Clock clock = new();
 			using ImportingContainer.Root root = new(new HostResolver((type, _) => type == typeof(IClock) ? clock : null));
 
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			object resolved = root.Resolve(typeof(IClock));
+#pragma warning restore CA2263
 			object resolvedAsync = await root.ResolveAsync(typeof(IClock));
 
 			await That(resolved).IsSameAs(clock)
@@ -363,7 +365,9 @@ public sealed partial class ExternalServiceResolveTests
 			await That(root.Resolve<IClock>()).IsSameAs(clock)
 				.Because("[ImportServices] sends every unregistered type to the host");
 			await That(await root.ResolveAsync<IClock>()).IsSameAs(clock);
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(root.Resolve(typeof(IClock))).IsSameAs(clock);
+#pragma warning restore CA2263
 		}
 
 		[Test]

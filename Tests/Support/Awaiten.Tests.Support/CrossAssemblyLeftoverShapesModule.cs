@@ -50,5 +50,7 @@ public static partial class CrossAssemblyLeftoverShapesModule
 	/// <summary>The shelf the module provides, for a test to compare against.</summary>
 	public static IPrivateInstanceShelf ExpectedShelf => Shelf;
 
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static IPrivateFactoryKettle MakeKettle() => new LeftoverKettle();
+#pragma warning restore CA1859
 }

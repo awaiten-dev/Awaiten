@@ -117,7 +117,9 @@ public static partial class TuckedShapeModule
 
 	internal static TuckedSpoon MakeSpoon() => new();
 
+#pragma warning disable CA1859 // the factory returns the registered service, which is the shape under test
 	private static ITuckedScale MakeScale(ITuckedWeight weight) => new TuckedScale(weight is TuckedWeight);
+#pragma warning restore CA1859
 }
 #if CONTAINER_SUPPORT
 

@@ -275,7 +275,7 @@ public partial class CollectionContributionTests
 
 	public sealed class EagerCaramel : ISyrup
 	{
-		public static int Built;
+		internal static int Built;
 
 		public EagerCaramel() => Interlocked.Increment(ref Built);
 	}

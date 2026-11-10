@@ -217,7 +217,7 @@ public partial class DecoratedImportTests
 		{
 			CountingResolver host = new();
 			using Shop.Root shop = new(host);
-			IAwaitenScope scope = shop.CreateScope();
+			Shop.Scope scope = shop.CreateScope();
 			LoggingGrinder grinder = (LoggingGrinder)scope.Resolve<IGrinder>();
 
 			scope.Dispose();
@@ -299,7 +299,7 @@ public partial class DecoratedImportTests
 		{
 			CountingResolver host = new();
 			using KeyedShop.Root shop = new(host);
-			using IAwaitenScope scope = shop.CreateScope();
+			using KeyedShop.Scope scope = shop.CreateScope();
 
 			await That(scope.Resolve(typeof(IGrinder), "burr")).Is<LoggingGrinder>();
 			await That(scope.Resolve(typeof(IGrinder), "other")).Is<HostGrinder>()
@@ -362,7 +362,9 @@ public partial class DecoratedImportTests
 			using SingletonShop.Root shop = new(host);
 
 			await That(shop.Resolve<IGrinder>()).Is<TracingGrinder>();
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(shop.Resolve(typeof(IGrinder))).Is<TracingGrinder>();
+#pragma warning restore CA2263
 			await That(shop.TryResolve(typeof(IGrinder), out object? grinder)).IsTrue();
 			await That(grinder).Is<TracingGrinder>();
 		}
@@ -372,8 +374,10 @@ public partial class DecoratedImportTests
 		{
 			using SingletonShop.Root shop = new(new CountingResolver());
 
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(shop.GetResolvability(typeof(IGrinder)).Status).IsEqualTo(AwaitenResolvabilityStatus.Resolvable)
 				.Because("the container resolves the decorator, which asks the host only for its inner instance");
+#pragma warning restore CA2263
 		}
 
 		[Test]
@@ -400,7 +404,7 @@ public partial class DecoratedImportTests
 
 			await That(((WarmGrinder)grinder).IsWarm).IsTrue();
 			await That(((WarmGrinder)grinder).Inner).IsSameAs(host.Handed[0]);
-			await That(shop.GetResolvability(typeof(IGrinder)).Status).IsEqualTo(AwaitenResolvabilityStatus.AsyncOnly)
+			await That(shop.GetResolvability<IGrinder>().Status).IsEqualTo(AwaitenResolvabilityStatus.AsyncOnly)
 				.Because("the decorator needs asynchronous initialization, so it is not handed out synchronously");
 		}
 	}

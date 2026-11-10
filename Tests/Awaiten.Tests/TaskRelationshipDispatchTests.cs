@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 
+#pragma warning disable CA2263 // the tests cover the dispatch of the Type-based overloads
+
 namespace Awaiten.Tests;
 
 /// <summary>

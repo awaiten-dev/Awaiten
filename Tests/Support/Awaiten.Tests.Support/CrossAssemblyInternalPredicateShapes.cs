@@ -81,7 +81,9 @@ public static partial class InternalPredicateBaseContainer
 
 internal sealed class PredicateAudit
 {
+#pragma warning disable CA1822 // a predicate reads it from the injected service
 	public bool Enabled => InternalPredicateSwitch.Audited;
+#pragma warning restore CA1822
 }
 
 internal sealed class PredicateGateway : IPredicateGateway

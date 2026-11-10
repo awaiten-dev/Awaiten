@@ -108,7 +108,7 @@ export default function Home(): ReactElement {
             <div className={styles.stepVisual}>
               <div className={styles.errorCard}>
                 <pre className={styles.code}>
-                  <Comment>// the cup grabs the machine without waiting for it</Comment>
+                  <Comment>{'// the cup grabs the machine without waiting for it'}</Comment>
                   {'\n'}
                   <Kw>public sealed class</Kw> <Type>Cup</Type>(
                   <span className={styles.squiggle}>Func&lt;EspressoMachine&gt;</span> machine);
@@ -137,7 +137,7 @@ export default function Home(): ReactElement {
               <pre className={styles.code}>
                 <Kw>await using</Kw> CoffeeShop.Root shop = <Kw>new</Kw>();
                 {'\n'}
-                <Kw>await</Kw> shop.InitializeAsync();   <Comment>// the machine warms up</Comment>
+                <Kw>await</Kw> shop.InitializeAsync();   <Comment>{'// the machine warms up'}</Comment>
               </pre>
               <div className={clsx(styles.service, styles.serviceWarm)}>
                 <span className={styles.lifetime}>Singleton · async</span>
@@ -158,7 +158,7 @@ export default function Home(): ReactElement {
             </div>
             <div className={styles.stepVisual}>
               <pre className={styles.code}>
-                Cup cup = <Kw>await</Kw> shop.ResolveAsync&lt;Cup&gt;();  <Comment>// a fresh cup, ready</Comment>
+                Cup cup = <Kw>await</Kw> shop.ResolveAsync&lt;Cup&gt;();  <Comment>{'// a fresh cup, ready'}</Comment>
               </pre>
               <div className={styles.services}>
                 <div className={styles.service}>
