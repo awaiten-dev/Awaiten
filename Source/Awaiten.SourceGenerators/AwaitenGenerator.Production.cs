@@ -1890,7 +1890,7 @@ partial class AwaitenGenerator
 			}
 
 			ImplInfo info = NewImplInfo(registration, containerSymbol);
-			if (!ReportedByModule(info, compilation) || UnservedMemberReason(info, compilation, modules ??= new SameCompilationModules(compilation)) is not { } reason)
+			if (!ReportedByModule(info, compilation) || UnservedMemberReason(info, containerSymbol, compilation, modules ??= new SameCompilationModules(compilation)) is not { } reason)
 			{
 				return false;
 			}
@@ -1918,14 +1918,21 @@ partial class AwaitenGenerator
 	///     Why the module reports the private member of <paramref name="info" /> (see <see cref="ReportedByModule" />), which the
 	///     container then leaves unbuilt, naming the module's diagnostic: AWT194 for a module that cannot receive a wrapper,
 	///     AWT195 for a parameter of a type private to the module, AWT112 for overloads no wrapper can choose between, else
-	///     AWT153. <see langword="null" /> when the container calls the member through a wrapper, when the module reports the
-	///     registered type as private to it instead (AWT216), or, for an <c>Instance</c> member, when no private member converts
-	///     to the registered type, which the container reports itself (AWT109).
+	///     AWT153. <see langword="null" /> when the container calls the member itself, as a container nested in the module
+	///     does, or through a wrapper, when the module reports the registered type as private to it instead (AWT216), or, for
+	///     an <c>Instance</c> member, when no private member converts to the registered type, which the container reports
+	///     itself (AWT109).
 	/// </summary>
-	private static string? UnservedMemberReason(ImplInfo info, Compilation compilation, SameCompilationModules modules)
+	private static string? UnservedMemberReason(ImplInfo info, INamedTypeSymbol containerSymbol, Compilation compilation, SameCompilationModules modules)
 	{
 		INamedTypeSymbol module = info.Origin!;
 		string member = UserMemberName(info.ProductionMember)!;
+		if ((info.GenericFactory ? GenericFactoryMembers(module, info.ProductionMember!, info.Symbol, compilation) : ProductionMemberCandidates(module, info.Production, info.ProductionMember!, info.Symbol, compilation))
+		    .Any(candidate => compilation.IsSymbolAccessibleWithin(candidate, containerSymbol)))
+		{
+			return null;
+		}
+
 		if (info.GenericFactory)
 		{
 			return $"its Factory member '{member}' is generic and private, and the module generates no wrapper for a generic member (AWT153)";

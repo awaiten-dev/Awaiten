@@ -677,8 +677,10 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// A module of this assembly reports a member producing a type private to it, or a private member no wrapper serves,
 		// in its own build, which leaves the registration out of the graph here (see BuildInstance, ReportedByModule and
-		// SkipUnservedModuleMembers), so only the shell is emitted while that fails the build.
+		// SkipUnservedModuleMembers), so only the shell is emitted while that fails the build. A base's imports count too,
+		// since the container inherits their registrations (see InheritBase).
 		hasBaseErrors |= CollectImportedModules(containerSymbol, new List<DiagnosticInfo>())
+			.Concat(ReadExtends(containerSymbol) is { } extended ? CollectImportedModules(extended, new List<DiagnosticInfo>()) : [])
 			.Select(module => module.Symbol)
 			.Where(module => SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
 			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)

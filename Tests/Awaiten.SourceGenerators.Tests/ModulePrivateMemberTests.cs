@@ -485,6 +485,69 @@ public class ModulePrivateMemberTests
 				.Because("no unkeyed registration of the service was declared, so the unkeyed consumer misses it for no other reason");
 		}
 
+		[Test]
+		public async Task AnError_LeavesAContainerExtendingAnImporterOnlyItsShell()
+		{
+			string library = Library("public static partial", ClosedRegistration, "private static Greeter Make(ref int count) => new Greeter();");
+			string containers = Container("[Transient<Till>]") + """
+
+				[Container(Extends = typeof(SameContainer))]
+				[Transient<Barista>]
+				public static partial class ExtendingContainer;
+				""";
+
+			GeneratorResult result = Generator.Run(library + containers);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*error AWT153:*").AsWildcard()
+				.Because("the module's error fails the build, so the container that inherits the module's registration adds no missing dependency it leads to");
+			await That(result.Sources["Awaiten.Lib.ExtendingContainer.g.cs"]).Contains("has registration errors");
+		}
+
+		[Test]
+		[Arguments("editorconfig")]
+		[Arguments("nowarn")]
+		[Arguments("pragma")]
+		public async Task AnExtendingContainer_ReportsTheMissingServiceWithTheReason(string path)
+		{
+			string library = Library("public static partial", ClosedRegistration, "private static Greeter Make(ref int count) => new Greeter();");
+			string containers = Container("[Transient<Till>]") + """
+
+				[Container(Extends = typeof(SameContainer))]
+				[Transient<Barista>]
+				public static partial class ExtendingContainer;
+				""";
+
+			GeneratorResult result = RunLowered(library + containers, "AWT153", path);
+
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.Contains(": error "))).HasSingle().Which
+				.Contains("*error AWT101: 'Lib.Barista' cannot be resolved: * its registration on the module 'Lib.CoffeeModule' is left out, because *(AWT153)").AsWildcard()
+				.Because("the container inherits the module's registration, which it leaves out like the base");
+			await That(result.Sources["Awaiten.Lib.SameContainer.g.cs"]).DoesNotContain("has registration errors")
+				.Because("nothing in the base depends on the registration it leaves out");
+		}
+
+		[Test]
+		[Arguments("editorconfig")]
+		[Arguments("nowarn")]
+		[Arguments("pragma")]
+		public async Task AContainerNestedInTheModule_CallsThePrivateMemberItself(string path)
+		{
+			string library = Library("public static partial", OpenRegistration, """
+				private static Repository<T> Make<T>() => new Repository<T>();
+
+				[Container]
+				[Import(typeof(CoffeeModule))]
+				[Transient<Checkout>]
+				public static partial class Nested;
+				""");
+
+			GeneratorResult result = RunLowered(library + Container("[Transient<Till>]"), "AWT153", path);
+
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.Contains(": error "))).IsEmpty()
+				.Because("a container nested in the module reaches its private member, so it keeps the registration");
+			await That(result.Sources["Awaiten.Lib.CoffeeModule+Nested.g.cs"]).Contains("global::Lib.CoffeeModule.Make<global::Lib.Order>()");
+		}
+
 		private static string Granted(string library)
 			=> library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;");
 
