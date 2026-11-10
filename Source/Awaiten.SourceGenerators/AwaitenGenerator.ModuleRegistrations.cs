@@ -2201,14 +2201,27 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The type that receives the empty collection of <paramref name="element" /> under <paramref name="key" /> which a
-	///     factory of the imported module of another assembly passes, or <see langword="null" /> when the module records none.
+	///     The element types whose collection a factory of the imported <paramref name="module" /> of another assembly
+	///     passes empty, as the module records them (see <see cref="RecordEmptyCollections" />), each with the name of its
+	///     record, which also encodes the key, and the type that receives the collection. A record whose element type this
+	///     compilation cannot find is left out.
 	/// </summary>
-	private static string? EmptyCollectionReceiver(INamedTypeSymbol module, INamedTypeSymbol element, string? key)
-		=> InternalsMembers(module, EmptyCollectionRecordName(element, key))
-			.OfType<IFieldSymbol>()
-			.Select(field => field.ConstantValue as string)
-			.FirstOrDefault(receiver => receiver is not null);
+	private static List<(INamedTypeSymbol Element, string Name, string Receiver)> EmptyCollectionRecords(INamedTypeSymbol module, Compilation compilation)
+	{
+		List<(INamedTypeSymbol Element, string Name, string Receiver)> records = new();
+		foreach (IFieldSymbol field in module.GetTypeMembers(InternalsClass).SelectMany(internals => internals.GetMembers()).OfType<IFieldSymbol>())
+		{
+			if (field.Name.StartsWith("EmptyCollection_", StringComparison.Ordinal)
+			    && field.ConstantValue is string value
+			    && value.IndexOf('\n') is var separator and > 0
+			    && DocumentationCommentId.GetFirstSymbolForReferenceId(value.Substring(separator + 1), compilation) is INamedTypeSymbol element)
+			{
+				records.Add((element, field.Name, value.Substring(0, separator)));
+			}
+		}
+
+		return records;
+	}
 
 	private static uint Fnv1a(string text)
 	{

@@ -68,7 +68,7 @@ public partial class DiagnosticTests
 
 		private static string Container(GeneratorResult result) => result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
 
-		[GeneratedRegex("public const string EmptyCollection_IThing_[0-9a-f]{8} = \"Lib\\.Counting\";")]
+		[GeneratedRegex("public const string EmptyCollection_IThing_[0-9a-f]{8} = \"Lib\\.Counting\\\\nLib\\.IThing\";")]
 		private static partial Regex Record();
 
 		[Test]
@@ -78,7 +78,79 @@ public partial class DiagnosticTests
 
 			await That(library.Diagnostics).IsEmpty();
 			await That(Record().IsMatch(library.Sources["Awaiten.ModuleScan.Lib.BrewModule.g.cs"])).IsTrue()
-				.Because("a consumer that registers the element type finds the record by name and reports the type that receives the empty collection");
+				.Because("a consumer finds the element type by its documentation id and reports the type that receives the empty collection");
+		}
+
+		[Test]
+		public async Task AnElementOfAPublicGenericTypeOverAnInternalOne_IsReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[
+					Library1(parameter: "IEnumerable<System.IObserver<IThing>> things"),
+					Library2(registration: "[Singleton<Observer, System.IObserver<Lib.IThing>>]", thing: "internal sealed class Observer : System.IObserver<Lib.IThing> { public void OnCompleted() { } public void OnError(System.Exception error) { } public void OnNext(Lib.IThing value) { } }"),
+				],
+				App);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT252") && diagnostic.Contains("an empty collection of 'System.IObserver<Lib.IThing>'"))
+				.Because("the element type is not public for its type argument, whose assembly grants InternalsVisibleTo, although the assembly of the generic type grants none");
+		}
+
+		[Test]
+		public async Task AVarianceMatch_IsReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[
+					Library1(parameter: "IEnumerable<IHandler<Order>> handlers")
+						.Replace("internal interface IThing { }", "internal interface IHandler<in T> { } internal class Message { } internal sealed class Order : Message { }"),
+					Library2(registration: "[Singleton<Handler, Lib.IHandler<Lib.Message>>]", thing: "internal sealed class Handler : Lib.IHandler<Lib.Message> { }"),
+				],
+				App);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT252") && diagnostic.Contains("an empty collection of 'Lib.IHandler<Lib.Order>'"))
+				.Because("a collection of 'IHandler<Order>' in the module's assembly holds the contravariant registration of 'IHandler<Message>'");
+		}
+
+		[Test]
+		public async Task AWhenInjectedIntoRegistration_IsNotReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[Library1(), Library2(registration: "[Singleton<Thing, Lib.IThing>(WhenInjectedInto = typeof(Lib.Counting))]"),],
+				App);
+
+			await That(result.Diagnostics).DoesNotContain("*AWT252*").AsWildcard()
+				.Because("a contextual registration is no member of a collection, so the collection is empty in the module's assembly too");
+		}
+
+		[Test]
+		public async Task AnElementTheContainerRegistersItself_IsReported()
+		{
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+				[
+					"""
+					[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Library2")]
+					[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestAssembly")]
+
+					namespace Lib0;
+
+					internal interface IThing { }
+					""",
+					Library1().Replace("internal interface IThing { }", "").Replace("IEnumerable<IThing>", "IEnumerable<Lib0.IThing>"),
+				],
+				"""
+				using Awaiten;
+
+				namespace MyCode;
+
+				internal sealed class Thing : Lib0.IThing { }
+
+				[Container]
+				[Import(typeof(Lib.BrewModule))]
+				[Singleton<Thing, Lib0.IThing>]
+				public static partial class MyContainer;
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("AWT252") && diagnostic.Contains("an empty collection of 'Lib0.IThing'") && diagnostic.Contains("although 'MyCode.MyContainer' registers it"))
+				.Because("the container's own registration of the element type is passed by a container in the module's assembly too");
 		}
 
 		[Test]

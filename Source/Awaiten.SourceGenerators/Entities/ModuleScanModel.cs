@@ -266,10 +266,11 @@ internal sealed record ScanSkip(string MarkerName, string ImplementationMetadata
 ///     resolves the parameter as the constructor would. <see cref="Argument" /> is the expression passed on in its
 ///     place, which unwraps a generated handle, or <see langword="null" /> to pass the parameter itself. A
 ///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />. A
-///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it, and
-///     <see cref="EmptyCollectionRecord" /> names the constant that records an empty collection it passes (AWT252).
+///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it,
+///     <see cref="EmptyCollectionRecord" /> names the constant that records an empty collection it passes (AWT252), and
+///     <see cref="EmptyCollectionElement" /> is the documentation id of its element type.
 /// </summary>
-internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null, string? EmptyCollectionRecord = null)
+internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null, string? EmptyCollectionRecord = null, string? EmptyCollectionElement = null)
 {
 	/// <summary>The expression the generated member passes on for this parameter.</summary>
 	public string ArgumentExpression => Argument ?? $"@{Name}";

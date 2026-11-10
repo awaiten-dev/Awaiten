@@ -478,7 +478,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 	/// <summary>
 	///     Adds to <paramref name="skipped" /> one record per element type and key whose collection a factory among
-	///     <paramref name="registrations" /> passes empty, holding the first type that receives it (AWT252).
+	///     <paramref name="registrations" /> passes empty, holding the first type that receives it and, on the next line,
+	///     the documentation id of the element type, by which a consumer finds it again (AWT252).
 	/// </summary>
 	private static void RecordEmptyCollections(List<RegistrationFactory> registrations, List<SkippedRegistration> skipped)
 	{
@@ -486,9 +487,9 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		{
 			foreach (FactoryParameter parameter in registration.Parameters.AsArray())
 			{
-				if (parameter.EmptyCollectionRecord is { } record && !skipped.Exists(entry => entry.MarkerName == record))
+				if (parameter is { EmptyCollectionRecord: { } record, EmptyCollectionElement: { } element, } && !skipped.Exists(entry => entry.MarkerName == record))
 				{
-					skipped.Add(new SkippedRegistration(record, Display(registration.ImplementationType), EmptyCollection: true));
+					skipped.Add(new SkippedRegistration(record, $"{Display(registration.ImplementationType)}\n{element}", EmptyCollection: true));
 				}
 			}
 		}
@@ -896,7 +897,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			inheritance = new Inheritance(containerSymbol, extended, modules, compilation, cancellationToken);
 		}
 
-		ReportEmptyCollectionsOfModules(modules, compilation, diagnostics);
+		ReportEmptyCollectionsOfModules(containerSymbol, modules, compilation, diagnostics);
 
 		// Only a container that extends none can be extended, so only such a container builds factories for its private
 		// implementations (see RecordBaseFactory).

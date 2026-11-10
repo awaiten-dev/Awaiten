@@ -1356,9 +1356,10 @@ partial class AwaitenGenerator
 	///     the assembly may provide (see <see cref="AssemblyModuleIndex.MayProvide" />), as an empty collection the
 	///     factory passes itself, since a container in the module's own assembly passes it empty too; otherwise
 	///     <see langword="null" />. A collection of a type that <paramref name="service" /> converts to stays, since it may
-	///     be the collection a composite composes. When the element's assembly grants <c>InternalsVisibleTo</c>, a module of
-	///     another assembly may register the element all the same, so the parameter names the constant that records the
-	///     empty collection for a consumer that registers it (see <see cref="EmptyCollectionRecordName" />).
+	///     be the collection a composite composes. When the assembly of the element type, or of one of its type arguments,
+	///     grants <c>InternalsVisibleTo</c>, another assembly may register the element all the same, so the parameter names
+	///     the constant that records the empty collection for a consumer that registers it (see
+	///     <see cref="EmptyCollectionRecordName" />).
 	/// </summary>
 	private static FactoryParameter? EmptyCollection(IParameterSymbol parameter, INamedTypeSymbol service, ModuleScanContext context)
 	{
@@ -1373,13 +1374,28 @@ partial class AwaitenGenerator
 			return null;
 		}
 
+		bool recorded = DeclaredInAssemblyGrantingInternals(named);
 		return new FactoryParameter(
 			parameter.Type.ToDisplayString(FullyQualifiedWithNullability),
 			parameter.Name,
 			Argument: $"global::System.Array.Empty<{named.ToDisplayString(FullyQualifiedWithNullability)}>()",
 			Fixed: true,
-			EmptyCollectionRecord: GrantsInternalsVisibleTo(named.ContainingAssembly) ? EmptyCollectionRecordName(named, key) : null);
+			EmptyCollectionRecord: recorded ? EmptyCollectionRecordName(named, key) : null,
+			EmptyCollectionElement: recorded ? DocumentationCommentId.CreateReferenceId(named) : null);
 	}
+
+	/// <summary>
+	///     Whether the assembly of <paramref name="type" />, of a type argument or of an array element in it grants
+	///     <c>InternalsVisibleTo</c>, so another assembly may name the type although it is not public.
+	/// </summary>
+	private static bool DeclaredInAssemblyGrantingInternals(ITypeSymbol type)
+		=> type switch
+		{
+			IArrayTypeSymbol array => DeclaredInAssemblyGrantingInternals(array.ElementType),
+			INamedTypeSymbol named => (named.ContainingAssembly is { } assembly && GrantsInternalsVisibleTo(assembly))
+			                          || named.TypeArguments.Any(DeclaredInAssemblyGrantingInternals),
+			_ => false,
+		};
 
 	/// <summary>
 	///     Mirrors one constructor or factory member parameter onto a generated factory (see

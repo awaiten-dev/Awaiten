@@ -2511,7 +2511,8 @@ internal static class Diagnostics
 	/// <summary>
 	///     An imported module of another assembly passes a decorator or composite an empty collection of an internal
 	///     element type, fixed in the module's own build because no module of its assembly registers the element, while
-	///     another imported module, of an assembly granted <c>InternalsVisibleTo</c>, registers it. A container in the
+	///     another imported module, of an assembly granted <c>InternalsVisibleTo</c>, or the container itself registers it,
+	///     or a variant service the collection holds. A container in the
 	///     module's assembly, or one that builds the type itself, would pass that registration, so the graph would differ
 	///     from the one it declares. Reported at the import of the module, which records the element types it fixed
 	///     empty; a module built by an older generator records none.
