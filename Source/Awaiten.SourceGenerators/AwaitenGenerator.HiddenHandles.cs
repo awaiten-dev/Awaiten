@@ -26,9 +26,10 @@ partial class AwaitenGenerator
 	///     internal service it holds, as <c>Lib.BeanStore (internal to module Lib.CoffeeModule)</c>, which the message
 	///     quotes like any other type, so a message never names a type the user did not write. A handle inside a longer
 	///     argument, such as a type argument, is named by the service alone. A generated hook wrapper is named by the
-	///     hook the module declares. <paramref name="produced" /> holds the production members the container's graph calls.
+	///     hook the module declares. <paramref name="called" /> holds the members the container's graph calls (see
+	///     <see cref="CalledMembers" />).
 	/// </summary>
-	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
+	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> called, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
 	{
 		List<ImportedModule> imported = CollectImportedModules(container, new List<DiagnosticInfo>());
 		if (ReadExtends(container) is { } baseContainer)
@@ -45,7 +46,7 @@ partial class AwaitenGenerator
 			.Where(module => !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
 			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
 			.ToList();
-		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, produced, diagnostics);
+		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, called, diagnostics);
 		if (diagnostics.Count == 0)
 		{
 			return;
@@ -134,29 +135,34 @@ partial class AwaitenGenerator
 	///     Reports AWT238 at the <c>[Import]</c> of a module of another assembly whose generated members take the handle
 	///     of an internal service that another module of that assembly declares, when no imported module of that assembly
 	///     registers the service and the container does not import that other module, and drops the AWT101, AWT242, AWT123
-	///     or AWT210 the missing handle registration causes, since the import is the one fix. A scan factory that is not
-	///     among the <paramref name="produced" /> members of the graph needs no handle, such as one whose match shares the
-	///     instance of another registration's handle through an alias (see <see cref="ShareHandledInstances" />).
+	///     or AWT210 the missing handle registration causes, since the import is the one fix. Only a member among the
+	///     <paramref name="called" /> members of the graph needs its handles, and of the factory of a decorator or composite
+	///     the graph leaves out only the handle of the service it returns, whose missing registration left it out. Any
+	///     other member the graph never calls asks for no import, such as the factory of a registration the
+	///     container replaces, or the factory and hook wrappers of a scan match that shares the instance of another
+	///     registration's handle through an alias (see <see cref="ShareHandledInstances" />).
 	///     Returns the modules that declare a handle an imported module takes, which name those handles in diagnostics.
 	/// </summary>
-	private static List<INamedTypeSymbol> ReportMissingHandleProviders(List<ImportedModule> imported, List<INamedTypeSymbol> modules, Compilation compilation, HashSet<string> produced, List<DiagnosticInfo> diagnostics)
+	private static List<INamedTypeSymbol> ReportMissingHandleProviders(List<ImportedModule> imported, List<INamedTypeSymbol> modules, Compilation compilation, HashSet<string> called, List<DiagnosticInfo> diagnostics)
 	{
 		List<INamedTypeSymbol> providers = new();
 		foreach (ImportedModule import in imported.Where(import => modules.Contains(import.Symbol, SymbolEqualityComparer.Default)))
 		{
 			INamedTypeSymbol module = import.Symbol;
-			HashSet<string> uncalledScanFactories = new(
-				module.GetAttributes()
-					.Where(attribute => attribute.AttributeClass is { } attributeClass && IsGeneratedScanRegistration(attributeClass) && attribute.ConstructorArguments.Length == 1)
-					.Select(attribute => attribute.ConstructorArguments[0].Value)
-					.OfType<string>()
-					.Where(factory => !produced.Contains($"{module.ToDisplayString(FullyQualified)}.{factory}")),
-				StringComparer.Ordinal);
+			string internals = $"{module.ToDisplayString(FullyQualified)}.{InternalsClass}.";
 			List<IMethodSymbol> methods = (module.GetTypeMembers(InternalsClass).FirstOrDefault()?.GetMembers() ?? ImmutableArray<ISymbol>.Empty)
 				.OfType<IMethodSymbol>()
 				.ToList();
-			// An uncalled scan factory still names its handles, as in the AWT141 of a match it skips.
-			HashSet<INamedTypeSymbol> needed = new(methods.Where(method => !uncalledScanFactories.Contains(InInternals(method.Name))).SelectMany(TypesOf), SymbolEqualityComparer.Default);
+			// An uncalled member still names its handles, as in the AWT141 of a match it skips. The graph leaves out a
+			// decorator or composite when its service has no registration, which only the missing provider of the
+			// handle of that service causes, so of an uncalled one only the service it returns counts.
+			HashSet<INamedTypeSymbol> needed = new(
+				methods.SelectMany(method => called.Contains(internals + method.Name)
+					? TypesOf(method)
+					: method.Name.StartsWith("Decorator_", StringComparison.Ordinal) || method.Name.StartsWith("Composite_", StringComparison.Ordinal)
+						? TypesIn(method.ReturnType)
+						: []),
+				SymbolEqualityComparer.Default);
 			foreach (INamedTypeSymbol handle in methods.SelectMany(TypesOf).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
 			{
 				if (handle is not { ContainingType: { Name: InternalsClass, ContainingType: { } provider, }, }
@@ -212,6 +218,29 @@ partial class AwaitenGenerator
 				INamedTypeSymbol named => new[] { named, }.Concat(named.TypeArguments.SelectMany(TypesIn)),
 				_ => [],
 			};
+	}
+
+	/// <summary>
+	///     The qualified members the generated code of <paramref name="instances" /> calls, without the type arguments of
+	///     a closing: the production members, which include the factories of the decorators and composites it applies,
+	///     the lifecycle hooks, the async initializer wrappers, the <c>When</c> predicates and the deferred setters.
+	/// </summary>
+	private static HashSet<string> CalledMembers(List<InstanceModel> instances)
+	{
+		HashSet<string> called = new(StringComparer.Ordinal);
+		foreach (InstanceModel instance in instances)
+		{
+			IEnumerable<string?> members = new[] { instance.ProductionMember, instance.OnActivated, instance.OnRelease, instance.When?.Member, }
+				.Concat(instance.AsyncInitializers.AsArray().Where(initializer => initializer.Wrapper).Select(initializer => $"{initializer.Type}.{initializer.Method}"))
+				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Setter));
+			foreach (string member in members.OfType<string>())
+			{
+				int generic = member.IndexOf('<');
+				called.Add(generic < 0 ? member : member.Substring(0, generic));
+			}
+		}
+
+		return called;
 	}
 
 	/// <summary>

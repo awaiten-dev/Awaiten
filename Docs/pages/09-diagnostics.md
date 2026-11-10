@@ -2592,7 +2592,7 @@ public static partial class CoffeeModule;
 public static partial class CoffeeShop;
 ```
 
-The generated factory of `Grinder` takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of `BeanStore`, which `StorageModule` declares and builds. Without importing `StorageModule`, nothing registers it. The same goes for a decorator or composite of such a service. The container reports only this cause, not the missing dependency ([AWT101](#awt101)) or the decorated service without a registration ([AWT123](#awt123)) it leads to. A scan match that shares the instance of another registration of its implementation never calls the scan's factory, so the services that factory takes need no import.
+The generated factory of `Grinder` takes the [generated handle](./04-registration/07-modules.md#services-only-the-module-uses) of `BeanStore`, which `StorageModule` declares and builds. Without importing `StorageModule`, nothing registers it. The same goes for a decorator or composite of such a service. The container reports only this cause, not the missing dependency ([AWT101](#awt101)) or the decorated service without a registration ([AWT123](#awt123)) it leads to. Only what the container calls counts: the factory of a default the container replaces, or the factory and hooks of a scan match that shares the instance of another registration of its implementation, never run, so the services they take need no import.
 
 **Fix:** Import the module the message names too.
 
