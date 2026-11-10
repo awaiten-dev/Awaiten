@@ -334,6 +334,46 @@ public partial class DiagnosticTests
 				await That(result.Diagnostics).HasSingle().Which.Contains("AWT238").And.Contains("'Lib.CoffeeModule' needs the internal service 'Lib.BeanStore'")
 					.Because("the container calls the decorator's factory, which takes the internal service another module registers");
 			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			[Arguments("full")]
+			[Arguments("reference")]
+			public async Task ADecoratorOfAServiceWithoutARegistration_NeedsNoModuleForTheServicesOfItsFactory(string consumer)
+			{
+				const string library = Storage + """
+					internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, BeanStore store) { } }
+
+					[Module]
+					[Decorate<LoggingGrinder, IGrinder>]
+					public static partial class CoffeeModule { }
+					""";
+				GeneratorResult result = Run(library, CoffeeContainer, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT123")
+					.Because("nothing registers the decorated service, so the container never calls the decorator's factory, and importing the storage module would not fix it");
+			}
+
+			[Test]
+			[Arguments("same")]
+			[Arguments("friend")]
+			public async Task ADecoratorTheContainerBuildsItself_ReportsTheMissingServiceLikeTheModulesOwnAssembly(string consumer)
+			{
+				const string library = Storage + """
+					public sealed class Grinder : IGrinder { }
+					internal sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner, BeanStore store) { } }
+
+					[Module]
+					[Singleton<Grinder, IGrinder>]
+					[Decorate<LoggingGrinder, IGrinder>]
+					public static partial class CoffeeModule { }
+					""";
+				GeneratorResult result = Run(library, CoffeeContainer, consumer);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("AWT101").And.Contains("'Lib.BeanStore'")
+					.Because("a container that can name the internal service builds the decorator itself and never calls the factory that takes its handle");
+			}
 		}
 	}
 }

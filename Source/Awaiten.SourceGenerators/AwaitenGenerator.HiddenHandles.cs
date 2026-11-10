@@ -128,8 +128,9 @@ partial class AwaitenGenerator
 	///     of an internal service that another module of that assembly declares, when no imported module of that assembly
 	///     registers the service and the container does not import that other module, and drops the AWT101, AWT242, AWT123
 	///     or AWT210 the missing handle registration causes, since the import is the one fix. Only a member among the
-	///     <paramref name="called" /> members of the graph, or the factory of a decorator or composite, needs its handles,
-	///     so any other member the graph never calls asks for no import, such as the factory of a registration the
+	///     <paramref name="called" /> members of the graph needs its handles, and of the factory of a decorator or composite
+	///     the graph leaves out only the handle of the service it returns, whose missing registration left it out. Any
+	///     other member the graph never calls asks for no import, such as the factory of a registration the
 	///     container replaces, or the factory and hook wrappers of a scan match that shares the instance of another
 	///     registration's handle through an alias (see <see cref="ShareHandledInstances" />).
 	///     Returns the modules that declare a handle an imported module takes, which name those handles in diagnostics.
@@ -145,12 +146,14 @@ partial class AwaitenGenerator
 				.OfType<IMethodSymbol>()
 				.ToList();
 			// An uncalled member still names its handles, as in the AWT141 of a match it skips. The graph leaves out a
-			// decorator or composite only when its service has no registration, which the missing handle provider causes.
+			// decorator or composite when its service has no registration, which only the missing provider of the
+			// handle of that service causes, so of an uncalled one only the service it returns counts.
 			HashSet<INamedTypeSymbol> needed = new(
-				methods.Where(method => called.Contains(internals + method.Name)
-				                        || method.Name.StartsWith("Decorator_", StringComparison.Ordinal)
-				                        || method.Name.StartsWith("Composite_", StringComparison.Ordinal))
-					.SelectMany(TypesOf),
+				methods.SelectMany(method => called.Contains(internals + method.Name)
+					? TypesOf(method)
+					: method.Name.StartsWith("Decorator_", StringComparison.Ordinal) || method.Name.StartsWith("Composite_", StringComparison.Ordinal)
+						? TypesIn(method.ReturnType)
+						: []),
 				SymbolEqualityComparer.Default);
 			foreach (INamedTypeSymbol handle in methods.SelectMany(TypesOf).Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
 			{
