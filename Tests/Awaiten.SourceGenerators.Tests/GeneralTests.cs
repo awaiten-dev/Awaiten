@@ -613,6 +613,52 @@ public class GeneralTests
 	}
 
 	[Test]
+	public async Task RuntimeArguments_NameTheFactoryOnAMissForEveryServiceShape()
+	{
+		GeneratorResult result = Generator.Run("""
+		                                       using Awaiten;
+		                                       using System;
+		                                       using System.Collections.Generic;
+
+		                                       public sealed class GlobalCup { public GlobalCup([Arg] int size) { } }
+
+		                                       namespace MyCode
+		                                       {
+		                                       	public sealed class Outer { public sealed class Inner { public Inner([Arg] int size) { } } }
+		                                       	public sealed class Box<T> { public Box([Arg] T value) { } public sealed class Nested { public Nested([Arg] T[] values) { } } }
+		                                       	public sealed class Repo<T> { public Repo([Arg] string name) { } }
+		                                       	public sealed class Consumer { public Consumer(Func<string, Repo<int>> repos) { } }
+
+		                                       	[Container]
+		                                       	[Transient<global::GlobalCup>]
+		                                       	[Transient<Outer.Inner>]
+		                                       	[Transient<Box<(int, string)>>]
+		                                       	[Transient<Box<(int, string)>.Nested>]
+		                                       	[Transient<Box<int?>>]
+		                                       	[Transient(typeof(Repo<>))]
+		                                       	[Transient<Consumer>]
+		                                       	[Transient<List<string>>(Factory = nameof(MakeList))]
+		                                       	public static partial class MyContainer
+		                                       	{
+		                                       		private static List<string> MakeList([Arg] int count) => new(count);
+		                                       	}
+		                                       }
+		                                       """);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the miss compares the request with every parameterized service by typeof, which compiles for each of these shapes");
+		string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
+		await That(source).Contains("if (serviceType == typeof(global::GlobalCup))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Outer.Inner))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Box<(int, string)>.Nested))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Box<int?>))")
+			.And.Contains("if (serviceType == typeof(global::MyCode.Repo<int>))")
+			.And.Contains("if (serviceType == typeof(global::System.Collections.Generic.List<string>))")
+			.Because("a service in the global namespace, a nested, generic, tuple or nullable one, a closing of an open generic and a factory product each get the factory remedy");
+		await That(source).Contains("resolve its factory 'System.Func<(int, string)[], MyCode.Box<(int, string)>.Nested>' instead");
+	}
+
+	[Test]
 	public async Task OpenGeneric_ExpandsToTheClosedImplementationRequiredByAConsumer()
 	{
 		GeneratorResult result = Generator.Run("""
