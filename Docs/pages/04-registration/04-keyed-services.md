@@ -65,7 +65,7 @@ IReceiptPrinter printer = shop.Resolve<IReceiptPrinter>();                  // T
 
 A contextual binding fills a property injected by [`[InjectProperty<T>]`](../05-resolution/05-property-injection.md) the same way it fills a constructor parameter, and a decorator on the service wraps the contextual implementation along with the default. The consumer may also be an implementation an imported [module](./07-modules.md) registers or scans: the binding reaches its constructor parameters, `[Inject]` properties and lifecycle hook parameters, also when a module of another assembly builds it through a generated factory.
 
-The consumer may be a [decorator](./02-decorators.md) or a [composite](./03-composites.md) too. The binding reaches the dependencies it takes besides the instance it wraps or the collection it fans out over, in every chain it wraps and under every key. It never replaces that inner instance or collection. For an open generic decorator, name the closing the binding applies to, such as `typeof(LoggingHandler<Order>)`, as for any open generic consumer.
+The consumer may be a [decorator](./02-decorators.md) or a [composite](./03-composites.md) too. The binding reaches the dependencies it takes besides the instance it wraps or the collection it fans out over, in every chain it wraps and under every key. It never replaces that inner instance or collection. For an open generic decorator, name the closing the binding applies to, such as `typeof(LoggingBehavior<PlaceOrder>)`, as for any open generic consumer.
 
 :::note
 If the named consumer has no unkeyed constructor parameter of the service to redirect, the binding never applies, and Awaiten warns ([AWT167](../09-diagnostics.md#awt167)).
