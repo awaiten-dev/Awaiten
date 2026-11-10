@@ -155,17 +155,19 @@ public static class Generator
 	/// <summary>
 	///     Like <see cref="RunWithGeneratedReferencedAssembly" />, but with a chain of generated referenced assemblies:
 	///     each of <paramref name="referencedSources" /> is compiled with the generator against the ones before it, so a
-	///     library can reference another generated library, and <paramref name="source" /> references all of them.
+	///     library can reference another generated library, and <paramref name="source" /> references all of them. With
+	///     <paramref name="referenceAssemblies" />, each is referenced by its reference assembly, as a project reference does in a build.
 	/// </summary>
 	public static GeneratorResult RunWithGeneratedReferencedAssemblyChain(
 		string[] referencedSources,
-		[StringSyntax("c#-test")] string source)
+		[StringSyntax("c#-test")] string source,
+		bool referenceAssemblies = false)
 	{
 		List<MetadataReference> references = new();
 		foreach (string referencedSource in referencedSources)
 		{
 			(Compilation referenced, _) = RunGenerator(referencedSource, references.ToArray(), [], $"Library{references.Count + 1}");
-			references.Add(EmitToReference(referenced));
+			references.Add(EmitToReference(referenced, referenceAssemblies ? new EmitOptions(metadataOnly: true, includePrivateMembers: false) : null));
 		}
 
 		return Run(source, references.ToArray());

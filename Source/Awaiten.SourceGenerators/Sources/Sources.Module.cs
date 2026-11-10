@@ -231,6 +231,12 @@ internal static partial class Sources
 					"Generated from a module [Decorate]: why no wrapper calls this decorator predicate. An assembly granted",
 					"InternalsVisibleTo calls the predicate itself; a consuming container that cannot reports this reason.");
 			}
+			else if (skipped.EmptyCollection)
+			{
+				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
+					"Generated from a module registration: the type a factory above passes an empty collection of an internal element",
+					"type that no module of this assembly registers. A consuming container that registers the element type reports it.");
+			}
 			else if (skipped.Hook)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,

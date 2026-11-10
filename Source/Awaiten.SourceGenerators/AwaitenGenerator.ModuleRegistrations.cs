@@ -2189,6 +2189,27 @@ partial class AwaitenGenerator
 			.Select(field => field.ConstantValue as string)
 			.FirstOrDefault(reason => reason is not null);
 
+	/// <summary>
+	///     A deterministic name for the constant that records that a factory of the module passes an empty collection of
+	///     <paramref name="element" /> under <paramref name="key" />, so a consumer that registers that element type under
+	///     that key finds the record (AWT252).
+	/// </summary>
+	private static string EmptyCollectionRecordName(INamedTypeSymbol element, string? key)
+	{
+		string identity = element.ToDisplayString(FullyQualified);
+		return $"EmptyCollection_{element.Name}_{Fnv1a(key is null ? identity : $"{identity}\0{key}"):x8}";
+	}
+
+	/// <summary>
+	///     The type that receives the empty collection of <paramref name="element" /> under <paramref name="key" /> which a
+	///     factory of the imported module of another assembly passes, or <see langword="null" /> when the module records none.
+	/// </summary>
+	private static string? EmptyCollectionReceiver(INamedTypeSymbol module, INamedTypeSymbol element, string? key)
+		=> InternalsMembers(module, EmptyCollectionRecordName(element, key))
+			.OfType<IFieldSymbol>()
+			.Select(field => field.ConstantValue as string)
+			.FirstOrDefault(receiver => receiver is not null);
+
 	private static uint Fnv1a(string text)
 	{
 		uint hash = 2166136261;

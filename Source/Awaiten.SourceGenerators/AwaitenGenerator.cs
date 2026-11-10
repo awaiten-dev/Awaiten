@@ -284,6 +284,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		else
 		{
 			(factories, registrations, handles, aliases, initializers) = ExpandModule(moduleSymbol, compilation, hidden, wrappers, skipped, contributions, diagnostics, cancellationToken);
+			RecordEmptyCollections(registrations, skipped);
 			expanded = true;
 		}
 
@@ -474,6 +475,24 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 	/// <summary>What a module that receives generated members emits (see <see cref="ExpandModule" />).</summary>
 	private sealed record ModuleExpansion(List<ModuleFactory> Factories, List<RegistrationFactory> Registrations, List<HiddenHandle> Handles, List<HiddenAlias> Aliases, List<HiddenInitializer> Initializers);
+
+	/// <summary>
+	///     Adds to <paramref name="skipped" /> one record per element type and key whose collection a factory among
+	///     <paramref name="registrations" /> passes empty, holding the first type that receives it (AWT252).
+	/// </summary>
+	private static void RecordEmptyCollections(List<RegistrationFactory> registrations, List<SkippedRegistration> skipped)
+	{
+		foreach (RegistrationFactory registration in registrations)
+		{
+			foreach (FactoryParameter parameter in registration.Parameters.AsArray())
+			{
+				if (parameter.EmptyCollectionRecord is { } record && !skipped.Exists(entry => entry.MarkerName == record))
+				{
+					skipped.Add(new SkippedRegistration(record, Display(registration.ImplementationType), EmptyCollection: true));
+				}
+			}
+		}
+	}
 
 	/// <summary>
 	///     Reports AWT235 when <paramref name="type" />, a module or container, declares a member named like the
@@ -876,6 +895,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			modules = InheritBase(extended, modules);
 			inheritance = new Inheritance(containerSymbol, extended, modules, compilation, cancellationToken);
 		}
+
+		ReportEmptyCollectionsOfModules(modules, compilation, diagnostics);
 
 		// Only a container that extends none can be extended, so only such a container builds factories for its private
 		// implementations (see RecordBaseFactory).

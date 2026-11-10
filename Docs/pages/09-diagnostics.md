@@ -2680,6 +2680,40 @@ public static partial class CoffeeShop
 
 **Fix:** Set the directive on the module's registration, or remove it from this one, or remove a hook from a registration or scan that shares the instance of a scan. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
 
+### AWT252
+
+:::danger[Error]
+An imported module of another assembly passes a decorator or composite an empty collection of an internal type, although another imported module registers that type in this container.
+:::
+
+A module builds a decorator or composite that another assembly can't construct through a factory it generates in its own build. When the type takes a collection of an internal type that no module of its assembly registers, the factory passes the collection empty, since a container in that assembly would pass it empty too. A library that the module's assembly grants `InternalsVisibleTo` can still register the internal type, though. A container that imports both modules would then build the decorator with an empty collection, while a container in the module's assembly, or one that both libraries grant `InternalsVisibleTo`, passes it the other module's registration. So the container reports this error at the `[Import]` of the module, naming the type that receives the collection and the module that registers its elements. A module built by an older version of Awaiten doesn't record the collections it passes empty, so it's not reported.
+
+```csharp no-compile
+// In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras InternalsVisibleTo:
+internal interface IFlavor;
+internal sealed class FlavoredBrewer(IBrewer inner, IEnumerable<IFlavor> flavors) : IBrewer;
+
+[Module]
+[Singleton<DripBrewer, IBrewer>]
+[Decorate<FlavoredBrewer, IBrewer>]   // no module of this library registers IFlavor
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Extras:
+internal sealed class Vanilla : IFlavor;
+
+[Module]
+[Singleton<Vanilla, IFlavor>]
+public static partial class ExtrasModule;
+
+// In the application, which neither library grants InternalsVisibleTo:
+[Container]
+[Import(typeof(BrewingModule))]   // FlavoredBrewer would get no flavors here
+[Import(typeof(ExtrasModule))]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Make the element type public, so the module's factory takes the collection from the container instead of passing it empty. Or grant the container's assembly `InternalsVisibleTo` in both libraries, so the container builds the decorator or composite itself and passes every registration of the element type.
+
 ### AWT253
 
 :::danger[Error]
