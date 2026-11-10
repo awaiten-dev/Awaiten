@@ -1740,6 +1740,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
         "message": "feat: warn when a collection over an imported service has no member (#385)"
+      },
+      {
+        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
+        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
       }
     ],
     "labels": [
@@ -2032,7 +2038,8 @@ window.BENCHMARK_DATA = {
       "b1707751",
       "7d3fbfc6",
       "3ab56b92",
-      "09c633b2"
+      "09c633b2",
+      "94a196c1"
     ],
     "datasets": [
       {
@@ -2328,7 +2335,8 @@ window.BENCHMARK_DATA = {
           6.425573865572612,
           6.215882785618305,
           6.2262849647265215,
-          3.0574310661426614
+          3.0574310661426614,
+          6.548656642436981
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2340,6 +2348,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2933,7 +2942,8 @@ window.BENCHMARK_DATA = {
           7.588890480143683,
           7.321607669549329,
           5.999973480900128,
-          4.080403942614794
+          4.080403942614794,
+          8.244261731704077
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2945,6 +2955,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3538,7 +3549,8 @@ window.BENCHMARK_DATA = {
           147.23677662213643,
           125.9397581577301,
           141.5191410950252,
-          59.084083267620635
+          59.084083267620635,
+          127.46344637870789
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3550,6 +3562,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4139,7 +4152,8 @@ window.BENCHMARK_DATA = {
           8.137576828400293,
           8.78564190864563,
           8.715751910848278,
-          5.134451225399971
+          5.134451225399971,
+          8.786192470788956
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4151,6 +4165,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4736,7 +4751,8 @@ window.BENCHMARK_DATA = {
           11.563970502217611,
           11.320113229964461,
           12.155243357022604,
-          6.319663459701197
+          6.319663459701197,
+          11.032033746441206
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4748,6 +4764,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6787,6 +6804,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
         "message": "feat: warn when a collection over an imported service has no member (#385)"
+      },
+      {
+        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
+        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
       }
     ],
     "labels": [
@@ -7079,7 +7102,8 @@ window.BENCHMARK_DATA = {
       "b1707751",
       "7d3fbfc6",
       "3ab56b92",
-      "09c633b2"
+      "09c633b2",
+      "94a196c1"
     ],
     "datasets": [
       {
@@ -7375,7 +7399,8 @@ window.BENCHMARK_DATA = {
           7.203171309828758,
           6.796773959810917,
           7.081999654216426,
-          3.260497453312079
+          3.260497453312079,
+          6.827638457928385
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7387,6 +7412,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7980,7 +8006,8 @@ window.BENCHMARK_DATA = {
           7.558693923552831,
           7.302193669478099,
           6.00801641281162,
-          4.131661187609037
+          4.131661187609037,
+          8.154115958015124
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7992,6 +8019,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8585,7 +8613,8 @@ window.BENCHMARK_DATA = {
           153.37489156723024,
           131.43387886683146,
           139.2798746109009,
-          58.72935757637024
+          58.72935757637024,
+          128.95174657503765
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8597,6 +8626,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9186,7 +9216,8 @@ window.BENCHMARK_DATA = {
           8.252886803022452,
           8.782671418573175,
           8.751684651843139,
-          4.844839874406656
+          4.844839874406656,
+          8.802481403308255
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9198,6 +9229,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9783,7 +9815,8 @@ window.BENCHMARK_DATA = {
           13.648449317685195,
           14.9473326086998,
           11.960317409038543,
-          8.157886114258032
+          8.157886114258032,
+          14.6186617399965
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9795,6 +9828,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11834,6 +11868,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
         "message": "feat: warn when a collection over an imported service has no member (#385)"
+      },
+      {
+        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
+        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
       }
     ],
     "labels": [
@@ -12126,7 +12166,8 @@ window.BENCHMARK_DATA = {
       "b1707751",
       "7d3fbfc6",
       "3ab56b92",
-      "09c633b2"
+      "09c633b2",
+      "94a196c1"
     ],
     "datasets": [
       {
@@ -12422,7 +12463,8 @@ window.BENCHMARK_DATA = {
           21.770500606298448,
           10.98386818667253,
           10.865462071129254,
-          31.80365855353219
+          31.80365855353219,
+          15.856938873018537
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12694,6 +12736,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -13027,7 +13070,8 @@ window.BENCHMARK_DATA = {
           1566.247440592448,
           753.6572447504316,
           739.9125402995518,
-          1895.9765813010079
+          1895.9765813010079,
+          1160.960160191854
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -13039,6 +13083,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13632,7 +13677,8 @@ window.BENCHMARK_DATA = {
           29995.949051920572,
           16923.942618815105,
           16647.266048177084,
-          24551.011034284318
+          24551.011034284318,
+          25370.002144949776
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13933,7 +13979,8 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32478,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14233,7 +14280,8 @@ window.BENCHMARK_DATA = {
           764.4278996331351,
           381.85375053542003,
           385.6462233249958,
-          739.5335021018982
+          739.5335021018982,
+          616.2078762735639
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14263,6 +14311,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14830,7 +14879,8 @@ window.BENCHMARK_DATA = {
           12178.36325785319,
           6200.7618489946635,
           6126.207024794358,
-          13896.199937947591
+          13896.199937947591,
+          8975.595078604561
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -15126,6 +15176,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -16881,6 +16932,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
         "message": "feat: warn when a collection over an imported service has no member (#385)"
+      },
+      {
+        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
+        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
       }
     ],
     "labels": [
@@ -17173,7 +17230,8 @@ window.BENCHMARK_DATA = {
       "b1707751",
       "7d3fbfc6",
       "3ab56b92",
-      "09c633b2"
+      "09c633b2",
+      "94a196c1"
     ],
     "datasets": [
       {
@@ -17469,7 +17527,8 @@ window.BENCHMARK_DATA = {
           186.22188970020838,
           77.07953801949819,
           78.02562792102496,
-          413.02755339940387
+          413.02755339940387,
+          115.91868620259422
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17741,6 +17800,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -18074,7 +18134,8 @@ window.BENCHMARK_DATA = {
           15403.928830660307,
           7041.450904846191,
           6971.237644195557,
-          15932.423860677083
+          15932.423860677083,
+          10815.49388478597
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -18086,6 +18147,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -18679,7 +18741,8 @@ window.BENCHMARK_DATA = {
           727819.275813802,
           422266.1103841146,
           403505.2094075521,
-          575030.7221304086
+          575030.7221304086,
+          640086.6211588542
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18980,7 +19043,8 @@ window.BENCHMARK_DATA = {
           721149,
           741117,
           741103,
-          719702
+          719702,
+          740033
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19280,7 +19344,8 @@ window.BENCHMARK_DATA = {
           44085.36818586077,
           22642.71392604283,
           22168.055661714992,
-          44754.377607073104
+          44754.377607073104,
+          38302.58962140764
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19577,7 +19642,8 @@ window.BENCHMARK_DATA = {
           80973,
           80303,
           80303,
-          80546
+          80546,
+          81193
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19877,7 +19943,8 @@ window.BENCHMARK_DATA = {
           362921.28935546876,
           190183.26782226562,
           182206.86786760602,
-          386860.846867488
+          386860.846867488,
+          263089.0813927284
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20174,7 +20241,8 @@ window.BENCHMARK_DATA = {
           573076,
           573119,
           573058,
-          572305
+          572305,
+          573120
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21904,6 +21972,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
         "message": "feat: warn when a collection over an imported service has no member (#385)"
+      },
+      {
+        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
+        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
       }
     ],
     "labels": [
@@ -22192,7 +22266,8 @@ window.BENCHMARK_DATA = {
       "b1707751",
       "7d3fbfc6",
       "3ab56b92",
-      "09c633b2"
+      "09c633b2",
+      "94a196c1"
     ],
     "datasets": [
       {
@@ -22484,7 +22559,8 @@ window.BENCHMARK_DATA = {
           313.244519335883,
           276.28324748675027,
           347.44622738020763,
-          270.83425542513527
+          270.83425542513527,
+          253.48829164505005
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -22519,6 +22595,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -23081,7 +23158,8 @@ window.BENCHMARK_DATA = {
           579.6728132883708,
           613.7070368448893,
           611.7377727508544,
-          645.9735329491751
+          645.9735329491751,
+          596.2519153448252
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -23093,6 +23171,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -23678,7 +23757,8 @@ window.BENCHMARK_DATA = {
           6533.078976222447,
           6595.708799634661,
           6753.620634460449,
-          6883.969565255301
+          6883.969565255301,
+          6554.1670018514
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23762,6 +23842,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -24275,7 +24356,8 @@ window.BENCHMARK_DATA = {
           397.7674593584878,
           398.7890155474345,
           419.54098443984986,
-          411.19897117614744
+          411.19897117614744,
+          392.00403475761414
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24287,6 +24369,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -24872,7 +24955,8 @@ window.BENCHMARK_DATA = {
           701.4505316416422,
           705.4597630818685,
           752.7615015029908,
-          748.4599643120399
+          748.4599643120399,
+          713.798678334554
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24884,6 +24968,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
