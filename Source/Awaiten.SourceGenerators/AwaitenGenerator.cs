@@ -850,7 +850,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		SameCompilationModules Modules,
 		HiddenInjectedProperties HiddenInjectedProperties,
 		Dictionary<string, PredicateModel> Predicates,
-		Dictionary<string, string> ClosingFaults);
+		Dictionary<string, string> ClosingFaults,
+		HashSet<InjectPropertyEntry> ReportedHandleEntries);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -1045,7 +1046,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults);
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>());
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)
@@ -1076,7 +1077,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		// AWT180: an [InjectProperty<TImpl>] entry whose implementation type matches no registration is never
 		// applied, reported now that every registered implementation has been seen.
-		ReportUnmatchedInjectProperties(injectProperties, implOrder, compilation, diagnostics);
+		ReportUnmatchedInjectProperties(injectProperties, implOrder, buildContext.ReportedHandleEntries, compilation, diagnostics);
 
 		// Variance for collections (Part C): union every variance-compatible registration's members into each
 		// requested closed-generic collection. Before the parameterized prune and edge building so the unioned

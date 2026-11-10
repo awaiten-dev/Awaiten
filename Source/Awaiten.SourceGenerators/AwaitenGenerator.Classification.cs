@@ -503,6 +503,8 @@ partial class AwaitenGenerator
 	///     the factory fills the <c>[Inject]</c> properties, so only the entries yield members, set on the instance it returns.
 	///     An instance handle passes the implementation it holds as <paramref name="target" />, whose properties the entries
 	///     name, and the <c>[Inject]</c> properties its factory fills as <paramref name="filled" />, which metadata may not show.
+	///     A handle sets no <c>Deferred</c> entry, so it passes <paramref name="reported" />, which collects the entries
+	///     reported here as AWT181 or AWT177: a <c>Deferred</c> entry yields no member, and only a valid one is left for AWT178.
 	/// </summary>
 	private static void DiscoverInjectedMembers(
 		ImplInfo info,
@@ -511,7 +513,8 @@ partial class AwaitenGenerator
 		List<MemberModel> members,
 		bool afterFactory = false,
 		INamedTypeSymbol? target = null,
-		IEnumerable<string>? filled = null)
+		IEnumerable<string>? filled = null,
+		HashSet<InjectPropertyEntry>? reported = null)
 	{
 		target ??= info.Symbol;
 
@@ -550,6 +553,7 @@ partial class AwaitenGenerator
 					Diagnostics.InjectPropertyAlsoInjectAttribute,
 					entry.Location ?? info.Location,
 					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				reported?.Add(entry);
 				continue;
 			}
 
@@ -560,6 +564,12 @@ partial class AwaitenGenerator
 					Diagnostics.InjectPropertyNotFound,
 					entry.Location ?? info.Location,
 					new EquatableArray<string>([entry.PropertyName, DisplayInstance(info.ImplementationType),])));
+				reported?.Add(entry);
+				continue;
+			}
+
+			if (entry.Deferred && reported is not null)
+			{
 				continue;
 			}
 

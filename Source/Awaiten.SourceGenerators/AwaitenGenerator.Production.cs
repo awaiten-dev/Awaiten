@@ -270,9 +270,12 @@ partial class AwaitenGenerator
 	///     <paramref name="members" />, set through the module's alias on the instance the handle's factory
 	///     <paramref name="producer" /> built (see <see cref="HandleAssignment" />), before its hooks and async
 	///     initialization run, as a container of the module's own assembly sets them while it constructs the
-	///     implementation. Returns the qualified alias, or <see langword="null" /> when no entry applies. A <c>Deferred</c>
-	///     entry is left to <see cref="ReportUnmatchedInjectProperties" />, and one for an <c>[Inject]</c> property, which
-	///     the factory takes as a parameter or sets through a setter wrapper, is AWT181.
+	///     implementation. Returns the qualified alias, or <see langword="null" /> when no entry applies. An entry for an
+	///     <c>[Inject]</c> property, which the factory takes as a parameter or sets through a setter wrapper, is AWT181, and
+	///     one that names no settable property is AWT177, also when it is <c>Deferred</c>, as in the module's own assembly.
+	///     Any other <c>Deferred</c> entry is left to <see cref="ReportUnmatchedInjectProperties" />, which reports it as
+	///     AWT178, an inherited one too: a base of another assembly may construct the implementation and set the entry, and
+	///     a base of this one reports the same diagnostics, which <see cref="RemoveBaseDiagnostics" /> then drops here.
 	/// </summary>
 	private static string? WithHandleEntries(List<MemberModel> members, ImplInfo info, IMethodSymbol producer, BuildContext context)
 	{
@@ -291,7 +294,6 @@ partial class AwaitenGenerator
 			entries = MergeOpenInjectProperties(info, entries, open, context.Diagnostics);
 		}
 
-		entries = entries.Where(entry => !entry.Deferred).ToList();
 		if (entries.Count == 0)
 		{
 			return null;
@@ -300,7 +302,7 @@ partial class AwaitenGenerator
 		InjectionContext injection = new(context.ContainerSymbol, context.Compilation, context.ServiceToImpl, context.ConstraintRejected, context.DeferredRejections, context.ConsumedConditionals, context.External.ServiceTypes, context.DispatchCandidates, context.Variance, context.Diagnostics);
 		IEnumerable<string> filled = producer.Parameters.Skip(FirstPropertyOrdinal(producer)).Select(parameter => parameter.Name).Concat(members.Select(member => member.MemberName));
 		int count = members.Count;
-		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList());
+		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList(), context.ReportedHandleEntries);
 		return members.Count > count ? $"{alias.ContainingType.ToDisplayString(FullyQualified)}.{alias.Name}" : null;
 	}
 
