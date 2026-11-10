@@ -1692,6 +1692,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 07:32:57 2026 \u002B0100",
         "message": "fix: accept graphs over module handles in another assembly that the module\u0027s own assembly accepts (#383)"
+      },
+      {
+        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
+        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
       }
     ],
     "labels": [
@@ -1976,7 +1982,8 @@ window.BENCHMARK_DATA = {
       "1ea8f53b",
       "577526ae",
       "334a5265",
-      "4ba6f678"
+      "4ba6f678",
+      "a60c39f3"
     ],
     "datasets": [
       {
@@ -2264,7 +2271,8 @@ window.BENCHMARK_DATA = {
           5.062600819269816,
           4.966567849119504,
           5.550651819507281,
-          6.357532496963229
+          6.357532496963229,
+          3.1384932309389115
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2276,6 +2284,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2853,7 +2862,8 @@ window.BENCHMARK_DATA = {
           6.987462297081947,
           6.980060916680556,
           7.576795262949807,
-          7.269329816102982
+          7.269329816102982,
+          4.227070654077189
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2865,6 +2875,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3442,7 +3453,8 @@ window.BENCHMARK_DATA = {
           87.07520695527394,
           86.78386902014414,
           116.66026000976562,
-          137.25265340805055
+          137.25265340805055,
+          58.92312007745107
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3454,6 +3466,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4027,7 +4040,8 @@ window.BENCHMARK_DATA = {
           6.576782878488302,
           6.551566925148169,
           7.751890886823336,
-          8.542281686266262
+          8.542281686266262,
+          5.0427367428938545
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4039,6 +4053,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4608,7 +4623,8 @@ window.BENCHMARK_DATA = {
           8.218172819568561,
           8.406056973338128,
           10.836464149753253,
-          11.205870043238004
+          11.205870043238004,
+          6.500400451819102
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4620,6 +4636,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6603,6 +6620,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 07:32:57 2026 \u002B0100",
         "message": "fix: accept graphs over module handles in another assembly that the module\u0027s own assembly accepts (#383)"
+      },
+      {
+        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
+        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
       }
     ],
     "labels": [
@@ -6887,7 +6910,8 @@ window.BENCHMARK_DATA = {
       "1ea8f53b",
       "577526ae",
       "334a5265",
-      "4ba6f678"
+      "4ba6f678",
+      "a60c39f3"
     ],
     "datasets": [
       {
@@ -7175,7 +7199,8 @@ window.BENCHMARK_DATA = {
           5.449599730968475,
           5.223373205615924,
           5.927369300808225,
-          6.799358519415061
+          6.799358519415061,
+          3.2524077610245774
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7187,6 +7212,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7764,7 +7790,8 @@ window.BENCHMARK_DATA = {
           6.4948844359471245,
           6.563417880733808,
           7.590932343403498,
-          7.368357919156551
+          7.368357919156551,
+          4.113212288490364
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7776,6 +7803,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8353,7 +8381,8 @@ window.BENCHMARK_DATA = {
           86.37873775164286,
           87.53744614124298,
           115.17275561605182,
-          130.48801694597518
+          130.48801694597518,
+          61.06955904620035
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8365,6 +8394,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -8938,7 +8968,8 @@ window.BENCHMARK_DATA = {
           6.525325658229681,
           6.83127282674496,
           7.8329867997339795,
-          8.504601187507312
+          8.504601187507312,
+          5.046418905258179
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -8950,6 +8981,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9519,7 +9551,8 @@ window.BENCHMARK_DATA = {
           11.400471327560288,
           8.897611404458681,
           14.302532023191452,
-          14.424258438746135
+          14.424258438746135,
+          6.485480271776518
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9531,6 +9564,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11514,6 +11548,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 07:32:57 2026 \u002B0100",
         "message": "fix: accept graphs over module handles in another assembly that the module\u0027s own assembly accepts (#383)"
+      },
+      {
+        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
+        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
       }
     ],
     "labels": [
@@ -11798,7 +11838,8 @@ window.BENCHMARK_DATA = {
       "1ea8f53b",
       "577526ae",
       "334a5265",
-      "4ba6f678"
+      "4ba6f678",
+      "a60c39f3"
     ],
     "datasets": [
       {
@@ -12086,7 +12127,8 @@ window.BENCHMARK_DATA = {
           15.453640865428108,
           27.995723311106364,
           15.42710392177105,
-          21.769106660286585
+          21.769106660286585,
+          21.397937925656638
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12358,6 +12400,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12675,7 +12718,8 @@ window.BENCHMARK_DATA = {
           1128.2967041560582,
           1551.888201268514,
           1160.0908798217774,
-          1542.2316566467284
+          1542.2316566467284,
+          1429.630593079787
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12687,6 +12731,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13264,7 +13309,8 @@ window.BENCHMARK_DATA = {
           25647.628584798178,
           21468.87774251302,
           25958.00174822126,
-          31121.54963378906
+          31121.54963378906,
+          29670.144881184897
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13557,6 +13603,7 @@ window.BENCHMARK_DATA = {
           32478,
           32474,
           32478,
+          32482,
           32482
         ],
         "borderColor": "#5E2750",
@@ -13849,7 +13896,8 @@ window.BENCHMARK_DATA = {
           590.8100794474284,
           614.9301128387451,
           575.3943471227374,
-          729.1367007573446
+          729.1367007573446,
+          693.8861024220785
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -13879,6 +13927,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14430,7 +14479,8 @@ window.BENCHMARK_DATA = {
           8552.611133030483,
           10774.726749965123,
           8692.970078688402,
-          12595.56137746175
+          12595.56137746175,
+          12265.60683186849
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14715,6 +14765,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -16425,6 +16476,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 07:32:57 2026 \u002B0100",
         "message": "fix: accept graphs over module handles in another assembly that the module\u0027s own assembly accepts (#383)"
+      },
+      {
+        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
+        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
       }
     ],
     "labels": [
@@ -16709,7 +16766,8 @@ window.BENCHMARK_DATA = {
       "1ea8f53b",
       "577526ae",
       "334a5265",
-      "4ba6f678"
+      "4ba6f678",
+      "a60c39f3"
     ],
     "datasets": [
       {
@@ -16997,7 +17055,8 @@ window.BENCHMARK_DATA = {
           116.61137425899506,
           465.42472038269045,
           116.34357515176137,
-          190.19635038375856
+          190.19635038375856,
+          205.76495444774628
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17269,6 +17328,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -17586,7 +17646,8 @@ window.BENCHMARK_DATA = {
           10641.770828833947,
           14268.510801188151,
           10621.98017018636,
-          15541.204475911458
+          15541.204475911458,
+          15835.222729492187
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -17598,6 +17659,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -18175,7 +18237,8 @@ window.BENCHMARK_DATA = {
           648489.83125,
           514764.913016183,
           631864.66328125,
-          769965.6658203125
+          769965.6658203125,
+          748355.1879882812
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18468,7 +18531,8 @@ window.BENCHMARK_DATA = {
           742572,
           736060,
           736840,
-          740197
+          740197,
+          740471
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18760,7 +18824,8 @@ window.BENCHMARK_DATA = {
           37666.859545898435,
           34457.15897827149,
           35994.562635149276,
-          44517.35473225911
+          44517.35473225911,
+          44344.6630452474
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19049,7 +19114,8 @@ window.BENCHMARK_DATA = {
           80971,
           79663,
           80969,
-          80508
+          80508,
+          80005
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19341,7 +19407,8 @@ window.BENCHMARK_DATA = {
           286337.12470703124,
           289584.4117713341,
           285667.90533854166,
-          363669.52275390626
+          363669.52275390626,
+          384236.80810546875
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19630,7 +19697,8 @@ window.BENCHMARK_DATA = {
           573075,
           571194,
           573137,
-          573169
+          573169,
+          573253
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21312,6 +21380,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 07:32:57 2026 \u002B0100",
         "message": "fix: accept graphs over module handles in another assembly that the module\u0027s own assembly accepts (#383)"
+      },
+      {
+        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
+        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
       }
     ],
     "labels": [
@@ -21592,7 +21666,8 @@ window.BENCHMARK_DATA = {
       "1ea8f53b",
       "577526ae",
       "334a5265",
-      "4ba6f678"
+      "4ba6f678",
+      "a60c39f3"
     ],
     "datasets": [
       {
@@ -21876,7 +21951,8 @@ window.BENCHMARK_DATA = {
           165.43737277984619,
           214.54987364155906,
           298.7991311073303,
-          399.6787350654602
+          399.6787350654602,
+          246.98568859100342
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -21911,6 +21987,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -22457,7 +22534,8 @@ window.BENCHMARK_DATA = {
           394.1065882047017,
           480.1638413111369,
           714.2716532487136,
-          588.7973795731863
+          588.7973795731863,
+          550.9879857472012
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -22469,6 +22547,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -23038,7 +23117,8 @@ window.BENCHMARK_DATA = {
           3553.927965927124,
           5045.387864430745,
           6604.018590654646,
-          6525.075712076823
+          6525.075712076823,
+          4165.627890450613
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23122,6 +23202,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -23619,7 +23700,8 @@ window.BENCHMARK_DATA = {
           251.3947126865387,
           352.64866021474205,
           440.8242521286011,
-          398.8961518727816
+          398.8961518727816,
+          348.57420552571614
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23631,6 +23713,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -24200,7 +24283,8 @@ window.BENCHMARK_DATA = {
           409.6868533066341,
           562.2753379821777,
           775.7329833984375,
-          711.9923654964992
+          711.9923654964992,
+          617.5849662144979
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24212,6 +24296,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
