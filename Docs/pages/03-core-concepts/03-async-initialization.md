@@ -69,7 +69,7 @@ public sealed class Scale : ICalibrated
 public static partial class CoffeeShop;
 ```
 
-The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A parameter may also be a relationship such as `Func<T>` or `Lazy<T>`. The method itself carries no Awaiten attributes. If you need `[FromKey]`, use an `OnActivated` hook instead.
+The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A C# default value does not change that. Awaiten ignores it, so `IClock? clock = null` still needs a registered `IClock` ([AWT101](../09-diagnostics.md#awt101)). A parameter may also be a relationship such as `Func<T>` or `Lazy<T>`, which needs the service registered too. To let the initializer run without the service, take a collection of it, which is empty when nothing registers the service, or give the service an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead. The method itself carries no Awaiten attributes. If you need `[FromKey]`, use an `OnActivated` hook instead.
 
 ## Use an activation hook
 

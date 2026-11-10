@@ -104,6 +104,99 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsWhenALazyTargetIsNotRegistered()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public sealed class Service { public Service(Lazy<IMissing> missing) { } }
+
+			                                       [Container]
+			                                       [Transient<Service>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+				.Because("a Lazy<T> does not make its target optional");
+		}
+
+		[Test]
+		public async Task ReportsWhenAConstructorParameterWithADefaultValueIsNotRegistered()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public sealed class Service { public Service(IMissing? missing = null) { } }
+
+			                                       [Container]
+			                                       [Transient<Service>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+				.Because("a C# default value does not make a constructor parameter optional");
+		}
+
+		[Test]
+		public async Task ReportsWhenAHookParameterWithADefaultValueIsNotRegistered()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public sealed class Service { }
+
+			                                       [Container]
+			                                       [Singleton<Service>(OnActivated = nameof(Activate))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static void Activate(Service service, IMissing? missing = null) { }
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+				.Because("a C# default value does not make a hook parameter optional");
+		}
+
+		[Test]
+		public async Task ReportsWhenAConventionParameterWithADefaultValueIsNotRegistered()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Threading.Tasks;
+
+			                                       namespace MyCode;
+
+			                                       public interface IMissing { }
+			                                       public interface IWarmUp { Task WarmUpAsync(IMissing? missing = null); }
+			                                       public sealed class Service : IWarmUp { public Task WarmUpAsync(IMissing? missing = null) => Task.CompletedTask; }
+
+			                                       [Container]
+			                                       [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+			                                       [Singleton<Service>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT101*").AsWildcard()
+				.Because("a C# default value does not make an async initializer convention parameter optional");
+		}
+
+		[Test]
 		public async Task ReportsWhenADefaultLosingToAnotherDefaultHasAnUnregisteredDependency()
 		{
 			GeneratorResult result = Generator.Run("""

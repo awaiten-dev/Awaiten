@@ -74,6 +74,8 @@ You rarely call these methods deep in your code. You call them once at the compo
 public sealed class Barista(Grinder grinder, EspressoMachine machine);
 ```
 
+Every constructor parameter is a dependency, also one with a C# default value. Awaiten ignores the default, so an unregistered `IMetrics? metrics = null` is [AWT101](../09-diagnostics.md#awt101). For a dependency the service can do without, use an [`Optional` injected property](./05-property-injection.md#tolerate-a-missing-service-with-optional) or a [collection](./03-collections.md), which is empty when nothing registers the service.
+
 For the shapes a dependency can take, like `Func<T>` or collections, read on.
 
 ## Where to go next
