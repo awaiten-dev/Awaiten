@@ -1481,8 +1481,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reads the <c>Keys</c> and <c>AllKeys</c> named arguments of a <c>[Decorate]</c> as the selected canonical
 	///     keys: unset yields the unkeyed registration only (<c>[null]</c>), <c>AllKeys</c> yields
-	///     <see langword="null" />. Returns <see langword="false" /> (having reported AWT211) when both are set, so the
-	///     decorator is skipped. An entry of an unsupported key type is reported as AWT170 and left out.
+	///     <see langword="null" />. Returns <see langword="false" />, so the decorator is skipped, when both are set
+	///     (reported as AWT211) or when <c>Keys</c> selects no key: it is empty (reported as AWT123) or each of its entries
+	///     has an unsupported key type (each reported as AWT170).
 	/// </summary>
 	private static bool TryReadDecoratorKeys(
 		AttributeData attribute,
@@ -1517,6 +1518,16 @@ partial class AwaitenGenerator
 			return false;
 		}
 
+		if (selected.Value.Values.IsEmpty)
+		{
+			diagnostics.Add(new DiagnosticInfo(
+				Diagnostics.DecoratorWithEmptyKeys,
+				location,
+				new EquatableArray<string>([AttributeTypeArgument(attribute, attributeClass, 1), AttributeTypeArgument(attribute, attributeClass, 0),])));
+			keys = null;
+			return false;
+		}
+
 		List<string?> list = new();
 		foreach (TypedConstant element in selected.Value.Values)
 		{
@@ -1536,7 +1547,7 @@ partial class AwaitenGenerator
 		}
 
 		keys = list;
-		return true;
+		return list.Count > 0;
 	}
 
 	/// <summary>
