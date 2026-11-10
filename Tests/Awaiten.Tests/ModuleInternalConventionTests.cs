@@ -60,6 +60,35 @@ public sealed partial class ModuleInternalConventionTests
 	}
 
 	[Test]
+	public async Task OnAnInternalImplementationAPrivateFactoryReturns_TheConventionsRunOncePerInstance()
+	{
+		await using ConventionShop.Root container = new();
+
+		IInternalConventionMill first = await container.ResolveAsync<IInternalConventionMill>();
+		IInternalConventionMill second = await container.ResolveAsync<IInternalConventionMill>();
+
+		await That(second).IsNotSameAs(first);
+		await That(first.Device.Steps).IsEqualTo(["warmed", "calibrated",])
+			.Because("the module records the conventions of the mill its factory returns as the public service, and the container runs them through the module's wrappers");
+		await That(second.Device.Steps).IsEqualTo(["warmed", "calibrated",]);
+		await That(container.GetResolvability<IInternalConventionMill>().Status).IsEqualTo(AwaitenResolvabilityStatus.AsyncOnly)
+			.Because("the conventions make the mill async-initialized, though this container sees only its public service");
+	}
+
+	[Test]
+	public async Task OnAnInternalImplementationAPrivateAsyncFactoryReturns_TheConventionsRunOnce()
+	{
+		await using ConventionShop.Root container = new();
+
+		IInternalConventionAsyncMill first = await container.ResolveAsync<IInternalConventionAsyncMill>();
+		IInternalConventionAsyncMill second = await container.ResolveAsync<IInternalConventionAsyncMill>();
+
+		await That(second).IsSameAs(first);
+		await That(first.Device.Steps).IsEqualTo(["warmed", "calibrated",])
+			.Because("the container awaits the factory's wrapper and runs the conventions the module recorded once on the singleton");
+	}
+
+	[Test]
 	public async Task OnAScanMatch_TheConventionRunsOnce()
 	{
 		await using ConventionShop.Root container = new();

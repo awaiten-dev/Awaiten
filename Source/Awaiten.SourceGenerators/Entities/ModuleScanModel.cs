@@ -105,6 +105,8 @@ internal sealed record HiddenInitializer(string Name, string HandleType, string 
 ///     <see cref="Awaited" /> marks a wrapper that awaits the target, because its awaitable result converts to the
 ///     wrapper's only through the awaited value. A hook wrapper of an open generic registration carries the
 ///     definition's <see cref="TypeParameters" /> and their <see cref="Constraints" />, so a container closes it per closing.
+///     <see cref="Initializers" /> records the conventions of the module that initialize what a <c>Factory</c> wrapper
+///     returns as a public service in place of an implementation another assembly cannot see.
 /// </summary>
 internal sealed record MemberWrapper(
 	string Name,
@@ -115,7 +117,15 @@ internal sealed record MemberWrapper(
 	bool IsInternal = false,
 	bool Awaited = false,
 	string? TypeParameters = null,
-	string? Constraints = null);
+	string? Constraints = null,
+	EquatableArray<MemberInitializer> Initializers = default);
+
+/// <summary>
+///     The record that a convention initializes what a public <c>Factory</c> wrapper of a module returns: a constant
+///     named <see cref="Name" /> (see <c>MemberInitializerName</c>) holding the <see cref="Convention" /> as a diagnostic
+///     names it, by which a container in another assembly runs the convention on an instance whose type it cannot see.
+/// </summary>
+internal sealed record MemberInitializer(string Name, string Convention);
 
 /// <summary>
 ///     An implementation the module generates no factory for, because an assembly granted <c>InternalsVisibleTo</c>
