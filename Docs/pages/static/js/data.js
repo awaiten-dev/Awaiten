@@ -1722,6 +1722,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:38:15 2026 \u002B0100",
         "message": "fix: report an error of a base in another assembly on the container that extends it instead of taking it for one the base reported (#392)"
+      },
+      {
+        "sha": "7d3fbfc60d1bf525d8d6dbc372d9c9408130e8ff",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:39:21 2026 \u002B0100",
+        "message": "fix!: report a public hook beside an internal overload also for a module inherited through Extends, and for overloads a binding leaves open or a call infers (#386)"
       }
     ],
     "labels": [
@@ -2011,7 +2017,8 @@ window.BENCHMARK_DATA = {
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
-      "b1707751"
+      "b1707751",
+      "7d3fbfc6"
     ],
     "datasets": [
       {
@@ -2304,7 +2311,8 @@ window.BENCHMARK_DATA = {
           3.2592487797141074,
           4.6295954287052155,
           5.078262385725975,
-          6.425573865572612
+          6.425573865572612,
+          6.215882785618305
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2316,6 +2324,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -2903,7 +2912,8 @@ window.BENCHMARK_DATA = {
           4.382670057316621,
           6.714144401825392,
           10.114786507685979,
-          7.588890480143683
+          7.588890480143683,
+          7.321607669549329
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2915,6 +2925,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3502,7 +3513,8 @@ window.BENCHMARK_DATA = {
           71.83644655545552,
           86.40624153614044,
           84.87249032088688,
-          147.23677662213643
+          147.23677662213643,
+          125.9397581577301
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3514,6 +3526,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4097,7 +4110,8 @@ window.BENCHMARK_DATA = {
           5.52214155288843,
           7.103266820311546,
           7.068444192409515,
-          8.137576828400293
+          8.137576828400293,
+          8.78564190864563
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4109,6 +4123,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4688,7 +4703,8 @@ window.BENCHMARK_DATA = {
           6.488900598670755,
           8.730206049978733,
           8.503545660773913,
-          11.563970502217611
+          11.563970502217611,
+          11.320113229964461
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -4700,6 +4716,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -6718,6 +6735,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:38:15 2026 \u002B0100",
         "message": "fix: report an error of a base in another assembly on the container that extends it instead of taking it for one the base reported (#392)"
+      },
+      {
+        "sha": "7d3fbfc60d1bf525d8d6dbc372d9c9408130e8ff",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:39:21 2026 \u002B0100",
+        "message": "fix!: report a public hook beside an internal overload also for a module inherited through Extends, and for overloads a binding leaves open or a call infers (#386)"
       }
     ],
     "labels": [
@@ -7007,7 +7030,8 @@ window.BENCHMARK_DATA = {
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
-      "b1707751"
+      "b1707751",
+      "7d3fbfc6"
     ],
     "datasets": [
       {
@@ -7300,7 +7324,8 @@ window.BENCHMARK_DATA = {
           3.3745072404188767,
           5.215921892651489,
           5.361481161912282,
-          7.203171309828758
+          7.203171309828758,
+          6.796773959810917
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -7312,6 +7337,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7899,7 +7925,8 @@ window.BENCHMARK_DATA = {
           4.153423052813325,
           6.510384636123975,
           6.8044650458863805,
-          7.558693923552831
+          7.558693923552831,
+          7.302193669478099
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -7911,6 +7938,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8498,7 +8526,8 @@ window.BENCHMARK_DATA = {
           58.96051316994887,
           86.48267342363086,
           84.56546711921692,
-          153.37489156723024
+          153.37489156723024,
+          131.43387886683146
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -8510,6 +8539,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -9093,7 +9123,8 @@ window.BENCHMARK_DATA = {
           5.473196189318385,
           7.084830126592091,
           6.835013265411059,
-          8.252886803022452
+          8.252886803022452,
+          8.782671418573175
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -9105,6 +9136,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9684,7 +9716,8 @@ window.BENCHMARK_DATA = {
           6.585546483950956,
           8.502661064267159,
           8.50854913038867,
-          13.648449317685195
+          13.648449317685195,
+          14.9473326086998
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -9696,6 +9729,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11714,6 +11748,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:38:15 2026 \u002B0100",
         "message": "fix: report an error of a base in another assembly on the container that extends it instead of taking it for one the base reported (#392)"
+      },
+      {
+        "sha": "7d3fbfc60d1bf525d8d6dbc372d9c9408130e8ff",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:39:21 2026 \u002B0100",
+        "message": "fix!: report a public hook beside an internal overload also for a module inherited through Extends, and for overloads a binding leaves open or a call infers (#386)"
       }
     ],
     "labels": [
@@ -12003,7 +12043,8 @@ window.BENCHMARK_DATA = {
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
-      "b1707751"
+      "b1707751",
+      "7d3fbfc6"
     ],
     "datasets": [
       {
@@ -12296,7 +12337,8 @@ window.BENCHMARK_DATA = {
           22.652274149656296,
           22.48820370634397,
           12.056393227974574,
-          21.770500606298448
+          21.770500606298448,
+          10.98386818667253
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -12568,6 +12610,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -12895,7 +12938,8 @@ window.BENCHMARK_DATA = {
           1549.9739187558491,
           1395.903124745687,
           858.3328734397888,
-          1566.247440592448
+          1566.247440592448,
+          753.6572447504316
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -12907,6 +12951,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -13494,7 +13539,8 @@ window.BENCHMARK_DATA = {
           31145.888079833985,
           19194.04303917518,
           18006.26173048753,
-          29995.949051920572
+          29995.949051920572,
+          16923.942618815105
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -13792,7 +13838,8 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32477,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -14089,7 +14136,8 @@ window.BENCHMARK_DATA = {
           732.1201538721721,
           550.4507327079773,
           436.70985237757367,
-          764.4278996331351
+          764.4278996331351,
+          381.85375053542003
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -14119,6 +14167,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -14680,7 +14729,8 @@ window.BENCHMARK_DATA = {
           12178.012446085611,
           9556.839626857212,
           7348.271180289133,
-          12178.36325785319
+          12178.36325785319,
+          6200.7618489946635
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -14974,6 +15024,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -16710,6 +16761,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:38:15 2026 \u002B0100",
         "message": "fix: report an error of a base in another assembly on the container that extends it instead of taking it for one the base reported (#392)"
+      },
+      {
+        "sha": "7d3fbfc60d1bf525d8d6dbc372d9c9408130e8ff",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:39:21 2026 \u002B0100",
+        "message": "fix!: report a public hook beside an internal overload also for a module inherited through Extends, and for overloads a binding leaves open or a call infers (#386)"
       }
     ],
     "labels": [
@@ -16999,7 +17056,8 @@ window.BENCHMARK_DATA = {
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
-      "b1707751"
+      "b1707751",
+      "7d3fbfc6"
     ],
     "datasets": [
       {
@@ -17292,7 +17350,8 @@ window.BENCHMARK_DATA = {
           183.44456083433968,
           248.02184969584147,
           82.48458672563235,
-          186.22188970020838
+          186.22188970020838,
+          77.07953801949819
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -17564,6 +17623,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -17891,7 +17951,8 @@ window.BENCHMARK_DATA = {
           15505.474245198568,
           12336.88778483073,
           8158.400577545166,
-          15403.928830660307
+          15403.928830660307,
+          7041.450904846191
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -17903,6 +17964,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -18490,7 +18552,8 @@ window.BENCHMARK_DATA = {
           747036.8886067708,
           440132.3209635417,
           462918.0396158854,
-          727819.275813802
+          727819.275813802,
+          422266.1103841146
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -18788,7 +18851,8 @@ window.BENCHMARK_DATA = {
           737145,
           720432,
           741104,
-          721149
+          721149,
+          741117
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -19085,7 +19149,8 @@ window.BENCHMARK_DATA = {
           44498.11613769531,
           30926.629934457633,
           24611.990987141926,
-          44085.36818586077
+          44085.36818586077,
+          22642.71392604283
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19379,7 +19444,8 @@ window.BENCHMARK_DATA = {
           79366,
           80959,
           80306,
-          80973
+          80973,
+          80303
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -19676,7 +19742,8 @@ window.BENCHMARK_DATA = {
           388209.52415364585,
           257922.27794471153,
           209899.1421875,
-          362921.28935546876
+          362921.28935546876,
+          190183.26782226562
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19970,7 +20037,8 @@ window.BENCHMARK_DATA = {
           573105,
           571193,
           573054,
-          573076
+          573076,
+          573119
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -21682,6 +21750,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:38:15 2026 \u002B0100",
         "message": "fix: report an error of a base in another assembly on the container that extends it instead of taking it for one the base reported (#392)"
+      },
+      {
+        "sha": "7d3fbfc60d1bf525d8d6dbc372d9c9408130e8ff",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 10 08:39:21 2026 \u002B0100",
+        "message": "fix!: report a public hook beside an internal overload also for a module inherited through Extends, and for overloads a binding leaves open or a call infers (#386)"
       }
     ],
     "labels": [
@@ -21967,7 +22041,8 @@ window.BENCHMARK_DATA = {
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
-      "b1707751"
+      "b1707751",
+      "7d3fbfc6"
     ],
     "datasets": [
       {
@@ -22256,7 +22331,8 @@ window.BENCHMARK_DATA = {
           181.07877033097404,
           175.39294339929307,
           210.71675288677216,
-          313.244519335883
+          313.244519335883,
+          276.28324748675027
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -22291,6 +22367,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -22847,7 +22924,8 @@ window.BENCHMARK_DATA = {
           434.77578960146224,
           406.3035115877787,
           464.2076938311259,
-          579.6728132883708
+          579.6728132883708,
+          613.7070368448893
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -22859,6 +22937,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -23438,7 +23517,8 @@ window.BENCHMARK_DATA = {
           3989.693291590764,
           3598.6709171295165,
           5002.926874287923,
-          6533.078976222447
+          6533.078976222447,
+          6595.708799634661
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23522,6 +23602,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -24029,7 +24110,8 @@ window.BENCHMARK_DATA = {
           278.8882144519261,
           251.13995416959128,
           347.69412949879967,
-          397.7674593584878
+          397.7674593584878,
+          398.7890155474345
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24041,6 +24123,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -24620,7 +24703,8 @@ window.BENCHMARK_DATA = {
           443.880597337087,
           378.1760669435774,
           551.8412367502848,
-          701.4505316416422
+          701.4505316416422,
+          705.4597630818685
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24632,6 +24716,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
