@@ -1178,10 +1178,10 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Reports AWT216, in the module's own build, for each eager or async-initialized singleton of the module whose
-	///     implementation and service are both private to it: a container starts it though nothing depends on it, and no
-	///     container can, since none can name the service to hold it, so a container in the module's assembly reports
-	///     AWT216 and one in another assembly AWT231. A container of the module's assembly that imports the module reports
-	///     it itself.
+	///     service is private to it: a container starts it though nothing depends on it, and no container can, since none
+	///     can name the service to hold it, so a container in the module's assembly reports AWT216 and one in another
+	///     assembly AWT231. A container of the module's assembly that imports the module reports it itself. A registered
+	///     type private to the module that a member produces is reported by <see cref="ReportModuleProductionMembers" />.
 	/// </summary>
 	private static void ReportModulePrivateStartedSingletons(INamedTypeSymbol module, Compilation compilation, List<DiagnosticInfo> diagnostics)
 	{
@@ -1193,9 +1193,10 @@ partial class AwaitenGenerator
 		List<AsyncInitializerConvention>? conventions = null;
 		foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
 		{
+			bool hiddenImplementation = IsHiddenInModule(registration.Implementation, module, compilation);
 			if (registration.Attribute.AttributeClass?.Name != "SingletonAttribute"
-			    || !IsHiddenInModule(registration.Implementation, module, compilation)
-			    || TypeHiddenInModule(registration.Service, module, compilation) is null)
+			    || (hiddenImplementation && registration.Member is not null)
+			    || TypeHiddenInModule(registration.Service, module, compilation) is not { } hiddenService)
 			{
 				continue;
 			}
@@ -1203,19 +1204,48 @@ partial class AwaitenGenerator
 			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
 			if (NamedFlag(registration.Attribute, "Eager") || IsHiddenAsyncInitialized(registration.Implementation, [registration,], module, compilation, conventions))
 			{
-				string implementation = Display(registration.Implementation.ToDisplayString(FullyQualified));
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.RegisteredTypeLessAccessible,
-					LocationInfo.From(registration.Location),
-					new EquatableArray<string>([
-						implementation,
-						implementation,
-						RegisteredAsPrivateService(registration.Implementation, registration.Service),
-						$"register it under an accessible service, or make '{implementation}' internal or public",
-					])));
+				diagnostics.Add(hiddenImplementation
+					? PrivateImplementationUnderPrivateService(registration.Implementation, registration.Service, hiddenService, registration.Location)
+					: PrivateModuleService(registration.Implementation, registration.Service, hiddenService, registration.Location));
 			}
 		}
 	}
+
+	/// <summary>
+	///     AWT216 for <paramref name="implementation" />, private to its module, registered under
+	///     <paramref name="service" />, which is or carries <paramref name="hiddenService" />, private to the module too.
+	///     The same text a container of the module's assembly reports (see <see cref="ReportLessAccessibleImplementation" />).
+	/// </summary>
+	private static DiagnosticInfo PrivateImplementationUnderPrivateService(INamedTypeSymbol implementation, INamedTypeSymbol service, INamedTypeSymbol hiddenService, Location? location)
+	{
+		string name = Display(implementation.ToDisplayString(FullyQualified));
+		return new DiagnosticInfo(
+			Diagnostics.RegisteredTypeLessAccessible,
+			LocationInfo.From(location),
+			new EquatableArray<string>([name, name, RegisteredAsPrivateService(implementation, service), PrivateServiceRemedy(hiddenService),]));
+	}
+
+	/// <summary>
+	///     AWT216 for <paramref name="implementation" />, which a container can name, registered under
+	///     <paramref name="service" />, which is or carries <paramref name="hiddenService" />, private to the module, so
+	///     no container can name the service. The module's build reports it for a singleton a container starts, a
+	///     container of the module's assembly for any lifetime (see <see cref="CollectLifetimeRegistrations" />).
+	/// </summary>
+	private static DiagnosticInfo PrivateModuleService(INamedTypeSymbol implementation, INamedTypeSymbol service, INamedTypeSymbol hiddenService, Location? location)
+	{
+		string name = Display(implementation.ToDisplayString(FullyQualified));
+		string reason = SymbolEqualityComparer.Default.Equals(service, hiddenService)
+			? $"'{name}' is registered under it, so no container can name the service"
+			: $"'{name}' is registered under the service '{Display(service.ToDisplayString(FullyQualified))}', which carries it, so no container can name the service";
+		return new DiagnosticInfo(
+			Diagnostics.RegisteredTypeLessAccessible,
+			LocationInfo.From(location),
+			new EquatableArray<string>([name, Display(hiddenService.ToDisplayString(FullyQualified)), reason, PrivateServiceRemedy(hiddenService),]));
+	}
+
+	/// <summary>The AWT216 remedy for a registration under a service that is or carries <paramref name="hiddenService" />, private to the module.</summary>
+	private static string PrivateServiceRemedy(INamedTypeSymbol hiddenService)
+		=> $"register it under an accessible service, or make '{Display(hiddenService.ToDisplayString(FullyQualified))}' internal or public";
 
 	/// <summary>The first parameter of <paramref name="factory" /> whose type is private to <paramref name="module" /> (see <see cref="TypeHiddenInModule" />), or <see langword="null" />.</summary>
 	private static IParameterSymbol? HiddenParameter(IMethodSymbol factory, INamedTypeSymbol module, Compilation compilation)

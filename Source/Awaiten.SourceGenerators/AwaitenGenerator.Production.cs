@@ -692,7 +692,8 @@ partial class AwaitenGenerator
 	///     type it registers itself, the type is a type argument every service carries, a service is itself private, the
 	///     container cannot reach a type its module does not build for it (see <see cref="SelfCompilesRegistration" />),
 	///     or no accessible type covers all of the services. For a struct the remedy says that implementations must be
-	///     classes, since no access modifier makes a struct one.
+	///     classes, since no access modifier makes a struct one. For a module's registration under a private service the
+	///     remedy names the service, since an internal implementation under it is still reported (see <see cref="PrivateModuleService" />).
 	/// </summary>
 	private static void ReportLessAccessibleImplementation(ImplInfo info, INamedTypeSymbol narrower, BuildContext context)
 	{
@@ -703,6 +704,7 @@ partial class AwaitenGenerator
 			{ Unreachable: true, } when info.Origin is null => ("the generated container cannot reach it", $"nest the container beside it, or make '{type}' internal"),
 			{ Unreachable: true, } => ("the generated container cannot reach it", $"make '{type}' internal"),
 			{ TypeArgument: true, } => ($"'{implementation}' carries it as a type argument into every type it converts to", $"make '{type}' internal or public"),
+			{ PrivateService: { } service, } when info.Origin is { } module => (RegisteredAsPrivateService(info.Symbol, service), PrivateServiceRemedy(TypeHiddenInModule(service, module, context.Compilation) ?? service)),
 			{ PrivateService: { } service, } => (RegisteredAsPrivateService(info.Symbol, service), $"register it under an accessible service, or make '{type}' internal or public"),
 			_ => ("no accessible type it converts to covers all of its services", "register it under one service, or give it an accessible base type that covers its services"),
 		};

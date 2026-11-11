@@ -57,7 +57,7 @@ partial class AwaitenGenerator
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
 			List<DiagnosticInfo> moduleDiagnostics = module.Inherited ? new List<DiagnosticInfo>() : diagnostics;
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance, modules),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance, modules, constraintRejected),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
 
@@ -247,6 +247,7 @@ partial class AwaitenGenerator
 	///     <c>Extends</c>, whose inaccessible declarations the inheritance reports (AWT226). <see cref="Modules" /> holds
 	///     what the modules of the container's own assembly generate. <see cref="Imports" /> are the modules the container
 	///     imports, which decide how a module of another assembly is built through its handles (see <see cref="ThroughHandle" />).
+	///     <see cref="Rejected" /> collects the services whose registration was dropped for a reported reason (see <see cref="RecordRejected" />).
 	/// </summary>
 	private readonly record struct LifetimeCollectionContext(
 		INamedTypeSymbol Owner,
@@ -258,7 +259,8 @@ partial class AwaitenGenerator
 		SameCompilationModules Modules,
 		bool Inherited = false,
 		Inheritance? Inheritance = null,
-		List<ImportedModule>? Imports = null);
+		List<ImportedModule>? Imports = null,
+		HashSet<string>? Rejected = null);
 
 	/// <summary>
 	///     Reads the <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registrations declared on the context's
@@ -266,7 +268,8 @@ partial class AwaitenGenerator
 	///     <c>typeof</c>-form ones into the context's open registrations; a closed <c>typeof</c> pair registers like
 	///     the generic form. A <c>Factory</c> or <c>Instance</c> registration of an imported module in another assembly
 	///     whose service and member this container cannot reach, and which the module builds through no handle, is
-	///     dropped like a constructed one (see <see cref="SelfCompiledRegistration" />).
+	///     dropped like a constructed one (see <see cref="SelfCompiledRegistration" />). A registration of a module in the
+	///     container's own assembly under a service private to the module is reported as AWT216 and dropped.
 	/// </summary>
 	private static void CollectLifetimeRegistrations(
 		LifetimeCollectionContext context,
@@ -365,11 +368,32 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			// The module's own assembly cannot name a service private to the module either, so the container reports the
+			// registration rather than emit code that names the service. A registered type private to the module is reported as AWT216 itself.
+			if (fromModule && skipGeneratedScanRegistrations && !conflictingDirectives
+			    && service is INamedTypeSymbol named
+			    && TypeHiddenInModule(named, origin!, context.Compilation) is { } hiddenService
+			    && !IsHiddenInModule(registration.Implementation, origin!, context.Compilation))
+			{
+				DiagnosticInfo diagnostic = PrivateModuleService(registration.Implementation, named, hiddenService, location);
+				if (!diagnostics.Contains(diagnostic))
+				{
+					diagnostics.Add(diagnostic);
+				}
+
+				if (context.Rejected is { } rejected)
+				{
+					RecordRejected(rejected, registration.ServiceType, key);
+				}
+
+				continue;
+			}
+
 			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations && !context.Inherited
 			    && productionMember is not null
 			    && service is INamedTypeSymbol unnameable
 			    && !context.Compilation.IsSymbolAccessibleWithin(unnameable, context.Compilation.Assembly)
-			    && !ReachesProductionMember(context.Owner, production, productionMember, registration.Implementation, context.Compilation.Assembly, context.Compilation))
+			    && (TypeHiddenInModule(unnameable, origin!, context.Compilation) is not null || !ReachesProductionMember(context.Owner, production, productionMember, registration.Implementation, context.Compilation.Assembly, context.Compilation)))
 			{
 				ReportStartedSingletonWithoutHandle(registration, context, unnameable);
 				continue;
@@ -400,7 +424,8 @@ partial class AwaitenGenerator
 	///     So does a container the module's assembly grants no <c>InternalsVisibleTo</c> for an implementation it could
 	///     construct, but for which the module generated a factory or recorded a skip: the implementation has an
 	///     <c>[Inject]</c> property this container does not see. A registration whose service this container cannot
-	///     name is dropped, also of an implementation it could construct: nothing here can resolve or depend on it (a
+	///     name is dropped, also of an implementation it could construct or the module generated a factory for under
+	///     another service: nothing here can resolve or depend on it (a
 	///     self-compiled constructor parameter is accessible, AWT195). Returns <see langword="null" /> for a dropped registration, after reporting
 	///     AWT231 once per implementation when the module recorded why it generated no factory for it or cannot carry
 	///     one (see <see cref="ModuleShapeReason" />), else AWT154
@@ -424,7 +449,9 @@ partial class AwaitenGenerator
 		bool hiddenMembers = !sameCompilation
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
 		                     && (GeneratedFactory(module, implementation, compilation) is not null || SkippedRegistrationReason(module, implementation) is not null);
-		if (registration.ServiceSymbol is not { } service || (!SelfCompilesRegistration(module, implementation, service, compilation) && !hiddenMembers))
+		if (registration.ServiceSymbol is not { } service
+		    || TypeHiddenInModule(service, module, compilation) is not null
+		    || (!SelfCompilesRegistration(module, implementation, service, compilation) && !hiddenMembers))
 		{
 			if (!sameCompilation
 			    && !context.Inherited
