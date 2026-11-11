@@ -177,6 +177,42 @@ public class VariantCollectionAcrossAssembliesTests
 	}
 
 	[Test]
+	public async Task ADecoratorOfVariantImplementationsRegisteredUnderTheExactService_GetsAFactory()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Library(registrations: "[Singleton<BaseHandler, IHandler<Derived>>]\n[Singleton<ObjectHandler, IHandler<Derived>>]"),], App);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("the collection holds the registrations of one service, which the factory takes through its handle");
+	}
+
+	[Test]
+	public async Task ADecoratorOfAVariantImplementationRegisteredUnderTheExactServiceNextToItsOwn_GetsNoFactory()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+			[Library(registrations: "[Singleton<DerivedHandler, IHandler<Derived>>]\n[Singleton<BaseHandler, IHandler<Base>>]\n[Singleton<BaseHandler, IHandler<Derived>>]"),],
+			App);
+
+		await That(result.Diagnostics).HasSingle().Which.Contains("error AWT230")
+			.Because("the collection still holds the variant registration of 'IHandler<Base>' next to the exact service");
+	}
+
+	[Test]
+	public async Task ADecoratorOfAnExactAndAVariantServiceThatArePublic_GetsAFactory()
+	{
+		GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
+			[
+				Library(registrations: "[Singleton<DerivedHandler, IHandler<Derived>>]\n[Singleton<BaseHandler, IHandler<Base>>]")
+					.Replace("internal interface IHandler<in T> { }", "public interface IHandler<in T> { }")
+					.Replace("internal class Base { }", "public class Base { }")
+					.Replace("internal sealed class Derived : Base { }", "public sealed class Derived : Base { }"),
+			],
+			App);
+
+		await That(result.Diagnostics).IsEmpty()
+			.Because("a collection of public services needs no handle, so it can hold several of them");
+	}
+
+	[Test]
 	public async Task AKeyedCollection_IsStillFixedEmpty()
 	{
 		GeneratorResult result = Generator.Run(Library().Replace("IEnumerable<IHandler<Derived>> handlers", "[FromKey(\"spare\")] IEnumerable<IHandler<Derived>> handlers"));

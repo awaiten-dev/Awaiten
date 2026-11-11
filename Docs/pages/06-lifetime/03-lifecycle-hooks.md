@@ -46,6 +46,34 @@ An activation dependency is resolved inline as the hook is called. A release dep
 
 Hook parameters participate in the graph like any other dependency: an unregistered one is [AWT101](../09-diagnostics.md#awt101), and they are covered by cycle, captive-dependency and async-taint analysis. A hook parameter cannot be a runtime `[Arg]` (there is no `Func<…>` call site to supply one), which is [AWT189](../09-diagnostics.md#awt189). A release hook parameter also cannot be a `Func<T>` or `Lazy<T>`: those capture a resolver delegate rather than a value, and by the time the hook runs the owner is already tearing down, so invoking the delegate would throw. That is [AWT191](../09-diagnostics.md#awt191); an activation hook may take them freely, but calling one over the singleton or scoped service it activates throws while that service is not cached yet (see [Relationships](../05-resolution/02-relationships.md#calling-a-relationship-while-the-service-is-built)).
 
+A C# default value does not make a hook parameter optional. Awaiten ignores it, so the hook below still needs a registered `Settings` ([AWT101](../09-diagnostics.md#awt101)):
+
+```csharp expect=AWT101
+[Container]
+[Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
+public static partial class CoffeeShop
+{
+    private static void Calibrate(EspressoMachine machine, Settings? settings = null) { }   // Settings is never registered
+}
+```
+
+To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
+
+```csharp
+[Container]
+[Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
+public static partial class CoffeeShop
+{
+    private static void Calibrate(EspressoMachine machine, IEnumerable<Settings> settings)
+    {
+        if (settings.FirstOrDefault() is { } shopSettings)
+        {
+            machine.Calibrate(shopSettings);
+        }
+    }
+}
+```
+
 ## Asynchronous activation
 
 An `OnActivated` hook may return `Task` or `ValueTask`. The container awaits it, so the service becomes [async-initialized](../03-core-concepts/03-async-initialization.md#use-an-activation-hook), like a service an async initializer convention matches. Connect the payment terminal without putting Awaiten on it.
