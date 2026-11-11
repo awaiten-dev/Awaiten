@@ -1,0 +1,103 @@
+---
+description: Learn which instances Awaiten disposes, in which order, and how to suppress or handle a failing teardown.
+---
+
+# Disposal
+
+Awaiten disposes what it creates. When a scope or the container closes, it tears down the instances it owns, in the right order. You clean the machine you used, and you clean it before you unplug the counter it sits on.
+
+## Dispose the container
+
+Disposing the `Root` disposes everything it owns, in reverse creation order: its singletons, the scoped services resolved on it and the transients it built. Use `await using`, so async-disposable instances are torn down too (see [Async disposal](#async-disposal)).
+
+```csharp
+await using (CoffeeShop.Root shop = new())
+{
+    // ...
+} // singletons disposed here
+```
+
+## Dispose a scope
+
+Disposing a scope disposes its scoped instances and any transients it created, again in reverse order. It leaves the parent and the shared singletons alone.
+
+```csharp
+await using (IAwaitenScope order = shop.CreateScope())
+{
+    // ...
+} // this order's instances disposed; singletons untouched
+```
+
+## Who owns a transient
+
+A transient is disposed by the owner that built it. Resolve one inside a scope and the scope disposes it. This is why [strict lifetime safety](./04-lifetime-safety.md) withholds disposable transients from the root by default. On the root they would pile up for the whole life of the container. To get a disposable transient with a bounded lifetime, use [Owned](./06-owned.md).
+
+## What Awaiten does not dispose
+
+An object you supplied with `Instance = nameof(...)` is yours. Awaiten never disposes it. The same is true for anything resolved from an external provider across the [MS.DI bridge](../07-hosting/01-msdi-bridge.md).
+
+## Suppressing disposal
+
+Sometimes the container builds a service but should not tear it down: the object is rented from a pool you return it to, or its lifetime belongs to something outside the container. Set `SuppressDisposal = true` and Awaiten constructs the service as usual but never calls its `Dispose`/`DisposeAsync`.
+
+On its own this is opt-out ownership, the built counterpart of an `Instance`: the container makes the object but hands its teardown to you. Paired with an [`OnRelease` hook](../05-registration/02-lifecycle-hooks.md) it becomes a clean return-to-pool, and with [`Owned<T>`](./06-owned.md) the rent-and-return is bounded to a `using` block.
+
+```csharp
+[Container]
+[Transient<Cup>(Factory = nameof(RentCup), OnRelease = nameof(ReturnCup), SuppressDisposal = true)]
+public static partial class CoffeeShop
+{
+    private static readonly CupPool Pool = new();
+
+    private static Cup RentCup() => Pool.Rent();
+    private static void ReturnCup(Cup cup) => Pool.Return(cup);   // returned, never disposed
+}
+```
+
+`SuppressDisposal` applies to a service the container constructs, by constructor or `Factory`. Setting it on a pre-built `Instance`, which the container never owns or disposes anyway, is a build error ([AWT192](../09-diagnostics.md#awt192)).
+
+A release-hooked transient like `Cup` above is withheld on the container root, as [lifetime safety](./04-lifetime-safety.md#strict-is-the-default) describes.
+
+Projected into Microsoft.Extensions.DependencyInjection, a disposable `SuppressDisposal` service would be disposed by MS.DI anyway, so the [bridge](../07-hosting/01-msdi-bridge.md#disposal) rejects it at startup ([AWT214](../09-diagnostics.md#awt214)).
+
+## Async disposal
+
+Dispose with `await using` and Awaiten awaits `DisposeAsync` on every async-disposable instance it owns.
+
+```csharp
+await using CoffeeShop.Root shop = new();
+```
+
+A scope disposes the same way, also through the `IAwaitenScope` interface, which is `IAsyncDisposable` on every framework. On net48 and other netstandard2.0 consumers, `IAsyncDisposable` comes from `Microsoft.Bcl.AsyncInterfaces`, which Awaiten references there.
+
+An [`OnRelease` hook](../05-registration/02-lifecycle-hooks.md#asynchronous-release) that returns `Task` or `ValueTask` is awaited the same way, before any instance is disposed.
+
+### A synchronous dispose of async-only teardown
+
+A synchronous `Dispose` cannot await anything. When the owner holds a service that is `IAsyncDisposable` but not `IDisposable`, or a service with an asynchronous `OnRelease` hook, a synchronous dispose:
+
+- disposes every other instance and runs every other release hook as usual,
+- leaves the async-only instance undisposed and skips the asynchronous hook,
+- then throws an `InvalidOperationException` that names the service, and the hook unless it runs through a generated wrapper. It cannot name a service whose factory returns a type that hides the async-only disposable.
+
+Several such services are reported in one `AggregateException`, one inner exception each.
+
+Awaiten warns about both cases at compile time ([AWT156](../09-diagnostics.md#awt156)). Use `await using` or `DisposeAsync`.
+
+## When teardown fails
+
+Every instance gets its teardown attempt, whatever fails before it. If an `OnRelease` hook or an instance's own `Dispose`/`DisposeAsync` throws, Awaiten keeps going: the remaining release hooks run, and every remaining instance is disposed, in the usual order. The failures are reported together once the teardown is complete:
+
+- One failure is rethrown unchanged, so `catch (IOException)` keeps working.
+- Several failures become one `AggregateException` that holds them in teardown order.
+
+A scope or container is disposed once. Disposing it again after a failed teardown does nothing, because every instance has already had its attempt.
+
+## Using a disposed container throws
+
+Resolving from a container or scope after it is disposed throws `ObjectDisposedException`. A disposed scope rejects even shared singletons.
+
+## Where to go next
+
+- [Owned](./06-owned.md) for disposable transients you rent and return.
+- [Lifetime safety](./04-lifetime-safety.md) for how Awaiten prevents disposal leaks.

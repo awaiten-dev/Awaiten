@@ -7,43 +7,26 @@ import TabItem from '@theme/TabItem';
 
 # External services
 
-Not everything comes from Awaiten. When you run under ASP.NET Core or the generic host, some services live in the host's provider. The payment gateway, the framework logger, and the configuration are wired there. External services let an Awaiten graph pull those in.
+Not everything comes from Awaiten. When you run under ASP.NET Core or the generic host, some services live in the host's provider. The payment terminal, the framework logger, and the configuration are wired there. External services let an Awaiten graph pull those in.
 
 ## Pull a single type with `[ImportService]`
 
-Declare a service type external with `[ImportService<T>]` on the container, or with its `typeof` form `[ImportService(typeof(T))]`; the two behave the same. Every unregistered dependency of that type is satisfied from the external provider instead of the graph, whether it is keyed or not, and whether it arrives as a constructor parameter, a factory parameter, or an `[Inject]` property. No Awaiten registration is needed for it. Every *other* unresolved dependency still gets the missing-dependency check (AWT101), so this is safer than the blanket fall-through below.
-
-<Tabs groupId="importServiceForm">
-
-<TabItem value="generic" label="Generic" default>
+Declare a service type external with `[ImportService<T>]` on the container, or with its `typeof` form `[ImportService(typeof(T))]`; the two behave the same. Every unregistered dependency of that type is satisfied from the external provider instead of the graph, whether it is keyed or not, and whether it arrives as a constructor parameter, a factory parameter, or an `[Inject]` property. No Awaiten registration is needed for it. Every *other* unresolved dependency still gets the missing-dependency check ([AWT101](../09-diagnostics.md#awt101)), so this is safer than the blanket fall-through below.
 
 ```csharp
 [Container]
-[ImportService<IPaymentGateway>]
+// highlight-next-line
+[ImportService<IPaymentTerminal>]   // or [ImportService(typeof(IPaymentTerminal))]
 [Singleton<Till>]
-[Singleton<Register>]
+[Singleton<CheckoutCounter>]
 public static partial class CoffeeShop;
 
-public sealed class Register(Till till, IPaymentGateway gateway);   // IPaymentGateway comes from the host
+public sealed class CheckoutCounter(Till till, IPaymentTerminal terminal);   // IPaymentTerminal comes from the host
 ```
 
-</TabItem>
+Because the import is declared on the container, the consumer asks for the host's service as an ordinary parameter and stays free of Awaiten.
 
-<TabItem value="typeof" label="typeof">
-
-```csharp
-[Container]
-[ImportService(typeof(IPaymentGateway))]   // same as [ImportService<IPaymentGateway>]
-[Singleton<Till>]
-[Singleton<Register>]
-public static partial class CoffeeShop;
-```
-
-</TabItem>
-
-</Tabs>
-
-For a keyed external service, select the key on a container [factory method](../04-registration/01-factories-and-instances.md) so the consumer stays a plain class; the `[FromKey]` is forwarded to the resolver.
+For a keyed external service, select the key on a container [factory method](../05-registration/01-factories-and-instances.md) so the consumer stays a plain class; the `[FromKey]` is forwarded to the resolver.
 
 ```csharp
 public sealed class Report(ITimeSystem timeSystem);   // a plain class, no attributes
@@ -58,10 +41,6 @@ public static partial class CoffeeShop
 ```
 
 `[ImportService]` works on an imported `[Module]` too, exactly as it does on the container.
-
-:::tip[Keeping DI out of your domain]
-Because external-ness is declared on the container, a service that consumes a host type just asks for it as an ordinary parameter, with no Awaiten reference in the domain class. `[ImportService]` is the clean-domain form. The only per-parameter attribute involved is `[FromKey]`, and only when you need a keyed external service.
-:::
 
 Only the *direct* dependency of type `T` is routed, not a [relationship or collection](#relationships-and-collections) over it. A declared type needs no consumer in the graph: [resolving it directly](#resolving-an-imported-service-directly) asks the host too.
 
@@ -108,21 +87,24 @@ public static partial class CoffeeShop;
 
 </Tabs>
 
-Each closing is routed exactly as if it were imported on its own: a `[FromKey]` key is forwarded, a [relationship or collection](#relationships-and-collections) over a closing is not routed, and the closing is listed as an [external dependency](#verifying-the-wiring) of the container, so startup verification checks every closing the graph consumes. A closing that is routed to the host but also registered on the container is reported as AWT175. The argument must be a closed type or an unbound generic definition; anything in between, such as `typeof(Outer<>.Inner)`, is reported as AWT215.
+Each closing is routed exactly as if it were imported on its own: a `[FromKey]` key is forwarded, a [relationship or collection](#relationships-and-collections) over a closing is not routed, and the closing is listed as an [external dependency](#verifying-the-wiring) of the container, so startup verification checks every closing the graph consumes. A closing that is routed to the host but also registered on the container is reported as [AWT175](../09-diagnostics.md#awt175). The argument must be a closed type or an unbound generic definition; anything in between, such as `typeof(Outer<>.Inner)`, is reported as [AWT215](../09-diagnostics.md#awt215).
 
-This includes a closing the container can't name: an internal implementation of a [module](../04-registration/07-modules.md#closings-over-internal-types) in another assembly that takes an `ILogger<>` closed over itself. The module records the closed type, and the container asks the host for it like for any other closing.
+This includes a closing the container can't name: an internal implementation of a [module](../05-registration/08-modules/02-library-module-rules.md#closings-over-internal-types) in another assembly that takes an `ILogger<>` closed over itself. The module records the closed type, and the container asks the host for it like for any other closing.
 
 ## Fall through everything with `[ImportServices]`
 
-Put `[ImportServices]` on the container and any unregistered direct dependency falls through to the external provider automatically. You trade some compile-time safety for less annotation. An injected property (`[Inject]` or `[InjectProperty]`) is the exception: it does not fall through, so an unregistered one is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)), or left at its default when it is `Optional`, unless its type is declared with `[ImportService]`.
+Put `[ImportServices]` on the container and any unregistered, unkeyed direct dependency falls through to the external provider automatically. You trade some compile-time safety for less annotation. Two kinds of dependency do not fall through, unless their type is declared with `[ImportService]`:
+
+- **A keyed dependency.** An unregistered `[FromKey]` dependency is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
+- **An injected property** (`[Inject]` or `[InjectProperty]`). An unregistered one is still a missing dependency ([AWT101](../09-diagnostics.md#awt101)), or left at its default when it is `Optional`.
 
 ```csharp
 [Container]
 [ImportServices]
-[Singleton<Register>]
+[Singleton<CheckoutCounter>]
 public static partial class CoffeeShop;
 
-// Register's IPaymentGateway is resolved from the host, unannotated
+// CheckoutCounter's IPaymentTerminal is resolved from the host, unannotated
 ```
 
 ## Relationships and collections
@@ -132,69 +114,75 @@ The external resolver hands back one instance of the type it is asked for, so on
 A relationship over an imported service (`Func<T>`, `Lazy<T>`, `Owned<T>`, `Task<T>` and their combinations) would resolve from the graph instead, which has no registration of it, so it is reported as [AWT242](../09-diagnostics.md#awt242). A [decorated](#decorate-an-imported-service) import is the exception: the relationship resolves the decorator chain. `[ImportServices]` declares no type imported, so under it alone an unregistered relationship is still a missing registration ([AWT101](../09-diagnostics.md#awt101)), as is an unregistered injected property even in its direct form.
 
 ```csharp expect=AWT242
-public sealed class Checkout(Lazy<IPaymentGateway> gateway);   // AWT242: take IPaymentGateway directly
+public sealed class Checkout(Lazy<IPaymentTerminal> terminal);   // AWT242: take IPaymentTerminal directly
 
 [Container]
-[ImportService<IPaymentGateway>]
+[ImportService<IPaymentTerminal>]
 [Singleton<Checkout>]
 public static partial class CoffeeShop;
 ```
 
-Importing a relationship type, such as `[ImportService<Func<IPaymentGateway>>]`, does not route a relationship either: a `Func<IPaymentGateway>` dependency is still the relationship over `IPaymentGateway`, built from the graph, so it is reported as [AWT259](../09-diagnostics.md#awt259). Import a named type for what the host provides instead.
+Importing a relationship type, such as `[ImportService<Func<IPaymentTerminal>>]`, does not route a relationship either: a `Func<IPaymentTerminal>` dependency is still the relationship over `IPaymentTerminal`, built from the graph, so it is reported as [AWT259](../09-diagnostics.md#awt259). Import a named type for what the host provides instead.
 
 A collection (`IEnumerable<T>`, `IReadOnlyList<T>`, `T[]` and the like) contains only the container's own registrations of `T`, including variance matches, never the host's instance. A closed imported type cannot be registered ([AWT175](../09-diagnostics.md#awt175)), so a collection of it gets members only through variance, such as a registered `IHandler<object>` in a collection of an imported `IHandler<string>`. A collection of an imported service without such a member is always empty and is reported as a warning ([AWT250](../09-diagnostics.md#awt250)). Under `[ImportServices]` alone, an empty collection of an unregistered type is not reported.
 
 ```csharp expect=AWT250
-public sealed class Checkout(IEnumerable<IPaymentGateway> gateways);   // AWT250: always empty, take IPaymentGateway directly
+public sealed class Checkout(IEnumerable<IPaymentTerminal> terminals);   // AWT250: always empty, take IPaymentTerminal directly
 
 [Container]
-[ImportService<IPaymentGateway>]
+[ImportService<IPaymentTerminal>]
 [Singleton<Checkout>]
 public static partial class CoffeeShop;
 ```
 
 For an open import, a relationship or collection over a closing resolves the closings the container registers, because the closing is routed to the host only where a direct dependency asks for it.
 
-For the same reason, a collection can't be imported itself. An `[ImportService]` of a collection shape, such as `IEnumerable<IPaymentGateway>`, an array, a keyed dictionary or a `Task` of one, is an error ([AWT258](../09-diagnostics.md#awt258)). Import the element type and depend on it directly, or register the members of the collection.
+For the same reason, a collection can't be imported itself. An `[ImportService]` of a collection shape, such as `IEnumerable<IPaymentTerminal>`, an array, a keyed dictionary or a `Task` of one, is an error ([AWT258](../09-diagnostics.md#awt258)). Import the element type and depend on it directly, or register the members of the collection.
 
 ## Decorate an imported service
 
-A [decorator](../04-registration/02-decorators.md#decorate-an-imported-service) wraps an imported service like a registered one. Every dependency of the service and every resolve of it then gets the decorator, and only the innermost decorator asks the host.
+A [decorator](../05-registration/03-decorators.md#decorate-an-imported-service) wraps an imported service like a registered one. Every dependency of the service and every resolve of it then gets the decorator, and only the innermost decorator asks the host.
 
 ```csharp
 [Container]
-[ImportService<IPaymentGateway>]
+[ImportService<IPaymentTerminal>]
 [Singleton<Till>]
-[Singleton<Register>]
-[Decorate<AuditedGateway, IPaymentGateway>]
+[Singleton<CheckoutCounter>]
+[Decorate<AuditedTerminal, IPaymentTerminal>]
 public static partial class CoffeeShop;
 
-public sealed class AuditedGateway(IPaymentGateway inner) : IPaymentGateway
+public sealed class AuditedTerminal(IPaymentTerminal inner) : IPaymentTerminal
 {
-    public Receipt Charge(decimal amount) => inner.Charge(amount);
+    public Task ChargeAsync(decimal amount) => inner.ChargeAsync(amount);
 }
 ```
 
-The decorator chain is transient and belongs to the container: it is built on each resolve, which asks the host again, and is disposed with the scope that built it. The instance the host hands in stays the host's. A collection of the service stays empty, as for an undecorated import. Under the [MS.DI bridge](./01-msdi-bridge.md), the container leaves the service's registration in the host alone, so a host consumer of `IPaymentGateway` gets the host's instance, and the services the container projects get the decorator.
+The decorator chain is transient and belongs to the container: it is built on each resolve, which asks the host again, and is disposed with the scope that built it. The instance the host hands in stays the host's. A collection of the service stays empty, as for an undecorated import. Under the [MS.DI bridge](./01-msdi-bridge.md), the container leaves the service's registration in the host alone, so a host consumer of `IPaymentTerminal` gets the host's instance, and the services the container projects get the decorator.
 
 ## Providing the external resolver
 
 Awaiten does not create the external provider. It asks an *external resolver* for these dependencies, and you supply that resolver once, up front.
 
-Under the [MS.DI bridge](./01-msdi-bridge.md) this is automatic. `AddAwaitenContainer` and the startup initialization wire the container to the host's `IServiceProvider`, so `[ImportService]` and `[ImportServices]` dependencies resolve from the host with nothing extra to do. `AwaitenServiceProviderFactory` wires the root as soon as it builds the provider. After a plain `AddAwaitenContainer`, MS.DI offers no hook when you build the provider, so the root is wired on the first resolution through a projected registration or when `WithInitialization()` starts. To resolve an imported service directly from the root before that, pass `new AwaitenServiceProviderExternalResolver(provider)` to its `IAwaitenExternalResolverHost.SetExternalResolver` yourself.
+Under the [MS.DI bridge](./01-msdi-bridge.md) this is automatic. `AddAwaitenContainer` and the startup initialization wire the container to the host's `IServiceProvider`, so `[ImportService]` and `[ImportServices]` dependencies resolve from the host with nothing extra to do. When the root is wired depends on the path:
+
+- `AwaitenServiceProviderFactory` wires the root as soon as it builds the provider.
+- After a plain `AddAwaitenContainer`, MS.DI offers no hook when you build the provider, so the root is wired on the first resolution through a projected registration or when `WithInitialization()` starts. To resolve an imported service directly from the root before that, pass `new AwaitenServiceProviderExternalResolver(provider)` to its `IAwaitenExternalResolverHost.SetExternalResolver` yourself.
 
 Standing alone, you set it yourself. Implement `IExternalResolver` and pass it to the generated `Root` constructor, so it is in place before anything resolves, eager singletons included.
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 
+await using CoffeeShop.Root shop = new(new HostResolver());
+CheckoutCounter counter = shop.Resolve<CheckoutCounter>();   // its IPaymentTerminal comes from HostResolver
+
 public sealed class HostResolver : IExternalResolver
 {
     public bool TryResolve(Type serviceType, object? key, [NotNullWhen(true)] out object? instance)
     {
-        if (serviceType == typeof(IPaymentGateway))
+        if (serviceType == typeof(IPaymentTerminal))
         {
-            instance = new StripeGateway();
+            instance = new CardTerminal();
             return true;
         }
 
@@ -202,22 +190,18 @@ public sealed class HostResolver : IExternalResolver
         return false;   // not found: Awaiten reports a missing external dependency
     }
 }
-
-using CoffeeShop.Root shop = new(new HostResolver());
-
-Register register = shop.Resolve<Register>();   // its IPaymentGateway comes from HostResolver
 ```
 
-The `key` argument carries the `[FromKey]` value for a keyed external dependency. A child scope, and the throwaway scope behind an `Owned<T>`, inherit the resolver from the scope that created them, so passing it once to the root is enough.
+The `key` argument carries the `[FromKey]` value for a keyed external dependency. A child scope without a resolver of its own uses the root's, and the throwaway scope behind an `Owned<T>` takes the resolver of the scope that created it, or the root's when that scope has none. So passing it once to the root is enough.
 
 ## Resolving an imported service directly
 
 Resolving an imported type from the container asks the host too, just like a dependency of that type. This covers `Resolve<T>()`, `ResolveAsync<T>()`, `TryResolve<T>()` and their `Type` and keyed forms. Each call asks the external resolver again, and the container neither caches nor disposes what the host hands back.
 
 ```csharp
-using CoffeeShop.Root shop = new(new HostResolver());
+await using CoffeeShop.Root shop = new(new HostResolver());
 
-IPaymentGateway gateway = shop.Resolve<IPaymentGateway>();   // asks HostResolver
+IPaymentTerminal terminal = shop.Resolve<IPaymentTerminal>();   // asks HostResolver
 ```
 
 If the host has no instance, `Resolve` throws the same error as a missing dependency, and `TryResolve` returns `false`. A closed `[ImportService]` type and every closing of an open one are routed with or without a key. Under `[ImportServices]`, any type the container has no registration for is routed when you resolve it without a key.
@@ -235,4 +219,4 @@ An externally supplied instance belongs to the external provider. Awaiten never 
 ## Where to go next
 
 - [MS.DI bridge](./01-msdi-bridge.md) for host integration and verification.
-- [Keyed services](../04-registration/04-keyed-services.md) for `[FromKey]`.
+- [Keyed services](../05-registration/05-keyed-services.md) for `[FromKey]`.

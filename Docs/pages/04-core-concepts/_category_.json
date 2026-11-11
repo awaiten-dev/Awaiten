@@ -1,0 +1,10 @@
+{
+	"label": "Core concepts",
+	"link": {
+		"type": "generated-index",
+		"description": "The ideas every container builds on. Lifetimes, scopes, async initialization, lifetime safety, disposal, and Owned handles."
+	},
+	"customProps": {
+		"description": "The ideas every container builds on. Lifetimes, scopes, async initialization, lifetime safety, disposal, and Owned handles."
+	}
+}

@@ -1,6 +1,10 @@
 {
 	"label": "Hosting",
+	"link": {
+		"type": "generated-index",
+		"description": "Run a container under ASP.NET Core and the generic host. The MS.DI bridge, services imported from the host, and migrating from MS.DI."
+	},
 	"customProps": {
-		"description": "Run a container under ASP.NET Core and the generic host. The MS.DI bridge and services imported from the host."
+		"description": "Run a container under ASP.NET Core and the generic host. The MS.DI bridge, services imported from the host, and migrating from MS.DI."
 	}
 }

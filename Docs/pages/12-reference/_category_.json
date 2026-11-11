@@ -1,0 +1,6 @@
+{
+	"label": "Reference",
+	"customProps": {
+		"description": "Look things up. Every attribute and its options, the runtime API, the terms the docs use, and fixes for common problems."
+	}
+}

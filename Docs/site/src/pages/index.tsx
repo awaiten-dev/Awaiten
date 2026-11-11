@@ -44,8 +44,8 @@ export default function Home(): ReactElement {
             <Link className={styles.primary} to="/docs/getting-started">
               Open your first coffee shop
             </Link>
-            <Link className={styles.secondary} to="/docs/core-concepts/async-initialization">
-              How async initialization works
+            <Link className={styles.secondary} to="/docs/introduction">
+              Why Awaiten
             </Link>
           </div>
         </div>
@@ -158,7 +158,9 @@ export default function Home(): ReactElement {
             </div>
             <div className={styles.stepVisual}>
               <pre className={styles.code}>
-                Cup cup = <Kw>await</Kw> shop.ResolveAsync&lt;Cup&gt;();  <Comment>{'// a fresh cup, ready'}</Comment>
+                <Kw>await using</Kw> IAwaitenScope order = shop.CreateScope();
+                {'\n'}
+                Cup cup = <Kw>await</Kw> order.ResolveAsync&lt;Cup&gt;();  <Comment>{'// a fresh cup, ready'}</Comment>
               </pre>
               <div className={styles.services}>
                 <div className={styles.service}>
@@ -184,7 +186,10 @@ export default function Home(): ReactElement {
             </div>
             <div>
               <h3>Plain C#, AOT clean</h3>
-              <p className={styles.muted}>No reflection on any path, so native AOT and trimming just work.</p>
+              <p className={styles.muted}>
+                No reflection on any path, so native AOT and trimming just work.{' '}
+                <Link to="/docs/benchmarks">See the benchmarks</Link>.
+              </p>
             </div>
             <div>
               <h3>Fits ASP.NET Core</h3>

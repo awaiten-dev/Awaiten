@@ -75,8 +75,8 @@ internal enum DependencyKind
 	///     registration of <c>T</c> into a dictionary keyed by each <c>Key</c>, in registration order. Captures
 	///     its members like <see cref="Enumerable" /> (a synchronous dictionary over an async member trips AWT122).
 	///     An empty index yields an empty dictionary. An explicitly registered dictionary of the exact type preempts
-	///     synthesis (rewritten to <see cref="Direct" />). Synthesis supports <c>string</c> keys only: a non-string
-	///     key is AWT159, and a surviving <c>[FromKey]</c> is AWT160.
+	///     synthesis (rewritten to <see cref="Direct" />). Synthesis supports <c>string</c> and enum keys: any other
+	///     key type, or one the keyed registrations do not all match, is AWT159, and a surviving <c>[FromKey]</c> is AWT160.
 	/// </summary>
 	KeyedCollection,
 

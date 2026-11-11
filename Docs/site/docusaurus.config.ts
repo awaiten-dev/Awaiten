@@ -76,7 +76,12 @@ const config: Config = {
     [
       '@docusaurus/plugin-client-redirects',
       {
-        redirects: [{from: '/docs', to: '/docs/getting-started'}],
+        redirects: [
+          {from: '/docs', to: '/docs/introduction'},
+          {from: '/docs/lifetime/lifetime-safety', to: '/docs/core-concepts/lifetime-safety'},
+          {from: '/docs/lifetime/owned', to: '/docs/core-concepts/owned'},
+          {from: '/docs/lifetime/lifecycle-hooks', to: '/docs/registration/lifecycle-hooks'},
+        ],
         createRedirects: (path: string) =>
           path.startsWith('/docs/') && path.length > '/docs/'.length ? [path.slice('/docs'.length)] : undefined,
       },
@@ -98,7 +103,7 @@ const config: Config = {
       },
       items: [
         {
-          to: '/docs/getting-started',
+          to: '/docs/introduction',
           label: 'Docs',
           position: 'left',
           activeBaseRegex: '/docs/(?!benchmarks|changelog)',
@@ -132,6 +137,36 @@ const config: Config = {
     },
     footer: {
       style: 'dark',
+      links: [
+        {
+          title: 'Learn',
+          items: [
+            {label: 'Introduction', to: '/docs/introduction'},
+            {label: 'Getting started', to: '/docs/getting-started'},
+            {label: 'Complete example', to: '/docs/complete-example'},
+            {label: 'Design principles', to: '/docs/design-principles'},
+          ],
+        },
+        {
+          title: 'Look up',
+          items: [
+            {label: 'Diagnostics', to: '/docs/diagnostics'},
+            {label: 'Reference', to: '/docs/reference'},
+            {label: 'Troubleshooting', to: '/docs/reference/troubleshooting'},
+            {label: 'Migrating from MS.DI', to: '/docs/hosting/migrate-from-msdi'},
+          ],
+        },
+        {
+          title: 'Project',
+          items: [
+            {label: 'Changelog', to: '/docs/changelog'},
+            {label: 'Benchmarks', to: '/docs/benchmarks'},
+            {label: 'GitHub', href: 'https://github.com/awaiten-dev/Awaiten'},
+            {label: 'Issues', href: 'https://github.com/awaiten-dev/Awaiten/issues'},
+            {label: 'NuGet', href: 'https://www.nuget.org/packages/Awaiten'},
+          ],
+        },
+      ],
       copyright: `Copyright © ${new Date().getFullYear()} Awaiten contributors.`,
     },
     prism: {

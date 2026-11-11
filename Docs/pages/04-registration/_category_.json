@@ -1,6 +1,0 @@
-{
-	"label": "Registration",
-	"customProps": {
-		"description": "Tell the container what to build. Factories, decorators, composites, keyed services, open generics, scanning, and modules."
-	}
-}

@@ -14,7 +14,7 @@ Correctness is a must. The other goals are strong defaults and win in this order
 - No reflection on any runtime path. The generated code and both libraries stay trim-safe and native-AOT clean; do not add `MakeGenericType`, `Activator` or similar.
 - `Awaiten` has no runtime dependencies (only private build-time packages), except `Microsoft.Bcl.AsyncInterfaces` on netstandard2.0, which brings `IAsyncDisposable` to net48 and other older frameworks. Do not add others. Microsoft.Extensions.DependencyInjection interop belongs in `Awaiten.Extensions.DependencyInjection`.
 - Generated code compiles for every consumer framework, including net48 through the netstandard2.0 asset.
-- Every new diagnostic needs a descriptor in `Diagnostics.cs`, a row in `AnalyzerReleases.Unshipped.md`, a `DiagnosticTests.AwtNNN*.cs` test and a section in `Docs/pages/09-diagnostics.md`. Ids are stable; never reuse one.
+- Every new diagnostic needs a descriptor in `Diagnostics.cs` with `helpLinkUri: HelpLink("AWTnnn")`, a row in `AnalyzerReleases.Unshipped.md`, a `DiagnosticTests.AwtNNN*.cs` test, and a section and an index row in `Docs/pages/09-diagnostics.md`. Ids are stable; never reuse one.
 - Public API changes are deliberate: update the API snapshots in `Tests/Awaiten.Api.Tests` in the same PR. Name public types by role as `CONTRIBUTING.md` describes. Public members carry XML docs.
 - A public type that only generated code emits or reads lives in `Awaiten.Internals`, never next to the types users write in `Awaiten`. It carries `[EditorBrowsable(EditorBrowsableState.Never)]` and a summary that starts with "Infrastructure for generated code.", and the generator names and matches it by that namespace.
 
@@ -45,7 +45,10 @@ Pages under `Docs/pages` are published on [awaiten.dev](https://awaiten.dev) by 
 
 In this repository:
 
-- Keep the pages user-facing and describe the current behavior, not its history.
+- Keep the pages user-facing and describe the current behavior, not its history. Library-author mechanics (generated wrappers, handles, `InternalsVisibleTo`) go on the library modules page, not on the feature pages.
+- Explain each topic on one page and link to it from the others; write rules as lists or tables, not long paragraphs.
+- Examples must work when copied: top-level statements before type declarations, an `Output` block only for output the code really prints.
+- [Docs/agents/documentation.md](Docs/agents/documentation.md) describes the structure, what goes where, the feature page layout, examples and diagnostic entries.
 - Do not set `collapsed` in `_category_.json`.
 - Most examples show container usage rather than tests; add a test only where an example checks a result. The coffee shop is the running example.
 - `Tests/Awaiten.Docs.Tests` compiles every `csharp` block of a page; the fence meta `no-compile` and `expect=AWTnnn` and the `Scaffold/` files are described in [Docs/agents/workflows.md](Docs/agents/workflows.md#documentation).
@@ -61,5 +64,6 @@ In this repository:
 
 - [Docs/agents/design-goals.md](Docs/agents/design-goals.md): the goals, code and test rules for every change, the checks before a commit and how to handle reviews.
 - [Docs/agents/workflows.md](Docs/agents/workflows.md): build, test, benchmark and docs commands, the Fallout pipeline targets and the CI workflows.
+- [Docs/agents/documentation.md](Docs/agents/documentation.md): how the user documentation is structured and written.
 - [Docs/agents/project-structure.md](Docs/agents/project-structure.md): architecture, source locations and where to change what.
-- [Docs/pages/08-design-principles.md](Docs/pages/08-design-principles.md): the user-facing design Awaiten serves (composition root, the four anti-patterns); features must not push users towards them.
+- [Docs/pages/03-design-principles.md](Docs/pages/03-design-principles.md): the user-facing design Awaiten serves (composition root, the four anti-patterns); features must not push users towards them.

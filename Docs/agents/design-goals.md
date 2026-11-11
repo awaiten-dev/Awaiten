@@ -43,7 +43,7 @@ When goals conflict, the earlier one wins.
 Run the checks that match the change:
 
 - **Any code change:** the tests of the affected projects (see [workflows.md](workflows.md)), on net10.0 and, when the change touches code that compiles for net48, on net48 too.
-- **New or changed diagnostic:** the descriptor in `Diagnostics.cs`, a row in `AnalyzerReleases.Unshipped.md`, a `DiagnosticTests.AwtNNN*.cs` test and a `### AWTnnn` section in `Docs/pages/09-diagnostics.md`.
+- **New or changed diagnostic:** the descriptor in `Diagnostics.cs`, a row in `AnalyzerReleases.Unshipped.md`, a `DiagnosticTests.AwtNNN*.cs` test and a section with an index row in `Docs/pages/09-diagnostics.md` (see [documentation.md](documentation.md#diagnostics)).
 - **Public API:** the API snapshot tests; review and accept intentional changes, never commit pending snapshots.
 - **Reflection, trimming, AOT or the MS.DI bridge:** `./build.ps1 AotTests` and `Tests/Awaiten.ExampleTests`, whose ASP.NET Core examples host containers in a real web app.
 - **Resolve hot path or a performance claim:** a benchmark before and after, in Release on the same machine.

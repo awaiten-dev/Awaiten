@@ -82,9 +82,9 @@ public sealed class TransientAttribute : Attribute
 	public string? OnActivated { get; set; }
 
 	/// <summary>
-	///     The name of a <c>static void</c> method on the container accepting the implementation, invoked when the
-	///     owning container or scope is disposed, before the instance's own disposal. For an open generic the
-	///     method may be generic over the service's type arguments.
+	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container accepting
+	///     the implementation, invoked when the owning container or scope is disposed, before the instance's own
+	///     disposal. For an open generic the method may be generic over the service's type arguments.
 	/// </summary>
 	public string? OnRelease { get; set; }
 
@@ -153,7 +153,7 @@ public sealed class TransientAttribute<TImplementation> : Attribute
 	public string? OnActivated { get; set; }
 
 	/// <summary>
-	///     The name of a <c>static void</c> method on the container accepting a
+	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container accepting a
 	///     <typeparamref name="TImplementation" />, invoked when the owning container or scope is disposed -
 	///     in reverse creation order and before the instance's own disposal (it runs in addition to, not
 	///     instead of, that disposal).
@@ -221,7 +221,7 @@ public sealed class TransientAttribute<TImplementation, TService> : Attribute
 	public string? OnActivated { get; set; }
 
 	/// <summary>
-	///     The name of a <c>static void</c> method on the container accepting a
+	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container accepting a
 	///     <typeparamref name="TImplementation" />, invoked when the owning container or scope is disposed -
 	///     in reverse creation order and before the instance's own disposal (it runs in addition to, not
 	///     instead of, that disposal).
