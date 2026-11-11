@@ -371,7 +371,7 @@ partial class AwaitenGenerator
 			    && !context.Compilation.IsSymbolAccessibleWithin(unnameable, context.Compilation.Assembly)
 			    && !ReachesProductionMember(context.Owner, production, productionMember, registration.Implementation, context.Compilation.Assembly, context.Compilation))
 			{
-				ReportStartedSingletonWithoutHandle(registration, context);
+				ReportStartedSingletonWithoutHandle(registration, context, unnameable);
 				continue;
 			}
 
@@ -432,7 +432,7 @@ partial class AwaitenGenerator
 			    && !compilation.IsSymbolAccessibleWithin(inaccessible, compilation.Assembly)
 			    && implementation is { TypeKind: TypeKind.Class, IsAbstract: false, })
 			{
-				ReportStartedSingletonWithoutHandle(registration, context);
+				ReportStartedSingletonWithoutHandle(registration, context, inaccessible);
 				return null;
 			}
 
@@ -467,8 +467,14 @@ partial class AwaitenGenerator
 
 			if (SkippedRegistrationReason(module, implementation) is { } reason)
 			{
-				ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public",
-					hiddenMembers && CanConstruct(implementation, compilation) ? Diagnostics.ModuleRegistrationPropertyNotSet : Diagnostics.ModuleRegistrationNotSelfCompiled);
+				if (hiddenMembers && CanConstruct(implementation, compilation))
+				{
+					ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make the [Inject] properties of '{DisplayInstance(registration.ImplementationType)}', their setters and their types public", Diagnostics.ModuleRegistrationPropertyNotSet);
+				}
+				else
+				{
+					ReportNotSelfCompiled(context, module, implementation, "factory", reason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and the constructor's parameter types public");
+				}
 			}
 			else if (ModuleShapeReason(module) is { } shape)
 			{
@@ -501,7 +507,7 @@ partial class AwaitenGenerator
 				}
 
 				string slot = release ? "OnRelease" : "OnActivated";
-				ReportNotSelfCompiled(context, module, implementation, $"{slot} hook wrapper", hookReason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and its {slot} hook public");
+				ReportNotSelfCompiled(context, module, implementation, $"{slot} hook wrapper", hookReason, $"make '{DisplayInstance(registration.ImplementationType)}', its constructor and its {slot} hook public", member: $"the {slot} hook '{hook}'");
 				return null;
 			}
 		}
@@ -512,21 +518,36 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reports AWT231 for a registration of an imported module in another assembly that this container drops because
 	///     it can neither name its internal service nor build it, when it is an eager or async-initialized singleton
-	///     that a container starts though nothing depends on it, so dropping it would otherwise go unnoticed.
+	///     that a container starts though nothing depends on it, so dropping it would otherwise go unnoticed. A service
+	///     private to the module is the cause whatever the module's assembly grants, since no container can name it.
 	/// </summary>
-	private static void ReportStartedSingletonWithoutHandle(RawRegistration registration, LifetimeCollectionContext context)
+	private static void ReportStartedSingletonWithoutHandle(RawRegistration registration, LifetimeCollectionContext context, INamedTypeSymbol service)
 	{
 		INamedTypeSymbol module = registration.Origin!;
+		Compilation compilation = context.Compilation;
 		if (registration.Lifetime == Lifetime.Singleton
-		    && (registration.Eager || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, context.Compilation, null)).AsyncInitializers.Count > 0))
+		    && (registration.Eager || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
 		{
-			ReportNotSelfCompiled(
-				context, module, registration.Implementation, "handle",
-				ModuleShapeReason(module)
-				?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
-					? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
-					: "its build reported an error for the module or ran without the Awaiten generator"),
-				$"make '{Display(registration.ImplementationType)}' and the service it is registered under public");
+			INamedTypeSymbol? hiddenService = TypeHiddenInModule(service, module, compilation);
+			DiagnosticInfo diagnostic = new(
+				Diagnostics.ModuleRegistrationNotSelfCompiled,
+				LocationInfo.From(context.FallbackLocation),
+				new EquatableArray<string>([
+					Display(module.ToDisplayString(FullyQualified)),
+					Display(registration.Implementation.ToDisplayString(FullyQualified)),
+					"handle",
+					hiddenService is not null
+						? $"the service it is registered under, '{Display(service.ToDisplayString(FullyQualified))}', is private to the module, so no container can name it"
+						: ModuleShapeReason(module)
+						  ?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
+							  ? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
+							  : "its build reported an error for the module or ran without the Awaiten generator"),
+					NotSelfCompiledRemedy(module, hiddenService ?? (ITypeSymbol)registration.Implementation, compilation, $"make '{Display(registration.ImplementationType)}' and the service it is registered under public"),
+				]));
+			if (!context.Diagnostics.Contains(diagnostic))
+			{
+				context.Diagnostics.Add(diagnostic);
+			}
 		}
 	}
 
@@ -537,7 +558,7 @@ partial class AwaitenGenerator
 	///     <paramref name="descriptor" /> picks the form for a type the container could construct but whose <c>[Inject]</c>
 	///     property it does not see.
 	/// </summary>
-	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy, DiagnosticDescriptor? descriptor = null)
+	private static void ReportNotSelfCompiled(LifetimeCollectionContext context, INamedTypeSymbol module, INamedTypeSymbol implementation, string missing, string reason, string remedy, DiagnosticDescriptor? descriptor = null, string? member = null)
 	{
 		DiagnosticInfo diagnostic = new(
 			descriptor ?? Diagnostics.ModuleRegistrationNotSelfCompiled,
@@ -547,12 +568,55 @@ partial class AwaitenGenerator
 				Display(implementation.ToDisplayString(FullyQualified)),
 				missing,
 				reason,
-				remedy,
+				NotSelfCompiledRemedy(module, implementation, context.Compilation, remedy, member),
 			]));
 		if (!context.Diagnostics.Contains(diagnostic))
 		{
 			context.Diagnostics.Add(diagnostic);
 		}
+	}
+
+	/// <summary>
+	///     The remedy an AWT231 for <paramref name="type" /> of the imported <paramref name="module" /> ends with, chosen by
+	///     the cause this container sees. No grant reaches a type private to the module, so that is made internal or
+	///     public. A class of a third assembly without a constructor this container can reach needs the grant of that
+	///     assembly instead, unless the module produces it through a member (<paramref name="constructed" /> false). A
+	///     container whose assembly the module's assembly grants <c>InternalsVisibleTo</c> is told what the
+	///     grant does not reach (the type, <paramref name="member" /> or the constructors) before
+	///     <paramref name="remedy" />, and any other container is offered the grant beside it.
+	/// </summary>
+	private static string NotSelfCompiledRemedy(INamedTypeSymbol module, ITypeSymbol type, Compilation compilation, string remedy, string? member = null, bool constructed = true)
+	{
+		bool granted = module.ContainingAssembly.GivesAccessTo(compilation.Assembly);
+		if (TypeHiddenInModule(type.OriginalDefinition, module, compilation) is { } hidden)
+		{
+			string name = Display(hidden.OriginalDefinition.ToDisplayString(FullyQualified));
+			return granted
+				? $"the InternalsVisibleTo grant to this assembly reaches only internal members, not '{name}', which is private to the module; make it internal or public"
+				: $"make '{name}', which is private to the module, internal or public";
+		}
+
+		string typeName = Display(type.OriginalDefinition.ToDisplayString(FullyQualified));
+
+		// Only the implementation's own assembly can grant access to its constructors, whatever the module's assembly grants.
+		if (constructed
+		    && type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, ContainingAssembly: { } owner, } foreign
+		    && !SymbolEqualityComparer.Default.Equals(owner, module.ContainingAssembly)
+		    && !SymbolEqualityComparer.Default.Equals(owner, compilation.Assembly)
+		    && !CanConstruct(foreign, compilation))
+		{
+			return $"grant this assembly InternalsVisibleTo in '{owner.Name}', the assembly of '{typeName}', or {remedy}";
+		}
+
+		if (!granted)
+		{
+			return $"grant this assembly InternalsVisibleTo in the module's assembly, or {remedy}";
+		}
+
+		string? ungranted = !compilation.IsSymbolAccessibleWithin(type.OriginalDefinition, compilation.Assembly)
+			? $"'{typeName}'"
+			: member ?? (constructed && type.OriginalDefinition is INamedTypeSymbol { TypeKind: TypeKind.Class, } named && !CanConstruct(named, compilation) ? $"the constructors of '{typeName}'" : null);
+		return ungranted is null ? remedy : $"the InternalsVisibleTo grant to this assembly reaches only internal members, not {ungranted}; {remedy}";
 	}
 
 	/// <summary>
@@ -682,6 +746,7 @@ partial class AwaitenGenerator
 						release ? "OnRelease" : "OnActivated",
 						hook,
 						reason,
+						NotSelfCompiledRemedy(module, registration.Implementation, compilation, "make the hook and its parameter types public", $"the hook '{hook}'"),
 					]));
 				if (!context.Diagnostics.Contains(diagnostic))
 				{
@@ -878,6 +943,34 @@ partial class AwaitenGenerator
 
 		if (origin is not null && SkippedScanMatch(origin, factory) is var (implementation, reason))
 		{
+			// A match this container constructs still needs the hook wrapper the skipped match did not get.
+			if (!context.Inherited
+			    && !friend
+			    && !SymbolEqualityComparer.Default.Equals(origin.ContainingAssembly, context.Compilation.Assembly)
+			    && CanConstruct(implementation, context.Compilation)
+			    && new[] { (Hook: onActivated, Slot: "OnActivated"), (Hook: onRelease, Slot: "OnRelease"), }
+				    .FirstOrDefault(candidate => candidate.Hook is { } hook
+				                                 && !AccessibleMembers(origin, hook, context.Compilation).OfType<IMethodSymbol>().Any(method => context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly))) is { Hook: { } unreached, Slot: { } slot, })
+			{
+				DiagnosticInfo diagnostic = new(
+					Diagnostics.ModuleHookNotWrapped,
+					LocationInfo.From(context.FallbackLocation),
+					new EquatableArray<string>([
+						Display(origin.ToDisplayString(FullyQualified)),
+						Display(implementation.ToDisplayString(FullyQualified)),
+						slot,
+						unreached,
+						reason,
+						NotSelfCompiledRemedy(origin, implementation, context.Compilation, "make the hook and its parameter types public", $"the hook '{unreached}'"),
+					]));
+				if (!context.Diagnostics.Contains(diagnostic))
+				{
+					context.Diagnostics.Add(diagnostic);
+				}
+
+				return true;
+			}
+
 			if (context.Inherited || CanConstruct(implementation, context.Compilation))
 			{
 				result.Add(new RawRegistration(
@@ -1272,7 +1365,7 @@ partial class AwaitenGenerator
 
 		string typeName = Display(type.OriginalDefinition.ToDisplayString(FullyQualified));
 		diagnostics.Add(ModuleShapeReason(module) is { } reason
-			? ContributionNotSelfCompiled(module, kind, typeName, reason, location)
+			? ContributionNotSelfCompiled(module, kind, type.OriginalDefinition, reason, location, compilation)
 			: new DiagnosticInfo(
 				Diagnostics.ModuleContributionNotSelfCompiled,
 				LocationInfo.From(location),
@@ -1283,18 +1376,24 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     AWT231 for a decorator, composite or open generic registration of <paramref name="module" />, named
 	///     <paramref name="kind" /> as AWT230 names it, for which the module generated no factory because of
-	///     <paramref name="reason" />: a module declares a decorator or composite, but registers a type.
+	///     <paramref name="reason" />: a module declares a decorator or composite, but registers a type. The remedy is the
+	///     <paramref name="recordedRemedy" /> of a fault the module recorded, else chosen by what this container sees (see
+	///     <see cref="NotSelfCompiledRemedy" />).
 	/// </summary>
-	private static DiagnosticInfo ContributionNotSelfCompiled(INamedTypeSymbol module, string kind, string type, string reason, Location? location)
-		=> kind == OpenRegistrationKind
+	private static DiagnosticInfo ContributionNotSelfCompiled(INamedTypeSymbol module, string kind, INamedTypeSymbol type, string reason, Location? location, Compilation compilation, string? recordedRemedy = null)
+	{
+		string typeName = Display(type.ToDisplayString(FullyQualified));
+		string remedy = recordedRemedy ?? NotSelfCompiledRemedy(module, type, compilation, $"make '{typeName}', its constructor and the constructor's parameter types public");
+		return kind == OpenRegistrationKind
 			? new DiagnosticInfo(
 				Diagnostics.ModuleRegistrationNotSelfCompiled,
 				LocationInfo.From(location),
-				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), type, "factory", reason, $"make '{type}', its constructor and the constructor's parameter types public",]))
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), typeName, "factory", reason, remedy,]))
 			: new DiagnosticInfo(
 				Diagnostics.ModuleContributionFactorySkipped,
 				LocationInfo.From(location),
-				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), kind, type, reason,]));
+				new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), kind, typeName, reason, remedy,]));
+	}
 
 	/// <summary>
 	///     Where a <c>[Decorate]</c> or <c>[Composite]</c> comes from while the container reads it: the module or base
@@ -1378,8 +1477,11 @@ partial class AwaitenGenerator
 				? new DiagnosticInfo(
 					Diagnostics.ModuleRegistrationPropertyNotSet,
 					LocationInfo.From(context.Location),
-					new EquatableArray<string>([Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,]))
-				: ContributionNotSelfCompiled(module, attributeClass.Name == "CompositeAttribute" ? "the composite" : "the decorator", Display(type.ToDisplayString(FullyQualified)), skipReason, context.Location);
+					new EquatableArray<string>([
+						Display(module.ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)), "factory", skipReason,
+						NotSelfCompiledRemedy(module, type, compilation, $"make the [Inject] properties of '{Display(type.ToDisplayString(FullyQualified))}', their setters and their types public"),
+					]))
+				: ContributionNotSelfCompiled(module, attributeClass.Name == "CompositeAttribute" ? "the composite" : "the decorator", type, skipReason, context.Location, compilation);
 			if (!diagnostics.Contains(diagnostic))
 			{
 				diagnostics.Add(diagnostic);

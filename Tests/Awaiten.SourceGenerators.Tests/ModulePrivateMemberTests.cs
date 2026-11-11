@@ -278,15 +278,35 @@ public class ModulePrivateMemberTests
 			GeneratorResult alone = Generator.Run(library);
 			GeneratorResult same = Generator.Run(library + SameAssemblyConsumer);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Granted(library), ExternalConsumer);
+			GeneratorResult friendReference = Generator.RunWithGeneratedReferenceAssembly(Granted(library), ExternalConsumer);
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalConsumer);
+			GeneratorResult externalReference = Generator.RunWithGeneratedReferenceAssembly(library, ExternalConsumer);
 
-			await That(alone.Diagnostics).IsEmpty();
+			await That(alone.Diagnostics).IsEmpty()
+				.Because("the module's own assembly and its friends call the member directly");
+			await That(Generator.Run(Granted(library)).Diagnostics).IsEmpty();
 			await That(same.Diagnostics).IsEmpty();
 			await That(same.Sources["Awaiten.Lib.LibContainer.g.cs"]).Contains("global::Lib.DataModule.Make<global::Lib.Order>()");
 			await That(friend.Diagnostics).IsEmpty();
 			await That(friend.Sources["Awaiten.App.AppContainer.g.cs"]).Contains("global::Lib.DataModule.Make<global::App.Order>()");
-			await That(external.Diagnostics).HasSingle().Which.Contains("*AWT108*'Make'*").AsWildcard()
-				.Because("the module generates no public wrapper for a generic member");
+			await That(friendReference.Diagnostics).IsEmpty();
+			foreach (GeneratorResult result in new[] { external, externalReference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*error AWT231: The imported module 'Lib.DataModule' registers 'Lib.IRepository<T>' through its Factory member 'Make', which this container cannot call, and the module's assembly generated no wrapper for it because 'Make' is internal and generic, and the module generates no public wrapper for a generic member; grant this assembly InternalsVisibleTo in the module's assembly, or make 'Make' and the types in its signature public").AsWildcard()
+					.Because("the module records why it generates no public wrapper for a generic member, so the container names it instead of a missing method (AWT108)");
+			}
+		}
+
+		[Test]
+		public async Task Public_NeedsNoRecord()
+		{
+			string library = OpenLibrary("public static partial", "public", "public static Repository<T> Make<T>() => new Repository<T>();");
+
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalConsumer);
+
+			await That(external.Diagnostics).IsEmpty();
+			await That(external.Sources["Awaiten.App.AppContainer.g.cs"]).Contains("global::Lib.DataModule.Make<global::App.Order>()");
 		}
 	}
 

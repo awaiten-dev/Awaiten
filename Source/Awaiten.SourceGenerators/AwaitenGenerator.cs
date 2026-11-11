@@ -172,6 +172,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		DeclaredAsyncInitializers(moduleSymbol, compilation, diagnostics);
 		ReportModuleProductionMembers(moduleSymbol, compilation, diagnostics);
 		ReportModuleEagerAsyncSingletons(moduleSymbol, compilation, diagnostics);
+		ReportModulePrivateStartedSingletons(moduleSymbol, compilation, diagnostics);
 		ReportModuleDecoratorPredicates(moduleSymbol, compilation, diagnostics);
 		EquatableArray<string> decoratorMistakesMarkers = new(ReportModuleDecoratorMistakes(moduleSymbol, compilation, diagnostics).ToArray());
 
@@ -201,7 +202,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		}
 
 		List<RegistrationFactory> contributions = receives ? CollectModuleContributionFactories(moduleSymbol, compilation, hidden, diagnostics, skipped) : new();
-		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation, hidden) : (new(), new());
+		(List<RegistrationFactory> openFactories, List<SkippedRegistration> openSkipped) = receives ? CollectModuleOpenFactories(moduleSymbol, compilation, hidden, diagnostics) : (new(), new());
 		contributions.AddRange(openFactories);
 		skipped.AddRange(openSkipped);
 		List<ConventionWrapper> conventionWrappers = receives ? CollectConventionWrappers(moduleSymbol, compilation, hidden) : new();
