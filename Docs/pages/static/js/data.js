@@ -1902,6 +1902,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
         "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
+      },
+      {
+        "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
+        "message": "fix!: choose the AWT231 remedy by its cause, report open hook and private started singleton faults in the library, and name the reason for internal generic factories (#421)"
       }
     ],
     "labels": [
@@ -2221,7 +2227,8 @@ window.BENCHMARK_DATA = {
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
-      "ce9ecfb5"
+      "ce9ecfb5",
+      "30a00e9a"
     ],
     "datasets": [
       {
@@ -2544,7 +2551,8 @@ window.BENCHMARK_DATA = {
           4.5963264014571905,
           6.4518549084663395,
           6.410465348225373,
-          6.837650951284629
+          6.837650951284629,
+          6.453162997961044
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2556,6 +2564,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3203,7 +3212,8 @@ window.BENCHMARK_DATA = {
           4.945658499995868,
           7.348202620561306,
           7.3835196026733945,
-          7.3014683700524845
+          7.3014683700524845,
+          7.34710636309215
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3215,6 +3225,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3862,7 +3873,8 @@ window.BENCHMARK_DATA = {
           95.074138991038,
           115.46278628281185,
           118.02654321193695,
-          106.33706315074649
+          106.33706315074649,
+          118.95536343256633
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3874,6 +3886,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4517,7 +4530,8 @@ window.BENCHMARK_DATA = {
           6.930765362886282,
           8.77653970917066,
           8.160058703805719,
-          9.415262934565543
+          9.415262934565543,
+          8.62201384504636
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4529,6 +4543,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5168,7 +5183,8 @@ window.BENCHMARK_DATA = {
           8.414764946469894,
           10.471442191551128,
           10.815988838672638,
-          11.828046315908432
+          11.828046315908432,
+          10.745442123285361
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5180,6 +5196,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7408,6 +7425,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
         "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
+      },
+      {
+        "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
+        "message": "fix!: choose the AWT231 remedy by its cause, report open hook and private started singleton faults in the library, and name the reason for internal generic factories (#421)"
       }
     ],
     "labels": [
@@ -7727,7 +7750,8 @@ window.BENCHMARK_DATA = {
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
-      "ce9ecfb5"
+      "ce9ecfb5",
+      "30a00e9a"
     ],
     "datasets": [
       {
@@ -8050,7 +8074,8 @@ window.BENCHMARK_DATA = {
           5.216412094732125,
           7.470406376322111,
           7.1187488448161345,
-          7.142867971743856
+          7.142867971743856,
+          7.114375508257321
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8062,6 +8087,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8709,7 +8735,8 @@ window.BENCHMARK_DATA = {
           4.979012201038691,
           7.450334317982197,
           7.415997161315038,
-          7.393030782540639
+          7.393030782540639,
+          7.279958751339179
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8721,6 +8748,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9368,7 +9396,8 @@ window.BENCHMARK_DATA = {
           98.84719137350719,
           115.90498822927475,
           118.54704763208117,
-          107.27079871067635
+          107.27079871067635,
+          112.32119168440501
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9380,6 +9409,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10023,7 +10053,8 @@ window.BENCHMARK_DATA = {
           6.923169678875378,
           8.755137924637113,
           8.179793765502316,
-          9.325838334858418
+          9.325838334858418,
+          8.578923922777175
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10035,6 +10066,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10674,7 +10706,8 @@ window.BENCHMARK_DATA = {
           8.322915487564527,
           14.460491799314816,
           14.236101270715396,
-          15.811277836561203
+          15.811277836561203,
+          14.295671287391867
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10686,6 +10719,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12914,6 +12948,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
         "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
+      },
+      {
+        "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
+        "message": "fix!: choose the AWT231 remedy by its cause, report open hook and private started singleton faults in the library, and name the reason for internal generic factories (#421)"
       }
     ],
     "labels": [
@@ -13233,7 +13273,8 @@ window.BENCHMARK_DATA = {
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
-      "ce9ecfb5"
+      "ce9ecfb5",
+      "30a00e9a"
     ],
     "datasets": [
       {
@@ -13556,7 +13597,8 @@ window.BENCHMARK_DATA = {
           10.44590131342411,
           19.71780617747988,
           11.52754828929901,
-          23.146042368809383
+          23.146042368809383,
+          14.585193351904552
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -13828,6 +13870,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14215,7 +14258,8 @@ window.BENCHMARK_DATA = {
           734.9772127151489,
           1486.9857045491538,
           768.4238410790762,
-          1481.7826442718506
+          1481.7826442718506,
+          1084.0555604298909
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14227,6 +14271,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -14874,7 +14919,8 @@ window.BENCHMARK_DATA = {
           16701.950929768882,
           29752.48732910156,
           18211.298185076033,
-          23729.08624674479
+          23729.08624674479,
+          17656.17772623698
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15202,6 +15248,7 @@ window.BENCHMARK_DATA = {
           32478,
           32482,
           32477,
+          32474,
           32474
         ],
         "borderColor": "#5E2750",
@@ -15529,7 +15576,8 @@ window.BENCHMARK_DATA = {
           376.33048669497174,
           731.805255762736,
           400.63640257517494,
-          654.7056528971746
+          654.7056528971746,
+          500.85677235921224
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15559,6 +15607,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16180,7 +16229,8 @@ window.BENCHMARK_DATA = {
           6021.6035761515295,
           11476.777734375,
           6702.440636189779,
-          11359.17233988444
+          11359.17233988444,
+          7634.864342825754
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16503,6 +16553,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -18420,6 +18471,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
         "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
+      },
+      {
+        "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
+        "message": "fix!: choose the AWT231 remedy by its cause, report open hook and private started singleton faults in the library, and name the reason for internal generic factories (#421)"
       }
     ],
     "labels": [
@@ -18739,7 +18796,8 @@ window.BENCHMARK_DATA = {
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
-      "ce9ecfb5"
+      "ce9ecfb5",
+      "30a00e9a"
     ],
     "datasets": [
       {
@@ -19062,7 +19120,8 @@ window.BENCHMARK_DATA = {
           77.00042856534323,
           206.57615625858307,
           82.75009784331688,
-          265.73778940836587
+          265.73778940836587,
+          192.5329233209292
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19334,6 +19393,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -19721,7 +19781,8 @@ window.BENCHMARK_DATA = {
           6998.672753470285,
           17313.10478922526,
           7951.057633463542,
-          12528.038243611654
+          12528.038243611654,
+          9507.407737731934
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -19733,6 +19794,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20380,7 +20442,8 @@ window.BENCHMARK_DATA = {
           405089.9648786272,
           760093.9734235491,
           440933.144921875,
-          560000.541796875
+          560000.541796875,
+          394126.6001627604
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -20708,7 +20771,8 @@ window.BENCHMARK_DATA = {
           739753,
           736997,
           718986,
-          721116
+          721116,
+          739364
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21035,7 +21099,8 @@ window.BENCHMARK_DATA = {
           22128.722208658855,
           48470.235347493486,
           25241.117407226564,
-          38781.97849934896
+          38781.97849934896,
+          26342.693806966145
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21359,7 +21424,8 @@ window.BENCHMARK_DATA = {
           80001,
           81576,
           80306,
-          80958
+          80958,
+          79995
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21686,7 +21752,8 @@ window.BENCHMARK_DATA = {
           178665.31946614583,
           374819.1278971354,
           228469.2885091146,
-          324942.6096191406
+          324942.6096191406,
+          210358.19663492838
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22010,7 +22077,8 @@ window.BENCHMARK_DATA = {
           573102,
           573059,
           573057,
-          571187
+          571187,
+          571194
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23902,6 +23970,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
         "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
+      },
+      {
+        "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
+        "message": "fix!: choose the AWT231 remedy by its cause, report open hook and private started singleton faults in the library, and name the reason for internal generic factories (#421)"
       }
     ],
     "labels": [
@@ -24217,7 +24291,8 @@ window.BENCHMARK_DATA = {
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
-      "ce9ecfb5"
+      "ce9ecfb5",
+      "30a00e9a"
     ],
     "datasets": [
       {
@@ -24536,7 +24611,8 @@ window.BENCHMARK_DATA = {
           180.8727978547414,
           280.94428649315466,
           213.5381868839264,
-          274.9899413245065
+          274.9899413245065,
+          265.6405601160867
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -24571,6 +24647,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25187,7 +25264,8 @@ window.BENCHMARK_DATA = {
           397.41793060302734,
           620.5625213214329,
           458.56047808329265,
-          647.2682706197103
+          647.2682706197103,
+          631.0021968841553
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25199,6 +25277,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -25838,7 +25917,8 @@ window.BENCHMARK_DATA = {
           3493.996276537577,
           7038.988597361246,
           4880.887506757464,
-          6974.25558980306
+          6974.25558980306,
+          6783.377737778884
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -25922,6 +26002,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -26489,7 +26570,8 @@ window.BENCHMARK_DATA = {
           265.21666701634723,
           431.88220472335814,
           338.6951224644979,
-          417.57864967981976
+          417.57864967981976,
+          413.0334866523743
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -26501,6 +26583,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -27140,7 +27223,8 @@ window.BENCHMARK_DATA = {
           461.1343176205953,
           731.5424861907959,
           551.8118749459585,
-          780.964310391744
+          780.964310391744,
+          763.0884423622718
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27152,6 +27236,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
