@@ -677,7 +677,8 @@ internal static partial class Sources
 				"Generated for a consuming container: the position of the first parameter of the factory below that stands for an",
 				"[Inject] property, which a consumer resolves like the property, never from the host through [ImportServices].");
 			Indent(builder, depth).Append(accessibility).Append(" const int ").Append(AwaitenGenerator.FirstPropertyName(factory.FactoryName)).Append(" = ")
-				.Append(parameters.Length - members.Length - optional.Length - parameters.Count(parameter => parameter.Fixed)).AppendLine(";");
+				.Append(parameters.Length - members.Length - optional.Length - parameters.Count(parameter => parameter.Fixed)
+					+ parameters.Take(parameters.Length - members.Length - optional.Length).Count(parameter => parameter.Exact is not null)).AppendLine(";");
 			builder.AppendLine();
 		}
 
@@ -863,9 +864,13 @@ internal static partial class Sources
 			.Append('(').Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
 
-	/// <summary>A mirrored parameter as it is declared on a generated factory or wrapper, with its attributes.</summary>
+	/// <summary>
+	///     A mirrored parameter as it is declared on a generated factory or wrapper, with its attributes, after the public
+	///     collection it takes as well (see <see cref="FactoryParameter.Exact" />).
+	/// </summary>
 	private static string MirroredParameter(FactoryParameter parameter)
-		=> $"{parameter.Attributes}{parameter.Type} @{parameter.Name}";
+		=> (parameter.Exact is { } exact ? $"{exact} @{AwaitenGenerator.ExactCollectionName(parameter.Name)}, " : string.Empty)
+		   + $"{parameter.Attributes}{parameter.Type} @{parameter.Name}";
 
 	private static void EmitModuleFactory(StringBuilder builder, int depth, ModuleFactory factory)
 	{

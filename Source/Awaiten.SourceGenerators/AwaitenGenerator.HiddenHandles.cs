@@ -854,9 +854,11 @@ partial class AwaitenGenerator
 		for (int i = 0; i < instances.Count; i++)
 		{
 			InstanceModel instance = instances[i];
-			foreach (ParameterModel dependency in instance.ConstructorParameters.AsArray()
-				         .Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
-				         .Concat(instance.HookParameters()))
+			List<ParameterModel> dependencies = instance.ConstructorParameters.AsArray()
+				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+				.Concat(instance.HookParameters())
+				.ToList();
+			foreach (ParameterModel dependency in dependencies)
 			{
 				bool keyed = dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection;
 				if (!keyed && dependency.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable))
@@ -875,7 +877,9 @@ partial class AwaitenGenerator
 						: aliased.Key == dependency.Key
 						  && (aliased.ServiceType == dependency.ServiceType
 						      || (element is { TypeKind: TypeKind.Interface, } && aliased.Key is null && VarianceCompatible(aliased.ServiceSymbol!, element, variance.Compilation)));
-					if (!member)
+					// A module's factory takes the public collection next to the handles of the variant service (see FactoryParameter.Exact).
+					if (!member
+					    || (!keyed && dependency.Key is null && dependencies.Exists(other => other.Kind == DependencyKind.Enumerable && other.Key is null && other.ServiceType == registration.ServiceType)))
 					{
 						continue;
 					}

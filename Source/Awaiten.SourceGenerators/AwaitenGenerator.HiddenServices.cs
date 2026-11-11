@@ -1902,15 +1902,23 @@ partial class AwaitenGenerator
 			? ((INamedTypeSymbol)type).TypeArguments.Take(((INamedTypeSymbol)type).TypeArguments.Length - 1).ToArray()
 			: [];
 		string? element = null;
-		if (shape is HiddenShape.Collection && FromKey(attributes) is null && inner is INamedTypeSymbol collected && VariantHiddenServices(collected, hidden) is { Count: > 0, } variants)
+		string? exact = null;
+		if (shape is HiddenShape.Collection && FromKey(attributes) is null && inner is INamedTypeSymbol collected)
 		{
-			if (variants.Count > 1 || hidden.Services.ContainsKey(collected) || hidden.ProvidedElsewhere(collected))
+			List<INamedTypeSymbol> variants = VariantHiddenServices(collected, hidden);
+			bool hiddenElement = hidden.Services.ContainsKey(collected) || hidden.ProvidedElsewhere(collected);
+			if ((variants.Count > 0 || hiddenElement)
+			    && (variants.Count + (hiddenElement ? 1 : 0) > 1 || HoldsPublicVariant(collected, hidden) || SharesInstance(collected, variants, hidden)))
 			{
-				return new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display(variants[0].ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]));
+				return new HiddenMirror(default, new PendingDiagnostic(Diagnostics.ModuleHiddenServiceShape, [Display((variants.Count > 0 ? variants[0] : collected).ToDisplayString(FullyQualified)), Display(type.ToDisplayString(FullyQualified)),]));
 			}
 
-			element = collected.ToDisplayString(FullyQualifiedWithNullability);
-			inner = variants[0];
+			if (variants.Count == 1)
+			{
+				element = collected.ToDisplayString(FullyQualifiedWithNullability);
+				exact = FitsFactorySignature(type, context) ? type.ToDisplayString(FullyQualifiedWithNullability) : null;
+				inner = variants[0];
+			}
 		}
 
 		if (shape is { } known && inner is INamedTypeSymbol service && (hidden.Services.ContainsKey(service) || hidden.ProvidedElsewhere(service))
@@ -1939,11 +1947,13 @@ partial class AwaitenGenerator
 				HiddenShape.FuncWithArguments => ($"global::System.Func<{argumentTypes}{handle}>", $"({lambdaArguments}) => @{name}({lambdaArguments}).Value"),
 				HiddenShape.FuncWithArgumentsOwned => ($"global::System.Func<{argumentTypes}global::Awaiten.Owned<{handle}>>",
 					$"({lambdaArguments}) => global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}({lambdaArguments}), {unwrap})"),
+				HiddenShape.Collection when exact is not null => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
+					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Concat<{element}>(@{ExactCollectionName(name)}, global::System.Linq.Enumerable.Select<{handle}, {element}>(@{name}, {unwrap})))"),
 				HiddenShape.Collection => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
 					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select{(element is null ? "" : $"<{handle}, {element}>")}(@{name}, {unwrap}))"),
 				_ => (handle, $"@{name}.Value"),
 			};
-			return new HiddenMirror(new FactoryParameter(parameterType, name, KeyAttribute(FromKey(attributes)), argument), null);
+			return new HiddenMirror(new FactoryParameter(parameterType, name, KeyAttribute(FromKey(attributes)), argument, Exact: exact), null);
 		}
 
 		return ReferencedHiddenService(type, hidden) is { } referenced && (shape is null || !SymbolEqualityComparer.Default.Equals(inner, referenced))
@@ -1969,6 +1979,43 @@ partial class AwaitenGenerator
 					                  && NamedTypeArgument(registration.Attribute, "WhenInjectedInto", hidden.Compilation) is null)))
 				.ToList()
 			: [];
+
+	/// <summary>
+	///     Whether a module of the assembly another assembly can name registers a public service other than
+	///     <paramref name="element" /> that an unkeyed collection of <paramref name="element" /> holds through variance. A
+	///     container of the module's own assembly orders its registrations among those of the internal services by
+	///     registration, which a generated member that takes the public members apart from the handles cannot match.
+	/// </summary>
+	private static bool HoldsPublicVariant(INamedTypeSymbol element, HiddenServices hidden)
+		=> element is { TypeKind: TypeKind.Interface, IsGenericType: true, }
+		   && HasDeclaredVariance(element)
+		   && hidden.Assembly.Registrations.Where(entry => IsExternallyAccessible(entry.Key)).Any(entry => entry.Value.Exists(registration =>
+			   IsExternallyAccessible(registration.Service)
+			   && !SymbolEqualityComparer.Default.Equals(registration.Service, element)
+			   && VarianceCompatible(registration.Service, element, hidden.Compilation)
+			   && NamedTypeArgument(registration.Attribute, "WhenInjectedInto", hidden.Compilation) is null));
+
+	/// <summary>
+	///     Whether a module of the assembly another assembly can name registers an implementation under
+	///     <paramref name="element" /> and under one of the internal <paramref name="variants" />. A container of the
+	///     module's own assembly holds its one instance once, while a generated member that takes the public members apart
+	///     from the handles would hold it twice.
+	/// </summary>
+	private static bool SharesInstance(INamedTypeSymbol element, List<INamedTypeSymbol> variants, HiddenServices hidden)
+	{
+		List<ModuleRegistration> registrations = hidden.Assembly.Registrations.Where(entry => IsExternallyAccessible(entry.Key)).SelectMany(entry => entry.Value).ToList();
+		return registrations.Exists(variant => variants.Contains(variant.Service, SymbolEqualityComparer.Default)
+		                                       && registrations.Exists(registration => SymbolEqualityComparer.Default.Equals(registration.Service, element)
+		                                                                               && SymbolEqualityComparer.Default.Equals(registration.Implementation, variant.Implementation)));
+	}
+
+	/// <summary>
+	///     The name of the parameter that a generated member takes right before the handles of the internal service an
+	///     unkeyed collection <paramref name="parameter" /> holds through variance: the public collection of the element
+	///     type, whose members lead, as in a container of the module's own assembly (see <see cref="FactoryParameter.Exact" />).
+	/// </summary>
+	internal static string ExactCollectionName(string parameter)
+		=> "awaiten__exact_" + parameter;
 
 	/// <summary>
 	///     The reason a consumer reports for an implementation whose <paramref name="member" /> takes the internal
