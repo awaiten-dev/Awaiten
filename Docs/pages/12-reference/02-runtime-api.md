@@ -128,7 +128,7 @@ These types connect a container to the services the host provides with `[ImportS
 | `IExternalResolver.TryResolve(Type serviceType, object? key, out object? instance)` | Implement it to hand out host services. `key` carries the `[FromKey]` value, or `null`. Return `false` when the service is unavailable. | [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver) |
 | `IAwaitenExternalResolverHost.ExternalResolver` | The resolver of this scope, or `null`. A child scope without one uses the root's. | |
 | `IAwaitenExternalResolverHost.SetExternalResolver(IExternalResolver resolver)` | Sets the resolver once per scope. Setting the same resolver again does nothing; a different one throws `InvalidOperationException`. | [Resolving an imported service directly](../07-hosting/02-external-services.mdx#resolving-an-imported-service-directly) |
-| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. |
+| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. | |
 | `new AwaitenExternalDependency(Type serviceType, object? key = null)` | Creates an entry, for example to compare against `ExternalDependencies`. | [Verifying the wiring](../07-hosting/02-external-services.mdx#verifying-the-wiring) |
 
 Every generated root and scope implements `IAwaitenExternalResolverHost` explicitly, so call its members through that interface or a variable typed `IAwaitenRoot`, not on a `Root` variable. A standalone container usually passes its resolver to the `Root(IExternalResolver?)` constructor instead.

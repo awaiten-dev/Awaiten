@@ -225,6 +225,7 @@ A synchronous `Factory` member of the module whose body constructs an async-init
 ### Hooks
 
 - An `OnActivated` or `OnRelease` hook can be `internal` too, beside a public overload that takes another type, on a `Factory` registration and on a registration of a public implementation that the container constructs.
+- The wrapper of an asynchronous hook returns the hook's task, which the container awaits as it awaits the hook itself.
 - The wrapper takes an internal service the library registers through its [generated handle](#services-only-the-module-uses). Any other parameter type must be public ([AWT203](../../09-diagnostics.md#awt203)) and carry no `[FromKey]` or `[Inject]` ([AWT204](../../09-diagnostics.md#awt204)).
 - A hook the wrapper can't expose gets no wrapper and no error in the library's build when a container can still call it directly:
   - a hook of a constructed registration, which a container in the library's own assembly calls,

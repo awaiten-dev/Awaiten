@@ -92,7 +92,7 @@ A relationship wraps one service, not a [collection](./03-collections.md) or ano
 
 - A relationship over a collection, such as `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` ([AWT256](../09-diagnostics.md#awt256)), unless the collection type itself is [registered as a service](./03-collections.md#registering-your-own-collection).
 - A collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` or `Func<ISyrup>[]` ([AWT254](../09-diagnostics.md#awt254)), unless the relationship type itself is registered as a service. Then the collection holds that registration.
-- A relationship over another relationship, such as `Func<Lazy<ISyrup>>`, `Lazy<Func<ISyrup>>`, `Func<TArg…, Lazy<ISyrup>>` or `Task<Lazy<ISyrup>>`. The container builds only the combinations in the [dependency shapes](./index.md#dependency-shapes) table, such as `Func<Owned<T>>` or `Lazy<Task<T>>`, and takes any other as a dependency on the whole type, a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
+- A relationship over another relationship, such as `Func<Lazy<ISyrup>>`, `Lazy<Func<ISyrup>>`, `Func<TArg…, Lazy<ISyrup>>` or `Task<Lazy<ISyrup>>`. The container builds only the combinations in the [dependency shapes](./index.md#dependency-shapes) table, such as `Func<Owned<T>>` or `Lazy<Task<T>>`, and reports any other as a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 
 Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
 
@@ -120,7 +120,7 @@ public sealed class OrderTaker(Func<Owned<Order>> orders)
 public static partial class CoffeeShop;
 ```
 
-A `Func<T>` or `Lazy<T>` is the right shape for building a transient or a singleton on demand, not for reaching a shorter lifetime. One case needs `Func<Owned<T>>` instead: a singleton that holds a `Func<T>` over a transient whose construction creates a disposable, the transient itself or one of its dependencies. Every call would track a new disposable on the root until the container is disposed, so it is reported ([AWT118](../09-diagnostics.md#awt118)): an error in the strict default, a warning under [Loose lifetime safety](../04-core-concepts/04-lifetime-safety.md).
+A `Func<T>` or `Lazy<T>` is the right shape for building a transient or a singleton on demand, not for reaching a shorter lifetime. One case needs `Func<Owned<T>>` instead: a root-owned service, such as a singleton, that holds a `Func<T>` over a transient whose construction creates a disposable, the transient itself or one of its dependencies. Every call would track a new disposable on the root until the container is disposed, so it is reported ([AWT118](../09-diagnostics.md#awt118)): an error in the strict default, a warning under [Loose lifetime safety](../04-core-concepts/04-lifetime-safety.md).
 
 Resolving such a `Func<T>` by type from the root throws in the strict default for the same reason. Resolve it from a scope, whose disposal bounds what it builds, or resolve `Func<Owned<T>>`.
 

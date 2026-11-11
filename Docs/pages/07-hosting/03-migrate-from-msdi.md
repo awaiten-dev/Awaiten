@@ -46,7 +46,7 @@ In MS.DI you call methods on a service collection at startup, and the provider w
 | `IServiceScopeFactory` injected into a service | `Func<Owned<T>>`: each call builds `T` in its own scope, which the handle disposes. See [Owned](../04-core-concepts/06-owned.md). |
 | `IDisposable` and `IAsyncDisposable` services | Disposed by the scope or root that built them, in reverse creation order. A service that is only `IAsyncDisposable` needs `await using`, as in MS.DI ([AWT156](../09-diagnostics.md#awt156)). See [Disposal](../04-core-concepts/05-disposal.md). |
 | `services.Configure<Settings>(...)` and `IOptions<Settings>` | Configuration stays in MS.DI. The container consumes it with `[ImportService(typeof(IOptions<>))]`. See [External services](./02-external-services.mdx). |
-| `services.AddHostedService<Roaster>()` | Stays in MS.DI. The hosted service's constructor can take services the bridge projects from the container. |
+| `services.AddHostedService<Roaster>()` | Stays in MS.DI. A hosted service is a root singleton, so its constructor can take projected singletons. MS.DI's scope validation rejects a scoped service there, and the strict default withholds a disposable transient from the root, so inject MS.DI's `IServiceScopeFactory` and resolve those in a scope of its own. |
 
 ### Overridable defaults and `TryAdd`
 

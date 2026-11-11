@@ -48,7 +48,7 @@ partial class Build
 	];
 
 	static readonly Regex ReleaseItemRegex = new(
-		@"^\* (?<title>.+?) by @\S+ in (?<url>https://github\.com/\S+/pull/(?<number>\d+))\s*$", RegexOptions.Compiled);
+		@"^\* (?<title>.+?) by @\S+ in (?:https://github\.com/\S+/pull/(?<number>\d+))\s*$", RegexOptions.Compiled);
 
 	static readonly Regex ConventionalTitleRegex = new(
 		@"^(?<type>[a-zA-Z]+)(\([^)]*\))?(?<breaking>!)?:\s*(?<text>.+)$", RegexOptions.Compiled);

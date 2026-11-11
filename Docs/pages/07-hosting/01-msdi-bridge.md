@@ -30,6 +30,8 @@ The bridge offers three ways to hand a container to MS.DI. The first two project
 The app below projects a container with a singleton price list, an order scoped to each request and a card terminal that connects asynchronously. The order logs through the host's logger, which the container imports. The host warms the terminal on startup and checks that it provides every service the container imports, and a minimal API endpoint takes the projected services as parameters.
 
 ```csharp title="Program.cs"
+using System.Threading;
+using System.Threading.Tasks;
 using Awaiten;
 using Awaiten.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
@@ -158,12 +160,13 @@ On both paths above, Awaiten disposes everything it built exactly once, with the
 - The container root is disposed with the root provider. After a plain `AddAwaitenContainer<TRoot>()`, the root provider takes over the root on the first bridged resolution or when `WithInitialization()` warms it, so dispose a root you only use directly yourself.
 - A root you passed to `AddAwaitenContainer(root)` is always yours to dispose.
 - A pre-built `Instance` member stays yours and is never disposed.
+- Do not dispose a scope or the provider while a `Task<T>` resolved from it is still pending: MS.DI disposes that task too, and disposing an incomplete task throws.
 
 Disposing the provider or a scope with `DisposeAsync` drains them asynchronously, so `IAsyncDisposable`-only services are supported there.
 
 MS.DI additionally calls `Dispose` on every instance a projected registration hands out, once per service type it was resolved as, before the Awaiten scope or root that built it. That is how MS.DI treats any factory registration, for example `AddSingleton<IWriter>(sp => sp.GetRequiredService<Ledger>())`, and it relies on `Dispose` being idempotent, as the `IDisposable` contract requires. A singleton `Ledger` resolved as both `IReader` and `IWriter` therefore sees three `Dispose` calls: one per service type from MS.DI, then one from Awaiten.
 
-That is also why a service built with `SuppressDisposal = true` cannot be projected when it is or may be disposable: MS.DI would dispose it no matter what the container promised. Both paths above throw at startup instead, naming the service, and [AWT214](../09-diagnostics.md#awt214) reports the projection at build time. Remove `SuppressDisposal`, register a pre-built `Instance` you own, or let Awaiten own everything as described next. In the strict default, a service that needs asynchronous initialization is unaffected, because MS.DI only receives its `Task<T>`. Under `SyncAfterInit` its bare type is projected, so the rule applies to it too.
+That is also why a service built with `SuppressDisposal = true` cannot be projected when it is or may be disposable: MS.DI would dispose it no matter what the container promised. Both paths above throw at startup instead, naming the service. [AWT214](../09-diagnostics.md#awt214) reports the projection at build time when the container is declared in the same project and the call names its `Root` type; elsewhere the startup throw catches it. Remove `SuppressDisposal`, register a pre-built `Instance` you own, or let Awaiten own everything as described next. In the strict default, a service that needs asynchronous initialization is unaffected, because MS.DI only receives its `Task<T>`. Under `SyncAfterInit` its bare type is projected, so the rule applies to it too.
 
 ## Or let Awaiten own everything
 
@@ -182,7 +185,7 @@ Here the container answers every request, so MS.DI consumers get everything it r
 
 ### Feature detection
 
-The provider also answers `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, from the container's registration metadata and without constructing anything. ASP.NET Core depends on this: minimal APIs ask it whether a handler parameter comes from dependency injection or from the request, and MVC's controller activation asks the same.
+The provider also answers `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, from the container's registration metadata and without constructing anything. ASP.NET Core depends on this: minimal APIs ask it whether a handler parameter comes from dependency injection or from the request, and MVC asks it to infer which action parameters bind from services.
 
 ```csharp
 IServiceProviderIsService probe = provider.GetRequiredService<IServiceProviderIsService>();

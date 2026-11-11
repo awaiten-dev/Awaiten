@@ -53,7 +53,7 @@ public static partial class CoffeeShop;
 | | `Strict` (default) | `Loose` |
 |---|---|---|
 | Disposable or release-hooked transient resolved by type on the root | Withheld: [AWT219](../09-diagnostics.md#awt219) on a typed `Root`, throws at run time | Resolves, held until the root is disposed |
-| `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) (analyzer only) | Suppressible warning AWT118 |
+| `Func<T>`, `Func<TArg, T>`, `Func<…, Task<T>>` or a dispatch dictionary over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) (analyzer only) | Suppressible warning AWT118 |
 | `Owned<T>`, a child scope, constructor injection | Allowed | Allowed |
 
 Reach for `Loose` when you are bridging to code that expects MS.DI behavior. Otherwise, strict plus `Owned<T>` keeps disposal honest. A container that [extends](../05-registration/09-extending-containers.md#options) another inherits its setting.

@@ -48,7 +48,7 @@ static partial class CoffeeShop
 - `Root` is what `await using CoffeeShop.Root shop = new();` creates. It is the outermost [scope](../04-core-concepts/02-scopes.md), and it holds the singletons: the `EspressoMachine`, the `Grinder`, the milks, the syrups and the terminal.
 - `Scope` is what `shop.CreateScope()` returns for each order. It holds that order's `Order`, `Tab` and `Barista`, and it reaches the singletons through the root.
 - The `Root(IExternalResolver?)` constructor takes the resolver for [imported services](../07-hosting/02-external-services.mdx#providing-the-external-resolver). The coffee shop imports none.
-- The scope implements `IAwaitenResolver<T>` for each service it resolves synchronously and `IAwaitenAsyncResolver<T>` for every unkeyed service without runtime arguments, async or not, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
+- The scope implements `IAwaitenResolver<T>` for each unkeyed service without runtime arguments that it resolves synchronously and `IAwaitenAsyncResolver<T>` for every unkeyed service without runtime arguments, async or not, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
 
 ## One resolver per registration
 

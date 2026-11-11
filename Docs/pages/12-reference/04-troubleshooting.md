@@ -93,7 +93,7 @@ See [AWT102](../09-diagnostics.md#awt102).
 
 **Symptom:** `Dispose()` on the root, a scope or an `Owned<T>` throws an `InvalidOperationException` about asynchronous disposal, or an `AggregateException` of several such exceptions when more than one service needs asynchronous disposal.
 
-**Cause:** The container owns a service that implements `IAsyncDisposable` but not `IDisposable`, or one with an asynchronous `OnRelease` hook. A synchronous dispose cannot await them, so it disposes everything else and then throws. Awaiten warns at build time ([AWT156](../09-diagnostics.md#awt156)).
+**Cause:** The container owns a service that implements `IAsyncDisposable` but not `IDisposable`, or one with an asynchronous `OnRelease` hook. A synchronous dispose cannot await them, so it disposes everything else and then throws. Awaiten warns at build time ([AWT156](../09-diagnostics.md#awt156)) when the receiver is statically typed as the generated `Root` or `Scope`.
 
 **Fix:** Dispose asynchronously, with `await using` or `await shop.DisposeAsync()`. Under the MS.DI bridge, dispose the provider and its scopes with `DisposeAsync` as well. See [Async disposal](../04-core-concepts/05-disposal.md#async-disposal).
 
@@ -103,7 +103,7 @@ See [AWT102](../09-diagnostics.md#awt102).
 
 **Cause:** In Awaiten the first registration wins single resolution, not the last one as in Microsoft.Extensions.DependencyInjection. The container's own registrations come first, then the imported modules in the order of their `[Import]`. All registrations stay members of the service's collections. Two imported modules that register different implementations of the service without `Fallback` are reported ([AWT155](../09-diagnostics.md#awt155)) when something resolves the service singly, since only the import order decides which one it gets.
 
-**Fix:** Register the implementation you want on the container itself, or make the other registrations overridable defaults with `Fallback`, which a registration of the same service without `Fallback` replaces. When you want every implementation, depend on a collection. See [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) and [Collections](../06-resolution/03-collections.md).
+**Fix:** Register the implementation you want on the container itself, or make the other registrations overridable defaults with `Fallback`, which a registration of the same service without `Fallback` replaces, unless that is a scan match or the closing of an open generic over a closed default. When you want every implementation, depend on a collection. See [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) and [Collections](../06-resolution/03-collections.md).
 
 ### An imported service is missing at run time
 

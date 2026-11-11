@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Awaiten.SourceGenerators;
 using Microsoft.CodeAnalysis;
 
@@ -11,6 +12,7 @@ namespace Awaiten.Docs.Tests;
 public sealed class DiagnosticsPageTests
 {
 	private static readonly string[] Lines = File.ReadAllLines(GetPagePath());
+	private static readonly Regex DiagnosticId = new(@"AWT\d+");
 
 	/// <summary>
 	///     The descriptors of <c>Awaiten.SourceGenerators.Diagnostics</c>, read by reflection because the class is internal.
@@ -62,8 +64,8 @@ public sealed class DiagnosticsPageTests
 	[Test]
 	public async Task Page_ShouldOnlyDocumentDiagnosticsWithDescriptor()
 	{
-		string[] headingIds = Lines.Where(line => line.StartsWith("### AWT")).Select(line => line.Substring(4, 6)).ToArray();
-		string[] indexIds = Lines.Where(line => line.StartsWith("| [AWT")).Select(line => line.Substring(3, 6)).ToArray();
+		string[] headingIds = Lines.Where(line => line.StartsWith("### AWT")).Select(line => DiagnosticId.Match(line).Value).ToArray();
+		string[] indexIds = Lines.Where(line => line.StartsWith("| [AWT")).Select(line => DiagnosticId.Match(line).Value).ToArray();
 
 		await That(headingIds).IsNotEmpty();
 		await That(headingIds.Except(Ids())).IsEmpty().Because("every section belongs to a diagnostic");
@@ -73,7 +75,8 @@ public sealed class DiagnosticsPageTests
 	}
 
 	/// <summary>
-	///     A not configurable descriptor is reported as an error, whatever its declared default severity.
+	///     A not configurable descriptor is documented as an error, whatever its declared default severity, because each
+	///     one is reported as an error today: AWT118's strict form is raised to an error per report, AWT255 is declared one.
 	/// </summary>
 	private static string GetDocumentedSeverity(DiagnosticDescriptor descriptor)
 		=> descriptor.CustomTags.Contains(WellKnownDiagnosticTags.NotConfigurable)

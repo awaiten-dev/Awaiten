@@ -81,10 +81,10 @@ Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md
 | `Instance` | `string?` | `null` | `[Singleton]` only: name of a field or property that holds a pre-built instance. The container neither constructs nor disposes it. Needs a closed type. | [Instances](../05-registration/01-factories-and-instances.md#instance) |
 | `Key` | `object?` | `null` | Registers under a key, so several implementations can share a service type. A consumer selects one with `[FromKey]`. | [Keyed services](../05-registration/05-keyed-services.md#register-with-a-key) |
 | `WhenInjectedInto` | `Type?` | `null` | Uses this registration only for the constructor parameters and `[Inject]` properties of the given consumer type, and the unconditional registration everywhere else. | [Contextual binding](../05-registration/05-keyed-services.md#bind-a-variant-to-a-consumer-with-wheninjectedinto) |
-| `Fallback` | [`Fallback`](#fallback) | `None` | Makes the registration an overridable default that a registration of the same service without `Fallback` replaces. | [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) |
+| `Fallback` | [`Fallback`](#fallback) | `None` | Makes the registration an overridable default that a registration of the same service without `Fallback` replaces, unless that is a scan match or the closing of an open generic over a closed default. | [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) |
 | `Eager` | `bool` | `false` | `[Singleton]` only: builds the singleton when the root is created instead of on first resolve. Needs a closed type. | [Lifetimes](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) |
 | `OnActivated` | `string?` | `null` | Name of a static method that receives the instance once it is constructed. A method returning `Task` or `ValueTask` makes the service async-initialized. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
-| `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before the instance's own disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
+| `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before the instance's own disposal. A method returning `Task` or `ValueTask` is awaited, which needs asynchronous disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `SuppressDisposal` | `bool` | `false` | Builds the instance but never disposes it. Releasing it is up to you, typically through `OnRelease`. | [Disposal](../04-core-concepts/05-disposal.md#suppressing-disposal) |
 
 Go on a container or module, any number of times.
@@ -141,7 +141,7 @@ Registers every concrete class that matches, from metadata the compiler reads at
 
 | Property | Type | Default | Meaning | See |
 |---|---|---|---|---|
-| `AssignableTo` | `Type?` | constructor argument | `typeof` form only: the marker interface or base type, or `null` for the parameterless, markerless scan. | [Scan without a marker](../05-registration/07-scanning.md#scan-without-a-marker) |
+| `AssignableTo` | `Type?` | constructor argument | The marker interface or base type passed as `typeof` to the non-generic `[Scan]`, or `null` for its parameterless, markerless form. | [Scan without a marker](../05-registration/07-scanning.md#scan-without-a-marker) |
 | `Lifetime` | [`Lifetime`](#lifetime) | `Transient` | The lifetime of every match. | [Choose the lifetime](../05-registration/07-scanning.md#choose-the-lifetime) |
 | `As` | [`ScanAs`](#scanas) | `Self` | How each match registers. | [Choose how they register](../05-registration/07-scanning.md#choose-how-they-register) |
 | `InAssembliesOf` | `Type[]?` | `null` | Scans the assemblies of these types instead of the container's own assembly. | [Scan other assemblies](../05-registration/07-scanning.md#scan-other-assemblies) |

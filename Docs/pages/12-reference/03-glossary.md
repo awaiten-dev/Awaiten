@@ -33,7 +33,7 @@ A container that another one names in `[Container(Extends = …)]`. The extendin
 
 ### Captive dependency
 
-A shorter-lived service held by a longer-lived one, such as a scoped `Order` inside a singleton. It would outlive its scope, so Awaiten reports it at build time ([AWT105](../09-diagnostics.md#awt105)). See [Lifetimes must line up](../04-core-concepts/01-lifetimes.md#lifetimes-must-line-up).
+A scoped service held by a singleton, directly or through transients, such as a scoped `Order` inside a singleton. It would outlive its scope, so Awaiten reports it at build time ([AWT105](../09-diagnostics.md#awt105)). See [Lifetimes must line up](../04-core-concepts/01-lifetimes.md#lifetimes-must-line-up).
 
 ### Closing
 
@@ -121,7 +121,7 @@ The `Awaiten.Extensions.DependencyInjection` package, which runs a container und
 
 ### Overridable default
 
-A registration with `Fallback = Fallback.Warn` or `Fallback.Silent`, usually in a module. A registration of the same service without `Fallback` replaces it. See [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults).
+A registration with `Fallback = Fallback.Warn` or `Fallback.Silent`, usually in a module. A registration of the same service without `Fallback` replaces it, unless that is a scan match or the closing of an open generic over a closed default. See [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults).
 
 ### `Owned<T>`
 
@@ -165,4 +165,4 @@ Building and initializing async services ahead of time: `InitializeAsync` on the
 
 ### Withheld service
 
-A service the container has but does not hand out through a given call, such as a disposable transient on the root under strict lifetime safety, or an async-tainted service on a synchronous `Resolve`. The exception names the fix, and `GetResolvability` reports why without throwing. See [Feature detection](../07-hosting/01-msdi-bridge.md#feature-detection).
+A service the container has but the root declines to resolve by type, such as a disposable transient under strict lifetime safety. A child scope resolves it. Resolving it on the root throws an exception that names the fix, and `GetResolvability` reports it as `WithheldOnRoot` without throwing. See [Feature detection](../07-hosting/01-msdi-bridge.md#feature-detection).

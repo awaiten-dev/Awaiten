@@ -10,7 +10,7 @@ A consumer declares what it needs, and the container fills it. The dependency ca
 
 Each shape below works as a constructor parameter, a factory parameter or an [injected property](./05-property-injection.md). `T` is the service, `TArg…` the [runtime arguments](./06-runtime-arguments.md) of a service built from them.
 
-| Shape | What you get | Async-tainted `T` | Under `[FromKey]` | Resolvable by type | Explained on |
+| Shape | What you get | Works over async-tainted `T` | Under `[FromKey]` | Resolvable by type | Explained on |
 |---|---|---|---|---|---|
 | `T` | The service. | Yes, the consumer becomes async-tainted too. | Yes | Yes, also with a key | [Resolving services](./01-resolving-services.md) |
 | `Func<T>` | A factory that resolves `T` on each call. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Relationships](./02-relationships.md) |
@@ -36,7 +36,7 @@ Each shape below works as a constructor parameter, a factory parameter or an [in
 
 How to read the columns:
 
-- **Async-tainted `T`.** `T` is [async-tainted](../12-reference/03-glossary.md#async-tainted) when it is async-initialized or depends on an async-initialized service. A synchronous relationship reports AWT119 when `T` itself is async-initialized and AWT120 when it only depends on one. A synchronous collection or dictionary reports AWT122 for any async-tainted member. "No" holds in the strict default. With `AsyncSafety.SyncAfterInit` on the container, a synchronous shape may reach an async-initialized service after warm-up, see [Async initialization](../04-core-concepts/03-async-initialization.md#relax-the-rule-when-you-need-to).
+- **Works over async-tainted `T`.** `T` is [async-tainted](../12-reference/03-glossary.md#async-tainted) when it is async-initialized or depends on an async-initialized service. A synchronous relationship reports AWT119 when `T` itself is async-initialized and AWT120 when it only depends on one. A synchronous collection or dictionary reports AWT122 for any async-tainted member. "No" holds in the strict default. With `AsyncSafety.SyncAfterInit` on the container, a synchronous shape may reach an async-initialized service after warm-up, see [Async initialization](../04-core-concepts/03-async-initialization.md#relax-the-rule-when-you-need-to).
 - **Under `[FromKey]`.** The shape wraps the registration, or holds the registrations, under that key. See [Keyed services](../05-registration/05-keyed-services.md#select-directly-with-fromkey).
 - **Resolvable by type.** `Resolve<…>()`, `TryResolve<…>()` or `ResolveAsync<…>()` hands out the shape from the root or a scope, with these limits:
   - A keyed resolve serves only the service itself, so every other shape under a key reaches a consumer only through `[FromKey]`.
@@ -51,7 +51,7 @@ Some dependencies are errors:
 - A `Func` whose arguments do not match is [AWT113](../09-diagnostics.md#awt113).
 - `Lazy<Owned<T>>` and `Lazy<Task<Owned<T>>>` are [AWT121](../09-diagnostics.md#awt121), because `Lazy` would memoize a single disposal handle. Take `Owned<T>`, `Func<Owned<T>>` or `Task<Owned<T>>` instead.
 - Relationships do not nest: a relationship over a collection or a collection of relationships is an error unless that type is registered as a service, see [Relationships](./02-relationships.md#relationships-wrap-a-single-service).
-- A relationship over another relationship, such as `Func<Lazy<T>>`, `Lazy<Func<T>>`, `Func<TArg…, Lazy<T>>` or `Task<Lazy<T>>`, is not built. Only the combinations in the table above are, so the dependency is on that whole type and is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
+- A relationship over another relationship, such as `Func<Lazy<T>>`, `Lazy<Func<T>>`, `Func<TArg…, Lazy<T>>` or `Task<Lazy<T>>`, is not built. Only the combinations in the table above are, so such a dependency is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 
 ## Where to go next
 

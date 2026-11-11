@@ -22,7 +22,7 @@ The rest of the docs explain Awaiten one feature at a time, with the coffee shop
 |---|---|
 | Which options a `[Singleton]`, `[Scan]` or `[Decorate]` takes, and their defaults | [Registrations](./01-attributes.md#registrations) |
 | What `[Container]` and `[Module]` can be configured with | [Containers and modules](./01-attributes.md#containers-and-modules) |
-| Which attributes may appear on your own types | [Injection sites](./01-attributes.md#injection-sites) |
+| Which attributes mark injected properties and parameters | [Injection sites](./01-attributes.md#injection-sites) |
 | The values of `Lifetime`, `AsyncSafety`, `LifetimeSafety`, `Fallback` or `ScanAs` | [Enums](./01-attributes.md#enums) |
 | Which overload resolves what, and when it throws | [Resolving](./02-runtime-api.md#resolving) |
 | What an `AWT` id means and how to fix it | [Diagnostics index](../09-diagnostics.md#index) |
