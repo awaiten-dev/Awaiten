@@ -54,22 +54,22 @@ The method's parameters are resolved from the graph, like the parameters of a co
 ```csharp
 public interface ICalibrated
 {
-    ValueTask CalibrateAsync(IClock clock, CancellationToken cancellationToken);
+    ValueTask CalibrateAsync(ITimeSystem timeSystem, CancellationToken cancellationToken);
 }
 
 public sealed class Scale : ICalibrated
 {
-    public ValueTask CalibrateAsync(IClock clock, CancellationToken cancellationToken) => default;
+    public ValueTask CalibrateAsync(ITimeSystem timeSystem, CancellationToken cancellationToken) => default;
 }
 
 [Container]
 [AsyncInitializer<ICalibrated>(nameof(ICalibrated.CalibrateAsync))]
-[Singleton<Clock, IClock>]
+[Singleton<RealTimeSystem, ITimeSystem>]
 [Singleton<Scale>]
 public static partial class CoffeeShop;
 ```
 
-The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A C# default value does not change that. Awaiten ignores it, so `IClock? clock = null` still needs a registered `IClock` ([AWT101](../09-diagnostics.md#awt101)). A parameter may also be a relationship such as `Func<T>` or `Lazy<T>`, which needs the service registered too. To let the initializer run without the service, take a collection of it, which is empty when nothing registers the service, or give the service an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead. The method itself carries no Awaiten attributes. If you need `[FromKey]`, use an `OnActivated` hook instead.
+The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A C# default value does not change that. Awaiten ignores it, so `ITimeSystem? timeSystem = null` still needs a registered `ITimeSystem` ([AWT101](../09-diagnostics.md#awt101)). A parameter may also be a relationship such as `Func<T>` or `Lazy<T>`, which needs the service registered too. To let the initializer run without the service, take a collection of it, which is empty when nothing registers the service, or give the service an [`Optional` injected property](../06-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead. The method itself carries no Awaiten attributes. If you need `[FromKey]`, use an `OnActivated` hook instead.
 
 ## Use an activation hook
 
@@ -92,7 +92,7 @@ public static partial class CoffeeShop
 }
 ```
 
-The container awaits the hook exactly once per instance, like a convention. Every rule on this page applies to it the same way. See [Lifecycle hooks](../07-lifetime/03-lifecycle-hooks.md#asynchronous-activation) for the hook's parameters.
+The container awaits the hook exactly once per instance, like a convention. Every rule on this page applies to it the same way. See [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#asynchronous-activation) for the hook's parameters.
 
 ## Order of several initializers
 
@@ -109,7 +109,7 @@ A registration is judged by the conventions of the container or module that decl
 
 - A container's conventions apply to its own registrations.
 - A module's conventions apply to the module's registrations. A container's conventions do not reach into an imported module.
-- A container that [extends](../05-registration/08-extending-containers.md) a base inherits the base's conventions. They run before the container's own.
+- A container that [extends](../05-registration/09-extending-containers.md) a base inherits the base's conventions. They run before the container's own.
 - No convention applies to an [`Instance`](../05-registration/01-factories-and-instances.md#instance) registration. The container doesn't own a pre-built instance, so it never initializes it, also not one a module of another assembly hands out.
 
 ```csharp
@@ -123,14 +123,14 @@ public static partial class BarModule;
 public static partial class CoffeeShop;
 ```
 
-A module or base container in another assembly may keep its conventions `internal`. How the container still runs them, and what that requires of the convention's parameters ([AWT234](../09-diagnostics.md#awt234)), is described in [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md).
+A module or base container in another assembly may keep its conventions `internal`; [Shipping modules from a library](../05-registration/08-modules/01-library-modules.md) describes what that requires.
 
 ## Resolve it asynchronously
 
 Use `ResolveAsync`. It constructs the service, awaits its initialization, and returns it ready to use.
 
 ```csharp
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 
 EspressoMachine machine = await shop.ResolveAsync<EspressoMachine>(cancellationToken);
 // machine.IsHot is true
@@ -149,7 +149,7 @@ await shop.InitializeAsync(cancellationToken);   // boiler hot, terminal connect
 // later, on the hot path, resolves are ready immediately
 ```
 
-This is the usual startup pattern. Warm up once when the shop opens, then serve. Under the generic host, the [MS.DI bridge](../08-hosting/01-msdi-bridge.md#warm-async-services-on-startup) does it for you during host startup:
+This is the usual startup pattern. Warm up once when the shop opens, then serve. Under the generic host, the [MS.DI bridge](../07-hosting/01-msdi-bridge.md#warm-async-services-on-startup) does it for you during host startup:
 
 ```csharp
 services.AddAwaitenContainer<CoffeeShop.Root>()
@@ -158,7 +158,7 @@ services.AddAwaitenContainer<CoffeeShop.Root>()
 
 ## Warm a scope
 
-`CreateScopeAsync` opens a scope and initializes its async scoped services eagerly. If one of them throws during initialization, the half-built scope is disposed for you rather than leaked, asynchronously when `IAsyncDisposable` is available, so async-only disposables are torn down too. You get the original exception (or `OperationCanceledException`) unchanged. Only if the disposal throws as well do you get an `AggregateException` that holds the original failure first, followed by every disposal failure in one flat list.
+`CreateScopeAsync` opens a scope and initializes its async scoped services eagerly. If one of them throws during initialization, the half-built scope is disposed for you rather than leaked, asynchronously, so async-only disposables are torn down too. You get the original exception (or `OperationCanceledException`) unchanged. Only if the disposal throws as well do you get an `AggregateException` that holds the original failure first, followed by every disposal failure in one flat list.
 
 ```csharp
 await using IAwaitenScope order = await shop.CreateScopeAsync(cancellationToken);
@@ -170,24 +170,24 @@ This is the point of the whole feature. In the strict default, a synchronous rel
 
 ```csharp expect=AWT119
 // highlight-next-line
-public sealed class Register(Func<EspressoMachine> machine);   // build error
+public sealed class CheckoutCounter(Func<EspressoMachine> machine);   // build error
 
 [Container]
 [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
 [Singleton<EspressoMachine>]
-[Singleton<Register>]
+[Singleton<CheckoutCounter>]
 public static partial class CoffeeShop;
 ```
 
-```text
-AWT119: 'Register' resolves 'EspressoMachine' through a synchronous Func<>, but 'EspressoMachine' is async-initialized; resolve it through ResolveAsync, or set AsyncSafety.SyncAfterInit on the [Container]
+```text title="Build error"
+error AWT119: 'CheckoutCounter' resolves 'EspressoMachine' through a synchronous Func<>, but 'EspressoMachine' is async-initialized; resolve it through ResolveAsync, or set AsyncSafety.SyncAfterInit on the [Container]
 ```
 
 If you do reach it at runtime, for example with `shop.Resolve<EspressoMachine>()`, `Resolve` throws with guidance toward `ResolveAsync`, and `TryResolve` reports it as not available. It never hands back an uninitialized instance.
 
 The same rule holds for a service that is only *transitively* tainted. A `Barista` that depends on the `EspressoMachine` is async too, so it is resolved with `ResolveAsync`.
 
-## Deferred shapes launder the taint
+## Keep a consumer synchronous by deferring the async work
 
 A synchronous service can still hold an async one, as long as it defers the work. Ask for `Task<T>`, `Func<Task<T>>`, or `Lazy<Task<T>>`, and the consumer stays synchronously resolvable.
 
@@ -227,11 +227,13 @@ public static partial class CoffeeShop
 }
 ```
 
-A convention matches what a factory declares it returns, not the registered type. A synchronous factory that returns a matching type behind a plainer one hides its initialization, which Awaiten warns about ([AWT106](../09-diagnostics.md#awt106)). For the factory of a module in another assembly, see [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md).
+A convention matches what a factory declares it returns, not the registered type. A synchronous factory that returns a matching type behind a plainer one hides its initialization, which Awaiten warns about ([AWT106](../09-diagnostics.md#awt106)). For a module's factory that warning comes in the module's own build, since a container in another assembly cannot see the factory's body.
 
 ## Failures are not cached
 
 If initialization throws, the faulted result is not memoized. The next resolve builds and initializes a fresh instance. The failed instance is disposed rather than leaked, and you get the original exception unchanged. Only if its disposal throws as well do you get an `AggregateException` that holds the original failure first and the disposal failure second. A cancellation from one caller does not poison the shared singleton either. A later caller with a live token can still initialize it.
+
+A caller that resolves the service while its initialization is already running joins that initialization and shares its outcome. The initialization runs with the token of the caller that started it, so a cancellation by that caller cancels the joined resolves too. The next resolve after it starts over with its own token.
 
 ## Relax the rule when you need to
 
@@ -256,7 +258,7 @@ An async service is often async-disposable too, so dispose the container and its
 
 ## Where to go next
 
-- [Lifecycle hooks](../07-lifetime/03-lifecycle-hooks.md) for `OnActivated` and `OnRelease`.
+- [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md) for `OnActivated` and `OnRelease`.
 - [Relationships](../06-resolution/02-relationships.md) for `Func`, `Lazy`, and `Task` shapes.
-- [Owned](../07-lifetime/01-owned.md) for async disposable transients you rent and return.
-- [MS.DI bridge](../08-hosting/01-msdi-bridge.md) to run async initialization under the generic host.
+- [Owned](./06-owned.md) for async disposable transients you rent and return.
+- [MS.DI bridge](../07-hosting/01-msdi-bridge.md) to run async initialization under the generic host.

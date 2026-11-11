@@ -11,7 +11,7 @@ Disposable transients are easy to leak. Resolve one on a long-lived owner and it
 In the strict default, a disposable transient is withheld from by-type resolution on the root. On the root, it would accumulate for the whole life of the container.
 
 ```csharp expect=AWT219
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 // highlight-next-line
 BrewSession session = shop.Resolve<BrewSession>();   // withheld on the root
 
@@ -23,22 +23,22 @@ public static partial class CoffeeShop;
 - On a receiver typed as the generated `Root`, as here, the build warns ([AWT219](../09-diagnostics.md#awt219)).
 - At run time the `Resolve` throws with guidance toward a bounded option, and `TryResolve` returns `false`. A resolve through `IAwaitenRoot`, or with a type only known at run time, is checked at run time only.
 
-A transient with an [`OnRelease` hook](../07-lifetime/03-lifecycle-hooks.md) is withheld the same way, even when [`SuppressDisposal`](./05-disposal.md#suppressing-disposal) opts it out of disposal itself: each construction queues the release on the owner, so on the root the instances pile up just like undisposed ones would.
+A transient with an [`OnRelease` hook](../05-registration/02-lifecycle-hooks.md) is withheld the same way, even when [`SuppressDisposal`](./05-disposal.md#suppressing-disposal) opts it out of disposal itself: each construction queues the release on the owner, so on the root the instances pile up just like undisposed ones would, and a rented object would not return to its pool before the container is disposed. Rent it through `Owned<T>` or from a child scope, and the release runs when the handle or the scope is disposed. A `SuppressDisposal` service without a release hook tracks nothing, so it stays resolvable everywhere.
 
 ## What is still allowed
 
 Strict mode does not get in your way for the safe shapes:
 
-- `Owned<T>` and `Func<Owned<T>>`, because you control disposal. See [Owned](../07-lifetime/01-owned.md).
+- `Owned<T>` and `Func<Owned<T>>`, because you control disposal. See [Owned](./06-owned.md).
 - A disposable transient injected into a normal constructor, because its owner disposes it.
 - A disposable transient resolved from a child scope, because the scope bounds its lifetime.
 - A singleton's `Lazy<T>` over a disposable, because it is memoized and bounded.
 
-What strict withholds is the leak-prone shape: a plain `Func<T>` or `Func<TArg, T>` over a disposable, held by a root-owned service. That is a non-suppressible error ([AWT118](../09-diagnostics.md#awt118)), because each call would strand another undisposed instance on the root. Under `Loose` it relaxes to a suppressible warning.
+What strict rejects is the leak-prone shape: a root-owned service (a singleton or a pre-built instance), directly or through the transients it depends on, holds a `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over a service that is built on demand, and building that service creates a disposable: it is disposable itself, or it builds a disposable transient somewhere below it. Each call would strand more undisposed instances on the root, so this is a non-suppressible error ([AWT118](../09-diagnostics.md#awt118)). Under `Loose` it relaxes to a suppressible warning.
 
 ## Loose when you want MS.DI semantics
 
-Set `LifetimeSafety = LifetimeSafety.Loose` to make everything resolvable everywhere, the way Microsoft's container behaves. The leak-prone pattern becomes a warning instead of being withheld.
+Set `LifetimeSafety = LifetimeSafety.Loose` to make everything resolvable everywhere, the way Microsoft's container behaves. A disposable transient resolved by type on the root then resolves and is held until the root is disposed, and the leak-prone `Func` pattern becomes a suppressible warning instead of an error.
 
 ```csharp
 [Container(LifetimeSafety = LifetimeSafety.Loose)]
@@ -49,13 +49,13 @@ public static partial class CoffeeShop;
 | | `Strict` (default) | `Loose` |
 |---|---|---|
 | Disposable or release-hooked transient resolved by type on the root | Withheld: [AWT219](../09-diagnostics.md#awt219) on a typed `Root`, throws at run time | Resolves, held until the root is disposed |
-| `Func<T>` or `Func<TArg, T>` over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) | Suppressible warning AWT118 |
+| `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) | Suppressible warning AWT118 |
 | `Owned<T>`, a child scope, constructor injection | Allowed | Allowed |
 
-Reach for `Loose` when you are bridging to code that expects MS.DI behavior. Otherwise, strict plus `Owned<T>` keeps disposal honest. A container that [extends](../05-registration/08-extending-containers.md#options) another inherits its setting.
+Reach for `Loose` when you are bridging to code that expects MS.DI behavior. Otherwise, strict plus `Owned<T>` keeps disposal honest. A container that [extends](../05-registration/09-extending-containers.md#options) another inherits its setting.
 
 ## Where to go next
 
-- [Owned](../07-lifetime/01-owned.md) for the recommended way to rent disposables.
+- [Owned](./06-owned.md) for the recommended way to rent disposables.
 - [Disposal](./05-disposal.md) for the teardown rules.
-- [MS.DI bridge](../08-hosting/01-msdi-bridge.md) for interop with Microsoft's container.
+- [MS.DI bridge](../07-hosting/01-msdi-bridge.md) for interop with Microsoft's container.

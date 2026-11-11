@@ -12,6 +12,7 @@ Give each registration a `Key`.
 
 ```csharp
 [Container]
+// highlight-next-line
 [Singleton<OatMilk, IMilk>(Key = "Oat")]
 [Singleton<WholeMilk, IMilk>(Key = "Whole")]
 [Singleton<SoyMilk, IMilk>(Key = "Soy")]
@@ -28,6 +29,7 @@ A key can be an `enum` constant (or a `typeof(...)`) instead of a string. An enu
 public enum MilkKind { Oat, Whole, Soy }
 
 [Container]
+// highlight-next-line
 [Singleton<OatMilk, IMilk>(Key = MilkKind.Oat)]
 [Singleton<WholeMilk, IMilk>(Key = MilkKind.Whole)]
 public static partial class CoffeeShop;
@@ -59,6 +61,7 @@ public sealed class DriveThroughRegister(IReceiptPrinter printer);
 
 [Container]
 [Singleton<ThermalPrinter, IReceiptPrinter>]
+// highlight-next-line
 [Singleton<WidePrinter, IReceiptPrinter>(WhenInjectedInto = typeof(DriveThroughRegister))]
 [Singleton<CounterRegister>]
 [Singleton<DriveThroughRegister>]
@@ -73,13 +76,9 @@ CounterRegister counter = shop.Resolve<CounterRegister>();                  // b
 IReceiptPrinter printer = shop.Resolve<IReceiptPrinter>();                  // ThermalPrinter
 ```
 
-A contextual binding fills a property injected by [`[InjectProperty<T>]`](../06-resolution/05-property-injection.md) the same way it fills a constructor parameter, and a decorator on the service wraps the contextual implementation along with the default. The consumer may also be an implementation an imported [module](./07-modules/index.md) registers or scans: the binding reaches its constructor parameters, `[Inject]` properties and lifecycle hook parameters, also when a module of another assembly builds it through a generated factory.
+A contextual binding fills a property injected by [`[InjectProperty<T>]`](../06-resolution/05-property-injection.md) the same way it fills a constructor parameter, and a decorator on the service wraps the contextual implementation along with the default. The consumer may also be an implementation an imported [module](./08-modules/index.md) registers or scans: the binding reaches its constructor parameters, `[Inject]` properties and lifecycle hook parameters, also when a module of another assembly builds it through a generated factory.
 
-The consumer may be a [decorator](./02-decorators.md) or a [composite](./03-composites.md) too. The binding reaches the dependencies it takes besides the instance it wraps or the collection it fans out over, in every chain it wraps and under every key. It never replaces that inner instance or collection. For an open generic decorator, name the closing the binding applies to, such as `typeof(LoggingBehavior<PlaceOrder>)`, as for any open generic consumer.
-
-:::note
-If the named consumer has no unkeyed constructor parameter of the service to redirect, the binding never applies, and Awaiten warns ([AWT167](../09-diagnostics.md#awt167)).
-:::
+The consumer may be a [decorator](./03-decorators.md) or a [composite](./04-composites.md) too. The binding reaches the dependencies it takes besides the instance it wraps or the collection it fans out over, in every chain it wraps and under every key. It never replaces that inner instance or collection. For an open generic decorator, name the closing the binding applies to, such as `typeof(LoggingBehavior<PlaceOrder>)`, as for any open generic consumer.
 
 ## Disambiguate same-typed dependencies with a factory
 
@@ -94,6 +93,7 @@ public sealed class Blend(IMilk primary, IMilk secondary);   // a plain class: t
 [Transient<Blend>(Factory = nameof(MakeBlend))]
 public static partial class CoffeeShop
 {
+    // highlight-next-line
     private static Blend MakeBlend([FromKey("Oat")] IMilk primary, [FromKey("Soy")] IMilk secondary)
         => new(primary, secondary);
 }
@@ -117,26 +117,27 @@ A typed key works the same way, and the enum `MilkKind.Oat` and the string `"Oat
 public sealed class LatteRecipe([FromKey(MilkKind.Oat)] IMilk milk);
 ```
 
-:::tip[When not to reach for this]
-Prefer distinct abstractions, or a [composite](./03-composites.md), over one service type selected by a key. A key is not part of the type: two `IMilk` parameters look the same to a reader whatever key selects them, and a key picked at run time from a dictionary or a `Resolve(key)` call is only checked when it runs. Reach for keys (and `WhenInjectedInto`) only when the implementations really are interchangeable variants of one abstraction, like the milk fridge above. Resolving the ambiguity with a key can hide a design that wants to be split into separate types, see [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
-:::
-
 ## Where the key goes
 
 The container side names a key with `Key =`: on a registration and on an [`[InjectProperty<T>]`](../06-resolution/05-property-injection.md) entry. The injection site selects one with `[FromKey]`: on a constructor or factory parameter, and on an [`[Inject]`](../06-resolution/05-property-injection.md) property, which has no `Key` of its own.
 
 ## Decorators and composites on keys
 
-A [decorator](./02-decorators.md#keyed-registrations) wraps only the unkeyed registrations unless it names keys: `Keys = new object?[] { null, "Oat" }` decorates the unkeyed registration and the `"Oat"` one, and `AllKeys = true` decorates every registration of the service. A decorated key is decorated wherever it is reached, through `Resolve`, `[FromKey]` or the keyed dictionary.
-
-A [composite](./03-composites.md#front-a-key) with a `Key` fronts that key: a resolve or `[FromKey]` under the key gets the composite, which fans out over the registrations under that key.
+A [decorator](./03-decorators.md#keyed-registrations) wraps a keyed registration only when it names the key in `Keys` or sets `AllKeys`, and a [composite](./04-composites.md#front-a-key) with a `Key` fronts the registrations under that key.
 
 ## Want the whole set?
 
 To get every keyed implementation as a map, ask for `IReadOnlyDictionary<string, IMilk>`. See [Keyed dictionaries](../06-resolution/04-keyed-dictionaries.md).
 
-:::note
-Two registrations with the same service type and key collide ([AWT117](../09-diagnostics.md#awt117)).
+## Rules
+
+- Two registrations with the same service type and key collide ([AWT117](../09-diagnostics.md#awt117)).
+- A `[FromKey]` that names a key nothing is registered under is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
+- A typed resolve on the generated `Root` or `Scope` with a constant key nothing is registered under is a warning ([AWT218](../09-diagnostics.md#awt218)).
+- A `WhenInjectedInto` binding whose consumer has no unkeyed constructor parameter of the service to redirect never applies, and Awaiten warns ([AWT167](../09-diagnostics.md#awt167)).
+
+:::tip[When not to reach for this]
+Prefer distinct abstractions, or a [composite](./04-composites.md), over one service type selected by a key. A key is not part of the type: two `IMilk` parameters look the same to a reader whatever key selects them, and a key picked at run time from a dictionary or a `Resolve(key)` call is only checked when it runs. Reach for keys (and `WhenInjectedInto`) only when the implementations really are interchangeable variants of one abstraction, like the milk fridge above. Resolving the ambiguity with a key can hide a design that wants to be split into separate types, see [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
 :::
 
 ## Where to go next

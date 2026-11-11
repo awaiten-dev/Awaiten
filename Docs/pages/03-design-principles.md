@@ -1,9 +1,10 @@
 ---
 description: The design that Awaiten's mechanics serve, from the composition root and volatile dependencies to the four DI anti-patterns.
 sidebar_label: Design principles
+pagination_prev: complete-example/index
 ---
 
-# Design principles & the composition root
+# Design principles and the composition root
 
 The rest of these docs teach the *mechanics*: how to register services, resolve them, and keep their lifetimes honest. This page is about the *design* those mechanics serve. Awaiten enforces the mechanics for you (lifetimes, cycles, async ordering) and turns the ones it can see into build errors. It cannot enforce the design. That part is on you, and it is what this page is for.
 
@@ -38,7 +39,7 @@ One rule follows from this, and it is the most important rule on the page:
 
 Not everything deserves an abstraction and a registration. Deciding what does is the judgment the container cannot make for you.
 
-A dependency is **volatile** when it does something you cannot control from a test or reproduce on demand: it talks to the outside world, has side effects, or gives different answers at different times. The clock, randomness, the filesystem, a database, an HTTP call, configuration read at startup. In the coffee shop, the espresso machine and the payment terminal are volatile: one touches hardware, the other calls the bank. These are exactly the things you want behind an abstraction so a test can stand in a fake, and exactly the things that belong in the container. A test that wants the whole graph can [extend](./05-registration/08-extending-containers.md) the production container and replace only these.
+A dependency is **volatile** when it does something you cannot control from a test or reproduce on demand: it talks to the outside world, has side effects, or gives different answers at different times. The clock, randomness, the filesystem, a database, an HTTP call, configuration read at startup. In the coffee shop, the espresso machine and the payment terminal are volatile: one touches hardware, the other calls the bank. These are exactly the things you want behind an abstraction so a test can stand in a fake, and exactly the things that belong in the container. A test that wants the whole graph can [extend](./05-registration/09-extending-containers.md) the production container and replace only these.
 
 A dependency is **stable** when it is deterministic and self-contained: a value type, a pure helper, a piece of data with no I/O behind it. A coffee `Recipe` that holds a list of steps is stable. Abstracting it buys you nothing, and registering it just adds noise to the root.
 
@@ -48,7 +49,7 @@ If a dependency reaches outside the process, keeps state that outlives one call,
 
 ## The four anti-patterns
 
-Loose coupling has four classic failure modes: four ways code stays bound to its collaborators even when it looks like it uses DI. Awaiten structurally rules out one of them; the other three are design mistakes no compiler can see, so recognizing them is the defense. These are not one team's opinion: the names follow van Deursen and Seemann's [*Dependency Injection Principles, Practices, and Patterns*](https://www.manning.com/books/dependency-injection-principles-practices-patterns) (Manning, 2019), and [Microsoft's own DI guidelines](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/guidelines#example-anti-patterns) warn against the same set.
+Loose coupling has four classic failure modes: four ways code stays bound to its collaborators even when it looks like it uses DI. Awaiten rules out one of them structurally and warns about a second ([AWT135](./09-diagnostics.md#awt135)); the other two are design mistakes no compiler can see, so recognizing them is the defense. These are not one team's opinion: the names follow van Deursen and Seemann's [*Dependency Injection Principles, Practices, and Patterns*](https://www.manning.com/books/dependency-injection-principles-practices-patterns) (Manning, 2019), and [Microsoft's own DI guidelines](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/guidelines#example-anti-patterns) warn against the same set.
 
 ### Control Freak
 
@@ -59,7 +60,7 @@ public sealed class Barista
 {
     public void Serve(Order order)
     {
-        PaymentTerminal terminal = new();       // built here, cannot be substituted
+        CardTerminal terminal = new();          // built here, cannot be substituted
         DateTime when = DateTime.UtcNow;        // and the clock is reached statically
         // ...
     }
@@ -68,7 +69,7 @@ public sealed class Barista
 
 Now `Barista` cannot be tested without charging a real card and reading the wall clock, and no caller can swap either one.
 
-**In Awaiten:** the tool does not stop a `new` inside a method, and it cannot. The fix is not a diagnostic; it is design. [Depend on an abstraction](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/architectural-principles#dependency-inversion) (`IPaymentGateway`, `ITimeSystem`), take it through the constructor, and register it on the container.
+**In Awaiten:** the tool does not stop a `new` inside a method, and it cannot. The fix is not a diagnostic; it is design. [Depend on an abstraction](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/architectural-principles#dependency-inversion) (`IPaymentTerminal`, `ITimeSystem`), take it through the constructor, and register it on the container.
 
 ### Service Locator
 
@@ -80,7 +81,7 @@ public sealed class Barista(IAwaitenResolver resolver)
     public void Serve(Order order)
     {
         // highlight-next-line
-        IPaymentGateway gateway = resolver.Resolve<IPaymentGateway>();   // real dependency, hidden
+        IPaymentTerminal terminal = resolver.Resolve<IPaymentTerminal>();   // real dependency, hidden
         // ...
     }
 }
@@ -115,15 +116,15 @@ A design that forces a particular constructor shape or late-binds types by refle
 Plain constructor injection needs no attribute at all. A class that [asks for its collaborators through its constructor](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/architectural-principles#explicit-dependencies) is already a clean POCO, and that is the common path.
 
 ```csharp
-public sealed class Barista(ITimeSystem timeSystem, IPaymentGateway gateway);   // no attributes, no Awaiten reference
+public sealed class Barista(ITimeSystem timeSystem, IPaymentTerminal terminal);   // no attributes, no Awaiten reference
 ```
 
 The few features that would otherwise put an Awaiten attribute on a domain class each have a **container-side form** that keeps the class plain, because the instruction lives on the composition root where Awaiten belongs:
 
 | Need | Container-side idiom (clean domain) | Consumer-side escape hatch |
 |---|---|---|
-| A host-owned service | [`[ImportService<T>]`](./08-hosting/02-external-services.mdx) | *(none needed)* |
-| A keyed implementation | [`WhenInjectedInto`](./05-registration/04-keyed-services.md) or a factory [`[FromKey]`](./05-registration/04-keyed-services.md) | `[FromKey]` on the parameter |
+| A host-owned service | [`[ImportService<T>]`](./07-hosting/02-external-services.mdx) | *(none needed)* |
+| A keyed implementation | [`WhenInjectedInto`](./05-registration/05-keyed-services.md) or a factory [`[FromKey]`](./05-registration/05-keyed-services.md) | `[FromKey]` on the parameter |
 | A runtime argument | a factory `[Arg]` behind [`Func<TArg, T>`](./06-resolution/06-runtime-arguments.md) | `[Arg]` on the parameter |
 | Property injection | [`[InjectProperty<T>]`](./06-resolution/05-property-injection.md) | `[Inject]` on the property |
 
@@ -131,17 +132,17 @@ Prefer the container-side form every time. It leaves the domain class free of an
 
 ### A module of your own
 
-There is one place outside the composition root where a reference to Awaiten earns its keep: a [module](./05-registration/07-modules/index.md) that your domain assembly ships for its own implementations. Without it, the composition root can only build what it can name, so every implementation would have to be `public` just so the outermost layer can construct it. With it, the domain keeps its implementations `internal` and exposes only the abstractions:
+There is one place outside the composition root where a reference to Awaiten earns its keep: a [module](./05-registration/08-modules/index.md) that your domain assembly ships for its own implementations. Without it, the composition root can only build what it can name, so every implementation would have to be `public` just so the outermost layer can construct it. With it, the domain keeps its implementations `internal` and exposes only the abstractions:
 
 ```csharp
 // in the domain assembly
-internal sealed class CardTerminal : IPaymentGateway   // stays internal
+internal sealed class CardTerminal : IPaymentTerminal   // stays internal
 {
-    public Receipt Charge(decimal amount) => new(amount);
+    public Task ChargeAsync(decimal amount) => Task.CompletedTask;
 }
 
 [Module]
-[Singleton<CardTerminal, IPaymentGateway>]
+[Singleton<CardTerminal, IPaymentTerminal>]
 public static partial class PaymentModule;
 ```
 
@@ -149,6 +150,7 @@ public static partial class PaymentModule;
 // in the composition root
 [Container]
 [Import(typeof(PaymentModule))]
+[Singleton<RealTimeSystem, ITimeSystem>]
 [Transient<Barista>]
 public static partial class CoffeeShop;
 ```
@@ -157,7 +159,7 @@ The module is composition code, not domain code. `CardTerminal` and `Barista` st
 
 The price is that the domain assembly now references Awaiten, and a host on another container can't use the module. If other applications consume your library, offer them a plain public factory as well.
 
-Awaiten guards part of this for you: applying a composition attribute (`[Singleton]`, `[Scan]`, and the like) in an assembly that declares no `[Container]` is the suppressible warning [AWT134](./09-diagnostics.md#awt134). That guard is best-effort, and it goes quiet in a single-project app that mixes the root with its domain. To enforce the full boundary, add an **architecture test** that asserts your domain and application assemblies carry no reference to Awaiten outside their module's namespace. That turns a convention into a red build the day someone crosses the line.
+Awaiten guards part of this for you: applying a composition attribute (`[Singleton]`, `[Scan]`, and the like) in an assembly that declares no `[Container]` is the suppressible warning [AWT134](./09-diagnostics.md#awt134). A `[Module]` class is exempt, so the module above does not trip it. That guard is best-effort, and it goes quiet in a single-project app that mixes the root with its domain. To enforce the full boundary, add an **architecture test** that asserts your domain and application assemblies carry no reference to Awaiten outside their module's namespace. That turns a convention into a red build the day someone crosses the line.
 
 [aweXpect.Reflection](https://docs.testably.org/aweXpect/extensions/aweXpect.Reflection/) expresses that rule directly. Point it at the assembly that holds your domain code, leave out its module's namespace, and assert the rest depends on nothing in the `Awaiten` namespace:
 
@@ -182,14 +184,14 @@ Only the composition-root assembly (the one that declares your `[Container]`) an
 
 ## When power becomes a smell
 
-Some of Awaiten's features resolve ambiguity gracefully: [keyed services](./05-registration/04-keyed-services.md), contextual binding, [scanning](./05-registration/06-scanning.md), [context-aware factories](./06-resolution/07-context-aware-factories.md), and [conditional decorators](./05-registration/02-decorators.md#apply-a-decorator-conditionally) all let you say "it depends" and have the container sort it out. That power is real, and sometimes exactly right. But resolving an ambiguity is not the same as removing it, and a container that smooths one over can hide a design that wants to be split into two clear abstractions instead of one clever registration.
+Some of Awaiten's features resolve ambiguity gracefully: [keyed services](./05-registration/05-keyed-services.md), contextual binding, [scanning](./05-registration/07-scanning.md), [context-aware factories](./06-resolution/07-context-aware-factories.md), and [conditional decorators](./05-registration/03-decorators.md#apply-a-decorator-conditionally) all let you say "it depends" and have the container sort it out. That power is real, and sometimes exactly right. But resolving an ambiguity is not the same as removing it, and a container that smooths one over can hide a design that wants to be split into two clear abstractions instead of one clever registration.
 
 Each of those feature pages carries a **"When not to reach for this"** note that names the simpler thing to prefer and the genuine case that justifies the feature. Read them as a set. When you find yourself reaching for the powerful form to paper over a design you are not happy with, that is the smell, and the fix usually lives in the design, not the registration.
 
 ## Where to go next
 
 - [Getting started](./01-getting-started.md) if you have not built a container yet.
-- [Keyed services](./05-registration/04-keyed-services.md) and [scanning](./05-registration/06-scanning.md) for the registration features to use sparingly.
+- [Keyed services](./05-registration/05-keyed-services.md) and [scanning](./05-registration/07-scanning.md) for the registration features to use sparingly.
 - [Property injection](./06-resolution/05-property-injection.md) and [context-aware factories](./06-resolution/07-context-aware-factories.md) for the resolution features to use sparingly.
-- [Extending containers](./05-registration/08-extending-containers.md) for a test composition root that reuses the production one.
+- [Extending containers](./05-registration/09-extending-containers.md) for a test composition root that reuses the production one.
 - [Diagnostics](./09-diagnostics.md) for the mechanics Awaiten *does* enforce.

@@ -31,19 +31,19 @@ In MS.DI you call methods on a service collection at startup, and the provider w
 | `services.AddTransient<Cup>()` | `[Transient<Cup>]` |
 | `services.AddSingleton<IBrewer>(sp => ...)` | `[Singleton<IBrewer>(Factory = nameof(MakeBrewer))]` with a static method on the container. Its parameters resolve from the graph, so there is no `sp.GetRequiredService` inside it. See [Factories and instances](../05-registration/01-factories-and-instances.md). |
 | `services.AddSingleton(menuBoard)` | `[Singleton<MenuBoard>(Instance = nameof(Menu))]` with a static field or property. As in MS.DI, the container never disposes it. |
-| `services.TryAddSingleton<ITimeSystem, RealTimeSystem>()` | `[Singleton<RealTimeSystem, ITimeSystem>(Fallback = Fallback.Silent)]`, typically in a module: a registration of the service without `Fallback` replaces it. Unlike `TryAdd`, a second default of the same service is kept too and joins its collections, and every default that is kept is built and validated like any registration: a missing or captive dependency of a default that never wins single resolution is still a compile-time error, and an eager one is still built at startup. See [overridable defaults](../05-registration/07-modules/index.md#overridable-defaults). |
-| An `AddPayments()` extension method on `IServiceCollection` | A static class marked `[Module]`, pulled in with `[Import(typeof(PaymentModule))]`. See [Modules](../05-registration/07-modules/index.md). |
-| Several `AddSingleton<ISyrup, ...>()` calls and an `IEnumerable<ISyrup>` parameter | Several `[Singleton<..., ISyrup>]` registrations and the same `IEnumerable<ISyrup>` parameter; arrays, `IReadOnlyList<T>` and the other [collection shapes](../06-resolution/03-collections.md) work too. A single `ISyrup` resolves to the *first* registration, not the last. |
+| `services.TryAddSingleton<ITimeSystem, RealTimeSystem>()` | `[Singleton<RealTimeSystem, ITimeSystem>(Fallback = Fallback.Silent)]`, typically in a module: an explicit registration of the service without `Fallback` replaces it, while a scan match or an open-generic closing does not. Unlike `TryAdd`, a second default of the same service is kept too and joins its collections, and every default that is kept is built and validated like any registration: a missing or captive dependency of a default that never wins single resolution is still a compile-time error, and an eager one is still built at startup. See [overridable defaults](../05-registration/08-modules/index.md#overridable-defaults). |
+| An `AddPayments()` extension method on `IServiceCollection` | A static class marked `[Module]`, pulled in with `[Import(typeof(PaymentModule))]`. See [Modules](../05-registration/08-modules/index.md). |
+| Several `AddSingleton<ISyrup, ...>()` calls and an `IEnumerable<ISyrup>` parameter | Several `[Singleton<..., ISyrup>]` registrations and the same `IEnumerable<ISyrup>` parameter; arrays, `IReadOnlyList<T>` and the other [collection shapes](../06-resolution/03-collections.md) work too. A single `ISyrup` resolves to the *first* registration, not the last. When the bridge projects the container, a consumer that stays in MS.DI sees only that one: its `IEnumerable<ISyrup>` holds the first registration, plus any `ISyrup` the host registers itself. See [What the bridge does not project](./01-msdi-bridge.md#what-the-bridge-does-not-project). |
 | `services.AddKeyedSingleton<IMilk, OatMilk>("Oat")` | `[Singleton<OatMilk, IMilk>(Key = "Oat")]` |
-| `[FromKeyedServices("Oat")] IMilk milk` | `[FromKey("Oat")] IMilk milk`, or keep the consumer free of attributes with `WhenInjectedInto` or a factory. See [Keyed services](../05-registration/04-keyed-services.md). |
-| `services.AddTransient(typeof(IRepository<>), typeof(Repository<>))` | `[Transient(typeof(Repository<>), typeof(IRepository<>))]`. Awaiten generates the closings the graph asks for. See [Open generics](../05-registration/05-open-generics.md). |
+| `[FromKeyedServices("Oat")] IMilk milk` | `[FromKey("Oat")] IMilk milk`, or keep the consumer free of attributes with `WhenInjectedInto` or a factory. See [Keyed services](../05-registration/05-keyed-services.md). |
+| `services.AddTransient(typeof(IRepository<>), typeof(Repository<>))` | `[Transient(typeof(Repository<>), typeof(IRepository<>))]`. Awaiten generates the closings the graph asks for. See [Open generics](../05-registration/06-open-generics.md). |
 | `ActivatorUtilities.CreateInstance<Cup>(sp, "Large")` | An `[Arg]` parameter and a `Func<string, Cup>` dependency. See [Runtime arguments](../06-resolution/06-runtime-arguments.md). |
 | `provider.GetRequiredService<Cup>()` | `shop.Resolve<Cup>()` |
 | `provider.GetService<Cup>()` | `shop.TryResolve<Cup>(out Cup? cup)` |
 | `provider.GetServices<ISyrup>()` | `shop.Resolve<IEnumerable<ISyrup>>()` |
 | `provider.GetRequiredKeyedService<IMilk>("Oat")` | `shop.Resolve<IMilk>("Oat")`. See [Resolving services](../06-resolution/01-resolving-services.md). |
 | `provider.CreateScope()`, `provider.CreateAsyncScope()` | `shop.CreateScope()`, disposed with `using` or `await using`. `CreateScopeAsync` also initializes the scope's async services up front. See [Scopes](../04-core-concepts/02-scopes.md). |
-| `IServiceScopeFactory` injected into a service | `Func<Owned<T>>`: each call builds `T` in its own scope, which the handle disposes. See [Owned](../07-lifetime/01-owned.md). |
+| `IServiceScopeFactory` injected into a service | `Func<Owned<T>>`: each call builds `T` in its own scope, which the handle disposes. See [Owned](../04-core-concepts/06-owned.md). |
 | `IDisposable` and `IAsyncDisposable` services | Disposed by the scope or root that built them, in reverse creation order. A service that is only `IAsyncDisposable` needs `await using`, as in MS.DI ([AWT156](../09-diagnostics.md#awt156)). See [Disposal](../04-core-concepts/05-disposal.md). |
 | `services.Configure<Settings>(...)` and `IOptions<Settings>` | Configuration stays in MS.DI. The container consumes it with `[ImportService(typeof(IOptions<>))]`. See [External services](./02-external-services.mdx). |
 | `services.AddHostedService<Roaster>()` | Stays in MS.DI. The hosted service's constructor can take services the bridge projects from the container. |
@@ -117,24 +117,7 @@ public static partial class CoffeeShop
 
 ### 1. Declare the container
 
-Translate each call into an attribute on a container class. Swap the type arguments where a service type is named: Awaiten takes the implementation first. The pre-built menu board becomes a static property that `Instance` points at.
-
-```csharp
-[Container]
-[Singleton<EspressoMachine>]
-[Singleton<EspressoBrewer, IBrewer>]
-[Scoped<Order>]
-[Transient<Cup>]
-[Singleton<OatMilk, IMilk>(Key = "Oat")]
-[Singleton<WholeMilk, IMilk>(Key = "Whole")]
-[Singleton<VanillaSyrup, ISyrup>]
-[Singleton<CaramelSyrup, ISyrup>]
-[Singleton<MenuBoard>(Instance = nameof(Menu))]
-public static partial class CoffeeShop
-{
-    private static MenuBoard Menu { get; } = MenuBoard.Load();
-}
-```
+Translate each call into an attribute on a container class, as the `CoffeeShop` class in the second tab shows. Swap the type arguments where a service type is named: `AddSingleton<IBrewer, EspressoBrewer>()` becomes `[Singleton<EspressoBrewer, IBrewer>]`, because Awaiten takes the implementation first. The pre-built menu board becomes a static property that `Instance` points at.
 
 ### 2. Build the project
 
@@ -142,18 +125,11 @@ There is no `ValidateOnBuild` to set: the build is the validation. If `Cup` need
 
 ### 3. Replace the provider with the root
 
-The generated `CoffeeShop.Root` takes the place of the `ServiceProvider`, and its scopes take the place of the MS.DI scopes.
+The generated `CoffeeShop.Root` takes the place of the `ServiceProvider`, and its scopes take the place of the MS.DI scopes, as the top of the second tab shows:
 
-```csharp
-await using CoffeeShop.Root shop = new();
-
-await using (IAwaitenScope order = shop.CreateScope())
-{
-    Order current = order.Resolve<Order>();
-    IMilk milk = order.Resolve<IMilk>("Oat");
-    IEnumerable<ISyrup> syrups = order.Resolve<IEnumerable<ISyrup>>();
-}
-```
+- `services.BuildServiceProvider(...)` becomes `new CoffeeShop.Root()`.
+- `provider.CreateAsyncScope()` becomes `shop.CreateScope()`.
+- `GetRequiredService<Order>()` becomes `Resolve<Order>()`, `GetRequiredKeyedService<IMilk>("Oat")` becomes `Resolve<IMilk>("Oat")`, and `GetServices<ISyrup>()` becomes `Resolve<IEnumerable<ISyrup>>()`.
 
 ### 4. Keep the host
 
@@ -185,7 +161,7 @@ using Awaiten.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
 ServiceCollection services = new();
-services.AddSingleton<IPaymentGateway, StripeGateway>();   // not migrated yet
+services.AddSingleton<IPaymentTerminal, CardTerminal>();   // not migrated yet
 services.AddAwaitenContainer<CoffeeShop.Root>();
 
 await using ServiceProvider provider = services.BuildServiceProvider();
@@ -193,32 +169,34 @@ provider.VerifyAwaitenContainers();
 
 [Container]
 // highlight-next-line
-[ImportService<IPaymentGateway>]   // still registered in MS.DI
+[ImportService<IPaymentTerminal>]   // still registered in MS.DI
 [Singleton<EspressoMachine>]
 [Scoped<Order>]
-[Transient<Barista>]
+[Transient<CheckoutCounter>]
 public static partial class CoffeeShop;
+
+public sealed class CheckoutCounter(IPaymentTerminal terminal);
 ```
 
-While a group is half moved, `[ImportServices]` lets every unregistered dependency fall through to the host instead of naming each one. It trades away the missing-dependency check, so replace it with `[ImportService<T>]` declarations once the group is done. See [External services](./02-external-services.mdx).
+While a group is half moved, `[ImportServices]` lets every unregistered, unkeyed direct dependency fall through to the host instead of naming each one. A keyed dependency and an injected property still need an `[ImportService<T>]`. It trades away the missing-dependency check, so replace it with `[ImportService<T>]` declarations once the group is done. See [External services](./02-external-services.mdx).
 
 :::tip
-`LifetimeSafety.Loose` on the container lets a disposable transient resolve from the root, as MS.DI allows. It can help while code still relies on that, but the strict default with [`Owned<T>`](../07-lifetime/01-owned.md) is the leak-free target. See [Lifetime safety](../04-core-concepts/04-lifetime-safety.md).
+`LifetimeSafety.Loose` on the container lets a disposable transient resolve from the root, as MS.DI allows. It can help while code still relies on that, but the strict default with [`Owned<T>`](../04-core-concepts/06-owned.md) is the leak-free target. See [Lifetime safety](../04-core-concepts/04-lifetime-safety.md).
 :::
 
 ## What has no direct equivalent
 
 - **Changing registrations at run time.** `Replace`, `RemoveAll`, or registering only `if (configuration["UseFilter"] == "true")` have no counterpart, because the graph is built at compile time. Make the choice in a [factory method](../05-registration/01-factories-and-instances.md#factory) that takes the setting as a parameter, or keep that registration in MS.DI.
-- **Last registration wins.** In MS.DI a later registration overrides an earlier one for single resolution. In Awaiten the first one wins, and an override is declared explicitly: a module offers an overridable default with `Fallback`, and the container's own registration replaces it.
+- **Last registration wins.** In MS.DI a later registration overrides an earlier one for single resolution. In Awaiten the first one wins, and an override is declared explicitly: a module offers an overridable default with `Fallback`, and an explicit registration of the service replaces it.
 - **Lambda factories.** A factory is a named static method on the container or a module, not a closure. Values it needs come from its parameters or from an `Instance` member.
 - **`KeyedService.AnyKey`.** A key selects exactly one registration; there is no wildcard key. To get every keyed implementation at once, take an [`IReadOnlyDictionary<string, IMilk>`](../06-resolution/04-keyed-dictionaries.md).
 - **Injecting `IServiceProvider` or `IServiceScopeFactory` into a service.** Resolving from the container inside a service is the service locator pattern, which Awaiten reports when its own resolver interfaces are injected ([AWT135](../09-diagnostics.md#awt135)). Take the dependency itself, a `Func<T>`, a `Func<Owned<T>>`, or a [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) for a type known only at run time.
 - **Disposable transients on the root.** MS.DI keeps every disposable transient resolved from the root provider until the provider is disposed. Awaiten's strict default withholds them from the root and points you to `Owned<T>` or a scope; `LifetimeSafety.Loose` restores the MS.DI behavior.
-- **Collections across the bridge.** The bridge projects each registration, not Awaiten's synthesized collections, so consume `IEnumerable<T>` of container services inside the container.
+- **Collections across the bridge.** `AddAwaitenContainer` and `AwaitenServiceProviderFactory` project one registration per service type, the one that wins single resolution, and none of Awaiten's synthesized collections, relationships or keyed dictionaries. Consume `IEnumerable<T>` of container services inside the container, or register a container service that holds the collection and inject that into the MS.DI consumer. Under `AwaitenServiceProvider`, where the container answers every request, MS.DI consumers get the container's collections. See [What the bridge does not project](./01-msdi-bridge.md#what-the-bridge-does-not-project).
 - **Open generic closings only the host asks for.** The container generates the closings its own graph uses. A closing that only a framework requests, for example as a minimal API parameter, is not available through the bridge. See [Feature detection](./01-msdi-bridge.md#feature-detection).
 - **Options, logging and hosted services.** They stay registered in MS.DI. The container imports what it needs, such as `[ImportService(typeof(ILogger<>))]`.
 
-MS.DI has no counterpart to [async initialization](../04-core-concepts/03-async-initialization.md) either: a service that needs asynchronous setup gets an async initializer convention or an asynchronous `OnActivated` hook on the container, and the bridge exposes it to MS.DI as `Task<T>`. If your services already share a startup interface of your own, name it in `[AsyncInitializer<T>]` and keep the services as they are.
+MS.DI has no counterpart to [async initialization](../04-core-concepts/03-async-initialization.md) either: a service that needs asynchronous setup gets an async initializer convention or an asynchronous `OnActivated` hook on the container, and in the strict default the bridge exposes it to MS.DI as `Task<T>`. With `AsyncSafety.SyncAfterInit` and `WithInitialization()`, MS.DI gets the bare type, warmed on startup; see [Warm async services on startup](./01-msdi-bridge.md#warm-async-services-on-startup). If your services already share a startup interface of your own, name it in `[AsyncInitializer<T>]` and keep the services as they are.
 
 ## Where to go next
 

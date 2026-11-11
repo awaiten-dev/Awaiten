@@ -8,18 +8,19 @@ The sidebar follows the `NN-` prefixes of the files and folders. Keep the prefix
 
 | Section | Holds |
 |---|---|
-| `01-getting-started.md` | Install, the first container, async warm-up, the first diagnostic. |
-| `02-complete-example/` | One realistic container that combines the main features (`index.md`), and a walkthrough of the code the generator writes for exactly that container (`01-generated-code.md`). |
+| `00-introduction.md` | What Awaiten is, what the compiler checks, how it compares with other containers and when to pick something else. |
+| `01-getting-started.md` | Requirements, install, the first container, async warm-up, the first diagnostic. |
+| `02-complete-example/` | One realistic container that combines the main features (`index.md`), and a walkthrough of the code the generator writes for exactly that container (`01-generated-code.md`, which the previous and next links skip). |
 | `03-design-principles.md` | The design the mechanics serve: composition root, volatile and stable dependencies, the anti-patterns, keeping Awaiten out of the domain. Feature pages link here from their "When not to reach for this" tip. |
-| `04-core-concepts/` | Lifetimes, scopes, async initialization, lifetime safety, disposal. |
-| `05-registration/` | How to tell the container what to build. `07-modules/` holds the user page (`index.md`) and the library-author page (`01-library-modules.md`). |
-| `06-resolution/` | How a consumer asks for services: the resolve surface, relationships, collections, property injection, runtime arguments. |
-| `07-lifetime/` | `Owned<T>` and lifecycle hooks. |
-| `08-hosting/` | The MS.DI bridge, imported services, migrating from MS.DI. |
-| `09-diagnostics.md` | The catalog of every `AWT` id. |
-| `12-reference/` | Lookup pages: attributes, runtime API, glossary, troubleshooting, with an `index.md` that says what each holds. |
+| `04-core-concepts/` | Lifetimes, scopes, async initialization, lifetime safety, disposal, `Owned<T>`. |
+| `05-registration/` | How to tell the container what to build: factories, lifecycle hooks, decorators, composites, keys, open generics, scanning, modules, extending containers. `08-modules/` holds the user page (`index.md`), the library-author guide (`01-library-modules.md`) and the detailed rules for library modules (`02-library-module-rules.md`). |
+| `06-resolution/` | How a consumer asks for services. Its `index.md` has one table of every dependency shape; the pages cover the resolve surface, relationships, collections, keyed dictionaries, property injection, runtime arguments, context-aware factories and generic variance. |
+| `07-hosting/` | The MS.DI bridge with a complete ASP.NET Core example, imported services, migrating from MS.DI. |
+| `09-diagnostics.md` | The catalog of every `AWT` id, with an index table. |
+| `10-benchmarks.mdx`, `11-changelog.mdx` | Rendered from generated data; reached from the navbar and footer, and left out of the sidebar on purpose (`sidebarItemsGenerator` in `docusaurus.config.ts`). |
+| `12-reference/` | Lookup pages: attributes, runtime API, glossary, troubleshooting and FAQ, with an `index.md` that says what each holds. |
 
-A page with subpages is a folder with an `index.md` (the page itself) and a `_category_.json` that sets only the `label`. A folder without an `index.md` gets `"link": {"type": "generated-index", "description": "..."}` in its `_category_.json`. Never set `collapsed`.
+A page with subpages is a folder with an `index.md` (the page itself) and a `_category_.json` that sets the `label` (and optionally `customProps.description`) but no `link`. A folder without an `index.md` gets `"link": {"type": "generated-index", "description": "..."}` in its `_category_.json`. Never set `collapsed`.
 
 When a page moves, update every relative link to it and to the pages it links to, and rename the matching folder under `Tests/Awaiten.Docs.Tests/Scaffold/`. A URL that was published needs a redirect in `Docs/site/docusaurus.config.ts`.
 
@@ -60,13 +61,13 @@ A form that puts an Awaiten attribute on a domain type (`[FromKey]`, `[Arg]`, `[
 
 Every id has one section in `09-diagnostics.md`, under the topic it belongs to:
 
-- The heading is `### AWTnnn: Short title \{#awtnnn\}`. The title is the descriptor title from `Diagnostics.cs` in sentence case, with code names in backticks. Escape the braces of the heading id: the site enables `future.v4`, which turns off the unescaped MDX 1 syntax.
+- The heading is `### AWTnnn: Short title \{#awtnnn\}`. The title is the descriptor title from `Diagnostics.cs` word for word (code names may be put in backticks), because the IDE shows that title next to the help link; improve the descriptor title instead of rewording it on the page. Escape the braces of the heading id: the site enables `future.v4`, which turns off the unescaped MDX 1 syntax.
 - An admonition with the severity (`:::danger[Error]` or `:::warning[Warning]`) and a one-sentence summary.
 - An `expect=AWTnnn` example that triggers it, with `// highlight-next-line` on the trigger.
 - A `**Fix:**` paragraph, followed by a fixed example where that helps.
 - A row in the `## Index` table at the top of the page, sorted by id.
 
-Every descriptor in `Diagnostics.cs` passes `helpLinkUri: HelpLink("AWTnnn")`, so the id in the IDE links to its section. An id that is no longer reported moves to `## Reserved ids` and is never reused.
+Every descriptor in `Diagnostics.cs` passes `helpLinkUri: HelpLink("AWTnnn")`, so the id in the IDE links to its section. An id that is no longer reported moves to `## Reserved ids` and is never reused. The page keeps `toc_max_heading_level: 2`: the index table, not the table of contents, lists the ids.
 
 ## Before you push
 

@@ -10,10 +10,14 @@ Awaiten is the async-first dependency injection container for .NET. It wires you
 
 This page opens a coffee shop from scratch. By the end you have a working container, you have added an espresso machine that warms up before it serves, and you have seen the compiler catch a mistake.
 
+:::note[About the examples]
+A code block in these docs assumes `using Awaiten;`, the implicit usings of an SDK-style project and the coffee-shop types such as `EspressoMachine`, `Order` and `Cup`, unless it is a complete program titled `Program.cs`.
+:::
+
 ## Requirements
 
 - The .NET SDK 10.0.300 or later, for the C# compiler the source generator needs. Visual Studio and Rider bring a compiler of their own, so keep the IDE at a version that ships the compiler of that SDK, or the generator does not run there. See [Troubleshooting](./12-reference/04-troubleshooting.md).
-- C# 11 or later. Projects that target .NET Framework or netstandard2.0 default to C# 7.3, so set `<LangVersion>latest</LangVersion>` in the project file.
+- C# 11 or later for Awaiten itself, or C# 9 with the `typeof` forms described below. The examples in these docs use C# 12 features such as primary constructors, classes without a body and collection expressions, so keep the language version at `latest`. Projects that target .NET Framework or netstandard2.0 default to C# 7.3, so set `<LangVersion>latest</LangVersion>` in the project file.
 - Any target framework from .NET Framework 4.8 and netstandard2.0 up to `net10.0`.
 
 <details>
@@ -21,7 +25,7 @@ This page opens a coffee shop from scratch. By the end you have a working contai
 
 C# 9 and 10 work too, as long as no module of the project declares a `[Scan]`: use the `typeof` forms, such as `[Singleton(typeof(Espresso))]`, which every generic attribute except `[AsyncInitializer<T>]` also has. On an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
 
-The generated code needs no polyfill package. Without one, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
+On .NET Framework and netstandard2.0, which lack the `NotNullWhen` attribute, the generated code still needs no polyfill package. Without one, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
 
 </details>
 
@@ -29,7 +33,7 @@ The generated code needs no polyfill package. Without one, only code in the same
 
 <PackageInstall package="Awaiten" />
 
-`Awaiten` is all you need: the attributes, the source generator and the runtime types. It has no third-party dependencies; on netstandard2.0 it references only `Microsoft.Bcl.AsyncInterfaces`, for async disposal. When you host the container in ASP.NET Core or the generic host, add `Awaiten.Extensions.DependencyInjection` as well, as the [MS.DI bridge](./08-hosting/01-msdi-bridge.md) describes.
+`Awaiten` is all you need: the attributes, the source generator and the runtime types. It has no third-party dependencies; on netstandard2.0 it references only `Microsoft.Bcl.AsyncInterfaces`, for async disposal. When you host the container in ASP.NET Core or the generic host, add `Awaiten.Extensions.DependencyInjection` as well, as the [MS.DI bridge](./07-hosting/01-msdi-bridge.md) describes.
 
 ## Build your first container
 
@@ -38,7 +42,7 @@ A container is a `static partial` class marked with `[Container]`. You register 
 ```csharp title="Program.cs"
 using Awaiten;
 
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 
 Cup cup = shop.Resolve<Cup>();
 Console.WriteLine($"Your cup holds {cup.Contents}.");
@@ -63,11 +67,11 @@ public static partial class CoffeeShop;
 Your cup holds fresh grounds.
 ```
 
-The generator emits a nested `Root` type. The `Root` is your composition root: it owns the singletons and it is the outermost scope. You create it, then ask it for services.
+The generator emits a nested `Root` type. The `[Container]` is your [composition root](./03-design-principles.md#the-composition-root), and the generated `Root` is its runtime instance: it owns the singletons and it is the outermost scope. You create it, then ask it for services.
 
 Awaiten built the `Cup` and passed in the shared `Grinder`. You wrote no factory code. A singleton is created once and shared, a transient is made fresh for every resolve.
 
-Dispose the `Root` when you are done. It disposes everything it owns.
+Dispose the `Root` when you are done. It disposes everything it owns. Use `await using`, so services that dispose asynchronously are torn down correctly too.
 
 ## Add a service that warms up
 
@@ -118,8 +122,6 @@ Your cup holds an espresso shot from fresh grounds.
 
 The `Cup` needs the machine, so it is asynchronous too: resolve it with `ResolveAsync<T>()`. Services without asynchronous setup still resolve synchronously with `Resolve<T>()`.
 
-Use `await using` for the `Root`, so services that dispose asynchronously are torn down correctly.
-
 ### Warm up when the shop opens
 
 In an app you usually warm everything up at startup, so no request waits for the boiler. `InitializeAsync` initializes every async singleton ahead of time, in dependency order:
@@ -131,14 +133,14 @@ await shop.InitializeAsync();   // the machine warms up here, once
 Cup cup = await shop.ResolveAsync<Cup>();   // ready immediately
 ```
 
-Under ASP.NET Core and the generic host, the [MS.DI bridge](./08-hosting/01-msdi-bridge.md#warm-async-services-on-startup) does this for you during host startup.
+Under ASP.NET Core and the generic host, the [MS.DI bridge](./07-hosting/01-msdi-bridge.md#warm-async-services-on-startup) does this for you during host startup when you add `WithInitialization()`.
 
 ## Register against an interface
 
 Most services hide behind an interface. Pass the implementation first, then the service type:
 
-```csharp title="Program.cs"
-using CoffeeShop.Root shop = new();
+```csharp
+await using CoffeeShop.Root shop = new();
 IBrewer brewer = shop.Resolve<IBrewer>();   // the container hands out the EspressoBrewer
 
 public interface IBrewer;
@@ -158,13 +160,19 @@ public static partial class CoffeeShop;
 
 Some things belong to a single order. Register them as `[Scoped]` and open a scope for each order:
 
-```csharp title="Program.cs"
+```csharp
 await using CoffeeShop.Root shop = new();
 
 await using (IAwaitenScope order = shop.CreateScope())
 {
     Order current = order.Resolve<Order>();
+    current.Items.Add("an espresso");
 } // the order and everything it owns is disposed here
+
+public sealed class Order
+{
+    public List<string> Items { get; } = [];
+}
 
 [Container]
 [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
@@ -202,24 +210,10 @@ Take `Func<Task<EspressoMachine>>` instead and await it, and the cup only ever g
 
 A missing registration, a dependency cycle and a singleton that captures a scoped service are caught the same way. Awaiten ships more than 100 diagnostics; the [Diagnostics](./09-diagnostics.md) page lists them all with an example and a fix.
 
-## Next steps
-
-Learn the concepts:
+## Where to go next
 
 - [Complete example](./02-complete-example/index.md) for a full container that uses the main features together.
-- [Lifetimes](./04-core-concepts/01-lifetimes.md) for singleton, scoped and transient in depth.
-- [Resolving services](./06-resolution/01-resolving-services.md) for the full resolve surface.
-- [Async initialization](./04-core-concepts/03-async-initialization.md) for conventions with parameters, asynchronous hooks and warming up scopes.
-
-Use it in your app:
-
-- [MS.DI bridge](./08-hosting/01-msdi-bridge.md) to run a container under ASP.NET Core and the generic host.
-- [Migrating from MS.DI](./08-hosting/03-migrate-from-msdi.md) to map your `IServiceCollection` registrations to Awaiten.
-- [Design principles & the composition root](./03-design-principles.md) for the design behind the mechanics.
-- [Benchmarks](./10-benchmarks.mdx) to compare Awaiten with other .NET containers.
-
-Look something up:
-
-- [Attribute reference](./12-reference/01-attributes.md) and [Runtime API](./12-reference/02-runtime-api.md) for every attribute, option and method.
-- [Glossary](./12-reference/03-glossary.md) for the terms these docs use.
-- [Troubleshooting](./12-reference/04-troubleshooting.md) when the generator does not run or a resolve throws.
+- [Lifetimes](./04-core-concepts/01-lifetimes.md) and the other core concepts, for singleton, scoped and transient in depth.
+- [MS.DI bridge](./07-hosting/01-msdi-bridge.md) to run a container under ASP.NET Core and the generic host.
+- [Migrating from MS.DI](./07-hosting/03-migrate-from-msdi.md) to map your `IServiceCollection` registrations to Awaiten.
+- [Reference](./12-reference/index.md) to look up an attribute, a runtime method, a term or a fix.

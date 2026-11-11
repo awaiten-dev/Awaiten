@@ -14,7 +14,7 @@ The rest of the docs explain Awaiten one feature at a time, with the coffee shop
 | [Runtime API](./02-runtime-api.md) | What you call at run time: the generated `Root` and `Scope`, `Resolve`, `TryResolve` and `ResolveAsync` with their overloads, scopes, `Owned<T>`, external resolvers, registration metadata and the MS.DI bridge. |
 | [Diagnostics](../09-diagnostics.md) | Every `AWT` diagnostic, with its severity, an example that triggers it and the fix. Your IDE links each id there. |
 | [Glossary](./03-glossary.md) | The terms the docs use, such as closing, async-tainted, overridable default or composition root, each in a few sentences. |
-| [Troubleshooting](./04-troubleshooting.md) | Problems that are not a single diagnostic: a generator that does not run, a resolve that throws at run time, a service that resolves to an unexpected implementation. |
+| [Troubleshooting](./04-troubleshooting.md) | Problems that are not a single diagnostic: a generator that does not run, a resolve that throws at run time, a service that resolves to an unexpected implementation, and answers to frequently asked questions. |
 
 ## Find it fast
 
@@ -28,6 +28,9 @@ The rest of the docs explain Awaiten one feature at a time, with the coffee shop
 | What an `AWT` id means and how to fix it | [Diagnostics index](../09-diagnostics.md#index) |
 | Why the build does not produce a `Root` | [Troubleshooting: build](./04-troubleshooting.md#build) |
 | Why a resolve throws although the build passed | [Troubleshooting: run time](./04-troubleshooting.md#run-time) |
+| Whether you can register services at run time or run one container per tenant | [Run-time registration](./04-troubleshooting.md#can-i-register-services-at-run-time), [several containers](./04-troubleshooting.md#can-i-have-several-containers-in-one-app-or-one-per-tenant) |
+| Whether resolution is thread-safe, and how to publish with native AOT | [Thread safety](./04-troubleshooting.md#is-resolution-thread-safe), [native AOT](./04-troubleshooting.md#how-do-i-publish-with-native-aot) |
+| How to keep an `AWT` warning a warning under `TreatWarningsAsErrors` | [Warnings as errors](./04-troubleshooting.md#a-diagnostic-fires-under-treatwarningsaserrors-how-do-i-keep-it-a-warning) |
 | How the generated code looks | [What Awaiten generates](../02-complete-example/01-generated-code.md) |
 
 ## Elsewhere on the site

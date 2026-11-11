@@ -4,7 +4,7 @@ description: Run container-side code when an instance is activated or released, 
 
 # Lifecycle hooks
 
-Lifecycle hooks let you run code when an instance is activated and when it is released, without putting that code in the service itself. Calibrate the espresso machine when it comes online. Purge it when the shop closes.
+Like a factory, a lifecycle hook is a method on the container. It lets you run code when an instance is activated and when it is released, without putting that code in the service itself. Calibrate the espresso machine when it comes online. Purge it when the shop closes.
 
 ## OnActivated and OnRelease
 
@@ -44,7 +44,12 @@ public static partial class CoffeeShop
 
 An activation dependency is resolved inline as the hook is called. A release dependency is resolved at construction and captured by value into the queued closure, so the hook holds the instance it was queued for even if a later resolve fails and rolls back. Reverse creation-order teardown keeps a captured dependency (a singleton pool, say) alive until after the release that uses it has run.
 
-Hook parameters participate in the graph like any other dependency: an unregistered one is [AWT101](../09-diagnostics.md#awt101), and they are covered by cycle, captive-dependency and async-taint analysis. A hook parameter cannot be a runtime `[Arg]` (there is no `Func<…>` call site to supply one), which is [AWT189](../09-diagnostics.md#awt189). A release hook parameter also cannot be a `Func<T>` or `Lazy<T>`: those capture a resolver delegate rather than a value, and by the time the hook runs the owner is already tearing down, so invoking the delegate would throw. That is [AWT191](../09-diagnostics.md#awt191); an activation hook may take them freely, but calling one over the singleton or scoped service it activates throws while that service is not cached yet (see [Relationships](../06-resolution/02-relationships.md#calling-a-relationship-while-the-service-is-built)).
+Hook parameters participate in the graph like any other dependency, including cycle, captive-dependency and async-taint analysis. The rules:
+
+- An unregistered hook parameter is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
+- A hook parameter cannot be a runtime `[Arg]`, because no `Func<…>` call supplies one ([AWT189](../09-diagnostics.md#awt189)).
+- A release hook parameter cannot be a `Func` or `Lazy` relationship, synchronous or async, or a [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) ([AWT191](../09-diagnostics.md#awt191)). Those resolve when called, and by the time the release hook runs the owner is already tearing down.
+- An activation hook may take a `Func<T>` or `Lazy<T>`, but calling one over the singleton or scoped service it activates throws while that service is not cached yet, see [Relationships](../06-resolution/02-relationships.md#calling-a-relationship-while-the-service-is-built).
 
 A C# default value does not make a hook parameter optional. Awaiten ignores it, so the hook below still needs a registered `Settings` ([AWT101](../09-diagnostics.md#awt101)):
 
@@ -57,7 +62,7 @@ public static partial class CoffeeShop
 }
 ```
 
-To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../05-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
+To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../06-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
 
 ```csharp
 [Container]
@@ -93,7 +98,7 @@ A `CancellationToken` parameter receives the token passed to `ResolveAsync`, `In
 
 The service and everything that depends on it now resolve through `ResolveAsync`. All async rules apply: a synchronous `Func<T>` or `Lazy<T>` over it is [AWT119](../09-diagnostics.md#awt119), an `Eager` singleton needs `AsyncSafety.SyncAfterInit` ([AWT161](../09-diagnostics.md#awt161)), and the MS.DI bridge exposes it as `Task<T>`.
 
-The hook works on every registration the container owns: any lifetime, keyed, `Factory`, open generic, scan and module registrations. A module or a base container runs it through a generated wrapper that returns the hook's task.
+The hook works on every registration the container owns: any lifetime, keyed, `Factory`, open generic, scan and module registrations.
 
 Only `Task` and `ValueTask` are awaited. A hook that returns `Task<T>` or `ValueTask<T>` is [AWT232](../09-diagnostics.md#awt232), because the container has no use for the result.
 
@@ -116,9 +121,7 @@ public static partial class CoffeeShop
 
 The hook does not make the service async-initialized. It still resolves through `Resolve`, because the hook only runs at teardown.
 
-Dispose the owner with `await using` or `DisposeAsync`. A synchronous `Dispose` cannot await the hook, so it skips it and throws once the rest is torn down, as described in [Disposal](../04-core-concepts/05-disposal.md#a-synchronous-dispose-of-async-only-teardown) ([AWT156](../09-diagnostics.md#awt156)). The same holds for an [`Owned<T>`](./01-owned.md) handle and for a scope of the [MS.DI bridge](../08-hosting/01-msdi-bridge.md).
-
-A module or a base container runs an asynchronous release hook through a generated wrapper that returns the hook's task, like an activation hook.
+Dispose the owner with `await using` or `DisposeAsync`. A synchronous `Dispose` cannot await the hook, so it skips it and throws once the rest is torn down, as described in [Disposal](../04-core-concepts/05-disposal.md#a-synchronous-dispose-of-async-only-teardown) ([AWT156](../09-diagnostics.md#awt156)). The same holds for an [`Owned<T>`](../04-core-concepts/06-owned.md) handle and for a scope of the [MS.DI bridge](../07-hosting/01-msdi-bridge.md).
 
 ## Ordering and failure
 
@@ -126,22 +129,23 @@ Activation happens before the instance is ever handed out, so a concurrent resol
 
 If `OnRelease` throws or its task faults, the teardown goes on: the other release hooks still run, and every instance is still disposed, including the one whose hook failed. The failure surfaces once the teardown is complete, together with any other teardown failure. See [Disposal → When teardown fails](../04-core-concepts/05-disposal.md#when-teardown-fails).
 
-:::note
-Hooks are for services the container owns. Setting one on a pre-built `Instance` registration is an error ([AWT165](../09-diagnostics.md#awt165)). Conflicting coalesced directives across registrations of one implementation are caught too ([AWT166](../09-diagnostics.md#awt166)).
-:::
+## Hooks on scans and modules
 
-## Hooks on a scan
+A `[Scan]` can name the same `OnActivated`/`OnRelease` hooks, applied to every match, so a whole scanned family shares one routine. See [Scanning → Lifecycle hooks](./07-scanning.md#lifecycle-hooks).
 
-A `[Scan]` can name the same `OnActivated`/`OnRelease` hooks, applied to every match, so a whole scanned family shares one routine. See [Scanning → Lifecycle hooks](../05-registration/06-scanning.md#lifecycle-hooks).
-
-A hook of a [module](../05-registration/07-modules/index.md) registration or scan may stay `internal`. The rules for a module that another assembly imports are on [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md).
+A hook of a [module](./08-modules/index.md) registration or scan may stay `internal`. When a container in another assembly imports the module, the [library module rules](./08-modules/02-library-module-rules.md#hooks) apply.
 
 ## Eager singletons
 
 `Eager = true` builds a singleton when the root is created. It is a lifetime option, so it is described under [Lifetimes](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup).
 
+## Rules
+
+- Hooks are for services the container owns. Setting one on a pre-built `Instance` registration is an error ([AWT165](../09-diagnostics.md#awt165)).
+- Registrations of the same implementation share one instance, so they must agree on its hooks and on `Eager`. Two registrations that name different hooks, or one with `Eager` and one explicitly without, are an error ([AWT166](../09-diagnostics.md#awt166)), and so is a scan that names a hook for a match whose registration names another or none. A registration that leaves a hook unset takes the other's.
+
 ## Where to go next
 
+- [Decorators](./03-decorators.md) to wrap a service in container-side behavior.
 - [Async initialization](../04-core-concepts/03-async-initialization.md) for async initializer conventions.
 - [Disposal](../04-core-concepts/05-disposal.md) for teardown order.
-- [Scanning](../05-registration/06-scanning.md#lifecycle-hooks) to apply a hook to a whole matched family.

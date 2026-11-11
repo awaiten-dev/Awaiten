@@ -15,13 +15,13 @@ Some sets of services grow over time. Every drink on the menu implements `IDrink
 public static partial class CoffeeShop;
 ```
 
-Every concrete, public, non-generic type assignable to `IDrink` is registered. The `typeof` form is equivalent:
+Every concrete, non-generic type assignable to `IDrink` that the container can name is registered, an internal type of the container's own assembly included. A class nested privately in the container matches too, when the scan registers it under an [accessible interface](#what-a-scan-skips). The `typeof` form is equivalent:
 
 ```csharp
 [Scan(typeof(IDrink))]
 ```
 
-A type the container cannot name or construct is skipped with a warning, see [what a scan skips](#what-a-scan-skips).
+A match the container cannot name, or whose constructors it cannot call, is skipped with a warning, see [what a scan skips](#what-a-scan-skips). A match whose dependencies are missing is an error ([AWT101](../09-diagnostics.md#awt101)), unless [`SkipUnconstructable`](#leave-out-types-that-are-not-services) skips it.
 
 ## Options
 
@@ -63,7 +63,7 @@ By default each match registers as itself. Use `As` to register under the marker
 [Scan<IViewModel>(As = ScanAs.MatchingInterface)]
 ```
 
-Here `MainViewModel : IViewModel, IMainViewModel` registers only under `IMainViewModel`.
+Here `MenuViewModel : IViewModel, IMenuViewModel` registers only under `IMenuViewModel`.
 
 - The match must genuinely implement the convention interface: it is selected from the type's implemented interfaces by name, not synthesized. Generic interfaces are not matched.
 - A match that implements no such interface contributes no `MatchingInterface` registration. When the scan names a marker and the match would otherwise register nothing at all, that is a warning ([AWT182](../09-diagnostics.md#awt182)), or, when the interface is implemented but inaccessible to the container, a warning naming it ([AWT188](../09-diagnostics.md#awt188)).
@@ -114,7 +114,7 @@ How the patterns combine:
 A marker often matches types that never come from the container: a design-time view model nested in the real one, or a row view model that your code creates with `new` because it takes a model in its constructor. Two options keep them out without an `Exclude` entry for each new one.
 
 ```csharp expect=AWT141
-public sealed class MenuViewModel : IViewModel
+public sealed class BasketViewModel : IViewModel
 {
     public sealed class DesignTime : IViewModel;
 }
@@ -144,7 +144,7 @@ To lower it for one file only, set `dotnet_diagnostic.AWT141.severity = suggesti
 Some conventions have no shared marker at all: every `Foo` has its own `IFoo` and nothing else in common. The parameterless `[Scan]` matches every concrete type instead of a marker, narrowed by the same filters.
 
 ```csharp
-[Scan(As = ScanAs.MatchingInterface, NamespacePatterns = ["MyApp.Services.**"])]
+[Scan(As = ScanAs.MatchingInterface, NamespacePatterns = ["CoffeeShop.Services.**"])]
 ```
 
 - A markerless scan's `As` may not include `Marker`: there is no marker to register under.
@@ -157,7 +157,7 @@ Some conventions have no shared marker at all: every `Foo` has its own `IFoo` an
 An unbound generic marker matches closed forms, the way Autofac's closed-types-of works. Each match registers under its closed marker interface.
 
 ```csharp
-[Scan(typeof(IView<>), As = ScanAs.Marker)]
+[Scan(typeof(IScreen<>), As = ScanAs.Marker)]
 ```
 
 ## Lifecycle hooks
@@ -174,7 +174,7 @@ public static partial class CoffeeShop
 }
 ```
 
-The hook's first parameter is the match, so it must accept every one: type it as the scanned marker (or `object`). Parameters after it are resolved from the graph exactly as for an [explicit registration's hook](../07-lifetime/03-lifecycle-hooks.md#hook-parameters), and the same rules and diagnostics apply: an unusable hook name is [AWT164](../09-diagnostics.md#awt164), an unregistered parameter is [AWT101](../09-diagnostics.md#awt101).
+The hook's first parameter is the match, so it must accept every one: type it as the scanned marker (or `object`). Parameters after it are resolved from the graph exactly as for an [explicit registration's hook](./02-lifecycle-hooks.md#hook-parameters), and the same rules and diagnostics apply: an unusable hook name is [AWT164](../09-diagnostics.md#awt164), an unregistered parameter is [AWT101](../09-diagnostics.md#awt101).
 
 When two scans match the same type, their hooks merge:
 
@@ -187,26 +187,27 @@ An [explicit registration](#overriding-a-scanned-type) of a scanned type is diff
 - Name the same method on the explicit registration if the special-cased type should keep the hook, or exclude the type from the scan and register it explicitly under the marker if it should not.
 - This follows the type, not the service: an explicit registration of just the concrete type, say `[Transient<Espresso>]` beside a marker scan, owns the instance of `Espresso` even where the scan still supplies its marker mapping.
 - It holds for every registration that shares the match's instance, a keyed one or one of an imported module included, and in every assembly: a module of another assembly that registers the type owns its instance there too.
-- A scan an [extending container](./08-extending-containers.md) inherits from its base is the exception: the extending container can neither name the base's hook nor exclude a type from the base's scan, so its own registration of a matched type replaces the scan's hooks for that type without an error.
+- A scan an [extending container](./09-extending-containers.md) inherits from its base is the exception: the extending container can neither name the base's hook nor exclude a type from the base's scan, so its own registration of a matched type replaces the scan's hooks for that type without an error.
 
 ### Generic hooks on an open marker
 
-An [open generic marker](#open-generic-markers) knows each match's closed type argument at compile time, so a hook can be *generic* and receive it directly, with no reflection and no `object`. The classic case is a WPF-style view/view-model family: bind each view to its matching view model as it is activated.
+An [open generic marker](#open-generic-markers) knows each match's closed type argument at compile time, so a hook can be *generic* and receive it directly, with no reflection and no `object`. The classic case is a family of screens, each bound to its view model as it is activated, as on the shop's self-order kiosk.
 
 ```csharp
 [Container]
-[Singleton<MainViewModel, IMainViewModel>]
-[Scan(typeof(IView<>), As = ScanAs.Marker, OnActivated = nameof(WireView))]
-public static partial class App
+[Singleton<MenuViewModel, IMenuViewModel>]
+// highlight-next-line
+[Scan(typeof(IScreen<>), As = ScanAs.Marker, OnActivated = nameof(Bind))]
+public static partial class Kiosk
 {
-    private static void WireView<TViewModel>(IView<TViewModel> view, TViewModel viewModel)
-        => view.DataContext = viewModel;
+    private static void Bind<TViewModel>(IScreen<TViewModel> screen, TViewModel viewModel)
+        => screen.ViewModel = viewModel;
 }
 ```
 
-For `MainWindow : IView<IMainViewModel>` the generator dispatches `WireView<IMainViewModel>(mainWindow, viewModel)`, resolving the matching `IMainViewModel` from the graph. The type argument is visible to graph analysis, so an unregistered view model fails the build ([AWT101](../09-diagnostics.md#awt101)) rather than at runtime. A non-generic method works too (its parameters typed as the marker or `object`); the type argument only applies when the method is generic.
+For `MenuScreen : IScreen<IMenuViewModel>` the generator dispatches `Bind<IMenuViewModel>(menuScreen, viewModel)`, resolving the matching `IMenuViewModel` from the graph. The type argument is visible to graph analysis, so an unregistered view model fails the build ([AWT101](../09-diagnostics.md#awt101)) rather than at runtime. A non-generic method works too (its parameters typed as the marker or `object`); the type argument only applies when the method is generic.
 
-- A *generic* hook takes its type argument from a closed marker form, so it needs exactly one it can bind. A match offering several, by closing the marker more than once (`Dual : IView<A>, IView<B>`), leaves that argument ambiguous and is reported as [AWT198](../09-diagnostics.md#awt198): register such a type explicitly with the hook it needs, or split the family so only one closed form binds it.
+- A *generic* hook takes its type argument from a closed marker form, so it needs exactly one it can bind. A match offering several, by closing the marker more than once (`OrderScreen : IScreen<A>, IScreen<B>`), leaves that argument ambiguous and is reported as [AWT198](../09-diagnostics.md#awt198): register such a type explicitly with the hook it needs, or split the family so only one closed form binds it.
 - Only forms the hook could actually bind count, so a constraint (`where TViewModel : class`) that rules out all closings but one settles the choice, as does accessibility: a closing at another assembly's internal type cannot be dispatched and yields to an accessible sibling.
 - If the hook name is overloaded and another overload also accepts the match, the collision is between overloads rather than closings and is reported as [AWT190](../09-diagnostics.md#awt190) instead.
 - A non-generic hook takes no type argument, so a match with several closings is fine for it.
@@ -217,15 +218,15 @@ An explicit registration of a scanned type wins over the scan, so you can specia
 
 ## What a scan skips
 
-A type the container cannot name is skipped rather than registered. Since a match quietly vanishing from the container is almost never what you meant, the scan reports the skip as [AWT193](../09-diagnostics.md#awt193):
+A match the container cannot name, or whose constructors it cannot call, is skipped rather than registered. Since a match quietly vanishing from the container is almost never what you meant, the scan reports the skip as [AWT193](../09-diagnostics.md#awt193):
 
-- An implementation that is `internal` to another assembly (with no `InternalsVisibleTo`), or a class nested privately in a type the container is not part of. Widening the type to `public` brings it back. For internal types of another assembly, moving the scan into a [module](./07-modules/01-library-modules.md#self-compiled-scans) of that assembly keeps them internal: the module builds them for any container that imports it.
+- An implementation that is `internal` to another assembly (with no `InternalsVisibleTo`), or a class nested privately in a type the container is not part of. Widening the type to `public` brings it back. For internal types of another assembly, moving the scan into a [module](./08-modules/02-library-module-rules.md#self-compiled-scans) of that assembly keeps them internal: the module builds them for any container that imports it.
 - A `public` class of another assembly whose constructors are all `internal`: the container can name the type but cannot call a constructor, so the scan skips it with [AWT193](../09-diagnostics.md#awt193) too, naming the constructors as the reason, where an explicit registration of the type fails with [AWT104](../09-diagnostics.md#awt104). An assembly the type's assembly grants `InternalsVisibleTo` can call them, so its scan registers the type, and a module scan in the type's own assembly builds it for every container that imports the module.
 - A class nested privately in the container that the scan registers as itself (`ScanAs.Self`, the default): the private type would be its own service, which the container cannot expose. The scan skips such a match with [AWT193](../09-diagnostics.md#awt193), naming the reason, instead of failing the build, and it does the same when no accessible type the match converts to covers all the interfaces it is registered under.
 
-Only a type your scan actually asked for is reported, so the internal plumbing of a scanned assembly stays quiet, as does anything you filtered out. Whether the *interfaces* a match is exposed under are accessible is a separate question, covered in [match the `Foo`/`IFoo` convention](#match-the-fooifoo-convention).
+Only a type your scan actually asked for is reported, so the internal plumbing of a scanned assembly stays quiet, as does anything you filtered out. An interface the match implements but the container cannot access is a separate case: `MatchingInterface` leaves it out with [AWT188](../09-diagnostics.md#awt188).
 
-A class nested privately in the container itself, such as a test double, is a match like any other, as long as the scan registers it under an accessible interface: the generated container hands it out as that interface, just as it does for an [explicit registration](./08-extending-containers.md) of a private type.
+A class nested privately in the container itself, such as a test double, is a match like any other, as long as the scan registers it under an accessible interface: the generated container hands it out as that interface, just as it does for an [explicit registration](./09-extending-containers.md) of a private type.
 
 ```csharp
 [Container]
@@ -238,7 +239,7 @@ public static partial class TestCoffeeShop
 
 ## Scan from a module
 
-A `[Scan]` may also sit on a `[Module]`, where it is compiled in the module's own build so a library can scan its `internal` implementations and expose them to consumers through their interfaces. `OnActivated` and `OnRelease` work there too, and the hook method may stay `internal`. See [self-compiled scans](./07-modules/01-library-modules.md#self-compiled-scans) for the rules, [shared instances](./07-modules/01-library-modules.md#shared-instances) for a match that another registration or scan also builds, and [several interfaces](./07-modules/01-library-modules.md#several-interfaces) for a match exposed under more than one interface.
+A `[Scan]` may also sit on a `[Module]`, where it is compiled in the module's own build so a library can scan its `internal` implementations and expose them to consumers through their interfaces. `OnActivated` and `OnRelease` work there too, and the hook method may stay `internal`. See [self-compiled scans](./08-modules/02-library-module-rules.md#self-compiled-scans) for the rules, [shared instances](./08-modules/02-library-module-rules.md#shared-instances) for a match that another registration or scan also builds, and [several interfaces](./08-modules/02-library-module-rules.md#several-interfaces) for a match exposed under more than one interface.
 
 ## Diagnostics
 
@@ -251,7 +252,7 @@ A `[Scan]` may also sit on a `[Module]`, where it is compiled in the module's ow
 | [AWT182](../09-diagnostics.md#awt182), [AWT187](../09-diagnostics.md#awt187), [AWT188](../09-diagnostics.md#awt188) | A `MatchingInterface` match registers nothing, registers under several same-named interfaces, or implements an inaccessible one. |
 | [AWT183](../09-diagnostics.md#awt183), [AWT184](../09-diagnostics.md#awt184) | A markerless scan breaks its rules, or registers nothing. |
 | [AWT190](../09-diagnostics.md#awt190), [AWT198](../09-diagnostics.md#awt198), [AWT199](../09-diagnostics.md#awt199) | A hook overload is ambiguous, a generic hook has several closings to bind, or two scans name different hooks. |
-| [AWT193](../09-diagnostics.md#awt193) | A match the container cannot name or construct is skipped. |
+| [AWT193](../09-diagnostics.md#awt193) | A match the container cannot name, or whose constructors it cannot call, is skipped. |
 
 :::tip[When not to reach for this]
 Prefer explicit registrations. A scan trades away the property that makes the composition root useful: the whole graph visible in one place. Reach for a scan only for a large, uniform family that grows on its own, like message handlers, validators, or plug-ins, where listing each one adds churn without adding clarity. For a handful of services, spell them out, see [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
@@ -259,6 +260,6 @@ Prefer explicit registrations. A scan trades away the property that makes the co
 
 ## Where to go next
 
-- [Modules](./07-modules/index.md) to group registrations for reuse.
-- [Shipping modules from a library](./07-modules/01-library-modules.md) to scan a library's internal implementations.
-- [Open generics](./05-open-generics.md) for generic service families.
+- [Modules](./08-modules/index.md) to group registrations for reuse.
+- [Shipping modules from a library](./08-modules/01-library-modules.md) to scan a library's internal implementations.
+- [Open generics](./06-open-generics.md) for generic service families.

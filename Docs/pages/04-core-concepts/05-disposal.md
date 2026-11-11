@@ -8,10 +8,10 @@ Awaiten disposes what it creates. When a scope or the container closes, it tears
 
 ## Dispose the container
 
-Disposing the `Root` disposes its singletons, in reverse creation order. Use `using`, or `await using` if anything is async-disposable.
+Disposing the `Root` disposes its singletons, in reverse creation order. Use `await using`, so async-disposable instances are torn down too (see [Async disposal](#async-disposal)).
 
 ```csharp
-using (CoffeeShop.Root shop = new())
+await using (CoffeeShop.Root shop = new())
 {
     // ...
 } // singletons disposed here
@@ -22,7 +22,7 @@ using (CoffeeShop.Root shop = new())
 Disposing a scope disposes its scoped instances and any transients it created, again in reverse order. It leaves the parent and the shared singletons alone.
 
 ```csharp
-using (IAwaitenScope order = shop.CreateScope())
+await using (IAwaitenScope order = shop.CreateScope())
 {
     // ...
 } // this order's instances disposed; singletons untouched
@@ -30,17 +30,17 @@ using (IAwaitenScope order = shop.CreateScope())
 
 ## Who owns a transient
 
-A transient is disposed by the owner that built it. Resolve one inside a scope and the scope disposes it. This is why [strict lifetime safety](./04-lifetime-safety.md) withholds disposable transients from the root by default. On the root they would pile up for the whole life of the container. To get a disposable transient with a bounded lifetime, use [Owned](../07-lifetime/01-owned.md).
+A transient is disposed by the owner that built it. Resolve one inside a scope and the scope disposes it. This is why [strict lifetime safety](./04-lifetime-safety.md) withholds disposable transients from the root by default. On the root they would pile up for the whole life of the container. To get a disposable transient with a bounded lifetime, use [Owned](./06-owned.md).
 
 ## What Awaiten does not dispose
 
-An object you supplied with `Instance = nameof(...)` is yours. Awaiten never disposes it. The same is true for anything resolved from an external provider across the [MS.DI bridge](../08-hosting/01-msdi-bridge.md).
+An object you supplied with `Instance = nameof(...)` is yours. Awaiten never disposes it. The same is true for anything resolved from an external provider across the [MS.DI bridge](../07-hosting/01-msdi-bridge.md).
 
 ## Suppressing disposal
 
 Sometimes the container builds a service but should not tear it down: the object is rented from a pool you return it to, or its lifetime belongs to something outside the container. Set `SuppressDisposal = true` and Awaiten constructs the service as usual but never calls its `Dispose`/`DisposeAsync`.
 
-On its own this is opt-out ownership, the built counterpart of an `Instance`: the container makes the object but hands its teardown to you. Paired with an [`OnRelease` hook](../07-lifetime/03-lifecycle-hooks.md) it becomes a clean return-to-pool, and with [`Owned<T>`](../07-lifetime/01-owned.md) the rent-and-return is bounded to a `using` block.
+On its own this is opt-out ownership, the built counterpart of an `Instance`: the container makes the object but hands its teardown to you. Paired with an [`OnRelease` hook](../05-registration/02-lifecycle-hooks.md) it becomes a clean return-to-pool, and with [`Owned<T>`](./06-owned.md) the rent-and-return is bounded to a `using` block.
 
 ```csharp
 [Container]
@@ -56,9 +56,9 @@ public static partial class CoffeeShop
 
 `SuppressDisposal` applies to a service the container constructs, by constructor or `Factory`. Setting it on a pre-built `Instance`, which the container never owns or disposes anyway, is a build error ([AWT192](../09-diagnostics.md#awt192)).
 
-An `OnRelease` hook counts like disposal for [strict lifetime safety](./04-lifetime-safety.md): each construction queues the release on the owner, so a release-hooked transient like `Cup` above is withheld from by-type resolution on the container root just as a disposable one is. On the root, every rented cup would be held until the container itself is disposed, and none would return to the pool before then. Rent through [`Owned<T>`](../07-lifetime/01-owned.md) or from a child scope and the return-to-pool runs when the handle or scope is disposed. A `SuppressDisposal` service *without* a release hook tracks nothing at all, so it stays resolvable everywhere.
+An `OnRelease` hook counts like disposal for [lifetime safety](./04-lifetime-safety.md#strict-is-the-default), so a release-hooked transient like `Cup` above is withheld from by-type resolution on the container root; rent it through [`Owned<T>`](./06-owned.md) or from a child scope.
 
-Projected into Microsoft.Extensions.DependencyInjection, a disposable `SuppressDisposal` service would be disposed by MS.DI anyway, so the [bridge](../08-hosting/01-msdi-bridge.md#disposal) rejects it at startup ([AWT214](../09-diagnostics.md#awt214)).
+Projected into Microsoft.Extensions.DependencyInjection, a disposable `SuppressDisposal` service would be disposed by MS.DI anyway, so the [bridge](../07-hosting/01-msdi-bridge.md#disposal) rejects it at startup ([AWT214](../09-diagnostics.md#awt214)).
 
 ## Async disposal
 
@@ -70,7 +70,7 @@ await using CoffeeShop.Root shop = new();
 
 A scope disposes the same way, also through the `IAwaitenScope` interface, which is `IAsyncDisposable` on every framework. On net48 and other netstandard2.0 consumers, `IAsyncDisposable` comes from `Microsoft.Bcl.AsyncInterfaces`, which Awaiten references there.
 
-An [`OnRelease` hook](../07-lifetime/03-lifecycle-hooks.md#asynchronous-release) that returns `Task` or `ValueTask` is awaited the same way, before any instance is disposed.
+An [`OnRelease` hook](../05-registration/02-lifecycle-hooks.md#asynchronous-release) that returns `Task` or `ValueTask` is awaited the same way, before any instance is disposed.
 
 ### A synchronous dispose of async-only teardown
 
@@ -98,5 +98,5 @@ Resolving from a container or scope after it is disposed throws `ObjectDisposedE
 
 ## Where to go next
 
-- [Owned](../07-lifetime/01-owned.md) for disposable transients you rent and return.
+- [Owned](./06-owned.md) for disposable transients you rent and return.
 - [Lifetime safety](./04-lifetime-safety.md) for how Awaiten prevents disposal leaks.

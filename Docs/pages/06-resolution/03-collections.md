@@ -36,31 +36,29 @@ ICollection<ISyrup>
 Members come back in precedence order:
 
 1. Registrations without `Fallback`.
-2. [Overridable defaults](../05-registration/07-modules/index.md#overridable-defaults).
-3. Closings of [open generic](../05-registration/05-open-generics.md) registrations, those without `Fallback` first.
-4. [Scan](../05-registration/06-scanning.md) matches.
+2. [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults).
+3. Closings of [open generic](../05-registration/06-open-generics.md) registrations, those without `Fallback` first.
+4. [Scan](../05-registration/07-scanning.md) matches.
 
 Within each group they keep declaration order, with the container's own registrations before those of the imported modules. Each member keeps its own lifetime. A service type with no registrations resolves to an empty collection, not an error.
 
-With [`[FromKey]`](../05-registration/04-keyed-services.md#select-directly-with-fromkey) on the parameter or property, such as `[FromKey("Oat")] IEnumerable<IMilk>`, the collection holds the registrations under that key instead. A collection under a key is served only to injection: a keyed `Resolve<IEnumerable<IMilk>>("Oat")` throws, and Awaiten warns about it at compile time ([AWT218](../09-diagnostics.md#awt218)).
+With [`[FromKey]`](../05-registration/05-keyed-services.md#select-directly-with-fromkey) on the parameter or property, such as `[FromKey("Oat")] IEnumerable<IMilk>`, the collection holds the registrations under that key instead. A collection under a key is served only to injection: a keyed `Resolve<IEnumerable<IMilk>>("Oat")` throws. When the call is on the generated `Root` or `Scope` and the key is a constant, Awaiten warns about it at compile time ([AWT218](../09-diagnostics.md#awt218)).
 
-A collection holds the services themselves, not [relationships](./02-relationships.md) over them. A collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` or `Func<ISyrup>[]`, is an error ([AWT254](../09-diagnostics.md#awt254)) rather than an empty collection, unless the relationship type itself is registered as a service. Depend on `IEnumerable<ISyrup>` for every member, or on a single `Lazy<ISyrup>` to defer the one single resolution picks.
+A collection holds the services themselves and a relationship wraps a single service, so a collection of relationships such as `IEnumerable<Lazy<ISyrup>>`, or a relationship over a collection such as `Func<IEnumerable<ISyrup>>`, is an error. See [Relationships wrap a single service](./02-relationships.md#relationships-wrap-a-single-service).
 
-The other way around does not work either: a relationship wraps a single service, so a relationship over a collection, such as `Func<IEnumerable<ISyrup>>` or `Lazy<IReadOnlyList<ISyrup>>`, is an error too ([AWT256](../09-diagnostics.md#awt256)), unless the collection type itself is registered. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
-
-Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an overridable default that a registration of the same service without `Fallback` replaces. Two defaults don't replace each other, so both are members. A single `ISyrup` resolves to one member, the first one. When several modules [contribute to one collection](../05-registration/07-modules/index.md#contribute-to-a-collection), a dependency on a single `ISyrup` is reported, because only the order of the imports decides which member it gets.
+Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an overridable default that an explicit registration of the same service without `Fallback` replaces. A scan match never replaces a default, and the closing of an open generic registration does not replace a closed default; both stay members behind it. Two defaults don't replace each other, so both are members. A single `ISyrup` resolves to one member, the first one. When several modules [contribute to one collection](../05-registration/08-modules/index.md#contribute-to-a-collection), a dependency on a single `ISyrup` is reported, because only the order of the imports decides which member it gets.
 
 ## Async collections
 
-If a member is async-initialized, you have two shapes.
+A synchronous collection shape builds every member while the consumer is built, so it cannot hold an async-initialized member ([AWT122](../09-diagnostics.md#awt122)). If a member is async-initialized, you have two shapes.
 
-`IAsyncEnumerable<T>` streams the members and awaits each one's initialization as you go.
+`IAsyncEnumerable<T>` streams the members and awaits each one's initialization as you go. It does not hide the async members from the consumer: a consumer that takes one is async-initialized too and resolves through `ResolveAsync`.
 
 ```csharp
 public sealed class Warmer(IAsyncEnumerable<IDrink> drinks);
 ```
 
-An awaited collection like `Task<IReadOnlyList<T>>` materializes and awaits every async member, but launders the taint so a synchronous consumer can still hold it.
+An awaited collection like `Task<IReadOnlyList<T>>` materializes and awaits every async member behind the task, so the consumer itself stays synchronously resolvable.
 
 ```csharp
 Task<IReadOnlyList<IDrink>> drinks = shop.Resolve<Task<IReadOnlyList<IDrink>>>();
@@ -77,4 +75,4 @@ Register a collection shape explicitly and it wins. Awaiten stops synthesizing t
 ## Where to go next
 
 - [Keyed dictionaries](./04-keyed-dictionaries.md) to get implementations keyed by name.
-- [Composites](../05-registration/03-composites.md) to expose many implementations as one service.
+- [Composites](../05-registration/04-composites.md) to expose many implementations as one service.

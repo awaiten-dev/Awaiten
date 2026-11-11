@@ -17,6 +17,7 @@ Add a `[RequestingType] Type` parameter to a factory method. Awaiten fills it wi
 [Transient<Barista>]
 public static partial class CoffeeShop
 {
+    // highlight-next-line
     private static Logger CreateLogger([RequestingType] Type? requestingType, Prefix prefix)
         => new Logger(requestingType?.FullName ?? "<root>", prefix);
 }
@@ -24,23 +25,26 @@ public static partial class CoffeeShop
 
 Now a `Barista` that needs an `ILogger` gets one tagged with `Barista`, and a `Register` gets one tagged with `Register`. Each consumer gets its own.
 
-## Resolved directly? The type is null
+## A direct resolve passes null
 
-When you resolve the service straight from the container, there is no consumer. The parameter is `null`, so declare it as `Type?` and handle that case. It is `null` as well behind a [conditional decorator](../05-registration/02-decorators.md#apply-a-decorator-conditionally) that is off, because the decorator would have been the consumer.
+When you resolve the service straight from the container, there is no consumer. The parameter is `null`, so declare it as `Type?` and handle that case. It is `null` as well behind a [conditional decorator](../05-registration/03-decorators.md#apply-a-decorator-conditionally) that is off, because the decorator would have been the consumer.
 
 ```csharp
 ILogger logger = shop.Resolve<ILogger>();   // requestingType is null here
 ```
 
-## Works with the rest
+## Other parameters and shapes work as usual
 
 The other factory parameters resolve from the graph as usual. `[RequestingType]` flows through `Func<T>` and through async factories too.
 
-The requesting type is the implementation even when your container cannot name it, because a [module](../05-registration/07-modules/index.md) in another assembly or the base of an [extending container](../05-registration/08-extending-containers.md) builds an internal or private implementation, decorator, composite or scan match for it. A logger gets the same name wherever the module is imported or the container is extended.
+The requesting type is the implementation even when your container cannot name it, because a [module](../05-registration/08-modules/index.md) in another assembly or the base of an [extending container](../05-registration/09-extending-containers.md) builds an internal or private implementation, decorator, composite or scan match for it. A logger gets the same name wherever the module is imported or the container is extended.
 
-:::note
-The parameter must be `System.Type` ([AWT162](../09-diagnostics.md#awt162)), and a factory cannot mix `[RequestingType]` with an `[Arg]` runtime argument ([AWT163](../09-diagnostics.md#awt163)).
-:::
+## Rules
+
+- The parameter must be `System.Type` ([AWT162](../09-diagnostics.md#awt162)).
+- A factory cannot mix `[RequestingType]` with an `[Arg]` runtime argument ([AWT163](../09-diagnostics.md#awt163)).
+- The factory runs for each consumer, so there is no `Owned<T>` over its service, in any form ([AWT186](../09-diagnostics.md#awt186)).
+- A keyed resolve, such as `Resolve<ILogger>("Audit")`, throws for a service built by such a factory, even when it is registered under that key. Inject it under the key instead, through a [`[FromKey]`](../05-registration/05-keyed-services.md#select-directly-with-fromkey) parameter or property.
 
 :::tip[When not to reach for this]
 The requesting-type hook is advanced, and it makes one abstraction mean different things to different consumers, which is exactly the kind of implicit coupling DI is meant to remove. Reserve it for a genuinely cross-cutting service where the consumer's identity is the whole point, like a logger named after the class that uses it. For anything else, give each consumer the dependency it actually needs, see [Design principles](../03-design-principles.md#when-power-becomes-a-smell).

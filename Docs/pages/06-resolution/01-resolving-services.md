@@ -11,7 +11,7 @@ Once a container is declared, you ask it for services. This page covers the reso
 `Resolve<T>()` returns the service or throws if it is not registered.
 
 ```csharp
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 
 Cup cup = shop.Resolve<Cup>();
 ```
@@ -62,7 +62,7 @@ if (shop.TryResolve<IMilk>(MilkKind.Whole, out IMilk? whole))
 IMilk soy = await shop.ResolveAsync<IMilk>("Soy", cancellationToken);
 ```
 
-The key is an `object`, so a string, an `enum` constant, or a `typeof(...)` all work, matching the key the registration carries. A `null` key resolves the unkeyed registration, exactly like the keyless overload. An unknown key follows the same miss rules as above: `Resolve` throws, `TryResolve` reports `false`. See [Keyed services](../05-registration/04-keyed-services.md).
+The key is an `object`, so a string, an `enum` constant, or a `typeof(...)` all work, matching the key the registration carries. The `Type` overloads, such as `Resolve(typeof(IMilk), key)`, take an `object?` key, and a `null` key resolves the unkeyed registration, exactly like the keyless overload. The generic overloads declare the key non-nullable, so call the keyless overload there instead. An unknown key follows the same miss rules as above: `Resolve` throws, `TryResolve` reports `false`. See [Keyed services](../05-registration/05-keyed-services.md).
 
 A keyed resolve serves plain services only: it hands out the registration under the key, not a collection of the registrations, a [relationship](./02-relationships.md) over it or the factory of a service with [runtime arguments](./06-runtime-arguments.md). `Resolve<IEnumerable<IMilk>>("Oat")` and `Resolve<Func<IMilk>>("Oat")` throw even when an `IMilk` is registered under `"Oat"`. The container builds these shapes under a key for injection: take them through a `[FromKey("Oat")] IEnumerable<IMilk>` or `[FromKey("Oat")] Func<IMilk>` parameter or property.
 
@@ -76,7 +76,7 @@ public sealed class Barista(Grinder grinder, EspressoMachine machine);
 
 Every constructor parameter is a dependency, including one with a C# default value. Awaiten ignores the default, so an unregistered `IMetrics? metrics = null` is [AWT101](../09-diagnostics.md#awt101). For a dependency the service can do without, use an [`Optional` injected property](./05-property-injection.md#tolerate-a-missing-service-with-optional) or a [collection](./03-collections.md), which is empty when nothing registers the service.
 
-For the shapes a dependency can take, like `Func<T>` or collections, read on.
+For the shapes a dependency can take, like `Func<T>` or collections, see the [table of dependency shapes](./index.md#dependency-shapes).
 
 ## Where to go next
 

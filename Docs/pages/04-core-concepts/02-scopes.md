@@ -11,9 +11,9 @@ A scope is a boundary for scoped services. Everything scoped is created once ins
 Call `CreateScope` on the root or on another scope. Dispose it when the unit of work is over.
 
 ```csharp
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 
-using (IAwaitenScope order = shop.CreateScope())
+await using (IAwaitenScope order = shop.CreateScope())
 {
     Order o = order.Resolve<Order>();
     Tab tab = order.Resolve<Tab>();
@@ -23,6 +23,8 @@ using (IAwaitenScope order = shop.CreateScope())
 ## Singletons are shared, scopes are not
 
 A child scope shares the container's singletons. It has its own scoped instances: inside one scope a scoped service resolves to the same instance every time, and a different scope gets its own (see [Scoped](./01-lifetimes.md#scoped)). Disposing a child does not touch the parent, and the espresso machine keeps running across every order.
+
+A scope you create from another scope is a child of the root, not of that scope. It does not share the other scope's scoped instances, and disposing the other scope does not dispose it. Dispose each scope you create yourself.
 
 ```mermaid
 flowchart TB

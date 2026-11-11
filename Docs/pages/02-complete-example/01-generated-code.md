@@ -1,6 +1,8 @@
 ---
 description: Walk through the code the Awaiten source generator emits for the coffee-shop container of the complete example, from the nested Root and Scope to resolvers, dispatch and async warm-up.
 sidebar_label: What Awaiten generates
+pagination_prev: complete-example/index
+pagination_next: design-principles
 ---
 
 # What Awaiten generates
@@ -10,7 +12,7 @@ Awaiten does its work at build time. For every `[Container]` the source generato
 This page walks through that file for the coffee shop of the [complete example](./index.md), so you can see what runs when the shop serves an order. The excerpts come from the real generated file, simplified: the `global::` prefixes, the disposed checks and the guards against re-entrant builds are left out, and `// …` marks elided code.
 
 :::note[Not a contract]
-The generated `Root` and `Scope` types, their constructors and the members of the interfaces they implement are the public surface you program against (see the [runtime API](../12-reference/02-runtime-api.md)). Everything else, such as the names of resolver methods, fields and the dispatch table, is an implementation detail that changes between versions. Do not call or reflect over it.
+The generated `Root` and `Scope` types, the public constructors of `Root` and the members of the interfaces they implement are the public surface you program against (see the [runtime API](../12-reference/02-runtime-api.md)). Everything else, such as the names of resolver methods, fields and the dispatch table, is an implementation detail that changes between versions. Do not call or reflect over it.
 :::
 
 ## Two nested types
@@ -45,8 +47,8 @@ static partial class CoffeeShop
 
 - `Root` is what `await using CoffeeShop.Root shop = new();` creates. It is the outermost [scope](../04-core-concepts/02-scopes.md), and it holds the singletons: the `EspressoMachine`, the `Grinder`, the milks, the syrups and the terminal.
 - `Scope` is what `shop.CreateScope()` returns for each order. It holds that order's `Order`, `Tab` and `Barista`, and it reaches the singletons through the root.
-- The `Root(IExternalResolver?)` constructor takes the resolver for [imported services](../08-hosting/02-external-services.mdx#providing-the-external-resolver). The coffee shop imports none.
-- The scope implements `IAwaitenResolver<T>` for each service it resolves synchronously and `IAwaitenAsyncResolver<T>` for each it resolves asynchronously, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
+- The `Root(IExternalResolver?)` constructor takes the resolver for [imported services](../07-hosting/02-external-services.mdx#providing-the-external-resolver). The coffee shop imports none.
+- The scope implements `IAwaitenResolver<T>` for each service it resolves synchronously and `IAwaitenAsyncResolver<T>` for every service, async or not, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
 
 ## One resolver per registration
 
@@ -121,7 +123,7 @@ The `Barista` is scoped too. Its constructor call shows how each [relationship](
 __s._barista = new Barista(
     ResolveTab(__s),
     new Func<string, Task<Cup>>((a0) => ResolveCupAsync(__s, a0, default)),
-    new Dictionary<string, IMilk> { ["oat"] = Root.ResolveOatMilk(__s.__root), ["whole"] = Root.ResolveWholeMilk(__s.__root) },
+    new Dictionary<string, IMilk> { ["Oat"] = Root.ResolveOatMilk(__s.__root), ["Whole"] = Root.ResolveWholeMilk(__s.__root) },
     new ISyrup[] { Root.ResolveVanillaSyrup(__s.__root), Root.ResolveCaramelSyrup(__s.__root) },
     Root.ResolveLoggingTerminal(__s.__root));
 ```
@@ -198,10 +200,13 @@ static Scope()
     __Bucket[] __entries =
     {
         new __Bucket(typeof(Grinder), static __s => Root.ResolveGrinder(__s.__root), false),
+        // …
         new __Bucket(typeof(Tab), static __s => ResolveTab(__s), false),
         new __Bucket(typeof(Barista), static __s => ResolveBarista(__s), false),
+        // …
         new __Bucket(typeof(IPaymentTerminal), static __s => Root.ResolveLoggingTerminal(__s.__root), false),
         new __Bucket(typeof(Func<Grinder>), __R0, false),
+        // …
         new __Bucket(typeof(Func<string, Task<Cup>>), __R33, false),
         // …
     };
@@ -209,7 +214,7 @@ static Scope()
 }
 ```
 
-The lookup hashes the type into a bucket and compares `Type` instances by identity. It needs no reflection, and the table is data, so it does not grow a method with every registration.
+Each shape that has no resolver of its own, such as `Func<Grinder>` or the `Func` the barista takes, gets a small helper (`__R0`, `__R33`) that the table points to, so the table and its helpers grow with the registrations. The lookup hashes the type into a bucket of a static array and compares the few `Type` instances in that bucket by identity, so finding a service costs a hash and a short scan, not a walk over every registration, and it needs no reflection.
 
 `Resolve(Type)` throws an `InvalidOperationException` when the table has no entry. For a service the container has but withholds from that call, such as the `EspressoMachine` on a synchronous `Resolve`, the message names the fix.
 
@@ -250,12 +255,12 @@ The compiler then writes them below the intermediate output, to `obj/<Configurat
 
 ## What this gives you
 
-- **No reflection.** The generated code constructs with `new`, calls the factories and hooks you named, and looks types up by identity with `typeof`. It never scans assemblies or creates types at run time. A [scan](../05-registration/06-scanning.md) is read from the compilation at build time.
+- **No reflection.** The generated code constructs with `new`, calls the factories and hooks you named, and looks types up by identity with `typeof`. It never scans assemblies or creates types at run time. A [scan](../05-registration/07-scanning.md) is read from the compilation at build time.
 - **Plain C#.** You can read, step through and set breakpoints in the generated file like in your own code.
-- **Native AOT and trimming.** The generated code and the `Awaiten` library contain no reflection-based activation, which the repository verifies with a native AOT test project. The [MS.DI bridge](../08-hosting/01-msdi-bridge.md#native-aot) is reflection-free as well.
+- **Native AOT and trimming.** The generated code and the `Awaiten` library contain no reflection-based activation, which the repository verifies with a native AOT test project. The [MS.DI bridge](../07-hosting/01-msdi-bridge.md#native-aot) is reflection-free as well.
 - **Every target framework.** The same file compiles for every framework Awaiten supports, .NET Framework 4.8 included, with the [language version](../01-getting-started.md#requirements) the requirements name.
 
-A [module](../05-registration/07-modules/index.md) in another assembly can generate code too: a public, `partial` module emits the factories and handles a container in that other assembly needs. See [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md).
+A [module](../05-registration/08-modules/index.md) in another assembly can generate code too: a public, `partial` module emits the factories and handles a container in that other assembly needs. See [Shipping modules from a library](../05-registration/08-modules/01-library-modules.md).
 
 ## Where to go next
 

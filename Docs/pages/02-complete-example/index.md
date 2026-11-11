@@ -1,10 +1,11 @@
 ---
 description: A full coffee-shop container that combines async initialization, scopes, runtime arguments, keyed services, collections, decorators and modules.
+pagination_next: design-principles
 ---
 
 # Complete example
 
-This page assembles a full coffee shop from the pieces in the rest of the docs. It shows a realistic container: [async equipment](../04-core-concepts/03-async-initialization.md), [per-order scopes](../04-core-concepts/02-scopes.md), cups sized at [run time](../06-resolution/06-runtime-arguments.md), [keyed milk](../05-registration/04-keyed-services.md), a [collection](../06-resolution/03-collections.md) of syrups, and a [decorated](../05-registration/02-decorators.md) payment terminal from a [module](../05-registration/07-modules/index.md). Read it top to bottom for an overview of how the features fit together, and follow the links for the details.
+This page assembles a full coffee shop from the pieces in the rest of the docs. It shows a realistic container: [async equipment](../04-core-concepts/03-async-initialization.md), [per-order scopes](../04-core-concepts/02-scopes.md), cups sized at [run time](../06-resolution/06-runtime-arguments.md), [keyed milk](../05-registration/05-keyed-services.md), a [collection](../06-resolution/03-collections.md) of syrups, and a [decorated](../05-registration/03-decorators.md) payment terminal from a [module](../05-registration/08-modules/index.md). Read it top to bottom for an overview of how the features fit together, and follow the links for the details.
 
 ```mermaid
 flowchart LR
@@ -120,6 +121,8 @@ public sealed class Barista(
 Group the payment wiring so it can be reused and tested on its own. The module registers the terminal and wraps it with logging.
 
 ```csharp title="PaymentModule.cs"
+using Awaiten;
+
 [Module]
 [Singleton<CardTerminal, IPaymentTerminal>]
 [Decorate<LoggingTerminal, IPaymentTerminal>]
@@ -129,6 +132,8 @@ public static partial class PaymentModule;
 ## The container
 
 ```csharp title="CoffeeShop.cs"
+using Awaiten;
+
 [Container]
 [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
 [Import(typeof(PaymentModule))]
@@ -147,8 +152,8 @@ public static partial class PaymentModule;
 [Transient<Cup>(Factory = nameof(MakeCup))]
 
 // keyed milk
-[Singleton<OatMilk, IMilk>(Key = "oat")]
-[Singleton<WholeMilk, IMilk>(Key = "whole")]
+[Singleton<OatMilk, IMilk>(Key = "Oat")]
+[Singleton<WholeMilk, IMilk>(Key = "Whole")]
 
 // syrups as a set
 [Singleton<VanillaSyrup, ISyrup>]
@@ -163,7 +168,7 @@ public static partial class CoffeeShop
 ```
 
 - The `[AsyncInitializer<IWarmUp>]` convention makes every `IWarmUp` of the shop [async](../04-core-concepts/03-async-initialization.md#mark-a-service-as-async), so the `EspressoMachine` is warmed up before anything receives it. A `Cup` needs the machine, so it is async too.
-- The `Barista` takes its cups through `Func<string, Task<Cup>>`. The size is a [runtime argument](../06-resolution/06-runtime-arguments.md#keep-the-argument-off-the-domain-type-with-a-factory) of the `MakeCup` factory, and the `Task` [defers the async work](../04-core-concepts/03-async-initialization.md#deferred-shapes-launder-the-taint), so the `Barista` itself resolves synchronously.
+- The `Barista` takes its cups through `Func<string, Task<Cup>>`. The size is a [runtime argument](../06-resolution/06-runtime-arguments.md#keep-the-argument-off-the-domain-type-with-a-factory) of the `MakeCup` factory, and the `Task` [defers the async work](../04-core-concepts/03-async-initialization.md#keep-a-consumer-synchronous-by-deferring-the-async-work), so the `Barista` itself resolves synchronously.
 - The milk is picked by key at run time from a [keyed dictionary](../06-resolution/04-keyed-dictionaries.md), and the syrups arrive as a [collection](../06-resolution/03-collections.md) in declaration order.
 - The `MenuBoard` is a pre-built [instance](../05-registration/01-factories-and-instances.md#instance). The container hands it out and never disposes it.
 
@@ -172,6 +177,8 @@ public static partial class CoffeeShop
 Create the root, warm the equipment once at startup, then serve each order in its own scope.
 
 ```csharp title="Program.cs"
+using Awaiten;
+
 await using CoffeeShop.Root shop = new();
 await shop.InitializeAsync();   // the espresso machine heats its boiler, once
 
@@ -180,7 +187,7 @@ Console.WriteLine($"Today's special: {shop.Resolve<MenuBoard>().Special}");
 await using (IAwaitenScope order = shop.CreateScope())
 {
     Barista barista = order.Resolve<Barista>();
-    string drink = await barista.ServeAsync("large", "oat");
+    string drink = await barista.ServeAsync("large", "Oat");
     Console.WriteLine($"Served {drink}.");
 } // the scope disposes the order's Tab here
 ```
@@ -203,4 +210,4 @@ None of this wiring is trusted at run time. Before the app ran, Awaiten verified
 - [What Awaiten generates](./01-generated-code.md) to see the code the generator writes for this container.
 - [Lifetimes](../04-core-concepts/01-lifetimes.md) to start on the concepts behind it.
 - [Diagnostics](../09-diagnostics.md) for every check the compiler runs.
-- [MS.DI bridge](../08-hosting/01-msdi-bridge.md) to run this under ASP.NET Core.
+- [MS.DI bridge](../07-hosting/01-msdi-bridge.md) to run this under ASP.NET Core.

@@ -49,7 +49,12 @@ public static partial class CoffeeShop;
 public sealed class MilkFridge(IReadOnlyDictionary<MilkKind, IMilk> milks);
 ```
 
-The dictionary synthesizes only when every keyed registration of the service matches the requested key type. A `Type` key builds a [dispatch dictionary](#dispatch-by-runtime-type) instead. Any other key type that is neither `string` nor an enum, or one whose registrations mix key kinds, is a build error ([AWT159](../09-diagnostics.md#awt159)) unless you register the dictionary yourself. A synthesized dictionary already resolves every key, so applying `[FromKey]` to it makes no sense and is an error ([AWT160](../09-diagnostics.md#awt160)).
+The rules:
+
+- The dictionary synthesizes only when every keyed registration of the service matches the requested key type. A key type that is neither `string` nor an enum, or registrations that mix key kinds, is a build error ([AWT159](../09-diagnostics.md#awt159)) unless you register the dictionary yourself.
+- Registrations keyed with `typeof(...)` cannot be collected into an `IReadOnlyDictionary<Type, TService>`. A `Type` key builds only a [dispatch dictionary](#dispatch-by-runtime-type), whose value is a `Func<TBase>`; any other value type is a build error ([AWT213](../09-diagnostics.md#awt213)).
+- A synthesized dictionary already resolves every key, so applying `[FromKey]` to it is an error ([AWT160](../09-diagnostics.md#awt160)).
+- The dictionary builds every member while the consumer is built, so it cannot hold an async-initialized member ([AWT122](../09-diagnostics.md#awt122)). Use the async form below.
 
 ## The async form
 
@@ -57,7 +62,7 @@ For async members, ask for `Task<IReadOnlyDictionary<string, TService>>`. It awa
 
 ## Dispatch by runtime type
 
-Sometimes the implementation to use depends on a type that is only known at run time. The classic case is a mediator: it receives an `object` message and needs the `IOrderHandler<T>` for `message.GetType()`. Key a dictionary by `Type` and Awaiten maps every closing of the generic handler to its type argument:
+Sometimes the implementation to use depends on a type that is only known at run time. The classic case is a mediator: it receives an `object` message and needs the `IOrderHandler<T>` for `message.GetType()`. Key a dictionary by `Type` and Awaiten maps the type argument of each closing of the generic handler to a factory for that closing:
 
 ```csharp
 public interface IOrderHandler { string Handle(object message); }
@@ -68,10 +73,10 @@ public sealed class OrderPaidHandler : IOrderHandler<OrderPaid> { public string 
 
 [Container]
 [Scan(typeof(IOrderHandler<>), As = ScanAs.Marker)]
-[Singleton<Counter>]
+[Singleton<OrderRouter>]
 public static partial class CoffeeShop;
 
-public sealed class Counter(IReadOnlyDictionary<Type, Func<IOrderHandler>> handlers)
+public sealed class OrderRouter(IReadOnlyDictionary<Type, Func<IOrderHandler>> handlers)
 {
     public string Handle(object message) => handlers[message.GetType()]().Handle(message);
 }
@@ -82,14 +87,15 @@ The dictionary holds one entry per closing, `typeof(OrderPlaced)` and `typeof(Or
 The rules:
 
 - **The value is `Func<TBase>`.** `TBase` is a non-generic interface that the generic interface extends, like `IOrderHandler` above. Each value resolves its closing exactly like a `Func<IOrderHandler<OrderPlaced>>` parameter would: with the closing's own lifetime, through its decorators, and from the scope that built the consumer.
-- **The members are the closed registrations.** Every unkeyed registration of a closed `IOrderHandler<T>` is an entry, whether a [scan](../05-registration/06-scanning.md) match (with `As = ScanAs.Marker`, so the match is registered under its closed interface) or an explicit one such as `[Transient<OrderPlacedHandler, IOrderHandler<OrderPlaced>>]`. An [open generic](../05-registration/05-open-generics.md) registration adds no entry, because its closings are unbounded.
+- **The members are the closed registrations.** Every unkeyed registration of a closed `IOrderHandler<T>` is an entry, whether a [scan](../05-registration/07-scanning.md) match (with `As = ScanAs.Marker`, so the match is registered under its closed interface) or an explicit one such as `[Transient<OrderPlacedHandler, IOrderHandler<OrderPlaced>>]`. An [open generic](../05-registration/06-open-generics.md) registration adds no entry, because its closings are unbounded.
+- **No key.** The dictionary holds every unkeyed closing, so a `[FromKey]` on it is a build error ([AWT213](../09-diagnostics.md#awt213)).
 - **One type parameter, one generic interface.** The key is the single type argument. A closing with two type arguments, or a second generic interface that also extends `TBase`, is a build error ([AWT213](../09-diagnostics.md#awt213)). Give each generic interface its own base interface.
 - **One implementation per type.** When two implementations close the same `T`, the entry resolves the one a direct `IOrderHandler<T>` dependency would get, so an explicit registration overrides a scanned handler.
 - **Exact types.** The lookup matches the exact runtime type, not a base type. An unknown type behaves like any dictionary: the indexer throws `KeyNotFoundException`, and `TryGetValue` returns `false`.
 - **Synchronous handlers.** Each value is a synchronous `Func`, so an async-initialized handler is reported like any `Func` over one ([AWT119](../09-diagnostics.md#awt119)).
 - **Lifetime safety.** A singleton consumer that reaches a disposable transient handler through the dictionary would strand each instance on the root ([AWT118](../09-diagnostics.md#awt118)). Register the consumer as `Scoped` so each scope disposes the handlers it builds.
 
-Inject the dictionary into a constructor, a factory, or an [`[Inject]`](./05-property-injection.md) property. It is not offered by `Resolve<T>`.
+Inject the dictionary into a constructor, a factory, or an [injected property](./05-property-injection.md). It is not offered by `Resolve<T>`.
 
 :::tip[When not to reach for this]
 Reach for the dispatch dictionary only when the type really is unknown until run time, like a message arriving as `object`. When the caller knows the type, inject `IOrderHandler<OrderPlaced>` directly, so the compiler checks that a handler exists. When every handler of a message should run, inject a [collection](./03-collections.md) of `IOrderHandler<OrderPlaced>` instead.
@@ -97,5 +103,5 @@ Reach for the dispatch dictionary only when the type really is unknown until run
 
 ## Where to go next
 
-- [Keyed services](../05-registration/04-keyed-services.md) to select a single keyed implementation.
+- [Keyed services](../05-registration/05-keyed-services.md) to select a single keyed implementation.
 - [Collections](./03-collections.md) for all unkeyed implementations.

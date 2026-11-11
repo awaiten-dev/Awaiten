@@ -11,3 +11,7 @@ public static class Log
 	{
 	}
 }
+
+// The plain barista that the module example's composition root builds. The page shows it in several blocks, which
+// keeps each of those declarations local to its block.
+public sealed class Barista(ITimeSystem timeSystem, IPaymentTerminal terminal);

@@ -321,9 +321,10 @@ internal static class Diagnostics
 	///     factory builds and re-tracks those disposables on the container's root, so they accumulate for its
 	///     entire lifetime, an unbounded leak. The leak-free remedy is the <c>{2}</c> message argument, since it
 	///     differs by relationship: a synchronous <c>Func&lt;…&gt;</c> is redirected to a
-	///     <c>Func&lt;…, Owned&lt;T&gt;&gt;</c> disposal handle (draining into a throwaway scope), while an
-	///     asynchronous <c>Func&lt;…, Task&lt;T&gt;&gt;</c> cannot use <c>Owned&lt;T&gt;</c> (a synchronous handle
-	///     that cannot await initialization, AWT119), so it is pointed at an explicitly scoped resolution instead.
+	///     <c>Func&lt;…, Owned&lt;T&gt;&gt;</c> disposal handle (draining into a throwaway scope), an asynchronous
+	///     <c>Func&lt;…, Task&lt;T&gt;&gt;</c> to <c>Func&lt;…, Task&lt;Owned&lt;T&gt;&gt;&gt;</c>, which resolves each
+	///     instance asynchronously into a throwaway scope, and the holder of a dispatch dictionary, which has no owned
+	///     form, to a scoped registration.
 	/// </summary>
 	/// <remarks>
 	///     Unlike the retired per-registration check, this is flow-based: it fires only for the statically
@@ -439,7 +440,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor DecoratedServiceNotRegistered = new(
 		"AWT123",
-		"Decorated service not registered",
+		"Decorator has nothing to decorate",
 		"'{0}' is decorated by '{1}' but has no registration to decorate; register the service before decorating it",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -966,7 +967,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor InaccessibleModuleMember = new(
 		"AWT153",
-		"Module production member not accessible",
+		"Module Factory or Instance member not accessible",
 		"'{0}' cannot be produced: the member '{2}' exists on the module '{1}' but is not accessible from the generated container; make it public, or internal within a visible assembly",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -1000,7 +1001,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleScanNotExpanded = new(
 		"AWT154",
-		"Module was not self-compiled",
+		"Module has no generated code the container can read",
 		"The imported module '{0}' {1}, but its assembly carries no code generated for it; it was compiled without the Awaiten source generator (or with a version predating self-compiled modules), so the container cannot use it; rebuild the module's assembly with the Awaiten generator referenced",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -2047,7 +2048,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor OpenGenericNeedsClosedType = new(
 		"AWT207",
-		"Option needs a closed type",
+		"Eager or Instance on an open generic registration",
 		"{0} needs a closed type, but '{1}' is an open generic; register the closings you want with a closed type instead",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -2151,7 +2152,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor SuppressedDisposalProjected = new(
 		"AWT214",
-		"A container with suppressed disposal is projected into Microsoft.Extensions.DependencyInjection",
+		"Suppressed disposal in a container projected into MS.DI",
 		"'{0}' is projected into Microsoft.Extensions.DependencyInjection, but its container suppresses the disposal of '{1}', which MS.DI would dispose anyway, so the projection throws at startup; remove SuppressDisposal, register a pre-built Instance you own, or resolve the service from the container directly (AwaitenServiceProvider)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -2167,7 +2168,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor TypeofArgumentNotClosedOrOpen = new(
 		"AWT215",
-		"A typeof argument is neither a closed type nor an unbound generic definition",
+		"typeof argument is neither a closed type nor an unbound generic definition",
 		"The typeof argument '{1}' of [{0}] is neither a closed type nor an unbound generic definition; pass a closed type such as typeof(Repository<Order>) or an unbound generic definition with every type argument omitted such as typeof(Repository<>)",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -2185,7 +2186,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor RegisteredTypeLessAccessible = new(
 		"AWT216",
-		"A registered type is less accessible than the generated container",
+		"Registered type is less accessible than the generated container",
 		"'{0}' cannot be registered: '{1}' is private or protected and {2}; {3}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
@@ -2220,7 +2221,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor TypedResolveOfUnprovidedService = new(
 		"AWT218",
-		"A typed resolve names a service the container does not provide",
+		"Typed resolve names a service the container does not provide",
 		"'{0}' has no {1} on '{2}', so this {3} throws at run time; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
@@ -2238,7 +2239,7 @@ internal static class Diagnostics
 	/// </summary>
 	public static readonly DiagnosticDescriptor TypedResolveOfWithheldService = new(
 		"AWT219",
-		"A typed resolve names a service the container withholds from that call",
+		"Typed resolve names a service the container withholds from that call",
 		"This {0} on '{1}' throws at run time: {2}",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
@@ -2424,7 +2425,8 @@ internal static class Diagnostics
 		"The imported module '{0}' registers '{1}', whose [Inject] property this container does not see, and the module's assembly generated no {2} that sets it because {3}; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT231"));
 
 	/// <summary>
 	///     The form of <see cref="ModuleRegistrationNotSelfCompiled">AWT231</see> for the generic <c>Factory</c> member of

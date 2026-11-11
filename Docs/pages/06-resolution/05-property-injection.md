@@ -56,7 +56,7 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
-Pass `nameof(Barista.Time)` so a rename carries through. Repeat the attribute, once per property. It reads the *implementation* type, so it applies wherever that type is constructed, including a type pulled in by a [`[Scan]`](../05-registration/06-scanning.md) that a per-registration list of names could never reach.
+Pass `nameof(Barista.Time)` so a rename carries through. Repeat the attribute, once per property. It reads the *implementation* type, so it applies wherever that type is constructed, including a type pulled in by a [`[Scan]`](../05-registration/07-scanning.md) that a per-registration list of names could never reach.
 
 ## Open generics with the `typeof` form
 
@@ -67,7 +67,7 @@ Every entry also comes in a `typeof` form. For a closed type the two are the sam
 [InjectProperty(typeof(Barista), nameof(Barista.Time))]   // typeof form, same behavior
 ```
 
-The `typeof` form exists for an unbound generic, which cannot be a type argument: `typeof(OrderBook<>)` fills the property on every closing of `OrderBook<T>` that the container constructs, whether an [open-generic registration](../05-registration/05-open-generics.md) or an explicit closed one produced it.
+The `typeof` form exists for an unbound generic, which cannot be a type argument: `typeof(OrderBook<>)` fills the property on every closing of `OrderBook<T>` that the container constructs, whether an [open-generic registration](../05-registration/06-open-generics.md) or an explicit closed one produced it.
 
 ```csharp
 public interface IOrderBook<T>;
@@ -100,7 +100,7 @@ The closed entry has to change at least one of `Key`, `Optional` and `Deferred`.
 
 ## Any dependency shape works
 
-A container-side property resolves the same way a constructor parameter does: relationships, collections, and keyed registrations all work. Each entry carries its own `Optional`, `Deferred`, and `Key`.
+A container-side property resolves the same way a constructor parameter does: relationships, collections, and keyed registrations all work. The one difference is [`[ImportServices]`](../07-hosting/02-external-services.mdx#fall-through-everything-with-importservices): an unregistered property does not fall through to the external provider, it is a missing dependency like any other. Each entry carries its own `Optional`, `Deferred`, and `Key`.
 
 ### Select a keyed registration with `Key`
 
@@ -108,7 +108,7 @@ A container-side property resolves the same way a constructor parameter does: re
 [InjectProperty<Barista>(nameof(Barista.DefaultMilk), Key = "Oat")]
 ```
 
-`Key` takes a `string`, an `enum` value, or a `typeof(...)`, exactly like a [`[FromKey]`](../05-registration/04-keyed-services.md) on an `[Inject]` property.
+`Key` takes a `string`, an `enum` value, or a `typeof(...)`, exactly like a [`[FromKey]`](../05-registration/05-keyed-services.md) on an `[Inject]` property.
 
 ### Break a cycle with `Deferred`
 
@@ -128,9 +128,9 @@ By default a property whose service is unregistered is a missing dependency ([AW
 [InjectProperty<Barista>(nameof(Barista.Metrics), Optional = true)]
 ```
 
-A service an [open generic](../05-registration/05-open-generics.md) registration can provide counts as registered: a property of type `IRepository<Order>` closes `[Singleton(typeof(Repository<>), typeof(IRepository<>))]` exactly like a constructor parameter would, so it is filled even when it is `Optional`.
+A service an [open generic](../05-registration/06-open-generics.md) registration can provide counts as registered: a property of type `IRepository<Order>` closes `[Singleton(typeof(Repository<>), typeof(IRepository<>))]` exactly like a constructor parameter would, so it is filled even when it is `Optional`.
 
-`Optional` tolerates a missing registration, not a request that no registration could serve. A `Lazy<Owned<T>>` ([AWT121](../09-diagnostics.md#awt121)) or a relationship over an [imported service](../08-hosting/02-external-services.mdx#relationships-and-collections) ([AWT242](../09-diagnostics.md#awt242)) is reported for an optional property too, also when an imported module of another assembly builds the implementation.
+`Optional` tolerates a missing registration, not a request that no registration could serve. A `Lazy<Owned<T>>` ([AWT121](../09-diagnostics.md#awt121)) or a relationship over an [imported service](../07-hosting/02-external-services.mdx#relationships-and-collections) ([AWT242](../09-diagnostics.md#awt242)) is reported for an optional property too, also when an imported module of another assembly builds the implementation.
 
 ### Rules for entries
 
@@ -138,7 +138,8 @@ A service an [open generic](../05-registration/05-open-generics.md) registration
 - An unreachable setter is [AWT136](../09-diagnostics.md#awt136).
 - A duplicate entry for one property is [AWT179](../09-diagnostics.md#awt179).
 - A type a `Factory` or `Instance` produces is built whole by its source, with nothing for the container to fill, so an entry for it is [AWT178](../09-diagnostics.md#awt178).
-- A type that a module of another assembly builds through its generated factory or instance handle still gets the entry: the container sets the property on the instance it receives, so the property needs a `set` accessor rather than `init`. See [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md) for when such an entry is AWT178.
+- A type that a module of another assembly builds still gets the entry: the container sets the property on the instance it receives, before the module's hooks and initializers run. There the entry is [AWT178](../09-diagnostics.md#awt178) when the property is init-only, when the entry is `Deferred`, or when the module builds the type from runtime `[Arg]` arguments. The [library module rules](../05-registration/08-modules/02-library-module-rules.md#container-side-property-entries) list every case.
+- An entry naming a [decorator](../05-registration/03-decorators.md) type is ignored without a diagnostic, because the decorator chain builds the decorator. Use `[Inject]` on the decorator's property, as described below.
 
 A property without an entry is left alone. Injection stays opt-in, one property at a time, and if a property carries both `[Inject]` and an `[InjectProperty<T>]` entry the `[Inject]` member wins and the redundant entry is flagged ([AWT181](../09-diagnostics.md#awt181)).
 
@@ -146,7 +147,7 @@ A property without an entry is left alone. Injection stays opt-in, one property 
 
 Marking the property itself with `[Inject]` asks for the same injection from the domain side. It fills exactly like a container-side entry, and `Optional`, `Deferred`, and a `[FromKey]` alongside it all work.
 
-`[Inject]` puts an Awaiten reference on your class, so reach for it only for the one shape `[InjectProperty]` cannot express: a property of a **decorator**, which its decorator chain builds rather than an entry filling it. For every other type, including an open generic one, prefer the container-side form. Where it applies, `[Inject]` is an accepted trade, not a defect.
+`[Inject]` puts an Awaiten reference on your class, so reach for it only for the one shape `[InjectProperty]` cannot express: a property of a **decorator**, which its decorator chain builds rather than an entry filling it. An `[InjectProperty]` entry that names a decorator type has no effect and is not reported, so the property stays unset. For every other type, including an open generic one, prefer the container-side form. Where it applies, `[Inject]` is an accepted trade, not a defect.
 
 ```csharp
 public sealed class AuditedTerminal(IPaymentTerminal inner) : IPaymentTerminal
@@ -167,10 +168,8 @@ public static partial class CoffeeShop;
 <details>
 <summary>Internal and private <code>[Inject]</code> properties</summary>
 
-- An `internal` `[Inject]` property, or one with an `internal` setter, is set by a container in its own assembly.
-- A container in another assembly doesn't see it. Register such a type in a [module](../05-registration/07-modules/index.md) of its own assembly, whose generated factory sets the property; that factory fills at most four init-only `Optional` properties of one type ([AWT200](../09-diagnostics.md#awt200)). See [Shipping modules from a library](../05-registration/07-modules/01-library-modules.md).
-- A container in another assembly that constructs such a type itself reports it instead of leaving the property unset: [AWT244](../09-diagnostics.md#awt244) for an `internal` property, [AWT136](../09-diagnostics.md#awt136) for an `internal` setter. It learns about such a property from a marker the Awaiten generator emits into the other assembly, so a library whose build emitted no such marker isn't checked.
-- A `private` `[Inject]` property or an explicit interface implementation can't be assigned by any container, so it's AWT136 wherever the container lives.
+- An `internal` `[Inject]` property, or one with an `internal` setter, is set by a container in its own assembly. A container in another assembly that constructs the type itself reports it instead of leaving it unset: [AWT244](../09-diagnostics.md#awt244) for an `internal` property, [AWT136](../09-diagnostics.md#awt136) for an `internal` setter. Register the type in a [module](../05-registration/08-modules/index.md) of its own assembly instead, see the [library module rules](../05-registration/08-modules/02-library-module-rules.md#injected-properties).
+- A `private` `[Inject]` property or an explicit interface implementation can't be assigned by any container, so it's [AWT136](../09-diagnostics.md#awt136) wherever the container lives.
 
 </details>
 
@@ -181,5 +180,5 @@ Prefer constructor injection. A constructor parameter states a dependency plainl
 ## Where to go next
 
 - [Relationships](./02-relationships.md) for deferred construction without property injection.
-- [Keyed services](../05-registration/04-keyed-services.md) for `[FromKey]` and container-side keyed selection.
+- [Keyed services](../05-registration/05-keyed-services.md) for `[FromKey]` and container-side keyed selection.
 - [Resolving services](./01-resolving-services.md) for the resolve surface.

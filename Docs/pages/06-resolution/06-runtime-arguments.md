@@ -70,7 +70,7 @@ public sealed class Barista(Func<string, Cup> cups)
 
 ## Several arguments
 
-List every `[Arg]` and pass a `Func` with the matching shape. Order follows the constructor.
+List every `[Arg]` and pass a `Func` with the matching shape. The `Func` arguments follow the order of the `[Arg]` parameters of the constructor or factory method.
 
 ```csharp
 public sealed class Receipt(Store store, [Arg] string customer, [Arg] int number);
@@ -89,11 +89,13 @@ Cup medium = await brewCup("Medium");
 
 ## Rules
 
-A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments. It is reachable only through a `Func<TArg..., T>` or `Func<TArg..., Task<T>>`, not as a plain, `Lazy<T>`, or `Task<T>` dependency ([AWT115](../09-diagnostics.md#awt115)). If the argument shape does not match the `[Arg]` parameters, that is a build error too ([AWT113](../09-diagnostics.md#awt113)).
-
-The argument wins even when its type is itself registered. A `[Arg] string` always comes from your call, never from the graph.
+- A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments.
+- It is reachable only through `Func<TArg..., T>`, `Func<TArg..., Owned<T>>`, `Func<TArg..., Task<T>>` or `Func<TArg..., Task<Owned<T>>>`. A plain, `Lazy<T>`, `Owned<T>` or `Task<T>` dependency on it is [AWT115](../09-diagnostics.md#awt115).
+- The `Func` arguments must match the `[Arg]` parameters in type and order; a `Func` that supplies other arguments, or none, is [AWT113](../09-diagnostics.md#awt113).
+- A synchronous `Func<TArg..., T>` over an async-initialized service is [AWT119](../09-diagnostics.md#awt119); take the `Task` form instead.
+- The argument wins even when its type is itself registered. A `[Arg] string` always comes from your call, never from the graph.
 
 ## Where to go next
 
 - [Relationships](./02-relationships.md) for `Func<T>` without arguments.
-- [Owned](../07-lifetime/01-owned.md) for `Func<TArg, Owned<T>>` when the built service is disposable.
+- [Owned](../04-core-concepts/06-owned.md) for `Func<TArg, Owned<T>>` when the built service is disposable.

@@ -18,6 +18,7 @@ public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal
 
 [Container]
 [Singleton<CardTerminal, IPaymentTerminal>]
+// highlight-next-line
 [Decorate<LoggingTerminal, IPaymentTerminal>]
 public static partial class CoffeeShop;
 
@@ -49,7 +50,7 @@ Need a different order? Set `Order`. A higher `Order` sits further out, and deco
 
 ## Collections are decorated too
 
-If a service has several implementations, each one is wrapped. A consumer that asks for `IEnumerable<IPaymentTerminal>` gets a collection of decorated terminals, so neither a plain resolve nor the collection reaches an undecorated instance. A [`WhenInjectedInto`](./04-keyed-services.md#bind-a-variant-to-a-consumer-with-wheninjectedinto) registration is wrapped by the same chain.
+If a service has several implementations, each one is wrapped. A consumer that asks for `IEnumerable<IPaymentTerminal>` gets a collection of decorated terminals, so neither a plain resolve nor the collection reaches an undecorated instance. A [`WhenInjectedInto`](./05-keyed-services.md#bind-a-variant-to-a-consumer-with-wheninjectedinto) registration is wrapped by the same chain.
 
 ## Keyed registrations
 
@@ -100,6 +101,7 @@ public sealed class Checkout(IHandler<PlaceOrder> handler);
 
 [Container]
 [Transient(typeof(Handler<>), typeof(IHandler<>))]
+// highlight-next-line
 [Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]
 [Transient<Checkout>]   // needs IHandler<PlaceOrder>, so that closing is in the graph
 public static partial class CoffeeShop;
@@ -107,7 +109,7 @@ public static partial class CoffeeShop;
 // Resolve<IHandler<PlaceOrder>>() returns LoggingBehavior<PlaceOrder>(Handler<PlaceOrder>)
 ```
 
-Awaiten synthesizes a closed decorator for every closing already in the graph, however it was registered: an open generic, an explicit closed registration, or a scan. An open decorator with no closing to wrap decorates nothing. A module or a base container meant for [extension](08-extending-containers.md) can declare it for the closings its consumers register; in any other container it warns ([AWT249](../09-diagnostics.md#awt249)), which a base meant only for extension suppresses at the attribute. Each closing then behaves exactly like a hand-written closed decorator: it joins its collection, respects `Order`, and interleaves with any explicit `[Decorate<D, IHandler<PlaceOrder>>]` on that one closing by the same rules.
+Awaiten synthesizes a closed decorator for every closing already in the graph, however it was registered: an open generic, an explicit closed registration, or a scan. An open decorator with no closing to wrap decorates nothing. A module or a base container meant for [extension](./09-extending-containers.md) can declare it for the closings its consumers register; in any other container it warns ([AWT249](../09-diagnostics.md#awt249)), which a base meant only for extension suppresses at the attribute. Each closing then behaves exactly like a hand-written closed decorator: it joins its collection, respects `Order`, and interleaves with any explicit `[Decorate<D, IHandler<PlaceOrder>>]` on that one closing by the same rules.
 
 The decorator's arity must match the service's, and it must expose the service with its type parameters in declaration order (`LoggingBehavior<T> : IHandler<T>`). A closing whose type arguments violate the decorator's constraints is skipped with a diagnostic. Like the closed form, a decorator's *own* generic dependencies are supplied only when some other registration already expands them into the graph.
 
@@ -121,9 +123,12 @@ public static class ShopSwitches
     public static bool AuditPayments { get; set; }
 }
 
+public sealed class AuditedTerminal(IPaymentTerminal inner) : IPaymentTerminal;
+
 [Container]
 [Singleton<CardTerminal, IPaymentTerminal>]
-[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+// highlight-next-line
+[Decorate<AuditedTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
 public static partial class CoffeeShop
 {
     private static bool AuditPayments => ShopSwitches.AuditPayments;
@@ -134,9 +139,9 @@ Set the switch at the entry point, before you create the root:
 
 ```csharp
 ShopSwitches.AuditPayments = Environment.GetCommandLineArgs().Contains("--audit");
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 
-// Resolve<IPaymentTerminal>() returns LoggingTerminal(CardTerminal) with --audit, else CardTerminal
+// Resolve<IPaymentTerminal>() returns AuditedTerminal(CardTerminal) with --audit, else CardTerminal
 ```
 
 A predicate without parameters is evaluated once per root, when the root is created and before any [eager](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) singleton is built. Changing the switch afterwards does not affect that root, and a new root reads it again. Decorators that name the same predicate share one evaluation. The `typeof` form takes `When` too, and the predicate then decides for every closing.
@@ -145,19 +150,23 @@ When the predicate is `false`, the decorator is never built: it is not initializ
 
 The graph is still validated with the decorator in place, whatever the predicate returns. Its dependencies must be registered, a captive dependency or a cycle through it is a build error, and [lifetime safety](../04-core-concepts/04-lifetime-safety.md) treats a disposable decorator as built. An async-initialized decorator keeps the service async even in a run where it is off, so resolve the service with `ResolveAsync` either way.
 
-### Build it at startup only when it is on
+<details>
+<summary>Build it at startup only when it is on</summary>
 
 `Eager = true` on the decorated singleton builds it when the root is created, through the decorator when that is on and without it otherwise. To build it at startup only in the runs that apply the decorator, resolve it at the entry point instead:
 
 ```csharp
-using CoffeeShop.Root shop = new();
+await using CoffeeShop.Root shop = new();
 if (ShopSwitches.AuditPayments)
 {
     await shop.ResolveAsync<IPaymentTerminal>(cancellationToken);
 }
 ```
 
-### Let the predicate take services
+</details>
+
+<details>
+<summary>Let the predicate take services</summary>
 
 A predicate can take services, for example settings the host binds from its configuration:
 
@@ -170,24 +179,33 @@ public sealed class AuditSettings
 [Container]
 [ImportService<AuditSettings>]
 [Singleton<CardTerminal, IPaymentTerminal>]
-[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditEnabled))]
+[Decorate<AuditedTerminal, IPaymentTerminal>(When = nameof(AuditEnabled))]
 public static partial class CoffeeShop
 {
     private static bool AuditEnabled(AuditSettings settings) => settings.Enabled;
 }
 ```
 
-Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use. Because it decides for the whole root, it takes only services the root shares as one instance it builds synchronously: singletons, `Instance` registrations and [imported services](../08-hosting/02-external-services.mdx) that are not initialized asynchronously.
+Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use. Because it decides for the whole root, it takes only services the root shares as one instance it builds synchronously: singletons, `Instance` registrations and [imported services](../07-hosting/02-external-services.mdx) that are not initialized asynchronously.
+
+</details>
 
 ### Rules for predicates
 
 - `When` names a static `bool` method, property or field of the type that declares the `[Decorate]`. Anything else, including a method returning `Task<bool>`, is a build error ([AWT246](../09-diagnostics.md#awt246)).
-- A predicate on a [module](./07-modules/index.md) or an [extended container](./08-extending-containers.md) must be internal or public ([AWT247](../09-diagnostics.md#awt247)). How a container in another assembly calls an internal one is described in [Shipping modules from a library](./07-modules/01-library-modules.md).
+- A predicate on a [module](./08-modules/index.md) or an [extended container](./09-extending-containers.md) must be internal or public ([AWT247](../09-diagnostics.md#awt247)). How a container in another assembly calls an internal one is described in [non-public members](./08-modules/02-library-module-rules.md#non-public-members) for a module and in [switch an inherited decorator off](./09-extending-containers.md#switch-an-inherited-decorator-off) for a base container.
 - A predicate parameter the root cannot supply once, such as a scoped service, a `Func<T>` or an async-initialized singleton, is a build error ([AWT248](../09-diagnostics.md#awt248)), and so is one that needs the decorated service ([AWT102](../09-diagnostics.md#awt102)).
 - A service that reaches the decorated service only through a `Func<T>` or `Lazy<T>` is allowed. If it calls that `Func<T>` or `Lazy<T>` in its constructor, the predicate is needed while it is being evaluated, and the resolve throws an `InvalidOperationException` that names the predicate.
 
 :::tip[When not to reach for this]
-A conditional decorator answers one question: should this cross-cutting wrapper exist in this run? Reach for it when the answer is fixed at startup, by a command-line switch, an environment or a deployment profile, and the decorator should then cost nothing. Do not use it to vary behavior while the application runs: the predicate is evaluated once. When the decision can change at run time, or differs per request or tenant, it is domain logic, so let the decorator take its options (or a feature-flag service) and pass calls through when it is disabled. Keep the switch a value the entry point sets once, or the predicate turns into an [ambient context](../03-design-principles.md#ambient-context). When several switches start to combine, or one swaps the core implementation rather than wrapping it, you have two applications: give each its own container that [extends](./08-extending-containers.md) a shared base, and pick the root at the entry point. And when a decorator is only off in tests, a test container that [extends the production one](./08-extending-containers.md#switch-an-inherited-decorator-off) is the better seam. See [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
+A conditional decorator answers one question: should this cross-cutting wrapper exist in this run? Reach for it when the answer is fixed at startup, by a command-line switch, an environment or a deployment profile, and the decorator should then cost nothing.
+
+- **Not for decisions while the application runs.** The predicate is evaluated once. When the decision can change at run time, or differs per request or tenant, it is domain logic: let the decorator take its options (or a feature-flag service) and pass calls through when it is disabled.
+- **Not for ambient state.** Keep the switch a value the entry point sets once, or the predicate turns into an [ambient context](../03-design-principles.md#ambient-context).
+- **Not for several applications.** When several switches start to combine, or one swaps the core implementation rather than wrapping it, you have two applications: give each its own container, share their common wiring in a [module](./08-modules/index.md), and pick the root at the entry point.
+- **Not for test-only switches.** When a decorator is only off in tests, a test container that [extends the production one](./09-extending-containers.md#switch-an-inherited-decorator-off) is the better seam.
+
+See [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
 :::
 
 ## Lifetime and disposal
@@ -200,7 +218,7 @@ If the inner service is async-initialized, the whole chain is async-tainted. Res
 
 ## Decorate an imported service
 
-A decorator also wraps a service the host provides through [`[ImportService<T>]`](../08-hosting/02-external-services.mdx). The container owns the decorator, and the host keeps its instance.
+A decorator also wraps a service the host provides through [`[ImportService<T>]`](../07-hosting/02-external-services.mdx). The container owns the decorator, and the host keeps its instance.
 
 ```csharp
 [Container]
@@ -226,5 +244,5 @@ An imported service has no lifetime the decorator could inherit, so the chain is
 
 ## Where to go next
 
-- [Composites](./03-composites.md) to expose many implementations as one.
+- [Composites](./04-composites.md) to expose many implementations as one.
 - [Collections](../06-resolution/03-collections.md) for resolving every implementation.

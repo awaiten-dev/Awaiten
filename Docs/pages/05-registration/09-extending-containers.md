@@ -4,7 +4,7 @@ description: Reuse a production container in tests and replace only the services
 
 # Extending containers
 
-A test that exercises the real composition usually wants all of it except one or two volatile services: the payment gateway that would charge a card, the clock that would make the result depend on the time of day. Copying the production container into the test project would work until the two drift apart. `Extends` lets one container start from another container's composition and replace only what differs.
+A test that exercises the real composition usually wants all of it except one or two volatile services: the payment terminal that would charge a card, the time system that would make the result depend on the time of day. Copying the production container into the test project would work until the two drift apart. `Extends` lets one container start from another container's composition and replace only what differs.
 
 ## Extend a production container
 
@@ -12,50 +12,60 @@ Set `Extends` on the `[Container]` of the test project and register the doubles 
 
 ```csharp
 [Container]
-[Singleton<StripeGateway, IPaymentGateway>]
+[Singleton<CardTerminal, IPaymentTerminal>]
 [Singleton<RealTimeSystem, ITimeSystem>]
-[Singleton<Barista>]
+[Transient<Checkout>]
 public static partial class CoffeeShop;
 
-public sealed class FakeGateway : IPaymentGateway
+public sealed class Checkout(IPaymentTerminal terminal)
 {
-    public Receipt Charge(decimal amount) => new(amount);
+    public Task PayAsync(decimal price) => terminal.ChargeAsync(price);
+}
+
+public sealed class FakeTerminal : IPaymentTerminal
+{
+    public decimal Charged { get; private set; }
+
+    public Task ChargeAsync(decimal amount)
+    {
+        Charged += amount;
+        return Task.CompletedTask;
+    }
 }
 
 [Container(Extends = typeof(CoffeeShop))]
-[Singleton<FakeGateway, IPaymentGateway>]
+// highlight-next-line
+[Singleton<FakeTerminal, IPaymentTerminal>]
+[Singleton<FakeTerminal>]
 public static partial class TestCoffeeShop;
 ```
 
-`TestCoffeeShop` compiles as if every declaration of `CoffeeShop` were written on it: its registrations, `[Import]`s, `[Scan]`s, decorators, composites, `[ImportService]` declarations, `[InjectProperty]` entries, lifecycle hooks, [async initializer conventions](../04-core-concepts/03-async-initialization.md#which-conventions-apply), `Eager` singletons and options. Only the `FakeGateway` differs. The generated `TestCoffeeShop.Root` is a container of its own: nothing at run time links it to `CoffeeShop.Root`, and resolving from it is as fast as from any other container.
+`TestCoffeeShop` compiles as if every declaration of `CoffeeShop` were written on it: its registrations, `[Import]`s, `[Scan]`s, decorators, composites, `[ImportService]` declarations, `[InjectProperty]` entries, lifecycle hooks, [async initializer conventions](../04-core-concepts/03-async-initialization.md#which-conventions-apply), `Eager` singletons and options. Only the `FakeTerminal` differs. Registered as itself too, it is one instance that a test can inspect. The generated `TestCoffeeShop.Root` is a container of its own: nothing at run time links it to `CoffeeShop.Root`, and resolving from it is as fast as from any other container.
 
 ## Use it in a test
 
 ```csharp
 [Test]
-public async Task Barista_ChargesThePrice()
+public async Task Checkout_ChargesThePrice()
 {
-    using TestCoffeeShop.Root shop = new();
+    await using TestCoffeeShop.Root shop = new();
 
-    Receipt receipt = shop.Resolve<Barista>().Serve(3.50m);
+    await shop.Resolve<Checkout>().PayAsync(3.50m);
 
-    await That(receipt.Amount).IsEqualTo(3.50m);
+    await That(shop.Resolve<FakeTerminal>().Charged).IsEqualTo(3.50m);
 }
 ```
 
-The `Barista` comes from the production composition, and its `IPaymentGateway` is the `FakeGateway`, so the test never reaches Stripe.
+The `Checkout` comes from the production composition, and its `IPaymentTerminal` is the `FakeTerminal`, so the test never charges a card.
 
 A double can also stay private to the test: nest it in the extending container, or nest the container beside it in the test class. The generated resolvers hand it out as its service, so nothing outside the test sees the type.
 
 ```csharp
 [Container(Extends = typeof(CoffeeShop))]
-[Singleton<FakeGateway, IPaymentGateway>]
+[Singleton<FakeTerminal, IPaymentTerminal>]
 public static partial class TestCoffeeShop
 {
-    private sealed class FakeGateway : IPaymentGateway
-    {
-        public Receipt Charge(decimal amount) => new(amount);
-    }
+    private sealed class FakeTerminal : IPaymentTerminal;
 }
 ```
 
@@ -67,7 +77,7 @@ A registration written directly on the extending container replaces every inheri
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
 - **Open generics.** A closed registration replaces its closing of an inherited open generic, and the other closings still come from the base. An open registration replaces an inherited open registration of the same generic.
 - **Scans.** A registration of a type the base's `[Scan]` matches owns the type's instance, which the scan's match shares, so the scan's lifecycle hooks do not run on it. Unlike a scan of the container itself ([AWT166](../09-diagnostics.md#awt166)), this is no error: the extending container cannot change the base's scan.
-- **Fallback.** A registration with `Fallback` is an [overridable default](./07-modules/index.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
+- **Fallback.** A registration with `Fallback` is an [overridable default](./08-modules/index.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
 - **Decorators.** The inherited decorators wrap the replacement, also one the host provides through [`[ImportService<T>]`](#per-test-doubles-from-the-host), except an inherited decorator with `AllKeys`, which cannot wrap an import ([AWT123](../09-diagnostics.md#awt123)). A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed, but a test can [switch it off](#switch-an-inherited-decorator-off).
 - **Shared instances.** When the base registers one implementation under several services, replacing one of them leaves the others on the production implementation, which then no longer shares an instance with the replacement.
 
@@ -82,40 +92,41 @@ public static partial class Shop;
 public static partial class TestShop;
 ```
 
-The whole graph is validated again. A replacement that breaks a dependency is reported like any other mistake: replacing a singleton's dependency with a scoped one is a [captive dependency](../09-diagnostics.md#awt105). A problem that the base already has is reported only on the base. An error of a base in another assembly is the exception: that assembly built although its graph is broken, because the error was suppressed there or the generator that built it did not check for it yet, so the extending container reports the error too, usually at its `Extends` argument.
+The whole graph is validated again. A replacement that breaks a dependency is reported like any other mistake: replacing a singleton's dependency with a scoped one is a [captive dependency](../09-diagnostics.md#awt105). A problem that the base already has is reported only on the base. An error of a base in another assembly is the exception: that assembly built although its graph is broken, for example because the error was suppressed there or the Awaiten version that built it does not report it, so the extending container reports the error too, usually at its `Extends` argument.
 
 ## Switch an inherited decorator off
 
-An inherited decorator cannot be removed, but it can be [conditional](./02-decorators.md#apply-a-decorator-conditionally). When its `When` predicate takes a service, such as a settings singleton, the extending container can replace that service, for example with an `Instance`, and so decide whether the decorator applies. A test that must not run a monitoring decorator, say one that polls the device in the background, turns it off this way.
+An inherited decorator cannot be removed, but it can be [conditional](./03-decorators.md#apply-a-decorator-conditionally). When its `When` predicate takes a service, such as a settings singleton, the extending container can replace that service, for example with an `Instance`, and so decide whether the decorator applies. A test that must not write an audit trail, say one that goes to a remote store, turns the audit decorator off this way.
 
 ```csharp
-public sealed class MonitoringSettings
+public sealed class AuditSettings
 {
     public bool Enabled { get; init; } = true;
 }
 
-public sealed class MonitoringTerminal(IPaymentTerminal inner) : IPaymentTerminal;
+public sealed class AuditedTerminal(IPaymentTerminal inner) : IPaymentTerminal;
 
 [Container]
-[Singleton<MonitoringSettings>]
+[Singleton<AuditSettings>]
 [Singleton<CardTerminal, IPaymentTerminal>]
-[Decorate<MonitoringTerminal, IPaymentTerminal>(When = nameof(IsMonitored))]
+[Decorate<AuditedTerminal, IPaymentTerminal>(When = nameof(IsAudited))]
 public static partial class CoffeeBar
 {
-    internal static bool IsMonitored(MonitoringSettings settings) => settings.Enabled;
+    internal static bool IsAudited(AuditSettings settings) => settings.Enabled;
 }
 
 [Container(Extends = typeof(CoffeeBar))]
-[Singleton<MonitoringSettings>(Instance = nameof(NoMonitoring))]
+// highlight-next-line
+[Singleton<AuditSettings>(Instance = nameof(NoAudit))]
 public static partial class TestCoffeeBar
 {
-    private static readonly MonitoringSettings NoMonitoring = new() { Enabled = false };
+    private static readonly AuditSettings NoAudit = new() { Enabled = false };
 }
 
 [Test]
-public async Task TestCoffeeBar_SkipsTheMonitoring()
+public async Task TestCoffeeBar_SkipsTheAudit()
 {
-    using TestCoffeeBar.Root bar = new();
+    await using TestCoffeeBar.Root bar = new();
 
     await That(bar.Resolve<IPaymentTerminal>()).IsExactly<CardTerminal>();
 }
@@ -125,28 +136,29 @@ The predicate runs in the extending container. When the test lives in another as
 
 ## Per-test doubles from the host
 
-To hand each test its own double, declare the service `[ImportService<T>]` on the extending container. That replaces the inherited registration too, and the test supplies the instance through the external resolver. The inherited decorators wrap that instance, and their chain is [transient](./02-decorators.md#decorate-an-imported-service). In the other direction, a registration on the extending container replaces an inherited `[ImportService<T>]`, so a test can register what production draws from its host.
+To hand each test its own double, declare the service `[ImportService<T>]` on the extending container. That replaces the inherited registration too, and the test supplies the instance through the external resolver. The inherited decorators wrap that instance, and their chain is [transient](./03-decorators.md#decorate-an-imported-service). In the other direction, a registration on the extending container replaces an inherited `[ImportService<T>]`, so a test can register what production draws from its host.
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 
-using HostedTestCoffeeShop.Root shop = new(new GatewayResolver(new FakeGateway()));
+await using HostedTestCoffeeShop.Root shop = new(new TerminalResolver(new FakeTerminal()));
 
 [Container(Extends = typeof(CoffeeShop))]
-[ImportService<IPaymentGateway>]
+// highlight-next-line
+[ImportService<IPaymentTerminal>]
 public static partial class HostedTestCoffeeShop;
 
-public sealed class GatewayResolver(IPaymentGateway gateway) : IExternalResolver
+public sealed class TerminalResolver(IPaymentTerminal terminal) : IExternalResolver
 {
     public bool TryResolve(Type serviceType, object? key, [NotNullWhen(true)] out object? instance)
     {
-        instance = serviceType == typeof(IPaymentGateway) ? gateway : null;
+        instance = serviceType == typeof(IPaymentTerminal) ? terminal : null;
         return instance is not null;
     }
 }
 ```
 
-See [external services](../08-hosting/02-external-services.mdx) for the resolver and for the MS.DI bridge, which supplies it automatically.
+See [external services](../07-hosting/02-external-services.mdx) for the resolver and for the MS.DI bridge, which supplies it automatically.
 
 ## Extends compared with Import and Fallback
 
@@ -173,7 +185,13 @@ The generated extending container calls the inherited factories, instance member
 [assembly: InternalsVisibleTo("CoffeeShop.Tests")]
 ```
 
-What the extending container can use depends on where it lives:
+- Anything inherited that the extending container cannot reach or build is an error on its `Extends` argument ([AWT226](../09-diagnostics.md#awt226)). That includes an internal match of the scan of a base in another assembly, so the test graph never silently lacks a service the production graph has.
+- A match of the base's scan that is private to the base, or that has an `[Inject]` property the extending container doesn't see, is skipped with a warning ([AWT193](../09-diagnostics.md#awt193)) when the extending container can't build it through a factory the base generates.
+- An implementation private to the base is built through a factory the base generates, as described below.
+- A type that a module the base imports registers is built through the module's generated factory, wherever the extending container lives (see [library module rules](./08-modules/02-library-module-rules.md#internal-implementations)).
+
+<details>
+<summary>What an extending container can reach, by where it lives</summary>
 
 | Inherited from the base | Extending container in the base's own assembly | In an assembly the base's assembly grants `InternalsVisibleTo` | In any other assembly |
 |---|---|---|---|
@@ -184,31 +202,26 @@ What the extending container can use depends on where it lives:
 | An `internal` `[Inject]` property, or one with an `internal` setter | sets it | sets it | builds the type through a module's generated factory, or reports it ([AWT226](../09-diagnostics.md#awt226)) |
 | An implementation nested privately in the base | calls the base's `internal` factory | calls the base's `internal` factory | can't reach the factory |
 
-Anything inherited that the extending container cannot reach or build is reported on its `Extends` argument ([AWT226](../09-diagnostics.md#awt226)), except a match of the base's scan: the extending container skips it with a warning ([AWT193](../09-diagnostics.md#awt193)), so a scan never fails the build.
-
-### Private members
+**Private members:**
 
 - When the base's assembly grants `InternalsVisibleTo` to any assembly, the base generates an `internal` wrapper for each private `Factory` or `Instance` member and lifecycle hook its registrations name, and an extending container in another assembly calls the wrapper. So a private member works there as soon as the test assembly has access.
 - A member whose signature names a type private to the base, and a generic factory, get no wrapper.
 - An extending container in the base's own assembly doesn't use the wrappers: make the member internal there.
 
-### Async initializer conventions
+**Async initializer conventions:**
 
 - A convention of the base may be internal even without `InternalsVisibleTo`. A public base generates a public wrapper in its `Internals` class for each convention whose type or method is not public, and an extending container in another assembly runs the convention through it.
 - The wrapper takes the parameters of the convention's method, so their types must be public.
 - When the base generates no wrapper, because a parameter type is internal or the convention type is private to the base, it records why, and the extending container reports the convention with that cause ([AWT234](../09-diagnostics.md#awt234)). A base built without the Awaiten generator has no wrappers, so its internal conventions are reported the same way.
 
-### Scans
+**Internal injected properties:**
 
-The same applies to the base's `[Scan]`: it sweeps the base's assembly and matches what the base sees, and a match the extending container cannot access is an error rather than a silently missing service.
-
-### Internal injected properties
-
-An `[Inject]` property that is `internal`, or has an `internal` setter, is invisible to an extending container in another assembly without `InternalsVisibleTo`.
-
-- When a [module](./07-modules/01-library-modules.md#internal-implementations) the base imports registers the type, the extending container builds it through the module's generated factory, which sets the property.
+- An `[Inject]` property that is `internal`, or has an `internal` setter, is invisible to an extending container in another assembly without `InternalsVisibleTo`.
+- When a module the base imports registers the type, the extending container builds it through the module's generated factory, which sets the property. It calls that factory for the base's own registration of the type too, as it does for a type whose constructor is internal.
 - When the base registers, scans, decorates or composes such a type itself, or fills such a property through an `[InjectProperty]` entry of its own, it records the property in its `Internals` class, which is then public, and the extending container reports the type ([AWT226](../09-diagnostics.md#awt226)) instead of building it without the property. Make the property public, or grant the extending container's assembly `InternalsVisibleTo`.
 - The base records such a type whether or not a container extends it, so a public base gets a public `Internals` class with a constant per type. It is hidden from IntelliSense and not meant to be used, and its member names are no stable API: an API compatibility check of your own may still list them.
+
+</details>
 
 ### Private implementations of the base
 
@@ -249,13 +262,13 @@ public static partial class TestRoastery;   // resolves IGrinder and IEnumerable
 The base must be another non-generic `[Container]` ([AWT222](../09-diagnostics.md#awt222)), not the container itself ([AWT223](../09-diagnostics.md#awt223)), and it must not extend a container of its own ([AWT224](../09-diagnostics.md#awt224)). Extending stays one level deep, so every registration of an extending container comes either from its own declaration or from its one base.
 
 :::tip[When not to reach for this]
-`Extends` is meant for tests and similar variants of one composition, such as a container for a local demo that swaps the payment gateway. It is not a way to build an inheritance hierarchy of production containers: shared wiring between several production containers belongs in [modules](./07-modules/index.md), which each container imports explicitly.
+`Extends` is meant for tests and similar variants of one composition, such as a container for a local demo that swaps the payment terminal. It is not a way to build an inheritance hierarchy of production containers: shared wiring between several production containers belongs in [modules](./08-modules/index.md), which each container imports explicitly.
 
-Keep unit tests free of containers altogether. A unit test constructs the class under test with its fakes directly; `Extends` is for the composition, integration and host-level tests that want the real graph. A test container that replaces half of its base is a hint that the production container composes too much in one place.
+Keep unit tests free of containers altogether. A unit test constructs the class under test with its fakes directly; `Extends` is for the composition, integration and host-level tests that want the real graph. A test container that replaces half of its base is a hint that the production container composes too much in one place. See [Design principles](../03-design-principles.md#the-composition-root).
 :::
 
 ## Where to go next
 
-- [Modules](./07-modules/index.md) to share registrations between containers.
-- [External services](../08-hosting/02-external-services.mdx) for services the host supplies.
+- [Modules](./08-modules/index.md) to share registrations between containers.
+- [External services](../07-hosting/02-external-services.mdx) for services the host supplies.
 - [Design principles](../03-design-principles.md) for the composition root a test container reuses.

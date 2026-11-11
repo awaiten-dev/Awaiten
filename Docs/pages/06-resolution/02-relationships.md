@@ -22,7 +22,7 @@ public sealed class Barista(Func<Cup> cups)
 `Lazy<T>` defers construction until the first access, then memoizes it. Good for something expensive that might not be needed.
 
 ```csharp
-public sealed class Register(Lazy<MenuBoard> menu)
+public sealed class MenuDisplay(Lazy<MenuBoard> menu)
 {
     public string Today() => menu.Value.Special;   // built on first read
 }
@@ -90,9 +90,10 @@ A relationship resolves from the scope that built the consumer, not from whereve
 
 ## Reaching shorter-lived services
 
-A singleton cannot depend on a scoped service directly ([AWT105](../09-diagnostics.md#awt105)). A `Func<T>` or `Lazy<T>` does not change that in practice: because relationships bind to their owner, a singleton's `Func<Order>` resolves from the root and always returns the root's one `Order`. To give a long-lived service a fresh scoped service on each use, take `Func<Owned<T>>`, which builds it in a scope of its own that the handle disposes. See [Owned](../07-lifetime/01-owned.md).
+A singleton cannot depend on a scoped service directly ([AWT105](../09-diagnostics.md#awt105)). A `Func<Order>` or `Lazy<Order>` in a singleton compiles without a diagnostic, but it does not reach a shorter lifetime: because relationships bind to their owner, it resolves from the root and always returns the root's one `Order`, which lives as long as the container. To give a long-lived service a fresh scoped service on each use, take `Func<Owned<T>>`. Each call builds the service in a scope of its own, and disposing the handle disposes that scope. See [Owned](../04-core-concepts/06-owned.md).
 
 ```csharp
+// highlight-next-line
 public sealed class OrderTaker(Func<Owned<Order>> orders)
 {
     public void Take()
@@ -100,13 +101,16 @@ public sealed class OrderTaker(Func<Owned<Order>> orders)
         using Owned<Order> order = orders();   // a new order, disposed with the handle
     }
 }
+
+[Container]
+[Singleton<OrderTaker>]
+[Scoped<Order>]
+public static partial class CoffeeShop;
 ```
 
-A `Func<T>` or `Lazy<T>` is the right shape for a transient or a singleton that you want built on demand, not for reaching a shorter lifetime.
+A `Func<T>` or `Lazy<T>` is the right shape for building a transient or a singleton on demand, not for reaching a shorter lifetime. One case needs `Func<Owned<T>>` instead: a singleton that holds a `Func<T>` over a transient whose construction creates a disposable, the transient itself or one of its dependencies. Every call would track a new disposable on the root until the container is disposed, so it is reported ([AWT118](../09-diagnostics.md#awt118)): an error in the strict default, a warning under [Loose lifetime safety](../04-core-concepts/04-lifetime-safety.md).
 
-:::warning
-In the strict default, a root-owned `Func<T>` over a disposable transient is withheld, because it would pile up undisposed instances on the root. Use [Owned](../07-lifetime/01-owned.md) instead, or switch to [Loose lifetime safety](../04-core-concepts/04-lifetime-safety.md).
-:::
+Resolving such a `Func<T>` by type from the root throws in the strict default for the same reason. Resolve it from a scope, whose disposal bounds what it builds, or resolve `Func<Owned<T>>`.
 
 ## Calling a relationship while the service is built
 
@@ -119,4 +123,4 @@ Some loops the container cannot stop. A transient that resolves itself is plain 
 ## Where to go next
 
 - [Runtime arguments](./06-runtime-arguments.md) for `Func<TArg, T>` with values you pass in.
-- [Owned](../07-lifetime/01-owned.md) for disposable services you rent and return.
+- [Owned](../04-core-concepts/06-owned.md) for disposable services you rent and return.

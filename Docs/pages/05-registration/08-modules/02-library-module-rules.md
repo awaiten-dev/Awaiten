@@ -1,59 +1,23 @@
 ---
-sidebar_label: Modules in a library
-description: Ship a module from a library that keeps its implementations internal, with generated factories, handles and self-compiled scans that let any container import it.
+sidebar_label: Library module rules
+description: The detailed rules for a module that a container in another assembly imports, from generated factories, wrappers and handles to self-compiled scans and InternalsVisibleTo.
 ---
 
-# Shipping modules from a library
+# Library module rules
 
-A library often keeps its implementations `internal` and exposes only interfaces. Its [module](./index.md) registers them like any other type, and a container in another assembly imports the module without the library granting `InternalsVisibleTo`. This page is for library authors: it describes what the module generates for that and which rules the library's build checks.
+This page is the reference for a [module shipped from a library](./01-library-modules.md): what the module generates for each kind of registration, what a container in another assembly does with it, and which build reports what. Read the [guide](./01-library-modules.md) first.
 
-## A minimal example
+## Who builds what
 
-The library keeps `Kettle` internal and declares its module `static partial`:
-
-```csharp title="Kettles/KettleModule.cs"
-public interface IKettle;
-internal sealed class Kettle(ITimeSystem time) : IKettle;   // stays internal
-
-[Module]
-[Singleton<Kettle, IKettle>]
-// highlight-next-line
-public static partial class KettleModule;   // partial, so the generator can add the factory
-```
-
-The application imports the module and resolves `IKettle`. It never names `Kettle`:
-
-```csharp title="CoffeeShop/CoffeeShop.cs"
-[Container]
-[Import(typeof(KettleModule))]
-[Singleton<RealTimeSystem, ITimeSystem>]
-public static partial class CoffeeShop;
-```
-
-The module compiles the registration **in its own build**: it emits a public factory that constructs `Kettle` and returns `IKettle`. The container in the application calls that factory instead of the constructor it cannot reach.
-
-:::warning[Rebuild against each library version]
-
-The members a module generates into `Internals` are public members of the library, but not a stable binary contract. Their signatures follow the internal types, and which of them exist follows the library's internal graph, so renaming an internal service, changing a constructor or taking an internal service in one more place can add, change or remove them. A container compiled against an older version of the library can then fail at run time, for example with a `TypeLoadException` or `MissingMethodException`. A container must be rebuilt against each new version of the library, even when the library's own public API didn't change. A package that ships a container importing a module of another package should depend on exactly the version of that package it was built against.
-
-:::
-
-## How it works
-
-- The module keeps every factory and wrapper it generates in a nested class named `Internals`, hidden from IntelliSense, so they stay apart from the module's own members. The name is reserved: a module or container that declares a member named `Internals` itself is an error ([AWT235](../../09-diagnostics.md#awt235)).
-- Diagnostics are reported in the library's build, so it is the library author who sees any problem, not the consumer.
-- A container in the module's own assembly constructs every implementation that isn't private to the module directly, through the same constructor the factory uses, so moving a module between projects never changes what it registers.
-- Importing a module whose assembly was built without the Awaiten generator, or with an Awaiten version that writes the generated metadata differently, is an error ([AWT154](../../09-diagnostics.md#awt154)) instead of a missing constructor.
-
-Who builds what depends on where the importing container lives:
+What a container builds itself and what it leaves to the module depends on where the container lives:
 
 | What the module registers | Container in the library's own assembly | Container in an assembly the library grants `InternalsVisibleTo` | Container in any other assembly |
 |---|---|---|---|
-| A public implementation with a public constructor | constructs it | constructs it | constructs it |
-| An implementation that is internal or has no public constructor | constructs it directly | constructs it itself, like any type it can reach | calls the module's generated factory ([internal implementations](#internal-implementations)) |
-| A type private to the module, or to a class that contains it | calls the module's factory | calls the module's factory | calls the module's factory, or builds it through a [generated handle](#services-only-the-module-uses) when it is registered under an internal service |
-| A service registered under an internal type | constructs it | constructs every type it can reach itself and registers no handles | builds it through a [generated handle](#services-only-the-module-uses) |
-| A match of the module's `[Scan]` | expands the scan and constructs the match directly, except a match private to the module | reads the matches from what the generator adds to the module | calls the factory per match ([self-compiled scans](#self-compiled-scans)) |
+| A public implementation with a public constructor | constructs it | constructs it | constructs it, but calls the module's [generated factory](#internal-implementations) when the type has an `[Inject]` property this assembly can't set, and builds it through a [generated handle](#services-only-the-module-uses) when the module also registers it under an internal service |
+| An implementation that is internal or has no public constructor | constructs it | constructs it, like any type it can reach | calls the module's [generated factory](#internal-implementations) |
+| A type private to the module, or to a class that contains it | calls the module's factory, the internal one that takes internal services directly when there is one | calls the module's factory, the internal one that takes internal services directly when there is one | calls the module's factory, or builds it through a [generated handle](#services-only-the-module-uses) when it is registered under an internal service |
+| A service registered under an internal type | constructs it, and calls the module's internal wrapper for a private `Factory` or `Instance` member and the module's factory for a type private to the module | the same, and registers no handles | builds it through a [generated handle](#services-only-the-module-uses) |
+| A match of the module's `[Scan]` | expands the scan and constructs the match, except a match private to the module, which it builds through the module's factory | calls the module's factory per match, the internal one that takes internal services directly when there is one, and constructs a match the module recorded instead of generating a factory for it | calls the module's factory per match ([self-compiled scans](#self-compiled-scans)) |
 
 ## Internal implementations
 
@@ -68,18 +32,10 @@ A container in another assembly calls that factory instead of the constructor it
 It reads from the implementation's metadata which of the module's [async initializer conventions](../../04-core-concepts/03-async-initialization.md#which-conventions-apply) it matches and whether it is disposable, so it initializes, disposes and shares the implementation exactly as one it constructs itself.
 
 - When the container, or another module, also registers a public implementation that the module builds this way, for example `[Singleton<Greeter>]` beside the module's `[Singleton<Greeter, IGreeter>]`, that registration calls the module's factory too, so both share one instance, as in the library's own assembly. Its own `OnActivated` or `OnRelease` hook is still the method of the container, module or base that declares the registration, and a hook that differs from the module's conflicts as in the library's own assembly ([AWT166](../../09-diagnostics.md#awt166)).
-- An `OnActivated` or `OnRelease` hook may take the internal type: the module emits a public wrapper for it.
-- A module or service another assembly cannot name never reaches such a container, so it self-compiles nothing.
-
-### Module rules
-
-The library's build checks the module and every implementation it compiles a factory for:
-
-- The module must be static ([AWT152](../../09-diagnostics.md#awt152)), `partial` ([AWT194](../../09-diagnostics.md#awt194)) and non-generic ([AWT201](../../09-diagnostics.md#awt201)).
-- The constructor's parameter types must be public, or services the module registers under an internal type (see [services only the module uses](#services-only-the-module-uses)), and not private to the module or a class that contains it ([AWT195](../../09-diagnostics.md#awt195)).
+- This includes a module of the container's assembly or of a third library that registers the implementation without being able to construct it: since a module of the implementation's assembly builds it, such a module generates no factory for it and reports nothing in its own build, and a container that imports it without that module reports it ([AWT104](../../09-diagnostics.md#awt104), or [AWT231](../../09-diagnostics.md#awt231) for a module of another assembly). When no module of the implementation's assembly builds it, the module reports AWT104 in its own build. The first of these registrations decides which [async initializer conventions](../../04-core-concepts/03-async-initialization.md#which-conventions-apply) initialize the one instance: those of the container, module or base that declares it.
 - An `[Arg]` or `[FromKey]` on a constructor parameter is copied onto the factory's parameter, so a container in another assembly passes the runtime argument or resolves the keyed service just as the constructor asks.
-- A hook's parameters must be public too ([AWT203](../../09-diagnostics.md#awt203)) and carry no `[FromKey]` ([AWT204](../../09-diagnostics.md#awt204)).
-- A convention of the module that initializes the implementation may be internal: the module generates a public wrapper for it, so the parameters of its method must be of public types or take internal services the library's modules register, which the wrapper takes through their handles ([AWT234](../../09-diagnostics.md#awt234)).
+- An `OnActivated` or `OnRelease` hook may take the internal type: the module emits a public wrapper for it.
+- A module or service another assembly cannot name never reaches such a container, so the module self-compiles nothing for it. A type private to the module is the exception: the module generates its factory whatever its own accessibility, because nothing else can construct the type.
 
 ### Injected properties
 
@@ -91,6 +47,15 @@ The library's build checks the module and every implementation it compiles a fac
   - a `Deferred` property that is init-only or required,
   - an `Optional` one that is required and not a collection,
   - a property without a setter the module can reach.
+
+### Container-side property entries
+
+A container in another assembly may declare an [`[InjectProperty]`](../../06-resolution/05-property-injection.md) entry for a type the module builds:
+
+- For a type the module builds through its generated factory, the container sets the property on the instance the factory returns, before anything else sees it. The property needs a `set` accessor: an init-only one is [AWT178](../../09-diagnostics.md#awt178).
+- For a type the module builds into a [generated instance handle](#handles), also when another registration or a scan shares the handle's instance, the container sets the property on the instance the handle holds, before the module's hooks and async initializers run. The entry is [AWT178](../../09-diagnostics.md#awt178) when it is `Deferred`, or when the module builds the type from runtime `[Arg]` arguments.
+- A composite the module builds through its factory is [AWT178](../../09-diagnostics.md#awt178), because that factory returns the service rather than the composite. So is a type a `Factory` or `Instance` member of the module produces, in every assembly.
+- A container in an assembly the library grants `InternalsVisibleTo` constructs such a type itself and fills every entry.
 
 ### The factory's return type
 
@@ -107,6 +72,8 @@ An internal implementation registered as `IGreeter` and as `IFormalGreeter : IGr
 The implementation can also be a private type nested in the module, or in a class that contains the module. The module can construct such a type, but other code in the assembly can't, so every container calls the module's factory, even a container in the same assembly. Its hooks can be private too.
 
 ```csharp
+public interface IKettle;
+
 [Module]
 [Singleton<Kettle, IKettle>(OnActivated = nameof(Preheat))]
 public static partial class TeaModule
@@ -129,7 +96,7 @@ public static partial class TeaModule
 
 ### Open generics
 
-An [open generic](../05-open-generics.md) registration, decorator or composite of a type another assembly can't construct, or whose `[Inject]` property it can't see, gets a generic factory. It has the open type's type parameters and their constraints, and a container closes it for each closing its graph uses:
+An [open generic](../06-open-generics.md) registration, decorator or composite of a type another assembly can't construct, or whose `[Inject]` property it can't see, gets a generic factory. It has the open type's type parameters and their constraints, and a container closes it for each closing its graph uses:
 
 ```csharp
 internal sealed class OrderRepository<T>(ITimeSystem time) : IRepository<T> where T : class;   // stays internal
@@ -143,6 +110,7 @@ public static partial class RepositoryModule;
 - Each closing behaves like one the container constructs itself: lifetimes, keys, `Fallback`, `WhenInjectedInto` and the constraint check ([AWT126](../../09-diagnostics.md#awt126)) apply per closing, a decorator keeps its place in the chain, and a composite fronts the other registrations of its closing.
 - The container reads the async initialization and disposal of each closed type off the library, with the module's [async initializer conventions](../../04-core-concepts/03-async-initialization.md#which-conventions-apply), so a convention that matches only some closings runs on exactly those.
 - A container in the module's own assembly, or one granted `InternalsVisibleTo`, calls the factory for an open type private to the module, which it can't construct either.
+- A closed registration of a closing on the container or another module, such as `[Singleton<Repository<Order>>]` beside the module's `[Singleton(typeof(Repository<>))]`, calls the generic factory too, so it shares the closing's instance, as in the library's own assembly.
 - A type the module registers both closed and as an open generic stays one instance per closing: the container builds it through whichever of the two factories returns a type that serves all of its services, and reports [AWT231](../../09-diagnostics.md#awt231) when neither does.
 
 An `OnActivated` or `OnRelease` hook of an open registration gets a generic wrapper beside the factory, with the same type parameters and constraints, which the container closes for each closing too. The module binds a generic hook to the open type's own type parameters, as a container binds it to each closing, so the hook may take the internal type and further parameters that use them:
@@ -170,12 +138,17 @@ The module never fails its build over an open generic. When it can't generate th
 - a convention of the module that no wrapper can run,
 - a module that isn't `partial`.
 
+<details>
+<summary>Generic hooks and their overloads</summary>
+
 A generic hook whose constraints the open type's type parameters don't satisfy, whose type parameters come in another order, or whose parameters the wrapper can't mirror, keeps the factory out with the reason. Overloads of the hook add these rules:
 
 - Another overload of the hook that accepts only some closings, such as an overload for `IRepository<Order>`, keeps the factory out too: a container in the library's own assembly reports the hook of such a closing as ambiguous ([AWT190](../../09-diagnostics.md#awt190)), while a container in another assembly may not see the overload, so it can't tell which closings it accepts.
 - The factory of a type private to the module stays `internal` then, for the containers of the library's own assembly and of the assemblies it grants `InternalsVisibleTo`, which report the ambiguous closings themselves. A `private` overload, which such an assembly doesn't see either, makes it report [AWT231](../../09-diagnostics.md#awt231) instead.
 - A public open type gets no hook wrapper then. When one of the two overloads isn't public, the module records the hook, and a container in another assembly reports [AWT231](../../09-diagnostics.md#awt231) instead of calling the overload it sees, since it can't tell which closings the other one accepts.
-- A [base container](../08-extending-containers.md) does the same for a `private` overload of the hook of a type private to it, which a container that extends it in another assembly reports as [AWT226](../../09-diagnostics.md#awt226).
+- A [base container](../09-extending-containers.md) does the same for a `private` overload of the hook of a type private to it, which a container that extends it in another assembly reports as [AWT226](../../09-diagnostics.md#awt226).
+
+</details>
 
 ### Closings over internal types
 
@@ -228,7 +201,7 @@ A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` h
 | `private` `Factory` or `Instance` member of a public service | calls the public wrapper, or the internal wrapper that returns the internal implementation when the public wrapper returns the public service in its place | calls a generated public wrapper |
 | generic `Factory` member of an open registration (no wrapper) | calls it when it is public or `internal` | calls it only when it is public; a `private` one is reported in the library's build ([AWT153](../../09-diagnostics.md#awt153)) |
 | `internal` `OnActivated` or `OnRelease` hook | calls the hook directly | calls a generated public wrapper |
-| `internal` `When` predicate of a [conditional decorator](../02-decorators.md#apply-a-decorator-conditionally) | calls the predicate | calls a generated public wrapper, which takes an internal service through its handle ([AWT247](../../09-diagnostics.md#awt247) with the reason when the module can't generate it) |
+| `internal` `When` predicate of a [conditional decorator](../03-decorators.md#apply-a-decorator-conditionally) | calls the predicate | calls a generated public wrapper, which takes an internal service through its handle ([AWT247](../../09-diagnostics.md#awt247) with the reason when the module can't generate it) |
 | `private` member of an `internal`, `partial` module | calls a generated internal wrapper | can't import the module |
 
 ### Factory and instance members
@@ -242,6 +215,13 @@ A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` h
 - A container in another assembly still matches the module's [async initializer conventions](../../04-core-concepts/03-async-initialization.md#which-conventions-apply) and reads the disposal against the implementation, so it initializes and disposes the instance as a container in the library's own assembly does. A matching convention whose type or method it can't call runs through a wrapper the module generates ([AWT234](../../09-diagnostics.md#awt234) when there is none).
 - An `internal`, `partial` module may use a private member too: only its own assembly and the assemblies the library grants `InternalsVisibleTo` can import it, so it generates an internal wrapper for the member, which their containers call.
 
+### Async initialization behind a factory
+
+A synchronous `Factory` member of the module whose body constructs an async-initialized type behind a plainer return type hides that initialization ([AWT106](../../09-diagnostics.md#awt106)). The library's own build reports it, because a container in another assembly, or in one the library grants `InternalsVisibleTo`, sees no body. A container in the library's own assembly leaves it to that build, so every container agrees.
+
+- Declare the constructed type as the factory's return type, or make the factory `async` and initialize the instance inside it.
+- When that type is private to the module, no container can name it as the return type ([AWT234](../../09-diagnostics.md#awt234)), so make the factory `async` or make the type `internal`.
+
 ### Hooks
 
 - An `OnActivated` or `OnRelease` hook can be `internal` too, beside a public overload that takes another type, on a `Factory` registration and on a registration of a public implementation that the container constructs.
@@ -251,7 +231,7 @@ A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` h
   - a hook whose parameter needs an internal service that a module of the library registers but can't build,
   - any hook when the library grants `InternalsVisibleTo` to an assembly.
 - A container that can call neither the hook nor a wrapper reports [AWT231](../../09-diagnostics.md#awt231).
-- A public hook beside an `internal` overload that accepts the implementation too is ambiguous where both are visible ([AWT190](../../09-diagnostics.md#awt190)), so the module records it, and a container in another assembly that sees only the public overload reports [AWT231](../../09-diagnostics.md#awt231) instead of calling it, or [AWT226](../../09-diagnostics.md#awt226) when it inherits the module's import from a [base container](../08-extending-containers.md) in another assembly.
+- A public hook beside an `internal` overload that accepts the implementation too is ambiguous where both are visible ([AWT190](../../09-diagnostics.md#awt190)), so the module records it, and a container in another assembly that sees only the public overload reports [AWT231](../../09-diagnostics.md#awt231) instead of calling it, or [AWT226](../../09-diagnostics.md#awt226) when it inherits the module's import from a [base container](../09-extending-containers.md) in another assembly.
 - A `private` hook is no hook for a type a container constructs ([AWT164](../../09-diagnostics.md#awt164)).
 
 ## Services only the module uses
@@ -322,9 +302,9 @@ The container treats the internal service like one it constructs itself:
 
 - One implementation registered under an internal service and under other services is one instance, since the container serves every service from its instance handle. The same happens for an internal implementation registered under several public services that no public type covers.
 - A public implementation that a module builds through a handle is one instance too when the container, or a module of another assembly, registers it as well. The container serves that registration from the handle, and reports a directive the handle can't apply to the instance ([AWT241](../../09-diagnostics.md#awt241)).
-- A module `Factory` or `Instance` that names only its service, such as `[Singleton<IClock>(Factory = nameof(CreateClock))]` with a factory that takes an internal service, names no implementation to share: a `Factory` or `Instance` of that service on the container is a second producer of it, as in the library's own assembly, so the container's own registration wins single resolution.
-- A registration that replaces the module's, on an [extending container](../08-extending-containers.md#a-replacement-replaces-in-full) or over an [overridable default](./index.md#overridable-defaults), never runs the module's factory, whatever its lifetime or production.
-- Several such members of one service, in one module or in several modules of the library, stay several producers of it too: each has handles of its own, so a container in another assembly keeps each one as a member of the collection, as the library's own assembly does. Only the modules the container imports count: when one of them constructs the class that such members produce, as `[Singleton<Clock>]` does, or matches it with a `[Scan]`, the members produce that one instance and conflict ([AWT111](../../09-diagnostics.md#awt111)), and when none does, they stay several producers, whatever other modules of the library register.
+- A module `Factory` or `Instance` that names only its service, such as `[Singleton<ITimeSystem>(Factory = nameof(CreateTimeSystem))]` with a factory that takes an internal service, names no implementation to share: a `Factory` or `Instance` of that service on the container is a second producer of it, as in the library's own assembly, so the container's own registration wins single resolution.
+- A registration that replaces the module's, on an [extending container](../09-extending-containers.md#a-replacement-replaces-in-full) or over an [overridable default](./index.md#overridable-defaults), never runs the module's factory, whatever its lifetime or production.
+- Several such members of one service, in one module or in several modules of the library, stay several producers of it too: each has handles of its own, so a container in another assembly keeps each one as a member of the collection, as the library's own assembly does. Only the modules the container imports count: when one of them constructs the class that such members produce, as `[Singleton<RealTimeSystem>]` does, or matches it with a `[Scan]`, the members produce that one instance and conflict ([AWT111](../../09-diagnostics.md#awt111)), and when none does, they stay several producers, whatever other modules of the library register.
 - A module that constructs an implementation it registers by constructor still constructs it when a container in another assembly calls its generated factory instead, so a `Factory` of that implementation on the container conflicts with it ([AWT111](../../09-diagnostics.md#awt111)), as in the library's own assembly.
 
 ### Several modules in one library
@@ -386,20 +366,20 @@ public static partial class HeaterModule
 
 ## Self-compiled scans
 
-A `[Scan]` on a `[Module]` reaches internal implementations the same way: the module compiles its own scan **in its own build**, emitting a factory per match that constructs the implementation (which its own assembly can see) and returns the accessible interface. A consuming container reads each match like a container [`[Scan]`](../06-scanning.md) match, so a self-compiled scan behaves as close to a container scan as the assembly boundary allows, including the async initialization and disposal of a match it cannot see.
+A `[Scan]` on a `[Module]` reaches internal implementations the same way: the module compiles its own scan **in its own build**, emitting a factory per match that constructs the implementation (which its own assembly can see) and returns the accessible interface. A consuming container reads each match like a container [`[Scan]`](../07-scanning.md) match, so a self-compiled scan behaves as close to a container scan as the assembly boundary allows, including the async initialization and disposal of a match it cannot see.
 
 ```csharp
-public interface IClock;
-public interface IPlugin;
-public interface IRoaster;
-internal sealed class Roaster(IClock clock) : IPlugin, IRoaster;   // stays internal
+internal sealed class Roaster(ITimeSystem time) : IPlugin, IRoaster;   // stays internal
 
 [Module]
 [Scan<IPlugin>(As = ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
 public static partial class PluginModule;   // partial, so the generator can add the factory
 ```
 
-A consuming container `[Import]`s the module and resolves `IRoaster` without ever naming `Roaster`. Each match is registered like a container scan match: an explicit registration of the same service in the container (or another module) **overrides** it, as does the container's own `[Scan]`, and when several matches expose the **same** interface they **collect**: a `[Scan<IPlugin>(As = ScanAs.Marker)]` over two internal plug-ins resolves as `IEnumerable<IPlugin>`, exactly as it would on a container. Because diagnostics are reported in the *library's* build, it is the library author who sees any problem, not the consumer.
+A consuming container `[Import]`s the module and resolves `IRoaster` without ever naming `Roaster`. Each match is registered like a container scan match:
+
+- An explicit registration of the same service in the container, or in another module, overrides it, as does the container's own `[Scan]`.
+- Several matches that expose the same interface collect: a `[Scan<IPlugin>(As = ScanAs.Marker)]` over two internal plug-ins resolves as `IEnumerable<IPlugin>`, exactly as it would on a container.
 
 ### Private matches
 
@@ -419,16 +399,16 @@ public static partial class TestPluginModule
 
 ### Scan rules
 
-These rules are reported at the library's source:
+The library's build checks these, besides the [rules every library module follows](./01-library-modules.md#rules):
 
-- The module must be static ([AWT152](../../09-diagnostics.md#awt152)), `partial` ([AWT194](../../09-diagnostics.md#awt194)) and non-generic ([AWT201](../../09-diagnostics.md#awt201)).
-- Its scan sweeps the module's own assembly only ([AWT202](../../09-diagnostics.md#awt202)). This holds even when the library grants `InternalsVisibleTo`, because a container reads the matches from what the generator adds to the module.
+- The scan sweeps the module's own assembly only ([AWT202](../../09-diagnostics.md#awt202)). This holds even when the library grants `InternalsVisibleTo`, because a container reads the matches from what the generator adds to the module.
 - A match registers through accessible interfaces: a match with none is skipped with a warning ([AWT196](../../09-diagnostics.md#awt196)), and one with several shares its instance through a generated handle (see [several interfaces](#several-interfaces)).
 - For an `internal` module, an internal interface is accessible, and so is an internal match registered as itself, because only the module's assembly and the assemblies it grants `InternalsVisibleTo` can import it. Its hooks may take internal parameter types, and its conventions may be internal, for the same reason.
 - A match that the module also registers and that every assembly can construct, because it and a constructor are public, gets no factory. A container constructs it for the registration and the scan alike, so they share one instance.
 - A match that the module also produces through a `Factory` or `Instance` member shares the instance of that member in every container, also when the member takes an internal service and a container in another assembly reaches it through a [generated handle](#services-only-the-module-uses).
 - A match's constructor parameters must be types a consumer can name ([AWT195](../../09-diagnostics.md#awt195)). An `[Arg]` or `[FromKey]` on a parameter is copied onto the factory, but a match with an `[Inject]` property is rejected ([AWT200](../../09-diagnostics.md#awt200)).
-- `SkipUnconstructable` works as on a container scan: it travels with each generated registration, so a consumer that cannot satisfy a match's dependencies drops the match with a warning ([AWT141](../../09-diagnostics.md#awt141)) instead of failing the build.
+
+`SkipUnconstructable` works as on a container scan, and the consuming container applies it: it travels with each generated registration, so a container that cannot satisfy a match's dependencies drops the match with a warning ([AWT141](../../09-diagnostics.md#awt141)) instead of failing the build.
 
 ### Hooks on a module scan
 
@@ -436,10 +416,6 @@ These rules are reported at the library's source:
 
 - Only the hook's parameters *after* the instance carry a rule the container form does not: they are resolved from the consuming container's graph, so each type has to be nameable outside the module's assembly, the same requirement a scanned constructor parameter gets.
 - An inaccessible hook dependency is [AWT203](../../09-diagnostics.md#awt203), and one marked `[FromKey]` or `[Inject]` is [AWT204](../../09-diagnostics.md#awt204), since the wrapper's bare signature cannot carry the attribute across the boundary.
-
-### Version check
-
-The expansion also stamps the module with a generated marker, present even when the scan matched nothing. A consuming container uses it as a version guard: importing a module whose metadata carries a `[Scan]` but no expansion is an error ([AWT154](../../09-diagnostics.md#awt154)) rather than a silent drop. A container reads the marker and the generated registrations only in the form its own Awaiten version writes, so this also reports a library built with an Awaiten version that writes them differently. Rebuild such a library against the Awaiten version the container uses.
 
 ### Scans in the container's own assembly
 
@@ -454,7 +430,7 @@ When the module lives in the **same assembly as the container**, there is no ass
 A match that the module's scans expose under several interfaces, through one scan's `As` or through several scans of the module, is built through a generated instance handle, like an internal implementation registered under several services (see [services only the module uses](#services-only-the-module-uses)). The module's factory wraps the instance in the handle, and a generated alias serves each interface from it, so a container in another assembly shares one instance across the interfaces: one per root for a singleton, one per scope for a scoped match and a new one per resolution for a transient match. The hooks and the module's [async initializer conventions](../../04-core-concepts/03-async-initialization.md#which-conventions-apply) run once on that instance through generated wrappers, the container disposes it once, a decorator wraps only its own interface, and the match joins the collection of each interface.
 
 ```csharp
-internal sealed class Roaster(IClock clock) : IPlugin, IRoaster;   // stays internal
+internal sealed class Roaster(ITimeSystem time) : IPlugin, IRoaster;   // stays internal
 
 [Module]
 [Scan<IPlugin>(As = ScanAs.Marker | ScanAs.MatchingInterface, Lifetime = Lifetime.Singleton)]
@@ -470,7 +446,7 @@ public static partial class PluginModule;   // IPlugin and IRoaster resolve to o
 
 ### Shared instances
 
-A match shares one instance with every other registration or scan match of the same implementation, in any assembly. This holds when the module registers the implementation through a `Factory`, when another module, the container or the base of an [extended container](../08-extending-containers.md) registers it, and when the scans of two modules match it. Each generated registration names its implementation, so a container in another assembly builds the instance once, through the registration that wins, and the match joins it. Types of the same full name from different assemblies are different implementations, so they never share an instance.
+A match shares one instance with every other registration or scan match of the same implementation, in any assembly. This holds when the module registers the implementation through a `Factory`, when another module, the container or the base of an [extended container](../09-extending-containers.md) registers it, and when the scans of two modules match it. Each generated registration names its implementation, so a container in another assembly builds the instance once, through the registration that wins, and the match joins it. Types of the same full name from different assemblies are different implementations, so they never share an instance.
 
 ```csharp
 public interface IAppliance;
@@ -500,7 +476,14 @@ Some of the rules above relax when the library grants `InternalsVisibleTo` to an
 
 For registrations:
 
-- When the factory can't support an implementation ([AWT195](../../09-diagnostics.md#awt195), [AWT197](../../09-diagnostics.md#awt197), [AWT200](../../09-diagnostics.md#awt200) or [AWT234](../../09-diagnostics.md#awt234)), the module generates no factory for it and reports no error. It records the reason instead. So it does for a public decorator or composite whose `internal` `[Inject]` property its factory can't set.
+- When the factory can't support an implementation, the module generates no factory for it and reports no error. It records the reason instead. This covers:
+  - a parameter type another assembly can't name, or an internal service the library can't build ([AWT195](../../09-diagnostics.md#awt195)),
+  - several services without a covering type ([AWT197](../../09-diagnostics.md#awt197)),
+  - an `[Inject]` property the factory can't mirror ([AWT200](../../09-diagnostics.md#awt200)), except a property without a setter the module can reach, which no container can set either, so it stays an error,
+  - an async initializer convention no wrapper can run ([AWT234](../../09-diagnostics.md#awt234)),
+  - an internal service that only another module registers ([AWT236](../../09-diagnostics.md#awt236)),
+  - an internal service taken in a shape the factory can't pass on ([AWT237](../../09-diagnostics.md#awt237)).
+- The same goes for a public decorator or composite whose `internal` `[Inject]` property its factory can't set.
 - The same goes for an implementation that one of the module's scans also matches: the module generates neither the registration's factory nor the scan's, and records both.
 - A hook whose wrapper can't mirror its parameters ([AWT203](../../09-diagnostics.md#awt203), [AWT204](../../09-diagnostics.md#awt204)) gets no wrapper the same way, unless the hook is generic.
 - The same goes for a module without a `[Scan]` that is generic or not `partial`, so it can't carry any factory ([AWT194](../../09-diagnostics.md#awt194), [AWT201](../../09-diagnostics.md#awt201)): it builds, and a container in any other assembly reports [AWT231](../../09-diagnostics.md#awt231).
@@ -521,9 +504,21 @@ For services only the module uses:
 - A module that isn't `partial` can't generate the handle of an internal singleton ([AWT194](../../09-diagnostics.md#awt194)). When its assembly grants `InternalsVisibleTo`, the library build leaves the singleton to those assemblies instead, and any other container reports that it can't build it ([AWT231](../../09-diagnostics.md#awt231)).
 - A private `Factory` or `Instance` member of an internal service is called through an internal wrapper (see [factory or instance of an internal service](#factory-or-instance-of-an-internal-service)).
 
+## Libraries built by another Awaiten version
+
+A container reads what the generator adds to a library only in the form its own Awaiten version writes. A library built without the Awaiten generator, or with a version that writes its generated metadata differently, behaves like this in a consuming container:
+
+- A self-compiled scan stamps the module with a generated marker, also when the scan matched nothing. A module whose metadata carries a `[Scan]` but no marker the container reads, or no factory for an implementation the container can't construct, is an error at the `[Import]` ([AWT154](../../09-diagnostics.md#awt154)) instead of a silently missing service. So is a generated scan registration that names neither a factory nor a match the module recorded.
+- The module's own build reports the mistakes of its `[Decorate]` attributes that are wrong for every importer, an empty `Keys` ([AWT123](../../09-diagnostics.md#awt123)), a decorator none of whose constructors takes the inner service ([AWT124](../../09-diagnostics.md#awt124)), an unsupported key type ([AWT170](../../09-diagnostics.md#awt170)) and `Keys` together with `AllKeys` ([AWT211](../../09-diagnostics.md#awt211)), and records that it did. For a module whose generated metadata lacks that record, the container reports them itself at its `[Import]`.
+- A container finds an internal `[Inject]` property of another assembly through a marker the generator emits into that assembly. A type of an assembly that lacks the marker isn't checked for such a property ([AWT244](../../09-diagnostics.md#awt244)).
+- A module records the collections its factories pass empty. For a module whose metadata lacks that record, the container doesn't report [AWT252](../../09-diagnostics.md#awt252).
+- A self-compiled scan records which async initializer conventions each match needs and whether it is disposable. For a generated scan registration whose metadata lacks that record, the container goes by the type the factory returns, as for any factory.
+- For a type a module builds into an instance handle, the container sets an `[InjectProperty]` entry through a member that returns the instance from the handle. A module whose metadata lacks that member makes the entry [AWT178](../../09-diagnostics.md#awt178).
+
+Rebuild such a library with the Awaiten version the container uses.
+
 ## Where to go next
 
-- [Modules](./index.md) for declaring and importing modules, overridable defaults and collections.
-- [Scanning](../06-scanning.md) for the scan options a module scan shares with a container scan.
-- [Extending containers](../08-extending-containers.md) for a base container in another assembly, which follows similar accessibility rules.
+- [Shipping modules from a library](./01-library-modules.md) for the guide this page details.
+- [Extending containers](../09-extending-containers.md#accessibility) for a base container in another assembly, which follows similar accessibility rules.
 - [Diagnostics](../../09-diagnostics.md) for every `AWT` id on this page.

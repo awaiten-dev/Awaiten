@@ -21,6 +21,7 @@ public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channel
 [Transient<PrinterChannel, IReceiptChannel>]
 [Transient<EmailChannel, IReceiptChannel>]
 [Transient<SmsChannel, IReceiptChannel>]
+// highlight-next-line
 [Composite<CompositeReceiptChannel, IReceiptChannel>]
 public static partial class CoffeeShop;
 ```
@@ -42,6 +43,7 @@ Set `Key` to front the registrations under one key instead of the unkeyed ones. 
 [Container]
 [Transient<PrinterChannel, IReceiptChannel>]
 [Transient<KitchenDisplayChannel, IReceiptChannel>(Key = "kitchen")]
+// highlight-next-line
 [Composite<CompositeReceiptChannel, IReceiptChannel>(Key = "kitchen")]
 public static partial class CoffeeShop;
 
@@ -66,6 +68,7 @@ public sealed class ReceiptDesk(IHandler<Receipt> handler);
 [Container]
 [Transient(typeof(EmailHandler<>), typeof(IHandler<>))]
 [Transient(typeof(SmsHandler<>), typeof(IHandler<>))]
+// highlight-next-line
 [Composite(typeof(CompositeHandler<>), typeof(IHandler<>))]
 [Transient<ReceiptDesk>]   // needs IHandler<Receipt>, so that closing is in the graph
 public static partial class CoffeeShop;
@@ -85,11 +88,15 @@ A composite is transient by default. Set `Lifetime` to change it.
 
 With no members registered, the composite still resolves and fans out to an empty collection.
 
-:::note
-Only one composite may front a given service and key ([AWT132](../09-diagnostics.md#awt132)), a `Key` must match a registration ([AWT212](../09-diagnostics.md#awt212)), and the composite's collection parameter must be of the composed service itself ([AWT130](../09-diagnostics.md#awt130), [AWT133](../09-diagnostics.md#awt133)). The open generic `typeof` form additionally requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the composite's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)). An unkeyed open composite that a container declares itself warns when the container's graph has no closing of the service ([AWT249](../09-diagnostics.md#awt249)).
-:::
+## Rules
+
+- Only one composite may front a given service and key ([AWT132](../09-diagnostics.md#awt132)).
+- A `Key` must match a registration ([AWT212](../09-diagnostics.md#awt212)).
+- The composite takes a collection of the composed service itself ([AWT130](../09-diagnostics.md#awt130), [AWT133](../09-diagnostics.md#awt133)).
+- The open generic `typeof` form requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the composite's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
+- An unkeyed open composite that a container declares itself warns when the container's graph has no closing of the service ([AWT249](../09-diagnostics.md#awt249)).
 
 ## Where to go next
 
-- [Decorators](./02-decorators.md) to wrap a single service instead of merging many.
+- [Decorators](./03-decorators.md) to wrap a single service instead of merging many.
 - [Collections](../06-resolution/03-collections.md) for resolving every implementation directly.

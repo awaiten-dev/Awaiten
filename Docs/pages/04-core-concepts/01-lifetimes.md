@@ -45,8 +45,8 @@ EspressoMachine b = shop.Resolve<EspressoMachine>();
 One instance per scope. The same within a scope, different across scopes. See [Scopes](./02-scopes.md) for how to open one.
 
 ```csharp
-using IAwaitenScope morning = shop.CreateScope();
-using IAwaitenScope evening = shop.CreateScope();
+await using IAwaitenScope morning = shop.CreateScope();
+await using IAwaitenScope evening = shop.CreateScope();
 
 Order a = morning.Resolve<Order>();
 Order b = morning.Resolve<Order>();   // same as a
@@ -78,7 +78,7 @@ This holds for `Factory` and `Instance` registrations too. Name the same one on 
 
 ## Where the lifetime is set
 
-A single registration picks its lifetime by its attribute: `[Singleton]`, `[Scoped]` or `[Transient]`. A bulk or composite registration, [`[Scan]`](../05-registration/06-scanning.md) and [`[Composite]`](../05-registration/03-composites.md), sets it with `Lifetime =` and defaults to `Transient`. A [decorator](../05-registration/02-decorators.md) has no lifetime of its own and inherits the lifetime of the service it wraps.
+A single registration picks its lifetime by its attribute: `[Singleton]`, `[Scoped]` or `[Transient]`. A bulk or composite registration, [`[Scan]`](../05-registration/07-scanning.md) and [`[Composite]`](../05-registration/04-composites.md), sets it with `Lifetime =` and defaults to `Transient`. A [decorator](../05-registration/03-decorators.md) has no lifetime of its own and inherits the lifetime of the service it wraps.
 
 ```csharp
 [Singleton<EspressoMachine>]
@@ -99,23 +99,11 @@ public sealed class EspressoMachine(Order order);   // singleton needs a scoped 
 public static partial class CoffeeShop;
 ```
 
-```text
-AWT105: singleton 'EspressoMachine' captures scoped 'Order'
+```text title="Build error"
+error AWT105: Captive dependency: the singleton 'EspressoMachine' depends on 'Order', which has the shorter Scoped lifetime and would be captured for the container's lifetime
 ```
 
-If a singleton genuinely needs a scoped service, it needs a scope to resolve it in. Take `Func<Owned<T>>`: each call builds the service in a scope of its own, which the handle disposes. A plain `Func<T>` or `Lazy<T>` does not help here. The singleton is built on the root, so its relationships resolve from the root and always hand back the root's one scoped instance. See [Owned](../07-lifetime/01-owned.md).
-
-```csharp
-public sealed class OrderTaker(Func<Owned<Order>> orders)
-{
-    public void Take()
-    {
-        using Owned<Order> order = orders();   // a fresh order in its own scope
-    }
-}
-```
-
-Often the simpler fix is to make the consumer scoped too.
+Often the simpler fix is to make the consumer scoped too. A singleton that genuinely needs a scoped service needs a scope of its own for each use, which [`Func<Owned<T>>` provides](../06-resolution/02-relationships.md#reaching-shorter-lived-services).
 
 ## Build a singleton at startup
 
@@ -127,7 +115,7 @@ By default a singleton is built the first time it is resolved. Mark it `Eager = 
 
 An eager singleton is built as its consumers see it: when it is decorated, its decorators are built with it.
 
-A singleton that is async-initialized, or that has an async-initialized decorator, cannot be built synchronously in the root's constructor, so `Eager` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
+A singleton that is [async-tainted](./03-async-initialization.md#mark-a-service-as-async), because it is async-initialized or depends on an async service, cannot be built synchronously in the root's constructor, so `Eager` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). The same holds when one of its decorators is async-tainted. With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
 
 ## Where to go next
 

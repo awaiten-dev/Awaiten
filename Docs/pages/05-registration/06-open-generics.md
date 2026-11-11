@@ -12,13 +12,14 @@ Use the `typeof` form with an unbound generic type.
 
 ```csharp
 [Container]
+// highlight-next-line
 [Transient(typeof(Repository<>), typeof(IRepository<>))]
 public static partial class CoffeeShop;
 ```
 
 ## Resolve a closed type
 
-Awaiten works out which closed forms you need at compile time from what the graph actually asks for: constructor and factory parameters, including those of [decorators](02-decorators.md) and [composites](03-composites.md), [injected properties](../06-resolution/05-property-injection.md) and the parameters of [lifecycle hooks](../07-lifetime/03-lifecycle-hooks.md), also when the closed service sits inside a collection, a keyed dictionary, a `Lazy<T>`, a `Func<T>`, a `Task<T>` or an `Owned<T>`. Each of those type arguments gets its own closed implementation, and each keeps the declared lifetime. You resolve a closing the graph asks for like any other service.
+Awaiten works out which closed forms you need at compile time from what the graph actually asks for: constructor and factory parameters, including those of [decorators](./03-decorators.md) and [composites](./04-composites.md), [injected properties](../06-resolution/05-property-injection.md) and the parameters of [lifecycle hooks](./02-lifecycle-hooks.md), also when the closed service sits inside a collection, a keyed dictionary, a `Lazy<T>`, a `Func<T>`, a `Task<T>` or an `Owned<T>`. Each of those type arguments gets its own closed implementation, and each keeps the declared lifetime. You resolve a closing the graph asks for like any other service.
 
 ```csharp
 IRepository<Order> orders = shop.Resolve<IRepository<Order>>();
@@ -38,6 +39,7 @@ public static partial class CoffeeShop;
 You can register an open generic under itself, without a separate service type.
 
 ```csharp
+// highlight-next-line
 [Transient(typeof(Handler<>))]
 // resolve: shop.Resolve<Handler<OrderPlaced>>()
 ```
@@ -73,7 +75,7 @@ public static partial class CoffeeShop;
 
 `IRecipe<Espresso>` is a `BrewRecipe<Espresso>` and `IRecipe<Croissant>` a `BakeRecipe<Croissant>`. The constraints of a generic `Factory` select its closings the same way.
 
-- **Several accept a closing.** The rules for several registrations apply as usual: the first one wins single resolution, `IEnumerable<IRecipe<T>>` holds every registration that accepts `T`, and two modules that both build a closing are reported for it ([AWT155](../09-diagnostics.md#awt155)).
+- **Several accept a closing.** The rules for several registrations apply as usual: the first one wins single resolution, `IEnumerable<IRecipe<T>>` holds every registration that accepts `T`, and two modules that both build a closing are reported when the graph resolves that closing singly ([AWT155](../09-diagnostics.md#awt155)).
 - **None accepts a closing.** A closing the graph asks for that neither an open nor a closed registration builds, also through [variance](../06-resolution/08-generic-variance.md), is an error that lists the candidates ([AWT126](../09-diagnostics.md#awt126)).
 - **Options.** `Fallback` and `WhenInjectedInto` apply among the registrations that accept the closing, so an overridable default or an unconditional registration serves the closings a stronger or contextual one can't build.
 - **Keys.** A skipped registration is not reported when a registration under another key, or a contextual one, builds the closing. A request under the key or context of the skipped registration that nothing else serves reports its constraints ([AWT126](../09-diagnostics.md#awt126)).
@@ -82,19 +84,7 @@ public static partial class CoffeeShop;
 
 ## Decorate or compose the closings
 
-Decorators and composites take the same `typeof` form, so one behavior wraps every closing of an open generic service. This is the pipeline-behavior pattern:
-
-```csharp
-[Transient(typeof(Handler<>), typeof(IHandler<>))]
-[Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]
-[Composite(typeof(CompositeHandler<>), typeof(IHandler<>))]
-```
-
-See [Decorators](./02-decorators.md#decorate-every-closing-of-an-open-generic) and [Composites](./03-composites.md#compose-every-closing-of-an-open-generic).
-
-:::note
-The implementation and service must have the same arity ([AWT125](../09-diagnostics.md#awt125)), and a closing the graph asks for must satisfy the constraints of at least one registration ([AWT126](../09-diagnostics.md#awt126)).
-:::
+Decorators and composites take the same `typeof` form, so one behavior wraps every closing of an open generic service, the pipeline-behavior pattern. See [Decorators](./03-decorators.md#decorate-every-closing-of-an-open-generic) and [Composites](./04-composites.md#compose-every-closing-of-an-open-generic).
 
 ## Registration options
 
@@ -111,7 +101,7 @@ The `typeof` form takes the same options as the generic form. On an open generic
 | `Instance` (`[Singleton]` only) | no ([AWT207](../09-diagnostics.md#awt207)) | yes |
 | `Eager` (`[Singleton]` only) | no ([AWT207](../09-diagnostics.md#awt207)) | yes |
 
-A closed `typeof` registration, such as `[Singleton(typeof(Clock), typeof(IClock))]`, is the same registration as `[Singleton<Clock, IClock>]`. The generic form checks at compile time that the implementation is a class that implements the service; the `typeof` form gets the same check from Awaiten ([AWT206](../09-diagnostics.md#awt206)).
+A closed `typeof` registration, such as `[Singleton(typeof(RealTimeSystem), typeof(ITimeSystem))]`, is the same registration as `[Singleton<RealTimeSystem, ITimeSystem>]`. The generic form checks at compile time that the implementation is a class that implements the service; the `typeof` form gets the same check from Awaiten ([AWT206](../09-diagnostics.md#awt206)).
 
 `Instance` and `Eager` describe one concrete instance. An open generic only becomes concrete per closing, and which closings exist depends on what the rest of the graph asks for, so both need a closed type. Register the closings you want eager, or pre-built, explicitly.
 
@@ -121,6 +111,7 @@ A closed `typeof` registration, such as `[Singleton(typeof(Clock), typeof(IClock
 
 ```csharp
 [Container]
+// highlight-next-line
 [Scoped(typeof(IRepository<>), Factory = nameof(CreateRepository))]
 public static partial class CoffeeShop
 {
@@ -141,10 +132,11 @@ Only an open generic registration closes a generic factory. A closed registratio
 
 ### Lifecycle hooks
 
-`OnActivated` and `OnRelease` run for every closing. The hook can be generic over the service's type arguments, which it receives like a hook on an [open-generic scan](./06-scanning.md#generic-hooks-on-an-open-marker): Awaiten binds it from the closed service, so `IConnection<Order>` calls `Opened<Order>(…)`. A non-generic hook, with its first parameter typed as `object` or a shared base, works for every closing too. A hook of a module's open registration that another assembly can't call runs through a [generic wrapper](./07-modules/01-library-modules.md#open-generics) the module generates.
+`OnActivated` and `OnRelease` run for every closing. The hook can be generic over the service's type arguments, which it receives like a hook on an [open-generic scan](./07-scanning.md#generic-hooks-on-an-open-marker): Awaiten binds it from the closed service, so `IConnection<Order>` calls `Opened<Order>(…)`. A non-generic hook, with its first parameter typed as `object` or a shared base, works for every closing too. A hook of a module's open registration that another assembly can't call runs through a [generic wrapper](./08-modules/02-library-module-rules.md#open-generics) the module generates.
 
 ```csharp
 [Container]
+// highlight-next-line
 [Scoped(typeof(Connection<>), typeof(IConnection<>), OnActivated = nameof(Opened))]
 public static partial class CoffeeShop
 {
@@ -155,14 +147,23 @@ public static partial class CoffeeShop
 
 ### Overridable defaults
 
-`Fallback` makes an open generic an overridable default, typically in a [module](./07-modules/index.md#overridable-defaults). It applies per closing: a closed registration without `Fallback` replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing it can build. A closed default replaces nothing, so the open default's closing stays a member of that closing's collections, behind the closed one.
+`Fallback` makes an open generic an overridable default, typically in a [module](./08-modules/index.md#overridable-defaults). It applies per closing: a closed registration without `Fallback` replaces the default for its own closing only, and a strong open registration of the same service replaces it for every closing it can build. A closed default replaces nothing, so the open default's closing stays a member of that closing's collections, behind the closed one.
 
 ```csharp
 [Container]
+// highlight-next-line
 [Singleton(typeof(MemoryCache<>), typeof(ICache<>), Fallback = Fallback.Warn)]
 [Singleton<OrderCache, ICache<Order>>]   // ICache<Order> is OrderCache, every other closing MemoryCache<T>
 public static partial class CoffeeShop;
 ```
+
+## Rules
+
+- The implementation and the service have the same arity ([AWT125](../09-diagnostics.md#awt125)).
+- A closing the graph asks for satisfies the constraints of at least one registration ([AWT126](../09-diagnostics.md#awt126)).
+- `Instance` and `Eager` need a closed type ([AWT207](../09-diagnostics.md#awt207)).
+- A closed `typeof` registration names a class that implements the service ([AWT206](../09-diagnostics.md#awt206)).
+- A generic factory has exactly the service's type parameters ([AWT208](../09-diagnostics.md#awt208)), and a closing that violates its constraints is an error when nothing else builds it ([AWT209](../09-diagnostics.md#awt209)).
 
 ## Where to go next
 

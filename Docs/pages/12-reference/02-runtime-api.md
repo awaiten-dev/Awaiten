@@ -14,7 +14,7 @@ The generator adds two public types to every container. See [What Awaiten genera
 | Member | What it does | See |
 |---|---|---|
 | `new MyContainer.Root()` | Creates the container. It is the outermost scope and owns the singletons. Eager singletons are built here. | [Getting started](../01-getting-started.md#build-your-first-container) |
-| `new MyContainer.Root(IExternalResolver? externalResolver)` | Creates the container with the resolver its imported services come from, in place before anything is resolved. | [External services](../08-hosting/02-external-services.mdx#providing-the-external-resolver) |
+| `new MyContainer.Root(IExternalResolver? externalResolver)` | Creates the container with the resolver its imported services come from, in place before anything is resolved. | [External services](../07-hosting/02-external-services.mdx#providing-the-external-resolver) |
 | `Root : Scope, IAwaitenRoot` | The root implements the members of [`IAwaitenRoot`](#iawaitenroot) and everything a scope offers. | |
 | `Scope : IAwaitenScope, IAwaitenExternalResolverHost` | A child scope. It implements [`IAwaitenScope`](#iawaitenscope). | [Scopes](../04-core-concepts/02-scopes.md) |
 | `Scope CreateScope()` | Opens a child scope, typed as the generated `Scope`. | [Scopes](../04-core-concepts/02-scopes.md#open-a-scope) |
@@ -27,7 +27,7 @@ A typed resolve on a receiver declared as `Root` or `Scope` is checked at build 
 
 ### IAwaitenResolver
 
-The synchronous surface of the root, every scope and adapters such as the MS.DI bridge.
+The synchronous surface. The generated root and every scope implement it; the MS.DI bridge adapts it to `IServiceProvider` ([`AwaitenServiceProvider`](#awaitenserviceprovider)).
 
 | Member | What it does | See |
 |---|---|---|
@@ -84,9 +84,9 @@ The container root. Extends `IAwaitenScope` and `IAwaitenExternalResolverHost`. 
 | Member | What it does | See |
 |---|---|---|
 | `Task InitializeAsync(ct = default)` | Builds and initializes every async singleton in dependency order. Idempotent and thread-safe. | [Warm everything up front](../04-core-concepts/03-async-initialization.md#warm-everything-up-front) |
-| `AwaitenResolvability GetResolvability(Type serviceType, object? key)` | Answers whether the root resolves the service synchronously, without building anything, and why not when it has the service. | [Feature detection](../08-hosting/01-msdi-bridge.md#feature-detection) |
+| `AwaitenResolvability GetResolvability(Type serviceType, object? key)` | Answers whether the root resolves the service synchronously, without building anything, and why not when it has the service. | [Feature detection](../07-hosting/01-msdi-bridge.md#feature-detection) |
 | `IReadOnlyList<AwaitenRegistration> Registrations` | The public registrations the container resolves, one entry per service type and key. | [Registration metadata](#registration-metadata) |
-| `IReadOnlyList<AwaitenExternalDependency> ExternalDependencies` | The services the container expects from its external resolver. Empty when there are none. | [Verifying the wiring](../08-hosting/02-external-services.mdx#verifying-the-wiring) |
+| `IReadOnlyList<AwaitenExternalDependency> ExternalDependencies` | The services the container expects from its external resolver. Empty when there are none. | [Verifying the wiring](../07-hosting/02-external-services.mdx#verifying-the-wiring) |
 
 ### AwaitenResolvability
 
@@ -111,7 +111,7 @@ New statuses may be added, so give a `switch` over `Status` a default case.
 
 ### `Owned<T>`
 
-A disposal handle over a service built in a throwaway scope of its own. Resolve or inject `Owned<T>`, `Func<Owned<T>>` or `Func<TArg…, Owned<T>>`, and do not create one with `new` ([AWT205](../09-diagnostics.md#awt205)). See [Owned](../07-lifetime/01-owned.md).
+A disposal handle over a service built in a throwaway scope of its own. Resolve or inject `Owned<T>`, `Func<Owned<T>>` or `Func<TArg…, Owned<T>>`, and do not create one with `new` ([AWT205](../09-diagnostics.md#awt205)). See [Owned](../04-core-concepts/06-owned.md).
 
 | Member | What it does |
 |---|---|
@@ -121,14 +121,14 @@ A disposal handle over a service built in a throwaway scope of its own. Resolve 
 
 ## External resolution
 
-These types connect a container to the services the host provides with `[ImportService]` or `[ImportServices]`. See [External services](../08-hosting/02-external-services.mdx).
+These types connect a container to the services the host provides with `[ImportService]` or `[ImportServices]`. See [External services](../07-hosting/02-external-services.mdx).
 
 | Type or member | What it does | See |
 |---|---|---|
-| `IExternalResolver.TryResolve(Type serviceType, object? key, out object? instance)` | Implement it to hand out host services. `key` carries the `[FromKey]` value, or `null`. Return `false` when the service is unavailable. | [Providing the external resolver](../08-hosting/02-external-services.mdx#providing-the-external-resolver) |
+| `IExternalResolver.TryResolve(Type serviceType, object? key, out object? instance)` | Implement it to hand out host services. `key` carries the `[FromKey]` value, or `null`. Return `false` when the service is unavailable. | [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver) |
 | `IAwaitenExternalResolverHost.ExternalResolver` | The resolver of this scope, or `null`. A child scope without one uses the root's. | |
-| `IAwaitenExternalResolverHost.SetExternalResolver(IExternalResolver resolver)` | Sets the resolver once per scope. Setting the same resolver again does nothing; a different one throws `InvalidOperationException`. | [Resolving an imported service directly](../08-hosting/02-external-services.mdx#resolving-an-imported-service-directly) |
-| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. | [Verifying the wiring](../08-hosting/02-external-services.mdx#verifying-the-wiring) |
+| `IAwaitenExternalResolverHost.SetExternalResolver(IExternalResolver resolver)` | Sets the resolver once per scope. Setting the same resolver again does nothing; a different one throws `InvalidOperationException`. | [Resolving an imported service directly](../07-hosting/02-external-services.mdx#resolving-an-imported-service-directly) |
+| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. | [Verifying the wiring](../07-hosting/02-external-services.mdx#verifying-the-wiring) |
 
 Every generated root and scope implements `IAwaitenExternalResolverHost`. A standalone container usually passes its resolver to the `Root(IExternalResolver?)` constructor instead.
 
@@ -156,28 +156,28 @@ These public types exist for the generated code and are hidden from IntelliSense
 
 ## MS.DI bridge
 
-The `Awaiten.Extensions.DependencyInjection` package. See [MS.DI bridge](../08-hosting/01-msdi-bridge.md).
+The `Awaiten.Extensions.DependencyInjection` package. See [MS.DI bridge](../07-hosting/01-msdi-bridge.md).
 
 ### Registering the container
 
 | Member | What it does | See |
 |---|---|---|
-| `services.AddAwaitenContainer<TRoot>()` | Creates a `TRoot` and projects its registrations into the `IServiceCollection`, with one Awaiten scope per MS.DI scope. An async-only service is projected as `Task<T>`. The root provider disposes the root once the bridge has used it. | [Project into a service collection](../08-hosting/01-msdi-bridge.md#project-into-a-service-collection) |
-| `services.AddAwaitenContainer<TRoot>(TRoot root)` | Projects a root you created, for example with your own external resolver. The root stays yours: dispose it after the provider. | [Project into a service collection](../08-hosting/01-msdi-bridge.md#project-into-a-service-collection) |
+| `services.AddAwaitenContainer<TRoot>()` | Creates a `TRoot` and projects its registrations into the `IServiceCollection`, with one Awaiten scope per MS.DI scope. An async-only service is projected as `Task<T>`. The root provider disposes the root once the bridge has used it. | [Project into a service collection](../07-hosting/01-msdi-bridge.md#project-into-a-service-collection) |
+| `services.AddAwaitenContainer<TRoot>(TRoot root)` | Projects a root you created, for example with your own external resolver. The root stays yours: dispose it after the provider. | [Project into a service collection](../07-hosting/01-msdi-bridge.md#project-into-a-service-collection) |
 | `AwaitenContainerBuilder<TRoot>.Services` | The service collection, for chaining further registrations. | |
-| `AwaitenContainerBuilder<TRoot>.WithInitialization()` | Adds a hosted service that calls `InitializeAsync` on host startup, wiring the external resolver first if none is set. Calling it again does nothing. | [Warm async services on startup](../08-hosting/01-msdi-bridge.md#warm-async-services-on-startup) |
-| `new AwaitenServiceProviderFactory<TRoot>(Action<AwaitenContainerBuilder<TRoot>>? configure = null)` | An `IServiceProviderFactory<TRoot>` for `UseServiceProviderFactory`. It projects the container and builds a standard MS.DI provider, and wires the root to it unless a resolver is set. | [Use it as the host's provider factory](../08-hosting/01-msdi-bridge.md#use-it-as-the-hosts-provider-factory) |
+| `AwaitenContainerBuilder<TRoot>.WithInitialization()` | Adds a hosted service that calls `InitializeAsync` on host startup, wiring the external resolver first if none is set. Calling it again does nothing. | [Warm async services on startup](../07-hosting/01-msdi-bridge.md#warm-async-services-on-startup) |
+| `new AwaitenServiceProviderFactory<TRoot>(Action<AwaitenContainerBuilder<TRoot>>? configure = null)` | An `IServiceProviderFactory<TRoot>` for `UseServiceProviderFactory`. It projects the container and builds a standard MS.DI provider, and wires the root to it unless a resolver is set. | [Use it as the host's provider factory](../07-hosting/01-msdi-bridge.md#use-it-as-the-hosts-provider-factory) |
 
 Both `AddAwaitenContainer` overloads and `CreateServiceProvider` throw an `InvalidOperationException` when the container builds a possibly disposable service with `SuppressDisposal = true` ([AWT214](../09-diagnostics.md#awt214)).
 
 ### AwaitenServiceProvider
 
-Adapts a root or scope directly to `IServiceProvider`, `IKeyedServiceProvider`, `ISupportRequiredService`, `IServiceScopeFactory`, `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, so Awaiten owns construction and disposal alone. See [Or let Awaiten own everything](../08-hosting/01-msdi-bridge.md#or-let-awaiten-own-everything).
+Adapts a root or scope directly to `IServiceProvider`, `IKeyedServiceProvider`, `ISupportRequiredService`, `IServiceScopeFactory`, `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, so Awaiten owns construction and disposal alone. See [Or let Awaiten own everything](../07-hosting/01-msdi-bridge.md#or-let-awaiten-own-everything).
 
 | Member | What it does |
 |---|---|
 | `new AwaitenServiceProvider(IAwaitenScope container, bool ownsContainer = true)` | Wraps the container. With `ownsContainer`, disposing the provider disposes the container. Wrap the `Root` to get the feature detection and the keyed `Task<T>` projection. |
-| `object? GetService(Type serviceType)` | `TryResolve`, so an unregistered service is `null`. A service the container has but withholds throws its guidance instead. |
+| `object? GetService(Type serviceType)` | `TryResolve`, so an unregistered service is `null`. On a provider that wraps the `Root`, and on the scopes it creates, a service the container has but withholds throws its guidance instead; a provider that wraps a child scope returns `null` for it. |
 | `object GetRequiredService(Type serviceType)` | Like `GetService`, but a miss throws the container's own exception naming the cause. |
 | `object? GetKeyedService(Type serviceType, object? serviceKey)` and `GetRequiredKeyedService` | The keyed forms. `KeyedService.AnyKey` is declined. |
 | `bool IsService(Type serviceType)` and `IsKeyedService(Type serviceType, object? serviceKey)` | Answered from `GetResolvability`, without building anything. |
@@ -188,9 +188,9 @@ Adapts a root or scope directly to `IServiceProvider`, `IKeyedServiceProvider`, 
 
 | Member | What it does | See |
 |---|---|---|
-| `new AwaitenServiceProviderExternalResolver(IServiceProvider provider)` | An `IExternalResolver` over an MS.DI provider. A keyed dependency resolves through the provider's `IKeyedServiceProvider`. | [Providing the external resolver](../08-hosting/02-external-services.mdx#providing-the-external-resolver) |
-| `provider.VerifyAwaitenContainers()` | Checks every container registered with `AddAwaitenContainer` against the provider and throws an `InvalidOperationException` that lists the missing external dependencies. Returns the provider for chaining. | [Verify external dependencies at startup](../08-hosting/01-msdi-bridge.md#verify-external-dependencies-at-startup) |
-| `root.VerifyAgainst(IServiceProvider provider)` | The same check for one container root. | [Verify external dependencies at startup](../08-hosting/01-msdi-bridge.md#verify-external-dependencies-at-startup) |
+| `new AwaitenServiceProviderExternalResolver(IServiceProvider provider)` | An `IExternalResolver` over an MS.DI provider. A keyed dependency resolves through the provider's `IKeyedServiceProvider`. | [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver) |
+| `provider.VerifyAwaitenContainers()` | Checks every container registered with `AddAwaitenContainer` against the provider and throws an `InvalidOperationException` that lists the missing external dependencies. Returns the provider for chaining. | [Verify external dependencies at startup](../07-hosting/01-msdi-bridge.md#verify-external-dependencies-at-startup) |
+| `root.VerifyAgainst(IServiceProvider provider)` | The same check for one container root. | [Verify external dependencies at startup](../07-hosting/01-msdi-bridge.md#verify-external-dependencies-at-startup) |
 
 ## Where to go next
 
