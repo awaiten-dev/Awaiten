@@ -69,7 +69,9 @@ public sealed class Scale : ICalibrated
 public static partial class CoffeeShop;
 ```
 
-The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A C# default value does not change that. Awaiten ignores it, so `ITimeSystem? timeSystem = null` still needs a registered `ITimeSystem` ([AWT101](../09-diagnostics.md#awt101)). A parameter may also be a relationship such as `Func<T>` or `Lazy<T>`, which needs the service registered too. To let the initializer run without the service, take a collection of it, which is empty when nothing registers the service, or give the service an [`Optional` injected property](../06-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead. The method itself carries no Awaiten attributes. If you need `[FromKey]`, use an `OnActivated` hook instead.
+The parameters are dependencies of the service, so every graph check covers them: a missing service, a captive dependency, a cycle. A C# default value does not make a parameter optional, see [Prefer constructor injection](../06-resolution/01-resolving-services.md#prefer-constructor-injection) for how to tolerate a missing service.
+
+The method itself carries no Awaiten attributes, so a `[FromKey]` parameter is an error ([AWT233](../09-diagnostics.md#awt233)). If you need `[FromKey]`, use an `OnActivated` hook instead.
 
 ## Use an activation hook
 
@@ -183,9 +185,9 @@ public static partial class CoffeeShop;
 error AWT119: 'CheckoutCounter' resolves 'EspressoMachine' through a synchronous Func<>, but 'EspressoMachine' is async-initialized; resolve it through ResolveAsync, or set AsyncSafety.SyncAfterInit on the [Container]
 ```
 
-If you do reach it at runtime, for example with `shop.Resolve<EspressoMachine>()`, `Resolve` throws with guidance toward `ResolveAsync`, and `TryResolve` reports it as not available. It never hands back an uninitialized instance.
+If you do reach it at runtime, for example with `shop.Resolve<EspressoMachine>()`, `Resolve` throws with guidance toward `ResolveAsync`, and `TryResolve` reports it as not available. It never hands back an uninitialized instance. A typed `Resolve` on a variable of the generated `Root` or `Scope` type already gets a build warning ([AWT219](../09-diagnostics.md#awt219)).
 
-The same rule holds for a service that is only *transitively* tainted. A `Barista` that depends on the `EspressoMachine` is async too, so it is resolved with `ResolveAsync`.
+The same rule holds for a service that is only *transitively* tainted. A `Barista` that depends on the `EspressoMachine` is async too, so it is resolved with `ResolveAsync`, and a synchronous `Func<Barista>` is a build error ([AWT120](../09-diagnostics.md#awt120)).
 
 ## Keep a consumer synchronous by deferring the async work
 
@@ -255,6 +257,14 @@ A synchronous resolve of an async service that has not been warmed yet blocks th
 ## Async disposal
 
 An async service is often async-disposable too, so dispose the container and its scopes with `await using`. See [Async disposal](./05-disposal.md#async-disposal).
+
+## Rules
+
+- An `[AsyncInitializer<T>]` must name a method the container can await through `T`: the only method of that name, an accessible instance method that is not generic, that returns `Task` or `ValueTask`, and whose parameters are passed by value without `[Arg]`, `[FromKey]` or `[Inject]` ([AWT233](../09-diagnostics.md#awt233)).
+- A synchronous `Func<T>`, `Lazy<T>` or `Owned<T>` over an async-initialized service is an error ([AWT119](../09-diagnostics.md#awt119)), and so is one over a service that is only transitively tainted ([AWT120](../09-diagnostics.md#awt120)), unless the container sets `AsyncSafety.SyncAfterInit`.
+- A typed synchronous `Resolve` of an async-tainted service on the generated `Root` or `Scope` throws at run time and gets a build warning ([AWT219](../09-diagnostics.md#awt219)).
+- A synchronous factory that hides an async-initialized type behind a plainer return type is a warning, because its initializer would never run ([AWT106](../09-diagnostics.md#awt106)).
+- An `Eager` singleton cannot be async-initialized unless the container sets `AsyncSafety.SyncAfterInit` ([AWT161](../09-diagnostics.md#awt161)).
 
 ## Where to go next
 

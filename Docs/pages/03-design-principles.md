@@ -18,7 +18,7 @@ A container that produces tightly coupled code is a container that has not helpe
 
 Your `[Container]` is the **[composition root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)**: the one place that knows how the whole graph fits together. The generated `Root` sits at your application's entry point, composes everything once, and owns it until shutdown.
 
-```csharp title="Program.cs"
+```csharp
 // at the entry point, and nowhere else:
 await using CoffeeShop.Root shop = new();
 

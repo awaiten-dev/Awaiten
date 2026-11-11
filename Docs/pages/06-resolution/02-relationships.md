@@ -41,7 +41,13 @@ public sealed class Barista(Task<EspressoMachine> machine)
 
 ## Resolve a relationship directly
 
-The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service, with two exceptions: a service with [runtime arguments](./06-runtime-arguments.md) comes only as its factories, such as `Func<TArg..., T>` and `Func<TArg..., Owned<T>>`, and a service built by a factory with a `[RequestingType]` parameter has no `Owned<T>` ([AWT186](../09-diagnostics.md#awt186)). The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
+The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service, with three exceptions:
+
+- An async-initialized service: its synchronous shapes throw, as the paragraph after the example explains.
+- A service with [runtime arguments](./06-runtime-arguments.md) comes only as its factories, such as `Func<TArg…, T>` and `Func<TArg…, Owned<T>>`.
+- A service built by a factory with a `[RequestingType]` parameter has no `Owned<T>` ([AWT186](../09-diagnostics.md#awt186)).
+
+The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
 
 ```csharp
 Func<Task<EspressoMachine>> machines = shop.Resolve<Func<Task<EspressoMachine>>>();
@@ -54,7 +60,7 @@ Resolving a relationship directly works without a key only. A [keyed resolve](./
 
 ## Relationships are built, not registered
 
-The container builds every relationship it injects, over the service the relationship wraps. Registering a relationship type as a service of its own, such as `[Singleton<Func<Cup>>(Factory = ...)]`, does not change that: a `Func<Cup>` parameter still gets the relationship over `Cup` and never the registered `Func<Cup>`, so the dependency is an error ([AWT259](../09-diagnostics.md#awt259)). The same holds for `Lazy<T>`, `Owned<T>`, `Task<T>` and `Func<TArg..., T>`, with or without a key.
+The container builds every relationship it injects, over the service the relationship wraps. Registering a relationship type as a service of its own, such as `[Singleton<Func<Cup>>(Factory = ...)]`, does not change that for a single relationship dependency: a `Func<Cup>` parameter still gets the relationship over `Cup` and never the registered `Func<Cup>`, so the dependency is an error ([AWT259](../09-diagnostics.md#awt259)). The same holds for `Lazy<T>`, `Owned<T>`, `Task<T>` and `Func<TArg…, T>`, with or without a key. A collection of the registered type, such as `IEnumerable<Func<Cup>>`, does hold the registration, see [Relationships wrap a single service](#relationships-wrap-a-single-service).
 
 Register the service and let the container build the relationship. When the factory does more than build the service, give it a name: register a small interface and depend on that instead.
 
@@ -82,7 +88,12 @@ public static partial class CoffeeShop;
 
 ## Relationships wrap a single service
 
-A relationship wraps one service, not a [collection](./03-collections.md). A dependency on `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` is an error ([AWT256](../09-diagnostics.md#awt256)), and so is a collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` ([AWT254](../09-diagnostics.md#awt254)). Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
+A relationship wraps one service, not a [collection](./03-collections.md), so these are errors:
+
+- A relationship over a collection, such as `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` ([AWT256](../09-diagnostics.md#awt256)), unless the collection type itself is [registered as a service](./03-collections.md#registering-your-own-collection).
+- A collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` or `Func<ISyrup>[]` ([AWT254](../09-diagnostics.md#awt254)), unless the relationship type itself is registered as a service. Then the collection holds that registration.
+
+Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
 
 ## Relationships bind to their owner
 

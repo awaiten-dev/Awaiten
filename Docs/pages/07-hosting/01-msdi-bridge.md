@@ -27,12 +27,13 @@ The bridge offers three ways to hand a container to MS.DI. The first two project
 
 ## A complete ASP.NET Core app
 
-The app below projects a container with a singleton price list, an order scoped to each request and a card terminal that connects asynchronously. The host warms the terminal on startup and checks that it provides every service the container imports, and a minimal API endpoint takes the projected services as parameters.
+The app below projects a container with a singleton price list, an order scoped to each request and a card terminal that connects asynchronously. The order logs through the host's logger, which the container imports. The host warms the terminal on startup and checks that it provides every service the container imports, and a minimal API endpoint takes the projected services as parameters.
 
 ```csharp title="Program.cs"
 using Awaiten;
 using Awaiten.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Logging;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // highlight-next-line
@@ -56,6 +57,7 @@ app.Run();
 [Singleton<PriceList>]
 [Scoped<Order>]
 [Singleton<CardTerminal, IPaymentTerminal>]
+[ImportService<ILogger<Order>>]
 public static partial class CoffeeShop;
 
 public interface IWarmUp
@@ -73,11 +75,15 @@ public sealed class PriceList
     public decimal PriceOf(string drink) => drink == "Latte" ? 3.80m : 2.40m;
 }
 
-public sealed class Order(PriceList prices)
+public sealed class Order(PriceList prices, ILogger<Order> logger)
 {
     public decimal Total { get; private set; }
 
-    public void Add(string drink) => Total += prices.PriceOf(drink);
+    public void Add(string drink)
+    {
+        Total += prices.PriceOf(drink);
+        logger.LogInformation("Added {Drink}", drink);
+    }
 }
 
 public sealed class CardTerminal : IPaymentTerminal, IWarmUp
@@ -146,7 +152,14 @@ builder.Host.UseServiceProviderFactory(
 
 ## Disposal
 
-On both paths above, Awaiten disposes everything it built exactly once, with the scope that owns it. The Awaiten scope aligned to an MS.DI scope is disposed with that scope, and the container root with the root provider. (After a plain `AddAwaitenContainer<TRoot>()`, the root provider takes over the root on the first bridged resolution or when `WithInitialization()` warms it, so dispose a root you only use directly yourself. A root you passed to `AddAwaitenContainer(root)` is always yours to dispose.) That includes disposables reached only as nested dependencies, which MS.DI never sees, and instances awaited through `Task<T>`. Disposing the provider or a scope with `DisposeAsync` drains them asynchronously, so `IAsyncDisposable`-only services are supported there. A pre-built `Instance` member stays yours and is never disposed.
+On both paths above, Awaiten disposes everything it built exactly once, with the scope that owns it. That includes disposables reached only as nested dependencies, which MS.DI never sees, and instances awaited through `Task<T>`.
+
+- The Awaiten scope aligned to an MS.DI scope is disposed with that scope.
+- The container root is disposed with the root provider. After a plain `AddAwaitenContainer<TRoot>()`, the root provider takes over the root on the first bridged resolution or when `WithInitialization()` warms it, so dispose a root you only use directly yourself.
+- A root you passed to `AddAwaitenContainer(root)` is always yours to dispose.
+- A pre-built `Instance` member stays yours and is never disposed.
+
+Disposing the provider or a scope with `DisposeAsync` drains them asynchronously, so `IAsyncDisposable`-only services are supported there.
 
 MS.DI additionally calls `Dispose` on every instance a projected registration hands out, once per service type it was resolved as, before the Awaiten scope or root that built it. That is how MS.DI treats any factory registration, for example `AddSingleton<IWriter>(sp => sp.GetRequiredService<Ledger>())`, and it relies on `Dispose` being idempotent, as the `IDisposable` contract requires. A singleton `Ledger` resolved as both `IReader` and `IWriter` therefore sees three `Dispose` calls: one per service type from MS.DI, then one from Awaiten.
 
@@ -268,7 +281,7 @@ The bridge constructs no generic types at run time. The generator emits the clos
 - **Relationship shapes** such as `Func<T>`, `Lazy<T>` and `Owned<T>`, which the container synthesizes for its own graph.
 - **Keyed dictionaries** such as `IReadOnlyDictionary<string, IMilk>`.
 - **Services with [runtime arguments](../06-resolution/06-runtime-arguments.md)**, which only their `Func<TArg…, T>` builds.
-- **A [decorated import](#project-into-a-service-collection)**, whose host registration stays as it is.
+- **A [decorated import](./02-external-services.mdx#decorate-an-imported-service)**, whose host registration stays as it is.
 
 For an MS.DI consumer that needs one of these shapes, register a container service that holds it, and inject that service instead:
 

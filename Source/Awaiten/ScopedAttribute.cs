@@ -83,9 +83,9 @@ public sealed class ScopedAttribute : Attribute
 	public string? OnActivated { get; set; }
 
 	/// <summary>
-	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container accepting the implementation, invoked when the
-	///     owning container or scope is disposed, before the instance's own disposal. For an open generic the
-	///     method may be generic over the service's type arguments.
+	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container accepting
+	///     the implementation, invoked when the owning container or scope is disposed, before the instance's own
+	///     disposal. For an open generic the method may be generic over the service's type arguments.
 	/// </summary>
 	public string? OnRelease { get; set; }
 

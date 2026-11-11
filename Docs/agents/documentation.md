@@ -27,7 +27,7 @@ When a page moves, update every relative link to it and to the pages it links to
 ## Where content goes
 
 - **One owner per topic.** Each topic is explained on one page. Other pages say it in a sentence and link there. Do not repeat the same paragraph, tip or example on several pages.
-- **User pages stay user-facing.** How a library module bridges an assembly boundary (generated factories, wrappers, handles, `Internals`, `InternalsVisibleTo` rules) belongs on `05-registration/07-modules/01-library-modules.md`. A feature page states the rule for a container in its own project and links to the library page for the rest.
+- **User pages stay user-facing.** How a library module bridges an assembly boundary (generated factories, wrappers, handles, `Internals`, `InternalsVisibleTo` rules) belongs on `05-registration/08-modules/01-library-modules.md`. A feature page states the rule for a container in its own project and links to the library page for the rest.
 - **Reference pages list, feature pages explain.** A reference entry is a table row or a few sentences with a link to the feature page. Keep the attribute and runtime API reference in step with the public API (`Tests/Awaiten.Api.Tests` snapshots) and with the defaults in `Source/Awaiten`.
 - **Describe the current behavior.** No history, no "used to", "no longer", "since version", "v1 limitation" or "predates". A check that depends on how another assembly was built is described as it works now.
 - **No internals of the repository.** Do not name test classes, internal types or member names of the generated code as if they were API. The generated-code walkthrough says its names are not a contract.

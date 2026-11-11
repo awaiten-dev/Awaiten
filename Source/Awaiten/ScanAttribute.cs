@@ -151,10 +151,10 @@ public sealed class ScanAttribute<TMarker> : Attribute
 	public string? OnActivated { get; set; }
 
 	/// <summary>
-	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container invoked when each match's owning container or
-	///     scope is disposed - in reverse creation order and before the instance's own disposal (in addition to, not
-	///     instead of, it). Its first parameter is the match (type it as <typeparamref name="TMarker" /> or
-	///     <c>object</c>); any parameters after it are resolved from the graph.
+	///     The name of a static method returning <c>void</c>, <c>Task</c> or <c>ValueTask</c> on the container invoked
+	///     when each match's owning container or scope is disposed - in reverse creation order and before the instance's
+	///     own disposal (in addition to, not instead of, it). Its first parameter is the match (type it as
+	///     <typeparamref name="TMarker" /> or <c>object</c>); any parameters after it are resolved from the graph.
 	/// </summary>
 	public string? OnRelease { get; set; }
 

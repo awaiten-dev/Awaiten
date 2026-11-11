@@ -2,42 +2,11 @@
 description: Fill settable properties after construction with [InjectProperty<T>] on the container, or [Inject] on the property as an escape hatch.
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # Property injection
 
 Awaiten fills constructor parameters by default. Property injection is the opt-in alternative for the odd case where a constructor does not fit, like breaking a cycle between two services. It is done through an object initializer, so there is still no reflection.
 
 There are two ways to ask for it. Declaring it on the container with `[InjectProperty<T>]`, or its `typeof` form for open generics, keeps the service a plain class, with no Awaiten reference in your domain code. That is the idiom. Marking the property itself with `[Inject]` is the escape hatch for the one shape the container-side form cannot express.
-
-<Tabs groupId="propertyInjection">
-
-<TabItem value="container" label="On the container" default>
-
-```csharp no-compile
-public sealed class Barista
-{
-    public ITimeSystem? Time { get; set; }
-}
-
-[InjectProperty<Barista>(nameof(Barista.Time))]   // on the [Container]
-```
-
-</TabItem>
-
-<TabItem value="inject" label="[Inject] on the property">
-
-```csharp no-compile
-public sealed class Barista
-{
-    [Inject] public ITimeSystem? Time { get; set; }   // Barista now references Awaiten
-}
-```
-
-</TabItem>
-
-</Tabs>
 
 ## Declare it on the container with `[InjectProperty<T>]`
 

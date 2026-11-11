@@ -6,17 +6,19 @@ description: What Awaiten is, what the compiler checks for you, how it compares 
 
 Awaiten is a compile-time dependency injection container for .NET. You declare your services with attributes on a container class, and a Roslyn source generator writes plain C# that builds the object graph. Nothing is discovered, reflected over or emitted at run time, so the result is trimming and native AOT clean, and you can read and step through it like your own code.
 
-What sets Awaiten apart is asynchronous initialization. A service that needs async setup before it can work, such as an espresso machine that heats its boiler or a payment terminal that connects to the bank, is tracked through the whole graph. The compiler stops any code path that could hand it out before its setup has finished.
+Awaiten treats asynchronous initialization as part of the graph. A service that needs async setup before it can work, such as an espresso machine that heats its boiler or a payment terminal that connects to the bank, is tracked through the whole graph, including relationships, collections and scopes. The compiler stops any code path that could hand it out before its setup has finished.
 
 ## What the compiler checks for you
 
-The generator checks the whole graph while you build and reports each mistake with an `AWT` id, as a build error or a warning. There are 149 of them, among others for:
+The generator checks the whole graph while you build and reports each mistake with an `AWT` id, as a build error or a warning. There are more than 100 of them, among others for:
 
 - a dependency that is not registered,
 - a dependency cycle,
 - a singleton that captures a scoped service,
 - an async-initialized service reached through a synchronous path,
-- a disposable transient that would pile up on the container root.
+- a `Func` on the container root that builds disposable services, whose instances would pile up there for the root's lifetime.
+
+The examples on this page assume the usings and coffee-shop types that the note at the top of [Getting started](./01-getting-started.md) describes.
 
 Forget to register the payment terminal the barista needs, and the build stops instead of the first order:
 
@@ -57,7 +59,7 @@ The columns for other containers describe each category in general. Check a libr
 | Reflection at run time | None | Used to activate services | Used to discover and activate services | None or little |
 | Async initialization | Tracked through the graph and checked at build time | Not built in | Not checked at build time | Varies by library |
 | Registration style | Attributes on a container class | Calls on an `IServiceCollection` at run time | Registration code at run time | Attributes or setup code that the generator reads |
-| Registration at run time | Not possible | Possible | Possible | Not possible |
+| Registrations decided by run-time code | Not possible | Possible | Possible | Not possible |
 | Native AOT and trimming | Supported | Supported, with limits | Depends on the library | Generally supported |
 
 For resolve and build times against Microsoft's container, Autofac, DryIoc and Simple Injector, see the [Benchmarks](./10-benchmarks.mdx).
@@ -77,7 +79,7 @@ Awaiten fixes the graph at build time. That is its strength, and it rules out de
 ## Frameworks and requirements
 
 - Your project targets anything from .NET Framework 4.8 and netstandard2.0 up to .NET 10. The generated code compiles for each of them.
-- You build with the .NET SDK 10.0.300 or later and C# 11 or later.
+- You build with the .NET SDK 10.0.300 or later and C# 11 or later, or C# 9 with the `typeof` forms.
 - `Awaiten` is the only package you need. Add `Awaiten.Extensions.DependencyInjection` to host a container in ASP.NET Core or the generic host.
 
 [Getting started](./01-getting-started.md#requirements) has the details, including older C# versions and IDE versions.

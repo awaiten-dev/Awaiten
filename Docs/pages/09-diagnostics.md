@@ -1171,7 +1171,7 @@ public static partial class CoffeeShop;
 ### AWT118: Factory accumulates disposables on the container root \{#awt118\}
 
 :::danger[Error]
-A root-owned instance holds a `Func` or `Func<…,Task<T>>` over a disposable build-on-demand service. Under strict lifetime safety (the default) this is a non-suppressible error; under `LifetimeSafety.Loose` it relaxes to a suppressible warning.
+A root-owned instance takes a `Func`, a `Func<…,Task<T>>` or a dispatch dictionary, through its constructor or a lifecycle hook, over a build-on-demand service that is disposable or rebuilds a disposable transient. Under strict lifetime safety (the default) this is a non-suppressible error; under `LifetimeSafety.Loose` it relaxes to a suppressible warning.
 :::
 
 ```csharp expect=AWT118
@@ -1185,7 +1185,7 @@ public sealed class Counter(Func<BrewSession> sessions);   // each call strands 
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
+**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). A [dispatch dictionary](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) has no `Owned` form: register its holder as `Scoped` instead, so each scope disposes what the dictionary builds. A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
 
 ```csharp
 public sealed class Counter(Func<Owned<BrewSession>> sessions);   // each handle disposes its own session
@@ -1639,7 +1639,7 @@ public sealed class Consumer(Box<Order> box);
 public static partial class CoffeeShop;
 ```
 
-It is reported at the open registration whose closings keep growing.
+It is reported at the open registration whose closings keep growing. The dependency on the closing it stopped at stays unsatisfied, so that dependency also reports [AWT101](#awt101).
 
 **Fix:** Break the recursion: an implementation must not depend on an ever-larger closing of its own open registration, as `Box<T>` does with `Box<Box<T>>`.
 
@@ -1663,7 +1663,7 @@ public static partial class CoffeeShop;
 ### AWT207: `Eager` or `Instance` on an open generic registration \{#awt207\}
 
 :::danger[Error]
-`Eager` or `Instance` is set on an open generic `typeof` registration. Both describe one concrete instance, but the closings of an open generic are whatever the graph asks for, so eagerly building "every closing" would start services because some other consumer happens to close the generic, and one pre-built instance cannot be every closing. Register the closings you want eager or pre-built with a closed type. The option is ignored.
+`Eager` or `Instance` is set on an open generic `typeof` registration. Both describe one concrete instance, but the closings of an open generic are whatever the graph asks for, so eagerly building "every closing" would start services because some other consumer happens to close the generic, and one pre-built instance cannot be every closing. Register the closings you want eager or pre-built with a closed type.
 :::
 
 ```csharp expect=AWT207
@@ -1994,6 +1994,7 @@ public sealed class Barista
 
 // In the application:
 [Container]
+// highlight-next-line
 [Singleton<Barista>]   // the container cannot see Barista.Time
 [Singleton<RealTimeSystem, ITimeSystem>]
 public static partial class CoffeeShop;
@@ -2267,6 +2268,7 @@ public sealed class Roaster : IRoaster, IEquipment;
 
 // Registering Roaster under IRoaster would not compile in the container's assembly.
 [Container]
+// highlight-next-line
 [Scan<IEquipment>(As = ScanAs.MatchingInterface, InAssembliesOf = [typeof(IEquipment)])]
 public static partial class CoffeeShop;
 ```
@@ -2492,6 +2494,7 @@ An imported module declares a `[Scan]`, or registers an implementation the conta
 ```csharp no-compile
 // In a referenced library that was compiled WITHOUT the Awaiten source generator:
 [Module]
+// highlight-next-line
 [Scan<IDrink>]   // never expanded, so it would contribute nothing
 public static partial class MenuModule;
 
@@ -2794,6 +2797,7 @@ public static class CalibrationModule;   // not partial, so it can't share a han
 
 [Module]
 [Singleton<Grinder, IGrinder>]
+// highlight-next-line
 [Decorate<LoggingGrinder, IGrinder>]   // internal, and its factory can't take the internal Calibration
 public static partial class EquipmentModule;
 
@@ -2825,6 +2829,7 @@ internal sealed class Grinder : IGrinder
 }
 
 [Module]
+// highlight-next-line
 [Singleton<Grinder, IGrinder>]   // the factory can't take the internal Calibration, so the module skips it
 public static partial class EquipmentModule;
 
@@ -2871,6 +2876,7 @@ internal sealed class EspressoMachine : IMachine
 }
 
 [Module]
+// highlight-next-line
 [AsyncInitializer<EspressoMachine>(nameof(EspressoMachine.WarmUpAsync))]   // no public wrapper can take the internal Boiler, which no module registers
 [Singleton<EspressoMachine, IMachine>]
 public static partial class EquipmentModule;
@@ -2959,6 +2965,7 @@ public static partial class CoffeeModule;
 
 // App
 [Container]
+// highlight-next-line
 [Import(typeof(CoffeeModule))]   // StorageModule is not imported
 public static partial class CoffeeShop;
 ```
@@ -2990,6 +2997,7 @@ public static partial class ApplianceModule;
 // In the application:
 [Container]
 [Import(typeof(BoilerModule))]
+// highlight-next-line
 [Import(typeof(ApplianceModule))]   // IBoiler doesn't convert to IAppliance
 public static partial class CoffeeShop;
 ```
@@ -3042,6 +3050,7 @@ public static partial class CoffeeModule;
 // In the application:
 [Container]
 [Import(typeof(CoffeeModule))]
+// highlight-next-line
 [Singleton<BeanStore>(OnActivated = nameof(Fill))]   // the handle can't run this hook
 public static partial class CoffeeShop
 {
@@ -3078,6 +3087,7 @@ public static partial class ExtrasModule;
 
 // In the application, which neither library grants InternalsVisibleTo:
 [Container]
+// highlight-next-line
 [Import(typeof(BrewingModule))]   // FlavoredBrewer would get no flavors here
 [Import(typeof(ExtrasModule))]
 public static partial class CoffeeShop;
@@ -3113,6 +3123,7 @@ public static partial class ExtrasModule;
 // In the application:
 [Container]
 [Import(typeof(BrewingModule))]
+// highlight-next-line
 [Import(typeof(ExtrasModule))]   // FlavoredBrewer would get no Vanilla here
 public static partial class CoffeeShop;
 ```
@@ -3138,6 +3149,7 @@ public static partial class BrewingModule;
 // In the application:
 [Container]
 [Import(typeof(BrewingModule))]
+// highlight-next-line
 [Singleton(typeof(Logger<>), typeof(ILogger<>))]   // can't be closed over the internal PourOver
 public static partial class CoffeeShop;
 ```
@@ -3397,19 +3409,16 @@ public static partial class CoffeeShop;
 A `Key` property or `[FromKey]` uses a constant whose type is not a supported key type. A resolution key must be a `string`, an `enum` value, or a `typeof(...)`.
 :::
 
-```csharp expect=AWT170,AWT101
-// highlight-next-line
-public sealed class LatteRecipe([FromKey(5)] IMilk milk);   // int is not a supported key type
-
+```csharp expect=AWT170
 [Container]
-[Singleton<OatMilk, IMilk>(Key = "Oat")]
-[Singleton<LatteRecipe>]
+// highlight-next-line
+[Singleton<OatMilk, IMilk>(Key = 5)]   // int is not a supported key type
 public static partial class CoffeeShop;
 ```
 
 An unsupported key in the `Keys` of a module's `[Decorate]` is reported by the module's own build, and a container that imports the module doesn't repeat it. A container reports it at its `[Import]` for a module whose generated metadata does not record that check.
 
-**Fix:** Use a `string`, an enum value or a `typeof(...)` as the key: `[FromKey("Oat")]`.
+**Fix:** Use a `string`, an enum value or a `typeof(...)` as the key: `Key = "Oat"`, and the same in a `[FromKey]`.
 
 ## External services
 
@@ -3563,6 +3572,7 @@ A container-side composition attribute (a lifetime registration, `[Scan]`, `[Dec
 
 ```csharp no-compile
 // A domain library that declares no [Container]:
+// highlight-next-line
 [Singleton<EspressoMachine>]        // registration belongs on the [Container], not here
 public sealed class EspressoMachine;
 ```
@@ -3572,7 +3582,7 @@ public sealed class EspressoMachine;
 ### AWT135: Service locator: a resolver interface is injected into a service \{#awt135\}
 
 :::warning[Warning]
-A resolver seam (`IAwaitenResolver`, `IAwaitenScope`, `IAwaitenRoot`, and the like) is injected into a type that is not the `[Container]` composition root. Resolving from the container at run time is the Service Locator anti-pattern: it hides the type's real dependencies and defeats the compile-time graph check. Inject the dependency you actually need instead, or, if the type is a host-integration adapter, suppress this on it with a justification. The typed fast paths `IAwaitenResolver<T>` and `IAwaitenAsyncResolver<T>` are single-service seams and are not reported.
+A resolver seam (`IAwaitenResolver`, `IAwaitenScope`, `IAwaitenRoot`, and the like) is injected into a type that is neither the `[Container]` composition root nor a `[Module]`. Resolving from the container at run time is the Service Locator anti-pattern: it hides the type's real dependencies and defeats the compile-time graph check. Inject the dependency you actually need instead, or, if the type is a host-integration adapter, suppress this on it with a justification. The typed fast paths `IAwaitenResolver<T>` and `IAwaitenAsyncResolver<T>` are single-service seams and are not reported.
 :::
 
 ```csharp expect=AWT135
@@ -3665,3 +3675,5 @@ Owned<Cup> owned = root.Resolve<Owned<Cup>>();      // the container builds the 
 ## Reserved ids
 
 AWT137, AWT176 and AWT217 are not reported. They stay reserved and are never reused for another diagnostic.
+
+An id that is neither in the index nor in this list, such as AWT220, AWT221, AWT227 to AWT229, AWT239 or AWT251, belongs to no diagnostic.

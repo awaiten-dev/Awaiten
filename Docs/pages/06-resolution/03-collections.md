@@ -22,7 +22,7 @@ public sealed class SyrupBar(IEnumerable<ISyrup> syrups);
 
 ## Supported shapes
 
-Any of these constructor parameter types works, and each is resolvable by type as well.
+Any of these constructor parameter types works. Each is resolvable by type as well when the collection is unkeyed and no member is [async-tainted](../12-reference/03-glossary.md#async-tainted). With an async-tainted member, resolve one of the [async collections](#async-collections) instead.
 
 ```csharp no-compile
 IEnumerable<ISyrup>
@@ -44,7 +44,12 @@ Within each group they keep declaration order, with the container's own registra
 
 With [`[FromKey]`](../05-registration/05-keyed-services.md#select-directly-with-fromkey) on the parameter or property, such as `[FromKey("Oat")] IEnumerable<IMilk>`, the collection holds the registrations under that key instead. A collection under a key is served only to injection: a keyed `Resolve<IEnumerable<IMilk>>("Oat")` throws. When the call is on the generated `Root` or `Scope` and the key is a constant, Awaiten warns about it at compile time ([AWT218](../09-diagnostics.md#awt218)).
 
-A collection holds the services themselves and a relationship wraps a single service, so a collection of relationships such as `IEnumerable<Lazy<ISyrup>>`, or a relationship over a collection such as `Func<IEnumerable<ISyrup>>`, is an error. See [Relationships wrap a single service](./02-relationships.md#relationships-wrap-a-single-service).
+A collection holds the services themselves and a relationship wraps a single service, so these are errors:
+
+- A collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` or `Func<ISyrup>[]` ([AWT254](../09-diagnostics.md#awt254)), unless the relationship type itself is registered as a service. Then the collection holds that registration.
+- A relationship over a collection, such as `Func<IEnumerable<ISyrup>>` ([AWT256](../09-diagnostics.md#awt256)), unless the collection type itself is [registered](#registering-your-own-collection).
+
+See [Relationships wrap a single service](./02-relationships.md#relationships-wrap-a-single-service).
 
 Every registration of the service is a member, also one that loses single resolution to an earlier registration. The only registration left out is an overridable default that an explicit registration of the same service without `Fallback` replaces. A scan match never replaces a default, and the closing of an open generic registration does not replace a closed default; both stay members behind it. Two defaults don't replace each other, so both are members. A single `ISyrup` resolves to one member, the first one. When several modules [contribute to one collection](../05-registration/08-modules/index.md#contribute-to-a-collection), a dependency on a single `ISyrup` is reported, because only the order of the imports decides which member it gets.
 

@@ -27,7 +27,7 @@ A typed resolve on a receiver declared as `Root` or `Scope` is checked at build 
 
 ### IAwaitenResolver
 
-The synchronous surface. The generated root and every scope implement it; the MS.DI bridge adapts it to `IServiceProvider` ([`AwaitenServiceProvider`](#awaitenserviceprovider)).
+The synchronous surface. The generated root and every scope implement it; the MS.DI bridge adapts a root or scope (an `IAwaitenScope`) to `IServiceProvider` ([`AwaitenServiceProvider`](#awaitenserviceprovider)).
 
 | Member | What it does | See |
 |---|---|---|
@@ -71,8 +71,8 @@ Extends `IAwaitenAsyncResolver`, `IDisposable` and `IAsyncDisposable`. A scope o
 | Member | What it does | See |
 |---|---|---|
 | `IAwaitenScope CreateScope()` | Opens a child scope that shares the root's singletons. The caller disposes it. | [Scopes](../04-core-concepts/02-scopes.md#open-a-scope) |
-| `Task<IAwaitenScope> CreateScopeAsync(ct = default)` | Opens a child scope and initializes its async scoped services in dependency order. If that fails, the scope is disposed and the original exception is thrown. | [Warm a scope](../04-core-concepts/03-async-initialization.md#warm-a-scope) |
-| `void Dispose()` | Disposes what the scope owns. Throws when it owns a service that is only `IAsyncDisposable` or has an asynchronous `OnRelease` hook ([AWT156](../09-diagnostics.md#awt156)). | [Disposal](../04-core-concepts/05-disposal.md#dispose-a-scope) |
+| `Task<IAwaitenScope> CreateScopeAsync(ct = default)` | Opens a child scope and initializes its async scoped services in dependency order. If that fails, the scope is disposed and the original exception is thrown. If the disposal throws too, both surface in one `AggregateException`, the original first. | [Warm a scope](../04-core-concepts/03-async-initialization.md#warm-a-scope) |
+| `void Dispose()` | Disposes what the scope owns. Throws when it owns a service that is only `IAsyncDisposable` or has an asynchronous `OnRelease` hook ([AWT156](../09-diagnostics.md#awt156)): an `InvalidOperationException`, or an `AggregateException` of them when there are several. | [Disposal](../04-core-concepts/05-disposal.md#dispose-a-scope) |
 | `ValueTask DisposeAsync()` | Disposes what the scope owns and awaits asynchronous disposal. Use it through `await using`. | [Async disposal](../04-core-concepts/05-disposal.md#async-disposal) |
 
 Disposing the root also disposes the singletons. Resolving from a disposed scope or root throws `ObjectDisposedException`.
@@ -111,7 +111,7 @@ New statuses may be added, so give a `switch` over `Status` a default case.
 
 ### `Owned<T>`
 
-A disposal handle over a service built in a throwaway scope of its own. Resolve or inject `Owned<T>`, `Func<Owned<T>>` or `Func<TArg…, Owned<T>>`, and do not create one with `new` ([AWT205](../09-diagnostics.md#awt205)). See [Owned](../04-core-concepts/06-owned.md).
+A disposal handle over a service built in a throwaway scope of its own. Resolve or inject `Owned<T>`, `Func<Owned<T>>` or `Func<TArg…, Owned<T>>`, or for an async-initialized service `Task<Owned<T>>`, `Func<Task<Owned<T>>>` or `Func<TArg…, Task<Owned<T>>>`, and do not create one with `new` ([AWT205](../09-diagnostics.md#awt205)). See [Owned](../04-core-concepts/06-owned.md).
 
 | Member | What it does |
 |---|---|
@@ -128,9 +128,10 @@ These types connect a container to the services the host provides with `[ImportS
 | `IExternalResolver.TryResolve(Type serviceType, object? key, out object? instance)` | Implement it to hand out host services. `key` carries the `[FromKey]` value, or `null`. Return `false` when the service is unavailable. | [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver) |
 | `IAwaitenExternalResolverHost.ExternalResolver` | The resolver of this scope, or `null`. A child scope without one uses the root's. | |
 | `IAwaitenExternalResolverHost.SetExternalResolver(IExternalResolver resolver)` | Sets the resolver once per scope. Setting the same resolver again does nothing; a different one throws `InvalidOperationException`. | [Resolving an imported service directly](../07-hosting/02-external-services.mdx#resolving-an-imported-service-directly) |
-| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. | [Verifying the wiring](../07-hosting/02-external-services.mdx#verifying-the-wiring) |
+| `AwaitenExternalDependency` | One entry of `IAwaitenRoot.ExternalDependencies`: its `ServiceType` and `Key`. |
+| `new AwaitenExternalDependency(Type serviceType, object? key = null)` | Creates an entry, for example to compare against `ExternalDependencies`. | [Verifying the wiring](../07-hosting/02-external-services.mdx#verifying-the-wiring) |
 
-Every generated root and scope implements `IAwaitenExternalResolverHost`. A standalone container usually passes its resolver to the `Root(IExternalResolver?)` constructor instead.
+Every generated root and scope implements `IAwaitenExternalResolverHost` explicitly, so call its members through that interface or a variable typed `IAwaitenRoot`, not on a `Root` variable. A standalone container usually passes its resolver to the `Root(IExternalResolver?)` constructor instead.
 
 ## Registration metadata
 
@@ -141,7 +142,7 @@ Every generated root and scope implements `IAwaitenExternalResolverHost`. A stan
 | `Type ServiceType` | The service type the container resolves. |
 | `Lifetime Lifetime` | The lifetime the container owns it under. |
 | `object? Key` | The key the registration declares, or `null`. |
-| `bool RequiresAsync` | Whether it has no synchronous path, because it or a dependency needs async initialization or an async factory. The bridge projects it as `Task<T>`. |
+| `bool RequiresAsync` | Whether it has no synchronous path, because it or a dependency needs async initialization or an async factory. Always `false` under `AsyncSafety.SyncAfterInit`. The bridge projects it as `Task<T>`. |
 | `bool ExternallyOwned` | Whether it is a pre-built `Instance` the container exposes but does not own. |
 | `bool DisposalSuppressed` | Whether the container builds a possibly disposable instance with `SuppressDisposal = true` and never disposes it. |
 
@@ -167,12 +168,17 @@ The `Awaiten.Extensions.DependencyInjection` package. See [MS.DI bridge](../07-h
 | `AwaitenContainerBuilder<TRoot>.Services` | The service collection, for chaining further registrations. | |
 | `AwaitenContainerBuilder<TRoot>.WithInitialization()` | Adds a hosted service that calls `InitializeAsync` on host startup, wiring the external resolver first if none is set. Calling it again does nothing. | [Warm async services on startup](../07-hosting/01-msdi-bridge.md#warm-async-services-on-startup) |
 | `new AwaitenServiceProviderFactory<TRoot>(Action<AwaitenContainerBuilder<TRoot>>? configure = null)` | An `IServiceProviderFactory<TRoot>` for `UseServiceProviderFactory`. It projects the container and builds a standard MS.DI provider, and wires the root to it unless a resolver is set. | [Use it as the host's provider factory](../07-hosting/01-msdi-bridge.md#use-it-as-the-hosts-provider-factory) |
+| `TRoot CreateBuilder(IServiceCollection services)` | Keeps the host's service collection and creates a new `TRoot`. The host calls it. | |
+| `IServiceProvider CreateServiceProvider(TRoot containerBuilder)` | Projects the root into the collection, runs `configure`, builds the provider and wires the root to it. The host calls it. Throws an `InvalidOperationException` when `CreateBuilder` was not called first. | |
 
 Both `AddAwaitenContainer` overloads and `CreateServiceProvider` throw an `InvalidOperationException` when the container builds a possibly disposable service with `SuppressDisposal = true` ([AWT214](../09-diagnostics.md#awt214)).
 
 ### AwaitenServiceProvider
 
 Adapts a root or scope directly to `IServiceProvider`, `IKeyedServiceProvider`, `ISupportRequiredService`, `IServiceScopeFactory`, `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, so Awaiten owns construction and disposal alone. See [Or let Awaiten own everything](../07-hosting/01-msdi-bridge.md#or-let-awaiten-own-everything).
+
+- A service that needs asynchronous resolution is served as `Task<T>`: request `Task<TService>` and await it. Keyed ones are served this way only when the provider wraps the `Root`.
+- An `IEnumerable<T>` of a reference element type that the container has no registration for resolves to an empty sequence.
 
 | Member | What it does |
 |---|---|

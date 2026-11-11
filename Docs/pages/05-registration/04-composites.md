@@ -91,6 +91,7 @@ With no members registered, the composite still resolves and fans out to an empt
 ## Rules
 
 - Only one composite may front a given service and key ([AWT132](../09-diagnostics.md#awt132)).
+- A composite is excluded from its own fan-out, so registering it also as a member of the composed service has no effect and warns ([AWT131](../09-diagnostics.md#awt131)).
 - A `Key` must match a registration ([AWT212](../09-diagnostics.md#awt212)).
 - The composite takes a collection of the composed service itself ([AWT130](../09-diagnostics.md#awt130), [AWT133](../09-diagnostics.md#awt133)).
 - The open generic `typeof` form requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the composite's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).

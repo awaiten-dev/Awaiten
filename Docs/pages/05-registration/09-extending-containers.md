@@ -185,10 +185,11 @@ The generated extending container calls the inherited factories, instance member
 [assembly: InternalsVisibleTo("CoffeeShop.Tests")]
 ```
 
-- Anything inherited that the extending container cannot reach or build is an error on its `Extends` argument ([AWT226](../09-diagnostics.md#awt226)). That includes an internal match of the scan of a base in another assembly, so the test graph never silently lacks a service the production graph has.
+- Anything inherited that the extending container cannot reach or build is an error on its `Extends` argument ([AWT226](../09-diagnostics.md#awt226)).
+- The base's `[Scan]` sweeps the base's assembly and matches what the base sees. An internal match of the scan of a base in another assembly is therefore an error too, so the test graph never silently lacks a service the production graph has.
 - A match of the base's scan that is private to the base, or that has an `[Inject]` property the extending container doesn't see, is skipped with a warning ([AWT193](../09-diagnostics.md#awt193)) when the extending container can't build it through a factory the base generates.
 - An implementation private to the base is built through a factory the base generates, as described below.
-- A type that a module the base imports registers is built through the module's generated factory, wherever the extending container lives (see [library module rules](./08-modules/02-library-module-rules.md#internal-implementations)).
+- A type that a module the base imports registers is built as any container in the extending container's assembly builds it: constructed directly when the extending container can reach it, in the module's assembly or one it grants `InternalsVisibleTo`, and otherwise through the module's generated factory (see [who builds what](./08-modules/02-library-module-rules.md#who-builds-what)).
 
 <details>
 <summary>What an extending container can reach, by where it lives</summary>

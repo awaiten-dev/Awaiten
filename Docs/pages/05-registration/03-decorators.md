@@ -109,7 +109,9 @@ public static partial class CoffeeShop;
 // Resolve<IHandler<PlaceOrder>>() returns LoggingBehavior<PlaceOrder>(Handler<PlaceOrder>)
 ```
 
-Awaiten synthesizes a closed decorator for every closing already in the graph, however it was registered: an open generic, an explicit closed registration, or a scan. An open decorator with no closing to wrap decorates nothing. A module or a base container meant for [extension](./09-extending-containers.md) can declare it for the closings its consumers register; in any other container it warns ([AWT249](../09-diagnostics.md#awt249)), which a base meant only for extension suppresses at the attribute. Each closing then behaves exactly like a hand-written closed decorator: it joins its collection, respects `Order`, and interleaves with any explicit `[Decorate<D, IHandler<PlaceOrder>>]` on that one closing by the same rules.
+Awaiten synthesizes a closed decorator for every closing already in the graph, however it was registered: an open generic, an explicit closed registration, or a scan. Each closing then behaves exactly like a hand-written closed decorator: it joins its collection, respects `Order`, and interleaves with any explicit `[Decorate<D, IHandler<PlaceOrder>>]` on that one closing by the same rules.
+
+An open decorator with no closing to wrap decorates nothing. A module or a base container meant for [extension](./09-extending-containers.md) can declare it for the closings its consumers register; in any other container it warns ([AWT249](../09-diagnostics.md#awt249)), which a base meant only for extension suppresses at the attribute.
 
 The decorator's arity must match the service's, and it must expose the service with its type parameters in declaration order (`LoggingBehavior<T> : IHandler<T>`). A closing whose type arguments violate the decorator's constraints is skipped with a diagnostic. Like the closed form, a decorator's *own* generic dependencies are supplied only when some other registration already expands them into the graph.
 
@@ -186,7 +188,9 @@ public static partial class CoffeeShop
 }
 ```
 
-Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use. Because it decides for the whole root, it takes only services the root shares as one instance it builds synchronously: singletons, `Instance` registrations and [imported services](../07-hosting/02-external-services.mdx) that are not initialized asynchronously.
+Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use.
+
+Because it decides for the whole root, it takes only services the root shares as one instance it builds synchronously: singletons, `Instance` registrations and [imported services](../07-hosting/02-external-services.mdx) that are not initialized asynchronously.
 
 </details>
 
@@ -197,24 +201,13 @@ Such a predicate is still evaluated once per root, but the first time a decorato
 - A predicate parameter the root cannot supply once, such as a scoped service, a `Func<T>` or an async-initialized singleton, is a build error ([AWT248](../09-diagnostics.md#awt248)), and so is one that needs the decorated service ([AWT102](../09-diagnostics.md#awt102)).
 - A service that reaches the decorated service only through a `Func<T>` or `Lazy<T>` is allowed. If it calls that `Func<T>` or `Lazy<T>` in its constructor, the predicate is needed while it is being evaluated, and the resolve throws an `InvalidOperationException` that names the predicate.
 
-:::tip[When not to reach for this]
-A conditional decorator answers one question: should this cross-cutting wrapper exist in this run? Reach for it when the answer is fixed at startup, by a command-line switch, an environment or a deployment profile, and the decorator should then cost nothing.
-
-- **Not for decisions while the application runs.** The predicate is evaluated once. When the decision can change at run time, or differs per request or tenant, it is domain logic: let the decorator take its options (or a feature-flag service) and pass calls through when it is disabled.
-- **Not for ambient state.** Keep the switch a value the entry point sets once, or the predicate turns into an [ambient context](../03-design-principles.md#ambient-context).
-- **Not for several applications.** When several switches start to combine, or one swaps the core implementation rather than wrapping it, you have two applications: give each its own container, share their common wiring in a [module](./08-modules/index.md), and pick the root at the entry point.
-- **Not for test-only switches.** When a decorator is only off in tests, a test container that [extends the production one](./09-extending-containers.md#switch-an-inherited-decorator-off) is the better seam.
-
-See [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
-:::
-
 ## Lifetime and disposal
 
 A decorator inherits the lifetime of what it decorates. Wrap a singleton and the decorator is a singleton. A decorator of an [imported service](#decorate-an-imported-service) is transient. On teardown the chain is disposed outermost first, so the decorator is disposed before its inner service.
 
 ## Async inner services
 
-If the inner service is async-initialized, the whole chain is async-tainted. Resolve it with `ResolveAsync`. A synchronous resolve is a build error ([AWT119](../09-diagnostics.md#awt119)). See [Async initialization](../04-core-concepts/03-async-initialization.md).
+If the inner service is async-initialized, the whole chain is async-tainted. Resolve it with `ResolveAsync`. A synchronous `Resolve` throws at run time, and on a variable of the generated `Root` or `Scope` type it gets a build warning ([AWT219](../09-diagnostics.md#awt219)). A synchronous `Func<T>`, `Lazy<T>` or `Owned<T>` over the chain is a build error ([AWT119](../09-diagnostics.md#awt119)), and so is one over a service that reaches the chain through its dependencies ([AWT120](../09-diagnostics.md#awt120)). See [Async initialization](../04-core-concepts/03-async-initialization.md).
 
 ## Decorate an imported service
 
@@ -229,7 +222,9 @@ public static partial class CoffeeShop;
 // Resolve<IPaymentTerminal>() returns LoggingTerminal(the host's terminal)
 ```
 
-An imported service has no lifetime the decorator could inherit, so the chain is transient: each resolve builds the decorators again, and the innermost asks the host for its instance, as an undecorated import does. The container tracks and disposes the decorators like any transient and never disposes the host's instance. A singleton that depends on the service holds one chain, as it would hold the bare import.
+An imported service has no lifetime the decorator could inherit, so the chain is transient: each resolve builds the decorators again, and the innermost asks the host for its instance, as an undecorated import does.
+
+The container tracks and disposes the decorators like any transient and never disposes the host's instance. A singleton that depends on the service holds one chain, as it would hold the bare import.
 
 - **Keys.** The host decides the keys it provides a service under, so name them in `Keys`: `Keys = ["backup"]` wraps the instance the host provides under `"backup"`. `AllKeys` and an empty `Keys` are a build error ([AWT123](../09-diagnostics.md#awt123)).
 - **Generics.** An open decorator wraps each closed `[ImportService<T>]` of its service, and a closed decorator can wrap a closing of an open import. An open decorator over an open import is a build error ([AWT123](../09-diagnostics.md#awt123)), since the container learns its closings only from the dependencies that ask for them.
@@ -241,6 +236,17 @@ An imported service has no lifetime the decorator could inherit, so the chain is
 - The decorator needs a constructor parameter that accepts the decorated service, which receives the inner instance ([AWT124](../09-diagnostics.md#awt124)). Its type may be one the service converts to, such as a base interface. A `[FromKey]` parameter never receives it.
 - When several parameters accept the service, the one whose type converts to the types of all the others receives the inner instance. Without exactly one such parameter the decorator is ambiguous ([AWT124](../09-diagnostics.md#awt124)).
 - The open generic `typeof` form requires an unbound generic ([AWT127](../09-diagnostics.md#awt127)) of matching arity ([AWT125](../09-diagnostics.md#awt125)), and skips a closing whose type arguments violate the decorator's constraints with a warning ([AWT171](../09-diagnostics.md#awt171)).
+
+:::tip[When not to reach for this]
+A conditional decorator answers one question: should this cross-cutting wrapper exist in this run? Reach for it when the answer is fixed at startup, by a command-line switch, an environment or a deployment profile, and the decorator should then cost nothing.
+
+- **Not for decisions while the application runs.** The predicate is evaluated once. When the decision can change at run time, or differs per request or tenant, it is domain logic: let the decorator take its options (or a feature-flag service) and pass calls through when it is disabled.
+- **Not for ambient state.** Keep the switch a value the entry point sets once, or the predicate turns into an [ambient context](../03-design-principles.md#ambient-context).
+- **Not for several applications.** When several switches start to combine, or one swaps the core implementation rather than wrapping it, you have two applications: give each its own container, share their common wiring in a [module](./08-modules/index.md), and pick the root at the entry point.
+- **Not for test-only switches.** When a decorator is only off in tests, a test container that [extends the production one](./09-extending-containers.md#switch-an-inherited-decorator-off) is the better seam.
+
+See [Design principles](../03-design-principles.md#when-power-becomes-a-smell).
+:::
 
 ## Where to go next
 

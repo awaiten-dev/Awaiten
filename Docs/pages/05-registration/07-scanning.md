@@ -15,7 +15,7 @@ Some sets of services grow over time. Every drink on the menu implements `IDrink
 public static partial class CoffeeShop;
 ```
 
-Every concrete, non-generic type assignable to `IDrink` that the container can name is registered, an internal type of the container's own assembly included. A class nested privately in the container matches too, when the scan registers it under an [accessible interface](#what-a-scan-skips). The `typeof` form is equivalent:
+Every concrete, non-generic type assignable to `IDrink` that the container can name is registered, an internal type of the container's own assembly included. The `typeof` form is equivalent:
 
 ```csharp
 [Scan(typeof(IDrink))]
@@ -187,7 +187,7 @@ An [explicit registration](#overriding-a-scanned-type) of a scanned type is diff
 - Name the same method on the explicit registration if the special-cased type should keep the hook, or exclude the type from the scan and register it explicitly under the marker if it should not.
 - This follows the type, not the service: an explicit registration of just the concrete type, say `[Transient<Espresso>]` beside a marker scan, owns the instance of `Espresso` even where the scan still supplies its marker mapping.
 - It holds for every registration that shares the match's instance, a keyed one or one of an imported module included, and in every assembly: a module of another assembly that registers the type owns its instance there too.
-- A scan an [extending container](./09-extending-containers.md) inherits from its base is the exception: the extending container can neither name the base's hook nor exclude a type from the base's scan, so its own registration of a matched type replaces the scan's hooks for that type without an error.
+- A scan an extending container inherits from its base is the exception, see [a replacement replaces in full](./09-extending-containers.md#a-replacement-replaces-in-full).
 
 ### Generic hooks on an open marker
 
@@ -247,6 +247,7 @@ A `[Scan]` may also sit on a `[Module]`, where it is compiled in the module's ow
 |---|---|
 | [AWT138](../09-diagnostics.md#awt138) | A scan matches nothing. This is a warning, not an error, so an empty menu does not break the build. |
 | [AWT141](../09-diagnostics.md#awt141) | `SkipUnconstructable` skips a match the container cannot construct. |
+| [AWT164](../09-diagnostics.md#awt164) | A scan's `OnActivated` or `OnRelease` names no usable hook. |
 | [AWT166](../09-diagnostics.md#awt166) | An explicit registration of a scanned type does not name a scan hook. |
 | [AWT172](../09-diagnostics.md#awt172), [AWT173](../09-diagnostics.md#awt173), [AWT174](../09-diagnostics.md#awt174) | A filter removes every match, an exclusion never applies, or an include matches everything. |
 | [AWT182](../09-diagnostics.md#awt182), [AWT187](../09-diagnostics.md#awt187), [AWT188](../09-diagnostics.md#awt188) | A `MatchingInterface` match registers nothing, registers under several same-named interfaces, or implements an inaccessible one. |

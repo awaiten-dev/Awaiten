@@ -52,7 +52,7 @@ public static partial class CoffeeShop;
 
 ## Supply the value through a Func
 
-A service with `[Arg]` parameters is resolved through a matching `Func<TArg..., T>`. The arguments are matched positionally.
+A service with `[Arg]` parameters is resolved through a matching `Func<TArg…, T>`. The arguments are matched positionally.
 
 ```csharp
 Func<string, Cup> makeCup = shop.Resolve<Func<string, Cup>>();
@@ -80,7 +80,7 @@ public sealed class Receipt(Store store, [Arg] string customer, [Arg] int number
 
 ## Async initialization
 
-When the service is initialized asynchronously, ask for `Func<TArg..., Task<T>>` instead. Each call builds the service from your arguments, and the task completes once it is initialized. The async factory works for a service without async initialization too, and then hands back a completed task.
+When the service is initialized asynchronously, ask for `Func<TArg…, Task<T>>` instead. Each call builds the service from your arguments, and the task completes once it is initialized. The async factory works for a service without async initialization too, and then hands back a completed task.
 
 ```csharp
 Func<string, Task<Cup>> brewCup = shop.Resolve<Func<string, Task<Cup>>>();
@@ -90,9 +90,9 @@ Cup medium = await brewCup("Medium");
 ## Rules
 
 - A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments.
-- It is reachable only through `Func<TArg..., T>`, `Func<TArg..., Owned<T>>`, `Func<TArg..., Task<T>>` or `Func<TArg..., Task<Owned<T>>>`. A plain, `Lazy<T>`, `Owned<T>` or `Task<T>` dependency on it is [AWT115](../09-diagnostics.md#awt115).
+- It is reachable only through `Func<TArg…, T>`, `Func<TArg…, Owned<T>>`, `Func<TArg…, Task<T>>` or `Func<TArg…, Task<Owned<T>>>`. A plain, `Lazy<T>`, `Owned<T>` or `Task<T>` dependency on it is [AWT115](../09-diagnostics.md#awt115).
 - The `Func` arguments must match the `[Arg]` parameters in type and order; a `Func` that supplies other arguments, or none, is [AWT113](../09-diagnostics.md#awt113).
-- A synchronous `Func<TArg..., T>` over an async-initialized service is [AWT119](../09-diagnostics.md#awt119); take the `Task` form instead.
+- A synchronous `Func<TArg…, T>` over an async-initialized service is [AWT119](../09-diagnostics.md#awt119); take the `Task` form instead.
 - The argument wins even when its type is itself registered. A `[Arg] string` always comes from your call, never from the graph.
 
 ## Where to go next

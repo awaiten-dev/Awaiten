@@ -34,7 +34,11 @@ Strict mode does not get in your way for the safe shapes:
 - A disposable transient resolved from a child scope, because the scope bounds its lifetime.
 - A singleton's `Lazy<T>` over a disposable, because it is memoized and bounded.
 
-What strict rejects is the leak-prone shape: a root-owned service (a singleton or a pre-built instance), directly or through the transients it depends on, holds a `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over a service that is built on demand, and building that service creates a disposable: it is disposable itself, or it builds a disposable transient somewhere below it. Each call would strand more undisposed instances on the root, so this is a non-suppressible error ([AWT118](../09-diagnostics.md#awt118)). Under `Loose` it relaxes to a suppressible warning.
+What strict rejects is the leak-prone shape: a root-owned service (a singleton or a pre-built instance), directly or through the transients it depends on, holds a `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over a service that is built on demand, and building that service creates a disposable: it is disposable itself, or it builds a disposable transient somewhere below it. Each call would strand more undisposed instances on the root, so this is a non-suppressible error ([AWT118](../09-diagnostics.md#awt118)). Under `Loose` it relaxes to a suppressible warning. Resolve it as `Func<…, Owned<T>>` or `Func<…, Task<Owned<T>>>` instead.
+
+A root-owned service that holds a [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) over such a service is reported the same way. A dispatch dictionary has no `Owned` form, so register its holder as scoped, and each scope disposes what the dictionary builds.
+
+AWT118 comes from Awaiten's analyzer, not the generator, so a build that [skips analyzers](../09-diagnostics.md) does not report it.
 
 ## Loose when you want MS.DI semantics
 
@@ -49,7 +53,7 @@ public static partial class CoffeeShop;
 | | `Strict` (default) | `Loose` |
 |---|---|---|
 | Disposable or release-hooked transient resolved by type on the root | Withheld: [AWT219](../09-diagnostics.md#awt219) on a typed `Root`, throws at run time | Resolves, held until the root is disposed |
-| `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) | Suppressible warning AWT118 |
+| `Func<T>`, `Func<TArg, T>` or `Func<…, Task<T>>` over one, held by a root-owned service | Non-suppressible error [AWT118](../09-diagnostics.md#awt118) (analyzer only) | Suppressible warning AWT118 |
 | `Owned<T>`, a child scope, constructor injection | Allowed | Allowed |
 
 Reach for `Loose` when you are bridging to code that expects MS.DI behavior. Otherwise, strict plus `Owned<T>` keeps disposal honest. A container that [extends](../05-registration/09-extending-containers.md#options) another inherits its setting.

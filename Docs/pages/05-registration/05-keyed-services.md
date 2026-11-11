@@ -134,7 +134,10 @@ To get every keyed implementation as a map, ask for `IReadOnlyDictionary<string,
 - Two registrations with the same service type and key collide ([AWT117](../09-diagnostics.md#awt117)).
 - A `[FromKey]` that names a key nothing is registered under is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 - A typed resolve on the generated `Root` or `Scope` with a constant key nothing is registered under is a warning ([AWT218](../09-diagnostics.md#awt218)).
-- A `WhenInjectedInto` binding whose consumer has no unkeyed constructor parameter of the service to redirect never applies, and Awaiten warns ([AWT167](../09-diagnostics.md#awt167)).
+- A `WhenInjectedInto` binding whose consumer has no unkeyed direct constructor parameter or `[Inject]` property of the service to redirect never applies, and Awaiten warns ([AWT167](../09-diagnostics.md#awt167)). A `[FromKey]` dependency, one deferred behind `Func` or `Lazy`, or a collection does not qualify.
+- A registration cannot set both `WhenInjectedInto` and `Key` ([AWT168](../09-diagnostics.md#awt168)).
+- Two contextual bindings of one service for the same consumer are ambiguous ([AWT169](../09-diagnostics.md#awt169)).
+- A key is a `string`, an `enum` value or a `typeof(...)`; a numeric, `char` or `bool` constant is an error ([AWT170](../09-diagnostics.md#awt170)).
 
 :::tip[When not to reach for this]
 Prefer distinct abstractions, or a [composite](./04-composites.md), over one service type selected by a key. A key is not part of the type: two `IMilk` parameters look the same to a reader whatever key selects them, and a key picked at run time from a dictionary or a `Resolve(key)` call is only checked when it runs. Reach for keys (and `WhenInjectedInto`) only when the implementations really are interchangeable variants of one abstraction, like the milk fridge above. Resolving the ambiguity with a key can hide a design that wants to be split into separate types, see [Design principles](../03-design-principles.md#when-power-becomes-a-smell).

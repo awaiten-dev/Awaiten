@@ -51,18 +51,7 @@ Hook parameters participate in the graph like any other dependency, including cy
 - A release hook parameter cannot be a `Func` or `Lazy` relationship, synchronous or async, or a [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) ([AWT191](../09-diagnostics.md#awt191)). Those resolve when called, and by the time the release hook runs the owner is already tearing down.
 - An activation hook may take a `Func<T>` or `Lazy<T>`, but calling one over the singleton or scoped service it activates throws while that service is not cached yet, see [Relationships](../06-resolution/02-relationships.md#calling-a-relationship-while-the-service-is-built).
 
-A C# default value does not make a hook parameter optional. Awaiten ignores it, so the hook below still needs a registered `Settings` ([AWT101](../09-diagnostics.md#awt101)):
-
-```csharp expect=AWT101
-[Container]
-[Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
-public static partial class CoffeeShop
-{
-    private static void Calibrate(EspressoMachine machine, Settings? settings = null) { }   // Settings is never registered
-}
-```
-
-To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../06-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
+A C# default value does not make a hook parameter optional ([AWT101](../09-diagnostics.md#awt101), see [Prefer constructor injection](../06-resolution/01-resolving-services.md#prefer-constructor-injection)). To let the hook run without the service, take a collection of it, which is empty when nothing registers the service. A relationship such as `Func<T>` or `Lazy<T>` does not help, because it needs the service registered too. When the service itself uses the dependency, give the service an [`Optional` injected property](../06-resolution/05-property-injection.md#tolerate-a-missing-service-with-optional) instead of passing the dependency through the hook.
 
 ```csharp
 [Container]
@@ -127,11 +116,11 @@ Dispose the owner with `await using` or `DisposeAsync`. A synchronous `Dispose` 
 
 Activation happens before the instance is ever handed out, so a concurrent resolve never sees a service that has not been activated. The hook runs first, synchronous or asynchronous. Then the container awaits each [async initializer convention](../04-core-concepts/03-async-initialization.md#order-of-several-initializers) the service matches, in declaration order. If `OnActivated` or a convention throws or its task faults, the instance is not published, and a disposable instance is disposed. A later resolve builds a fresh one and tries again. Release is only queued once activation succeeds.
 
-If `OnRelease` throws or its task faults, the teardown goes on: the other release hooks still run, and every instance is still disposed, including the one whose hook failed. The failure surfaces once the teardown is complete, together with any other teardown failure. See [Disposal → When teardown fails](../04-core-concepts/05-disposal.md#when-teardown-fails).
+If `OnRelease` throws or its task faults, the teardown goes on: the other release hooks still run, and every instance is still disposed, including the one whose hook failed. The failure surfaces once the teardown is complete, together with any other teardown failure. See [When teardown fails](../04-core-concepts/05-disposal.md#when-teardown-fails).
 
 ## Hooks on scans and modules
 
-A `[Scan]` can name the same `OnActivated`/`OnRelease` hooks, applied to every match, so a whole scanned family shares one routine. See [Scanning → Lifecycle hooks](./07-scanning.md#lifecycle-hooks).
+A `[Scan]` can name the same `OnActivated`/`OnRelease` hooks, applied to every match, so a whole scanned family shares one routine. See [Scanning](./07-scanning.md#lifecycle-hooks).
 
 A hook of a [module](./08-modules/index.md) registration or scan may stay `internal`. When a container in another assembly imports the module, the [library module rules](./08-modules/02-library-module-rules.md#hooks) apply.
 

@@ -48,7 +48,7 @@ static partial class CoffeeShop
 - `Root` is what `await using CoffeeShop.Root shop = new();` creates. It is the outermost [scope](../04-core-concepts/02-scopes.md), and it holds the singletons: the `EspressoMachine`, the `Grinder`, the milks, the syrups and the terminal.
 - `Scope` is what `shop.CreateScope()` returns for each order. It holds that order's `Order`, `Tab` and `Barista`, and it reaches the singletons through the root.
 - The `Root(IExternalResolver?)` constructor takes the resolver for [imported services](../07-hosting/02-external-services.mdx#providing-the-external-resolver). The coffee shop imports none.
-- The scope implements `IAwaitenResolver<T>` for each service it resolves synchronously and `IAwaitenAsyncResolver<T>` for every service, async or not, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
+- The scope implements `IAwaitenResolver<T>` for each service it resolves synchronously and `IAwaitenAsyncResolver<T>` for every unkeyed service without runtime arguments, async or not, so `Resolve<T>()` and `ResolveAsync<T>()` take a typed path without a lookup.
 
 ## One resolver per registration
 
@@ -220,7 +220,7 @@ Each shape that has no resolver of its own, such as `Func<Grinder>` or the `Func
 
 ## A container with errors
 
-When the container has an error, the generator emits no wiring. The file then contains only a `Root` that implements `IAwaitenRoot` and throws on use, so your code still compiles and the build reports the actual `AWT` diagnostics instead of follow-up errors about a missing type:
+When the container has an error, the generator emits no wiring. The file then contains only a `Root` that implements `IAwaitenRoot` and throws on use, so code that uses only the `Root` still compiles and the build reports the actual `AWT` diagnostics instead of follow-up errors about a missing type:
 
 ```csharp no-compile
 public object Resolve(Type serviceType) => throw new InvalidOperationException(
@@ -257,7 +257,7 @@ The compiler then writes them below the intermediate output, to `obj/<Configurat
 
 - **No reflection.** The generated code constructs with `new`, calls the factories and hooks you named, and looks types up by identity with `typeof`. It never scans assemblies or creates types at run time. A [scan](../05-registration/07-scanning.md) is read from the compilation at build time.
 - **Plain C#.** You can read, step through and set breakpoints in the generated file like in your own code.
-- **Native AOT and trimming.** The generated code and the `Awaiten` library contain no reflection-based activation, which the repository verifies with a native AOT test project. The [MS.DI bridge](../07-hosting/01-msdi-bridge.md#native-aot) is reflection-free as well.
+- **Native AOT and trimming.** The generated code and the `Awaiten` library contain no reflection-based activation. The [MS.DI bridge](../07-hosting/01-msdi-bridge.md#native-aot) constructs no generic types at run time and supports native AOT as well.
 - **Every target framework.** The same file compiles for every framework Awaiten supports, .NET Framework 4.8 included, with the [language version](../01-getting-started.md#requirements) the requirements name.
 
 A [module](../05-registration/08-modules/index.md) in another assembly can generate code too: a public, `partial` module emits the factories and handles a container in that other assembly needs. See [Shipping modules from a library](../05-registration/08-modules/01-library-modules.md).

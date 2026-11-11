@@ -47,7 +47,7 @@ IFeed<DomainEvent> feed = shop.Resolve<IFeed<DomainEvent>>();   // the OrderPlac
 - When several registrations match, the nearest one wins: the one the services of all the others convert to. For `IHandler<OrderPlaced>`, a registration of `IHandler<DomainEvent>` is nearer than one of `IHandler<object>`. Registrations that are equally near keep declaration order.
 - Invariant interfaces never match a different closing.
 - Keyed registrations are never variance candidates, and a `[FromKey]` dependency never takes a variance match.
-- A direct dependency, a `Func<T>` and a `Func<TArg..., T>` take a variance match.
+- A direct dependency, a `Func<T>` and a `Func<TArg…, T>` take a variance match.
 - Every unkeyed collection shape takes variance matches too, including `IAsyncEnumerable<T>` and the awaited collections: the exact matches lead, and the variance matches follow.
 - The other relationships, `Lazy<T>`, `Task<T>`, `Owned<T>`, `Func<..., Owned<T>>` and the `Task` forms such as `Func<Task<T>>`, take only an exact registration. Over a closing that only a variance match provides, they are a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 - All of this holds for constructor parameters and [injected properties](./05-property-injection.md) alike.

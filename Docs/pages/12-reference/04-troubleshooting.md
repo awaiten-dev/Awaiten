@@ -12,12 +12,12 @@ Each entry names a symptom, its cause and the fix, and [frequently asked questio
 
 ### The generator does not run, or `Root` is not found
 
-**Symptom:** `CoffeeShop.Root` does not compile, for example with the error CS0426 (the type name `Root` does not exist in the type), and the project has no generated file for the container (see [See the generated code](../02-complete-example/01-generated-code.md#see-the-generated-code)).
+**Symptom:** `CoffeeShop.Root` does not compile, for example with the error CS0426 (the type name `Root` does not exist in the type), and the project has no generated file for the container ([See the generated code](../02-complete-example/01-generated-code.md#see-the-generated-code) shows where to look).
 
 **Causes and fixes:**
 
 - **The compiler is too old.** The generator needs the compiler of the .NET SDK the [requirements](../01-getting-started.md#requirements) name. An older compiler does not load it and warns instead, typically with CS9057. Install that SDK or a later one, and check `global.json` if the repository pins an older one.
-- **The IDE brings its own compiler.** Visual Studio and Rider compile with a compiler of their own. When `dotnet build` succeeds but the IDE shows the error, update the IDE to a version that ships the compiler of that SDK.
+- **The IDE compiler is older.** When `dotnet build` succeeds but the IDE shows the error, see [The IDE shows errors but `dotnet build` passes](#the-ide-shows-errors-but-dotnet-build-passes).
 - **The language version is too old.** Awaiten needs C# 11, or C# 9 or 10 when the project uses only the `typeof` forms of the attributes and no module of it declares a `[Scan]`. The examples in these docs use C# 12. Projects that target .NET Framework or netstandard2.0 default to C# 7.3. Awaiten then reports [AWT243](../09-diagnostics.md#awt243) and generates nothing. Set `<LangVersion>latest</LangVersion>` in the project file.
 - **The class is not `static partial`.** A container that is not `static` is [AWT116](../09-diagnostics.md#awt116). One that is not `partial` fails with the compiler error CS0260, because the generated file declares the other part of the class.
 
@@ -36,7 +36,13 @@ Each entry names a symptom, its cause and the fix, and [frequently asked questio
 
 **Cause:** Each type in the chain needs the next one to be constructed, so none of them can be built first. A constructor parameter, a factory or hook parameter and an `[Inject]` property all count as edges of the chain, also through several types in between.
 
-**Fix:** Pick the edge that is needed only later, not during construction, and defer it: take `Func<T>` instead of `T`, or mark the property `[Inject(Deferred = true)]`. Better, move the logic that both types share into a third type, so the two no longer need each other. See [AWT102](../09-diagnostics.md#awt102) and [Break a cycle with `Deferred`](../06-resolution/05-property-injection.md#break-a-cycle-with-deferred).
+**Fix:** One of these:
+
+- Pick the edge that is needed only later, not during construction, and take `Func<T>` instead of `T` there.
+- Make that edge an `[Inject(Deferred = true)]` property. This needs a singleton or scoped type in the cycle, because a cycle of transients only never terminates ([AWT145](../09-diagnostics.md#awt145)). See [Break a cycle with `Deferred`](../06-resolution/05-property-injection.md#break-a-cycle-with-deferred).
+- Better, move the logic that both types share into a third type, so the two no longer need each other.
+
+See [AWT102](../09-diagnostics.md#awt102).
 
 ### A captive dependency is reported
 
@@ -52,7 +58,7 @@ Each entry names a symptom, its cause and the fix, and [frequently asked questio
 
 **Symptom:** Every `Resolve`, `ResolveAsync`, `CreateScope` and `InitializeAsync` on the container throws an `InvalidOperationException` that points at the build diagnostics, and `TryResolve` returns `false`.
 
-**Cause:** The container has an error, such as a missing dependency, that was suppressed or lowered to a warning, so the build passed. A container with an error gets no wiring, only a placeholder `Root` that throws. The exception is an error that a module of the container's own assembly reports about one of its registrations: lowered, or disabled with `#pragma` where it is reported, it only leaves that registration out.
+**Cause:** The container has an error, such as a missing dependency, that was suppressed or lowered to a warning, so the build passed. A container with an error gets no wiring, only a placeholder `Root` that throws. One case is different: an error that a module of the container's own assembly reports about one of its registrations, lowered or disabled with `#pragma` where it is reported, only leaves that registration out.
 
 **Fix:** Look for the `AWT` error in the build output and fix its cause instead of suppressing it. See the introduction of [Diagnostics](../09-diagnostics.md) and [A container with errors](../02-complete-example/01-generated-code.md#a-container-with-errors).
 
@@ -85,7 +91,7 @@ Each entry names a symptom, its cause and the fix, and [frequently asked questio
 
 ### A synchronous Dispose throws
 
-**Symptom:** `Dispose()` on the root, a scope or an `Owned<T>` throws an `InvalidOperationException` about asynchronous disposal.
+**Symptom:** `Dispose()` on the root, a scope or an `Owned<T>` throws an `InvalidOperationException` about asynchronous disposal, or an `AggregateException` of several such exceptions when more than one service needs asynchronous disposal.
 
 **Cause:** The container owns a service that implements `IAsyncDisposable` but not `IDisposable`, or one with an asynchronous `OnRelease` hook. A synchronous dispose cannot await them, so it disposes everything else and then throws. Awaiten warns at build time ([AWT156](../09-diagnostics.md#awt156)).
 
@@ -106,7 +112,11 @@ Each entry names a symptom, its cause and the fix, and [frequently asked questio
 **Causes and fixes:**
 
 - **The host does not register it.** Awaiten cannot check the host's registrations at build time. Call `provider.VerifyAwaitenContainers()` at startup, which throws and names every missing external dependency. See [Verify external dependencies at startup](../07-hosting/01-msdi-bridge.md#verify-external-dependencies-at-startup).
-- **No external resolver is wired yet.** After a plain `AddAwaitenContainer<TRoot>()`, the root is wired to the host's provider on the first resolution through a projected registration or when `WithInitialization()` starts. Resolving from the root directly before that has no resolver to ask. Use `AwaitenServiceProviderFactory`, which wires the root when it builds the provider, construct the root with its resolver and pass it to `AddAwaitenContainer(root)`, or call `SetExternalResolver` yourself. A standalone container passes its resolver to the `Root` constructor. See [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver).
+- **No external resolver is wired yet.** After a plain `AddAwaitenContainer<TRoot>()`, the root is wired to the host's provider on the first resolution through a projected registration or when `WithInitialization()` starts. Resolving from the root directly before that has no resolver to ask. See [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver). Wire it earlier in one of these ways:
+  - Use `AwaitenServiceProviderFactory`, which wires the root when it builds the provider.
+  - Construct the root with its resolver and pass it to `AddAwaitenContainer(root)`.
+  - Call `SetExternalResolver` yourself, through `IAwaitenExternalResolverHost` or a variable typed `IAwaitenRoot`, since the root implements it explicitly.
+  - For a standalone container, pass the resolver to the `Root` constructor.
 
 ### A container in another assembly fails after a library update
 
@@ -142,7 +152,11 @@ No. The registrations are attributes that the generator reads at build time, and
 
 Yes. Declare as many `[Container]` classes as you need. Share registrations through a [module](../05-registration/08-modules/index.md) that each imports, or let one container [extend](../05-registration/09-extending-containers.md) another.
 
-Every `new MyContainer.Root()` is an independent container with its own singletons, so one root per tenant works: create it when the tenant is first served and dispose it when the tenant goes away. Hand each root the services of its tenant through the `Root(IExternalResolver)` constructor (see [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver)). A pre-built [`Instance`](../05-registration/01-factories-and-instances.md#instance) is a static member, so every root shares it.
+Every `new MyContainer.Root()` is an independent container with its own singletons, so one root per tenant works:
+
+- Create the root when the tenant is first served and dispose it when the tenant goes away.
+- Hand each root the services of its tenant through the `Root(IExternalResolver)` constructor (see [Providing the external resolver](../07-hosting/02-external-services.mdx#providing-the-external-resolver)).
+- A pre-built [`Instance`](../05-registration/01-factories-and-instances.md#instance) is a static member, so every root shares it.
 
 ### How do I use `ILogger<T>` and `IOptions<T>`?
 
@@ -166,7 +180,13 @@ Awaiten is not tested with hot reload. The wiring is C# that the generator write
 
 ### How do I publish with native AOT?
 
-Set `<PublishAot>true</PublishAot>` in the project of the app and publish for a runtime identifier, such as `dotnet publish -r linux-x64`. The generated container constructs with `new` and identifies types with `typeof`, and neither the `Awaiten` library nor the MS.DI bridge uses reflection to create services, so they need no trimming annotations or warning suppressions. Every CI build publishes a test app with native AOT that uses a container, a module of another assembly and the MS.DI bridge, with trim and AOT warnings treated as errors. Your own code and your other dependencies have to be AOT-compatible too. See [What this gives you](../02-complete-example/01-generated-code.md#what-this-gives-you) and [Native AOT](../07-hosting/01-msdi-bridge.md#native-aot).
+Set `<PublishAot>true</PublishAot>` in the project of the app and publish for a runtime identifier, such as `dotnet publish -r linux-x64`. Awaiten needs nothing else:
+
+- The generated container constructs with `new` and identifies types with `typeof`.
+- Neither the `Awaiten` library nor the MS.DI bridge uses reflection to create services, so they need no trimming annotations or warning suppressions.
+- Your own code and your other dependencies have to be AOT-compatible too.
+
+See [What this gives you](../02-complete-example/01-generated-code.md#what-this-gives-you) and [Native AOT](../07-hosting/01-msdi-bridge.md#native-aot).
 
 ### A diagnostic fires under `TreatWarningsAsErrors`. How do I keep it a warning?
 

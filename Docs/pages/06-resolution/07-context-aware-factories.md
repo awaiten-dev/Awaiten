@@ -23,7 +23,7 @@ public static partial class CoffeeShop
 }
 ```
 
-Now a `Barista` that needs an `ILogger` gets one tagged with `Barista`, and a `Register` gets one tagged with `Register`. Each consumer gets its own.
+Now a `Barista` that needs an `ILogger` gets one tagged with `Barista`. Every other consumer of `ILogger` gets its own, tagged with its type.
 
 ## A direct resolve passes null
 

@@ -21,7 +21,7 @@ A service that needs asynchronous setup before use: an async initializer convent
 
 ### Async-tainted
 
-A service that is async-initialized or depends on one through a dependency that is not deferred, such as a plain constructor parameter. Under strict async safety it is reachable only asynchronously. A deferred shape such as `Task<T>` or `Func<Task<T>>` keeps the consumer synchronous. See [Deferred shapes launder the taint](../04-core-concepts/03-async-initialization.md#keep-a-consumer-synchronous-by-deferring-the-async-work).
+A service that is async-initialized or depends on one through a dependency that is not deferred, such as a plain constructor parameter. Under strict async safety it is reachable only asynchronously. A deferred shape such as `Task<T>` or `Func<Task<T>>` keeps the consumer synchronous. See [Keep a consumer synchronous by deferring the async work](../04-core-concepts/03-async-initialization.md#keep-a-consumer-synchronous-by-deferring-the-async-work).
 
 ### Async safety
 
@@ -65,7 +65,7 @@ An implementation that wraps a service: it takes the service as a constructor pa
 
 ### Dispatch dictionary
 
-A keyed dictionary keyed by `Type`, such as `IReadOnlyDictionary<Type, Func<IOrderHandler>>`, that maps the type argument of each closing of a generic handler to a factory for that closing, for dispatch on a type only known at run time. See [Dispatch by runtime type](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type).
+A dictionary keyed by `Type`, such as `IReadOnlyDictionary<Type, Func<IOrderHandler>>`, that maps the type argument of each closing of a generic handler to a factory for that closing, for dispatch on a type only known at run time. See [Dispatch by runtime type](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type).
 
 ### Eager singleton
 
@@ -129,7 +129,7 @@ A disposal handle: the service is built in a throwaway scope that disposing the 
 
 ### Projection
 
-What the MS.DI bridge does with `AddAwaitenContainer`: it adds a service descriptor for each registration of the container to the `IServiceCollection`, so the host resolves Awaiten services side by side with its own. See [Project into a service collection](../07-hosting/01-msdi-bridge.md#project-into-a-service-collection).
+What the MS.DI bridge does with `AddAwaitenContainer`: it adds a service descriptor to the `IServiceCollection` for each service type and key of the container, the registration that wins single resolution, so the host resolves Awaiten services side by side with its own. Collections are not projected. See [Project into a service collection](../07-hosting/01-msdi-bridge.md#project-into-a-service-collection).
 
 ### Registration
 

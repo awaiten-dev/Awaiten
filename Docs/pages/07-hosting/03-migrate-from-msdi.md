@@ -31,7 +31,7 @@ In MS.DI you call methods on a service collection at startup, and the provider w
 | `services.AddTransient<Cup>()` | `[Transient<Cup>]` |
 | `services.AddSingleton<IBrewer>(sp => ...)` | `[Singleton<IBrewer>(Factory = nameof(MakeBrewer))]` with a static method on the container. Its parameters resolve from the graph, so there is no `sp.GetRequiredService` inside it. See [Factories and instances](../05-registration/01-factories-and-instances.md). |
 | `services.AddSingleton(menuBoard)` | `[Singleton<MenuBoard>(Instance = nameof(Menu))]` with a static field or property. As in MS.DI, the container never disposes it. |
-| `services.TryAddSingleton<ITimeSystem, RealTimeSystem>()` | `[Singleton<RealTimeSystem, ITimeSystem>(Fallback = Fallback.Silent)]`, typically in a module: an explicit registration of the service without `Fallback` replaces it, while a scan match or an open-generic closing does not. Unlike `TryAdd`, a second default of the same service is kept too and joins its collections, and every default that is kept is built and validated like any registration: a missing or captive dependency of a default that never wins single resolution is still a compile-time error, and an eager one is still built at startup. See [overridable defaults](../05-registration/08-modules/index.md#overridable-defaults). |
+| `services.TryAddSingleton<ITimeSystem, RealTimeSystem>()` | `[Singleton<RealTimeSystem, ITimeSystem>(Fallback = Fallback.Silent)]`, typically in a module. It differs from `TryAdd` as listed [below the table](#overridable-defaults-and-tryadd). |
 | An `AddPayments()` extension method on `IServiceCollection` | A static class marked `[Module]`, pulled in with `[Import(typeof(PaymentModule))]`. See [Modules](../05-registration/08-modules/index.md). |
 | Several `AddSingleton<ISyrup, ...>()` calls and an `IEnumerable<ISyrup>` parameter | Several `[Singleton<..., ISyrup>]` registrations and the same `IEnumerable<ISyrup>` parameter; arrays, `IReadOnlyList<T>` and the other [collection shapes](../06-resolution/03-collections.md) work too. A single `ISyrup` resolves to the *first* registration, not the last. When the bridge projects the container, a consumer that stays in MS.DI sees only that one: its `IEnumerable<ISyrup>` holds the first registration, plus any `ISyrup` the host registers itself. See [What the bridge does not project](./01-msdi-bridge.md#what-the-bridge-does-not-project). |
 | `services.AddKeyedSingleton<IMilk, OatMilk>("Oat")` | `[Singleton<OatMilk, IMilk>(Key = "Oat")]` |
@@ -47,6 +47,15 @@ In MS.DI you call methods on a service collection at startup, and the provider w
 | `IDisposable` and `IAsyncDisposable` services | Disposed by the scope or root that built them, in reverse creation order. A service that is only `IAsyncDisposable` needs `await using`, as in MS.DI ([AWT156](../09-diagnostics.md#awt156)). See [Disposal](../04-core-concepts/05-disposal.md). |
 | `services.Configure<Settings>(...)` and `IOptions<Settings>` | Configuration stays in MS.DI. The container consumes it with `[ImportService(typeof(IOptions<>))]`. See [External services](./02-external-services.mdx). |
 | `services.AddHostedService<Roaster>()` | Stays in MS.DI. The hosted service's constructor can take services the bridge projects from the container. |
+
+### Overridable defaults and `TryAdd`
+
+An [overridable default](../05-registration/08-modules/index.md#overridable-defaults) differs from `TryAdd`:
+
+- An explicit registration of the service without `Fallback` replaces it, while a scan match or an open-generic closing does not.
+- A second default of the same service is kept too and joins its collections.
+- Every default that is kept is built and validated like any registration: a missing or captive dependency of a default that never wins single resolution is still a compile-time error.
+- An eager default that is kept is still built at startup.
 
 ## Migrate a coffee shop
 

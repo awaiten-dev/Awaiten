@@ -214,6 +214,7 @@ A missing registration, a dependency cycle and a singleton that captures a scope
 
 - [Complete example](./02-complete-example/index.md) for a full container that uses the main features together.
 - [Lifetimes](./04-core-concepts/01-lifetimes.md) and the other core concepts, for singleton, scoped and transient in depth.
+- [Async initialization](./04-core-concepts/03-async-initialization.md) for services that need async setup before they work.
 - [MS.DI bridge](./07-hosting/01-msdi-bridge.md) to run a container under ASP.NET Core and the generic host.
 - [Migrating from MS.DI](./07-hosting/03-migrate-from-msdi.md) to map your `IServiceCollection` registrations to Awaiten.
 - [Reference](./12-reference/index.md) to look up an attribute, a runtime method, a term or a fix.

@@ -25,13 +25,13 @@ Marks a `static partial` class as a container. The generator adds the nested `Ro
 |---|---|---|---|---|
 | `AsyncSafety` | [`AsyncSafety`](#asyncsafety) | `Strict` | Whether an async-initialized service is reachable only asynchronously, or also synchronously after warm-up. | [Async initialization](../04-core-concepts/03-async-initialization.md#relax-the-rule-when-you-need-to) |
 | `LifetimeSafety` | [`LifetimeSafety`](#lifetimesafety) | `Strict` | Whether the root withholds disposable transients and a root-owned `Func` over one is an error. | [Lifetime safety](../04-core-concepts/04-lifetime-safety.md) |
-| `Extends` | `Type?` | `null` | Another container whose whole composition this one starts from. The base's options apply, so a container that sets `Extends` does not set `AsyncSafety` or `LifetimeSafety` itself. | [Extending containers](../05-registration/09-extending-containers.md) |
+| `Extends` | `Type?` | `null` | Another container whose whole composition this one starts from. The base's options apply, so a container that sets `Extends` does not set `AsyncSafety` or `LifetimeSafety` itself. The base must not extend another container ([AWT224](../09-diagnostics.md#awt224)). | [Extending containers](../05-registration/09-extending-containers.md) |
 
 Goes on a class once. The class must be `static` ([AWT116](../09-diagnostics.md#awt116)).
 
 ### Module
 
-Marks a `static` class as a reusable set of registrations that a container pulls in with `[Import]`. A module carries the same registration attributes as a container. It has no properties. See [Modules](../05-registration/08-modules/index.md#declare-a-module).
+Marks a `static` class as a reusable set of registrations that a container pulls in with `[Import]`. A module carries the same registration attributes as a container. It has no properties. The class must be `static` ([AWT152](../09-diagnostics.md#awt152)). See [Modules](../05-registration/08-modules/index.md#declare-a-module).
 
 ```csharp no-compile
 [Module]

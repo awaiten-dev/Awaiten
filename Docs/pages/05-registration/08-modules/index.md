@@ -17,7 +17,7 @@ The container is the one place that composes modules. A [test container](../09-e
 
 ## Declare a module
 
-A module is a `static partial` class marked `[Module]`. It carries the same registration attributes a container does.
+A module is a `static` class marked `[Module]`. It carries the same registration attributes a container does.
 
 ```csharp
 [Module]
@@ -26,7 +26,7 @@ A module is a `static partial` class marked `[Module]`. It carries the same regi
 public static partial class PaymentModule;
 ```
 
-Declare every module `public static partial`. The generator adds factories, wrappers and handles to a module whenever a container in another assembly can't reach what the module registers: an internal implementation or constructor, a non-public `Factory`, `Instance` or hook member, an `[Inject]` property that assembly can't set, a service registered under an internal type, or any `[Scan]` of the module. Without `partial` it can't add them, and the library's build ([AWT194](../../09-diagnostics.md#awt194)) or the importing container reports it. Declaring it from the start keeps a later `internal` from breaking a consumer (see [shipping modules from a library](./01-library-modules.md)).
+Declare every module `public static partial`, even though only `static` is required: a module that a container in another assembly imports needs `partial` as soon as it registers something that assembly can't reach ([AWT194](../../09-diagnostics.md#awt194)), and declaring it from the start keeps a later `internal` from breaking a consumer (see [shipping modules from a library](./01-library-modules.md)).
 
 ## Import it
 
@@ -142,6 +142,5 @@ A module's own `[Scan]`, by contrast, does reach the importing container. A cont
 ## Where to go next
 
 - [Shipping modules from a library](./01-library-modules.md) to keep a library's implementations `internal` and still let any container import its module.
-- [Scanning](../07-scanning.md) to register by convention instead of by hand.
 - [Extending containers](../09-extending-containers.md) to reuse a whole container in tests and replace any inherited registration, not only a `Fallback` default.
 - [Complete example](../../02-complete-example/index.md) to see modules in a full container.

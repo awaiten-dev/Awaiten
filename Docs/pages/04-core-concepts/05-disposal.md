@@ -8,7 +8,7 @@ Awaiten disposes what it creates. When a scope or the container closes, it tears
 
 ## Dispose the container
 
-Disposing the `Root` disposes its singletons, in reverse creation order. Use `await using`, so async-disposable instances are torn down too (see [Async disposal](#async-disposal)).
+Disposing the `Root` disposes everything it owns, in reverse creation order: its singletons, the scoped services resolved on it and the transients it built. Use `await using`, so async-disposable instances are torn down too (see [Async disposal](#async-disposal)).
 
 ```csharp
 await using (CoffeeShop.Root shop = new())
@@ -56,7 +56,7 @@ public static partial class CoffeeShop
 
 `SuppressDisposal` applies to a service the container constructs, by constructor or `Factory`. Setting it on a pre-built `Instance`, which the container never owns or disposes anyway, is a build error ([AWT192](../09-diagnostics.md#awt192)).
 
-An `OnRelease` hook counts like disposal for [lifetime safety](./04-lifetime-safety.md#strict-is-the-default), so a release-hooked transient like `Cup` above is withheld from by-type resolution on the container root; rent it through [`Owned<T>`](./06-owned.md) or from a child scope.
+A release-hooked transient like `Cup` above is withheld on the container root, as [lifetime safety](./04-lifetime-safety.md#strict-is-the-default) describes.
 
 Projected into Microsoft.Extensions.DependencyInjection, a disposable `SuppressDisposal` service would be disposed by MS.DI anyway, so the [bridge](../07-hosting/01-msdi-bridge.md#disposal) rejects it at startup ([AWT214](../09-diagnostics.md#awt214)).
 
@@ -79,7 +79,8 @@ A synchronous `Dispose` cannot await anything. When the owner holds a service th
 - disposes every other instance and runs every other release hook as usual,
 - leaves the async-only instance undisposed and skips the asynchronous hook,
 - then throws an `InvalidOperationException` that names the service, and the hook unless it runs through a generated wrapper. It cannot name a service whose factory returns a type that hides the async-only disposable.
-- Several such services are reported in one `AggregateException`, one inner exception each.
+
+Several such services are reported in one `AggregateException`, one inner exception each.
 
 Awaiten warns about both cases at compile time ([AWT156](../09-diagnostics.md#awt156)). Use `await using` or `DisposeAsync`.
 

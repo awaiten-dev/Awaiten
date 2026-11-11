@@ -60,10 +60,12 @@ To keep a factory-built service but opt out of that disposal, set `SuppressDispo
 
 ## Rules
 
-- A `Factory` cannot name an overloaded method ([AWT112](../09-diagnostics.md#awt112)).
+- A `Factory` must name an accessible method that returns the registered service ([AWT108](../09-diagnostics.md#awt108)), and only one such method of that name may exist ([AWT112](../09-diagnostics.md#awt112)).
+- An `Instance` must name an accessible field or property of the registered service type ([AWT109](../09-diagnostics.md#awt109)).
 - A `Factory` cannot name a generic method, whose type parameters only the closings of an [open generic](./06-open-generics.md#generic-factories) registration supply ([AWT108](../09-diagnostics.md#awt108)).
 - A registration cannot set both `Factory` and `Instance` ([AWT110](../09-diagnostics.md#awt110)).
 - Registrations of one implementation must produce it the same way ([AWT111](../09-diagnostics.md#awt111)) and agree on its lifetime and lifecycle directives ([AWT107](../09-diagnostics.md#awt107), [AWT166](../09-diagnostics.md#awt166)).
+- A synchronous factory that returns an async-initialized type behind a plainer return type hides its initialization, which then never runs ([AWT106](../09-diagnostics.md#awt106)). Return the concrete type, or make the factory `async`.
 
 ## Where to go next
 

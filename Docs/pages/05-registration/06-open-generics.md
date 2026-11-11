@@ -159,10 +159,14 @@ public static partial class CoffeeShop;
 
 ## Rules
 
+- When one of the two `typeof` types is an unbound generic such as `typeof(Repository<>)`, both must be ([AWT127](../09-diagnostics.md#awt127)).
+- A `typeof` argument of `[ImportService]` or `[InjectProperty]` is a closed type or an unbound generic definition, not a type nested in an unbound generic such as `typeof(Recipe<>.Step)` ([AWT215](../09-diagnostics.md#awt215)).
 - The implementation and the service have the same arity ([AWT125](../09-diagnostics.md#awt125)).
+- The implementation exposes the service with its type parameters in declaration order, as `Repository<T> : IRepository<T>` does ([AWT128](../09-diagnostics.md#awt128)).
 - A closing the graph asks for satisfies the constraints of at least one registration ([AWT126](../09-diagnostics.md#awt126)).
 - `Instance` and `Eager` need a closed type ([AWT207](../09-diagnostics.md#awt207)).
-- A closed `typeof` registration names a class that implements the service ([AWT206](../09-diagnostics.md#awt206)).
+- A closed `typeof` registration names a class or interface assignable to the service ([AWT206](../09-diagnostics.md#awt206)).
+- Expansion stops at a nesting limit, so registrations that recurse into ever larger closings, such as a `Node<T>` that depends on `Node<List<T>>`, are an error ([AWT129](../09-diagnostics.md#awt129)).
 - A generic factory has exactly the service's type parameters ([AWT208](../09-diagnostics.md#awt208)), and a closing that violates its constraints is an error when nothing else builds it ([AWT209](../09-diagnostics.md#awt209)).
 
 ## Where to go next
