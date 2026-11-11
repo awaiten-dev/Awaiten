@@ -138,6 +138,93 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).IsEmpty()
 				.Because("an [Inject] property is an unkeyed direct dependency, so it consumes the contextual binding");
 		}
+
+		[Test]
+		public async Task ReportsForAnExtendingContainersBindingOfAnImplementationTheBasesModuleOfAnotherAssemblyBuildsThroughItsFactory()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       public interface IKettle { }
+			                       public sealed class Kettle : IKettle { internal Kettle() { } }
+
+			                       [Module]
+			                       [Singleton<Kettle, IKettle>]
+			                       public static partial class KettleModule { }
+			                       """;
+			const string consumer = """
+			                        using Awaiten;
+			                        using Lib;
+
+			                        namespace MyCode;
+
+			                        public sealed class Unused { }
+
+			                        [Container]
+			                        [Import(typeof(KettleModule))]
+			                        public static partial class BaseContainer;
+
+			                        [Container(Extends = typeof(BaseContainer))]
+			                        [Singleton<Kettle, IKettle>(WhenInjectedInto = typeof(Unused))]
+			                        [Singleton<Unused>]
+			                        public static partial class MyContainer;
+			                        """;
+
+			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(same.Diagnostics).HasSingle().Which.Contains("AWT167");
+			await That(external.Diagnostics).HasSingle().Which.Contains("AWT167")
+				.Because("the extending container declares the binding that calls the inherited module's generated factory, so it reports the binding it never applies");
+		}
+
+		[Test]
+		public async Task ReportsForAnExtendingContainersBindingOfAnImplementationTheBasesModuleOfAnotherAssemblyBuildsThroughAHandle()
+		{
+			const string library = """
+			                       using Awaiten;
+
+			                       namespace Lib;
+
+			                       internal interface IHiddenKettle { }
+			                       public interface IKettle { }
+			                       public sealed class Kettle : IHiddenKettle, IKettle { }
+
+			                       [Module]
+			                       [Singleton<Kettle, IHiddenKettle>]
+			                       public static partial class KettleModule { }
+			                       """;
+			const string consumer = """
+			                        using Awaiten;
+			                        using Lib;
+
+			                        namespace MyCode;
+
+			                        public sealed class Unused { }
+			                        public sealed class OtherKettle : IKettle { }
+
+			                        [Container]
+			                        [Import(typeof(KettleModule))]
+			                        [Singleton<OtherKettle, IKettle>]
+			                        public static partial class BaseContainer;
+
+			                        [Container(Extends = typeof(BaseContainer))]
+			                        [Singleton<Kettle, IKettle>(WhenInjectedInto = typeof(Unused))]
+			                        [Singleton<Unused>]
+			                        public static partial class MyContainer;
+			                        """;
+
+			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
+
+			await That(same.Diagnostics).HasSingle().Which.Contains("AWT167");
+			await That(external.Diagnostics).HasSingle().Which.Contains("AWT167")
+				.Because("the extending container declares the binding that serves the instance of the inherited module's handle, so it reports the binding it never applies");
+			await That(external.Sources.Single(source => source.Key.Contains("MyContainer")).Value).Contains("global::Lib.KettleModule.Internals.Alias_Kettle_")
+				.Because("the binding is served through the alias of the module's handle");
+		}
 	}
 
 	public class Awt168ContextualBindingWithKey
@@ -253,93 +340,6 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("each consumer has its own contextual slot, so there is no collision");
-		}
-
-		[Test]
-		public async Task ReportsForAnExtendingContainersBindingOfAnImplementationTheBasesModuleOfAnotherAssemblyBuildsThroughItsFactory()
-		{
-			const string library = """
-			                       using Awaiten;
-
-			                       namespace Lib;
-
-			                       public interface IKettle { }
-			                       public sealed class Kettle : IKettle { internal Kettle() { } }
-
-			                       [Module]
-			                       [Singleton<Kettle, IKettle>]
-			                       public static partial class KettleModule { }
-			                       """;
-			const string consumer = """
-			                        using Awaiten;
-			                        using Lib;
-
-			                        namespace MyCode;
-
-			                        public sealed class Unused { }
-
-			                        [Container]
-			                        [Import(typeof(KettleModule))]
-			                        public static partial class BaseContainer;
-
-			                        [Container(Extends = typeof(BaseContainer))]
-			                        [Singleton<Kettle, IKettle>(WhenInjectedInto = typeof(Unused))]
-			                        [Singleton<Unused>]
-			                        public static partial class MyContainer;
-			                        """;
-
-			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
-			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
-
-			await That(same.Diagnostics).HasSingle().Which.Contains("AWT167");
-			await That(external.Diagnostics).HasSingle().Which.Contains("AWT167")
-				.Because("the extending container declares the binding that calls the inherited module's generated factory, so it reports the binding it never applies");
-		}
-
-		[Test]
-		public async Task ReportsForAnExtendingContainersBindingOfAnImplementationTheBasesModuleOfAnotherAssemblyBuildsThroughAHandle()
-		{
-			const string library = """
-			                       using Awaiten;
-
-			                       namespace Lib;
-
-			                       internal interface IHiddenKettle { }
-			                       public interface IKettle { }
-			                       public sealed class Kettle : IHiddenKettle, IKettle { }
-
-			                       [Module]
-			                       [Singleton<Kettle, IHiddenKettle>]
-			                       public static partial class KettleModule { }
-			                       """;
-			const string consumer = """
-			                        using Awaiten;
-			                        using Lib;
-
-			                        namespace MyCode;
-
-			                        public sealed class Unused { }
-			                        public sealed class OtherKettle : IKettle { }
-
-			                        [Container]
-			                        [Import(typeof(KettleModule))]
-			                        [Singleton<OtherKettle, IKettle>]
-			                        public static partial class BaseContainer;
-
-			                        [Container(Extends = typeof(BaseContainer))]
-			                        [Singleton<Kettle, IKettle>(WhenInjectedInto = typeof(Unused))]
-			                        [Singleton<Unused>]
-			                        public static partial class MyContainer;
-			                        """;
-
-			GeneratorResult same = Generator.Run(library + "\n" + consumer.Replace("using Awaiten;", string.Empty).Replace("using Lib;", string.Empty).Replace("namespace MyCode;", string.Empty));
-			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, consumer);
-
-			await That(same.Diagnostics).HasSingle().Which.Contains("AWT167");
-			await That(external.Diagnostics).HasSingle().Which.Contains("AWT167")
-				.Because("the extending container declares the binding that serves the instance of the inherited module's handle, so it reports the binding it never applies");
-			await That(external.Sources.Single(source => source.Key.Contains("MyContainer")).Value).Contains("global::Lib.KettleModule.Internals.Alias_Kettle_")
-				.Because("the binding is served through the alias of the module's handle");
 		}
 	}
 }

@@ -63,7 +63,7 @@ public class ModuleFactorySharingTests
 				.Because("the hooked registration calls the module's generated factory, so both coalesce into one singleton");
 			await That(greeter.ClockAssignments).IsEqualTo(1);
 			await That(greeter.Steps).IsEqualTo(["activate", "convention",])
-				.Because("the container's activation hook runs once, before the module's async initializer convention");
+				.Because("the container's activation hook runs once, before the container's async initializer convention");
 		}
 
 		await That(greeter.Steps).IsEqualTo(["activate", "convention", "release", "dispose",])
@@ -99,7 +99,110 @@ public class ModuleFactorySharingTests
 		await That(container.Resolve<IFactorySharingGreeter>().GetType()).IsEqualTo(typeof(FactorySharingGreeter));
 		await That(((FactorySharingGreeter)container.Resolve<IFactorySharingGreeter>()).ClockAssignments).IsEqualTo(1);
 	}
+
+	[Test]
+	public async Task ARegistrationOfAModuleOfThisAssembly_IsOneInstanceWithTheModulesRegistration()
+	{
+		using KettleBesideLocalModuleContainer.Root container = new();
+
+		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>())
+			.Because("the local module's registration calls the generated factory of the kettle's module, so both coalesce into one singleton");
+	}
+
+	[Test]
+	public async Task ARegistrationOfAModuleOfAThirdLibrary_IsOneInstanceWithTheModulesRegistration()
+	{
+		using KettleOfAThirdLibraryContainer.Root container = new();
+
+		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>())
+			.Because("the third library cannot construct the kettle, so its registration calls the generated factory of the kettle's module");
+		await That(container.Resolve<InternalConstructorRepository<long>>()).IsSameAs(container.Resolve<InternalConstructorRepository<long>>())
+			.Because("the third library's closed registration calls the generic factory of the repository's module");
+	}
+
+	[Test]
+	public async Task AClosedRegistrationOfAClosingOfTheModulesOpenRegistration_IsOneInstance()
+	{
+		using RepositoryBesideModuleContainer.Root container = new();
+
+		RepositoryConsumer consumer = container.Resolve<RepositoryConsumer>();
+
+		await That(consumer.Beans).IsSameAs(container.Resolve<InternalConstructorRepository<int>>())
+			.Because("the closed registration calls the module's generic factory, so it and the closing are one singleton");
+		await That(consumer.Orders).IsSameAs(container.Resolve<InternalConstructorRepository<string>>())
+			.Because("a closing only the open registration serves is built through the module's generic factory too");
+	}
+
+	[Test]
+	public async Task AContainerRegistrationThatComesFirst_RunsOnlyTheContainersConventions()
+	{
+		await using BrewerBesideModuleContainer.Root container = new();
+
+		InternalConstructorBrewer brewer = await container.ResolveAsync<InternalConstructorBrewer>();
+
+		await That(brewer.Steps).IsEqualTo(["container",])
+			.Because("the container's registration comes first, so its conventions initialize the instance the module's factory builds, as in the module's own assembly");
+	}
+
+	[Test]
+	public async Task AnExtendingContainerOfABaseInTheModulesAssembly_SharesTheInheritedKettle()
+	{
+		using ExtendingInternalConstructorBaseContainer.Root container = new();
+
+		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>())
+			.Because("the inherited registration calls the module's generated factory instead of the constructor it cannot reach");
+	}
+
+	[Test]
+	public async Task AnExtendingContainerOfABaseInAThirdAssembly_SharesTheInheritedKettle()
+	{
+		using ExtendingThirdLibraryKettleBaseContainer.Root container = new();
+
+		await That(container.Resolve<InternalConstructorKettle>()).IsSameAs(container.Resolve<IInternalConstructorKettle>());
+		await That(container.Resolve<InternalConstructorRepository<long>>()).IsSameAs(container.Resolve<InternalConstructorRepository<long>>())
+			.Because("the inherited closed registration calls the module's generic factory instead of the constructor it cannot reach");
+	}
 }
+
+/// <summary>A consumer of the closing <see cref="RepositoryBesideModuleContainer" /> registers closed and of one it does not.</summary>
+public sealed class RepositoryConsumer(InternalConstructorRepository<int> beans, InternalConstructorRepository<string> orders)
+{
+	public InternalConstructorRepository<int> Beans { get; } = beans;
+
+	public InternalConstructorRepository<string> Orders { get; } = orders;
+}
+
+[Module]
+[Singleton<InternalConstructorKettle>]
+public static partial class LocalKettleModule;
+
+[Container]
+[Import(typeof(CrossAssemblyInternalConstructorModule))]
+[Import(typeof(LocalKettleModule))]
+public static partial class KettleBesideLocalModuleContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyThirdLibraryKettleModule))]
+[Import(typeof(CrossAssemblyInternalConstructorModule))]
+public static partial class KettleOfAThirdLibraryContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyInternalConstructorModule))]
+[Singleton<InternalConstructorRepository<int>>]
+[Singleton<RepositoryConsumer>]
+public static partial class RepositoryBesideModuleContainer;
+
+[Container]
+[AsyncInitializer<IContainerWarmable>(nameof(IContainerWarmable.ContainerWarmAsync))]
+[Import(typeof(CrossAssemblyInternalConstructorModule))]
+[Singleton<InternalConstructorBrewer>]
+public static partial class BrewerBesideModuleContainer;
+
+[Container(Extends = typeof(CrossAssemblyInternalConstructorBaseContainer))]
+public static partial class ExtendingInternalConstructorBaseContainer;
+
+[Container(Extends = typeof(CrossAssemblyThirdLibraryKettleBaseContainer))]
+public static partial class ExtendingThirdLibraryKettleBaseContainer;
 
 /// <summary>The local counterpart of <see cref="FactorySharingGreeter" />, registered by a module of this assembly.</summary>
 public sealed class LocalFactorySharingGreeter : IFactorySharingGreeter
@@ -133,6 +236,7 @@ public static partial class LocalFactorySharingModule;
 public static partial class GreeterBesideModuleContainer;
 
 [Container]
+[AsyncInitializer<ISelfCompiledStartable>(nameof(ISelfCompiledStartable.StartAsync))]
 [Import(typeof(CrossAssemblyHookedFactorySharingModule))]
 [Singleton<HookedFactorySharingGreeter>(OnActivated = nameof(Activate), OnRelease = nameof(Release))]
 public static partial class HookedGreeterBesideModuleContainer

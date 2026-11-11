@@ -1650,7 +1650,7 @@ partial class AwaitenGenerator
 		    || !TryMirrorInjectedProperties(implementation, context with { Diagnostics = rejections, }, first.Location, subject, ref parameters, out members)
 		    || rejections.Count > 0)
 		{
-			if (UnbuildableNeedsOnly(implementation, rejections, context) is { } unbuildable)
+			if ((UnbuildableNeedsOnly(implementation, rejections, context) ?? ConstructorOfItsOwnAssembly(implementation, rejections, context.Compilation)) is { } unbuildable)
 			{
 				skipped.Add(new SkippedRegistration(RegistrationSkippedName(implementation), unbuildable));
 				return null;
@@ -2015,6 +2015,23 @@ partial class AwaitenGenerator
 		rejections.RemoveAll(hidden.UnbuildableNeeds.ContainsKey);
 		return rejections.Count == 0 ? hidden.UnbuildableNeeds[need] : null;
 	}
+
+	/// <summary>
+	///     The reason a consumer reports (AWT231) when <paramref name="rejections" /> hold only the AWT104 of an
+	///     implementation of another assembly that a module of that assembly builds through its generated factory, or
+	///     <see langword="null" />. The module reports nothing: a container that imports it beside that module builds the
+	///     implementation through the module's factory, as a container there constructs it, and any other container
+	///     reports it. Without such a factory no container can build it, so the module reports the AWT104 itself. Metadata
+	///     does not show this compilation the internal constructors of another assembly, so the reason names no accessibility.
+	/// </summary>
+	private static string? ConstructorOfItsOwnAssembly(INamedTypeSymbol implementation, List<DiagnosticInfo> rejections, Compilation compilation)
+		=> rejections.Count == 1
+		   && rejections[0].Descriptor == Diagnostics.NoAccessibleConstructor
+		   && !SymbolEqualityComparer.Default.Equals(implementation.ContainingAssembly, compilation.Assembly)
+		   && EnumerateTypes(implementation.ContainingAssembly.GlobalNamespace)
+			   .Any(type => HasAwaitenAttribute(type.GetAttributes(), "ModuleAttribute") && GeneratedFactoryOrOpen(type, implementation, compilation) is not null)
+			? $"no constructor of it is accessible outside '{implementation.ContainingAssembly.Name}'"
+			: null;
 
 	private static void ReportRegistrationExposures(SelfCompiledSubject subject, string exposures, string remedy, Location? location, List<DiagnosticInfo> diagnostics)
 		=> diagnostics.Add(new DiagnosticInfo(

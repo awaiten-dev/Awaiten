@@ -292,7 +292,9 @@ partial class AwaitenGenerator
 		public INamedTypeSymbol? Origin { get; init; }
 
 		/// <summary>
-		///     The module or base container that declares a decorator or composite, or <see langword="null" />. Its
+		///     The module or base container that declares a decorator or composite, the container, module or base that
+		///     declares a registration built through another owner's generated member (<c>Declarer</c>), or
+		///     <see langword="null" />. Its
 		///     <c>[AsyncInitializer&lt;T&gt;]</c> conventions judge the instance (see <see cref="ConventionScope" />).
 		/// </summary>
 		public INamedTypeSymbol? DeclaredBy { get; init; }

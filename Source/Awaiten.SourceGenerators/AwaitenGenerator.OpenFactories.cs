@@ -63,13 +63,14 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The open definition (<c>Repository&lt;T&gt;</c>) and the service constructed with its type parameters
-	///     (<c>IRepository&lt;T&gt;</c>) of a well-formed open <c>typeof</c> pair, or <see langword="null" />.
+	///     (<c>IRepository&lt;T&gt;</c>) of a well-formed open <c>typeof</c> pair, or <see langword="null" />. A lifetime
+	///     attribute that names only the definition registers it as itself.
 	/// </summary>
 	private static (INamedTypeSymbol Definition, INamedTypeSymbol Service)? OpenContributionPair(AttributeData attribute)
 	{
-		if (attribute.ConstructorArguments.Length != 2
-		    || attribute.ConstructorArguments[0].Value is not INamedTypeSymbol { IsUnboundGenericType: true, } mapped
-		    || attribute.ConstructorArguments[1].Value is not INamedTypeSymbol { IsUnboundGenericType: true, } service
+		if (!TryReadTypeofPair(attribute, out INamedTypeSymbol mapped, out INamedTypeSymbol service)
+		    || !mapped.IsUnboundGenericType
+		    || !service.IsUnboundGenericType
 		    || TryReadOpenGenericPair(mapped, service, null, new List<DiagnosticInfo>()) is not { } pair)
 		{
 			return null;
