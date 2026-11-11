@@ -516,7 +516,7 @@ internal static class Diagnostics
 	/// <summary>
 	///     An open generic registration's implementation and service have different arity, so no closed
 	///     service can be mapped onto the implementation's type parameters (e.g. <c>Repository&lt;,&gt;</c>
-	///     declared for <c>IRepository&lt;&gt;</c>). v1 matches the open form exactly, so the arities must be equal.
+	///     declared for <c>IRepository&lt;&gt;</c>). The match is on the open form exactly, so the arities must be equal.
 	/// </summary>
 	public static readonly DiagnosticDescriptor OpenGenericArityMismatch = new(
 		"AWT125",
@@ -1778,7 +1778,7 @@ internal static class Diagnostics
 	///     module's assembly. The generated factory is a
 	///     <c>public</c> method that resolves that parameter from the consuming container's graph, so the parameter
 	///     type has to be nameable by the consumer. Widen the parameter type's accessibility, or keep the type out of
-	///     self-compilation. In v1 a self-compiled factory cannot construct through an inaccessible parameter.
+	///     self-compilation. A self-compiled factory cannot construct through an inaccessible parameter.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ModuleScanParameterInaccessible = new(
 		"AWT195",

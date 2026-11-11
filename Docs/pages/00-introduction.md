@@ -18,7 +18,7 @@ The generator checks the whole graph while you build and reports each mistake wi
 - an async-initialized service reached through a synchronous path,
 - a `Func` on the container root that builds disposable services, whose instances would pile up there for the root's lifetime.
 
-The examples on this page assume the usings and coffee-shop types that the note at the top of [Getting started](./01-getting-started.md) describes.
+The examples on this page assume `using Awaiten;` and coffee-shop types such as `IPaymentTerminal` and `CardTerminal` declared elsewhere.
 
 Forget to register the payment terminal the barista needs, and the build stops instead of the first order:
 

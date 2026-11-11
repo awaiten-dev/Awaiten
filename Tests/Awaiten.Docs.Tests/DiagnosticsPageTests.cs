@@ -13,6 +13,8 @@ public sealed class DiagnosticsPageTests
 {
 	private static readonly string[] Lines = File.ReadAllLines(GetPagePath());
 	private static readonly Regex DiagnosticId = new(@"AWT\d+");
+	private static readonly Regex InlineCode = new("`[^`]*`");
+	private static readonly Regex SentenceBreak = new(@"(?<!\be\.g|\bi\.e)[.!?] +[A-Z\[]");
 
 	/// <summary>
 	///     The descriptors of <c>Awaiten.SourceGenerators.Diagnostics</c>, read by reflection because the class is internal.
@@ -51,6 +53,10 @@ public sealed class DiagnosticsPageTests
 		await That(admonition).IsNotNull().Because($"the section of {id} starts with its severity admonition");
 		await That(severities.Select(severity => $":::{(severity == "Error" ? "danger" : "warning")}[{severity}]"))
 			.Contains(admonition!);
+		string[] summary = Lines.Skip(Array.IndexOf(Lines, admonition, heading) + 1).TakeWhile(line => line != ":::").ToArray();
+		await That(summary).HasCount(1).Because("the admonition summary is one line");
+		await That(SentenceBreak.IsMatch(InlineCode.Replace(summary[0], "Code"))).IsFalse()
+			.Because("the admonition summarizes the diagnostic in one sentence, and the details follow it");
 		string? indexRow = Lines.FirstOrDefault(line => line.StartsWith($"| [{id}](#{anchor}) |"));
 		await That(indexRow).IsNotNull().Because($"{id} needs a row in the index");
 		string[] row = indexRow!.Replace("`", "").Split('|').Select(cell => cell.Trim()).ToArray();

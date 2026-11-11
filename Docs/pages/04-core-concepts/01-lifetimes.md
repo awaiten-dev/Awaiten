@@ -115,7 +115,7 @@ By default a singleton is built the first time it is resolved. Mark it `Eager = 
 
 An eager singleton is built as its consumers see it: when it is decorated, its decorators are built with it.
 
-A singleton that is [async-tainted](./03-async-initialization.md#mark-a-service-as-async), because it is async-initialized or depends on an async service, cannot be built synchronously in the root's constructor, so `Eager` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). The same holds when one of its decorators is async-tainted. With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
+A singleton that is [async-tainted](./03-async-initialization.md#mark-a-service-as-async), because it is async-initialized or depends on an async service, cannot be built synchronously in the root's constructor, so `Eager` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). The same holds when one of its decorators is async-tainted. With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created, so `new CoffeeShop.Root()` [blocks the calling thread](./03-async-initialization.md#relax-the-rule-when-you-need-to) until that initialization finishes. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
 
 ## Where to go next
 

@@ -22,7 +22,7 @@ public sealed class SyrupBar(IEnumerable<ISyrup> syrups);
 
 ## Supported shapes
 
-Any of these constructor parameter types works. Each is resolvable by type as well when the collection is unkeyed and no member is [async-tainted](../12-reference/03-glossary.md#async-tainted). With an async-tainted member, resolve one of the [async collections](#async-collections) instead.
+Any of these constructor parameter types works. Each is resolvable by type as well when the collection is unkeyed, its element type has a registration and no member is [async-tainted](../12-reference/03-glossary.md#async-tainted). With an async-tainted member, resolve one of the [async collections](#async-collections) instead.
 
 ```csharp no-compile
 IEnumerable<ISyrup>
@@ -40,7 +40,7 @@ Members come back in precedence order:
 3. Closings of [open generic](../05-registration/06-open-generics.md) registrations, those without `Fallback` first.
 4. [Scan](../05-registration/07-scanning.md) matches.
 
-Within each group they keep declaration order, with the container's own registrations before those of the imported modules. Each member keeps its own lifetime. A service type with no registrations resolves to an empty collection, not an error.
+Within each group they keep declaration order, with the container's own registrations before those of the imported modules. Each member keeps its own lifetime. A service type with no registrations is injected as an empty collection, not an error, but resolving that collection by type throws, because the container serves a collection by type only when its element type has a registration.
 
 With [`[FromKey]`](../05-registration/05-keyed-services.md#select-directly-with-fromkey) on the parameter or property, such as `[FromKey("Oat")] IEnumerable<IMilk>`, the collection holds the registrations under that key instead. A collection under a key is served only to injection: a keyed `Resolve<IEnumerable<IMilk>>("Oat")` throws. When the call is on the generated `Root` or `Scope` and the key is a constant, Awaiten warns about it at compile time ([AWT218](../09-diagnostics.md#awt218)).
 

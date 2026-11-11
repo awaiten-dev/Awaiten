@@ -206,13 +206,7 @@ What the probe reports:
 
 The same answer is available to your own code through `IAwaitenRoot.GetResolvability`. It tells a failed `TryResolve` apart: one service is genuinely not the container's, another is a mistake with a named fix. An adapter that must answer an unknown type with `null`, because that is how it says "not mine" to a framework, wants this before it decides between returning `null` and throwing.
 
-| `Status` | Meaning | `Reason` |
-|---|---|---|
-| `NotRegistered` | `Resolve` cannot build this type under this key: the container has no such service, or serves it only in another shape (see below) | none |
-| `Resolvable` | `Resolve` builds it | none |
-| `AsyncOnly` | It needs asynchronous initialization | the message `Resolve` would throw |
-| `WithheldOnRoot` | A disposable transient the root declines to build | the message `Resolve` would throw |
-| `External` | The container imports it, so resolving it asks the external resolver | none |
+Its `Status` is `NotRegistered`, `Resolvable`, `AsyncOnly`, `WithheldOnRoot` or `External`, and for `AsyncOnly` and `WithheldOnRoot` its `Reason` is the message `Resolve` would throw. The [Runtime API](../12-reference/02-runtime-api.md#awaitenresolvability) describes each status.
 
 ```csharp
 AwaitenResolvability answer = shop.GetResolvability<EspressoMachine>();
@@ -228,7 +222,6 @@ if (answer.Reason is { } reason)
   - a collection of relationships, such as `IEnumerable<Lazy<T>>`.
 - Under a non-null key it covers the keyed surface exactly as the keyed `Resolve` does, which serves plain services only. So a relationship or collection under a key is `NotRegistered` there, and so is a keyed `Task<T>`, even though the bridge projects one for an async-only keyed service, and so is a keyed service with runtime arguments or one built by a `[RequestingType]` factory. `GetResolvability(Type)` and `GetResolvability<T>()` ask without a key, matching `Resolve(Type)` and `Resolve<T>()`.
 - It lives on the root because that is where the answer belongs: a child scope builds a root-withheld transient normally.
-- New statuses may be added later, so give a `switch` over `Status` a default case.
 
 </details>
 

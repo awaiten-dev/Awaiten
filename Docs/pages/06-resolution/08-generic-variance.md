@@ -51,6 +51,7 @@ IFeed<DomainEvent> feed = shop.Resolve<IFeed<DomainEvent>>();   // the OrderPlac
 - Every unkeyed collection shape takes variance matches too, including `IAsyncEnumerable<T>` and the awaited collections: the exact matches lead, and the variance matches follow.
 - The other relationships, `Lazy<T>`, `Task<T>`, `Owned<T>`, `Func<..., Owned<T>>` and the `Task` forms such as `Func<Task<T>>`, take only an exact registration. Over a closing that only a variance match provides, they are a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 - All of this holds for constructor parameters and [injected properties](./05-property-injection.md) alike.
+- Resolving by type takes a variance match for the service itself, such as `Resolve<IFeed<DomainEvent>>()`. A `Func<T>` or collection over a closing that only a variance match provides is served by type only when a consumer in the graph depends on that closing in a matching form: a direct dependency or `Func<T>` for the `Func<T>`, any collection shape for every collection shape. Otherwise the resolve throws.
 
 ## Where to go next
 

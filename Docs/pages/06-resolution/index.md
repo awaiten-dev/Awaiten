@@ -41,7 +41,7 @@ How to read the columns:
 - **Resolvable by type.** `Resolve<…>()`, `TryResolve<…>()` or `ResolveAsync<…>()` hands out the shape from the root or a scope, with these limits:
   - A keyed resolve serves only the service itself, so every other shape under a key reaches a consumer only through `[FromKey]`.
   - The synchronous relationships come with a service that is not async-tainted and the `Task` relationships with an async-tainted one. Asking for the other throws and names the shape to use. A service with runtime arguments always comes with `Func<TArg…, Task<T>>` and `Func<TArg…, Task<Owned<T>>>`, async-tainted or not.
-  - A synchronous collection shape is resolvable only when no member is async-tainted.
+  - A collection shape is resolvable only when its element type has a registration, so a collection that is injected empty throws when resolved. A synchronous one also needs that no member is async-tainted.
   - `IReadOnlyDictionary<TKey, T>` and its `Task` form are resolvable only when every key of `T` is of one type, and the synchronous dictionary only when no member is async-tainted.
   - In the strict default, the root withholds a shape that builds a new disposable on each call, such as a `Func<T>` over a disposable transient, see [Relationships](./02-relationships.md#reaching-shorter-lived-services).
 

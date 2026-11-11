@@ -84,7 +84,7 @@ Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md
 | `Fallback` | [`Fallback`](#fallback) | `None` | Makes the registration an overridable default that a registration of the same service without `Fallback` replaces, unless that is a scan match or the closing of an open generic over a closed default. | [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) |
 | `Eager` | `bool` | `false` | `[Singleton]` only: builds the singleton when the root is created instead of on first resolve. Needs a closed type. | [Lifetimes](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) |
 | `OnActivated` | `string?` | `null` | Name of a static method that receives the instance once it is constructed. A method returning `Task` or `ValueTask` makes the service async-initialized. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
-| `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before the instance's own disposal. A method returning `Task` or `ValueTask` is awaited, which needs asynchronous disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
+| `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before any instance it owns is disposed. A method returning `Task` or `ValueTask` is awaited, which needs asynchronous disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `SuppressDisposal` | `bool` | `false` | Builds the instance but never disposes it. Releasing it is up to you, typically through `OnRelease`. | [Disposal](../04-core-concepts/05-disposal.md#suppressing-disposal) |
 
 Go on a container or module, any number of times.
@@ -260,7 +260,7 @@ Goes on a parameter, once.
 
 ### RequestingType
 
-Marks a `Type?` parameter of a `Factory` method that receives the type being constructed, such as the consumer of a logger. It is `null` when the service is resolved straight from the container. It has no properties. See [Context-aware factories](../06-resolution/07-context-aware-factories.md#ask-for-the-requesting-type).
+Marks a `Type?` parameter of a `Factory` method that receives the type of the consumer the service is built for, such as the class that uses a logger. It is `null` when the service is resolved straight from the container. It has no properties. See [Context-aware factories](../06-resolution/07-context-aware-factories.md#ask-for-the-requesting-type).
 
 ```csharp no-compile
 private static ILogger CreateLogger([RequestingType] Type? consumer) => /* … */;

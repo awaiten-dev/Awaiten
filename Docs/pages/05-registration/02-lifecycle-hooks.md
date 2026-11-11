@@ -22,7 +22,7 @@ public static partial class CoffeeShop
 
 You can type the parameter as `object` instead when one hook serves several implementations.
 
-`OnActivated` runs once, right after construction. For an async service it runs before the async initializer conventions. `OnRelease` runs when the owner or scope is disposed, before the instance's own `Dispose`, and in reverse creation order. By default it runs *in addition to* that disposal; pair it with [`SuppressDisposal`](../04-core-concepts/05-disposal.md#suppressing-disposal) to replace disposal entirely, as when a hook returns an object to a pool.
+`OnActivated` runs once, right after construction. For an async service it runs before the async initializer conventions. `OnRelease` runs when the owner or scope is disposed, in reverse creation order, and every release hook of the owner or scope runs before any of its instances is disposed. By default it runs *in addition to* that disposal; pair it with [`SuppressDisposal`](../04-core-concepts/05-disposal.md#suppressing-disposal) to replace disposal entirely, as when a hook returns an object to a pool.
 
 ## Hook parameters
 
@@ -42,7 +42,7 @@ public static partial class CoffeeShop
 }
 ```
 
-An activation dependency is resolved inline as the hook is called. A release dependency is resolved at construction and captured by value into the queued closure, so the hook holds the instance it was queued for even if a later resolve fails and rolls back. Reverse creation-order teardown keeps a captured dependency (a singleton pool, say) alive until after the release that uses it has run.
+An activation dependency is resolved inline as the hook is called. A release dependency is resolved at construction and captured by value into the queued closure, so the hook holds the instance it was queued for even if a later resolve fails and rolls back. A captured dependency (a singleton pool, say) is still alive when the hook runs, because the release hooks all run before any disposal starts.
 
 Hook parameters participate in the graph like any other dependency, including cycle, captive-dependency and async-taint analysis. The rules:
 

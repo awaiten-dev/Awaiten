@@ -99,7 +99,7 @@ The answer of `GetResolvability`. The `default` value is `NotRegistered` without
 
 | `AwaitenResolvabilityStatus` | Meaning |
 |---|---|
-| `NotRegistered` (0) | The container has no registration for the type under the key. |
+| `NotRegistered` (0) | `Resolve` cannot build the type under the key: the container has no such service, or serves it only in another shape, as [Feature detection](../07-hosting/01-msdi-bridge.md#feature-detection) lists. |
 | `Resolvable` (1) | The root resolves it synchronously. |
 | `AsyncOnly` (2) | The container has it but serves it only asynchronously, typically because it needs async initialization. |
 | `WithheldOnRoot` (3) | The container has it, but the root declines to build it, such as a disposable transient under strict lifetime safety. A child scope resolves it. |
