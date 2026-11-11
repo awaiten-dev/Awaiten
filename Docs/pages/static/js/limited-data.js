@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "a8dc6378825494124d896ce4782dc9d27c2eb64d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
-        "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
-      },
-      {
         "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
         "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
+      },
+      {
+        "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
+        "message": "fix: share a module\u0027s generated factory with registrations of other modules, closed closings and inherited registrations, and keep the declarer\u0027s async initializer conventions (#423)"
       }
     ],
     "labels": [
-      "a8dc6378",
       "af6814f5",
       "473c4389",
       "5485cfa1",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "c37f6b39",
       "ce9ecfb5",
       "30a00e9a",
-      "b54bb515"
+      "b54bb515",
+      "8a229ae0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.437558035765376,
           6.527111094731551,
           3.148773940404256,
           4.896269593387842,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.410465348225373,
           6.837650951284629,
           6.453162997961044,
-          3.1932616287044118
+          3.1932616287044118,
+          4.7026525601744655
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.297164591153463,
           7.325951104362805,
           4.803037607669831,
           7.00768257783992,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.3835196026733945,
           7.3014683700524845,
           7.34710636309215,
-          4.021192003289858
+          4.021192003289858,
+          6.874369817475478
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          125.2359938621521,
           135.20926240285237,
           63.79545038087027,
           82.91607408523559,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           118.02654321193695,
           106.33706315074649,
           118.95536343256633,
-          55.956197106838225
+          55.956197106838225,
+          83.80781107743582
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.377478778362274,
           9.093067325651646,
           5.434546659390132,
           6.5198511297504105,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.160058703805719,
           9.415262934565543,
           8.62201384504636,
-          4.7488465543304175
+          4.7488465543304175,
+          6.291251955429713
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          9.617391478802476,
           10.989498717280535,
           6.6236268281936646,
           8.446163219213485,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.815988838672638,
           11.828046315908432,
           10.745442123285361,
-          5.763252373536428
+          5.763252373536428,
+          8.511599918561322
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "a8dc6378825494124d896ce4782dc9d27c2eb64d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
-        "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
-      },
-      {
         "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
         "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
+      },
+      {
+        "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
+        "message": "fix: share a module\u0027s generated factory with registrations of other modules, closed closings and inherited registrations, and keep the declarer\u0027s async initializer conventions (#423)"
       }
     ],
     "labels": [
-      "a8dc6378",
       "af6814f5",
       "473c4389",
       "5485cfa1",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "c37f6b39",
       "ce9ecfb5",
       "30a00e9a",
-      "b54bb515"
+      "b54bb515",
+      "8a229ae0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.635203438145774,
           7.132826404912131,
           3.3147520955119814,
           5.4766526935356,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.1187488448161345,
           7.142867971743856,
           7.114375508257321,
-          3.215576774839844
+          3.215576774839844,
+          5.477856195889986
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.117961529890696,
           7.305907238806997,
           4.194749943912029,
           6.489185622582833,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.415997161315038,
           7.393030782540639,
           7.279958751339179,
-          3.8497279306252796
+          3.8497279306252796,
+          6.213786235877445
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          96.24784821271896,
           126.19988008907863,
           63.84873849550883,
           83.76261964241664,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           118.54704763208117,
           107.27079871067635,
           112.32119168440501,
-          56.20116950784411
+          56.20116950784411,
+          82.33007622559866
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.1904394168938905,
           9.09549425223044,
           5.410570149975164,
           6.535289174566667,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.179793765502316,
           9.325838334858418,
           8.578923922777175,
-          4.855583379666011
+          4.855583379666011,
+          6.223821550607681
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12.992012273271879,
           14.351332194530046,
           8.152687722444535,
           8.209044939050308,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.236101270715396,
           15.811277836561203,
           14.295671287391867,
-          5.736058213389837
+          5.736058213389837,
+          8.502467448512713
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "a8dc6378825494124d896ce4782dc9d27c2eb64d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
-        "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
-      },
-      {
         "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:19:24 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
         "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
+      },
+      {
+        "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
+        "message": "fix: share a module\u0027s generated factory with registrations of other modules, closed closings and inherited registrations, and keep the declarer\u0027s async initializer conventions (#423)"
       }
     ],
     "labels": [
-      "a8dc6378",
       "af6814f5",
       "473c4389",
       "5485cfa1",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "c37f6b39",
       "ce9ecfb5",
       "30a00e9a",
-      "b54bb515"
+      "b54bb515",
+      "8a229ae0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          20.21032026410103,
           28.363061809539794,
           15.418597850203515,
           21.678517945607503,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           11.52754828929901,
           23.146042368809383,
           14.585193351904552,
-          19.64391533732414
+          19.64391533732414,
+          15.557439165455955
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1466.0034839630127,
           1776.1530934651694,
           1116.7360412052699,
           1564.2815734863282,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           768.4238410790762,
           1481.7826442718506,
           1084.0555604298909,
-          1445.5916565486364
+          1445.5916565486364,
+          1148.7089395523071
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29745.690598707934,
           31426.48087855748,
           25498.066239420572,
           29503.812377929688,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18211.298185076033,
           23729.08624674479,
           17656.17772623698,
-          29441.407470703125
+          29441.407470703125,
+          25393.573470052084
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2637,7 +2637,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           32482,
-          32482,
           32478,
           32482,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32474,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          713.8057792027791,
           785.2916119893392,
           610.1480487823486,
           756.1623973210652,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           400.63640257517494,
           654.7056528971746,
           500.85677235921224,
-          739.0012366612752
+          739.0012366612752,
+          593.8563266118367
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11618.4874613444,
           13099.605563572475,
           9665.884779866536,
           11892.856968180338,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6702.440636189779,
           11359.17233988444,
           7634.864342825754,
-          11426.161483764648
+          11426.161483764648,
+          8671.359736633302
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2886,7 +2886,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          24760,
           24761,
           24760,
           24760,
@@ -2932,6 +2931,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "a8dc6378825494124d896ce4782dc9d27c2eb64d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
-        "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
-      },
       {
         "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
         "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
+      },
+      {
+        "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
+        "message": "fix: share a module\u0027s generated factory with registrations of other modules, closed closings and inherited registrations, and keep the declarer\u0027s async initializer conventions (#423)"
       }
     ],
     "labels": [
-      "a8dc6378",
       "af6814f5",
       "473c4389",
       "5485cfa1",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "c37f6b39",
       "ce9ecfb5",
       "30a00e9a",
-      "b54bb515"
+      "b54bb515",
+      "8a229ae0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          186.69636693000794,
           270.7339647928874,
           115.3314334494727,
           179.0664984067281,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           82.75009784331688,
           265.73778940836587,
           192.5329233209292,
-          188.64801398913065
+          188.64801398913065,
+          114.27332612673442
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14457.201711382184,
           16981.940146891277,
           10970.022185262043,
           14621.209573599008,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7951.057633463542,
           12528.038243611654,
           9507.407737731934,
-          14008.42696271624
+          14008.42696271624,
+          10430.717340087891
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          724859.0543387277,
           803447.8815755208,
           638163.0103236607,
           736627.300920759,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           440933.144921875,
           560000.541796875,
           394126.6001627604,
-          712105.1259068081
+          712105.1259068081,
+          621811.2106584822
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740462,
           740994,
           740793,
           740993,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           718986,
           721116,
           739364,
-          740465
+          740465,
+          740032
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          44145.53891194661,
           47610.412418619795,
           34547.60314941406,
           45812.34584263393,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           25241.117407226564,
           38781.97849934896,
           26342.693806966145,
-          43691.56388636998
+          43691.56388636998,
+          35598.92927769252
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80012,
           80779,
           80301,
           80777,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80306,
           80958,
           79995,
-          80005
+          80005,
+          81186
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          375849.54791666666,
           407757.76712239586,
           270240.18701171875,
           351594.51224190847,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           228469.2885091146,
           324942.6096191406,
           210358.19663492838,
-          347664.7892578125
+          347664.7892578125,
+          261639.61725260416
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573027,
           573056,
           573057,
           573073,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573057,
           571187,
           571194,
-          573119
+          573119,
+          573091
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "a8dc6378825494124d896ce4782dc9d27c2eb64d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:16:40 2026 \u002B0100",
-        "message": "feat: let containers in other assemblies call internal decorator predicates through generated wrappers (#368)"
-      },
       {
         "sha": "af6814f5946b222f6d802ce38f8b88ca3cd7f3e5",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
         "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
+      },
+      {
+        "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
+        "author": "Valentin Breu\u00DF",
+        "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
+        "message": "fix: share a module\u0027s generated factory with registrations of other modules, closed closings and inherited registrations, and keep the declarer\u0027s async initializer conventions (#423)"
       }
     ],
     "labels": [
-      "a8dc6378",
       "af6814f5",
       "473c4389",
       "5485cfa1",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "c37f6b39",
       "ce9ecfb5",
       "30a00e9a",
-      "b54bb515"
+      "b54bb515",
+      "8a229ae0"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          220.17193072182792,
           172.43724274635315,
           178.65012346781216,
           210.12603061993917,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           213.5381868839264,
           274.9899413245065,
           265.6405601160867,
-          165.46614317893983
+          165.46614317893983,
+          289.290744415919
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          455.777627547582,
           401.53917558376605,
           419.1342578274863,
           455.3992163658142,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           458.56047808329265,
           647.2682706197103,
           631.0021968841553,
-          369.99908157984413
+          369.99908157984413,
+          473.21136239369713
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4793.718191000132,
           3467.2230824061803,
           3658.3186314900718,
           4815.49405670166,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4880.887506757464,
           6974.25558980306,
           6783.377737778884,
-          3268.7833377838133
+          3268.7833377838133,
+          5052.519259897867
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          347.7106599966685,
           242.49249636332195,
           273.0929437050453,
           333.94251006444296,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           338.6951224644979,
           417.57864967981976,
           413.0334866523743,
-          237.13019029910748
+          237.13019029910748,
+          347.4860536893209
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          568.0868235270183,
           396.41191104253136,
           419.50258417129515,
           530.1281888144357,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           551.8118749459585,
           780.964310391744,
           763.0884423622718,
-          364.5124552726746
+          364.5124552726746,
+          529.6110659917196
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
