@@ -23,7 +23,7 @@ A code block in these docs assumes `using Awaiten;`, the implicit usings of an S
 <details>
 <summary>Older C# versions and polyfills</summary>
 
-C# 9 and 10 work too, as long as no module of the project declares a `[Scan]`: use the `typeof` forms, such as `[Singleton(typeof(Espresso))]`, which every generic attribute except `[AsyncInitializer<T>]` also has. On an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
+C# 9 and 10 work too, as long as no module of the project declares a `[Scan]`: use the `typeof` forms, such as `[Singleton(typeof(Espresso))]`, which every generic attribute except `[AsyncInitializer<T>]` also has. The `typeof` forms of `[Decorate]` and `[Composite]` take only open generics ([AWT127](./09-diagnostics.md#awt127)), so a closed decorator or composite needs C# 11. On an older version Awaiten reports [AWT243](./09-diagnostics.md#awt243) instead of generating code.
 
 On .NET Framework and netstandard2.0, which lack the `NotNullWhen` attribute, the generated code still needs no polyfill package. Without one, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
 

@@ -92,7 +92,7 @@ Cup medium = await brewCup("Medium");
 - A service with `[Arg]` parameters must be transient ([AWT114](../09-diagnostics.md#awt114)), because each call builds a fresh instance from your arguments.
 - It is reachable only through `Func<TArg…, T>`, `Func<TArg…, Owned<T>>`, `Func<TArg…, Task<T>>` or `Func<TArg…, Task<Owned<T>>>`. A plain, `Lazy<T>`, `Owned<T>` or `Task<T>` dependency on it is [AWT115](../09-diagnostics.md#awt115).
 - The `Func` arguments must match the `[Arg]` parameters in type and order; a `Func` that supplies other arguments, or none, is [AWT113](../09-diagnostics.md#awt113).
-- A synchronous `Func<TArg…, T>` over an async-initialized service is [AWT119](../09-diagnostics.md#awt119); take the `Task` form instead.
+- A synchronous `Func<TArg…, T>` over an async-tainted service is [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120); take the `Task` form instead.
 - The argument wins even when its type is itself registered. A `[Arg] string` always comes from your call, never from the graph.
 
 ## Where to go next

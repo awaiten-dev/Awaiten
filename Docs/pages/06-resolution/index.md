@@ -17,11 +17,11 @@ Each shape below works as a constructor parameter, a factory parameter or an [in
 | `Lazy<T>` | `T`, resolved once on first access. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Relationships](./02-relationships.md) |
 | `Owned<T>` | `T` built in a scope of its own, disposed with the handle. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Owned](../04-core-concepts/06-owned.md) |
 | `Func<Owned<T>>` | A new `Owned<T>` handle on each call. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Owned](../04-core-concepts/06-owned.md) |
-| `Task<T>` | A task that completes once `T` is initialized. | Yes, the consumer stays synchronous. | Yes | For an async-initialized `T` | [Relationships](./02-relationships.md) |
-| `Func<Task<T>>` | A factory that resolves and initializes `T` on each call. | Yes, the consumer stays synchronous. | Yes | For an async-initialized `T` | [Relationships](./02-relationships.md#resolve-a-relationship-directly) |
-| `Lazy<Task<T>>` | `T`, resolved and initialized once on first access. | Yes, the consumer stays synchronous. | Yes | For an async-initialized `T` | [Relationships](./02-relationships.md#resolve-a-relationship-directly) |
-| `Task<Owned<T>>` | An `Owned<T>` handle once `T` is initialized. | Yes, the consumer stays synchronous. | Yes | For an async-initialized `T` | [Owned](../04-core-concepts/06-owned.md) |
-| `Func<Task<Owned<T>>>` | A new initialized `Owned<T>` handle on each call. | Yes, the consumer stays synchronous. | Yes | For an async-initialized `T` | [Owned](../04-core-concepts/06-owned.md) |
+| `Task<T>` | A task that completes once `T` is initialized. | Yes, the consumer stays synchronous. | Yes | For an async-tainted `T` | [Relationships](./02-relationships.md) |
+| `Func<Task<T>>` | A factory that resolves and initializes `T` on each call. | Yes, the consumer stays synchronous. | Yes | For an async-tainted `T` | [Relationships](./02-relationships.md#resolve-a-relationship-directly) |
+| `Lazy<Task<T>>` | `T`, resolved and initialized once on first access. | Yes, the consumer stays synchronous. | Yes | For an async-tainted `T` | [Relationships](./02-relationships.md#resolve-a-relationship-directly) |
+| `Task<Owned<T>>` | An `Owned<T>` handle once `T` is initialized. | Yes, the consumer stays synchronous. | Yes | For an async-tainted `T` | [Owned](../04-core-concepts/06-owned.md) |
+| `Func<Task<Owned<T>>>` | A new initialized `Owned<T>` handle on each call. | Yes, the consumer stays synchronous. | Yes | For an async-tainted `T` | [Owned](../04-core-concepts/06-owned.md) |
 | `Func<TArg…, T>` | A factory that builds `T` from your arguments. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Runtime arguments](./06-runtime-arguments.md) |
 | `Func<TArg…, Owned<T>>` | A factory that builds `T` from your arguments into a handle. | No, [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120) | Yes | Yes | [Runtime arguments](./06-runtime-arguments.md) |
 | `Func<TArg…, Task<T>>` | A factory that builds and initializes `T` from your arguments. | Yes, the consumer stays synchronous. | Yes | Yes | [Runtime arguments](./06-runtime-arguments.md#async-initialization) |
@@ -40,7 +40,7 @@ How to read the columns:
 - **Under `[FromKey]`.** The shape wraps the registration, or holds the registrations, under that key. See [Keyed services](../05-registration/05-keyed-services.md#select-directly-with-fromkey).
 - **Resolvable by type.** `Resolve<…>()`, `TryResolve<…>()` or `ResolveAsync<…>()` hands out the shape from the root or a scope, with these limits:
   - A keyed resolve serves only the service itself, so every other shape under a key reaches a consumer only through `[FromKey]`.
-  - The synchronous relationships come with a synchronous service and the `Task` relationships with an async-initialized one. Asking for the other throws and names the shape to use.
+  - The synchronous relationships come with a service that is not async-tainted and the `Task` relationships with an async-tainted one. Asking for the other throws and names the shape to use. A service with runtime arguments always comes with `Func<TArg…, Task<T>>` and `Func<TArg…, Task<Owned<T>>>`, async-tainted or not.
   - A synchronous collection shape is resolvable only when no member is async-tainted.
   - `IReadOnlyDictionary<TKey, T>` and its `Task` form are resolvable only when every key of `T` is of one type, and the synchronous dictionary only when no member is async-tainted.
   - In the strict default, the root withholds a shape that builds a new disposable on each call, such as a `Func<T>` over a disposable transient, see [Relationships](./02-relationships.md#reaching-shorter-lived-services).
@@ -51,6 +51,7 @@ Some dependencies are errors:
 - A `Func` whose arguments do not match is [AWT113](../09-diagnostics.md#awt113).
 - `Lazy<Owned<T>>` and `Lazy<Task<Owned<T>>>` are [AWT121](../09-diagnostics.md#awt121), because `Lazy` would memoize a single disposal handle. Take `Owned<T>`, `Func<Owned<T>>` or `Task<Owned<T>>` instead.
 - Relationships do not nest: a relationship over a collection or a collection of relationships is an error unless that type is registered as a service, see [Relationships](./02-relationships.md#relationships-wrap-a-single-service).
+- A relationship over another relationship, such as `Func<Lazy<T>>`, `Lazy<Func<T>>`, `Func<TArg…, Lazy<T>>` or `Task<Lazy<T>>`, is not built. Only the combinations in the table above are, so the dependency is on that whole type and is a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 
 ## Where to go next
 

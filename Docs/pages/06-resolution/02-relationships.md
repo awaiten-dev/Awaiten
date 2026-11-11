@@ -43,18 +43,18 @@ public sealed class Barista(Task<EspressoMachine> machine)
 
 The shapes you inject, you can also resolve by type, from the root or from a scope. `Func<T>`, `Lazy<T>` and `Owned<T>` come with every service, with three exceptions:
 
-- An async-initialized service: its synchronous shapes throw, as the paragraph after the example explains.
+- An [async-tainted](../12-reference/03-glossary.md#async-tainted) service: its synchronous shapes throw, as the paragraph after the example explains.
 - A service with [runtime arguments](./06-runtime-arguments.md) comes only as its factories, such as `Func<TArg…, T>` and `Func<TArg…, Owned<T>>`.
 - A service built by a factory with a `[RequestingType]` parameter has no `Owned<T>` ([AWT186](../09-diagnostics.md#awt186)).
 
-The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with a service that is initialized asynchronously, which is where you need them.
+The async shapes `Task<T>`, `Func<Task<T>>`, `Lazy<Task<T>>`, `Task<Owned<T>>` and `Func<Task<Owned<T>>>` come with an async-tainted service, which is where you need them. A service with runtime arguments comes with `Func<TArg…, Task<T>>` and `Func<TArg…, Task<Owned<T>>>`, async-tainted or not.
 
 ```csharp
 Func<Task<EspressoMachine>> machines = shop.Resolve<Func<Task<EspressoMachine>>>();
 EspressoMachine machine = await machines();
 ```
 
-A synchronous shape over an async-initialized service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task. A `Func<T>`, `Lazy<T>` or `Owned<T>` over a service with runtime arguments throws with its factory as the remedy.
+A synchronous shape over an async-tainted service cannot await the initialization, so resolving it throws, and the message names the async shape to use instead. An async shape over a synchronous service throws too, and its message tells you to resolve the service directly, or through `ResolveAsync` if you want a task. A `Func<T>`, `Lazy<T>` or `Owned<T>` over a service with runtime arguments throws with its factory as the remedy.
 
 Resolving a relationship directly works without a key only. A [keyed resolve](./01-resolving-services.md#keyed-resolution) serves plain services, so `Resolve<Func<IMilk>>("Oat")` throws even when an `IMilk` is registered under `"Oat"`. Inject the keyed relationship instead, through a `[FromKey("Oat")] Func<IMilk>` parameter or property.
 
@@ -88,10 +88,11 @@ public static partial class CoffeeShop;
 
 ## Relationships wrap a single service
 
-A relationship wraps one service, not a [collection](./03-collections.md), so these are errors:
+A relationship wraps one service, not a [collection](./03-collections.md) or another relationship, so these are errors:
 
 - A relationship over a collection, such as `Func<IEnumerable<ISyrup>>`, `Lazy<IReadOnlyList<ISyrup>>` or `Owned<ISyrup[]>` ([AWT256](../09-diagnostics.md#awt256)), unless the collection type itself is [registered as a service](./03-collections.md#registering-your-own-collection).
 - A collection of relationships, such as `IEnumerable<Lazy<ISyrup>>` or `Func<ISyrup>[]` ([AWT254](../09-diagnostics.md#awt254)), unless the relationship type itself is registered as a service. Then the collection holds that registration.
+- A relationship over another relationship, such as `Func<Lazy<ISyrup>>`, `Lazy<Func<ISyrup>>`, `Func<TArg…, Lazy<ISyrup>>` or `Task<Lazy<ISyrup>>`. The container builds only the combinations in the [dependency shapes](./index.md#dependency-shapes) table, such as `Func<Owned<T>>` or `Lazy<Task<T>>`, and takes any other as a dependency on the whole type, a missing dependency ([AWT101](../09-diagnostics.md#awt101)).
 
 Depend on the collection itself. To defer or own the members, register a small service that takes the collection and depend on the relationship over that service.
 

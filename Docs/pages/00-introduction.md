@@ -79,7 +79,7 @@ Awaiten fixes the graph at build time. That is its strength, and it rules out de
 ## Frameworks and requirements
 
 - Your project targets anything from .NET Framework 4.8 and netstandard2.0 up to .NET 10. The generated code compiles for each of them.
-- You build with the .NET SDK 10.0.300 or later and C# 11 or later, or C# 9 with the `typeof` forms.
+- You build with the .NET SDK 10.0.300 or later and C# 11 or later, or C# 9 with the `typeof` forms as long as no module declares a `[Scan]`.
 - `Awaiten` is the only package you need. Add `Awaiten.Extensions.DependencyInjection` to host a container in ASP.NET Core or the generic host.
 
 [Getting started](./01-getting-started.md#requirements) has the details, including older C# versions and IDE versions.

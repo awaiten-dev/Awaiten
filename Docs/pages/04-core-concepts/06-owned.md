@@ -55,7 +55,7 @@ Disposing the handle releases the dedicated scope that built the service, includ
 
 ## Rent an async-initialized service
 
-For an async-initialized service, inject `Func<Task<Owned<T>>>`, or `Task<Owned<T>>` for a single handle. The task completes once the service is initialized. Dispose the handle with `await using`, so an async-disposable service is torn down through `DisposeAsync`.
+For an async-initialized service, or one that depends on one, inject `Func<Task<Owned<T>>>`, or `Task<Owned<T>>` for a single handle. The task completes once the service is initialized. Dispose the handle with `await using`, so an async-disposable service is torn down through `DisposeAsync`.
 
 ```csharp
 public sealed class MilkSteamer : IAsyncDisposable
@@ -77,7 +77,7 @@ public sealed class Counter(Func<Task<Owned<MilkSteamer>>> steamers)
 
 ## Rules
 
-- A synchronous `Owned<T>` or `Func<Owned<T>>` cannot await initialization, so over an async-initialized service it is [AWT119](../09-diagnostics.md#awt119). Use the `Task` forms above.
+- A synchronous `Owned<T>` or `Func<Owned<T>>` cannot await initialization, so over an async-tainted service it is [AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120). Use the `Task` forms above.
 - An `Owned<T>` handle cannot be requested through a `Lazy<Owned<T>>` ([AWT121](../09-diagnostics.md#awt121)), since memoizing one handle would hand back a disposed one after the first teardown.
 - A service built by a factory with a `[RequestingType]` parameter has no `Owned<T>` form ([AWT186](../09-diagnostics.md#awt186)).
 - Only the container creates `Owned<T>`. A handle built with `new` disposes whatever scope it is given, the root included, so constructing one in your code is a warning ([AWT205](../09-diagnostics.md#awt205)).

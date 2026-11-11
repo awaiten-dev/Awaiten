@@ -13,7 +13,7 @@ A static method named with `OnActivated` that receives a service once it is cons
 
 ### Async initializer convention
 
-An `[AsyncInitializer<T>]` on a container or module that names a method of `T`, such as `IWarmUp.WarmUpAsync`. Every service of that container or module whose implementation is a `T` is initialized by awaiting the method once, before it is handed out. Your domain type keeps no reference to Awaiten. See [Async initialization](../04-core-concepts/03-async-initialization.md#mark-a-service-as-async).
+An `[AsyncInitializer<T>]` on a container or module that names a method of `T`, such as `IWarmUp.WarmUpAsync`. Every service of that container or module whose implementation implements the interface or derives from the class `T` is initialized by awaiting the method once, before it is handed out. Your domain type keeps no reference to Awaiten. See [Async initialization](../04-core-concepts/03-async-initialization.md#mark-a-service-as-async).
 
 ### Async-initialized
 

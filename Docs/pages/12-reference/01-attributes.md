@@ -25,7 +25,7 @@ Marks a `static partial` class as a container. The generator adds the nested `Ro
 |---|---|---|---|---|
 | `AsyncSafety` | [`AsyncSafety`](#asyncsafety) | `Strict` | Whether an async-initialized service is reachable only asynchronously, or also synchronously after warm-up. | [Async initialization](../04-core-concepts/03-async-initialization.md#relax-the-rule-when-you-need-to) |
 | `LifetimeSafety` | [`LifetimeSafety`](#lifetimesafety) | `Strict` | Whether the root withholds disposable transients and a root-owned `Func` over one is an error. | [Lifetime safety](../04-core-concepts/04-lifetime-safety.md) |
-| `Extends` | `Type?` | `null` | Another container whose whole composition this one starts from. The base's options apply, so a container that sets `Extends` does not set `AsyncSafety` or `LifetimeSafety` itself. The base must not extend another container ([AWT224](../09-diagnostics.md#awt224)). | [Extending containers](../05-registration/09-extending-containers.md) |
+| `Extends` | `Type?` | `null` | Another container whose whole composition this one starts from. The base's options apply, so a container that sets `Extends` does not set `AsyncSafety` or `LifetimeSafety` itself ([AWT225](../09-diagnostics.md#awt225)). The base must not extend another container ([AWT224](../09-diagnostics.md#awt224)). | [Extending containers](../05-registration/09-extending-containers.md) |
 
 Goes on a class once. The class must be `static` ([AWT116](../09-diagnostics.md#awt116)).
 
@@ -156,7 +156,7 @@ Goes on a container or module, any number of times. A markerless scan cannot use
 
 ### AsyncInitializer
 
-Declares an async initializer convention: every service of the container or module whose implementation is `T` is initialized by awaiting the named method once, before it is handed out. The method is an instance method of `T` that returns `Task` or `ValueTask`, is not overloaded, and has its parameters resolved from the graph. A `CancellationToken` parameter receives the token of the call that triggered the initialization. See [Async initialization](../04-core-concepts/03-async-initialization.md#mark-a-service-as-async).
+Declares an async initializer convention: every service of the container or module whose implementation implements the interface or derives from the class `T` is initialized by awaiting the named method once, before it is handed out. The method is an instance method of `T` that returns `Task` or `ValueTask`, is not overloaded, and has its parameters resolved from the graph. A `CancellationToken` parameter receives the token of the call that triggered the initialization. See [Async initialization](../04-core-concepts/03-async-initialization.md#mark-a-service-as-async).
 
 ```csharp no-compile
 [AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]

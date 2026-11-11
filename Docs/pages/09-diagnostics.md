@@ -3676,4 +3676,4 @@ Owned<Cup> owned = root.Resolve<Owned<Cup>>();      // the container builds the 
 
 AWT137, AWT176 and AWT217 are not reported. They stay reserved and are never reused for another diagnostic.
 
-An id that is neither in the index nor in this list, such as AWT220, AWT221, AWT227 to AWT229, AWT239 or AWT251, belongs to no diagnostic.
+An id that is neither in the index nor in this list belongs to no diagnostic.

@@ -55,9 +55,9 @@ Every registration of the service is a member, also one that loses single resolu
 
 ## Async collections
 
-A synchronous collection shape builds every member while the consumer is built, so it cannot hold an async-initialized member ([AWT122](../09-diagnostics.md#awt122)). If a member is async-initialized, you have two shapes.
+A synchronous collection shape builds every member while the consumer is built, so it cannot hold an async-tainted member ([AWT122](../09-diagnostics.md#awt122)). If a member is async-tainted, you have two shapes.
 
-`IAsyncEnumerable<T>` streams the members and awaits each one's initialization as you go. It does not hide the async members from the consumer: a consumer that takes one is async-initialized too and resolves through `ResolveAsync`.
+`IAsyncEnumerable<T>` streams the members and awaits each one's initialization as you go. It does not hide the async members from the consumer: when a member is async-tainted, a consumer that takes one is async-tainted too and resolves through `ResolveAsync`.
 
 ```csharp
 public sealed class Warmer(IAsyncEnumerable<IDrink> drinks);

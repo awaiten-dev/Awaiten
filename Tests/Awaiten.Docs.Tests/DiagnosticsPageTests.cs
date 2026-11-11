@@ -42,18 +42,34 @@ public sealed class DiagnosticsPageTests
 		string[] severities = descriptors.Select(GetDocumentedSeverity).Distinct().ToArray();
 
 		int heading = Array.FindIndex(Lines, line => line.StartsWith($"### {id}: "));
-		await That(heading).IsGreaterThanOrEqualTo(0);
+		await That(heading).IsGreaterThanOrEqualTo(0).Because($"{id} needs a section on the page");
 		await That(Lines[heading].Replace("`", "")).IsEqualTo($"### {id}: {title} \\{{#{anchor}\\}}")
 			.Because("the IDE shows the descriptor title next to the help link");
-		string admonition = Lines.Skip(heading + 1).First(line => line.Length > 0);
+		string? admonition = Lines.Skip(heading + 1).FirstOrDefault(line => line.Length > 0);
+		await That(admonition).IsNotNull().Because($"the section of {id} starts with its severity admonition");
 		await That(severities.Select(severity => $":::{(severity == "Error" ? "danger" : "warning")}[{severity}]"))
-			.Contains(admonition);
-		string[] row = (Lines.FirstOrDefault(line => line.StartsWith($"| [{id}](#{anchor}) |")) ?? "| | | |")
-			.Replace("`", "").Split('|').Select(cell => cell.Trim()).ToArray();
+			.Contains(admonition!);
+		string? indexRow = Lines.FirstOrDefault(line => line.StartsWith($"| [{id}](#{anchor}) |"));
+		await That(indexRow).IsNotNull().Because($"{id} needs a row in the index");
+		string[] row = indexRow!.Replace("`", "").Split('|').Select(cell => cell.Trim()).ToArray();
 		await That(row[3]).IsEqualTo(title);
 		await That(severities).Contains(severity => row[2].StartsWith(severity))
 			.Because("the index row may add when another severity applies, as for AWT118 under loose lifetime safety");
-		await That(descriptors).All().Satisfy(descriptor => descriptor.HelpLinkUri.EndsWith($"#{anchor}"));
+		await That(descriptors).All().Satisfy(descriptor => descriptor.HelpLinkUri == $"https://awaiten.dev/docs/diagnostics#{anchor}")
+			.Because("the help link leads to the section of the diagnostic");
+	}
+
+	[Test]
+	public async Task Page_ShouldOnlyDocumentDiagnosticsWithDescriptor()
+	{
+		string[] headingIds = Lines.Where(line => line.StartsWith("### AWT")).Select(line => line.Substring(4, 6)).ToArray();
+		string[] indexIds = Lines.Where(line => line.StartsWith("| [AWT")).Select(line => line.Substring(3, 6)).ToArray();
+
+		await That(headingIds).IsNotEmpty();
+		await That(headingIds.Except(Ids())).IsEmpty().Because("every section belongs to a diagnostic");
+		await That(indexIds.Except(Ids())).IsEmpty().Because("every index row belongs to a diagnostic");
+		await That(headingIds.Distinct()).HasCount(headingIds.Length).Because("each diagnostic has one section");
+		await That(indexIds).IsEqualTo(indexIds.OrderBy(id => id, StringComparer.Ordinal)).Because("the index is sorted by id");
 	}
 
 	/// <summary>

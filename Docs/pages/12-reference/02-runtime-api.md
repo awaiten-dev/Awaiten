@@ -177,8 +177,8 @@ Both `AddAwaitenContainer` overloads and `CreateServiceProvider` throw an `Inval
 
 Adapts a root or scope directly to `IServiceProvider`, `IKeyedServiceProvider`, `ISupportRequiredService`, `IServiceScopeFactory`, `IServiceProviderIsService` and `IServiceProviderIsKeyedService`, so Awaiten owns construction and disposal alone. See [Or let Awaiten own everything](../07-hosting/01-msdi-bridge.md#or-let-awaiten-own-everything).
 
-- A service that needs asynchronous resolution is served as `Task<T>`: request `Task<TService>` and await it. Keyed ones are served this way only when the provider wraps the `Root`.
-- An `IEnumerable<T>` of a reference element type that the container has no registration for resolves to an empty sequence.
+- A service that needs asynchronous resolution is served as `Task<T>`: request `Task<TService>` and await it. Keyed ones are served this way only by a provider that wraps the `Root` and by the scopes it creates.
+- An `IEnumerable<T>` of a reference element type that the container has no unkeyed registration for resolves to an empty sequence, on a provider that wraps the `Root` and on the scopes it creates. A provider that wraps a child scope returns `null` for it.
 
 | Member | What it does |
 |---|---|

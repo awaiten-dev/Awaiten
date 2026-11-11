@@ -54,7 +54,7 @@ The rules:
 - The dictionary synthesizes only when every keyed registration of the service matches the requested key type. A key type that is neither `string` nor an enum, or registrations that mix key kinds, is a build error ([AWT159](../09-diagnostics.md#awt159)) unless you register the dictionary yourself.
 - Registrations keyed with `typeof(...)` cannot be collected into an `IReadOnlyDictionary<Type, TService>`. A `Type` key builds only a [dispatch dictionary](#dispatch-by-runtime-type), whose value is a `Func<TBase>`; any other value type is a build error ([AWT213](../09-diagnostics.md#awt213)).
 - A synthesized dictionary already resolves every key, so applying `[FromKey]` to it is an error ([AWT160](../09-diagnostics.md#awt160)).
-- The dictionary builds every member while the consumer is built, so it cannot hold an async-initialized member ([AWT122](../09-diagnostics.md#awt122)). Use the async form below.
+- The dictionary builds every member while the consumer is built, so it cannot hold an async-tainted member ([AWT122](../09-diagnostics.md#awt122)). Use the async form below.
 
 ## The async form
 
@@ -92,7 +92,7 @@ The rules:
 - **One type parameter, one generic interface.** The key is the single type argument. A closing with two type arguments, or a second generic interface that also extends `TBase`, is a build error ([AWT213](../09-diagnostics.md#awt213)). Give each generic interface its own base interface.
 - **One implementation per type.** When two implementations close the same `T`, the entry resolves the one a direct `IOrderHandler<T>` dependency would get, so an explicit registration overrides a scanned handler.
 - **Exact types.** The lookup matches the exact runtime type, not a base type. An unknown type behaves like any dictionary: the indexer throws `KeyNotFoundException`, and `TryGetValue` returns `false`.
-- **Synchronous handlers.** Each value is a synchronous `Func`, so an async-initialized handler is reported like any `Func` over one ([AWT119](../09-diagnostics.md#awt119)).
+- **Synchronous handlers.** Each value is a synchronous `Func`, so an async-tainted handler is reported like any `Func` over one ([AWT119](../09-diagnostics.md#awt119) or [AWT120](../09-diagnostics.md#awt120)).
 - **Lifetime safety.** A singleton consumer that reaches a disposable transient handler through the dictionary would strand each instance on the root ([AWT118](../09-diagnostics.md#awt118)). Register the consumer as `Scoped` so each scope disposes the handlers it builds.
 
 Inject the dictionary into a constructor, a factory, or an [injected property](./05-property-injection.md). It is not offered by `Resolve<T>`.
