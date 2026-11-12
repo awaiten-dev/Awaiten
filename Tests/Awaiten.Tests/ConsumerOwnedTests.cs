@@ -14,7 +14,7 @@ public partial class ConsumerOwnedTests
 	public async Task Func_HandsTheInstanceOverUntracked()
 	{
 		Debouncer owned;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			owned = container.Resolve<StorageFactory>().Create();
 		}
@@ -27,7 +27,7 @@ public partial class ConsumerOwnedTests
 	public async Task Func_KeepsTheInstancesOfOtherConsumersContainerOwned()
 	{
 		Debouncer direct;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			direct = container.Resolve<SearchBox>().Debouncer;
 		}
@@ -40,9 +40,9 @@ public partial class ConsumerOwnedTests
 	public async Task Func_KeepsScopedDependenciesOwnedByTheirScope()
 	{
 		Clock clock;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
-			using ShopContainer.Scope scope = container.CreateScope();
+			await using ShopContainer.Scope scope = container.CreateScope();
 			clock = scope.Resolve<ScopedStorageFactory>().Create().Clock;
 		}
 
@@ -54,7 +54,7 @@ public partial class ConsumerOwnedTests
 	public async Task FuncWithRuntimeArguments_HandsTheInstanceOverUntracked()
 	{
 		Cup cup;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			cup = container.Resolve<Counter>().Pour("large");
 		}
@@ -81,7 +81,7 @@ public partial class ConsumerOwnedTests
 	public async Task DispatchDictionary_HandsEachInstanceOverUntracked()
 	{
 		IHandler handler;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			handler = container.Resolve<Mediator>().Handlers[typeof(Order)]();
 		}
@@ -94,7 +94,7 @@ public partial class ConsumerOwnedTests
 	public async Task Func_OverADecoratedService_HandsTheOutermostDecoratorOverUntracked()
 	{
 		LoggingGrinder grinder;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			grinder = (LoggingGrinder)container.Resolve<GrinderFactory>().Create();
 		}
@@ -120,7 +120,7 @@ public partial class ConsumerOwnedTests
 	public async Task DispatchDictionary_KeepsSharedEntriesContainerOwned()
 	{
 		Ledger ledger;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			ledger = (Ledger)container.Resolve<Mediator>().Handlers[typeof(Refund)]();
 		}
@@ -146,7 +146,7 @@ public partial class ConsumerOwnedTests
 	public async Task KeyedFunc_HandsTheInstanceOverUntracked()
 	{
 		Debouncer debouncer;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			debouncer = container.Resolve<KeyedStorageFactory>().Create();
 		}
@@ -160,7 +160,7 @@ public partial class ConsumerOwnedTests
 	{
 		Debouncer fromProperty;
 		Debouncer fromHook;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			HookedStorageFactory factory = container.Resolve<HookedStorageFactory>();
 			fromProperty = factory.Debouncers();
@@ -177,7 +177,7 @@ public partial class ConsumerOwnedTests
 	public async Task OpenGenericEntry_CoversEachClosing()
 	{
 		Bag<int> bag;
-		using (ShopContainer.Root container = new())
+		await using (ShopContainer.Root container = new())
 		{
 			bag = container.Resolve<BagUser>().Shelf.Create();
 		}
