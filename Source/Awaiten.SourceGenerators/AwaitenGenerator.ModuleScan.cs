@@ -218,7 +218,7 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Emits the factory for one module-scan match, or reports why it cannot: the exposure must resolve to
-	///     interfaces every consumer of the module can name (AWT196 when none), several of which the factory serves
+	///     interfaces every consumer of the module can name (see <see cref="NoExposureDiagnostic" /> when none), several of which the factory serves
 	///     through an instance handle (see <see cref="WithInstanceHandle" />, AWT197 when no handle can share the
 	///     instance, see <see cref="UnsharedExposuresFault" />), and the
 	///     constructor's parameters must all be accessible outside the assembly (AWT195), because they appear on the
@@ -252,10 +252,11 @@ partial class AwaitenGenerator
 
 		if (distinct.Count == 0)
 		{
-			diagnostics.Add(new DiagnosticInfo(
-				Diagnostics.ModuleScanNoAccessibleExposure,
-				LocationInfo.From(match.Location),
-				new EquatableArray<string>([Display(typeName),])));
+			if (NoExposureDiagnostic(type, match, markerInfo, context.Compilation) is { } noExposure)
+			{
+				diagnostics.Add(noExposure);
+			}
+
 			return 0;
 		}
 
@@ -1039,6 +1040,37 @@ partial class AwaitenGenerator
 
 		HashSet<string> seen = new(StringComparer.Ordinal);
 		return exposures.Where(exposure => seen.Add(exposure.ToDisplayString(FullyQualified))).ToList();
+	}
+
+	/// <summary>
+	///     The warning for a module-scan match without an accessible exposure. An exposure that exists but that no consumer
+	///     can name (<c>Self</c>, an internal marker or convention interface) is AWT196. A match with no exposure at all is
+	///     reported like a container scan's (see <see cref="RegisterScanMatch" />): AWT139 for <c>Marker</c>, else AWT182
+	///     for <c>MatchingInterface</c>, and nothing for a markerless scan.
+	/// </summary>
+	private static DiagnosticInfo? NoExposureDiagnostic(INamedTypeSymbol type, ScanMatch match, ScanMarkerInfo markerInfo, Compilation compilation)
+	{
+		string typeName = type.ToDisplayString(FullyQualified);
+		bool exists = match.RegisterSelf
+		              || (match.RegisterMarker && markerInfo.Marker is not null
+		                                       && (markerInfo.Open
+			                                       ? ClosedMarkerInterfaces(type, markerInfo.Definition!)
+			                                       : MarkerInterfaces(type, markerInfo.Marker, compilation)).Count > 0)
+		              || (match.RegisterMatchingInterface && MatchingInterfaces(type).Count > 0);
+		if (exists)
+		{
+			return new DiagnosticInfo(Diagnostics.ModuleScanNoAccessibleExposure, LocationInfo.From(match.Location), new EquatableArray<string>([Display(typeName),]));
+		}
+
+		if (markerInfo.Marker is null)
+		{
+			return null;
+		}
+
+		string markerDisplay = (markerInfo.Open ? markerInfo.Definition! : markerInfo.Marker).ToDisplayString(FullyQualified);
+		return match.RegisterMarker
+			? new DiagnosticInfo(Diagnostics.ScanNoImplementedInterfaces, LocationInfo.From(match.Location), new EquatableArray<string>([Display(typeName), Display(markerDisplay),]))
+			: new DiagnosticInfo(Diagnostics.ScanNoMatchingInterface, LocationInfo.From(match.Location), new EquatableArray<string>([Display(typeName), Display("I" + type.Name),]));
 	}
 
 	/// <summary>

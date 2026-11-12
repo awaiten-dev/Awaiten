@@ -108,6 +108,95 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task Awt196_ReportsWhenTheMatchingInterfaceIsInternal()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IPlugin { }
+			                                       internal interface IRoaster { }
+			                                       internal sealed class Roaster : IPlugin, IRoaster { }
+
+			                                       [Module]
+			                                       [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+			                                       public static partial class PluginModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT196") && diagnostic.Contains("Lib.Roaster"))
+				.Because("the matching interface exists but no consumer of the public module can name it");
+		}
+
+		[Test]
+		public async Task Awt196_DoesNotReportWhenTheMatchHasNoMatchingInterface()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IViewModel { }
+			                                       public interface IMenuViewModel : IViewModel { }
+			                                       internal sealed class MenuViewModel : IMenuViewModel { }
+			                                       internal sealed class OrderLineViewModel : IViewModel
+			                                       {
+			                                           public OrderLineViewModel(string product) { }
+			                                       }
+
+			                                       [Module]
+			                                       [Scan<IViewModel>(As = ScanAs.MatchingInterface, SkipUnconstructable = true)]
+			                                       public static partial class ViewModelModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT182") && diagnostic.Contains("'Lib.OrderLineViewModel'") && diagnostic.Contains("'IOrderLineViewModel'"))
+				.Because("a match with no matching interface has no exposure at all, which the module reports like a container scan does, not as an inaccessible one");
+		}
+
+		[Test]
+		public async Task Awt196_DoesNotReportForAMarkerlessScanMatchWithoutAMatchingInterface()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib.Widgets;
+
+			                                       public interface IConformingWidget { }
+			                                       internal sealed class ConformingWidget : IConformingWidget { }
+			                                       internal sealed class BareWidget { }
+
+			                                       [Module]
+			                                       [Scan(As = ScanAs.MatchingInterface, NamespacePatterns = ["Lib.Widgets"])]
+			                                       public static partial class WidgetModule { }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a markerless scan skips a non-conforming type silently, in a module as in a container");
+		}
+
+		[Test]
+		public async Task Awt196_InAnInternalModule_ReportsAMatchWithoutAMatchingInterfaceAsAwt182()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       internal interface IPlugin { }
+			                                       internal interface IRoaster { }
+			                                       internal sealed class Roaster : IPlugin, IRoaster { }
+			                                       internal sealed class Grinder : IPlugin { }
+
+			                                       [Module]
+			                                       [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+			                                       internal static partial class PluginModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT182") && diagnostic.Contains("'Lib.Grinder'"))
+				.Because("an internal module exposes Roaster under its internal interface, and Grinder has no matching interface at all");
+		}
+
+		[Test]
 		public async Task Awt197_DoesNotReportWhenAMatchHasMultipleExposures()
 		{
 			GeneratorResult result = Generator.Run("""

@@ -403,7 +403,8 @@ public static partial class TestPluginModule
 The library's build checks these, besides the [rules every library module follows](./01-library-modules.md#rules):
 
 - The scan sweeps the module's own assembly only ([AWT202](../../09-diagnostics.md#awt202)). This holds even when the library grants `InternalsVisibleTo`, because a container reads the matches from what the generator adds to the module.
-- A match registers through accessible interfaces: a match with none is skipped with a warning ([AWT196](../../09-diagnostics.md#awt196)), and one with several shares its instance through a generated handle (see [several interfaces](#several-interfaces)).
+- A match registers through accessible interfaces: a match whose exposures are all inaccessible is skipped with a warning ([AWT196](../../09-diagnostics.md#awt196)), and one with several shares its instance through a generated handle (see [several interfaces](#several-interfaces)).
+- A match with no exposure at all, such as no `I` + name interface under `ScanAs.MatchingInterface`, is skipped and reported as on a container scan ([AWT139](../../09-diagnostics.md#awt139), [AWT182](../../09-diagnostics.md#awt182)), and silently by a markerless scan.
 - For an `internal` module, an internal interface is accessible, and so is an internal match registered as itself, because only the module's assembly and the assemblies it grants `InternalsVisibleTo` can import it. Its hooks may take internal parameter types, and its conventions may be internal, for the same reason.
 - A match that the module also registers and that every assembly can construct, because it and a constructor are public, gets no factory. A container constructs it for the registration and the scan alike, so they share one instance.
 - A match that the module also produces through a `Factory` or `Instance` member shares the instance of that member in every container, also when the member takes an internal service and a container in another assembly reaches it through a [generated handle](#services-only-the-module-uses).
@@ -421,7 +422,7 @@ Only the hook's parameters *after* the instance carry a rule the container form 
 
 When the module lives in the **same assembly as the container**, there is no assembly boundary to bridge, and the container expands the module's `[Scan]` directly. The scan still means exactly what it means across assemblies: the same accessible exposures per match, one instance across them, the same rules, and construction through the same constructor the generated factory would mirror, so moving a module between the container's project and a library never changes what its scan registers.
 
-- A match skipped in the module's build (AWT196) stays skipped here too.
+- A match skipped in the module's build (AWT139, AWT182, AWT196) stays skipped here too.
 - The only difference is mechanical: the container constructs the match directly instead of calling the generated factory, which it cannot see within its own compilation, except for a match private to the module or a class that contains it, which it builds through the factory the module generates in the same build.
 - The self-compiled factories are still generated into the module, so the same module keeps working for any *other* assembly that imports it.
 

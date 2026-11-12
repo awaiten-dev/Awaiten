@@ -157,7 +157,7 @@ partial class AwaitenGenerator
 	///     see its own output, so the module's self-compiled <c>[GeneratedScanRegistration]</c> attributes are
 	///     invisible within the compilation that declares the module. The expansion runs the module pipeline's own
 	///     logic (<see cref="CollectModuleScanFactories" />), so a scan means exactly the same thing wherever the
-	///     module lives - one accessible exposure per match, matches the module build skipped (AWT196) stay skipped,
+	///     module lives - one accessible exposure per match, matches the module build skipped (AWT139, AWT182, AWT196) stay skipped,
 	///     and construction goes through the greediest accessible constructor, the one the generated factory mirrors -
 	///     except that with no assembly boundary the container constructs the match directly instead of through the
 	///     factory it cannot resolve. A match hidden in the module it cannot construct either, so it calls the
