@@ -32,7 +32,7 @@ public partial class DiagnosticTests
 			{
 				GeneratorResult result = Generator.Run(Module("public", "private"));
 
-				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The decorator predicate 'MyCode.ClientModule.Enabled' is not accessible from the container: it is private to the module 'MyCode.ClientModule'; make it internal or public")
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The predicate 'MyCode.ClientModule.Enabled' is not accessible from the container: it is private to the module 'MyCode.ClientModule'; make it internal or public")
 					.Because("the library that declares the module sees the mistake, not only the containers of its consumers, which cannot fix it");
 			}
 
@@ -122,7 +122,7 @@ public partial class DiagnosticTests
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly(OtherAssemblyModule("internal"), Importer);
 
-			await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The decorator predicate 'Lib.ClientModule.Enabled' is not accessible from the container: the module 'Lib.ClientModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly")
+			await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The predicate 'Lib.ClientModule.Enabled' is not accessible from the container: the module 'Lib.ClientModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly")
 				.Because("a module built without the generator carries no wrapper for its internal predicate");
 		}
 
@@ -142,6 +142,91 @@ public partial class DiagnosticTests
 			GeneratorResult result = Generator.RunWithReferencedAssembly(OtherAssemblyModule("public"), Importer);
 
 			await That(result.Diagnostics).IsEmpty();
+		}
+
+		public class OfEagerWhen
+		{
+			[Test]
+			public async Task ReportsAPrivatePredicateOfAModuleInTheSameAssembly()
+			{
+				GeneratorResult result = Generator.Run(Module("MyCode", "private") + """
+
+				                                                                      [Container]
+				                                                                      [Import(typeof(ClientModule))]
+				                                                                      public static partial class MyContainer;
+				                                                                      """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT247*'MyCode.ClientModule.Enabled'*private to the module 'MyCode.ClientModule'; make it internal or public*").AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsAPrivatePredicateInTheModulesOwnBuild()
+			{
+				GeneratorResult result = Generator.Run(Module("MyCode", "private"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT247*private to the module 'MyCode.ClientModule'*").AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsAPrivatePredicateOfAnExtendedBaseContainer()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public sealed class Client { }
+
+				                                       [Container]
+				                                       [Singleton<Client>(EagerWhen = nameof(Enabled))]
+				                                       public static partial class BaseContainer
+				                                       {
+				                                       	private static bool Enabled() => true;
+				                                       }
+
+				                                       [Container(Extends = typeof(BaseContainer))]
+				                                       public static partial class TestContainer;
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT247*private to the container 'MyCode.BaseContainer'; make it internal or public*").AsWildcard()
+					.Because("the extending container's root evaluates the predicate of the inherited registration itself");
+			}
+
+			[Test]
+			public async Task ReportsANonPublicPredicateOfAModuleInAnotherAssemblyWithoutAWrapper()
+			{
+				GeneratorResult result = Generator.RunWithReferencedAssembly(Module("Lib", "internal"), Importer);
+
+				await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The predicate 'Lib.ClientModule.Enabled' is not accessible from the container: the module 'Lib.ClientModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly");
+			}
+
+			[Test]
+			[Arguments("public", false)]
+			[Arguments("internal", true)]
+			public async Task DoesNotReportAPredicateOfAModuleInAnotherAssemblyTheContainerCanCall(string accessibility, bool grant)
+			{
+				string module = Module("Lib", accessibility);
+				GeneratorResult result = Generator.RunWithReferencedAssembly(
+					grant ? module.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;") : module, Importer);
+
+				await That(result.Diagnostics).IsEmpty();
+			}
+
+			private static string Module(string @namespace, string accessibility)
+				=> $$"""
+				     using Awaiten;
+
+				     namespace {{@namespace}};
+
+				     public sealed class Client { }
+
+				     [Module]
+				     [Singleton<Client>(EagerWhen = nameof(Enabled))]
+				     public static partial class ClientModule
+				     {
+				     	{{accessibility}} static bool Enabled() => true;
+				     }
+				     """;
 		}
 
 		private const string Importer = """

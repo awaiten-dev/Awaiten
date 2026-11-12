@@ -398,7 +398,7 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Records a public wrapper for each internal decorator predicate (see <see cref="InternalPredicate" />) of a public
+	///     Records a public wrapper for each internal <c>When</c> or <c>EagerWhen</c> predicate (see <see cref="InternalPredicate" />) of a public
 	///     container without <c>Extends</c>, so a container that extends it in another assembly calls the predicate without
 	///     <c>InternalsVisibleTo</c>. A predicate that takes a type other assemblies cannot name gets none.
 	/// </summary>

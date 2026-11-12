@@ -699,6 +699,7 @@ partial class AwaitenGenerator
 			Origin = reg.Origin,
 			DeclaredBy = reg.Declarer,
 			Eager = reg.Eager,
+			EagerWhen = reg.EagerWhen,
 			OnActivated = reg.OnActivated,
 			OnRelease = reg.OnRelease,
 			OnActivatedOrigin = reg.OnActivated is null ? null : DeclaringOrigin(reg, container),
@@ -1278,11 +1279,11 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Every per-instance directive (OnActivated, OnRelease, Eager, SuppressDisposal or ConsumerOwned) this registration sets to
-	///     a value the coalesced instance will not use, each yielded independently so it can be reported on its own.
-	///     Coalescing keeps the first (winning) registration's directives, so a conflict is a later registration
-	///     explicitly naming a directive value that differs from the winner's: a differing hook, or opting into Eager
-	///     or SuppressDisposal the winner did not. A registration that leaves a directive unset (a null hook, or a
+	///     Every per-instance directive (OnActivated, OnRelease, Eager, EagerWhen, SuppressDisposal or ConsumerOwned) this
+	///     registration sets to a value the coalesced instance will not use, each yielded independently so it can be
+	///     reported on its own. Coalescing keeps the first (winning) registration's directives, so a conflict is a later
+	///     registration explicitly naming a directive value that differs from the winner's: a differing hook or
+	///     <c>EagerWhen</c> predicate, or opting into Eager or SuppressDisposal the winner did not. A registration that leaves a directive unset (a null hook, or a
 	///     bool flag left at its default false) states no opinion and merges with the winner rather than conflicting,
 	///     so the winner's own directives, which this registration inherits, are never a conflict against themselves.
 	///     A hook is identified by its name and the type that declares it, so the same name on a module and on the
@@ -1306,6 +1307,11 @@ partial class AwaitenGenerator
 			yield return ("Eager", "false", "true");
 		}
 
+		if (registration.EagerWhen is { } eagerWhen && eagerWhen.Member != info.EagerWhen?.Member)
+		{
+			yield return ("EagerWhen", info.Eager ? "Eager = true" : DescribePredicate(info.EagerWhen), DescribePredicate(eagerWhen));
+		}
+
 		if (registration.SuppressDisposal && !info.SuppressDisposal)
 		{
 			yield return ("SuppressDisposal", "false", "true");
@@ -1327,6 +1333,9 @@ partial class AwaitenGenerator
 
 		static string DescribeTypes(IReadOnlyList<string>? types)
 			=> types is not { Count: > 0, } ? "unset" : "[" + string.Join(", ", types.Select(type => $"typeof({Display(type)})")) + "]";
+
+		static string DescribePredicate(DecoratorPredicate? predicate)
+			=> predicate is null ? "unset" : $"'{Display(predicate.Declared ?? predicate.Member)}'";
 	}
 
 	/// <summary>

@@ -155,15 +155,20 @@ The graph is still validated with the decorator in place, whatever the predicate
 <details>
 <summary>Build it at startup only when it is on</summary>
 
-`Eager = true` on the decorated singleton builds it when the root is created, through the decorator when that is on and without it otherwise. To build it at startup only in the runs that apply the decorator, resolve it at the entry point instead:
+`Eager = true` on the decorated singleton builds it when the root is created, through the decorator when that is on and without it otherwise. To build it at startup only in the runs that apply the decorator, name the same predicate in [`EagerWhen`](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup):
 
 ```csharp
-await using CoffeeShop.Root shop = new();
-if (ShopSwitches.AuditPayments)
+[Container]
+// highlight-next-line
+[Singleton<CardTerminal, IPaymentTerminal>(EagerWhen = nameof(AuditPayments))]
+[Decorate<AuditedTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class CoffeeShop
 {
-    await shop.ResolveAsync<IPaymentTerminal>(cancellationToken);
+    private static bool AuditPayments => ShopSwitches.AuditPayments;
 }
 ```
+
+Both read the one evaluation of the predicate, so the terminal is built at startup, decorated, exactly in the runs that audit payments, and stays lazy in the others.
 
 </details>
 
@@ -188,7 +193,7 @@ public static partial class CoffeeShop
 }
 ```
 
-Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use.
+Such a predicate is still evaluated once per root, but the first time a decorator it guards is needed, once its services are resolved; an eager singleton evaluates it while it is built, and a singleton whose `EagerWhen` names it evaluates it when the root is created. Concurrent first resolves wait for that one evaluation, and a predicate that throws is evaluated again on the next use.
 
 Because it decides for the whole root, it takes only services the root shares as one instance it builds synchronously: singletons, `Instance` registrations and [imported services](../07-hosting/02-external-services.mdx) that are not initialized asynchronously.
 
@@ -199,6 +204,7 @@ Because it decides for the whole root, it takes only services the root shares as
 - `When` names a static `bool` method, property or field of the type that declares the `[Decorate]`. Anything else, including a method returning `Task<bool>`, is a build error ([AWT246](../09-diagnostics.md#awt246)).
 - A predicate on a [module](./08-modules/index.md) or an [extended container](./09-extending-containers.md) must be internal or public ([AWT247](../09-diagnostics.md#awt247)). How a container in another assembly calls an internal one is described in [non-public members](./08-modules/02-library-module-rules.md#non-public-members) for a module and in [switch an inherited decorator off](./09-extending-containers.md#switch-an-inherited-decorator-off) for a base container.
 - A predicate parameter the root cannot supply once, such as a scoped service, a `Func<T>` or an async-initialized singleton, is a build error ([AWT248](../09-diagnostics.md#awt248)), and so is one that needs the decorated service ([AWT102](../09-diagnostics.md#awt102)).
+- The `EagerWhen` predicate of a [`[Singleton]`](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) follows the same rules, on the type that declares the `[Singleton]`, and shares its evaluation with the decorators that name it.
 - A service that reaches the decorated service only through a `Func<T>` or `Lazy<T>` is allowed. If it calls that `Func<T>` or `Lazy<T>` in its constructor, the predicate is needed while it is being evaluated, and the resolve throws an `InvalidOperationException` that names the predicate.
 
 ## Lifetime and disposal

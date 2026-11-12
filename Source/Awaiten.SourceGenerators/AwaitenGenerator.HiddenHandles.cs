@@ -231,14 +231,14 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The qualified members the generated code of <paramref name="instances" /> calls, without the type arguments of
 	///     a closing: the production members, which include the factories of the decorators and composites it applies,
-	///     the lifecycle hooks, the async initializer wrappers, the <c>When</c> predicates and the deferred setters.
+	///     the lifecycle hooks, the async initializer wrappers, the <c>When</c> and <c>EagerWhen</c> predicates and the deferred setters.
 	/// </summary>
 	private static HashSet<string> CalledMembers(List<InstanceModel> instances)
 	{
 		HashSet<string> called = new(StringComparer.Ordinal);
 		foreach (InstanceModel instance in instances)
 		{
-			IEnumerable<string?> members = new[] { instance.ProductionMember, instance.OnActivated, instance.OnRelease, instance.When?.Member, }
+			IEnumerable<string?> members = new[] { instance.ProductionMember, instance.OnActivated, instance.OnRelease, instance.When?.Member, instance.EagerWhen?.Member, }
 				.Concat(instance.AsyncInitializers.AsArray().Where(initializer => initializer.Wrapper).Select(initializer => $"{initializer.Type}.{initializer.Method}"))
 				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Setter));
 			foreach (string member in members.OfType<string>())
@@ -302,6 +302,7 @@ partial class AwaitenGenerator
 				Weak = own.All(registration => registration.Weak),
 				Lifetime = own[0].Lifetime,
 				Eager = own[0].Eager,
+				EagerWhen = own[0].EagerWhen,
 				SuppressDisposal = own[0].SuppressDisposal,
 				ConsumerOwned = own[0].ConsumerOwned,
 				OnActivated = own[0].OnActivated,
@@ -317,7 +318,7 @@ partial class AwaitenGenerator
 			string handled = HandledIdentity(raw[index]);
 			if (aliases.Any(alias => alias.ImplementationType.EndsWith(AliasKeyMarker + handled, StringComparison.Ordinal)) && kept.Add(handled))
 			{
-				raw[index] = raw[index] with { Weak = true, Eager = false, };
+				raw[index] = raw[index] with { Weak = true, Eager = false, EagerWhen = null, };
 			}
 			else
 			{
@@ -494,6 +495,7 @@ partial class AwaitenGenerator
 			Production = ProductionKind.Factory,
 			ProductionMember = InInternals(alias.Name),
 			Eager = false,
+			EagerWhen = null,
 			OnActivated = null,
 			OnRelease = null,
 			OnActivatedMarkers = null,
@@ -584,7 +586,7 @@ partial class AwaitenGenerator
 				{
 					HashSet<string> conflicting = new(ConflictingDirectives(NewImplInfo(plain, container), handle, container).Select(directive => directive.Directive), StringComparer.Ordinal);
 					foreach ((string directive, string _, string _) in ConflictingDirectives(NewImplInfo(handle, container), registration, container)
-						         .Where(directive => directive.Directive != "Eager" && !conflicting.Contains(directive.Directive)))
+						         .Where(directive => directive.Directive is not ("Eager" or "EagerWhen") &&!conflicting.Contains(directive.Directive)))
 					{
 						Report($"it sets {directive}, which the handle cannot apply to the instance it builds", scan
 							? $"remove {directive}, or grant this assembly InternalsVisibleTo in the module's assembly"
@@ -610,6 +612,7 @@ partial class AwaitenGenerator
 			raw[index] = ThroughAlias(registration with { Lifetime = handle.Lifetime, }, owner, implementation, alias, compilation, producer is null ? null : handled) with
 			{
 				Eager = registration.Eager,
+				EagerWhen = registration.EagerWhen,
 				Declarer = registration.Declarer ?? registration.Origin ?? container,
 			};
 
@@ -791,6 +794,8 @@ partial class AwaitenGenerator
 				HiddenProduction = DescribeProduction(registrations[0].Production, registrations[0].Member, module),
 				Key = null,
 				Eager = NamedFlag(registrations[0].Attribute, "Eager"),
+				// A predicate that differs from this registration's is AWT166 in the module's own build.
+				EagerWhen = NamedArgument(registrations[0].Attribute, "EagerWhen") is null ? null : registration.EagerWhen,
 				OnActivated = Hook(NamedArgument(registrations[0].Attribute, "OnActivated"), release: false),
 				OnRelease = Hook(NamedArgument(registrations[0].Attribute, "OnRelease"), release: true),
 				SuppressDisposal = NamedFlag(registrations[0].Attribute, "SuppressDisposal"),

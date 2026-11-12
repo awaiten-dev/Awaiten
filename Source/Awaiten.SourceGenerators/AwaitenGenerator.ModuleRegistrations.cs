@@ -367,7 +367,7 @@ partial class AwaitenGenerator
 	///     import, gets only such internal wrappers. A return type private
 	///     to the module is exposed as the registered type (see <see cref="OwnedMemberType" />). Whether a public member
 	///     already serves a registration is judged by the members that produce its type and the hooks that take it, so a
-	///     public overload of another type does not stand in for an internal one. An internal decorator predicate (see
+	///     public overload of another type does not stand in for an internal one. An internal <c>When</c> or <c>EagerWhen</c> predicate (see
 	///     <see cref="InternalPredicate" />) gets a public wrapper too, a property for a property or field, taking an
 	///     internal service through its handle; one with a parameter no wrapper can take lands in <paramref name="skipped" />.
 	/// </summary>
@@ -1158,7 +1158,7 @@ partial class AwaitenGenerator
 		{
 			if (registration.Attribute.AttributeClass?.Name != "SingletonAttribute"
 			    || registration.Production == ProductionKind.Instance
-			    || !NamedFlag(registration.Attribute, "Eager"))
+			    || !StartsEagerly(registration.Attribute))
 			{
 				continue;
 			}
@@ -1203,7 +1203,7 @@ partial class AwaitenGenerator
 			}
 
 			conventions ??= DeclaredAsyncInitializers(module, compilation, null);
-			if (NamedFlag(registration.Attribute, "Eager") || IsHiddenAsyncInitialized(registration.Implementation, [registration,], module, compilation, conventions))
+			if (StartsEagerly(registration.Attribute) || IsHiddenAsyncInitialized(registration.Implementation, [registration,], module, compilation, conventions))
 			{
 				string implementation = Display(registration.Implementation.ToDisplayString(FullyQualified));
 				diagnostics.Add(new DiagnosticInfo(
@@ -2104,7 +2104,7 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether a closed registration of <paramref name="module" /> names a <c>Factory</c> or <c>Instance</c> member or
-	///     a lifecycle hook that exists but has no public overload, or a decorator predicate that is internal, which a
+	///     a lifecycle hook that exists but has no public overload, or a <c>When</c> or <c>EagerWhen</c> predicate that is internal, which a
 	///     container in another assembly calls only through a generated wrapper.
 	/// </summary>
 	private static bool HasMemberNeedingWrapper(INamedTypeSymbol module, Compilation compilation)

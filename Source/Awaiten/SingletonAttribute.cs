@@ -14,7 +14,7 @@ namespace Awaiten;
 ///     like <see cref="SingletonAttribute{TImplementation, TService}" />.
 /// </summary>
 /// <remarks>
-///     <see cref="Instance" /> and <see cref="Eager" /> need a closed type. On an open generic,
+///     <see cref="Instance" />, <see cref="Eager" /> and <see cref="EagerWhen" /> need a closed type. On an open generic,
 ///     <see cref="Factory" /> names a generic method with the service's type parameters, closed per closing.
 /// </remarks>
 /// <example><c>[Singleton(typeof(Repository&lt;&gt;), typeof(IRepository&lt;&gt;))]</c></example>
@@ -85,6 +85,16 @@ public sealed class SingletonAttribute : Attribute
 	///     type: register the closings you want eager explicitly.
 	/// </summary>
 	public bool Eager { get; set; }
+
+	/// <summary>
+	///     The name of a static <see langword="bool" /> method, property or field, on the type that declares this
+	///     attribute, that decides once per root whether the singleton is built when the root is created, like
+	///     <see cref="Eager" />. It follows the rules of a decorator's <c>When</c> predicate. When it is
+	///     <see langword="false" />, the singleton is built on first resolve. Needs a closed type and cannot be combined
+	///     with <see cref="Eager" />.
+	/// </summary>
+	/// <example><c>[Singleton(typeof(Client), typeof(IClient), EagerWhen = nameof(MonitoringEnabled))]</c></example>
+	public string? EagerWhen { get; set; }
 
 	/// <summary>
 	///     The name of a static method on the container accepting the implementation, invoked once the
@@ -181,6 +191,15 @@ public sealed class SingletonAttribute<TImplementation> : Attribute
 	public bool Eager { get; set; }
 
 	/// <summary>
+	///     The name of a static <see langword="bool" /> method, property or field, on the type that declares this
+	///     attribute, that decides once per root whether the singleton is built when the root is created, like
+	///     <see cref="Eager" />. It follows the rules of a decorator's <c>When</c> predicate. When it is
+	///     <see langword="false" />, the singleton is built on first resolve. Cannot be combined with <see cref="Eager" />.
+	/// </summary>
+	/// <example><c>[Singleton&lt;IClient&gt;(Factory = nameof(CreateClient), EagerWhen = nameof(MonitoringEnabled))]</c></example>
+	public string? EagerWhen { get; set; }
+
+	/// <summary>
 	///     The name of a static method on the container accepting a
 	///     <typeparamref name="TImplementation" />, invoked once the instance has been constructed - a
 	///     post-construction initialization hook. A method returning <c>Task</c> or <c>ValueTask</c> is awaited and
@@ -269,6 +288,15 @@ public sealed class SingletonAttribute<TImplementation, TService> : Attribute
 	///     Eager singletons are built in registration order and disposed with the container like any other.
 	/// </summary>
 	public bool Eager { get; set; }
+
+	/// <summary>
+	///     The name of a static <see langword="bool" /> method, property or field, on the type that declares this
+	///     attribute, that decides once per root whether the singleton is built when the root is created, like
+	///     <see cref="Eager" />. It follows the rules of a decorator's <c>When</c> predicate. When it is
+	///     <see langword="false" />, the singleton is built on first resolve. Cannot be combined with <see cref="Eager" />.
+	/// </summary>
+	/// <example><c>[Singleton&lt;IClient&gt;(Factory = nameof(CreateClient), EagerWhen = nameof(MonitoringEnabled))]</c></example>
+	public string? EagerWhen { get; set; }
 
 	/// <summary>
 	///     The name of a static method on the container accepting a

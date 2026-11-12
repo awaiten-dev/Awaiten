@@ -11,7 +11,8 @@ namespace Awaiten.SourceGenerators;
 ///     <c>Weak</c> / <c>IsDefault</c> (an overridable module default, filling only a gap; <c>IsDefault</c> is
 ///     Fallback.Warn, which reports AWT148 on colliding defaults), <c>Origin</c> (the imported module that
 ///     declared it), <c>IsSynthesized</c> (from open generic
-///     expansion, yielding to explicit registrations), and <c>Eager</c> (build-time construction, singletons only).
+///     expansion, yielding to explicit registrations), and <c>Eager</c> (build-time construction, singletons only)
+///     or <c>EagerWhen</c>, the predicate that decides it once per root.
 ///     <c>WhenInjectedInto</c> names a consumer type for a contextual binding: the registration is stored under a
 ///     synthetic context key and reached only from that consumer's constructor parameters (AWT167 when it never applies).
 ///     <c>GreedyConstructor</c> marks a same-compilation module-scan match, constructed through the greediest
@@ -79,7 +80,8 @@ internal sealed record RawRegistration(
 	string? HiddenProduction = null,
 	RawRegistration? Aliased = null,
 	INamedTypeSymbol? Declarer = null,
-	IReadOnlyList<string>? ConsumerOwned = null);
+	IReadOnlyList<string>? ConsumerOwned = null,
+	DecoratorPredicate? EagerWhen = null);
 
 /// <summary>
 ///     An imported module: its symbol and the location of the container's <c>[Import]</c> attribute that
@@ -124,7 +126,8 @@ internal sealed record DecorateRegistration(
 	bool InnerReportedByModule = false);
 
 /// <summary>
-///     The <c>When</c> predicate of a <c>[Decorate]</c>: the fully qualified static <see cref="Member" /> the root reads,
+///     The <c>When</c> predicate of a <c>[Decorate]</c> or the <c>EagerWhen</c> predicate of a <c>[Singleton]</c>: the
+///     fully qualified static <see cref="Member" /> the root reads,
 ///     the <see cref="Method" /> it calls when the member is a method (whose parameters the root resolves), and the
 ///     attribute's location. <see cref="Declared" /> names the predicate the user declared when <see cref="Member" /> is
 ///     the wrapper its owner generated for it.
@@ -278,6 +281,12 @@ partial class AwaitenGenerator
 		///     singleton (see <c>BuildInstance</c>).
 		/// </summary>
 		public bool Eager { get; init; }
+
+		/// <summary>
+		///     The predicate that decides at root creation whether the winning registration is built eagerly
+		///     (<c>EagerWhen</c>), or <see langword="null" />. Set and honored like <see cref="Eager" />.
+		/// </summary>
+		public DecoratorPredicate? EagerWhen { get; init; }
 
 		/// <summary>
 		///     The identities of the outermost decorator chain links wrapping this implementation, one per decorated

@@ -61,12 +61,12 @@
  AWT158  | Awaiten   | Warning  | An [Inject(Optional = true)] property is init-only, so an unregistered dependency leaves it permanently at its default
  AWT159  | Awaiten   | Error    | A keyed dictionary (IReadOnlyDictionary<TKey, TService>) has a key type that is neither string nor an enum, or that mismatches its keyed registrations
  AWT160  | Awaiten   | Error    | A [FromKey] is applied to a synthesized keyed collection (IReadOnlyDictionary<string, TService>), which resolves every key
- AWT161  | Awaiten   | Error    | An Eager singleton is async-initialized and cannot be constructed synchronously at container build time; a warning in the build of the module that registers it
+ AWT161  | Awaiten   | Error    | An Eager or EagerWhen singleton is async-initialized and cannot be constructed synchronously at container build time; a warning in the build of the module that registers it
  AWT162  | Awaiten   | Error    | A [RequestingType] factory parameter is not of type System.Type
  AWT163  | Awaiten   | Error    | A factory has both a [RequestingType] parameter and an [Arg] runtime-argument parameter
  AWT164  | Awaiten   | Error    | An OnActivated/OnRelease registration names a member that is not a usable lifecycle hook, such as a generic method whose type parameters nothing binds
  AWT165  | Awaiten   | Error    | An OnActivated/OnRelease lifecycle hook is set on a pre-built Instance registration, which the container does not own
- AWT166  | Awaiten   | Error    | An implementation is registered with conflicting OnActivated/OnRelease/Eager directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not
+ AWT166  | Awaiten   | Error    | An implementation is registered with conflicting OnActivated/OnRelease/Eager/EagerWhen directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not
  AWT167  | Awaiten   | Warning  | A WhenInjectedInto contextual binding never applies because the named consumer has no unkeyed direct constructor parameter to redirect
  AWT168  | Awaiten   | Error    | A registration sets both WhenInjectedInto and Key, which claim the same resolution slot, so the Key is silently dropped
  AWT169  | Awaiten   | Error    | Two implementations set WhenInjectedInto for the same service and consumer, so the contextual resolution would be ambiguous
@@ -106,7 +106,7 @@
  AWT204  | Awaiten   | Error    | A self-compiled module [Scan] or registration hook parameter carries [FromKey]/[Inject] metadata the generated hook wrapper cannot mirror
  AWT205  | Awaiten   | Warning  | User code constructs an Owned<T> disposal handle with new, although only the container should create one
  AWT206  | Awaiten   | Error    | A closed typeof registration's implementation is not a class or interface assignable to its service
- AWT207  | Awaiten   | Error    | Eager or Instance is set on an open generic typeof registration, but both need a closed type
+ AWT207  | Awaiten   | Error    | Eager, EagerWhen or Instance is set on an open generic typeof registration, but each needs a closed type
  AWT208  | Awaiten   | Error    | The Factory of an open generic typeof registration is not a generic method with the service's number of type parameters
  AWT209  | Awaiten   | Error    | A closing of an open generic typeof registration violates the constraints of its generic Factory, so the closing is skipped
  AWT210  | Awaiten   | Error    | A key in a decorator's Keys matches no registration of the decorated service
@@ -138,9 +138,9 @@
  AWT243  | Awaiten   | Error    | The project compiles with a C# version older than the code generated for a container or module needs (C# 9, or C# 11 for a module that declares a [Scan]), so nothing is generated for it
  AWT244  | Awaiten   | Error    | A container constructs a type of another assembly whose [Inject] property is not accessible from the container's assembly, so it would leave the property unset
  AWT245  | Awaiten   | Warning  | A Factory or Instance member is declared nullable or [MaybeNull], so it may produce null for a service the container serves as non-nullable
- AWT246  | Awaiten   | Error    | A decorator's When names no static bool method, property or field of the type that declares the [Decorate]
- AWT247  | Awaiten   | Error    | A decorator's When names a predicate on a module or base container that the container cannot call, because it is private, or not public in another assembly or on a public module
- AWT248  | Awaiten   | Error    | A decorator predicate takes a parameter the root cannot supply: an [Arg], a by-reference parameter, a relationship, a collection, or a service that is not a synchronously built singleton, Instance or imported service
+ AWT246  | Awaiten   | Error    | A decorator's When or a singleton's EagerWhen names no static bool method, property or field of the type that declares the attribute
+ AWT247  | Awaiten   | Error    | A decorator's When or a singleton's EagerWhen names a predicate on a module or base container that the container cannot call, because it is private, or not public in another assembly or on a public module
+ AWT248  | Awaiten   | Error    | A When or EagerWhen predicate takes a parameter the root cannot supply: an [Arg], a by-reference parameter, a relationship, a collection, or a service that is not a synchronously built singleton, Instance or imported service
  AWT249  | Awaiten   | Warning  | An unkeyed open generic decorator or composite of a container applies to no closing of its service in the container's graph
  AWT250  | Awaiten   | Warning  | A collection over a service the container imports through [ImportService] has no member, so it is always empty, since the external resolver serves only a direct dependency
  AWT252  | Awaiten   | Error    | An imported module of another assembly passes an empty collection of an internal element type that another imported module registers, so the graph differs from the one built in the module's assembly
@@ -153,6 +153,7 @@
  AWT259  | Awaiten   | Error    | A dependency is a relationship such as Func<T> whose type the container also registers or imports as a service, which injection never hands out, because it builds the relationship over T
  AWT261  | Awaiten   | Error    | A consumer lists a service in ConsumerOwned whose build leaves more than the instance on the owner, such as another disposable transient, a Func or Lazy over one, or a release hook, which the consumer cannot release
  AWT262  | Awaiten   | Warning  | A ConsumerOwned entry that no Func or dispatch dictionary of the consumer over a build-on-demand service the container disposes reaches, in any closing of the registration
+ AWT263  | Awaiten   | Error    | A [Singleton] sets both Eager = true and EagerWhen, so the predicate would never decide whether it is built at startup
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

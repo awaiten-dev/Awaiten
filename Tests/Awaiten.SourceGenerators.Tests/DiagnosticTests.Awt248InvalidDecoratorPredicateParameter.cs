@@ -161,6 +161,76 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).IsEmpty();
 		}
 
+		public class OfEagerWhen
+		{
+			[Test]
+			[Arguments("[Singleton<Settings>]", "[Arg] Settings settings", "it is a runtime [Arg], which no caller supplies")]
+			[Arguments("[Singleton<Settings>]", "System.Func<Settings> settings", "it is a relationship or a collection")]
+			[Arguments("[Scoped<Settings>]", "Settings settings", "it is scoped")]
+			[Arguments("[Transient<Settings>]", "Settings settings", "it is transient")]
+			public async Task ReportsAParameterTheRootCannotSupply(string registration, string parameter, string reason)
+			{
+				GeneratorResult result = Generator.Run(EagerContainer(registration, parameter));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains($"*error AWT248: The predicate 'MyCode.MyContainer.Warm' cannot take '*MyCode.Settings*': {reason}*").AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsAnAsyncInitializedSingleton()
+			{
+				GeneratorResult result = Generator.Run(EagerContainer("""
+				                                                      [AsyncInitializer<Settings>(nameof(Settings.InitializeAsync))]
+				                                                      [Singleton<Settings>]
+				                                                      """, "Settings settings"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT248*cannot take 'MyCode.Settings': it is initialized asynchronously, but a predicate is evaluated synchronously*").AsWildcard()
+					.Because("the root evaluates the predicate synchronously in its constructor, so it cannot await the service it takes");
+			}
+
+			[Test]
+			public async Task ReportsAPredicateSharedWithADecoratorOnce()
+			{
+				GeneratorResult result = Generator.Run(EagerContainer("[Scoped<Settings>]", "Settings settings", "[Decorate<MonitoringClient, IClient>(When = nameof(Warm))]"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT248*it is scoped*").AsWildcard()
+					.Because("a decorator and a singleton that name the same predicate share its one evaluation and its diagnostics");
+			}
+
+			[Test]
+			[Arguments("[Singleton<Settings>]")]
+			[Arguments("[Singleton<Settings>(Instance = nameof(Current))]")]
+			[Arguments("[ImportService<Settings>]")]
+			public async Task DoesNotReportASharedSynchronousService(string registration)
+			{
+				GeneratorResult result = Generator.Run(EagerContainer(registration, "Settings settings"));
+
+				await That(result.Diagnostics).IsEmpty();
+			}
+
+			private static string EagerContainer(string registrations, string parameter, string decorator = "")
+				=> $$"""
+				     using Awaiten;
+
+				     namespace MyCode;
+
+				     public interface IClient { }
+				     public sealed class Settings { public System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask; }
+				     public sealed class Client : IClient { }
+				     public sealed class MonitoringClient : IClient { public MonitoringClient(IClient inner) { } }
+
+				     [Container]
+				     {{registrations}}
+				     [Singleton<Client, IClient>(EagerWhen = nameof(Warm))]
+				     {{decorator}}
+				     public static partial class MyContainer
+				     {
+				     	internal static Settings Current { get; } = new();
+
+				     	private static bool Warm({{parameter}}) => true;
+				     }
+				     """;
+		}
+
 		private static string Container(string registrations, string parameter, string settings = "Settings { }")
 			=> $$"""
 			     using Awaiten;

@@ -5,13 +5,16 @@ namespace Awaiten.SourceGenerators;
 
 internal static partial class Sources
 {
-	/// <summary>The distinct predicates of the conditional decorator chain links, in order of first use.</summary>
+	/// <summary>
+	///     The distinct predicates of the conditional decorator chain links and of the singletons with an
+	///     <c>EagerWhen</c>, in order of first use.
+	/// </summary>
 	private static List<PredicateModel> DistinctPredicates(InstanceModel[] instances)
 	{
 		List<PredicateModel> predicates = new();
-		foreach (InstanceModel instance in instances)
+		foreach (PredicateModel predicate in instances.SelectMany(instance => new[] { instance.When, instance.EagerWhen, }).OfType<PredicateModel>())
 		{
-			if (instance.When is { } predicate && !predicates.Exists(known => known.Member == predicate.Member))
+			if (!predicates.Exists(known => known.Member == predicate.Member))
 			{
 				predicates.Add(predicate);
 			}
@@ -19,6 +22,10 @@ internal static partial class Sources
 
 		return predicates;
 	}
+
+	/// <summary>The expression that reads the predicate at <paramref name="index" /> from <paramref name="root" />.</summary>
+	private static string PredicateValue(PredicateModel predicate, int index, string root)
+		=> predicate.IsLazy ? $"Root.{PredicateMethod(index)}({root})" : $"{root}.{PredicateField(index)}";
 
 	/// <summary>
 	///     Emits the <c>Root</c> field of each predicate: a <c>readonly bool</c> the constructor sets for a parameterless
@@ -75,7 +82,7 @@ internal static partial class Sources
 			string arguments = string.Join(", ", predicate.Parameters.AsArray()
 				.Select(parameter => DependencyValue(parameter, context.Instances, context.Names, context.ServiceToIndex, asynchronous: false)));
 			Separate(builder);
-			AppendXmlSummary(builder, depth, $"Evaluates the decorator predicate <c>{AwaitenGenerator.Display(predicate.DeclaredMember)}</c> once per root.");
+			AppendXmlSummary(builder, depth, $"Evaluates the predicate <c>{AwaitenGenerator.Display(predicate.DeclaredMember)}</c> once per root.");
 			Indent(builder, depth).Append("internal static bool ").Append(PredicateMethod(p)).AppendLine("(Root __s)");
 			Indent(builder, depth).AppendLine("{");
 			Indent(builder, depth + 1).Append("int __state = ").Append(field).AppendLine(";");
@@ -124,7 +131,7 @@ internal static partial class Sources
 		int index = context.Predicates.FindIndex(known => known.Member == predicate.Member);
 		ParameterModel inner = instance.ConstructorParameters.AsArray()
 			.First(parameter => parameter.ImportedInner || parameter.Key?.StartsWith(AwaitenGenerator.DecoratorKeyPrefix, StringComparison.Ordinal) == true);
-		string enabled = predicate.IsLazy ? $"Root.{PredicateMethod(index)}(__s.__root)" : $"__s.__root.{PredicateField(index)}";
+		string enabled = PredicateValue(predicate, index, "__s.__root");
 		Indent(builder, depth).Append("if (!").Append(enabled).AppendLine(")");
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).Append("return ").Append(DependencyValue(inner, context.Instances, context.Names, context.ServiceToIndex, asynchronous)).AppendLine(";");

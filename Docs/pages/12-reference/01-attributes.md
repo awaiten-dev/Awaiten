@@ -57,7 +57,7 @@ Goes on a container, any number of times.
 
 ### Singleton, Scoped and Transient
 
-Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md). The three attributes share their forms and properties, except that `Eager` and `Instance` exist only on `[Singleton]`.
+Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md). The three attributes share their forms and properties, except that `Eager`, `EagerWhen` and `Instance` exist only on `[Singleton]`.
 
 ```csharp no-compile
 [Singleton<Grinder>]                                   // the implementation is its own service
@@ -83,6 +83,7 @@ Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md
 | `WhenInjectedInto` | `Type?` | `null` | Uses this registration only for the constructor parameters and `[Inject]` properties of the given consumer type, and the unconditional registration everywhere else. | [Contextual binding](../05-registration/05-keyed-services.md#bind-a-variant-to-a-consumer-with-wheninjectedinto) |
 | `Fallback` | [`Fallback`](#fallback) | `None` | Makes the registration an overridable default that a registration of the same service without `Fallback` replaces, unless that is a scan match or the closing of an open generic over a closed default. | [Overridable defaults](../05-registration/08-modules/index.md#overridable-defaults) |
 | `Eager` | `bool` | `false` | `[Singleton]` only: builds the singleton when the root is created instead of on first resolve. Needs a closed type. | [Lifetimes](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) |
+| `EagerWhen` | `string?` | `null` | `[Singleton]` only: name of a static `bool` method, property or field on the declaring type. When it is `true`, the singleton is built when the root is created, like `Eager`. It is evaluated once per root. Needs a closed type and cannot be combined with `Eager`. | [Lifetimes](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) |
 | `OnActivated` | `string?` | `null` | Name of a static method that receives the instance once it is constructed. A method returning `Task` or `ValueTask` makes the service async-initialized. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before any instance it owns is disposed. A method returning `Task` or `ValueTask` is awaited, which needs asynchronous disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `SuppressDisposal` | `bool` | `false` | Builds the instance but never disposes it. Releasing it is up to you, typically through `OnRelease`. | [Disposal](../04-core-concepts/05-disposal.md#suppressing-disposal) |

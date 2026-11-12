@@ -74,7 +74,7 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Reads an open <c>[Singleton(typeof(Repository&lt;&gt;), typeof(IRepository&lt;&gt;))]</c> registration into an
 	///     <see cref="OpenRegistration" /> carrying every option the generic form has that can hold per closing. Reports
-	///     AWT125/AWT127/AWT128 for a malformed pair, AWT207 for <c>Eager</c> or <c>Instance</c> (each needs a closed
+	///     AWT125/AWT127/AWT128 for a malformed pair, AWT207 for <c>Eager</c>, <c>EagerWhen</c> or <c>Instance</c> (each needs a closed
 	///     type, and the option is ignored), and AWT208 when the owner declares a method named by <c>Factory</c> but none
 	///     with the service's arity (the registration is dropped).
 	/// </summary>
@@ -98,6 +98,11 @@ partial class AwaitenGenerator
 		if (NamedFlag(attribute, "Eager"))
 		{
 			ReportNeedsClosedType("Eager");
+		}
+
+		if (NamedArgument(attribute, "EagerWhen") is not null)
+		{
+			ReportNeedsClosedType("EagerWhen");
 		}
 
 		if (NamedArgument(attribute, "Instance") is not null)
@@ -444,6 +449,7 @@ partial class AwaitenGenerator
 			}
 
 			EnqueueHooks(registration, registration.Implementation, 0, context);
+			EnqueuePredicate(registration.Implementation, registration.EagerWhen, 0, context);
 			EnqueueOpenWrappers(registration, 0, context);
 		}
 
@@ -514,8 +520,8 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Enqueues the method of a decorator's <c>When</c> predicate, so the services it takes seed expansion like a
-	///     factory's parameters. A property, a field or an unusable predicate (AWT246, AWT247) takes none.
+	///     Enqueues the method of a decorator's <c>When</c> or a singleton's <c>EagerWhen</c> predicate, so the services it
+	///     takes seed expansion like a factory's parameters. A property, a field or an unusable predicate (AWT246, AWT247) takes none.
 	/// </summary>
 	private static void EnqueuePredicate(INamedTypeSymbol decorator, DecoratorPredicate? when, int depth, ExpansionContext context)
 	{

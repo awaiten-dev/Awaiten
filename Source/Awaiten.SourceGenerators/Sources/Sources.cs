@@ -106,7 +106,7 @@ internal static partial class Sources
 		/// <summary>Whether the generated code can apply <c>NotNullWhenAttribute</c> (see <see cref="ContainerModel.HasNotNullWhen" />).</summary>
 		public bool NotNullWhen => Model is not { HasNotNullWhen: false, };
 
-		/// <summary>The distinct decorator predicates in order of first use, each with one flag on the <c>Root</c>.</summary>
+		/// <summary>The distinct <c>When</c> and <c>EagerWhen</c> predicates in order of first use, each with one flag on the <c>Root</c>.</summary>
 		public List<PredicateModel> Predicates { get; } = DistinctPredicates(Instances);
 
 		/// <summary>Whether a consumer owns what a <c>Func</c> builds, so the <c>Scope</c> needs <c>__Disown</c>.</summary>
@@ -256,7 +256,7 @@ internal static partial class Sources
 			else
 			{
 				EmitMemberWrapper(builder, depth, wrapper, "public",
-					"Generated for a container that extends this one: forwards to an internal decorator predicate of this",
+					"Generated for a container that extends this one: forwards to an internal predicate of this",
 					"container, which an extending container in another assembly cannot call.");
 			}
 		}
@@ -705,7 +705,7 @@ internal static partial class Sources
 		Indent(members, body).AppendLine("public Root(global::Awaiten.IExternalResolver? externalResolver) : base(externalResolver)");
 		Indent(members, body).AppendLine("{");
 		EmitPredicateEvaluation(members, body + 1, context.Predicates);
-		EmitEagerActivation(members, body + 1, instances, names);
+		EmitEagerActivation(members, body + 1, instances, names, context.Predicates);
 		Indent(members, body).AppendLine("}");
 		// The Root override of InitializeAsync warms the async singletons in dependency order (the base
 		// Scope warms only its async scoped services).
@@ -782,25 +782,41 @@ internal static partial class Sources
 	///     an undecorated pre-built <c>Instance</c> has nothing to build.
 	///     The synchronous analog of <c>InitializeAsync</c>. An async-tainted eager singleton or decorator in the
 	///     strict default is AWT161 (the throwing error body is emitted instead), so the call here is always valid.
+	///     A singleton with an <c>EagerWhen</c> is built at the same place only when its predicate is
+	///     <see langword="true" />, which a predicate that takes services evaluates there, after the eager singletons before it.
 	/// </summary>
-	private static void EmitEagerActivation(StringBuilder builder, int depth, InstanceModel[] instances, Names names)
+	private static void EmitEagerActivation(StringBuilder builder, int depth, InstanceModel[] instances, Names names, List<PredicateModel> predicates)
 	{
 		for (int i = 0; i < instances.Length; i++)
 		{
-			if (!instances[i].Eager)
+			if (!instances[i].Eager && instances[i].EagerWhen is null)
 			{
 				continue;
 			}
 
 			int[] decorators = instances[i].OutermostDecorators.AsArray();
-			if (decorators.Length == 0 && instances[i].Production != ProductionKind.Instance)
+			int[] resolvers = decorators.Length == 0 && instances[i].Production != ProductionKind.Instance ? [i,] : decorators;
+			if (resolvers.Length == 0)
 			{
-				Indent(builder, depth).Append(names.Resolver(i)).AppendLine("(this);");
+				continue;
 			}
 
-			foreach (int decorator in decorators)
+			int statementDepth = depth;
+			if (instances[i].EagerWhen is { } predicate)
 			{
-				Indent(builder, depth).Append(names.Resolver(decorator)).AppendLine("(this);");
+				Indent(builder, depth).Append("if (").Append(PredicateValue(predicate, predicates.FindIndex(known => known.Member == predicate.Member), "this")).AppendLine(")");
+				Indent(builder, depth).AppendLine("{");
+				statementDepth++;
+			}
+
+			foreach (int resolver in resolvers)
+			{
+				Indent(builder, statementDepth).Append(names.Resolver(resolver)).AppendLine("(this);");
+			}
+
+			if (instances[i].EagerWhen is not null)
+			{
+				Indent(builder, depth).AppendLine("}");
 			}
 		}
 	}
