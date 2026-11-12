@@ -123,7 +123,15 @@ partial class AwaitenGenerator
 	///     for a generic type definition such as <c>typeof(Repository&lt;&gt;)</c> each of its closings.
 	/// </summary>
 	private static bool Lists(string entry, string service)
-		=> entry == service || (entry.Contains("<>") || entry.Contains("<,")) && entry == Unbound(service);
+	{
+		if (entry == service)
+		{
+			return true;
+		}
+
+		string definition = entry.Replace(" ", "");
+		return (definition.Contains("<>") || definition.Contains("<,")) && definition == Unbound(service);
+	}
 
 	/// <summary>
 	///     The display of the generic type definition of a closed type such as <c>global::Ns.Outer&lt;int&gt;.Inner&lt;(int, string)&gt;</c>,

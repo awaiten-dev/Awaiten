@@ -245,6 +245,28 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Map<,>", "Map<int, (int, string)>")]
+		[Arguments("Outer<>.Inner<>", "Outer<int>.Inner<string>")]
+		[Arguments("Outer<>.Leaf", "Outer<int>.Leaf")]
+		public async Task AppliesNestedAndMultiParameterGenericTypeDefinitions(string definition, string closing)
+		{
+			GeneratorResult result = Run(
+				$$"""
+				public sealed class Map<TKey, TValue> : IDisposable { public void Dispose() { } }
+				public sealed class Outer<T>
+				{
+				    public sealed class Inner<TInner> : IDisposable { public void Dispose() { } }
+				    public sealed class Leaf : IDisposable { public void Dispose() { } }
+				}
+				public sealed class Shelf { public Shelf(Func<{{closing}}> items) { } }
+				""",
+				$"[Transient<{closing}>]\n[Singleton<Shelf>(ConsumerOwned = [typeof({definition})])]");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the definition names the closing, so the entry applies and the Func is owned");
+		}
+
+		[Test]
 		public async Task DoesNotReportSharedDisposablesBelowTheService()
 		{
 			GeneratorResult result = Run(
