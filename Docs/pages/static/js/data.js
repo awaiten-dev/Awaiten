@@ -1938,6 +1938,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
         "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
+      },
+      {
+        "sha": "f23bc30e965e283f41569568551ebf35ff33b5f9",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
+        "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
       }
     ],
     "labels": [
@@ -2263,7 +2269,8 @@ window.BENCHMARK_DATA = {
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
-      "4d763195"
+      "4d763195",
+      "f23bc30e"
     ],
     "datasets": [
       {
@@ -2592,7 +2599,8 @@ window.BENCHMARK_DATA = {
           4.7026525601744655,
           3.3774269952305724,
           4.569760790963968,
-          4.788992305951459
+          4.788992305951459,
+          6.724975656185832
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2604,6 +2612,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3263,7 +3272,8 @@ window.BENCHMARK_DATA = {
           6.874369817475478,
           3.855277065932751,
           6.680790423200681,
-          5.045931176344554
+          5.045931176344554,
+          7.397512113054593
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3275,6 +3285,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3934,7 +3945,8 @@ window.BENCHMARK_DATA = {
           83.80781107743582,
           60.522289379437765,
           86.36527078151703,
-          118.85646391709646
+          118.85646391709646,
+          125.10849435512836
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3946,6 +3958,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4601,7 +4614,8 @@ window.BENCHMARK_DATA = {
           6.291251955429713,
           4.7459359303116795,
           6.094791850873402,
-          7.3918998291095095
+          7.3918998291095095,
+          9.138424622019132
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4613,6 +4627,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5264,7 +5279,8 @@ window.BENCHMARK_DATA = {
           8.511599918561322,
           6.302549221685955,
           8.502746078584876,
-          8.700169250369072
+          8.700169250369072,
+          10.649898132930199
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5276,6 +5292,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7546,6 +7563,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
         "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
+      },
+      {
+        "sha": "f23bc30e965e283f41569568551ebf35ff33b5f9",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
+        "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
       }
     ],
     "labels": [
@@ -7871,7 +7894,8 @@ window.BENCHMARK_DATA = {
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
-      "4d763195"
+      "4d763195",
+      "f23bc30e"
     ],
     "datasets": [
       {
@@ -8200,7 +8224,8 @@ window.BENCHMARK_DATA = {
           5.477856195889986,
           3.258035199344158,
           6.022801181444755,
-          5.3802798618872965
+          5.3802798618872965,
+          7.460126606623332
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8212,6 +8237,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8871,7 +8897,8 @@ window.BENCHMARK_DATA = {
           6.213786235877445,
           3.8555272902761186,
           6.7907362924172325,
-          5.06335816582044
+          5.06335816582044,
+          7.558005342526095
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8883,6 +8910,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9542,7 +9570,8 @@ window.BENCHMARK_DATA = {
           82.33007622559866,
           57.58755241121565,
           83.82006335258484,
-          118.51953384081523
+          118.51953384081523,
+          117.38326307932536
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9554,6 +9583,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10209,7 +10239,8 @@ window.BENCHMARK_DATA = {
           6.223821550607681,
           4.629209374742849,
           6.213790068030358,
-          7.396051007509231
+          7.396051007509231,
+          9.146059264739355
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10221,6 +10252,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10872,7 +10904,8 @@ window.BENCHMARK_DATA = {
           8.502467448512713,
           6.045997931559881,
           8.48157165486079,
-          8.71180018463305
+          8.71180018463305,
+          14.09018779794375
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10884,6 +10917,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13154,6 +13188,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
         "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
+      },
+      {
+        "sha": "f23bc30e965e283f41569568551ebf35ff33b5f9",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
+        "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
       }
     ],
     "labels": [
@@ -13479,7 +13519,8 @@ window.BENCHMARK_DATA = {
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
-      "4d763195"
+      "4d763195",
+      "f23bc30e"
     ],
     "datasets": [
       {
@@ -13808,7 +13849,8 @@ window.BENCHMARK_DATA = {
           15.557439165455955,
           12.588376453518867,
           22.922509256998698,
-          20.188160140599525
+          20.188160140599525,
+          22.64449506600698
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14080,6 +14122,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14479,7 +14522,8 @@ window.BENCHMARK_DATA = {
           1148.7089395523071,
           829.447088094858,
           1591.446944645473,
-          1560.0456837972006
+          1560.0456837972006,
+          1523.6987042744954
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14491,6 +14535,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15150,7 +15195,8 @@ window.BENCHMARK_DATA = {
           25393.573470052084,
           19293.274759145883,
           30715.92072753906,
-          29522.42311314174
+          29522.42311314174,
+          24509.57162475586
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15484,7 +15530,8 @@ window.BENCHMARK_DATA = {
           32478,
           32477,
           32482,
-          32482
+          32482,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15817,7 +15864,8 @@ window.BENCHMARK_DATA = {
           593.8563266118367,
           448.39477183024087,
           775.625108273824,
-          774.751190884908
+          774.751190884908,
+          666.0008653004965
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15847,6 +15895,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16480,7 +16529,8 @@ window.BENCHMARK_DATA = {
           8671.359736633302,
           7685.035360209147,
           12770.108057462252,
-          11882.675614493233
+          11882.675614493233,
+          11401.0069569179
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16803,6 +16853,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -18762,6 +18813,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
         "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
+      },
+      {
+        "sha": "f23bc30e965e283f41569568551ebf35ff33b5f9",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
+        "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
       }
     ],
     "labels": [
@@ -19087,7 +19144,8 @@ window.BENCHMARK_DATA = {
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
-      "4d763195"
+      "4d763195",
+      "f23bc30e"
     ],
     "datasets": [
       {
@@ -19416,7 +19474,8 @@ window.BENCHMARK_DATA = {
           114.27332612673442,
           88.15125351746877,
           295.86944624582924,
-          187.04954946041107
+          187.04954946041107,
+          290.77687209447225
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19688,6 +19747,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20087,7 +20147,8 @@ window.BENCHMARK_DATA = {
           10430.717340087891,
           8179.538434709822,
           16370.880337524413,
-          14613.589503696987
+          14613.589503696987,
+          14119.246208699544
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20099,6 +20160,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20758,7 +20820,8 @@ window.BENCHMARK_DATA = {
           621811.2106584822,
           467888.838671875,
           770288.6768229167,
-          743857.658984375
+          743857.658984375,
+          589109.7459309896
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21092,7 +21155,8 @@ window.BENCHMARK_DATA = {
           740032,
           735812,
           741745,
-          741755
+          741755,
+          719003
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21425,7 +21489,8 @@ window.BENCHMARK_DATA = {
           35598.92927769252,
           25428.433173043388,
           45966.31479492188,
-          45210.771488444014
+          45210.771488444014,
+          40770.48544108073
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21755,7 +21820,8 @@ window.BENCHMARK_DATA = {
           81186,
           81165,
           80302,
-          80303
+          80303,
+          80344
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22088,7 +22154,8 @@ window.BENCHMARK_DATA = {
           261639.61725260416,
           222363.59921875,
           380953.9745117187,
-          375173.6207682292
+          375173.6207682292,
+          338341.5186848958
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22418,7 +22485,8 @@ window.BENCHMARK_DATA = {
           573091,
           573056,
           572962,
-          573138
+          573138,
+          571205
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24346,6 +24414,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
         "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
+      },
+      {
+        "sha": "f23bc30e965e283f41569568551ebf35ff33b5f9",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
+        "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
       }
     ],
     "labels": [
@@ -24667,7 +24741,8 @@ window.BENCHMARK_DATA = {
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
-      "4d763195"
+      "4d763195",
+      "f23bc30e"
     ],
     "datasets": [
       {
@@ -24992,7 +25067,8 @@ window.BENCHMARK_DATA = {
           289.290744415919,
           284.72612229983014,
           214.40004153251647,
-          167.76656784330095
+          167.76656784330095,
+          270.73038009007774
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25027,6 +25103,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25655,7 +25732,8 @@ window.BENCHMARK_DATA = {
           473.21136239369713,
           606.2042676485502,
           458.0186004638672,
-          390.3100924125084
+          390.3100924125084,
+          619.8033185005188
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25667,6 +25745,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26318,7 +26397,8 @@ window.BENCHMARK_DATA = {
           5052.519259897867,
           6877.787338256836,
           5005.859122975668,
-          3418.973902482253
+          3418.973902482253,
+          6810.7125773111975
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -26402,6 +26482,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -26981,7 +27062,8 @@ window.BENCHMARK_DATA = {
           347.4860536893209,
           442.738272190094,
           351.03126567204794,
-          255.65110795838493
+          255.65110795838493,
+          427.6365304311117
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -26993,6 +27075,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -27644,7 +27727,8 @@ window.BENCHMARK_DATA = {
           529.6110659917196,
           746.5196462631226,
           553.0438563028971,
-          407.9703657786051
+          407.9703657786051,
+          761.1126542772565
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27656,6 +27740,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
