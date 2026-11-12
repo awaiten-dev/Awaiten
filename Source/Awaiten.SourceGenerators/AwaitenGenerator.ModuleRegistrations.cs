@@ -927,9 +927,10 @@ partial class AwaitenGenerator
 				return null;
 			}
 
+			string requestingType = produced.ToDisplayString(FullyQualified);
 			if (IsExternallyAccessible(method.ReturnType))
 			{
-				return new MemberWrapper(MemberWrapperName("Factory", member, produced), WrapperReturnType(method.ReturnType, method), member, MirroredParameters(method.Parameters));
+				return new MemberWrapper(MemberWrapperName("Factory", member, produced), WrapperReturnType(method.ReturnType, method), member, MirroredParameters(method.Parameters), RequestingType: requestingType);
 			}
 
 			bool awaited = IsAsyncFactoryReturn(method.ReturnType, compilation, out ITypeSymbol result);
@@ -941,7 +942,8 @@ partial class AwaitenGenerator
 					member,
 					MirroredParameters(method.Parameters),
 					Awaited: awaited,
-					Initializers: MemberInitializers(name, result))
+					Initializers: MemberInitializers(name, result),
+					RequestingType: requestingType)
 				: null;
 		}
 
