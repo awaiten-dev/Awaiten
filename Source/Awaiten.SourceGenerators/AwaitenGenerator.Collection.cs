@@ -356,7 +356,8 @@ partial class AwaitenGenerator
 				OnActivated: NamedArgument(attribute, "OnActivated"),
 				OnRelease: NamedArgument(attribute, "OnRelease"),
 				SuppressDisposal: NamedFlag(attribute, "SuppressDisposal"),
-				WhenInjectedInto: whenInjectedInto);
+				WhenInjectedInto: whenInjectedInto,
+				ConsumerOwned: NamedTypeArrayArgument(attribute, "ConsumerOwned"));
 
 			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations
 			    && ThroughHandle(registration, context.Compilation, implicitHandles, context.Imports ?? []) is { } handled)

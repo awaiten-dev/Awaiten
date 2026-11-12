@@ -175,6 +175,8 @@ Every reported id with its default severity. The ids that are never reported are
 | [AWT257](#awt257) | Error | Collection misses a registration served through a handle |
 | [AWT258](#awt258) | Error | Collection imported from the external resolver |
 | [AWT259](#awt259) | Error | Relationship type registered as a service |
+| [AWT261](#awt261) | Error | Consumer cannot own what its Func builds |
+| [AWT262](#awt262) | Warning | `ConsumerOwned` entry never applies |
 
 ## Graph correctness
 
@@ -1203,7 +1205,7 @@ public sealed class Counter(Func<BrewSession> sessions);   // each call strands 
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). A [dispatch dictionary](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) has no `Owned` form: register its holder as `Scoped` instead, so each scope disposes what the dictionary builds. A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
+**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). When the consumer disposes each instance itself, list the service in [`ConsumerOwned`](./04-core-concepts/04-lifetime-safety.md#let-a-consumer-own-what-its-func-builds) on its registration instead. A [dispatch dictionary](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) has no `Owned` form: register its holder as `Scoped` instead, so each scope disposes what the dictionary builds. A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
 
 ```csharp
 public sealed class Counter(Func<Owned<BrewSession>> sessions);   // each handle disposes its own session
@@ -1213,6 +1215,49 @@ public sealed class Counter(Func<Owned<BrewSession>> sessions);   // each handle
 [Singleton<Counter>]
 public static partial class CoffeeShop;
 ```
+
+### AWT261: Consumer cannot own what its Func builds \{#awt261\}
+
+:::danger[Error]
+A consumer lists a service in `ConsumerOwned`, but building the service creates a disposable transient besides the instance the consumer gets, queues an `OnRelease` hook, or tracks a value type as a boxed copy.
+:::
+
+The consumer can only dispose the instance it holds. A disposable transient below it, including a decorated instance below the outermost decorator, would never be disposed. Singleton and scoped dependencies belong to their own owner and are not reported. Every route to the service counts: a `Func<T>`, a `Func<TArg…, T>`, a `Func<…, Task<T>>` and each entry of a dispatch dictionary.
+
+```csharp expect=AWT261
+public sealed class Filter : IDisposable { public void Dispose() { } }
+public sealed class BrewSession(Filter filter) : IDisposable { public void Dispose() { } }
+// highlight-next-line
+public sealed class Barista(Func<BrewSession> sessions);   // disposing a session leaves its filter undisposed
+
+[Container]
+[Transient<Filter>]
+[Transient<BrewSession>]
+[Singleton<Barista>(ConsumerOwned = [typeof(BrewSession)])]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Remove the service from `ConsumerOwned` and take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. Making the inner disposable a singleton or scoped service works too, when it may be shared.
+
+### AWT262: `ConsumerOwned` entry never applies \{#awt262\}
+
+:::warning[Warning]
+A consumer lists a service in `ConsumerOwned`, but takes no `Func` or dispatch dictionary over a transient or parameterized registration of it.
+:::
+
+Only those build an instance per call that the consumer could own. A `Lazy<T>`, a direct dependency or a `Func` over a singleton or scoped service hands out an instance the container keeps owning.
+
+```csharp expect=AWT262
+// highlight-next-line
+public sealed class Barista(Lazy<BrewSession> session);   // a Lazy builds one session, which the container owns
+
+[Container]
+[Transient<BrewSession>]
+[Singleton<Barista>(ConsumerOwned = [typeof(BrewSession)])]
+public static partial class CoffeeShop;
+```
+
+**Fix:** Remove the entry, or list the type the consumer's `Func` names.
 
 ### AWT121: `Owned<T>` handle requested through `Lazy` \{#awt121\}
 

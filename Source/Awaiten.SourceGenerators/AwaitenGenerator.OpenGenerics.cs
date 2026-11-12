@@ -165,6 +165,7 @@ partial class AwaitenGenerator
 			OnActivated = NamedArgument(attribute, "OnActivated"),
 			OnRelease = NamedArgument(attribute, "OnRelease"),
 			SuppressDisposal = NamedFlag(attribute, "SuppressDisposal"),
+			ConsumerOwned = NamedTypeArrayArgument(attribute, "ConsumerOwned"),
 			Inheritance = context.Inherited ? context.Inheritance : null,
 		});
 
@@ -835,7 +836,8 @@ partial class AwaitenGenerator
 			WhenInjectedInto: candidate.WhenInjectedInto,
 			OnActivatedMarkers: candidate.OnActivated is null ? null : markers,
 			OnReleaseMarkers: candidate.OnRelease is null ? null : markers,
-			GenericFactory: candidate.Factory is not null);
+			GenericFactory: candidate.Factory is not null,
+			ConsumerOwned: candidate.ConsumerOwned);
 	}
 
 	/// <summary>
@@ -1391,6 +1393,8 @@ partial class AwaitenGenerator
 		public string? OnRelease { get; init; }
 
 		public bool SuppressDisposal { get; init; }
+
+		public IReadOnlyList<string>? ConsumerOwned { get; init; }
 
 		/// <summary>
 		///     The live <see cref="Location" />, which every closing takes, so a diagnostic about one points at the open

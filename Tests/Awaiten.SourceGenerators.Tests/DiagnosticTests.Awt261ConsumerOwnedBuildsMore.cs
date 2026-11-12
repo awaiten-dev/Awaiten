@@ -1,0 +1,141 @@
+namespace Awaiten.SourceGenerators.Tests;
+
+public partial class DiagnosticTests
+{
+	public class Awt261ConsumerOwnedBuildsMore
+	{
+		private static GeneratorResult Run(string types, string registrations, string members = "")
+			=> Generator.Run($$"""
+			                   using Awaiten;
+			                   using System;
+			                   using System.Collections.Generic;
+
+			                   namespace MyCode;
+
+			                   {{types}}
+
+			                   [Container]
+			                   {{registrations}}
+			                   public static partial class MyContainer
+			                   {
+			                       {{members}}
+			                   }
+			                   """);
+
+		[Test]
+		public async Task ReportsADisposableTransientBelowTheService()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Debouncer : IDisposable { public Debouncer(Timer timer) { } public void Dispose() { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.IsEqualTo("(9,76): error AWT261: 'MyCode.StorageFactory' lists 'MyCode.Debouncer' in ConsumerOwned, but building 'MyCode.Debouncer' also creates the disposable transient 'MyCode.Timer', which the consumer cannot release by disposing the instance it gets; remove 'MyCode.Debouncer' from ConsumerOwned and take an Owned<T> handle through the Func, or register 'MyCode.StorageFactory' as Scoped")
+				.Because("the consumer disposes the debouncer it gets, but nothing would dispose the timer built with it");
+		}
+
+		[Test]
+		public async Task ReportsADisposableDecoratedInstance()
+		{
+			GeneratorResult result = Run(
+				"""
+				public interface IGrinder;
+				public sealed class Grinder : IGrinder, IDisposable { public void Dispose() { } }
+				public sealed class LoggingGrinder : IGrinder { public LoggingGrinder(IGrinder inner) { } }
+				public sealed class GrinderFactory { public GrinderFactory(Func<IGrinder> grinders) { } }
+				""",
+				"[Transient<Grinder, IGrinder>]\n[Decorate<LoggingGrinder, IGrinder>]\n[Singleton<GrinderFactory>(ConsumerOwned = [typeof(IGrinder)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*also creates the disposable transient 'MyCode.Grinder'*").AsWildcard()
+				.Because("the consumer only gets the outermost decorator, so a disposable inner instance would leak");
+		}
+
+		[Test]
+		public async Task ReportsAReleaseHook()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Debouncer;
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<Debouncer>(OnRelease = nameof(Release))]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]",
+				"private static void Release(Debouncer debouncer) { }");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*queues the OnRelease hook of 'MyCode.Debouncer'*").AsWildcard()
+				.Because("the release hook is queued on the owner, which the consumer cannot run");
+		}
+
+		[Test]
+		public async Task ReportsEachEntryOfADispatchDictionary()
+		{
+			GeneratorResult result = Run(
+				"""
+				public interface IHandler;
+				public interface IHandler<T> : IHandler;
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class OrderHandler : IHandler<int> { public OrderHandler(Timer timer) { } }
+				public sealed class RefundHandler : IHandler<string>;
+				public sealed class Mediator { public Mediator(IReadOnlyDictionary<Type, Func<IHandler>> handlers) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<OrderHandler, IHandler<int>>]\n[Transient<RefundHandler, IHandler<string>>]\n[Singleton<Mediator>(ConsumerOwned = [typeof(IHandler)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*building 'MyCode.OrderHandler' also creates the disposable transient 'MyCode.Timer'*").AsWildcard()
+				.Because("every entry of the dictionary is a route to what the consumer owns");
+		}
+
+		[Test]
+		public async Task ReportsAFuncWithRuntimeArguments()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Cup { public Cup(Timer timer, [Arg] string size) { } }
+				public sealed class Counter { public Counter(Func<string, Cup> cups) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<Cup>]\n[Singleton<Counter>(ConsumerOwned = [typeof(Cup)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*").AsWildcard()
+				.Because("a Func<TArg, T> reaches the service like a Func<T>");
+		}
+
+		[Test]
+		public async Task ReportsAnAsyncFunc()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Kettle { public Kettle(Timer timer) { } }
+				public sealed class KettleFactory { public KettleFactory(Func<System.Threading.Tasks.Task<Kettle>> kettles) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<Kettle>]\n[Singleton<KettleFactory>(ConsumerOwned = [typeof(Kettle)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*").AsWildcard()
+				.Because("a Func<Task<T>> reaches the service like a Func<T>");
+		}
+
+		[Test]
+		public async Task DoesNotReportSharedDisposablesBelowTheService()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Clock : IDisposable { public void Dispose() { } }
+				public sealed class Log : IDisposable { public void Dispose() { } }
+				public sealed class Debouncer : IDisposable { public Debouncer(Clock clock, Log log) { } public void Dispose() { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Singleton<Clock>]\n[Scoped<Log>]\n[Transient<Debouncer>]\n[Scoped<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("singleton and scoped dependencies belong to their owner and never leak through the consumer");
+		}
+	}
+}

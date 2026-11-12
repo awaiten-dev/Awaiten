@@ -1218,6 +1218,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			varianceCandidateTypes.Add(serviceType);
 		}
 
+		ApplyConsumerOwned(instances, instanceLocations, serviceToImpl, implToIndex, MembershipIndices(collections, keyedCollections, implToIndex), diagnostics);
+
 		return new GraphModel(instances, dependencies, constructionDependencies, combinedDependencies, serviceToImpl, implToIndex, instanceLocations, collections, varianceCandidateTypes, keyedCollections, external, OpenServices(open), factories ?? new BaseFactories(), unresolvedDuplicates);
 	}
 

@@ -78,7 +78,8 @@ internal sealed record RawRegistration(
 	INamedTypeSymbol? Hidden = null,
 	string? HiddenProduction = null,
 	RawRegistration? Aliased = null,
-	INamedTypeSymbol? Declarer = null);
+	INamedTypeSymbol? Declarer = null,
+	IReadOnlyList<string>? ConsumerOwned = null);
 
 /// <summary>
 ///     An imported module: its symbol and the location of the container's <c>[Import]</c> attribute that
@@ -354,6 +355,12 @@ partial class AwaitenGenerator
 		///     owner outside the container. Set from the first registration like the implementation's other options.
 		/// </summary>
 		public bool SuppressDisposal { get; init; }
+
+		/// <summary>
+		///     The services whose <c>Func</c> factories the consumer owns (<c>ConsumerOwned</c>), from the winning
+		///     registration like the implementation's other options.
+		/// </summary>
+		public IReadOnlyList<string>? ConsumerOwned { get; init; }
 
 		/// <summary>
 		///     Whether <see cref="ProductionMember" /> names a generic factory of an open generic <c>typeof</c>

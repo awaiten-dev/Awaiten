@@ -96,6 +96,19 @@ partial class AwaitenGenerator
 	///     Reads a <c>System.Type</c> named argument (a <c>typeof(…)</c>) off an attribute, returning its
 	///     <see cref="TypeIdentity" />, or <see langword="null" /> when unset. Used for <c>WhenInjectedInto</c>.
 	/// </summary>
+	private static string[]? NamedTypeArrayArgument(AttributeData attribute, string name)
+	{
+		foreach (KeyValuePair<string, TypedConstant> argument in attribute.NamedArguments)
+		{
+			if (argument.Key == name && argument.Value is { Kind: TypedConstantKind.Array, IsNull: false, } types)
+			{
+				return types.Values.Select(type => type.Value).OfType<ITypeSymbol>().Select(type => type.ToDisplayString(FullyQualified)).ToArray();
+			}
+		}
+
+		return null;
+	}
+
 	private static string? NamedTypeArgument(AttributeData attribute, string name, Compilation compilation)
 	{
 		foreach (KeyValuePair<string, TypedConstant> argument in attribute.NamedArguments)

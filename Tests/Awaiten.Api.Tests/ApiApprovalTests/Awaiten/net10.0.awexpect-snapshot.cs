@@ -312,6 +312,7 @@ namespace Awaiten
     {
         public ScopedAttribute(System.Type implementation) { }
         public ScopedAttribute(System.Type implementation, System.Type service) { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public System.Type Implementation { get; }
@@ -326,6 +327,7 @@ namespace Awaiten
     public sealed class ScopedAttribute<TImplementation> : System.Attribute where TImplementation : class
     {
         public ScopedAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public object? Key { get; set; }
@@ -338,6 +340,7 @@ namespace Awaiten
     public sealed class ScopedAttribute<TImplementation, TService> : System.Attribute where TImplementation : class, TService
     {
         public ScopedAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public object? Key { get; set; }
@@ -351,6 +354,7 @@ namespace Awaiten
     {
         public SingletonAttribute(System.Type implementation) { }
         public SingletonAttribute(System.Type implementation, System.Type service) { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
@@ -367,6 +371,7 @@ namespace Awaiten
     public sealed class SingletonAttribute<TImplementation> : System.Attribute where TImplementation : class
     {
         public SingletonAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
@@ -381,6 +386,7 @@ namespace Awaiten
     public sealed class SingletonAttribute<TImplementation, TService> : System.Attribute where TImplementation : class, TService
     {
         public SingletonAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
@@ -396,6 +402,7 @@ namespace Awaiten
     {
         public TransientAttribute(System.Type implementation) { }
         public TransientAttribute(System.Type implementation, System.Type service) { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public System.Type Implementation { get; }
@@ -410,6 +417,7 @@ namespace Awaiten
     public sealed class TransientAttribute<TImplementation> : System.Attribute where TImplementation : class
     {
         public TransientAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public object? Key { get; set; }
@@ -422,6 +430,7 @@ namespace Awaiten
     public sealed class TransientAttribute<TImplementation, TService> : System.Attribute where TImplementation : class, TService
     {
         public TransientAttribute() { }
+        public System.Type[]? ConsumerOwned { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public object? Key { get; set; }

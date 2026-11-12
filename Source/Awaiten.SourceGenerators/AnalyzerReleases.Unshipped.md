@@ -151,6 +151,8 @@
  AWT257  | Awaiten   | Error    | A collection the container builds would miss a registration that an imported module of another assembly serves only through a generated handle the container cannot read
  AWT258  | Awaiten   | Error    | An [ImportService] names a collection shape or keyed dictionary, which the container always builds from its own registrations, so the external resolver is never asked for it
  AWT259  | Awaiten   | Error    | A dependency is a relationship such as Func<T> whose type the container also registers or imports as a service, which injection never hands out, because it builds the relationship over T
+ AWT261  | Awaiten   | Error    | A consumer lists a service in ConsumerOwned whose build leaves a disposable transient, a release hook or a boxed value on the owner, which the consumer cannot release
+ AWT262  | Awaiten   | Warning  | A ConsumerOwned entry that no Func or dispatch dictionary of the consumer over a build-on-demand service reaches
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

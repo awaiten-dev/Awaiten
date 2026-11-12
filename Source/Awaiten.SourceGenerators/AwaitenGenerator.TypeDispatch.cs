@@ -168,7 +168,7 @@ partial class AwaitenGenerator
 
 			foreach (DispatchMember member in dependency.DispatchMembers.AsArray())
 			{
-				yield return new ParameterModel(member.Service, DependencyKind.Func, Location: dependency.Location);
+				yield return new ParameterModel(member.Service, DependencyKind.Func, Location: dependency.Location, ConsumerOwned: dependency.ConsumerOwned);
 			}
 		}
 	}

@@ -40,6 +40,39 @@ A root-owned service that holds a [dispatch dictionary](../06-resolution/04-keye
 
 AWT118 comes from Awaiten's analyzer, not the generator, so a build that [skips analyzers](../09-diagnostics.md) does not report it.
 
+## Let a consumer own what its Func builds
+
+Some consumers dispose what their `Func<T>` creates, such as a factory that hands each instance to an object that disposes it. List the service in `ConsumerOwned` on the consumer's registration, and the container hands every instance that consumer's `Func` builds over untracked. The consumer's constructor keeps a plain `Func<T>`, and every other consumer of the service keeps container-owned instances.
+
+```csharp
+// highlight-next-line
+public sealed class Barista(Func<BrewSession> sessions)   // disposes each session it starts
+{
+    public void Serve()
+    {
+        using BrewSession session = sessions();
+        session.Brew();
+    }
+}
+
+public sealed class Tasting(BrewSession session)          // the container disposes this session
+{
+    public void Run() => session.Brew();
+}
+
+[Container]
+[Transient<BrewSession>]
+// highlight-next-line
+[Singleton<Barista>(ConsumerOwned = [typeof(BrewSession)])]
+[Scoped<Tasting>]
+public static partial class CoffeeShop;
+```
+
+- It covers the consumer's `Func<T>`, `Func<TArg…, T>`, `Func<…, Task<T>>` and [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) over a transient or parameterized service. List the type the `Func` names, or the base type of a dispatch dictionary.
+- The consumer can only dispose the instance it gets, so building the service may create no other disposable transient, including a decorated instance below the outermost decorator, and may queue no `OnRelease` hook ([AWT261](../09-diagnostics.md#awt261)). Singleton and scoped dependencies are fine: they belong to their own owner.
+- An entry that no such `Func` or dictionary of the consumer reaches has no effect and is reported ([AWT262](../09-diagnostics.md#awt262)), for example one over a singleton or scoped service, which the container shares rather than builds per call.
+- When several registrations share one implementation, they must agree on `ConsumerOwned` ([AWT166](../09-diagnostics.md#awt166)).
+
 ## Loose when you want MS.DI semantics
 
 Set `LifetimeSafety = LifetimeSafety.Loose` to make everything resolvable everywhere, the way Microsoft's container behaves. A disposable transient resolved by type on the root then resolves and is held until the root is disposed, and the leak-prone `Func` pattern becomes a suppressible warning instead of an error.

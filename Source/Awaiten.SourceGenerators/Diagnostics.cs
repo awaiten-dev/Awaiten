@@ -2859,4 +2859,33 @@ internal static class Diagnostics
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT259"));
+
+	/// <summary>
+	///     A consumer lists a service in <c>ConsumerOwned</c>, but building the service leaves more on the owner than the
+	///     instance the consumer gets: a disposable transient below it (a decorated inner instance included), an
+	///     <c>OnRelease</c> hook, or a value type the container tracks as a boxed copy. The consumer can only dispose the
+	///     instance it holds, so the rest would leak, which <c>Owned&lt;T&gt;</c> or a scoped consumer avoids.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ConsumerOwnedBuildsMore = new(
+		"AWT261",
+		"Consumer cannot own what its Func builds",
+		"'{0}' lists '{1}' in ConsumerOwned, but building '{2}' {3}, which the consumer cannot release by disposing the instance it gets; remove '{1}' from ConsumerOwned and take an Owned<T> handle through the Func, or register '{0}' as Scoped",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT261"));
+
+	/// <summary>
+	///     A <c>ConsumerOwned</c> entry no <c>Func</c> or dispatch dictionary of the consumer reaches: the consumer takes no
+	///     <c>Func&lt;T&gt;</c>, <c>Func&lt;TArg…, T&gt;</c>, <c>Func&lt;…, Task&lt;T&gt;&gt;</c> or dispatch dictionary over the
+	///     service, or the service is a singleton or scoped one the container shares rather than builds per call.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ConsumerOwnedNeverApplies = new(
+		"AWT262",
+		"ConsumerOwned entry never applies",
+		"'{0}' lists '{1}' in ConsumerOwned, but takes no Func or dispatch dictionary over a transient or parameterized '{1}', so the entry has no effect; remove it",
+		"Awaiten",
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT262"));
 }

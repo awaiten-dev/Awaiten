@@ -124,6 +124,8 @@ A `Func<T>` or `Lazy<T>` is the right shape for building a transient or a single
 
 Resolving such a `Func<T>` by type from the root throws in the strict default for the same reason. Resolve it from a scope, whose disposal bounds what it builds, or resolve `Func<Owned<T>>`.
 
+A consumer that disposes what its `Func<T>` builds can keep the plain `Func<T>` when its registration lists the service in [`ConsumerOwned`](../04-core-concepts/04-lifetime-safety.md#let-a-consumer-own-what-its-func-builds).
+
 ## Calling a relationship while the service is built
 
 A `Func<T>` or `Lazy<T>` of a singleton or scoped service returns the one instance the container caches, and the container caches it only once its constructor and its `OnActivated` hook have returned. Calling it before then, from the service's own constructor, a decorator of it, a dependency it builds or its `OnActivated` hook, throws an `InvalidOperationException` instead of building a second instance. Call the `Func` or `Lazy` after the constructor returns, or take the service through a [deferred property](./05-property-injection.md#break-a-cycle-with-deferred), which the container wires once it has cached the owner. A service with a deferred property of its own is cached as soon as its constructor returns, so its deferred properties and its `OnActivated` hook already get the cached instance.

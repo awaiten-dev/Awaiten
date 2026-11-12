@@ -105,6 +105,61 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     What building <paramref name="start" /> leaves on its owner that a consumer owning the built instance could
+	///     not release by disposing it (AWT261), or <see langword="null" /> when the instance is all it leaves. A
+	///     singleton or scoped dependency belongs to its owner and does not count; a transient one rebuilt with it,
+	///     a decorated inner instance included, counts when it is disposable or has an <c>OnRelease</c> hook.
+	/// </summary>
+	internal static string? ConsumerOwnedFault(
+		IReadOnlyList<InstanceModel> instances,
+		Dictionary<ServiceKey, int> serviceToIndex,
+		CollectionMembership membership,
+		int start)
+	{
+		InstanceModel target = instances[start];
+		if (!target.IsReferenceType)
+		{
+			return "tracks a boxed copy of the value type";
+		}
+
+		HashSet<int> visited = new() { start, };
+		Stack<int> stack = new();
+		stack.Push(start);
+		while (stack.Count > 0)
+		{
+			int node = stack.Pop();
+			InstanceModel instance = instances[node];
+			string display = DisplayInstance(instance.ImplementationType);
+			if (instance.HasReleaseHook)
+			{
+				return $"queues the OnRelease hook of '{display}'";
+			}
+
+			if (instance.TracksHandleDisposal)
+			{
+				return $"tracks the instance handle of '{display}'";
+			}
+
+			if (node != start && instance.NeedsDisposal)
+			{
+				return $"also creates the disposable transient '{display}'";
+			}
+
+			Stack<int> next = new();
+			PushFreshTransientDependencies(instance, instances, serviceToIndex, membership, next);
+			foreach (int dependency in next)
+			{
+				if (visited.Add(dependency))
+				{
+					stack.Push(dependency);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	///     Pushes the dependencies of <paramref name="instance" /> rebuilt as part of constructing it: a direct
 	///     transient dependency and each transient collection member (materialized eagerly). A relationship/Owned/Arg
 	///     parameter defers and a scoped/singleton dependency is cached, so neither is followed.

@@ -94,7 +94,7 @@ internal static partial class Sources
 	private static string TypeDispatchLiteral(ParameterModel dependency, InstanceModel[] instances, Names names, Dictionary<ServiceKey, int> serviceToIndex, string requestingType)
 	{
 		string items = string.Join(", ", dependency.DispatchMembers.AsArray().Select(member =>
-			$"[typeof({member.KeyType})] = {ResolveExpression(new ParameterModel(member.Service, DependencyKind.Func), instances, names, serviceToIndex, requestingType)}"));
+			$"[typeof({member.KeyType})] = {ResolveExpression(new ParameterModel(member.Service, DependencyKind.Func, ConsumerOwned: dependency.ConsumerOwned), instances, names, serviceToIndex, requestingType)}"));
 		return $"new global::System.Collections.Generic.Dictionary<global::System.Type, global::System.Func<{dependency.ServiceType}>> {{ {items} }}";
 	}
 
@@ -513,7 +513,7 @@ internal static partial class Sources
 		{
 			// A Func<TArg…, T> over a parameterized service binds the owner's parameterized resolver, which
 			// takes the runtime arguments and is never cached.
-			return FuncFactory(funcArgTypes, ForwardedArgs(target), parameter.ServiceType, resolver);
+			return FuncFactory(funcArgTypes, ForwardedArgs(target), parameter.ServiceType, resolver, parameter.ConsumerOwned);
 		}
 
 		// A singleton/Instance resolves through its Root-hosted resolver over the root; a scoped/transient through
@@ -523,11 +523,22 @@ internal static partial class Sources
 
 		return parameter.Kind switch
 		{
-			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {value})",
+			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {Disowned(value, parameter.ConsumerOwned)})",
 			DependencyKind.Lazy => $"new global::System.Lazy<{parameter.ServiceType}>(() => {value})",
 			_ => value,
 		};
 	}
+
+	/// <summary>
+	///     The call that builds a consumer-owned instance (see <see cref="ParameterModel.ConsumerOwned" />), which the
+	///     owner stops tracking before the consumer gets it, or <paramref name="call" /> itself for any other.
+	/// </summary>
+	private static string Disowned(string call, bool consumerOwned)
+		=> consumerOwned ? $"__s.__Disown({call})" : call;
+
+	/// <summary>The asynchronous counterpart of <see cref="Disowned" />, over the task that builds the instance.</summary>
+	private static string DisownedAsync(string task, bool consumerOwned)
+		=> consumerOwned ? $"__s.__DisownAsync({task})" : task;
 
 	/// <summary>
 	///     The construction expression for a dependency produced by a requesting-type factory, extracted from
@@ -549,7 +560,7 @@ internal static partial class Sources
 				: $"global::System.Threading.Tasks.Task.FromResult<{parameter.ServiceType}>({resolver}(__s, {requestingType}))";
 			return parameter.Kind switch
 			{
-				DependencyKind.FuncTask => $"new global::System.Func<{task}>(() => {taskValue})",
+				DependencyKind.FuncTask => $"new global::System.Func<{task}>(() => {DisownedAsync(taskValue, parameter.ConsumerOwned)})",
 				DependencyKind.LazyTask => $"new global::System.Lazy<{task}>(() => {taskValue})",
 				_ => taskValue,
 			};
@@ -558,7 +569,7 @@ internal static partial class Sources
 		string requestingCall = $"{resolver}(__s, {requestingType})";
 		return parameter.Kind switch
 		{
-			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {requestingCall})",
+			DependencyKind.Func => $"new global::System.Func<{parameter.ServiceType}>(() => {Disowned(requestingCall, parameter.ConsumerOwned)})",
 			DependencyKind.Lazy => $"new global::System.Lazy<{parameter.ServiceType}>(() => {requestingCall})",
 			_ => requestingCall,
 		};
@@ -583,7 +594,7 @@ internal static partial class Sources
 		string asyncValue = AsyncRelationshipValue(parameter.ServiceType, target, targetIndex, names, rootOwned);
 		return parameter.Kind switch
 		{
-			DependencyKind.FuncTask => AsyncFuncFactory(funcArgTypes, parameter.ServiceType, asyncValue),
+			DependencyKind.FuncTask => AsyncFuncFactory(funcArgTypes, parameter.ServiceType, DisownedAsync(asyncValue, parameter.ConsumerOwned)),
 			DependencyKind.LazyTask => $"new global::System.Lazy<global::System.Threading.Tasks.Task<{parameter.ServiceType}>>(() => {asyncValue})",
 			_ => asyncValue,
 		};
@@ -594,14 +605,14 @@ internal static partial class Sources
 	///     runtime arguments to a parameterized service's resolver. With no argument types this is the plain
 	///     deferred <c>Func&lt;T&gt;</c>.
 	/// </summary>
-	private static string FuncFactory(string[] argTypes, string[] forwarded, string service, string resolver)
+	private static string FuncFactory(string[] argTypes, string[] forwarded, string service, string resolver, bool consumerOwned)
 	{
 		string generics = argTypes.Length == 0 ? service : string.Join(", ", argTypes) + ", " + service;
 		string lambdaArgs = string.Join(", ", argTypes.Select((_, i) => "a" + i));
 		// A Func over a parameterized service binds its Scope-hosted static resolver over the current owner __s,
 		// forwarding the runtime arguments after it.
 		string call = ResolveCall(resolver, rootOwned: false, string.Join("", forwarded.Select(arg => ", " + arg)));
-		return $"new global::System.Func<{generics}>(({lambdaArgs}) => {call})";
+		return $"new global::System.Func<{generics}>(({lambdaArgs}) => {Disowned(call, consumerOwned)})";
 	}
 
 	/// <summary>

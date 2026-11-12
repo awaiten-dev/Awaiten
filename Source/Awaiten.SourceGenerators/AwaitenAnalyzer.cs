@@ -367,7 +367,8 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 	// service, the async form is the only deferred factory that can reach an async-tainted target at all.
 	private static bool IsRootAccumulatingFunc(GraphModel graph, Dictionary<ServiceKey, int> serviceToIndex, CollectionMembership membership, ParameterModel parameter)
 	{
-		if (parameter.Kind is not (DependencyKind.Func or DependencyKind.FuncTask) || parameter.ProducesOwned
+		// A consumer-owned Func hands what it builds over untracked, and AWT261 covers a build that leaves more behind.
+		if (parameter.Kind is not (DependencyKind.Func or DependencyKind.FuncTask) || parameter.ProducesOwned || parameter.ConsumerOwned
 		    || !graph.ServiceToImpl.TryGetValue(new ServiceKey(parameter.ServiceType, parameter.Key), out string? targetImpl)
 		    || !graph.ImplToIndex.TryGetValue(targetImpl, out int targetIndex))
 		{

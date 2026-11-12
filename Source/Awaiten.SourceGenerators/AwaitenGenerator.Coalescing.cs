@@ -189,8 +189,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     Lets the first registration in precedence order that constructs or produces the implementation of a scan instance
 	///     handle (see <see cref="IsScanHandle" />) win over the scan, as in the module's own assembly. An explicit
-	///     registration wins over every scan match: the handle and the scan's aliases take its lifetime and
-	///     <c>SuppressDisposal</c>, and the scan's hooks are dropped, each one the registration does not name too after
+	///     registration wins over every scan match: the handle and the scan's aliases take its lifetime,
+	///     <c>SuppressDisposal</c> and <c>ConsumerOwned</c>, and the scan's hooks are dropped, each one the registration does not name too after
 	///     reporting AWT166 (see <see cref="ScanHookOnOwnedInstance" />). Among the scan matches, which include the container's
 	///     own scans and the matches of other modules, the first decides the lifetime, which the handle and the scan's
 	///     aliases take while keeping the scan's hooks, and each later one with another lifetime is AWT142 once per
@@ -276,7 +276,7 @@ partial class AwaitenGenerator
 			RawRegistration Yielded(RawRegistration registration)
 				=> winner.IsScan
 					? registration with { Lifetime = winner.Lifetime, }
-					: registration with { Lifetime = winner.Lifetime, SuppressDisposal = winner.SuppressDisposal, OnActivated = null, OnRelease = null, };
+					: registration with { Lifetime = winner.Lifetime, SuppressDisposal = winner.SuppressDisposal, ConsumerOwned = winner.ConsumerOwned, OnActivated = null, OnRelease = null, };
 		}
 
 		return winners;
@@ -704,6 +704,7 @@ partial class AwaitenGenerator
 			OnActivatedOrigin = reg.OnActivated is null ? null : DeclaringOrigin(reg, container),
 			OnReleaseOrigin = reg.OnRelease is null ? null : DeclaringOrigin(reg, container),
 			SuppressDisposal = reg.SuppressDisposal,
+			ConsumerOwned = reg.ConsumerOwned,
 			GenericFactory = reg.GenericFactory,
 			Traits = reg.Traits,
 			TraitsExact = reg.TraitsExact,
@@ -1277,7 +1278,7 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Every per-instance directive (OnActivated, OnRelease, Eager, or SuppressDisposal) this registration sets to
+	///     Every per-instance directive (OnActivated, OnRelease, Eager, SuppressDisposal or ConsumerOwned) this registration sets to
 	///     a value the coalesced instance will not use, each yielded independently so it can be reported on its own.
 	///     Coalescing keeps the first (winning) registration's directives, so a conflict is a later registration
 	///     explicitly naming a directive value that differs from the winner's: a differing hook, or opting into Eager
@@ -1310,6 +1311,12 @@ partial class AwaitenGenerator
 			yield return ("SuppressDisposal", "false", "true");
 		}
 
+		if (registration.ConsumerOwned is { Count: > 0, } consumerOwned
+		    && !new HashSet<string>(consumerOwned, StringComparer.Ordinal).SetEquals(info.ConsumerOwned ?? []))
+		{
+			yield return ("ConsumerOwned", DescribeTypes(info.ConsumerOwned), DescribeTypes(consumerOwned));
+		}
+
 		bool IsDifferentHook(string? hook, string? winnerHook, INamedTypeSymbol? winnerOrigin)
 			=> hook is not null
 			   && (!string.Equals(hook, winnerHook, StringComparison.Ordinal)
@@ -1317,6 +1324,9 @@ partial class AwaitenGenerator
 
 		string DescribeHook(string? hook, INamedTypeSymbol? origin)
 			=> hook is null ? "unset" : $"'{Display(QualifiedMember(origin ?? containerSymbol, hook))}'";
+
+		static string DescribeTypes(IReadOnlyList<string>? types)
+			=> types is not { Count: > 0, } ? "unset" : "[" + string.Join(", ", types.Select(type => $"typeof({Display(type)})")) + "]";
 	}
 
 	/// <summary>

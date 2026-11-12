@@ -1407,8 +1407,8 @@ internal static partial class Sources
 				string parameterizedFunc = $"global::System.Func<{string.Join(", ", argTypes)}, {service}>";
 				seen.Add(parameterizedFunc);
 				entries.Add(funcWithheld
-					? new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver), FuncWithheldMessage(service))
-					: new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver)));
+					? new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver, consumerOwned: false), FuncWithheldMessage(service))
+					: new DispatchEntry(parameterizedFunc, FuncFactory(declaredArgTypes, ForwardedArgs(instance), service, resolver, consumerOwned: false)));
 
 				// The leak-free factory for a parameterized service: Func<TArg…, Owned<T>> hands each built
 				// instance back as a disposal handle instead of accumulating it on the owner.
