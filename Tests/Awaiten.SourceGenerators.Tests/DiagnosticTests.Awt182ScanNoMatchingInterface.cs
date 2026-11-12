@@ -75,5 +75,47 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).DoesNotContain("*AWT182*").AsWildcard()
 				.Because("a markerless scan skips a non-conforming type silently instead of warning per type");
 		}
+
+		[Test]
+		public async Task ReportsForAModuleScanMatchWithNoConventionInterface()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IDrink { }
+			                                       public interface ILatte { }
+			                                       internal sealed class Latte : IDrink, ILatte { }
+			                                       internal sealed class Mocha : IDrink { }
+
+			                                       [Module]
+			                                       [Scan<IDrink>(As = ScanAs.MatchingInterface)]
+			                                       public static partial class DrinkModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT182") && diagnostic.Contains("'Lib.Mocha'") && diagnostic.Contains("'IMocha'"))
+				.Because("a module scan reports a match with no matching interface like a container scan does");
+		}
+
+		[Test]
+		public async Task DoesNotReportForAModuleScanMatchWhenTheSelfFlagIsAlsoSet()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public interface IDrink { }
+			                                       internal sealed class Mocha : IDrink { }
+
+			                                       [Module]
+			                                       [Scan<IDrink>(As = ScanAs.Self | ScanAs.MatchingInterface)]
+			                                       public static partial class DrinkModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT196") && diagnostic.Contains("'Lib.Mocha'"))
+				.Because("the Self exposure exists but names a type no consumer of the public module can name");
+		}
 	}
 }

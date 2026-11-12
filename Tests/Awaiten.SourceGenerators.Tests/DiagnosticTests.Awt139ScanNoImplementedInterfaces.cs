@@ -74,5 +74,25 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).DoesNotContain("*AWT139*").AsWildcard()
 				.Because("the match implements the marker interface, so it is registered under it");
 		}
+
+		[Test]
+		public async Task ReportsForAModuleScanMatchWithNoAssignableInterface()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace Lib;
+
+			                                       public abstract class HandlerBase { }
+			                                       internal sealed class RealHandler : HandlerBase { }
+
+			                                       [Module]
+			                                       [Scan(typeof(HandlerBase), As = ScanAs.Marker)]
+			                                       public static partial class HandlerModule { }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Satisfies(diagnostic => diagnostic.Contains("warning AWT139") && diagnostic.Contains("'Lib.RealHandler'") && diagnostic.Contains("'Lib.HandlerBase'"))
+				.Because("a module scan reports a match with no marker interface like a container scan does, not as AWT196");
+		}
 	}
 }

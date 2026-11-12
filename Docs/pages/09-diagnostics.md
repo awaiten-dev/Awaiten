@@ -2157,6 +2157,8 @@ public sealed class QuarterlyReport : Report;   // a Report, but implements no i
 public static partial class CoffeeShop;
 ```
 
+A `[Scan]` on a `[Module]` reports it the same way.
+
 **Fix:** Scan a marker interface, or add the `Self` flag to keep the self registration: `As = ScanAs.Self | ScanAs.Marker`.
 
 ### AWT140: Assembly scan target has no candidate types \{#awt140\}
@@ -2296,6 +2298,8 @@ public sealed class Ristretto : IEspresso;   // no IRistretto, so it is not regi
 [Scan<IEspresso>(As = ScanAs.MatchingInterface)]
 public static partial class CoffeeShop;
 ```
+
+A markerless scan skips such a type silently. A `[Scan]` on a `[Module]` reports it the same way.
 
 **Fix:** Implement the convention interface (`IRistretto`), or add the `Self` flag to keep the self registration: `As = ScanAs.Self | ScanAs.MatchingInterface`.
 
@@ -2734,7 +2738,7 @@ public static partial class BarModule
 ### AWT196: Module scan match has no accessible exposure \{#awt196\}
 
 :::warning[Warning]
-A self-compiled module `[Scan]` match has no exposure interface accessible outside the module's assembly, so it is skipped.
+A self-compiled module `[Scan]` match has an exposure, but none that is accessible outside the module's assembly, so it is skipped.
 :::
 
 ```csharp expect=AWT196
@@ -2746,7 +2750,14 @@ internal sealed class Roaster : IPlugin;
 public static partial class PluginModule;
 ```
 
-A consumer resolves a self-compiled match only through an accessible interface. `ScanAs.Self` over an `internal` implementation exposes nothing nameable, so the match registers nothing and is skipped, mirroring the warning severity a container scan gives a match it cannot register ([AWT182](#awt182)/[AWT188](#awt188)/[AWT193](#awt193)). The skip holds even when the importing container lives in the module's own assembly, so a module scan registers the same matches wherever the module is imported from. Expose it through a public interface (`ScanAs.MatchingInterface` or `ScanAs.Marker`), or exclude the match.
+A consumer resolves a self-compiled match only through an accessible interface. The match is skipped when every exposure it has names a type a consumer cannot name:
+
+- `ScanAs.Self` over an `internal` implementation.
+- An `internal` marker interface or `I` + name interface.
+
+The skip holds even when the importing container lives in the module's own assembly, so a module scan registers the same matches wherever the module is imported from.
+
+A match with no exposure at all is skipped and reported like a match of a container scan: [AWT139](#awt139) when `ScanAs.Marker` finds no interface assignable to the marker, [AWT182](#awt182) when `ScanAs.MatchingInterface` finds no `I` + name interface, and nothing for a markerless scan.
 
 An `internal` module is imported only by its own assembly and by the assemblies it grants `InternalsVisibleTo`. So for such a module, an internal interface is accessible, and so is the internal match itself under `ScanAs.Self`.
 
