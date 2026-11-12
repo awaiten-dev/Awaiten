@@ -116,6 +116,76 @@ public partial class ConsumerOwnedTests
 			.Because("the module builds the internal consumer through a handle, which keeps its ConsumerOwned option");
 	}
 
+	[Test]
+	public async Task DispatchDictionary_KeepsSharedEntriesContainerOwned()
+	{
+		Ledger ledger;
+		using (ShopContainer.Root container = new())
+		{
+			ledger = (Ledger)container.Resolve<Mediator>().Handlers[typeof(Refund)]();
+		}
+
+		await That(ledger.Disposed).IsTrue()
+			.Because("a singleton entry is shared, so the container keeps disposing it even though the consumer owns its transient entries");
+	}
+
+	[Test]
+	public async Task Func_OverAnAsyncOnlyDisposable_HandsTheInstanceOverUntracked()
+	{
+		Steamer steamer;
+		await using (ShopContainer.Root container = new())
+		{
+			steamer = container.Resolve<SteamerFactory>().Create();
+		}
+
+		await That(steamer.Disposed).IsFalse()
+			.Because("the container tracks an async-only disposable behind a wrapper, which __Disown removes too");
+	}
+
+	[Test]
+	public async Task KeyedFunc_HandsTheInstanceOverUntracked()
+	{
+		Debouncer debouncer;
+		using (ShopContainer.Root container = new())
+		{
+			debouncer = container.Resolve<KeyedStorageFactory>().Create();
+		}
+
+		await That(debouncer.Disposed).IsFalse()
+			.Because("a [FromKey] Func reaches the keyed registration, which the consumer owns like the unkeyed one");
+	}
+
+	[Test]
+	public async Task FuncOfAnInjectedPropertyAndAnActivationHook_HandOverTheirInstancesUntracked()
+	{
+		Debouncer fromProperty;
+		Debouncer fromHook;
+		using (ShopContainer.Root container = new())
+		{
+			HookedStorageFactory factory = container.Resolve<HookedStorageFactory>();
+			fromProperty = factory.Debouncers();
+			fromHook = factory.FromHook!();
+		}
+
+		await That(fromProperty.Disposed).IsFalse()
+			.Because("an [Inject] property's Func belongs to the consumer like a constructor parameter's");
+		await That(fromHook.Disposed).IsFalse()
+			.Because("an activation hook's Func belongs to the consumer like a constructor parameter's");
+	}
+
+	[Test]
+	public async Task OpenGenericEntry_CoversEachClosing()
+	{
+		Bag<int> bag;
+		using (ShopContainer.Root container = new())
+		{
+			bag = container.Resolve<BagUser>().Shelf.Create();
+		}
+
+		await That(bag.Disposed).IsFalse()
+			.Because("typeof(Bag<>) in ConsumerOwned names every closing of the definition");
+	}
+
 	public sealed class Debouncer : IDisposable
 	{
 		public bool Disposed { get; private set; }
@@ -214,8 +284,72 @@ public partial class ConsumerOwnedTests
 		public IGrinder Create() => grinders();
 	}
 
+	public sealed class Refund;
+
+	public sealed class Ledger : IHandler<Refund>, IDisposable
+	{
+		public bool Disposed { get; private set; }
+
+		public void Dispose() => Disposed = true;
+	}
+
+	public sealed class Steamer : IAsyncDisposable
+	{
+		public bool Disposed { get; private set; }
+
+		public ValueTask DisposeAsync()
+		{
+			Disposed = true;
+			return default;
+		}
+	}
+
+	public sealed class SteamerFactory(Func<Steamer> steamers)
+	{
+		public Steamer Create() => steamers();
+	}
+
+	public sealed class KeyedStorageFactory([FromKey("night")] Func<Debouncer> debouncers)
+	{
+		public Debouncer Create() => debouncers();
+	}
+
+	public sealed class HookedStorageFactory
+	{
+		[Inject]
+		public Func<Debouncer> Debouncers { get; set; } = null!;
+
+		public Func<Debouncer>? FromHook { get; set; }
+	}
+
+	public sealed class Bag<T> : IDisposable
+	{
+		public bool Disposed { get; private set; }
+
+		public void Dispose() => Disposed = true;
+	}
+
+	public sealed class BagShelf<T>(Func<Bag<T>> bags)
+	{
+		public Bag<T> Create() => bags();
+	}
+
+	public sealed class BagUser(BagShelf<int> shelf)
+	{
+		public BagShelf<int> Shelf { get; } = shelf;
+	}
+
 	[Container]
 	[Transient<Debouncer>]
+	[Transient<Debouncer>(Key = "night")]
+	[Singleton<KeyedStorageFactory>(ConsumerOwned = [typeof(Debouncer),])]
+	[Singleton<HookedStorageFactory>(OnActivated = nameof(Activate), ConsumerOwned = [typeof(Debouncer),])]
+	[Singleton<Ledger, IHandler<Refund>>]
+	[Transient<Steamer>]
+	[Singleton<SteamerFactory>(ConsumerOwned = [typeof(Steamer),])]
+	[Transient(typeof(Bag<>))]
+	[Singleton(typeof(BagShelf<>), ConsumerOwned = [typeof(Bag<>),])]
+	[Transient<BagUser>]
 	[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer),])]
 	[Transient<SearchBox>]
 	[Scoped<Clock>]
@@ -230,7 +364,10 @@ public partial class ConsumerOwnedTests
 	[Transient<Grinder, IGrinder>]
 	[Decorate<LoggingGrinder, IGrinder>]
 	[Singleton<GrinderFactory>(ConsumerOwned = [typeof(IGrinder),])]
-	public static partial class ShopContainer;
+	public static partial class ShopContainer
+	{
+		private static void Activate(HookedStorageFactory factory, Func<Debouncer> debouncers) => factory.FromHook = debouncers;
+	}
 
 	[Container]
 	[Import(typeof(CrossAssemblyConsumerOwnedModule))]

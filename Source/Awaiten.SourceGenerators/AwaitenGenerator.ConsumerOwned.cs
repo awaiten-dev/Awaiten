@@ -38,7 +38,7 @@ partial class AwaitenGenerator
 			}
 
 			string consumerDisplay = DisplayInstance(consumer.ImplementationType);
-			HashSet<string> listed = new(consumer.ConsumerOwned.AsArray(), StringComparer.Ordinal);
+			string[] listed = consumer.ConsumerOwned.AsArray().Distinct(StringComparer.Ordinal).ToArray();
 			HashSet<string> applied = new(StringComparer.Ordinal);
 			HashSet<string> reported = new(StringComparer.Ordinal);
 
@@ -47,12 +47,15 @@ partial class AwaitenGenerator
 				ConstructorParameters = Marked(consumer.ConstructorParameters),
 				ActivationParameters = Marked(consumer.ActivationParameters),
 				ReleaseParameters = Marked(consumer.ReleaseParameters),
+				AsyncInitializers = new EquatableArray<AsyncInitializerModel>(consumer.AsyncInitializers.AsArray()
+					.Select(initializer => initializer with { Parameters = Marked(initializer.Parameters), })
+					.ToArray()),
 				InjectedMembers = new EquatableArray<MemberModel>(consumer.InjectedMembers.AsArray()
 					.Select(member => member with { Dependency = Mark(member.Dependency), })
 					.ToArray()),
 			};
 
-			foreach (string service in consumer.ConsumerOwned.AsArray().Where(service => !applied.Contains(service)).Distinct(StringComparer.Ordinal))
+			foreach (string service in listed.Where(service => !applied.Contains(service)))
 			{
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.ConsumerOwnedNeverApplies,
@@ -65,9 +68,10 @@ partial class AwaitenGenerator
 
 			ParameterModel Mark(ParameterModel parameter)
 			{
+				string[] entries = listed.Where(entry => Lists(entry, parameter.ServiceType)).ToArray();
 				if (parameter.Kind is not (DependencyKind.Func or DependencyKind.FuncTask or DependencyKind.TypeDispatch)
 				    || parameter.ProducesOwned
-				    || !listed.Contains(parameter.ServiceType))
+				    || entries.Length == 0)
 				{
 					return parameter;
 				}
@@ -83,7 +87,7 @@ partial class AwaitenGenerator
 					return parameter;
 				}
 
-				applied.Add(parameter.ServiceType);
+				applied.UnionWith(entries);
 				foreach (int target in targets)
 				{
 					if (ConsumerOwnedFault(instances, serviceToIndex, membership, target) is { } fault
@@ -103,6 +107,51 @@ partial class AwaitenGenerator
 
 				return parameter with { ConsumerOwned = true, };
 			}
+		}
+	}
+
+	/// <summary>
+	///     Whether the <c>ConsumerOwned</c> <paramref name="entry" /> names <paramref name="service" />: the type itself, or
+	///     for a generic type definition such as <c>typeof(Repository&lt;&gt;)</c> each of its closings.
+	/// </summary>
+	private static bool Lists(string entry, string service)
+	{
+		if (entry == service)
+		{
+			return true;
+		}
+
+		int open = entry.IndexOf('<');
+		return open > 0
+		       && entry.Substring(open).Trim('<', '>').All(c => c == ',')
+		       && service.Length > open && service[open] == '<'
+		       && string.CompareOrdinal(entry, 0, service, 0, open) == 0
+		       && TopLevelArity(service, open) == entry.Length - open - 1;
+
+		static int TopLevelArity(string type, int open)
+		{
+			int depth = 0, arity = 1;
+			for (int i = open; i < type.Length; i++)
+			{
+				switch (type[i])
+				{
+					case '<':
+						depth++;
+						break;
+					case '>':
+						if (--depth == 0)
+						{
+							return i == type.Length - 1 ? arity : -1;
+						}
+
+						break;
+					case ',' when depth == 1:
+						arity++;
+						break;
+				}
+			}
+
+			return -1;
 		}
 	}
 }

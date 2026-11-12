@@ -1219,10 +1219,17 @@ public static partial class CoffeeShop;
 ### AWT261: Consumer cannot own what its Func builds \{#awt261\}
 
 :::danger[Error]
-A consumer lists a service in `ConsumerOwned`, but building the service creates a disposable transient besides the instance the consumer gets, queues an `OnRelease` hook, or tracks a value type as a boxed copy.
+A consumer lists a service in `ConsumerOwned`, but building the service leaves more on the owner than the instance the consumer gets.
 :::
 
-The consumer can only dispose the instance it holds. A disposable transient below it, including a decorated instance below the outermost decorator, would never be disposed. Singleton and scoped dependencies belong to their own owner and are not reported. Every route to the service counts: a `Func<T>`, a `Func<TArg…, T>`, a `Func<…, Task<T>>` and each entry of a dispatch dictionary.
+The consumer can only dispose the instance it holds. Reported are:
+
+- a disposable transient below it, including a decorated instance below the outermost decorator and an injected property, or a transient whose factory may return a disposable;
+- a `Func` or `Lazy` below it over a transient that creates a disposable, since the owner tracks what it builds later;
+- an `OnRelease` hook, which the owner queues;
+- a disposable value type, which the owner tracks as a boxed copy.
+
+Singleton and scoped dependencies belong to their own owner and are not reported. Every route to the service counts: a `Func<T>`, a `Func<TArg…, T>`, a `Func<…, Task<T>>` and each entry of a dispatch dictionary.
 
 ```csharp expect=AWT261
 public sealed class Filter : IDisposable { public void Dispose() { } }

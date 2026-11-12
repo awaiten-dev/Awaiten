@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Awaiten.SourceGenerators.Tests;
 
 public partial class DiagnosticTests
@@ -120,6 +122,72 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).HasSingle().Which
 				.Contains("*error AWT261*").AsWildcard()
 				.Because("a Func<Task<T>> reaches the service like a Func<T>");
+		}
+
+		[Test]
+		public async Task ReportsADisposableTransientInAnInjectedProperty()
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Debouncer { [Inject] public Timer Timer { get; set; } = null!; }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*also creates the disposable transient 'MyCode.Timer'*").AsWildcard()
+				.Because("an injected property is built with the service and tracked on the owner like a constructor parameter");
+		}
+
+		[Test]
+		public async Task ReportsAFactoryThatMayReturnADisposable()
+		{
+			GeneratorResult result = Run(
+				"""
+				public interface ITimer { }
+				public sealed class Timer : ITimer, IDisposable { public void Dispose() { } }
+				public sealed class Debouncer { public Debouncer(ITimer timer) { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<ITimer>(Factory = nameof(MakeTimer))]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]",
+				"private static ITimer MakeTimer() => new Timer();");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*whose factory may return a disposable*").AsWildcard()
+				.Because("the owner tracks a factory output that turns out to be disposable at run time");
+		}
+
+		[Test]
+		[Arguments("Lazy<Timer> timer")]
+		[Arguments("Func<Timer> timers")]
+		public async Task ReportsADeferredDisposableTransientBelowTheService(string parameter)
+		{
+			GeneratorResult result = Run(
+				$$"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Debouncer { public Debouncer({{parameter}}) { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<Timer>]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT261*defers building the disposable transient 'MyCode.Timer'*").AsWildcard()
+				.Because("what the deferred relationship builds later is tracked on the owner and never released with the debouncer");
+		}
+
+		[Test]
+		public async Task DoesNotReportANonDisposableValueType()
+		{
+			GeneratorResult result = Run(
+				"""
+				public struct Ticket { }
+				public sealed class Counter { public Counter(Func<Ticket> tickets) { } }
+				""",
+				"[Transient<Ticket>]\n[Singleton<Counter>(ConsumerOwned = [typeof(Ticket)])]");
+
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.Contains("AWT261"))).IsEmpty()
+				.Because("the container never tracks a value type that is not disposable");
 		}
 
 		[Test]

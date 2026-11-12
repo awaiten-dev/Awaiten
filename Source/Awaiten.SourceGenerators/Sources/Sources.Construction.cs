@@ -479,6 +479,13 @@ internal static partial class Sources
 		string resolver = names.Resolver(targetIndex);
 		InstanceModel target = instances[targetIndex];
 
+		// A consumer owns only what the call builds and the owner tracks: a shared entry of a dispatch dictionary, or an
+		// instance the owner never tracks, stays as it is, so __Disown never drops another entry.
+		if (parameter.ConsumerOwned && (target.Lifetime != Lifetime.Transient && !target.IsParameterized || DisposalOf(target) == DisposalTracking.None))
+		{
+			parameter = parameter with { ConsumerOwned = false, };
+		}
+
 		string[] funcArgTypes = parameter.DeclaredFuncArgTypes.AsArray();
 		bool rootOwned = IsRootOwned(target);
 

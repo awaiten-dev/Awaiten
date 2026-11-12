@@ -103,8 +103,7 @@ internal static partial class Sources
 	/// <summary>Whether a parameter of any instance is consumer-owned (see <see cref="ParameterModel.ConsumerOwned" />).</summary>
 	private static bool HasConsumerOwned(InstanceModel[] instances)
 		=> instances.Any(instance => instance.ConstructorParameters.AsArray()
-			.Concat(instance.ActivationParameters.AsArray())
-			.Concat(instance.ReleaseParameters.AsArray())
+			.Concat(instance.HookParameters())
 			.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
 			.Any(parameter => parameter.ConsumerOwned));
 
