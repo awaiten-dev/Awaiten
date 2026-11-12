@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
-        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
-      },
-      {
         "sha": "8e63f80d3ff28b2f5758f4ff3a0d643dbf7fe69f",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 10:14:16 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type of a module Factory registration in every assembly (#425)"
+      },
+      {
+        "sha": "4d7631953b2da722b90a0cbc7f6baa2ee09ca0e8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
+        "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
       }
     ],
     "labels": [
-      "5485cfa1",
       "8e63f80d",
       "76006f25",
       "4acf0df5",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "b54bb515",
       "8a229ae0",
       "8b613a55",
-      "8fd557e3"
+      "8fd557e3",
+      "4d763195"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.896269593387842,
           3.4167489100779806,
           6.249826745263168,
           2.9741418694456416,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           3.1932616287044118,
           4.7026525601744655,
           3.3774269952305724,
-          4.569760790963968
+          4.569760790963968,
+          4.788992305951459
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.00768257783992,
           4.8532523065805435,
           7.324308746627399,
           3.8766041954358417,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           4.021192003289858,
           6.874369817475478,
           3.855277065932751,
-          6.680790423200681
+          6.680790423200681,
+          5.045931176344554
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          82.91607408523559,
           61.11257263819377,
           134.482116206487,
           64.54421005249023,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           55.956197106838225,
           83.80781107743582,
           60.522289379437765,
-          86.36527078151703
+          86.36527078151703,
+          118.85646391709646
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.5198511297504105,
           4.668275877833366,
           9.093503376202923,
           4.708898781133549,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           4.7488465543304175,
           6.291251955429713,
           4.7459359303116795,
-          6.094791850873402
+          6.094791850873402,
+          7.3918998291095095
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.446163219213485,
           6.74826913114105,
           10.792313404954397,
           6.408759246979441,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           5.763252373536428,
           8.511599918561322,
           6.302549221685955,
-          8.502746078584876
+          8.502746078584876,
+          8.700169250369072
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
-        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
-      },
-      {
         "sha": "8e63f80d3ff28b2f5758f4ff3a0d643dbf7fe69f",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 10:14:16 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type of a module Factory registration in every assembly (#425)"
+      },
+      {
+        "sha": "4d7631953b2da722b90a0cbc7f6baa2ee09ca0e8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
+        "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
       }
     ],
     "labels": [
-      "5485cfa1",
       "8e63f80d",
       "76006f25",
       "4acf0df5",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "b54bb515",
       "8a229ae0",
       "8b613a55",
-      "8fd557e3"
+      "8fd557e3",
+      "4d763195"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.4766526935356,
           3.381543810878481,
           6.78914178105501,
           3.527899812374796,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           3.215576774839844,
           5.477856195889986,
           3.258035199344158,
-          6.022801181444755
+          6.022801181444755,
+          5.3802798618872965
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.489185622582833,
           4.275754204736306,
           7.306218456228574,
           3.9024764860669774,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           3.8497279306252796,
           6.213786235877445,
           3.8555272902761186,
-          6.7907362924172325
+          6.7907362924172325,
+          5.06335816582044
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          83.76261964241664,
           61.596589235159065,
           143.6905117670695,
           60.15581340789795,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           56.20116950784411,
           82.33007622559866,
           57.58755241121565,
-          83.82006335258484
+          83.82006335258484,
+          118.51953384081523
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.535289174566667,
           4.8110642244418464,
           9.118893916790302,
           4.700313194096088,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           4.855583379666011,
           6.223821550607681,
           4.629209374742849,
-          6.213790068030358
+          6.213790068030358,
+          7.396051007509231
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.209044939050308,
           6.468176345412548,
           14.045695827557491,
           8.03954952955246,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           5.736058213389837,
           8.502467448512713,
           6.045997931559881,
-          8.48157165486079
+          8.48157165486079,
+          8.71180018463305
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
-        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
-      },
-      {
         "sha": "8e63f80d3ff28b2f5758f4ff3a0d643dbf7fe69f",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 22:41:56 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 10:14:16 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type of a module Factory registration in every assembly (#425)"
+      },
+      {
+        "sha": "4d7631953b2da722b90a0cbc7f6baa2ee09ca0e8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
+        "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
       }
     ],
     "labels": [
-      "5485cfa1",
       "8e63f80d",
       "76006f25",
       "4acf0df5",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "b54bb515",
       "8a229ae0",
       "8b613a55",
-      "8fd557e3"
+      "8fd557e3",
+      "4d763195"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          21.678517945607503,
           23.09026456773281,
           20.288839073975883,
           24.213826326529183,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           19.64391533732414,
           15.557439165455955,
           12.588376453518867,
-          22.922509256998698
+          22.922509256998698,
+          20.188160140599525
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1564.2815734863282,
           1717.0647830963135,
           1503.264043535505,
           1552.0894171396892,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1445.5916565486364,
           1148.7089395523071,
           829.447088094858,
-          1591.446944645473
+          1591.446944645473,
+          1560.0456837972006
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29503.812377929688,
           33606.24806565505,
           29710.02604980469,
           30476.969661458334,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           29441.407470703125,
           25393.573470052084,
           19293.274759145883,
-          30715.92072753906
+          30715.92072753906,
+          29522.42311314174
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2639,7 +2639,6 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32482,
-          32482,
           32478,
           32482,
           32478,
@@ -2685,6 +2684,7 @@ window.BENCHMARK_DATA = {
           32482,
           32478,
           32477,
+          32482,
           32482
         ],
         "borderColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          756.1623973210652,
           799.5065917332967,
           728.503289159139,
           744.338254737854,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           739.0012366612752,
           593.8563266118367,
           448.39477183024087,
-          775.625108273824
+          775.625108273824,
+          774.751190884908
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11892.856968180338,
           12014.39510498047,
           11989.777310180663,
           12320.058410644531,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11426.161483764648,
           8671.359736633302,
           7685.035360209147,
-          12770.108057462252
+          12770.108057462252,
+          11882.675614493233
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2888,7 +2888,6 @@ window.BENCHMARK_DATA = {
         "data": [
           24760,
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2929,6 +2928,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
-        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
-      },
       {
         "sha": "8e63f80d3ff28b2f5758f4ff3a0d643dbf7fe69f",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 10:14:16 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type of a module Factory registration in every assembly (#425)"
+      },
+      {
+        "sha": "4d7631953b2da722b90a0cbc7f6baa2ee09ca0e8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
+        "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
       }
     ],
     "labels": [
-      "5485cfa1",
       "8e63f80d",
       "76006f25",
       "4acf0df5",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "b54bb515",
       "8a229ae0",
       "8b613a55",
-      "8fd557e3"
+      "8fd557e3",
+      "4d763195"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          179.0664984067281,
           152.78836731910707,
           186.2293701355274,
           208.71895079612733,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           188.64801398913065,
           114.27332612673442,
           88.15125351746877,
-          295.86944624582924
+          295.86944624582924,
+          187.04954946041107
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14621.209573599008,
           14285.607628377278,
           14408.019775390625,
           14554.053484990047,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14008.42696271624,
           10430.717340087891,
           8179.538434709822,
-          16370.880337524413
+          16370.880337524413,
+          14613.589503696987
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          736627.300920759,
           825275.097516741,
           730789.8916341146,
           769525.330501302,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           712105.1259068081,
           621811.2106584822,
           467888.838671875,
-          770288.6768229167
+          770288.6768229167,
+          743857.658984375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740993,
           741735,
           741602,
           739195,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740465,
           740032,
           735812,
-          741745
+          741745,
+          741755
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          45812.34584263393,
           48035.01153564453,
           43463.78264567057,
           45717.060119628906,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           43691.56388636998,
           35598.92927769252,
           25428.433173043388,
-          45966.31479492188
+          45966.31479492188,
+          45210.771488444014
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80777,
           80305,
           80301,
           80858,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80005,
           81186,
           81165,
-          80302
+          80302,
+          80303
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          351594.51224190847,
           380544.5333007813,
           367392.1435546875,
           370989.2241861979,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           347664.7892578125,
           261639.61725260416,
           222363.59921875,
-          380953.9745117187
+          380953.9745117187,
+          375173.6207682292
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573073,
           573123,
           572995,
           573139,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573119,
           573091,
           573056,
-          572962
+          572962,
+          573138
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "5485cfa109d30719c4ef6e0921a85ceff26bdb63",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:21:36 2026 \u002B0100",
-        "message": "fix: report generator diagnostics in the compilation\u0027s syntax trees so that .editorconfig severities and #pragma apply (#376)"
-      },
       {
         "sha": "8e63f80d3ff28b2f5758f4ff3a0d643dbf7fe69f",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 10:14:16 2026 \u002B0100",
         "message": "fix: pass the implementation as the requesting type of a module Factory registration in every assembly (#425)"
+      },
+      {
+        "sha": "4d7631953b2da722b90a0cbc7f6baa2ee09ca0e8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Thu Nov 12 17:10:35 2026 \u002B0100",
+        "message": "feat: let a consumer own what its Func builds with ConsumerOwned (AWT261, AWT262) (#426)"
       }
     ],
     "labels": [
-      "5485cfa1",
       "8e63f80d",
       "76006f25",
       "4acf0df5",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "b54bb515",
       "8a229ae0",
       "8b613a55",
-      "8fd557e3"
+      "8fd557e3",
+      "4d763195"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          210.12603061993917,
           272.4645924886068,
           454.5157265663147,
           290.82627436092923,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           165.46614317893983,
           289.290744415919,
           284.72612229983014,
-          214.40004153251647
+          214.40004153251647,
+          167.76656784330095
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          455.3992163658142,
           596.5880759102957,
           642.1969882965088,
           455.7620379447937,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           369.99908157984413,
           473.21136239369713,
           606.2042676485502,
-          458.0186004638672
+          458.0186004638672,
+          390.3100924125084
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4815.49405670166,
           6801.019601004465,
           6796.294970376151,
           4808.518183898926,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           3268.7833377838133,
           5052.519259897867,
           6877.787338256836,
-          5005.859122975668
+          5005.859122975668,
+          3418.973902482253
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          333.94251006444296,
           404.67264928817747,
           431.0686794598897,
           326.80019071896874,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           237.13019029910748,
           347.4860536893209,
           442.738272190094,
-          351.03126567204794
+          351.03126567204794,
+          255.65110795838493
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          530.1281888144357,
           774.9686605135599,
           804.8887557347615,
           539.8476467768352,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           364.5124552726746,
           529.6110659917196,
           746.5196462631226,
-          553.0438563028971
+          553.0438563028971,
+          407.9703657786051
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
