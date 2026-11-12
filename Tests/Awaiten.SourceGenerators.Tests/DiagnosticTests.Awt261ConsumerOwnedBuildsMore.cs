@@ -191,6 +191,60 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments(true)]
+		[Arguments(false)]
+		public async Task DoesNotReportAFuncBelowTheServiceThatItsServiceOwns(bool consumerFirst)
+		{
+			string barista = "[Singleton<Barista>(ConsumerOwned = [typeof(Session)])]";
+			string session = "[Transient<Session>(ConsumerOwned = [typeof(Filter)])]";
+			GeneratorResult result = Run(
+				"""
+				public sealed class Filter : IDisposable { public void Dispose() { } }
+				public sealed class Session : IDisposable { public Session(Func<Filter> filters) { } public void Dispose() { } }
+				public sealed class Barista { public Barista(Func<Session> sessions) { } }
+				""",
+				"[Transient<Filter>]\n" + (consumerFirst ? barista + "\n" + session : session + "\n" + barista));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the session owns what its Func builds, so the owner tracks nothing besides the session, whatever the registration order");
+		}
+
+		[Test]
+		public async Task DoesNotReportAFactoryOutputWhoseDisposalIsSuppressed()
+		{
+			GeneratorResult result = Run(
+				"""
+				public interface ITimer { }
+				public sealed class Timer : ITimer, IDisposable { public void Dispose() { } }
+				public sealed class Debouncer { public Debouncer(ITimer timer) { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				"[Transient<ITimer>(Factory = nameof(MakeTimer), SuppressDisposal = true)]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]",
+				"private static ITimer MakeTimer() => new Timer();");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container never tracks a factory output whose disposal is suppressed");
+		}
+
+		[Test]
+		[Arguments("(int, string)")]
+		[Arguments("int[,]")]
+		[Arguments("Dictionary<int, string>")]
+		public async Task AppliesAGenericTypeDefinitionToEachClosing(string argument)
+		{
+			GeneratorResult result = Run(
+				$$"""
+				public sealed class Bag<T> : IDisposable { public void Dispose() { } }
+				public sealed class Shelf<T> { public Shelf(Func<Bag<T>> bags) { } }
+				public sealed class Store { public Store(Shelf<{{argument}}> shelf) { } }
+				""",
+				"[Transient(typeof(Bag<>))]\n[Singleton(typeof(Shelf<>), ConsumerOwned = [typeof(Bag<>)])]\n[Transient<Store>]");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("typeof(Bag<>) names every closing, whatever commas its type argument contains");
+		}
+
+		[Test]
 		public async Task DoesNotReportSharedDisposablesBelowTheService()
 		{
 			GeneratorResult result = Run(

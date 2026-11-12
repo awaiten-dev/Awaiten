@@ -41,7 +41,7 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task DoesNotReportAnOwnedFunc()
+		public async Task DoesNotReportAFuncOverATransient()
 		{
 			GeneratorResult result = Run("public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }", "[Transient<Debouncer>]");
 

@@ -138,7 +138,7 @@ partial class AwaitenGenerator
 
 			if (node == start)
 			{
-				if (!instance.IsReferenceType && (instance.NeedsDisposal || instance.RuntimeDisposalCheck))
+				if (!instance.IsReferenceType && (instance.NeedsDisposal || MayNeedDisposal(instance)))
 				{
 					return "tracks a boxed copy of the value type";
 				}
@@ -147,7 +147,7 @@ partial class AwaitenGenerator
 			{
 				return $"also creates the disposable transient '{display}'";
 			}
-			else if (instance.RuntimeDisposalCheck)
+			else if (MayNeedDisposal(instance))
 			{
 				return $"also creates the transient '{display}', whose factory may return a disposable";
 			}
@@ -175,14 +175,14 @@ partial class AwaitenGenerator
 
 		string? DeferredDisposable(IEnumerable<ParameterModel> dependencies)
 		{
-			foreach (ParameterModel parameter in AwaitenGenerator.AnalyzedDependencies(dependencies))
+			foreach (ParameterModel parameter in AnalyzedDependencies(dependencies))
 			{
 				if (parameter.Kind is DependencyKind.Func or DependencyKind.FuncTask or DependencyKind.Lazy or DependencyKind.LazyTask
 				    && !parameter.ProducesOwned
 				    && !parameter.ConsumerOwned
 				    && serviceToIndex.TryGetValue(KeyOf(parameter), out int target)
 				    && (instances[target].Lifetime == Lifetime.Transient || instances[target].IsParameterized)
-				    && (BuildsFreshDisposable(instances, serviceToIndex, membership, target) || instances[target].RuntimeDisposalCheck))
+				    && (BuildsFreshDisposable(instances, serviceToIndex, membership, target) || MayNeedDisposal(instances[target])))
 				{
 					return DisplayInstance(instances[target].ImplementationType);
 				}
@@ -190,6 +190,9 @@ partial class AwaitenGenerator
 
 			return null;
 		}
+
+		// A factory output the owner tracks behind a run-time check unless SuppressDisposal opts it out.
+		static bool MayNeedDisposal(InstanceModel instance) => instance.RuntimeDisposalCheck && !instance.SuppressDisposal;
 	}
 
 	/// <summary>

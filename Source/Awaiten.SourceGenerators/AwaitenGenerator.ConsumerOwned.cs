@@ -1,3 +1,4 @@
+using System.Text;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 
@@ -29,6 +30,9 @@ partial class AwaitenGenerator
 			}
 		}
 
+		// Every consumer is marked before any build is checked, so a Func that a service below the target owns itself
+		// counts as owned whatever the registration order.
+		List<(int Consumer, ParameterModel Parameter, int[] Targets)> owned = new();
 		for (int i = 0; i < instances.Count; i++)
 		{
 			InstanceModel consumer = instances[i];
@@ -37,10 +41,9 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			string consumerDisplay = DisplayInstance(consumer.ImplementationType);
+			int index = i;
 			string[] listed = consumer.ConsumerOwned.AsArray().Distinct(StringComparer.Ordinal).ToArray();
 			HashSet<string> applied = new(StringComparer.Ordinal);
-			HashSet<string> reported = new(StringComparer.Ordinal);
 
 			instances[i] = consumer with
 			{
@@ -60,7 +63,7 @@ partial class AwaitenGenerator
 				diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.ConsumerOwnedNeverApplies,
 					instanceLocations[i],
-					new EquatableArray<string>([consumerDisplay, Display(service),])));
+					new EquatableArray<string>([DisplayInstance(consumer.ImplementationType), Display(service),])));
 			}
 
 			EquatableArray<ParameterModel> Marked(EquatableArray<ParameterModel> parameters)
@@ -79,8 +82,8 @@ partial class AwaitenGenerator
 				int[] targets = (parameter.Kind == DependencyKind.TypeDispatch
 						? parameter.DispatchMembers.AsArray().Select(member => new ServiceKey(member.Service, null))
 						: [new ServiceKey(parameter.ServiceType, parameter.Key),])
-					.Select(key => serviceToIndex.TryGetValue(key, out int index) ? index : -1)
-					.Where(index => index >= 0 && (instances[index].Lifetime == Lifetime.Transient || instances[index].IsParameterized))
+					.Select(key => serviceToIndex.TryGetValue(key, out int target) ? target : -1)
+					.Where(target => target >= 0 && (instances[target].Lifetime == Lifetime.Transient || instances[target].IsParameterized))
 					.ToArray();
 				if (targets.Length == 0)
 				{
@@ -88,24 +91,29 @@ partial class AwaitenGenerator
 				}
 
 				applied.UnionWith(entries);
-				foreach (int target in targets)
-				{
-					if (ConsumerOwnedFault(instances, serviceToIndex, membership, target) is { } fault
-					    && reported.Add($"{parameter.ServiceType}|{target}"))
-					{
-						diagnostics.Add(new DiagnosticInfo(
-							Diagnostics.ConsumerOwnedBuildsMore,
-							parameter.Location ?? instanceLocations[i],
-							new EquatableArray<string>([
-								consumerDisplay,
-								Display(parameter.ServiceType),
-								DisplayInstance(instances[target].ImplementationType),
-								fault,
-							])));
-					}
-				}
-
+				owned.Add((index, parameter, targets));
 				return parameter with { ConsumerOwned = true, };
+			}
+		}
+
+		HashSet<string> reported = new(StringComparer.Ordinal);
+		foreach ((int consumer, ParameterModel parameter, int[] targets) in owned)
+		{
+			foreach (int target in targets)
+			{
+				if (ConsumerOwnedFault(instances, serviceToIndex, membership, target) is { } fault
+				    && reported.Add($"{consumer}|{parameter.ServiceType}|{target}"))
+				{
+					diagnostics.Add(new DiagnosticInfo(
+						Diagnostics.ConsumerOwnedBuildsMore,
+						parameter.Location ?? instanceLocations[consumer],
+						new EquatableArray<string>([
+							DisplayInstance(instances[consumer].ImplementationType),
+							Display(parameter.ServiceType),
+							DisplayInstance(instances[target].ImplementationType),
+							fault,
+						])));
+				}
 			}
 		}
 	}
@@ -115,43 +123,54 @@ partial class AwaitenGenerator
 	///     for a generic type definition such as <c>typeof(Repository&lt;&gt;)</c> each of its closings.
 	/// </summary>
 	private static bool Lists(string entry, string service)
+		=> entry == service || (entry.Contains("<>") || entry.Contains("<,")) && entry == Unbound(service);
+
+	/// <summary>
+	///     The display of the generic type definition of a closed type such as <c>global::Ns.Outer&lt;int&gt;.Inner&lt;(int, string)&gt;</c>,
+	///     as <c>typeof</c> displays it: <c>global::Ns.Outer&lt;&gt;.Inner&lt;&gt;</c>. A comma inside a tuple or an array
+	///     rank is no argument separator.
+	/// </summary>
+	private static string Unbound(string type)
 	{
-		if (entry == service)
+		StringBuilder unbound = new(type.Length);
+		int angles = 0, nested = 0;
+		foreach (char c in type)
 		{
-			return true;
-		}
-
-		int open = entry.IndexOf('<');
-		return open > 0
-		       && entry.Substring(open).Trim('<', '>').All(c => c == ',')
-		       && service.Length > open && service[open] == '<'
-		       && string.CompareOrdinal(entry, 0, service, 0, open) == 0
-		       && TopLevelArity(service, open) == entry.Length - open - 1;
-
-		static int TopLevelArity(string type, int open)
-		{
-			int depth = 0, arity = 1;
-			for (int i = open; i < type.Length; i++)
+			switch (c)
 			{
-				switch (type[i])
-				{
-					case '<':
-						depth++;
-						break;
-					case '>':
-						if (--depth == 0)
-						{
-							return i == type.Length - 1 ? arity : -1;
-						}
+				case '<':
+					if (angles++ == 0)
+					{
+						unbound.Append('<');
+					}
 
-						break;
-					case ',' when depth == 1:
-						arity++;
-						break;
-				}
+					break;
+				case '>':
+					if (--angles == 0)
+					{
+						unbound.Append('>');
+					}
+
+					break;
+				case '(' or '[' when angles > 0:
+					nested++;
+					break;
+				case ')' or ']' when angles > 0:
+					nested--;
+					break;
+				case ',' when angles == 1 && nested == 0:
+					unbound.Append(',');
+					break;
+				default:
+					if (angles == 0)
+					{
+						unbound.Append(c);
+					}
+
+					break;
 			}
-
-			return -1;
 		}
+
+		return unbound.ToString();
 	}
 }

@@ -2865,8 +2865,8 @@ internal static class Diagnostics
 	///     instance the consumer gets: a disposable transient below it (a decorated inner instance, an injected property
 	///     or a factory output that may be disposable included), a <c>Func</c> or <c>Lazy</c> below it over such a
 	///     transient, an <c>OnRelease</c> hook, or a disposable value type the container tracks as a boxed copy. The
-	///     consumer can only dispose the
-	///     instance it holds, so the rest would leak, which <c>Owned&lt;T&gt;</c> or a scoped consumer avoids.
+	///     consumer can only dispose the instance it holds, so the rest would leak, which <c>Owned&lt;T&gt;</c> or a
+	///     scoped consumer avoids.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ConsumerOwnedBuildsMore = new(
 		"AWT261",

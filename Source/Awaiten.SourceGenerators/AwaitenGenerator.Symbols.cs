@@ -93,8 +93,8 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Reads a <c>System.Type</c> named argument (a <c>typeof(…)</c>) off an attribute, returning its
-	///     <see cref="TypeIdentity" />, or <see langword="null" /> when unset. Used for <c>WhenInjectedInto</c>.
+	///     Reads a <c>System.Type[]</c> named argument off an attribute as fully qualified displays, or
+	///     <see langword="null" /> when unset. Used for <c>ConsumerOwned</c>.
 	/// </summary>
 	private static string[]? NamedTypeArrayArgument(AttributeData attribute, string name)
 	{
@@ -109,6 +109,10 @@ partial class AwaitenGenerator
 		return null;
 	}
 
+	/// <summary>
+	///     Reads a <c>System.Type</c> named argument (a <c>typeof(…)</c>) off an attribute, returning its
+	///     <see cref="TypeIdentity" />, or <see langword="null" /> when unset. Used for <c>WhenInjectedInto</c>.
+	/// </summary>
 	private static string? NamedTypeArgument(AttributeData attribute, string name, Compilation compilation)
 	{
 		foreach (KeyValuePair<string, TypedConstant> argument in attribute.NamedArguments)
