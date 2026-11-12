@@ -93,6 +93,23 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Reads a <c>System.Type[]</c> named argument off an attribute as fully qualified displays, or
+	///     <see langword="null" /> when unset. Used for <c>ConsumerOwned</c>.
+	/// </summary>
+	private static string[]? NamedTypeArrayArgument(AttributeData attribute, string name)
+	{
+		foreach (KeyValuePair<string, TypedConstant> argument in attribute.NamedArguments)
+		{
+			if (argument.Key == name && argument.Value is { Kind: TypedConstantKind.Array, IsNull: false, } types)
+			{
+				return types.Values.Select(type => type.Value).OfType<ITypeSymbol>().Select(type => type.ToDisplayString(FullyQualified)).ToArray();
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	///     Reads a <c>System.Type</c> named argument (a <c>typeof(…)</c>) off an attribute, returning its
 	///     <see cref="TypeIdentity" />, or <see langword="null" /> when unset. Used for <c>WhenInjectedInto</c>.
 	/// </summary>

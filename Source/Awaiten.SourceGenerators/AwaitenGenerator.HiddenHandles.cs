@@ -303,6 +303,7 @@ partial class AwaitenGenerator
 				Lifetime = own[0].Lifetime,
 				Eager = own[0].Eager,
 				SuppressDisposal = own[0].SuppressDisposal,
+				ConsumerOwned = own[0].ConsumerOwned,
 				OnActivated = own[0].OnActivated,
 				OnRelease = own[0].OnRelease,
 			};
@@ -793,6 +794,7 @@ partial class AwaitenGenerator
 				OnActivated = Hook(NamedArgument(registrations[0].Attribute, "OnActivated"), release: false),
 				OnRelease = Hook(NamedArgument(registrations[0].Attribute, "OnRelease"), release: true),
 				SuppressDisposal = NamedFlag(registrations[0].Attribute, "SuppressDisposal"),
+				ConsumerOwned = NamedTypeArrayArgument(registrations[0].Attribute, "ConsumerOwned"),
 				// A factory member may return any subtype, which the handle's variant reveals only at run time.
 				Traits = registration.Production == ProductionKind.Constructor ? TraitsOf(implementation, DeclaredAsyncInitializers(module, compilation, null)) : null,
 				TraitsExact = registration.Production == ProductionKind.Constructor,

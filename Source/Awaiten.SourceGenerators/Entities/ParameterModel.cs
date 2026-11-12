@@ -42,6 +42,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     and the factory forgives the argument it forwards.
 ///     <c>ImportedInner</c> marks the <see cref="DependencyKind.External" /> inner parameter of the innermost decorator
 ///     over an imported service, which a conditional link returns when its predicate is false.
+///     <c>ConsumerOwned</c> marks a <c>Func</c> or dispatch dictionary over a build-on-demand service that its consumer
+///     lists in <c>ConsumerOwned</c>: the container hands each instance it builds over untracked.
 /// </summary>
 internal sealed record ParameterModel(
 	string ServiceType,
@@ -57,4 +59,5 @@ internal sealed record ParameterModel(
 	string? DeclaredType = null,
 	EquatableArray<string> DeclaredFuncArgTypes = default,
 	bool ImportedInner = false,
-	bool ClosingHandle = false);
+	bool ClosingHandle = false,
+	bool ConsumerOwned = false);

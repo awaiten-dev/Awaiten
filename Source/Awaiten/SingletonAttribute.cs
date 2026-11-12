@@ -109,6 +109,14 @@ public sealed class SingletonAttribute : Attribute
 	///     projection into Microsoft.Extensions.DependencyInjection rejects (AWT214).
 	/// </summary>
 	public bool SuppressDisposal { get; set; }
+
+	/// <summary>
+	///     Services whose <c>Func</c> factories this consumer owns: an instance built through a <c>Func&lt;T&gt;</c>,
+	///     <c>Func&lt;TArg…, T&gt;</c>, <c>Func&lt;…, Task&lt;T&gt;&gt;</c> or dispatch dictionary injected into this consumer is not
+	///     tracked by the container, and the consumer disposes it. Building the service may create no other disposable
+	///     and run no release hook (AWT261). Other consumers keep container-owned instances.
+	/// </summary>
+	public Type[]? ConsumerOwned { get; set; }
 }
 
 /// <summary>
@@ -198,6 +206,14 @@ public sealed class SingletonAttribute<TImplementation> : Attribute
 	///     projection into Microsoft.Extensions.DependencyInjection rejects (AWT214).
 	/// </summary>
 	public bool SuppressDisposal { get; set; }
+
+	/// <summary>
+	///     Services whose <c>Func</c> factories this consumer owns: an instance built through a <c>Func&lt;T&gt;</c>,
+	///     <c>Func&lt;TArg…, T&gt;</c>, <c>Func&lt;…, Task&lt;T&gt;&gt;</c> or dispatch dictionary injected into this consumer is not
+	///     tracked by the container, and the consumer disposes it. Building the service may create no other disposable
+	///     and run no release hook (AWT261). Other consumers keep container-owned instances.
+	/// </summary>
+	public Type[]? ConsumerOwned { get; set; }
 }
 
 /// <summary>
@@ -280,6 +296,14 @@ public sealed class SingletonAttribute<TImplementation, TService> : Attribute
 	///     projection into Microsoft.Extensions.DependencyInjection rejects (AWT214).
 	/// </summary>
 	public bool SuppressDisposal { get; set; }
+
+	/// <summary>
+	///     Services whose <c>Func</c> factories this consumer owns: an instance built through a <c>Func&lt;T&gt;</c>,
+	///     <c>Func&lt;TArg…, T&gt;</c>, <c>Func&lt;…, Task&lt;T&gt;&gt;</c> or dispatch dictionary injected into this consumer is not
+	///     tracked by the container, and the consumer disposes it. Building the service may create no other disposable
+	///     and run no release hook (AWT261). Other consumers keep container-owned instances.
+	/// </summary>
+	public Type[]? ConsumerOwned { get; set; }
 }
 
 #pragma warning restore S2326

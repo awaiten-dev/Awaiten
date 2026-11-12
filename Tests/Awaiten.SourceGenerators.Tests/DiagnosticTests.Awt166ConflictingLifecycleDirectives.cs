@@ -107,6 +107,31 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsConflictingConsumerOwnedOnTwoRegistrationsOfOneImplementation()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Debouncer : IDisposable { public void Dispose() { } }
+			                                       public interface IStorageFactory;
+			                                       public sealed class StorageFactory : IStorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+
+			                                       [Container]
+			                                       [Transient<Debouncer>]
+			                                       [Singleton<StorageFactory, IStorageFactory>]
+			                                       [Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]
+			                                       public static partial class MyContainer;
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT166*conflicting ConsumerOwned directives*").AsWildcard()
+				.Because("coalescing keeps the first registration's directives, so a differing ConsumerOwned would be dropped silently");
+		}
+
+		[Test]
 		public async Task ReportsWhenALaterRegistrationSetsAHookTheWinnerOmits()
 		{
 			GeneratorResult result = Generator.Run("""

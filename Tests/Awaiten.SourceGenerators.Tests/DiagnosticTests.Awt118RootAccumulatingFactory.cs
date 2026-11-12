@@ -80,6 +80,62 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Func<Tool> tools")]
+		[Arguments("Func<System.Threading.Tasks.Task<Tool>> tools")]
+		public async Task DoesNotReportWhenTheConsumerOwnsWhatTheFuncBuilds(string parameter)
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>($$"""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Tool : IDisposable { public void Dispose() { } }
+			                                       public sealed class Depot { public Depot({{parameter}}) { } }
+			                                       public sealed class Shelf { public Shelf(Func<Tool> tools) { } }
+
+			                                       [Container]
+			                                       [Transient<Tool>]
+			                                       [Singleton<Depot>(ConsumerOwned = [typeof(Tool)])]
+			                                       [Singleton<Shelf>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(diagnostics).HasSingle().Which
+				.Contains("*AWT118*'MyCode.Shelf'*").AsWildcard()
+				.Because("Depot owns what its Func builds, while Shelf, which lists nothing, still accumulates tools on the root");
+		}
+
+		[Test]
+		public async Task DoesNotReportADispatchDictionaryWhoseConsumerOwnsItsEntries()
+		{
+			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""
+			                                       using Awaiten;
+			                                       using System;
+			                                       using System.Collections.Generic;
+
+			                                       namespace MyCode;
+
+			                                       public interface IHandler;
+			                                       public interface IHandler<T> : IHandler;
+			                                       public sealed class OrderHandler : IHandler<int>, IDisposable { public void Dispose() { } }
+			                                       public sealed class Mediator(IReadOnlyDictionary<Type, Func<IHandler>> handlers);
+
+			                                       [Container]
+			                                       [Transient<OrderHandler, IHandler<int>>]
+			                                       [Singleton<Mediator>(ConsumerOwned = [typeof(IHandler)])]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(diagnostics.Any(d => d.Contains("AWT118"))).IsFalse()
+				.Because("the mediator owns what each entry of its dispatch dictionary builds");
+		}
+
+		[Test]
 		public async Task DoesNotReportForADisposableTransientThatIsNotReachedThroughARootBoundFunc()
 		{
 			string[] diagnostics = await Analyzer.Run<AwaitenAnalyzer>("""

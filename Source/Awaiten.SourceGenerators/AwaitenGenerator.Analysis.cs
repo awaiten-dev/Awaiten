@@ -105,6 +105,97 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     What building <paramref name="start" /> leaves on its owner that a consumer owning the built instance could
+	///     not release by disposing it (AWT261), or <see langword="null" /> when the instance is all it leaves. A
+	///     singleton or scoped dependency belongs to its owner and does not count. A transient one built with it counts
+	///     when it is or may be disposable or has an <c>OnRelease</c> hook, a decorated inner instance and an injected
+	///     property included, and so does a <c>Func</c> or <c>Lazy</c> below it over a transient that creates a
+	///     disposable, since what it builds later is tracked on the same owner.
+	/// </summary>
+	internal static string? ConsumerOwnedFault(
+		IReadOnlyList<InstanceModel> instances,
+		Dictionary<ServiceKey, int> serviceToIndex,
+		CollectionMembership membership,
+		int start)
+	{
+		HashSet<int> visited = new() { start, };
+		Stack<int> stack = new();
+		stack.Push(start);
+		while (stack.Count > 0)
+		{
+			int node = stack.Pop();
+			InstanceModel instance = instances[node];
+			string display = DisplayInstance(instance.ImplementationType);
+			if (instance.HasReleaseHook)
+			{
+				return $"queues the OnRelease hook of '{display}'";
+			}
+
+			if (instance.TracksHandleDisposal)
+			{
+				return $"tracks the instance handle of '{display}'";
+			}
+
+			if (node == start)
+			{
+				if (!instance.IsReferenceType && (instance.NeedsDisposal || MayNeedDisposal(instance)))
+				{
+					return "tracks a boxed copy of the value type";
+				}
+			}
+			else if (instance.NeedsDisposal)
+			{
+				return $"also creates the disposable transient '{display}'";
+			}
+			else if (MayNeedDisposal(instance))
+			{
+				return $"also creates the transient '{display}', whose factory may return a disposable";
+			}
+
+			IEnumerable<ParameterModel> dependencies = instance.ConstructorParameters.AsArray()
+				.Concat(instance.HookParameters())
+				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency));
+			if (DeferredDisposable(dependencies) is { } deferred)
+			{
+				return $"defers building the disposable transient '{deferred}' through a Func or Lazy whose instances the owner tracks";
+			}
+
+			Stack<int> next = new();
+			PushFreshTransientDependencies(dependencies.Select(parameter => parameter.Kind == DependencyKind.Task ? parameter with { Kind = DependencyKind.Direct, } : parameter), instances, serviceToIndex, membership, next);
+			foreach (int dependency in next)
+			{
+				if (visited.Add(dependency))
+				{
+					stack.Push(dependency);
+				}
+			}
+		}
+
+		return null;
+
+		string? DeferredDisposable(IEnumerable<ParameterModel> dependencies)
+		{
+			foreach (ParameterModel parameter in AnalyzedDependencies(dependencies))
+			{
+				if (parameter.Kind is DependencyKind.Func or DependencyKind.FuncTask or DependencyKind.Lazy or DependencyKind.LazyTask
+				    && !parameter.ProducesOwned
+				    && !parameter.ConsumerOwned
+				    && serviceToIndex.TryGetValue(KeyOf(parameter), out int target)
+				    && (instances[target].Lifetime == Lifetime.Transient || instances[target].IsParameterized)
+				    && (BuildsFreshDisposable(instances, serviceToIndex, membership, target) || MayNeedDisposal(instances[target])))
+				{
+					return DisplayInstance(instances[target].ImplementationType);
+				}
+			}
+
+			return null;
+		}
+
+		// A factory output the owner tracks behind a run-time check unless SuppressDisposal opts it out.
+		static bool MayNeedDisposal(InstanceModel instance) => instance.RuntimeDisposalCheck && !instance.SuppressDisposal;
+	}
+
+	/// <summary>
 	///     Pushes the dependencies of <paramref name="instance" /> rebuilt as part of constructing it: a direct
 	///     transient dependency and each transient collection member (materialized eagerly). A relationship/Owned/Arg
 	///     parameter defers and a scoped/singleton dependency is cached, so neither is followed.
@@ -115,11 +206,19 @@ partial class AwaitenGenerator
 		Dictionary<ServiceKey, int> serviceToIndex,
 		CollectionMembership membership,
 		Stack<int> stack)
-	{
 		// A lifecycle hook's graph-resolved parameters are built as part of constructing the instance too (an
 		// activation dependency inline, a release dependency captured), so a transient disposable reached through
 		// one is a fresh disposable of this build like a constructor parameter's.
-		foreach (ParameterModel parameter in instance.ConstructorParameters.AsArray().Concat(instance.HookParameters()))
+		=> PushFreshTransientDependencies(instance.ConstructorParameters.AsArray().Concat(instance.HookParameters()), instances, serviceToIndex, membership, stack);
+
+	private static void PushFreshTransientDependencies(
+		IEnumerable<ParameterModel> parameters,
+		IReadOnlyList<InstanceModel> instances,
+		Dictionary<ServiceKey, int> serviceToIndex,
+		CollectionMembership membership,
+		Stack<int> stack)
+	{
+		foreach (ParameterModel parameter in parameters)
 		{
 			if (parameter.Kind is DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable)
 			{

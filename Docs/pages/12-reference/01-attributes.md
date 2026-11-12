@@ -86,6 +86,7 @@ Register an implementation with a [lifetime](../04-core-concepts/01-lifetimes.md
 | `OnActivated` | `string?` | `null` | Name of a static method that receives the instance once it is constructed. A method returning `Task` or `ValueTask` makes the service async-initialized. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `OnRelease` | `string?` | `null` | Name of a static method that receives the instance when its owning container or scope is disposed, before any instance it owns is disposed. A method returning `Task` or `ValueTask` is awaited, which needs asynchronous disposal. | [Lifecycle hooks](../05-registration/02-lifecycle-hooks.md#onactivated-and-onrelease) |
 | `SuppressDisposal` | `bool` | `false` | Builds the instance but never disposes it. Releasing it is up to you, typically through `OnRelease`. | [Disposal](../04-core-concepts/05-disposal.md#suppressing-disposal) |
+| `ConsumerOwned` | `Type[]?` | `null` | Services whose instances this consumer's `Func` factories and dispatch dictionaries build untracked, so the consumer disposes them. Other consumers keep container-owned instances. | [Lifetime safety](../04-core-concepts/04-lifetime-safety.md#let-a-consumer-own-what-its-func-builds) |
 
 Go on a container or module, any number of times.
 

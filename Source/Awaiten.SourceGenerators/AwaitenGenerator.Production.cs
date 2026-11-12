@@ -165,6 +165,7 @@ partial class AwaitenGenerator
 			ActivationParameters: activationParameters,
 			ReleaseParameters: releaseParameters,
 			SuppressDisposal: info.SuppressDisposal,
+			ConsumerOwned: new EquatableArray<string>(info.ConsumerOwned?.ToArray() ?? []),
 			PrivateServices: PrivateServices(info, containerSymbol),
 			ResolverType: info.When?.Service ?? resolverType,
 			IsAsyncActivation: activationHook is not null && IsAsyncHookReturn(activationHook.ReturnType, compilation),

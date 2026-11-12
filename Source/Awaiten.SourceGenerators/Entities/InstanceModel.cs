@@ -91,7 +91,8 @@ internal sealed record InstanceModel(
 	PredicateModel? When = null,
 	string? RequestingType = null,
 	bool DecoratesImport = false,
-	string? AssignThrough = null)
+	string? AssignThrough = null,
+	EquatableArray<string> ConsumerOwned = default)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated

@@ -100,6 +100,56 @@ internal static partial class Sources
 		return false;
 	}
 
+	/// <summary>Whether a parameter of any instance is consumer-owned (see <see cref="ParameterModel.ConsumerOwned" />).</summary>
+	private static bool HasConsumerOwned(InstanceModel[] instances)
+		=> instances.Any(instance => instance.ConstructorParameters.AsArray()
+			.Concat(instance.HookParameters())
+			.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+			.Any(parameter => parameter.ConsumerOwned));
+
+	/// <summary>
+	///     Emits <c>__Disown</c> and <c>__DisownAsync</c> on the base <c>Scope</c>: they remove the newest
+	///     <c>__disposables</c> entry that tracks a just-built instance, which its consumer owns and disposes. AWT261
+	///     guarantees that the instance is the only entry its build added.
+	/// </summary>
+	private static void EmitDisownHelpers(StringBuilder builder, int depth, bool asyncOnlyDisposals)
+	{
+		AppendXmlSummary(builder, depth, "Stops tracking <paramref name=\"instance\" />, which the consumer that built it owns.");
+		Indent(builder, depth).AppendLine("private protected T __Disown<T>(T instance)");
+		Indent(builder, depth).AppendLine("{");
+		// A factory output checked at run time is tracked only when disposable, so a miss would scan every entry.
+		Indent(builder, depth + 1).AppendLine("if (!(instance is global::System.IDisposable || instance is global::System.IAsyncDisposable))");
+		Indent(builder, depth + 1).AppendLine("{");
+		Indent(builder, depth + 2).AppendLine("return instance;");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("lock (__gate)");
+		Indent(builder, depth + 1).AppendLine("{");
+		Indent(builder, depth + 2).AppendLine("if (__disposables is { } __tracked)");
+		Indent(builder, depth + 2).AppendLine("{");
+		Indent(builder, depth + 3).AppendLine("for (int i = __tracked.Count - 1; i >= 0; i--)");
+		Indent(builder, depth + 3).AppendLine("{");
+		Indent(builder, depth + 4).AppendLine(asyncOnlyDisposals
+			? "if (ReferenceEquals(__tracked[i], instance) || (__tracked[i] is __AsyncOnlyDisposable __entry && __entry.Wraps(instance!)))"
+			: "if (ReferenceEquals(__tracked[i], instance))");
+		Indent(builder, depth + 4).AppendLine("{");
+		Indent(builder, depth + 5).AppendLine("__tracked.RemoveAt(i);");
+		Indent(builder, depth + 5).AppendLine("break;");
+		Indent(builder, depth + 4).AppendLine("}");
+		Indent(builder, depth + 3).AppendLine("}");
+		Indent(builder, depth + 2).AppendLine("}");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("return instance;");
+		Indent(builder, depth).AppendLine("}");
+		builder.AppendLine();
+		AppendXmlSummary(builder, depth, "The asynchronous counterpart of <c>__Disown&lt;T&gt;</c>.");
+		Indent(builder, depth).AppendLine("private protected async global::System.Threading.Tasks.Task<T> __DisownAsync<T>(global::System.Threading.Tasks.Task<T> instance)");
+		Indent(builder, depth).AppendLine("{");
+		Indent(builder, depth + 1).AppendLine("return __Disown(await instance.ConfigureAwait(false));");
+		Indent(builder, depth).AppendLine("}");
+	}
+
 	/// <summary>The <c>__disposables</c> entry that tracks <paramref name="target" />: itself, or wrapped with its guidance.</summary>
 	private static string DisposableEntry(InstanceModel instance, string target)
 		=> IsAsyncOnlyDisposal(instance) ? $"new __AsyncOnlyDisposable({target}, {AsyncOnlyDisposalMessage(instance)})" : target;
@@ -127,6 +177,12 @@ internal static partial class Sources
 			Indent(builder, depth + 1).AppendLine("}");
 			builder.AppendLine();
 			Indent(builder, depth + 1).AppendLine("public global::System.Threading.Tasks.ValueTask DisposeAsync() => _instance.DisposeAsync();");
+			if (context.ConsumerOwned)
+			{
+				builder.AppendLine();
+				Indent(builder, depth + 1).AppendLine("internal bool Wraps(object instance) => ReferenceEquals(_instance, instance);");
+			}
+
 			Indent(builder, depth).AppendLine("}");
 		}
 
