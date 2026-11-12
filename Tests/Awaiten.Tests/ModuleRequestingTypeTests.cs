@@ -43,6 +43,17 @@ public partial class ModuleRequestingTypeTests
 			.Because("the module's scan factory names the internal match it builds, not the interface it exposes");
 	}
 
+	[Test]
+	public async Task InternalImplementationOfAFactoryMember_PresentsItselfAsTheRequestingType()
+	{
+		using RequestingTypeContainer.Root container = new();
+
+		IRequestingTypeMill mill = container.Resolve<IRequestingTypeMill>();
+
+		await That(mill.Log.Category).IsEqualTo("RequestingTypeMill")
+			.Because("the module's wrapper of the factory member names the implementation the registration names, not the service it returns");
+	}
+
 	[Container]
 	[Import(typeof(RequestingTypeModule))]
 	public static partial class RequestingTypeContainer;

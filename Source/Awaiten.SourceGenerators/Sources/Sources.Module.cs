@@ -193,6 +193,11 @@ internal static partial class Sources
 			}
 			else
 			{
+				if (wrapper.RequestingType is not null)
+				{
+					EmitRequestingType(builder, depth + 2, "public", wrapper.Name, wrapper.RequestingType, null, null);
+				}
+
 				EmitMemberWrapper(builder, depth + 2, wrapper, "public",
 					"Generated from a module registration: forwards to the module's own member, which a consuming container in",
 					"another assembly cannot call.");

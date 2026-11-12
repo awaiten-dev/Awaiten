@@ -248,6 +248,68 @@ public partial class ModuleRequestingTypeTests
 			"global::Lib.IKettle");
 
 	[Test]
+	public async Task FactoryRegistrationNamingItsImplementation_IsTheImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal sealed class Grinder : IGrinder { }
+			        """, "[Singleton<Grinder, IGrinder>(Factory = nameof(MakeGrinder))]", "    internal static Grinder MakeGrinder(Log log) => new();"),
+			Consumer(""),
+			"global::Lib.Grinder");
+
+	[Test]
+	public async Task PrivateFactoryRegistrationNamingItsImplementation_IsTheImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal sealed class Grinder : IGrinder { }
+			        """, "[Singleton<Grinder, IGrinder>(Factory = nameof(MakeGrinder))]", "    private static Grinder MakeGrinder(Log log) => new();"),
+			Consumer(""),
+			"global::Lib.Grinder");
+
+	[Test]
+	public async Task AsyncFactoryRegistrationNamingItsImplementation_IsTheImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal sealed class Grinder : IGrinder { }
+			        """, "[Singleton<Grinder, IGrinder>(Factory = nameof(MakeGrinder))]", "    internal static System.Threading.Tasks.Task<Grinder> MakeGrinder(Log log) => System.Threading.Tasks.Task.FromResult(new Grinder());"),
+			Consumer(""),
+			"global::Lib.Grinder");
+
+	[Test]
+	public async Task FactoryRegistrationNamingItsImplementationWithAHook_IsTheImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal sealed class Grinder : IGrinder { }
+			        """, "[Singleton<Grinder, IGrinder>(Factory = nameof(MakeGrinder), OnActivated = nameof(Warm))]",
+				"    internal static Grinder MakeGrinder(Log log) => new();\n    public static void Warm(IGrinder grinder, Log log) { }"),
+			Consumer(""),
+			"global::Lib.Grinder", "global::Lib.Grinder");
+
+	[Test]
+	public async Task FactoryRegistrationReturningASubtypeOfItsImplementation_IsTheRegisteredImplementationEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IGrinder { }
+			        internal class Grinder : IGrinder { }
+			        internal sealed class FineGrinder : Grinder { }
+			        """, "[Singleton(typeof(Grinder), typeof(IGrinder), Factory = nameof(MakeGrinder))]", "    internal static FineGrinder MakeGrinder(Log log) => new();"),
+			Consumer(""),
+			"global::Lib.Grinder");
+
+	[Test]
+	public async Task FactoryRegistrationOfTheServiceReturningAnInternalImplementation_IsTheServiceEverywhere()
+		=> await AgreeEverywhere(
+			Library("""
+			        public interface IBrewer { }
+			        internal sealed class Brewer : IBrewer { }
+			        """, "[Singleton<IBrewer>(Factory = nameof(MakeBrewer))]", "    internal static Brewer MakeBrewer(Log log) => new();"),
+			Consumer(""),
+			"global::Lib.IBrewer");
+
+	[Test]
 	public async Task ModuleBuiltWithoutTheMethod_KeepsTheTypeItsFactoryReturns()
 	{
 		string library = Library("""

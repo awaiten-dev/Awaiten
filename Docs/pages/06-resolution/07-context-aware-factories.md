@@ -42,6 +42,7 @@ The requesting type is the implementation even when your container cannot name i
 ## Rules
 
 - The parameter must be `System.Type` ([AWT162](../09-diagnostics.md#awt162)).
+- For a service built by a `Factory` registration, the requesting type is the implementation the registration names, whatever the factory method returns: `Grinder` for `[Singleton<Grinder, IGrinder>(Factory = ...)]`, the service for `[Singleton<IGrinder>(Factory = ...)]`.
 - A factory cannot mix `[RequestingType]` with an `[Arg]` runtime argument ([AWT163](../09-diagnostics.md#awt163)).
 - The factory runs for each consumer, so there is no `Owned<T>` over its service, in any form ([AWT186](../09-diagnostics.md#awt186)).
 - A keyed resolve, such as `Resolve<ILogger>("Audit")`, throws for a service built by such a factory, even when it is registered under that key. Inject it under the key instead, through a [`[FromKey]`](../05-registration/05-keyed-services.md#select-directly-with-fromkey) parameter or property.

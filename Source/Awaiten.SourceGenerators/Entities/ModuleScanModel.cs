@@ -109,7 +109,9 @@ internal sealed record HiddenInitializer(string Name, string HandleType, string 
 ///     wrapper's only through the awaited value. A hook wrapper of an open generic registration carries the
 ///     definition's <see cref="TypeParameters" /> and their <see cref="Constraints" />, so a container closes it per closing.
 ///     <see cref="Initializers" /> records the conventions of the module that initialize what a <c>Factory</c> wrapper
-///     returns as a public service in place of an implementation another assembly cannot see.
+///     returns as a public service in place of an implementation another assembly cannot see. <see cref="RequestingType" />
+///     is the registered implementation a public <c>Factory</c> wrapper of a module produces, which a container passes as
+///     the requesting type in place of the type the wrapper returns (see <see cref="AwaitenGenerator.RequestingTypeName" />).
 /// </summary>
 internal sealed record MemberWrapper(
 	string Name,
@@ -121,7 +123,8 @@ internal sealed record MemberWrapper(
 	bool Awaited = false,
 	string? TypeParameters = null,
 	string? Constraints = null,
-	EquatableArray<MemberInitializer> Initializers = default);
+	EquatableArray<MemberInitializer> Initializers = default,
+	string? RequestingType = null);
 
 /// <summary>
 ///     The record that a convention initializes what a public <c>Factory</c> wrapper of a module returns: a constant
