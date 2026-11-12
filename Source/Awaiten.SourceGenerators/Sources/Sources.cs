@@ -111,6 +111,9 @@ internal static partial class Sources
 
 		/// <summary>Whether a consumer owns what a <c>Func</c> builds, so the <c>Scope</c> needs <c>__Disown</c>.</summary>
 		public bool ConsumerOwned { get; } = HasConsumerOwned(Instances);
+
+		/// <summary>Whether a factory takes an <c>[Inherited]</c> parameter, so the <c>Scope</c> needs <c>__InheritedSlot</c>.</summary>
+		public bool Inherited { get; } = HasInheritedParameters(Instances);
 	}
 
 	/// <summary>
@@ -508,6 +511,12 @@ internal static partial class Sources
 		{
 			Separate(helpers);
 			EmitDisownHelpers(helpers, body, context.AsyncOnlyDisposals);
+		}
+
+		if (context.Inherited)
+		{
+			Separate(helpers);
+			EmitInheritedSlotType(helpers, body);
 		}
 
 		// The external-resolution helpers are emitted only when the container imports from the host, so a container

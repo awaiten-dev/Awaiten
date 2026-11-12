@@ -146,7 +146,9 @@ partial class AwaitenGenerator
 	///     the same definition; a closed registration still wins its closing over an inherited open one through the
 	///     ordinary open generic expansion. A container <c>Fallback</c> registration only fills a gap and replaces
 	///     nothing. A closed <c>[ImportService&lt;T&gt;]</c> declared on the container replaces every inherited
-	///     registration of <c>T</c>, under any key, so the host supplies it instead.
+	///     registration of <c>T</c>, under any key, so the host supplies it instead. A replaced registration that the
+	///     replacement's factory takes through an <c>[Inherited]</c> parameter (see <see cref="TakesInherited" />) is kept
+	///     under its <see cref="InheritedKey" /> instead, without its <c>Eager</c> or <c>EagerWhen</c>.
 	/// </summary>
 	private static void ReplaceInherited(
 		Inheritance inheritance,
@@ -163,9 +165,31 @@ partial class AwaitenGenerator
 			.Where(registration => !registration.Weak)
 			.Select(OpenServiceKey));
 
-		result.RemoveAll(registration => inheritance.Owns(registration.Origin)
-		                                 && (ownImports.Contains(registration.ServiceType)
-		                                     || replaced.Contains(new ServiceKey(registration.ServiceType, EffectiveKey(registration.Key, registration.WhenInjectedInto)))));
+		HashSet<ServiceKey> kept = new(own
+			.Where(registration => !registration.Weak && TakesInherited(inheritance.Container, registration))
+			.Select(registration => new ServiceKey(registration.ServiceType, EffectiveKey(registration.Key, registration.WhenInjectedInto))));
+
+		for (int index = result.Count - 1; index >= 0; index--)
+		{
+			RawRegistration registration = result[index];
+			if (!inheritance.Owns(registration.Origin))
+			{
+				continue;
+			}
+
+			string? effectiveKey = EffectiveKey(registration.Key, registration.WhenInjectedInto);
+			if (!ownImports.Contains(registration.ServiceType) && kept.Contains(new ServiceKey(registration.ServiceType, effectiveKey)))
+			{
+				// Kept for the replacement's [Inherited] parameter under a key nothing else names; the replacement
+				// decides startup, so its Eager and EagerWhen go.
+				result[index] = registration with { Key = InheritedKey(effectiveKey), WhenInjectedInto = null, Eager = false, EagerWhen = null, };
+			}
+			else if (ownImports.Contains(registration.ServiceType) || replaced.Contains(new ServiceKey(registration.ServiceType, effectiveKey)))
+			{
+				result.RemoveAt(index);
+			}
+		}
+
 		open.RemoveAll(registration => inheritance.Owns(registration.Origin) && replacedOpen.Contains(OpenServiceKey(registration)));
 
 		static string? EffectiveKey(string? key, string? whenInjectedInto)
@@ -174,6 +198,28 @@ partial class AwaitenGenerator
 		static ServiceKey OpenServiceKey(OpenRegistration registration)
 			=> new(registration.Service.ToDisplayString(FullyQualified), EffectiveKey(registration.Key, registration.WhenInjectedInto));
 	}
+
+	/// <summary>
+	///     Whether the <c>Factory</c> member of <paramref name="registration" />, declared on <paramref name="container" />,
+	///     has an overload with an <c>[Inherited]</c> parameter over the registration's service, whose replaced registrations
+	///     <see cref="ReplaceInherited" /> then keeps for that parameter.
+	/// </summary>
+	private static bool TakesInherited(INamedTypeSymbol container, RawRegistration registration)
+		=> registration is { Production: ProductionKind.Factory, ProductionMember: { } member, }
+		   && MembersNamed(container, member).OfType<IMethodSymbol>()
+			   .SelectMany(method => method.Parameters)
+			   .Any(parameter => HasAwaitenAttribute(parameter.GetAttributes(), "InheritedAttribute")
+			                     && InheritedServiceType(parameter.Type).ToDisplayString(FullyQualified) == registration.ServiceType);
+
+	/// <summary>
+	///     The service an <c>[Inherited]</c> parameter of <paramref name="type" /> takes: the type itself, or the service a
+	///     <c>Func</c>, <c>Lazy</c> or <c>Task</c> wraps.
+	/// </summary>
+	private static ITypeSymbol InheritedServiceType(ITypeSymbol type)
+		=> type is INamedTypeSymbol { IsGenericType: true, Name: "Func" or "Lazy" or "Task", } wrapper
+		   && wrapper.ContainingNamespace?.ToDisplayString() is "System" or "System.Threading.Tasks"
+			? InheritedServiceType(wrapper.TypeArguments[wrapper.TypeArguments.Length - 1])
+			: type;
 
 	/// <summary>
 	///     Removes from <paramref name="external" /> each closed <c>[ImportService&lt;T&gt;]</c> type that a registration

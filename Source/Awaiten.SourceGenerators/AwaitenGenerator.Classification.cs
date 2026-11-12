@@ -106,6 +106,12 @@ partial class AwaitenGenerator
 
 			ReportUnsupportedFromKey(parameter.GetAttributes(), parameterModel.Location ?? info.Location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
+			if (IsInheritedParameter(parameter))
+			{
+				parameters.Add(InheritedDependency(parameter, parameterModel, info, context));
+				continue;
+			}
+
 			parameterModel = RedirectDecoratorInner(parameterModel, info, context.DecoratorInner);
 			parameterModel = RedirectCompositeCollection(parameterModel, info, context.CompositeCollections);
 

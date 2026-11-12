@@ -1263,6 +1263,11 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in hookParameters)
 		{
 			ParameterModel parameterModel = ClassifyParameter(parameter, asynchronous, context.External.ServiceTypes);
+			if (ReportMisplacedInherited(parameter, context.Diagnostics))
+			{
+				parameters.Add(parameterModel with { Kind = DependencyKind.Absent, Key = null, });
+				continue;
+			}
 
 			// AWT189: a hook parameter cannot be a runtime [Arg]. Dropped so it contributes no (unresolvable) graph
 			// edge and no emitted argument; the error already fails the build.

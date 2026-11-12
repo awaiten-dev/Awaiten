@@ -154,6 +154,7 @@
  AWT261  | Awaiten   | Error    | A consumer lists a service in ConsumerOwned whose build leaves more than the instance on the owner, such as another disposable transient, a Func or Lazy over one, or a release hook, which the consumer cannot release
  AWT262  | Awaiten   | Warning  | A ConsumerOwned entry that no Func or dispatch dictionary of the consumer over a build-on-demand service the container disposes reaches, in any closing of the registration
  AWT263  | Awaiten   | Error    | A [Singleton] sets both Eager = true and EagerWhen, so the predicate would never decide whether it is built at startup
+ AWT264  | Awaiten   | Error    | A parameter marked [Inherited] that is not one of a Factory member of an extending container's registration, carries [Arg] or [FromKey], takes an unsupported shape, names another service, or whose registration replaces nothing of the base
 
 ; AWT137 (an injected property marked [Arg]) is retired: [Arg] targets only parameters, so the compiler rejects it on a property. The id stays reserved and is never reused.
 ; AWT217 (a partially open [InjectProperty(typeof(...), name)] target) is retired before it shipped: AWT215 covers the typeof argument of [InjectProperty] and [ImportService] alike. The id stays reserved and is never reused.

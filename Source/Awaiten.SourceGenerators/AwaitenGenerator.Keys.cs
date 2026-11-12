@@ -133,6 +133,19 @@ partial class AwaitenGenerator
 		       || key.StartsWith(EnumKeyPrefix, StringComparison.Ordinal)
 		       || key.StartsWith(TypeKeyPrefix, StringComparison.Ordinal));
 
+	/// <summary>
+	///     The synthetic key a registration of an extended base keeps when a replacement's factory takes it with
+	///     <c>[Inherited]</c>: the replaced registration's effective key behind a prefix, so it serves no resolve,
+	///     collection or decorator, and only the <c>[Inherited]</c> parameter names it.
+	/// </summary>
+	private const string InheritedKeyPrefix = "__inh:";
+
+	/// <summary>The <see cref="InheritedKeyPrefix" /> key of a replaced registration with the effective key <paramref name="key" />.</summary>
+	private static string InheritedKey(string? key) => InheritedKeyPrefix + key;
+
+	/// <summary>Whether <paramref name="key" /> is the key of a replaced registration kept for <c>[Inherited]</c>.</summary>
+	internal static bool IsInheritedKey(string? key) => key is not null && key.StartsWith(InheritedKeyPrefix, StringComparison.Ordinal);
+
 	/// <summary>The fully-qualified enum type of an enum-kind key, or <see langword="null" /> for any other key kind.</summary>
 	private static string? EnumKeyType(string key)
 		=> key.StartsWith(EnumKeyPrefix, StringComparison.Ordinal)
@@ -175,6 +188,12 @@ partial class AwaitenGenerator
 	/// </summary>
 	private static string KeyDisplay(string key)
 	{
+		if (IsInheritedKey(key))
+		{
+			string replaced = key.Substring(InheritedKeyPrefix.Length);
+			return replaced.Length == 0 ? "[Inherited]" : $"[Inherited] {KeyDisplay(replaced)}";
+		}
+
 		if (key.StartsWith(StringKeyPrefix, StringComparison.Ordinal))
 		{
 			return key.Substring(StringKeyPrefix.Length);
