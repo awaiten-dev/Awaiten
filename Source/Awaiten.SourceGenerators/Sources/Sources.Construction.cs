@@ -481,7 +481,7 @@ internal static partial class Sources
 
 		// A consumer owns only what the call builds and the owner tracks: a shared entry of a dispatch dictionary, or an
 		// instance the owner never tracks, stays as it is, so __Disown never drops another entry.
-		if (parameter.ConsumerOwned && (target.Lifetime != Lifetime.Transient && !target.IsParameterized || DisposalOf(target) == DisposalTracking.None))
+		if (parameter.ConsumerOwned && !AwaitenGenerator.ConsumerCanOwn(target))
 		{
 			parameter = parameter with { ConsumerOwned = false, };
 		}

@@ -117,6 +117,12 @@ internal static partial class Sources
 		AppendXmlSummary(builder, depth, "Stops tracking <paramref name=\"instance\" />, which the consumer that built it owns.");
 		Indent(builder, depth).AppendLine("private protected T __Disown<T>(T instance)");
 		Indent(builder, depth).AppendLine("{");
+		// A factory output checked at run time is tracked only when disposable, so a miss would scan every entry.
+		Indent(builder, depth + 1).AppendLine("if (!(instance is global::System.IDisposable || instance is global::System.IAsyncDisposable))");
+		Indent(builder, depth + 1).AppendLine("{");
+		Indent(builder, depth + 2).AppendLine("return instance;");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
 		Indent(builder, depth + 1).AppendLine("lock (__gate)");
 		Indent(builder, depth + 1).AppendLine("{");
 		Indent(builder, depth + 2).AppendLine("if (__disposables is { } __tracked)");

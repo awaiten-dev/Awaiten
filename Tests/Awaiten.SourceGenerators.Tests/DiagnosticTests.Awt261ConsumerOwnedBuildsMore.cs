@@ -41,6 +41,24 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("Scoped")]
+		[Arguments("Transient")]
+		public async Task OffersAScopedOrTransientConsumerToDropTheEntry(string lifetime)
+		{
+			GeneratorResult result = Run(
+				"""
+				public sealed class Timer : IDisposable { public void Dispose() { } }
+				public sealed class Debouncer : IDisposable { public Debouncer(Timer timer) { } public void Dispose() { } }
+				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+				""",
+				$"[Transient<Timer>]\n[Transient<Debouncer>]\n[{lifetime}<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.EndsWith("which the consumer cannot release by disposing the instance it gets; remove 'MyCode.Debouncer' from ConsumerOwned, so the container disposes what the Func builds, or take an Owned<T> handle through the Func")
+				.Because("the consumer is already bounded by its owner, so registering it as Scoped is no remedy");
+		}
+
+		[Test]
 		public async Task ReportsADisposableDecoratedInstance()
 		{
 			GeneratorResult result = Run(
@@ -147,7 +165,7 @@ public partial class DiagnosticTests
 				"""
 				public interface ITimer { }
 				public sealed class Timer : ITimer, IDisposable { public void Dispose() { } }
-				public sealed class Debouncer { public Debouncer(ITimer timer) { } }
+				public sealed class Debouncer : IDisposable { public Debouncer(ITimer timer) { } public void Dispose() { } }
 				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
 				""",
 				"[Transient<ITimer>(Factory = nameof(MakeTimer))]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]",
@@ -216,7 +234,7 @@ public partial class DiagnosticTests
 				"""
 				public interface ITimer { }
 				public sealed class Timer : ITimer, IDisposable { public void Dispose() { } }
-				public sealed class Debouncer { public Debouncer(ITimer timer) { } }
+				public sealed class Debouncer : IDisposable { public Debouncer(ITimer timer) { } public void Dispose() { } }
 				public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
 				""",
 				"[Transient<ITimer>(Factory = nameof(MakeTimer), SuppressDisposal = true)]\n[Transient<Debouncer>]\n[Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]",

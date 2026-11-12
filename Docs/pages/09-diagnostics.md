@@ -1244,15 +1244,15 @@ public sealed class Barista(Func<BrewSession> sessions);   // disposing a sessio
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Remove the service from `ConsumerOwned` and take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. Making the inner disposable a singleton or scoped service works too, when it may be shared.
+**Fix:** Remove the service from `ConsumerOwned` and take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. A consumer that is already scoped or transient only needs the entry removed. Making the inner disposable a singleton or scoped service works too, when it may be shared.
 
 ### AWT262: `ConsumerOwned` entry never applies \{#awt262\}
 
 :::warning[Warning]
-A consumer lists a service in `ConsumerOwned`, but takes no `Func` or dispatch dictionary over a transient or parameterized registration of it.
+A consumer lists a service in `ConsumerOwned`, but takes no `Func` or dispatch dictionary over a transient or parameterized registration of it that the container disposes.
 :::
 
-Only those build an instance per call that the consumer could own. A `Lazy<T>`, a direct dependency or a `Func` over a singleton or scoped service hands out an instance the container keeps owning.
+Only those build an instance per call that the consumer could own. A `Lazy<T>`, a direct dependency or a `Func` over a singleton or scoped service hands out an instance the container keeps owning, and a service that is not disposable or sets `SuppressDisposal` leaves nothing to own. On an open generic consumer, the entry is reported only when no closing uses it.
 
 ```csharp expect=AWT262
 // highlight-next-line

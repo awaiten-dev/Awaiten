@@ -10,8 +10,9 @@ partial class AwaitenGenerator
 	///     Applies the <c>ConsumerOwned</c> option of each consumer: marks every <c>Func</c>, async <c>Func</c> and dispatch
 	///     dictionary over a listed build-on-demand service, so the emitter hands what it builds over untracked and the
 	///     analyzer skips AWT118 for it. Reports AWT261 where building such a service leaves more on the owner than the
-	///     instance, and AWT262 for an entry that marks nothing. A singleton or scoped target is shared rather than built
-	///     per call, so the consumer never owns it.
+	///     instance, and AWT262 for an entry that has no effect in any closing of the consumer's registration: it marks
+	///     nothing, or only targets the consumer cannot own (see <see cref="ConsumerCanOwn" />) whose build leaves nothing
+	///     on the owner. A singleton or scoped target is shared rather than built per call, so the consumer never owns it.
 	/// </summary>
 	private static void ApplyConsumerOwned(
 		List<InstanceModel> instances,
@@ -32,7 +33,11 @@ partial class AwaitenGenerator
 
 		// Every consumer is marked before any build is checked, so a Func that a service below the target owns itself
 		// counts as owned whatever the registration order.
-		List<(int Consumer, ParameterModel Parameter, int[] Targets)> owned = new();
+		List<(int Consumer, ParameterModel Parameter, int[] Targets, string[] Entries)> owned = new();
+		// The closings of one open registration share its location, so an entry is reported only when no closing uses it.
+		List<(LocationInfo? Location, string Registration, int Index)> registrationOrder = new();
+		Dictionary<(LocationInfo? Location, string Registration, int Index), (int Consumer, int Closings, string[] Listed, HashSet<string> Applied)> registrations = new();
+		Dictionary<int, (LocationInfo? Location, string Registration, int Index)> registrationOf = new();
 		for (int i = 0; i < instances.Count; i++)
 		{
 			InstanceModel consumer = instances[i];
@@ -43,7 +48,19 @@ partial class AwaitenGenerator
 
 			int index = i;
 			string[] listed = consumer.ConsumerOwned.AsArray().Distinct(StringComparer.Ordinal).ToArray();
-			HashSet<string> applied = new(StringComparer.Ordinal);
+			(LocationInfo? Location, string Registration, int Index) key = instanceLocations[i] is null
+				? (null, consumer.ImplementationType, i)
+				: (instanceLocations[i], Unbound(consumer.ImplementationType), -1);
+			registrationOf[i] = key;
+			if (registrations.TryGetValue(key, out (int Consumer, int Closings, string[] Listed, HashSet<string> Applied) registration))
+			{
+				registrations[key] = registration with { Closings = registration.Closings + 1, };
+			}
+			else
+			{
+				registrationOrder.Add(key);
+				registrations[key] = (i, 1, listed, new HashSet<string>(StringComparer.Ordinal));
+			}
 
 			instances[i] = consumer with
 			{
@@ -57,14 +74,6 @@ partial class AwaitenGenerator
 					.Select(member => member with { Dependency = Mark(member.Dependency), })
 					.ToArray()),
 			};
-
-			foreach (string service in listed.Where(service => !applied.Contains(service)))
-			{
-				diagnostics.Add(new DiagnosticInfo(
-					Diagnostics.ConsumerOwnedNeverApplies,
-					instanceLocations[i],
-					new EquatableArray<string>([DisplayInstance(consumer.ImplementationType), Display(service),])));
-			}
 
 			EquatableArray<ParameterModel> Marked(EquatableArray<ParameterModel> parameters)
 				=> new(parameters.AsArray().Select(Mark).ToArray());
@@ -90,33 +99,70 @@ partial class AwaitenGenerator
 					return parameter;
 				}
 
-				applied.UnionWith(entries);
-				owned.Add((index, parameter, targets));
+				owned.Add((index, parameter, targets, entries));
 				return parameter with { ConsumerOwned = true, };
 			}
 		}
 
 		HashSet<string> reported = new(StringComparer.Ordinal);
-		foreach ((int consumer, ParameterModel parameter, int[] targets) in owned)
+		foreach ((int consumer, ParameterModel parameter, int[] targets, string[] entries) in owned)
 		{
+			// A target the consumer cannot own whose build leaves nothing on the owner makes the entry a no-op (AWT262).
+			bool applies = false;
 			foreach (int target in targets)
 			{
-				if (ConsumerOwnedFault(instances, serviceToIndex, membership, target) is { } fault
-				    && reported.Add($"{consumer}|{parameter.ServiceType}|{target}"))
+				string? fault = ConsumerOwnedFault(instances, serviceToIndex, membership, target);
+				applies |= fault is not null || ConsumerCanOwn(instances[target]);
+				if (fault is not null && reported.Add($"{consumer}|{parameter.ServiceType}|{target}"))
 				{
+					string consumerDisplay = DisplayInstance(instances[consumer].ImplementationType);
+					string service = Display(parameter.ServiceType);
+					// A scoped or transient consumer is already bounded by its owner, so dropping the entry is enough.
+					string remedy = instances[consumer].Lifetime == Lifetime.Singleton
+						? $"remove '{service}' from ConsumerOwned and take an Owned<T> handle through the Func, or register '{consumerDisplay}' as Scoped"
+						: $"remove '{service}' from ConsumerOwned, so the container disposes what the Func builds, or take an Owned<T> handle through the Func";
 					diagnostics.Add(new DiagnosticInfo(
 						Diagnostics.ConsumerOwnedBuildsMore,
 						parameter.Location ?? instanceLocations[consumer],
 						new EquatableArray<string>([
-							DisplayInstance(instances[consumer].ImplementationType),
-							Display(parameter.ServiceType),
+							consumerDisplay,
+							service,
 							DisplayInstance(instances[target].ImplementationType),
 							fault,
+							remedy,
 						])));
 				}
 			}
+
+			if (applies)
+			{
+				registrations[registrationOf[consumer]].Applied.UnionWith(entries);
+			}
+		}
+
+		foreach ((LocationInfo? Location, string Registration, int Index) key in registrationOrder)
+		{
+			(int consumer, int closings, string[] listed, HashSet<string> applied) = registrations[key];
+			string display = DisplayInstance(closings == 1 ? instances[consumer].ImplementationType : key.Registration);
+			foreach (string service in listed.Where(service => !applied.Contains(service)))
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.ConsumerOwnedNeverApplies,
+					key.Location ?? instanceLocations[consumer],
+					new EquatableArray<string>([display, Display(service),])));
+			}
 		}
 	}
+
+	/// <summary>
+	///     Whether a consumer can own what a <c>Func</c> over <paramref name="target" /> builds: the target is built per
+	///     call (transient or parameterized) and its owner would track it for disposal. A shared instance, or one the
+	///     owner never disposes (not disposable, or <c>SuppressDisposal</c>), stays as it is.
+	/// </summary>
+	internal static bool ConsumerCanOwn(InstanceModel target)
+		=> (target.Lifetime == Lifetime.Transient || target.IsParameterized)
+		   && !target.SuppressDisposal
+		   && (target.NeedsDisposal || target.RuntimeDisposalCheck);
 
 	/// <summary>
 	///     Whether the <c>ConsumerOwned</c> <paramref name="entry" /> names <paramref name="service" />: the type itself, or

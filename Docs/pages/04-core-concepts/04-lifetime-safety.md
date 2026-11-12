@@ -68,11 +68,11 @@ public sealed class Tasting(BrewSession session)          // the container dispo
 public static partial class CoffeeShop;
 ```
 
-- It covers the `Func<T>`, `Func<TArg…, T>` and `Func<…, Task<T>>` the consumer takes through its constructor, an injected property or a lifecycle hook, over a transient or parameterized service. List the type the `Func` names, or a generic type definition such as `typeof(Repository<>)` for all its closings.
+- It covers the `Func<T>`, `Func<TArg…, T>` and `Func<…, Task<T>>` the consumer takes through its constructor, an injected property, a lifecycle hook or an async initializer, over a transient or parameterized service. List the type the `Func` names, or a generic type definition such as `typeof(Repository<>)` for all its closings.
 - For a [dispatch dictionary](../06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type), list its base type. The consumer owns its transient entries, while a singleton or scoped entry stays shared.
 - The consumer can only dispose the instance it gets, so building the service may leave nothing else on the owner ([AWT261](../09-diagnostics.md#awt261)): no other disposable transient, a decorated instance below the outermost decorator and an injected property included, no `Func` or `Lazy` below it over a transient that creates a disposable, and no `OnRelease` hook. Singleton and scoped dependencies are fine: they belong to their own owner.
 - `ConsumerOwned` is set on a consumer's registration, so a decorator or a composite cannot use it.
-- An entry that no such `Func` or dictionary of the consumer reaches has no effect and is reported ([AWT262](../09-diagnostics.md#awt262)), for example one over a singleton or scoped service, which the container shares rather than builds per call.
+- An entry that no such `Func` or dictionary of the consumer reaches has no effect and is reported ([AWT262](../09-diagnostics.md#awt262)), for example one over a singleton or scoped service, which the container shares rather than builds per call, or one over a service the container never disposes. On an open generic consumer, an entry counts when any closing uses it.
 - When several registrations share one implementation, they must agree on `ConsumerOwned` ([AWT166](../09-diagnostics.md#awt166)).
 
 ## Loose when you want MS.DI semantics

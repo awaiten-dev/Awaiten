@@ -2866,12 +2866,13 @@ internal static class Diagnostics
 	///     or a factory output that may be disposable included), a <c>Func</c> or <c>Lazy</c> below it over such a
 	///     transient, an <c>OnRelease</c> hook, or a disposable value type the container tracks as a boxed copy. The
 	///     consumer can only dispose the instance it holds, so the rest would leak, which <c>Owned&lt;T&gt;</c> or a
-	///     scoped consumer avoids.
+	///     scoped consumer avoids. The last argument is the whole remedy, chosen by the consumer's lifetime: a singleton
+	///     can also become scoped, while a scoped or transient consumer only drops the entry.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ConsumerOwnedBuildsMore = new(
 		"AWT261",
 		"Consumer cannot own what its Func builds",
-		"'{0}' lists '{1}' in ConsumerOwned, but building '{2}' {3}, which the consumer cannot release by disposing the instance it gets; remove '{1}' from ConsumerOwned and take an Owned<T> handle through the Func, or register '{0}' as Scoped",
+		"'{0}' lists '{1}' in ConsumerOwned, but building '{2}' {3}, which the consumer cannot release by disposing the instance it gets; {4}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
@@ -2880,12 +2881,14 @@ internal static class Diagnostics
 	/// <summary>
 	///     A <c>ConsumerOwned</c> entry no <c>Func</c> or dispatch dictionary of the consumer reaches: the consumer takes no
 	///     <c>Func&lt;T&gt;</c>, <c>Func&lt;TArg…, T&gt;</c>, <c>Func&lt;…, Task&lt;T&gt;&gt;</c> or dispatch dictionary over the
-	///     service, or the service is a singleton or scoped one the container shares rather than builds per call.
+	///     service, or the service is a singleton or scoped one the container shares rather than builds per call, or one
+	///     the container never disposes (not disposable, or <c>SuppressDisposal</c>). For an open generic consumer, an
+	///     entry is reported once, and only when no closing uses it.
 	/// </summary>
 	public static readonly DiagnosticDescriptor ConsumerOwnedNeverApplies = new(
 		"AWT262",
 		"ConsumerOwned entry never applies",
-		"'{0}' lists '{1}' in ConsumerOwned, but takes no Func or dispatch dictionary over a transient or parameterized '{1}', so the entry has no effect; remove it",
+		"'{0}' lists '{1}' in ConsumerOwned, but takes no Func or dispatch dictionary over a transient or parameterized '{1}' that the container disposes, so the entry has no effect; remove it",
 		"Awaiten",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,

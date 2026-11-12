@@ -26,7 +26,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = Run("public sealed class StorageFactory { public StorageFactory(Lazy<Debouncer> debouncer) { } }", "[Transient<Debouncer>]");
 
 			await That(result.Diagnostics).HasSingle().Which
-				.IsEqualTo("(11,2): warning AWT262: 'MyCode.StorageFactory' lists 'MyCode.Debouncer' in ConsumerOwned, but takes no Func or dispatch dictionary over a transient or parameterized 'MyCode.Debouncer', so the entry has no effect; remove it")
+				.IsEqualTo("(11,2): warning AWT262: 'MyCode.StorageFactory' lists 'MyCode.Debouncer' in ConsumerOwned, but takes no Func or dispatch dictionary over a transient or parameterized 'MyCode.Debouncer' that the container disposes, so the entry has no effect; remove it")
 				.Because("only a Func or a dispatch dictionary builds instances the consumer could own");
 		}
 
@@ -50,15 +50,95 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
-		public async Task ReportsConflictingConsumerOwnedOnTwoRegistrationsOfOneImplementation()
+		[Arguments("[Transient<Debouncer>(SuppressDisposal = true)]")]
+		[Arguments("[Transient<Debouncer>(Factory = nameof(Make), SuppressDisposal = true)]")]
+		public async Task ReportsAServiceTheContainerNeverDisposes(string registration)
 		{
-			GeneratorResult result = Run(
-				"public interface IStorageFactory;\npublic sealed class StorageFactory : IStorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }",
-				"[Transient<Debouncer>]\n[Singleton<StorageFactory, IStorageFactory>]");
+			GeneratorResult result = Generator.Run($$"""
+			                                        using Awaiten;
+			                                        using System;
+
+			                                        namespace MyCode;
+
+			                                        public sealed class Debouncer : IDisposable { public void Dispose() { } }
+			                                        public sealed class StorageFactory { public StorageFactory(Func<Debouncer> debouncers) { } }
+
+			                                        [Container]
+			                                        {{registration}}
+			                                        [Singleton<StorageFactory>(ConsumerOwned = [typeof(Debouncer)])]
+			                                        public static partial class MyContainer
+			                                        {
+			                                            private static Debouncer Make() => new();
+			                                        }
+			                                        """);
 
 			await That(result.Diagnostics).HasSingle().Which
-				.Contains("*error AWT166*conflicting ConsumerOwned directives*").AsWildcard()
-				.Because("coalescing keeps the first registration's directives, so a differing ConsumerOwned would be dropped silently");
+				.Contains("*warning AWT262*").AsWildcard()
+				.Because("the container never disposes the debouncer, so there is nothing for the consumer to take over");
 		}
+
+		[Test]
+		public async Task ReportsANonDisposableService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Ticket { }
+			                                       public sealed class Counter { public Counter(Func<Ticket> tickets) { } }
+
+			                                       [Container]
+			                                       [Transient<Ticket>]
+			                                       [Singleton<Counter>(ConsumerOwned = [typeof(Ticket)])]
+			                                       public static partial class MyContainer;
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*warning AWT262*'MyCode.Counter' lists 'MyCode.Ticket'*").AsWildcard()
+				.Because("a ticket is neither disposable nor builds anything the owner tracks, so the entry changes nothing");
+		}
+
+		[Test]
+		public async Task DoesNotReportAnEntryThatAnotherClosingOfTheConsumerUses()
+		{
+			GeneratorResult result = RunOpenConsumer("public sealed class Shop { public Shop(Shelf<Debouncer> debouncers, Shelf<Timer> timers) { } }");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the entry applies to Shelf<Debouncer>, so removing it would change that closing");
+		}
+
+		[Test]
+		public async Task ReportsAnEntryNoClosingUsesOnce()
+		{
+			GeneratorResult result = RunOpenConsumer("public sealed class Shop { public Shop(Shelf<Timer> timers, Shelf<Clock> clocks) { } }");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*warning AWT262*'MyCode.Shelf<>' lists 'MyCode.Debouncer'*").AsWildcard()
+				.Because("the closings share one registration, which is reported once and named by its definition");
+		}
+
+		private static GeneratorResult RunOpenConsumer(string shop)
+			=> Generator.Run($$"""
+			                   using Awaiten;
+			                   using System;
+
+			                   namespace MyCode;
+
+			                   public sealed class Debouncer : IDisposable { public void Dispose() { } }
+			                   public sealed class Timer : IDisposable { public void Dispose() { } }
+			                   public sealed class Clock : IDisposable { public void Dispose() { } }
+			                   public sealed class Shelf<T> { public Shelf(Func<T> items) { } }
+			                   {{shop}}
+
+			                   [Container]
+			                   [Transient<Debouncer>]
+			                   [Transient<Timer>]
+			                   [Transient<Clock>]
+			                   [Scoped(typeof(Shelf<>), ConsumerOwned = [typeof(Debouncer)])]
+			                   [Scoped<Shop>]
+			                   public static partial class MyContainer;
+			                   """);
 	}
 }
