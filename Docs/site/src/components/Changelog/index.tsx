@@ -1,6 +1,6 @@
 /**
  * The changelog as a timeline, filled from `src/data/changelog.json`, which the `DocsData` build target generates from
- * the GitHub releases. Each major version is a chapter with a summary; the releases of the latest major version are
+ * the GitHub releases. Each major version is a chapter; the releases of the latest major version are
  * shown, older ones on demand.
  */
 import React, {type ReactElement, type ReactNode, useState} from 'react';
@@ -58,12 +58,12 @@ function summarize(releases: ChangelogRelease[]): Summary {
   return {commits, counts};
 }
 
-function Bar({summary, thick}: {summary: Summary; thick?: boolean}): ReactElement {
+function Bar({summary}: {summary: Summary}): ReactElement {
   const present = categories.filter(({category}) => summary.counts[category] > 0);
   const total = present.reduce((sum, {category}) => sum + summary.counts[category], 0);
   return (
     <div
-      className={clsx(styles.bar, thick && styles.thick)}
+      className={styles.bar}
       role="img"
       aria-label={present.map(({category, many}) => `${summary.counts[category]} ${many}`).join(', ')}>
       {present.map(({category}) => (
@@ -279,7 +279,6 @@ export default function Changelog({changelog: {releases}}: Props): ReactElement 
       <div className={styles.timeline}>
         {majors.map((major, index) => {
           const majorReleases = releases.filter((release) => majorOf(release) === major);
-          const summary = summarize(majorReleases);
           const first = majorReleases[majorReleases.length - 1];
           const last = majorReleases[0];
           const from = formatDate(first.date, {month: 'short', year: 'numeric'});
@@ -293,8 +292,6 @@ export default function Changelog({changelog: {releases}}: Props): ReactElement 
                 <p className={styles.span}>
                   {plural(majorReleases.length, 'release', 'releases')} · {from === to ? from : `${from} to ${to}`}
                 </p>
-                <Bar summary={summary} thick />
-                <Stats summary={summary} />
               </div>
               {index === 0 || expanded.includes(major) ? (
                 majorReleases.map((release) => (
