@@ -2034,6 +2034,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
@@ -2375,7 +2381,8 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
@@ -2720,7 +2727,8 @@ window.BENCHMARK_DATA = {
           6.399770854757382,
           4.860039963076512,
           3.201268791158994,
-          6.21166401853164
+          6.21166401853164,
+          6.180821465452512
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2732,6 +2740,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3423,7 +3432,8 @@ window.BENCHMARK_DATA = {
           7.345700619121392,
           6.95814897865057,
           3.923768685864551,
-          10.020161247679166
+          10.020161247679166,
+          10.376993904511133
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3435,6 +3445,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4126,7 +4137,8 @@ window.BENCHMARK_DATA = {
           112.22446834189552,
           88.42695304552714,
           56.72980957371848,
-          114.50940085252127
+          114.50940085252127,
+          115.90216409365335
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4138,6 +4150,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4825,7 +4838,8 @@ window.BENCHMARK_DATA = {
           8.188874436418216,
           6.443626171847185,
           4.469610226842073,
-          8.50270507360498
+          8.50270507360498,
+          8.591319015622139
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4837,6 +4851,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5520,7 +5535,8 @@ window.BENCHMARK_DATA = {
           10.749388809005419,
           8.220005206763744,
           5.977495563881738,
-          11.261467321560932
+          11.261467321560932,
+          10.897044329770974
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5532,6 +5548,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7914,6 +7931,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
@@ -8255,7 +8278,8 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
@@ -8600,7 +8624,8 @@ window.BENCHMARK_DATA = {
           7.433005154132843,
           5.216453750928243,
           3.291904219488303,
-          6.973292630452376
+          6.973292630452376,
+          6.957348134900842
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8612,6 +8637,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9303,7 +9329,8 @@ window.BENCHMARK_DATA = {
           7.833350397646427,
           6.716735363006592,
           3.9192779724796614,
-          8.7291562674301
+          8.7291562674301,
+          8.712620777579454
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9315,6 +9342,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10006,7 +10034,8 @@ window.BENCHMARK_DATA = {
           110.03129856927055,
           87.8477542479833,
           54.75116766874607,
-          110.16743755340576
+          110.16743755340576,
+          112.7673612912496
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10018,6 +10047,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10705,7 +10735,8 @@ window.BENCHMARK_DATA = {
           8.169195892719122,
           6.85277642806371,
           4.671618827680747,
-          7.758266403124883
+          7.758266403124883,
+          9.085034889834267
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10717,6 +10748,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11400,7 +11432,8 @@ window.BENCHMARK_DATA = {
           14.029957552368824,
           11.372998410463333,
           5.804354172945023,
-          14.829002106189728
+          14.829002106189728,
+          14.766388502717017
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11412,6 +11445,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13794,6 +13828,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
@@ -14135,7 +14175,8 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
@@ -14480,7 +14521,8 @@ window.BENCHMARK_DATA = {
           20.550241253773372,
           21.149382303158443,
           15.635852775971095,
-          21.528445130586626
+          21.528445130586626,
+          12.174908942409925
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14752,6 +14794,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15183,7 +15226,8 @@ window.BENCHMARK_DATA = {
           1523.1749202183314,
           1469.2484045028687,
           1097.816152708871,
-          1537.2213566643852
+          1537.2213566643852,
+          811.2067292758396
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15195,6 +15239,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15886,7 +15931,8 @@ window.BENCHMARK_DATA = {
           29917.062534877234,
           30320.094319661457,
           17857.625376383465,
-          29947.849357096355
+          29947.849357096355,
+          18718.950766427177
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16236,7 +16282,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32474,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16585,7 +16632,8 @@ window.BENCHMARK_DATA = {
           738.9720098495484,
           774.0555228551228,
           568.6855466206869,
-          760.291862487793
+          760.291862487793,
+          404.1462012699672
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16615,6 +16663,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17280,7 +17329,8 @@ window.BENCHMARK_DATA = {
           12048.559979952299,
           12113.944552103678,
           8189.433624267578,
-          12942.883726501464
+          12942.883726501464,
+          6458.415947469076
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17626,7 +17676,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19674,6 +19725,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
@@ -20015,7 +20072,8 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
@@ -20360,7 +20418,8 @@ window.BENCHMARK_DATA = {
           199.51943543752034,
           185.85317792892457,
           167.65236700375874,
-          229.90483828953333
+          229.90483828953333,
+          76.88119270971843
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20632,6 +20691,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21063,7 +21123,8 @@ window.BENCHMARK_DATA = {
           15539.916112263998,
           14472.360782078335,
           9344.578490121025,
-          16250.187390136718
+          16250.187390136718,
+          7479.476569112142
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21075,6 +21136,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21766,7 +21828,8 @@ window.BENCHMARK_DATA = {
           738973.4303850447,
           734399.8752790178,
           427608.122140067,
-          755988.4709123884
+          755988.4709123884,
+          422382.4083426339
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22116,7 +22179,8 @@ window.BENCHMARK_DATA = {
           740463,
           741733,
           735366,
-          738520
+          738520,
+          735271
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22465,7 +22529,8 @@ window.BENCHMARK_DATA = {
           45175.41973876953,
           43864.7286705604,
           30867.83323451451,
-          47401.05213216146
+          47401.05213216146,
+          22903.65350811298
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22811,7 +22876,8 @@ window.BENCHMARK_DATA = {
           80011,
           80302,
           79664,
-          80082
+          80082,
+          79667
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23160,7 +23226,8 @@ window.BENCHMARK_DATA = {
           361331.18876953126,
           353100.46025390626,
           239819.74799804686,
-          384538.38580729166
+          384538.38580729166,
+          181268.19709123884
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23506,7 +23573,8 @@ window.BENCHMARK_DATA = {
           573074,
           573059,
           571208,
-          573090
+          573090,
+          573085
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25530,6 +25598,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
@@ -25867,7 +25941,8 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
@@ -26208,7 +26283,8 @@ window.BENCHMARK_DATA = {
           178.6451291356768,
           288.9003121852875,
           164.55925500392914,
-          208.21065068244934
+          208.21065068244934,
+          207.6969141960144
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26243,6 +26319,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -26903,7 +26980,8 @@ window.BENCHMARK_DATA = {
           410.5092167173113,
           460.3266388007573,
           374.71216102746814,
-          447.3234804698399
+          447.3234804698399,
+          451.2680216789246
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -26915,6 +26993,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27598,7 +27677,8 @@ window.BENCHMARK_DATA = {
           3554.5630146906924,
           4894.100114695231,
           3347.54144014631,
-          4666.524297860952
+          4666.524297860952,
+          4634.27742207845
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -27682,6 +27762,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28293,7 +28374,8 @@ window.BENCHMARK_DATA = {
           262.4480411529541,
           342.1455665588379,
           239.6430368934359,
-          331.0886113460247
+          331.0886113460247,
+          329.81409594217934
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28305,6 +28387,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -28988,7 +29071,8 @@ window.BENCHMARK_DATA = {
           415.82570018087114,
           542.7291932423909,
           371.0008008139474,
-          546.8135286477896
+          546.8135286477896,
+          521.5203612872532
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29000,6 +29084,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
