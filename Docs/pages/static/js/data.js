@@ -1986,6 +1986,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 07:54:24 2026 \u002B0100",
         "message": "chore: Bump the awexpect group to v4.0.0 (#438)"
+      },
+      {
+        "sha": "5035d89185c9f32ebb5b789cb31dd01a94b4c2a2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
+        "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
       }
     ],
     "labels": [
@@ -2319,7 +2325,8 @@ window.BENCHMARK_DATA = {
       "856ced65",
       "e78008ec",
       "a5c68911",
-      "caed6092"
+      "caed6092",
+      "5035d891"
     ],
     "datasets": [
       {
@@ -2656,7 +2663,8 @@ window.BENCHMARK_DATA = {
           3.1760004988083472,
           5.8194133671266695,
           6.1892910232146585,
-          4.804449540376663
+          4.804449540376663,
+          6.426383812840168
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2668,6 +2676,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3343,7 +3352,8 @@ window.BENCHMARK_DATA = {
           3.814791447793444,
           5.856443824512618,
           5.87456248452266,
-          5.050852117935817
+          5.050852117935817,
+          7.447781280676524
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3355,6 +3365,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4030,7 +4041,8 @@ window.BENCHMARK_DATA = {
           56.48111260334651,
           129.10515659650167,
           134.23091452916464,
-          127.66682359150478
+          127.66682359150478,
+          122.4504742304484
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4042,6 +4054,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4713,7 +4726,8 @@ window.BENCHMARK_DATA = {
           4.5075397749741875,
           7.854370750486851,
           8.047012307322943,
-          7.233307792672089
+          7.233307792672089,
+          9.302802842855453
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4725,6 +4739,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5392,7 +5407,8 @@ window.BENCHMARK_DATA = {
           5.697163964311282,
           11.853519839048385,
           10.720348246892293,
-          8.92818333208561
+          8.92818333208561,
+          10.57907674908638
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5404,6 +5420,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7730,6 +7747,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 07:54:24 2026 \u002B0100",
         "message": "chore: Bump the awexpect group to v4.0.0 (#438)"
+      },
+      {
+        "sha": "5035d89185c9f32ebb5b789cb31dd01a94b4c2a2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
+        "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
       }
     ],
     "labels": [
@@ -8063,7 +8086,8 @@ window.BENCHMARK_DATA = {
       "856ced65",
       "e78008ec",
       "a5c68911",
-      "caed6092"
+      "caed6092",
+      "5035d891"
     ],
     "datasets": [
       {
@@ -8400,7 +8424,8 @@ window.BENCHMARK_DATA = {
           3.1740994190176326,
           6.207999863794872,
           6.480455790956815,
-          5.1442216237386065
+          5.1442216237386065,
+          7.418329860155399
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8412,6 +8437,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9087,7 +9113,8 @@ window.BENCHMARK_DATA = {
           3.826666634243268,
           6.109017057220141,
           5.943500805113997,
-          5.113884472846985
+          5.113884472846985,
+          7.335016893652769
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9099,6 +9126,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9774,7 +9802,8 @@ window.BENCHMARK_DATA = {
           54.846379556826186,
           129.4791845480601,
           134.54195994990212,
-          124.66913404464722
+          124.66913404464722,
+          115.13147605260214
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9786,6 +9815,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10457,7 +10487,8 @@ window.BENCHMARK_DATA = {
           4.552576032280922,
           7.876017053212438,
           8.224775984883308,
-          7.244121613105138
+          7.244121613105138,
+          9.195835985740025
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10469,6 +10500,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11136,7 +11168,8 @@ window.BENCHMARK_DATA = {
           5.780623037616412,
           15.897788798809051,
           10.71948139667511,
-          9.025907775121075
+          9.025907775121075,
+          13.924811059236527
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11148,6 +11181,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13474,6 +13508,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 07:54:24 2026 \u002B0100",
         "message": "chore: Bump the awexpect group to v4.0.0 (#438)"
+      },
+      {
+        "sha": "5035d89185c9f32ebb5b789cb31dd01a94b4c2a2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
+        "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
       }
     ],
     "labels": [
@@ -13807,7 +13847,8 @@ window.BENCHMARK_DATA = {
       "856ced65",
       "e78008ec",
       "a5c68911",
-      "caed6092"
+      "caed6092",
+      "5035d891"
     ],
     "datasets": [
       {
@@ -14144,7 +14185,8 @@ window.BENCHMARK_DATA = {
           16.543949167927106,
           16.827603636185327,
           11.714113898575306,
-          17.241100547711053
+          17.241100547711053,
+          21.234356405479566
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14416,6 +14458,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14831,7 +14874,8 @@ window.BENCHMARK_DATA = {
           1164.3487535204206,
           1318.7326939900715,
           792.1507074991862,
-          1222.4137235005696
+          1222.4137235005696,
+          1541.8386530194964
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14843,6 +14887,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15518,7 +15563,8 @@ window.BENCHMARK_DATA = {
           26103.837927246095,
           26488.96894124349,
           17690.157267252605,
-          25901.499727376304
+          25901.499727376304,
+          30635.191552734374
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15857,6 +15903,7 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32482,
+          32478,
           32478,
           32478,
           32478,
@@ -16201,7 +16248,8 @@ window.BENCHMARK_DATA = {
           566.2842385927836,
           631.8685262680053,
           407.9170180638631,
-          627.7118209203085
+          627.7118209203085,
+          763.2647468703134
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16231,6 +16279,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16880,7 +16929,8 @@ window.BENCHMARK_DATA = {
           9085.10774230957,
           9502.130497741698,
           6900.758491007487,
-          9101.689353942871
+          9101.689353942871,
+          12378.5675684611
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17218,7 +17268,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19218,6 +19269,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 07:54:24 2026 \u002B0100",
         "message": "chore: Bump the awexpect group to v4.0.0 (#438)"
+      },
+      {
+        "sha": "5035d89185c9f32ebb5b789cb31dd01a94b4c2a2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
+        "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
       }
     ],
     "labels": [
@@ -19551,7 +19608,8 @@ window.BENCHMARK_DATA = {
       "856ced65",
       "e78008ec",
       "a5c68911",
-      "caed6092"
+      "caed6092",
+      "5035d891"
     ],
     "datasets": [
       {
@@ -19888,7 +19946,8 @@ window.BENCHMARK_DATA = {
           120.09791884422302,
           125.27329961458842,
           83.25129363366536,
-          115.94337101166064
+          115.94337101166064,
+          220.177922468919
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20160,6 +20219,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20575,7 +20635,8 @@ window.BENCHMARK_DATA = {
           10849.149013264974,
           11148.415479532878,
           7352.47830418178,
-          11056.050164358956
+          11056.050164358956,
+          15198.877040608724
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20587,6 +20648,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21262,7 +21324,8 @@ window.BENCHMARK_DATA = {
           631911.8210797991,
           645086.5292317708,
           433475.59083909256,
-          643393.9521484375
+          643393.9521484375,
+          760823.6350260417
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21604,7 +21667,8 @@ window.BENCHMARK_DATA = {
           719706,
           721166,
           718417,
-          721149
+          721149,
+          740459
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21945,7 +22009,8 @@ window.BENCHMARK_DATA = {
           38063.62802327474,
           37477.20838216146,
           24985.042960030692,
-          37623.24524739583
+          37623.24524739583,
+          45377.0992553711
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22283,7 +22348,8 @@ window.BENCHMARK_DATA = {
           80971,
           80968,
           79823,
-          80970
+          80970,
+          80009
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22624,7 +22690,8 @@ window.BENCHMARK_DATA = {
           276445.3409179688,
           286781.4410481771,
           189030.3639948918,
-          278854.32744140626
+          278854.32744140626,
+          375984.0517578125
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22962,7 +23029,8 @@ window.BENCHMARK_DATA = {
           572978,
           573060,
           573040,
-          573073
+          573073,
+          573023
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24938,6 +25006,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 07:54:24 2026 \u002B0100",
         "message": "chore: Bump the awexpect group to v4.0.0 (#438)"
+      },
+      {
+        "sha": "5035d89185c9f32ebb5b789cb31dd01a94b4c2a2",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
+        "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
       }
     ],
     "labels": [
@@ -25267,7 +25341,8 @@ window.BENCHMARK_DATA = {
       "856ced65",
       "e78008ec",
       "a5c68911",
-      "caed6092"
+      "caed6092",
+      "5035d891"
     ],
     "datasets": [
       {
@@ -25600,7 +25675,8 @@ window.BENCHMARK_DATA = {
           266.282258717219,
           294.7585385004679,
           303.5486866065434,
-          262.3517687479655
+          262.3517687479655,
+          255.50943960462297
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25635,6 +25711,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -26279,7 +26356,8 @@ window.BENCHMARK_DATA = {
           588.9412403787885,
           639.3577314785549,
           652.2545047906729,
-          541.6232180595398
+          541.6232180595398,
+          587.1072974205017
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -26291,6 +26369,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26958,7 +27037,8 @@ window.BENCHMARK_DATA = {
           6484.333868408203,
           5108.640026385968,
           5240.1409747783955,
-          4326.15854699271
+          4326.15854699271,
+          6409.323629651751
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -27042,6 +27122,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27637,7 +27718,8 @@ window.BENCHMARK_DATA = {
           390.456392065684,
           427.02977418899536,
           427.95887562206815,
-          364.2500877698263
+          364.2500877698263,
+          392.34098408772394
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27649,6 +27731,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -28316,7 +28399,8 @@ window.BENCHMARK_DATA = {
           709.8180127825055,
           738.2238626480103,
           724.2913686207363,
-          564.4525542940412
+          564.4525542940412,
+          694.5350073496501
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -28328,6 +28412,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
