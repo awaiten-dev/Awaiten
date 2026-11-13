@@ -1992,6 +1992,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
@@ -2326,7 +2332,8 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
@@ -2664,7 +2671,8 @@ window.BENCHMARK_DATA = {
           5.8194133671266695,
           6.1892910232146585,
           4.804449540376663,
-          6.426383812840168
+          6.426383812840168,
+          3.3519368304737975
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2676,6 +2684,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3353,7 +3362,8 @@ window.BENCHMARK_DATA = {
           5.856443824512618,
           5.87456248452266,
           5.050852117935817,
-          7.447781280676524
+          7.447781280676524,
+          4.148203492696796
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3365,6 +3375,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4042,7 +4053,8 @@ window.BENCHMARK_DATA = {
           129.10515659650167,
           134.23091452916464,
           127.66682359150478,
-          122.4504742304484
+          122.4504742304484,
+          61.14370497862498
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4054,6 +4066,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4727,7 +4740,8 @@ window.BENCHMARK_DATA = {
           7.854370750486851,
           8.047012307322943,
           7.233307792672089,
-          9.302802842855453
+          9.302802842855453,
+          5.037225277296135
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4739,6 +4753,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5408,7 +5423,8 @@ window.BENCHMARK_DATA = {
           11.853519839048385,
           10.720348246892293,
           8.92818333208561,
-          10.57907674908638
+          10.57907674908638,
+          6.220947410662969
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5420,6 +5436,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7753,6 +7770,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
@@ -8087,7 +8110,8 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
@@ -8425,7 +8449,8 @@ window.BENCHMARK_DATA = {
           6.207999863794872,
           6.480455790956815,
           5.1442216237386065,
-          7.418329860155399
+          7.418329860155399,
+          3.19826413889726
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8437,6 +8462,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9114,7 +9140,8 @@ window.BENCHMARK_DATA = {
           6.109017057220141,
           5.943500805113997,
           5.113884472846985,
-          7.335016893652769
+          7.335016893652769,
+          4.1024008473524685
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9126,6 +9153,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9803,7 +9831,8 @@ window.BENCHMARK_DATA = {
           129.4791845480601,
           134.54195994990212,
           124.66913404464722,
-          115.13147605260214
+          115.13147605260214,
+          59.460494654519216
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9815,6 +9844,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10488,7 +10518,8 @@ window.BENCHMARK_DATA = {
           7.876017053212438,
           8.224775984883308,
           7.244121613105138,
-          9.195835985740025
+          9.195835985740025,
+          5.013056363910437
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10500,6 +10531,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11169,7 +11201,8 @@ window.BENCHMARK_DATA = {
           15.897788798809051,
           10.71948139667511,
           9.025907775121075,
-          13.924811059236527
+          13.924811059236527,
+          6.109464001442705
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11181,6 +11214,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13514,6 +13548,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
@@ -13848,7 +13888,8 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
@@ -14186,7 +14227,8 @@ window.BENCHMARK_DATA = {
           16.827603636185327,
           11.714113898575306,
           17.241100547711053,
-          21.234356405479566
+          21.234356405479566,
+          25.384815736611685
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14458,6 +14500,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14875,7 +14918,8 @@ window.BENCHMARK_DATA = {
           1318.7326939900715,
           792.1507074991862,
           1222.4137235005696,
-          1541.8386530194964
+          1541.8386530194964,
+          1676.135283279419
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14887,6 +14931,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15564,7 +15609,8 @@ window.BENCHMARK_DATA = {
           26488.96894124349,
           17690.157267252605,
           25901.499727376304,
-          30635.191552734374
+          30635.191552734374,
+          31443.20744541713
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15903,6 +15949,7 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32482,
+          32478,
           32478,
           32478,
           32478,
@@ -16249,7 +16296,8 @@ window.BENCHMARK_DATA = {
           631.8685262680053,
           407.9170180638631,
           627.7118209203085,
-          763.2647468703134
+          763.2647468703134,
+          819.4810942967732
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16279,6 +16327,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16930,7 +16979,8 @@ window.BENCHMARK_DATA = {
           9502.130497741698,
           6900.758491007487,
           9101.689353942871,
-          12378.5675684611
+          12378.5675684611,
+          13042.077461751302
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17269,6 +17319,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -19275,6 +19326,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
@@ -19609,7 +19666,8 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
@@ -19947,7 +20005,8 @@ window.BENCHMARK_DATA = {
           125.27329961458842,
           83.25129363366536,
           115.94337101166064,
-          220.177922468919
+          220.177922468919,
+          291.4133881092072
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20219,6 +20278,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20636,7 +20696,8 @@ window.BENCHMARK_DATA = {
           11148.415479532878,
           7352.47830418178,
           11056.050164358956,
-          15198.877040608724
+          15198.877040608724,
+          16592.364489746094
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20648,6 +20709,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21325,7 +21387,8 @@ window.BENCHMARK_DATA = {
           645086.5292317708,
           433475.59083909256,
           643393.9521484375,
-          760823.6350260417
+          760823.6350260417,
+          784553.2708984375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21668,7 +21731,8 @@ window.BENCHMARK_DATA = {
           721166,
           718417,
           721149,
-          740459
+          740459,
+          719101
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22010,7 +22074,8 @@ window.BENCHMARK_DATA = {
           37477.20838216146,
           24985.042960030692,
           37623.24524739583,
-          45377.0992553711
+          45377.0992553711,
+          48677.34121907552
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22349,7 +22414,8 @@ window.BENCHMARK_DATA = {
           80968,
           79823,
           80970,
-          80009
+          80009,
+          80357
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22691,7 +22757,8 @@ window.BENCHMARK_DATA = {
           286781.4410481771,
           189030.3639948918,
           278854.32744140626,
-          375984.0517578125
+          375984.0517578125,
+          428095.8125325521
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23030,7 +23097,8 @@ window.BENCHMARK_DATA = {
           573060,
           573040,
           573073,
-          573023
+          573023,
+          573107
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25012,6 +25080,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
@@ -25342,7 +25416,8 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
@@ -25676,7 +25751,8 @@ window.BENCHMARK_DATA = {
           294.7585385004679,
           303.5486866065434,
           262.3517687479655,
-          255.50943960462297
+          255.50943960462297,
+          175.25422083536785
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25711,6 +25787,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -26357,7 +26434,8 @@ window.BENCHMARK_DATA = {
           639.3577314785549,
           652.2545047906729,
           541.6232180595398,
-          587.1072974205017
+          587.1072974205017,
+          397.865706718885
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -26369,6 +26447,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27038,7 +27117,8 @@ window.BENCHMARK_DATA = {
           5108.640026385968,
           5240.1409747783955,
           4326.15854699271,
-          6409.323629651751
+          6409.323629651751,
+          3569.871804646083
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -27122,6 +27202,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27719,7 +27800,8 @@ window.BENCHMARK_DATA = {
           427.02977418899536,
           427.95887562206815,
           364.2500877698263,
-          392.34098408772394
+          392.34098408772394,
+          256.40726774079457
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27731,6 +27813,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -28400,7 +28483,8 @@ window.BENCHMARK_DATA = {
           738.2238626480103,
           724.2913686207363,
           564.4525542940412,
-          694.5350073496501
+          694.5350073496501,
+          390.31239697138466
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -28412,6 +28496,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
