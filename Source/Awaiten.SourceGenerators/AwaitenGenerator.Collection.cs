@@ -38,7 +38,7 @@ partial class AwaitenGenerator
 		List<OpenRegistration> open = new();
 
 		SameCompilationModules sameCompilationModules = new(compilation);
-		CollectLifetimeRegistrations(new LifetimeCollectionContext(containerSymbol, null, null, compilation, open, diagnostics, sameCompilationModules), result);
+		CollectLifetimeRegistrations(new LifetimeCollectionContext(containerSymbol, null, null, compilation, open, diagnostics, sameCompilationModules, Container: containerSymbol), result);
 
 		// The container's own registrations, which replace the inherited ones of an extended base (see ReplaceInherited).
 		List<RawRegistration> own = inheritance is null ? [] : new(result);
@@ -57,14 +57,16 @@ partial class AwaitenGenerator
 			bool sameCompilation = SymbolEqualityComparer.Default.Equals(module.Symbol.ContainingAssembly, containerSymbol.ContainingAssembly);
 			List<DiagnosticInfo> moduleDiagnostics = module.Inherited ? new List<DiagnosticInfo>() : diagnostics;
 			CollectLifetimeRegistrations(
-				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance, modules),
+				new LifetimeCollectionContext(module.Symbol, module.Symbol, module.ImportLocation, compilation, open, moduleDiagnostics, sameCompilationModules, module.Inherited, inheritance, modules, containerSymbol),
 				result,
 				skipGeneratedScanRegistrations: sameCompilation);
 
-			// The base sees the [Inject] property of a type this container cannot build without the module's factory.
+			// The base sees the [Inject] property of a type this container cannot build without the module's factory, and
+			// an EagerWhen predicate is reported like the When of an inherited decorator.
 			if (module.Inherited)
 			{
-				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet || diagnostic.Descriptor == Diagnostics.InheritedPrivateImplementation));
+				diagnostics.AddRange(moduleDiagnostics.Where(diagnostic => diagnostic.Descriptor == Diagnostics.ModuleRegistrationNotSelfCompiled || diagnostic.Descriptor == Diagnostics.ModuleRegistrationPropertyNotSet || diagnostic.Descriptor == Diagnostics.InheritedPrivateImplementation
+				                                                           || diagnostic.Descriptor == Diagnostics.InvalidDecoratorPredicate || diagnostic.Descriptor == Diagnostics.InaccessibleDecoratorPredicate));
 			}
 		}
 
@@ -258,7 +260,8 @@ partial class AwaitenGenerator
 		SameCompilationModules Modules,
 		bool Inherited = false,
 		Inheritance? Inheritance = null,
-		List<ImportedModule>? Imports = null);
+		List<ImportedModule>? Imports = null,
+		INamedTypeSymbol? Container = null);
 
 	/// <summary>
 	///     Reads the <c>[Singleton]</c>/<c>[Transient]</c>/<c>[Scoped]</c> registrations declared on the context's
@@ -336,6 +339,20 @@ partial class AwaitenGenerator
 			ReportContextualBindingWithKey(key, whenInjectedInto, implementation, location, diagnostics);
 			ReportUnsupportedRegistrationKey(attribute, LocationInfo.From(location), Display(implementation.ToDisplayString(FullyQualified)), diagnostics);
 
+			// EagerWhen with Eager = true is AWT263; the singleton stays eager, which the predicate could only narrow.
+			DecoratorPredicate? eagerWhen = null;
+			if (NamedFlag(attribute, "Eager") && NamedArgument(attribute, "EagerWhen") is not null)
+			{
+				diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.EagerWithEagerWhen,
+					LocationInfo.From(location),
+					new EquatableArray<string>([Display(implementation.ToDisplayString(FullyQualified)),])));
+			}
+			else
+			{
+				TryReadPredicate(attribute, context.Owner, context.Container ?? context.Owner, context.Compilation, location, diagnostics, out eagerWhen);
+			}
+
 			RawRegistration registration = new(
 				service.ToDisplayString(FullyQualified),
 				TypeIdentity((INamedTypeSymbol)implementation, context.Compilation),
@@ -357,7 +374,8 @@ partial class AwaitenGenerator
 				OnRelease: NamedArgument(attribute, "OnRelease"),
 				SuppressDisposal: NamedFlag(attribute, "SuppressDisposal"),
 				WhenInjectedInto: whenInjectedInto,
-				ConsumerOwned: NamedTypeArrayArgument(attribute, "ConsumerOwned"));
+				ConsumerOwned: NamedTypeArrayArgument(attribute, "ConsumerOwned"),
+				EagerWhen: eagerWhen);
 
 			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations
 			    && ThroughHandle(registration, context.Compilation, implicitHandles, context.Imports ?? []) is { } handled)
@@ -541,7 +559,7 @@ partial class AwaitenGenerator
 		INamedTypeSymbol module = registration.Origin!;
 		Compilation compilation = context.Compilation;
 		if (registration.Lifetime == Lifetime.Singleton
-		    && (registration.Eager || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
+		    && (registration.Eager || registration.EagerWhen is not null || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
 		{
 			INamedTypeSymbol? hiddenService = TypeHiddenInModule(service, module, compilation);
 			DiagnosticInfo diagnostic = new(
@@ -1546,6 +1564,13 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     Whether a <c>[Singleton]</c> may be built when the root is created though nothing depends on it: it sets
+	///     <c>Eager</c>, or names an <c>EagerWhen</c> predicate that may allow it.
+	/// </summary>
+	private static bool StartsEagerly(AttributeData attribute)
+		=> NamedFlag(attribute, "Eager") || NamedArgument(attribute, "EagerWhen") is not null;
+
+	/// <summary>
 	///     Reads the <c>Fallback</c> enum named argument off a lifetime attribute as its underlying int
 	///     (0 = None, 1 = Warn, 2 = Silent), defaulting to 0 (None, a normal registration) when unset. These
 	///     values must stay in step with the <c>Fallback</c> enum, which the generator cannot reference directly.
@@ -1610,7 +1635,7 @@ partial class AwaitenGenerator
 			// The predicate is read even when the keys skip the decorator, so its own mistakes are reported too.
 			bool leftToModule = module is not null && HasAwaitenAttribute(module.GetAttributes(), "ModuleAttribute") && ReportsOwnDecoratorMistakes(module, compilation);
 			bool keysRead = TryReadDecoratorKeys(attribute, attributeClass, LocationInfo.From(location), leftToModule ? new List<DiagnosticInfo>() : diagnostics, out IReadOnlyList<string?>? keys);
-			if (!TryReadDecoratorPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when)
+			if (!TryReadPredicate(attribute, module ?? containerSymbol, containerSymbol, compilation, location, diagnostics, out DecoratorPredicate? when)
 			    || !keysRead)
 			{
 				declarationOrder++;

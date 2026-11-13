@@ -991,7 +991,7 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Reports <see cref="Diagnostics.EagerAsyncSingleton">AWT161</see> for an async-tainted <c>Eager</c>
-	///     singleton: it has no synchronous construction path, so it cannot be built in the root's synchronous
+	///     singleton, or one with an <c>EagerWhen</c> predicate that may make it eager: it has no synchronous construction path, so it cannot be built in the root's synchronous
 	///     constructor. A decorated eager singleton is built through its outermost decorators, so an async-tainted
 	///     decorator is reported too. Strict default only; <c>AsyncSafety.SyncAfterInit</c> emits a blocking resolver
 	///     and allows it.
@@ -1003,7 +1003,7 @@ partial class AwaitenGenerator
 	{
 		for (int i = 0; i < instances.Count; i++)
 		{
-			if (!instances[i].Eager)
+			if (!instances[i].Eager && instances[i].EagerWhen is null)
 			{
 				continue;
 			}

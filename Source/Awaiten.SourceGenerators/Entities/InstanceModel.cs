@@ -16,7 +16,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="IsAsyncTainted" /> (reaches one through a non-deferred dependency).
 ///     <see cref="RuntimeDisposalCheck" /> is set for a factory whose declared return type is not
 ///     <c>IDisposable</c> but could produce one at runtime, so the resolver tracks it behind a runtime type test.
-///     <see cref="Eager" /> marks a singleton built at container build time rather than lazily on first resolve.
+///     <see cref="Eager" /> marks a singleton built at container build time rather than lazily on first resolve, and
+///     <see cref="EagerWhen" /> is the predicate that decides it once per root instead.
 ///     <see cref="OnActivated" /> / <see cref="OnRelease" /> are the resolved names of the container's
 ///     <c>static void M(TImplementation, …)</c> lifecycle hooks. The activation hook runs once the instance is
 ///     constructed; the release hook is queued at construction and run when the owning Root/Scope is disposed,
@@ -92,7 +93,8 @@ internal sealed record InstanceModel(
 	string? RequestingType = null,
 	bool DecoratesImport = false,
 	string? AssignThrough = null,
-	EquatableArray<string> ConsumerOwned = default)
+	EquatableArray<string> ConsumerOwned = default,
+	PredicateModel? EagerWhen = null)
 {
 	/// <summary>
 	///     The services the container offers for resolution: none for an <see cref="Unlisted" /> instance, the generated
@@ -209,15 +211,18 @@ internal sealed record InstanceModel(
 
 	/// <summary>
 	///     Every graph dependency this instance resolves: its constructor/factory parameters, its injected
-	///     <c>[Inject]</c> member dependencies, its lifecycle hook parameters and the services its <see cref="When" />
-	///     predicate takes, in that order. For the dependency-walking passes that treat all groups alike; a pass that
-	///     distinguishes them (deferred members in the cycle graph, say) enumerates the groups itself. The predicate's
-	///     services are shared singletons the root resolves synchronously, so of the dependency graphs only the
-	///     construction graph edges them, where they close a cycle.
+	///     <c>[Inject]</c> member dependencies, its lifecycle hook parameters and the services its <see cref="When" /> and
+	///     <see cref="EagerWhen" /> predicates take, in that order. For the dependency-walking passes that treat all groups
+	///     alike; a pass that distinguishes them (deferred members in the cycle graph, say) enumerates the groups itself.
+	///     The predicates' services are shared singletons the root resolves synchronously, so of the dependency graphs
+	///     only the construction graph edges those of <see cref="When" />, where they close a cycle. Those of
+	///     <see cref="EagerWhen" /> are resolved only when the root is created, not when the instance is built, so no graph
+	///     edges them.
 	/// </summary>
 	public IEnumerable<ParameterModel> WalkedDependencies()
 		=> ConstructorParameters.AsArray()
 			.Concat(InjectedMembers.AsArray().Select(member => member.Dependency))
 			.Concat(HookParameters())
-			.Concat(When?.Parameters.AsArray() ?? []);
+			.Concat(When?.Parameters.AsArray() ?? [])
+			.Concat(EagerWhen?.Parameters.AsArray() ?? []);
 }

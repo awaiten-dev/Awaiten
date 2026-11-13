@@ -1146,7 +1146,7 @@ internal static class Diagnostics
 		helpLinkUri: HelpLink("AWT160"));
 
 	/// <summary>
-	///     A <c>[Singleton&lt;T&gt;(Eager = true)]</c> singleton is async-tainted in the strict default: it is
+	///     A <c>[Singleton&lt;T&gt;(Eager = true)]</c> singleton, or one with an <c>EagerWhen</c> predicate, is async-tainted in the strict default: it is
 	///     async-initialized (or reaches one through its non-deferred dependencies), so it cannot be constructed
 	///     synchronously in the generated root's constructor without handing back an uninitialized instance.
 	///     <c>InitializeAsync</c> already warms the async singletons, or opt into
@@ -1155,7 +1155,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor EagerAsyncSingleton = new(
 		"AWT161",
 		"Eager async-initialized singleton",
-		"'{0}' is marked Eager but is async-initialized; it cannot be constructed synchronously at container build time - InitializeAsync already warms the async singletons, or opt into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)] to allow synchronous eager construction",
+		"'{0}' is marked Eager or EagerWhen but is async-initialized; it cannot be constructed synchronously at container build time - InitializeAsync already warms the async singletons, or opt into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)] to allow synchronous eager construction",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
@@ -1171,7 +1171,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor EagerAsyncSingletonInModule = new(
 		"AWT161",
 		EagerAsyncSingleton.Title,
-		"'{0}' is marked Eager but is async-initialized, so a container with the default AsyncSafety cannot construct it synchronously at build time and reports AWT161; drop Eager, since InitializeAsync already warms the async singletons, unless every importing container opts into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)]",
+		"'{0}' is marked Eager or EagerWhen but is async-initialized, so a container with the default AsyncSafety cannot construct it synchronously at build time and reports AWT161; drop Eager or EagerWhen, since InitializeAsync already warms the async singletons, unless every importing container opts into [Container(AsyncSafety = AsyncSafety.SyncAfterInit)]",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
@@ -2652,45 +2652,46 @@ internal static class Diagnostics
 		helpLinkUri: HelpLink("AWT245"));
 
 	/// <summary>
-	///     The <c>When</c> of a <c>[Decorate]</c> names no member the root can evaluate as its predicate: the type that
-	///     declares the attribute has no such member, or it is not a static non-generic method, readable property or field
-	///     of type <see langword="bool" /> (an asynchronous <c>Task&lt;bool&gt;</c> or <c>ValueTask&lt;bool&gt;</c> included),
-	///     or several methods of that name return <see langword="bool" />.
+	///     The <c>When</c> of a <c>[Decorate]</c> or the <c>EagerWhen</c> of a <c>[Singleton]</c> names no member the root
+	///     can evaluate as its predicate: the type that declares the attribute has no such member, or it is not
+	///     a static non-generic method, readable property or field of type <see langword="bool" /> (an asynchronous
+	///     <c>Task&lt;bool&gt;</c> or <c>ValueTask&lt;bool&gt;</c> included), or several methods of that name return
+	///     <see langword="bool" />.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InvalidDecoratorPredicate = new(
 		"AWT246",
-		"Invalid decorator predicate",
-		"The decorator predicate '{0}' is not usable: {1}; name a static bool method, property or field of the type that declares the [Decorate]",
+		"Invalid predicate",
+		"The predicate '{0}' is not usable: {1}; name a static bool method, property or field of the type that declares the {2}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT246"));
 
 	/// <summary>
-	///     The <c>When</c> of a <c>[Decorate]</c> on a module or an extended base container names a predicate the generated
-	///     container cannot call: it is private to a type of the container's assembly, or not public on a type of another
-	///     assembly (whose non-public members the container does not see) that generated no public wrapper for it, for the
-	///     reason its metadata records. The module's own build reports a private predicate of a module no container of its
-	///     assembly imports.
+	///     The <c>When</c> of a <c>[Decorate]</c> or the <c>EagerWhen</c> of a <c>[Singleton]</c> on a module or an
+	///     extended base container names a predicate the generated container cannot call: it is private to a type of the
+	///     container's assembly, or not public on a type of another assembly (whose non-public members the container does
+	///     not see) that generated no public wrapper for it, for the reason its metadata records. The module's own build
+	///     reports a private predicate of a module no container of its assembly imports.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InaccessibleDecoratorPredicate = new(
 		"AWT247",
-		"Decorator predicate not accessible",
-		"The decorator predicate '{0}' is not accessible from the container: {1}",
+		"Predicate not accessible",
+		"The predicate '{0}' is not accessible from the container: {1}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT247"));
 
 	/// <summary>
-	///     A decorator predicate takes a parameter the root cannot supply before it evaluates the predicate once: a runtime
-	///     <c>[Arg]</c>, a parameter passed by reference, a relationship or a collection, or a service that is scoped,
-	///     transient, built for each consumer or initialized asynchronously.
+	///     A <c>When</c> or <c>EagerWhen</c> predicate takes a parameter the root cannot supply before it evaluates the
+	///     predicate once: a runtime <c>[Arg]</c>, a parameter passed by reference, a relationship or a collection, or a
+	///     service that is scoped, transient, built for each consumer or initialized asynchronously.
 	/// </summary>
 	public static readonly DiagnosticDescriptor InvalidDecoratorPredicateParameter = new(
 		"AWT248",
-		"Invalid decorator predicate parameter",
-		"The decorator predicate '{0}' cannot take '{1}': {2}; a predicate is evaluated once per root and takes only singletons, Instance registrations or imported services that are not initialized asynchronously",
+		"Invalid predicate parameter",
+		"The predicate '{0}' cannot take '{1}': {2}; a predicate is evaluated once per root and takes only singletons, Instance registrations or imported services that are not initialized asynchronously",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
@@ -2893,4 +2894,17 @@ internal static class Diagnostics
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT262"));
+
+	/// <summary>
+	///     A <c>[Singleton]</c> sets both <c>Eager = true</c> and <c>EagerWhen</c>. <c>Eager</c> builds it at startup in every
+	///     run, so the predicate would never decide anything.
+	/// </summary>
+	public static readonly DiagnosticDescriptor EagerWithEagerWhen = new(
+		"AWT263",
+		"Eager and EagerWhen on one registration",
+		"'{0}' sets both Eager = true and EagerWhen, but Eager builds it at startup in every run, so the predicate never decides; keep EagerWhen to build it only when the predicate allows it, or Eager to build it always",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT263"));
 }

@@ -7,11 +7,12 @@ namespace Awaiten.SourceGenerators;
 partial class AwaitenGenerator
 {
 	/// <summary>
-	///     Reads the <c>When</c> predicate of a <c>[Decorate]</c>: a static <see langword="bool" /> method, property or
-	///     field of <paramref name="owner" />, the type that declares the attribute. Reports AWT246 when it names no such
-	///     member and AWT247 when the container cannot reach it, and returns <see langword="false" /> for both.
+	///     Reads the predicate of an attribute (see <see cref="PredicateArgument" />), the <c>When</c> of a
+	///     <c>[Decorate]</c> or the <c>EagerWhen</c> of a <c>[Singleton]</c>: a static <see langword="bool" /> method,
+	///     property or field of <paramref name="owner" />, the type that declares the attribute. Reports AWT246 when it
+	///     names no such member and AWT247 when the container cannot reach it, and returns <see langword="false" /> for both.
 	/// </summary>
-	private static bool TryReadDecoratorPredicate(
+	private static bool TryReadPredicate(
 		AttributeData attribute,
 		INamedTypeSymbol owner,
 		INamedTypeSymbol containerSymbol,
@@ -21,7 +22,7 @@ partial class AwaitenGenerator
 		out DecoratorPredicate? predicate)
 	{
 		predicate = null;
-		if (attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "When").Value.Value is not string name)
+		if (PredicateArgument(attribute) is not { } argument || NamedArgument(attribute, argument) is not { } name)
 		{
 			return true;
 		}
@@ -46,7 +47,7 @@ partial class AwaitenGenerator
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.InvalidDecoratorPredicate,
 				LocationInfo.From(location),
-				new EquatableArray<string>([display, reason,])));
+				new EquatableArray<string>([display, reason, $"[{attribute.AttributeClass!.Name.Substring(0, attribute.AttributeClass.Name.Length - "Attribute".Length)}]",])));
 			return false;
 		}
 
@@ -83,16 +84,28 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     The predicate the <c>When</c> of <paramref name="attribute" />, a <c>[Decorate]</c> of
-	///     <paramref name="owner" />, names when it is internal, which a public owner wraps for containers in other
+	///     The named argument of <paramref name="attribute" /> that names a predicate: <c>When</c> of a <c>[Decorate]</c>,
+	///     <c>EagerWhen</c> of a <c>[Singleton]</c>, or <see langword="null" /> for any other attribute.
+	/// </summary>
+	private static string? PredicateArgument(AttributeData attribute)
+		=> attribute.AttributeClass is { } attributeClass && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+			? attributeClass.Name switch
+			{
+				"DecorateAttribute" => "When",
+				"SingletonAttribute" => "EagerWhen",
+				_ => null,
+			}
+			: null;
+
+	/// <summary>
+	///     The predicate the <c>When</c> of a <c>[Decorate]</c> or the <c>EagerWhen</c> of a <c>[Singleton]</c> of
+	///     <paramref name="owner" /> names when it is internal, which a public owner wraps for containers in other
 	///     assemblies (see <see cref="PredicateWrapperName" />), or <see langword="null" />. A private predicate gets no
 	///     wrapper: a container in the owner's assembly could not call it either.
 	/// </summary>
 	private static ISymbol? InternalPredicate(AttributeData attribute, INamedTypeSymbol owner, Compilation compilation)
 	{
-		if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
-		    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace
-		    || NamedArgument(attribute, "When") is not { } name)
+		if (PredicateArgument(attribute) is not { } argument || NamedArgument(attribute, argument) is not { } name)
 		{
 			return null;
 		}
@@ -161,8 +174,9 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Reports, in the module's own build, the <c>When</c> predicates of its <c>[Decorate]</c> attributes that no
-	///     container importing it can use, so the library that declares the module sees them: one that is unusable (AWT246)
+	///     Reports, in the module's own build, the <c>When</c> predicates of its <c>[Decorate]</c> attributes and the
+	///     <c>EagerWhen</c> predicates of its <c>[Singleton]</c> attributes that no container importing it can use, so
+	///     the library that declares the module sees them: one that is unusable (AWT246)
 	///     or private (AWT247), unless a container of its assembly imports the module and reports it itself. An internal
 	///     predicate is not reported: a container in the module's assembly or in a friend calls it, and one in another
 	///     assembly calls the module's wrapper or reports why the module generated none (see <see cref="CollectModuleMemberWrappers" />).
@@ -176,14 +190,13 @@ partial class AwaitenGenerator
 
 		foreach (AttributeData attribute in module.GetAttributes())
 		{
-			if (attribute.AttributeClass is not { Name: "DecorateAttribute", } attributeClass
-			    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
+			if (PredicateArgument(attribute) is null)
 			{
 				continue;
 			}
 
 			Location? location = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
-			if (TryReadDecoratorPredicate(attribute, module, module, compilation, location, diagnostics, out DecoratorPredicate? predicate)
+			if (TryReadPredicate(attribute, module, module, compilation, location, diagnostics, out DecoratorPredicate? predicate)
 			    && predicate is not null
 			    && module.GetMembers(predicate.Member.Substring(predicate.Member.LastIndexOf('.') + 1)).First(member => PredicateShapeProblem(member, compilation) is null).DeclaredAccessibility == Accessibility.Private)
 			{
@@ -204,12 +217,19 @@ partial class AwaitenGenerator
 	///     reports each problem once.
 	/// </summary>
 	private static PredicateModel? BuildPredicate(ImplInfo info, BuildContext context)
-	{
-		if (info.When is not { Predicate: var predicate, Service: var service, })
-		{
-			return null;
-		}
+		=> info.When is { Predicate: var predicate, Service: var service, } ? BuildPredicate(predicate, service, context) : null;
 
+	/// <summary>
+	///     The predicate model of the <c>EagerWhen</c> of a singleton, or <see langword="null" />. It shares the model, and
+	///     so the root's one evaluation, with every decorator and singleton that names the same predicate.
+	/// </summary>
+	private static PredicateModel? BuildEagerPredicate(ImplInfo info, BuildContext context)
+		=> info.EagerWhen is { } predicate && info.Lifetime == Lifetime.Singleton
+			? BuildPredicate(predicate, info.OwningServiceOrImpl, context)
+			: null;
+
+	private static PredicateModel BuildPredicate(DecoratorPredicate predicate, string service, BuildContext context)
+	{
 		if (!context.Predicates.TryGetValue(predicate.Member, out PredicateModel? model))
 		{
 			model = ClassifyPredicateParameters(predicate, service, context);
@@ -287,9 +307,9 @@ partial class AwaitenGenerator
 	private static void ValidateDecoratorPredicates(GraphModel graph, List<DiagnosticInfo> diagnostics)
 	{
 		HashSet<string> checkedPredicates = new(StringComparer.Ordinal);
-		foreach (InstanceModel instance in graph.Instances)
+		foreach (PredicateModel predicate in graph.Instances.SelectMany(instance => new[] { instance.When, instance.EagerWhen, }).OfType<PredicateModel>())
 		{
-			if (instance.When is not { IsLazy: true, } predicate || !checkedPredicates.Add(predicate.Member))
+			if (!predicate.IsLazy || !checkedPredicates.Add(predicate.Member))
 			{
 				continue;
 			}

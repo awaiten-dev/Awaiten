@@ -167,6 +167,58 @@ public partial class DiagnosticTests
 			await That(result.Diagnostics).IsEmpty();
 		}
 
+		public class OfEagerWhen
+		{
+			[Test]
+			[Arguments("", "has no member 'Enabled'")]
+			[Arguments("private static int Enabled() => 1;", "returns 'int', not bool")]
+			[Arguments("private static System.Threading.Tasks.Task<bool> Enabled() => System.Threading.Tasks.Task.FromResult(true);", "a predicate is evaluated synchronously")]
+			[Arguments("private static bool Enabled { set { } }", "'Enabled' has no getter")]
+			public async Task ReportsAnUnusablePredicate(string member, string reason)
+			{
+				GeneratorResult result = Generator.Run(Container("""
+				                                                 [Singleton<Settings>(EagerWhen = "Enabled")]
+				                                                 """, member));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains($"*error AWT246: The predicate 'MyCode.MyContainer.Enabled' is not usable: *{reason}*; name a static bool method, property or field of the type that declares the [Singleton]").AsWildcard();
+			}
+
+			[Test]
+			public async Task ReportsAPredicateOfAModuleNoContainerImportsInTheModulesOwnBuild()
+			{
+				GeneratorResult result = Generator.Run("""
+				                                       using Awaiten;
+
+				                                       namespace MyCode;
+
+				                                       public sealed class Client { }
+
+				                                       [Module]
+				                                       [Singleton<Client>(EagerWhen = nameof(Enabled))]
+				                                       public static partial class ClientModule
+				                                       {
+				                                       	public static int Enabled() => 1;
+				                                       }
+				                                       """);
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT246*'MyCode.ClientModule.Enabled'*returns 'int', not bool*[Singleton]").AsWildcard()
+					.Because("the library that declares the module sees the mistake of an EagerWhen like that of a When");
+			}
+
+			[Test]
+			[Arguments("private static bool Enabled() => true;")]
+			[Arguments("private static bool Enabled => true;")]
+			[Arguments("private static readonly bool Enabled = true;")]
+			public async Task DoesNotReportAStaticBoolMethodPropertyOrField(string member)
+			{
+				GeneratorResult result = Generator.Run(Container("""
+				                                                 [Singleton<Settings>(EagerWhen = nameof(Enabled))]
+				                                                 """, member));
+
+				await That(result.Diagnostics).IsEmpty();
+			}
+		}
+
 		private static string Container(string attributes, string members)
 			=> $$"""
 			     using Awaiten;

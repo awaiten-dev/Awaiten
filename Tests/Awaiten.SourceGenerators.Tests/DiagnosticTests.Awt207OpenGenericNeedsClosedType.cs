@@ -27,6 +27,29 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task ReportsEagerWhenOnAnOpenGeneric()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface ICache<T> { }
+			                                       public sealed class Cache<T> : ICache<T> { }
+
+			                                       [Container]
+			                                       [Singleton(typeof(Cache<>), typeof(ICache<>), EagerWhen = nameof(Warm))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Warm => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*AWT207*EagerWhen needs a closed type*").AsWildcard()
+				.Because("EagerWhen builds a singleton at startup like Eager, which no closing of an open generic can be by declaration");
+		}
+
+		[Test]
 		public async Task ReportsInstanceOnAnOpenGeneric()
 		{
 			GeneratorResult result = Generator.Run("""
@@ -63,9 +86,11 @@ public partial class DiagnosticTests
 			                                       [Container]
 			                                       [Singleton(typeof(Cache<int>), typeof(ICache<int>), Eager = true)]
 			                                       [Singleton(typeof(Cache<string>), typeof(ICache<string>), Instance = nameof(Shared))]
+			                                       [Singleton(typeof(Cache<long>), typeof(ICache<long>), EagerWhen = nameof(Warm))]
 			                                       public static partial class MyContainer
 			                                       {
 			                                       	private static readonly Cache<string> Shared = new();
+			                                       	private static bool Warm => true;
 			                                       }
 			                                       """);
 

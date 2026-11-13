@@ -7,6 +7,62 @@ public partial class DiagnosticTests
 	public class Awt166ConflictingLifecycleDirectives
 	{
 		[Test]
+		[Arguments("(EagerWhen = nameof(Warm))", "(EagerWhen = nameof(Cold))", "EagerWhen directives ('MyCode.MyContainer.Warm' and 'MyCode.MyContainer.Cold')")]
+		[Arguments("", "(EagerWhen = nameof(Cold))", "EagerWhen directives (unset and 'MyCode.MyContainer.Cold')")]
+		[Arguments("(Eager = true)", "(EagerWhen = nameof(Cold))", "EagerWhen directives (Eager = true and 'MyCode.MyContainer.Cold')")]
+		[Arguments("(EagerWhen = nameof(Warm))", "(Eager = true)", "Eager directives (false and true)")]
+		public async Task ReportsWhenCoalescedRegistrationsDisagreeOnEagerWhen(string first, string second, string expected)
+		{
+			GeneratorResult result = Generator.Run($$"""
+			                                         using Awaiten;
+
+			                                         namespace MyCode;
+
+			                                         public interface IRead { }
+			                                         public interface IWrite { }
+			                                         public sealed class Store : IRead, IWrite { }
+
+			                                         [Container]
+			                                         [Singleton<Store, IRead>{{first}}]
+			                                         [Singleton<Store, IWrite>{{second}}]
+			                                         public static partial class MyContainer
+			                                         {
+			                                         	private static bool Warm => true;
+			                                         	private static bool Cold => false;
+			                                         }
+			                                         """);
+
+			await That(result.Diagnostics).HasSingle().Which.Contains($"*AWT166*'MyCode.Store' is registered with conflicting {expected}*").AsWildcard()
+				.Because("coalescing keeps the first registration's eager directive, so a different one must not be silently dropped");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheSameEagerWhenOnCoalescedRegistrations()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IRead { }
+			                                       public interface IWrite { }
+			                                       public interface IAudit { }
+			                                       public sealed class Store : IRead, IWrite, IAudit { }
+
+			                                       [Container]
+			                                       [Singleton<Store, IRead>(EagerWhen = nameof(Warm))]
+			                                       [Singleton<Store, IWrite>]
+			                                       [Singleton<Store, IAudit>(EagerWhen = nameof(Warm))]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       	private static bool Warm => true;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
 		public async Task ReportsWhenCoalescedRegistrationsNameDifferentOnActivatedHooks()
 		{
 			GeneratorResult result = Generator.Run("""

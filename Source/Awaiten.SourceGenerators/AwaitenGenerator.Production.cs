@@ -49,7 +49,7 @@ partial class AwaitenGenerator
 		{
 			RecordBaseWrappers(info, null, null, null, context);
 			return BuildPrebuiltInstance(info, containerSymbol, compilation, diagnostics, context.Modules) is { } prebuilt
-				? prebuilt with { ResolverType = resolverType, Unlisted = info.Unlisted, }
+				? prebuilt with { ResolverType = resolverType, Unlisted = info.Unlisted, EagerWhen = BuildEagerPredicate(info, context), }
 				: null;
 		}
 
@@ -176,7 +176,8 @@ partial class AwaitenGenerator
 			When: BuildPredicate(info, context),
 			RequestingType: GeneratedRequestingType(info, producer, productionMember),
 			DecoratesImport: info.DecoratesImport,
-			AssignThrough: assignThrough);
+			AssignThrough: assignThrough,
+			EagerWhen: BuildEagerPredicate(info, context));
 
 		static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol @interface)
 		{

@@ -1077,7 +1077,7 @@ partial class AwaitenGenerator
 			.Where(candidate => candidate.Viable
 			                    && (IsExternallyAccessible(candidate.Implementation)
 			                        || candidate.Registrations.Any(registration => !IsHiddenService(registration.Service, module, compilation))
-			                        || (candidate.Registrations[0].Attribute.AttributeClass?.Name == "SingletonAttribute" && (candidate.Registrations.Any(registration => NamedFlag(registration.Attribute, "Eager")) || IsHiddenAsyncInitialized(candidate.Implementation, candidate.Registrations, module, compilation, conventions)))
+			                        || (candidate.Registrations[0].Attribute.AttributeClass?.Name == "SingletonAttribute" && (candidate.Registrations.Any(registration => StartsEagerly(registration.Attribute)) || IsHiddenAsyncInitialized(candidate.Implementation, candidate.Registrations, module, compilation, conventions)))
 			                        || demand.Scanned.Contains(candidate.Implementation)
 			                        || candidate.HiddenServices(module, compilation).Any(demand.Services.Contains)
 			                        || (hidden.SeveralModules && hidden.ImplementedElsewhere(candidate.Implementation))))
@@ -1227,7 +1227,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			if (NamedFlag(registration.Attribute, "Eager"))
+			if (StartsEagerly(registration.Attribute))
 			{
 				return (registration, true);
 			}
@@ -1287,6 +1287,11 @@ partial class AwaitenGenerator
 				{
 					Report(Diagnostics.ConflictingLifecycleDirectives, registration, hook, DescribeHook(NamedArgument(first.Attribute, hook)), DescribeHook(named));
 				}
+			}
+
+			if (NamedArgument(registration.Attribute, "EagerWhen") is { } predicate && predicate != NamedArgument(first.Attribute, "EagerWhen") && directivesReported.Add("EagerWhen"))
+			{
+				Report(Diagnostics.ConflictingLifecycleDirectives, registration, "EagerWhen", NamedFlag(first.Attribute, "Eager") ? "Eager = true" : DescribeHook(NamedArgument(first.Attribute, "EagerWhen")), DescribeHook(predicate));
 			}
 
 			foreach (string flag in new[] { "Eager", "SuppressDisposal", })

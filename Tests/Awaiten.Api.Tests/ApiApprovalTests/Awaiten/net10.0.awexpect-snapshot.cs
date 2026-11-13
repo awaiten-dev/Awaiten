@@ -356,6 +356,7 @@ namespace Awaiten
         public SingletonAttribute(System.Type implementation, System.Type service) { }
         public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
+        public string? EagerWhen { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public System.Type Implementation { get; }
@@ -373,6 +374,7 @@ namespace Awaiten
         public SingletonAttribute() { }
         public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
+        public string? EagerWhen { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public string? Instance { get; set; }
@@ -388,6 +390,7 @@ namespace Awaiten
         public SingletonAttribute() { }
         public System.Type[]? ConsumerOwned { get; set; }
         public bool Eager { get; set; }
+        public string? EagerWhen { get; set; }
         public string? Factory { get; set; }
         public Awaiten.Fallback Fallback { get; set; }
         public string? Instance { get; set; }

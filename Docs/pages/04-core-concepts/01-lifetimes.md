@@ -115,7 +115,26 @@ By default a singleton is built the first time it is resolved. Mark it `Eager = 
 
 An eager singleton is built as its consumers see it: when it is decorated, its decorators are built with it.
 
-A singleton that is [async-tainted](./03-async-initialization.md#mark-a-service-as-async), because it is async-initialized or depends on an async service, cannot be built synchronously in the root's constructor, so `Eager` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). The same holds when one of its decorators is async-tainted. With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created, so `new CoffeeShop.Root()` [blocks the calling thread](./03-async-initialization.md#relax-the-rule-when-you-need-to) until that initialization finishes. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
+To build it at startup only in some runs, name a predicate in `EagerWhen` instead of setting `Eager`:
+
+```csharp
+[Container]
+// highlight-next-line
+[Singleton<EspressoMachine>(EagerWhen = nameof(PreheatOnStartup))]
+public static partial class CoffeeShop
+{
+    private static bool PreheatOnStartup => !Environment.GetCommandLineArgs().Contains("--no-preheat");
+}
+```
+
+The root evaluates the predicate once when it is created. When it returns `true`, the singleton is built like an `Eager` one, at its place in registration order. When it returns `false`, nothing is built at startup and the singleton is built on its first resolve, as one shared instance like any other.
+
+- The predicate follows the [rules of a decorator predicate](../05-registration/03-decorators.md#rules-for-predicates): a static `bool` method, property or field of the type that declares the `[Singleton]`, which may take services the root shares. A predicate that takes services resolves them when the root is created.
+- A decorator whose `When` names the same predicate shares its one evaluation, so the service is built at startup in exactly the runs that decorate it.
+- `EagerWhen` together with `Eager = true` is a build error ([AWT263](../09-diagnostics.md#awt263)), and like `Eager` it needs a closed type ([AWT207](../09-diagnostics.md#awt207)).
+- An [extending container](../05-registration/09-extending-containers.md) inherits `EagerWhen` with the registration. Replace a service the predicate takes to change the decision, for example to switch it off in a test container.
+
+A singleton that is [async-tainted](./03-async-initialization.md#mark-a-service-as-async), because it is async-initialized or depends on an async service, cannot be built synchronously in the root's constructor, so `Eager` or `EagerWhen` on it is a build error ([AWT161](../09-diagnostics.md#awt161)). The same holds when one of its decorators is async-tainted. With [`AsyncSafety.SyncAfterInit`](./03-async-initialization.md#relax-the-rule-when-you-need-to) on the container, it is constructed and initialized when the root is created, so `new CoffeeShop.Root()` [blocks the calling thread](./03-async-initialization.md#relax-the-rule-when-you-need-to) until that initialization finishes. Usually the better choice for async singletons is [`InitializeAsync`](./03-async-initialization.md#warm-everything-up-front) at startup.
 
 ## Where to go next
 

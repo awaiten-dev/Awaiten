@@ -51,6 +51,61 @@ public class PredicateWrapperTests
 		}
 		""";
 
+	public class EagerWhenOfModules
+	{
+		private static string EagerLibrary(string registration, string member, string decorator = "") => $$"""
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IGrinder { }
+			public sealed class Grinder : IGrinder { }
+			public sealed class LoggingGrinder(IGrinder inner) : IGrinder { public IGrinder Inner { get; } = inner; }
+			public sealed class Settings { public bool Warm { get; init; } }
+			internal sealed class BeanStore { }
+
+			[Module]
+			[Singleton<Grinder, IGrinder>(EagerWhen = nameof(Warm))]
+			{{registration}}
+			{{decorator}}
+			public static partial class CoffeeModule
+			{
+				{{member}}
+			}
+			""";
+
+		[Test]
+		[Arguments("", "internal static bool Warm => true;", "")]
+		[Arguments("[Singleton<Settings>]", "internal static bool Warm(Settings settings) => settings.Warm;", "")]
+		[Arguments("[Singleton<BeanStore>]", "internal static bool Warm(BeanStore store) => true;", "")]
+		[Arguments("", "internal static bool Warm => true;", "[Decorate<LoggingGrinder, IGrinder>(When = nameof(Warm))]")]
+		public async Task InternalPredicate_IsUsableEverywhere(string registration, string member, string decorator)
+		{
+			string library = EagerLibrary(registration, member, decorator);
+
+			await That(Generator.Run(library).Diagnostics).IsEmpty()
+				.Because("the module generates a public wrapper for the EagerWhen predicate like for a When predicate");
+			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).IsEmpty();
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer);
+			await That(external.Diagnostics).IsEmpty();
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Internals.Predicate_Warm")
+				.Because("a container in another assembly calls the predicate through the module's wrapper");
+			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(library.Replace("namespace Lib;", Grant), ExternalContainer);
+			await That(friend.Diagnostics).IsEmpty();
+			await That(friend.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("global::Lib.CoffeeModule.Warm").And.DoesNotContain("Predicate_Warm");
+		}
+
+		[Test]
+		public async Task PredicateSharedWithADecorator_GetsOneWrapperAndOneFlag()
+		{
+			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(
+				EagerLibrary("", "internal static bool Warm => true;", "[Decorate<LoggingGrinder, IGrinder>(When = nameof(Warm))]"), ExternalContainer);
+
+			await That(external.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("__when0 = global::Lib.CoffeeModule.Internals.Predicate_Warm;").And.DoesNotContain("__when1")
+				.Because("the EagerWhen and the When name the same predicate, so the root reads it once");
+		}
+	}
+
 	public class Modules
 	{
 		[Test]
@@ -107,8 +162,8 @@ public class PredicateWrapperTests
 			string library = Library(registration, member);
 
 			await That(Generator.Run(library).Diagnostics).IsEmpty();
-			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).HasSingle().Which.Contains("error AWT248: The decorator predicate 'Lib.CoffeeModule.Audit' cannot take 'Lib.");
-			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.Contains($"error AWT248: The decorator predicate 'Lib.CoffeeModule.Audit' cannot take {cause}")
+			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).HasSingle().Which.Contains("error AWT248: The predicate 'Lib.CoffeeModule.Audit' cannot take 'Lib.");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.Contains($"error AWT248: The predicate 'Lib.CoffeeModule.Audit' cannot take {cause}")
 				.Because("the wrapper keeps the rule that a predicate takes only services the root shares, and names the predicate and the service the user wrote");
 		}
 
@@ -121,7 +176,7 @@ public class PredicateWrapperTests
 				.Because("a container of the module's assembly may still call the predicate itself");
 			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).HasSingle().Which.Contains("AWT101");
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(
-				"error AWT247: The decorator predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call, and it generated no public wrapper for it: 'Audit' is internal and its parameter 'value' has the type 'Lib.Unregistered', which is not public; make the predicate and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly");
+				"error AWT247: The predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call, and it generated no public wrapper for it: 'Audit' is internal and its parameter 'value' has the type 'Lib.Unregistered', which is not public; make the predicate and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly");
 			await That(Generator.RunWithGeneratedReferenceAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.Contains("'Audit' is internal and its parameter 'value' has the type 'Lib.Unregistered', which is not public");
 		}
 
@@ -130,11 +185,11 @@ public class PredicateWrapperTests
 		{
 			string library = Library("", "private static bool Audit => true;");
 
-			await That(Generator.Run(library).Diagnostics).HasSingle().Which.Contains("error AWT247: The decorator predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: it is private to the module 'Lib.CoffeeModule'; make it internal or public")
+			await That(Generator.Run(library).Diagnostics).HasSingle().Which.Contains("error AWT247: The predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: it is private to the module 'Lib.CoffeeModule'; make it internal or public")
 				.Because("no container can call a private predicate, so the library sees the error before its consumers do");
 			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).HasSingle().Which.Contains("it is private to the module 'Lib.CoffeeModule'; make it internal or public")
 				.Because("the container of the module's assembly reports it in place of the module");
-			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.Contains("error AWT247: The decorator predicate 'Lib.CoffeeModule.Audit'");
+			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.Contains("error AWT247: The predicate 'Lib.CoffeeModule.Audit'");
 		}
 
 		[Test]
@@ -146,7 +201,7 @@ public class PredicateWrapperTests
 				.Because("a container of the module's assembly or a friend still calls the predicate");
 			await That(Generator.Run(library + SameAssemblyContainer).Diagnostics).IsEmpty();
 			await That(Generator.RunWithGeneratedReferencedAssembly(library, ExternalContainer).Diagnostics).HasSingle().Which.EndsWith(
-				"error AWT247: The decorator predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call, and it generated no public wrapper for it: the module, or a class that contains it, is not partial; make the predicate and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly");
+				"error AWT247: The predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call, and it generated no public wrapper for it: the module, or a class that contains it, is not partial; make the predicate and its parameter types public, or grant this assembly InternalsVisibleTo in the module's assembly");
 		}
 
 		[Test]
@@ -155,7 +210,7 @@ public class PredicateWrapperTests
 			GeneratorResult result = Generator.RunWithReferencedAssembly(Library("", "internal static bool Audit => true;"), ExternalContainer);
 
 			await That(result.Diagnostics).HasSingle().Which.EndsWith(
-				"error AWT247: The decorator predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly");
+				"error AWT247: The predicate 'Lib.CoffeeModule.Audit' is not accessible from the container: the module 'Lib.CoffeeModule' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the module's assembly");
 		}
 	}
 
@@ -212,7 +267,7 @@ public class PredicateWrapperTests
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(Base("private static bool Audit => true;"), Extending);
 
-			await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The decorator predicate 'Lib.BaseShop.Audit' is not accessible from the container: the container 'Lib.BaseShop' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the container's assembly")
+			await That(result.Diagnostics).HasSingle().Which.EndsWith("error AWT247: The predicate 'Lib.BaseShop.Audit' is not accessible from the container: the container 'Lib.BaseShop' is in another assembly, whose non-public members the container cannot call; make it public, or grant this assembly InternalsVisibleTo in the container's assembly")
 				.Because("the base wraps only an internal predicate, and the metadata of another assembly does not show a private one");
 		}
 	}

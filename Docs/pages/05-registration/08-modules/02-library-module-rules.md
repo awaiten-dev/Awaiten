@@ -187,13 +187,13 @@ Anything else is [AWT253](../../09-diagnostics.md#awt253) in the container:
 
 What a closing handle covers:
 
-- A direct parameter of a constructor, a factory, an `OnActivated` or `OnRelease` hook, a decorator predicate or an async initializer convention goes through a closing handle, and so does an `[Inject]` property, also a deferred one.
+- A direct parameter of a constructor, a factory, an `OnActivated` or `OnRelease` hook, a `When` or `EagerWhen` predicate or an async initializer convention goes through a closing handle, and so does an `[Inject]` property, also a deferred one.
 - The module's factory can't run a hook, a generic factory, a convention of the module or a decorator of the module on the closing, so for such a registration the module records why, and a container that keeps the registration reports it.
 - A relationship or collection over the closing, an `[Arg]` of it and a closing over a type private to the module are still [AWT195](../../09-diagnostics.md#awt195), and an optional injected property of it is [AWT200](../../09-diagnostics.md#awt200).
 
 ## Non-public members
 
-A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` hooks and the `When` predicates of its decorators don't have to be public. Awaiten calls the members qualified by the module type, and for a member another assembly can't call, the module generates a wrapper:
+A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` hooks, the `When` predicates of its decorators and the `EagerWhen` predicates of its singletons don't have to be public. Awaiten calls the members qualified by the module type, and for a member another assembly can't call, the module generates a wrapper:
 
 | Member | Container in the library's own assembly or one the library grants `InternalsVisibleTo` | Container in any other assembly |
 |---|---|---|
@@ -201,7 +201,7 @@ A module's `Factory` and `Instance` members, its `OnActivated` and `OnRelease` h
 | `private` `Factory` or `Instance` member of a public service | calls the public wrapper, or the internal wrapper that returns the internal implementation when the public wrapper returns the public service in its place | calls a generated public wrapper |
 | generic `Factory` member of an open registration (no wrapper) | calls it when it is public or `internal` | calls it only when it is public; a `private` one is reported in the library's build ([AWT153](../../09-diagnostics.md#awt153)) |
 | `internal` `OnActivated` or `OnRelease` hook | calls the hook directly | calls a generated public wrapper |
-| `internal` `When` predicate of a [conditional decorator](../03-decorators.md#apply-a-decorator-conditionally) | calls the predicate | calls a generated public wrapper, which takes an internal service through its handle ([AWT247](../../09-diagnostics.md#awt247) with the reason when the module can't generate it) |
+| `internal` `When` predicate of a [conditional decorator](../03-decorators.md#apply-a-decorator-conditionally) or `EagerWhen` predicate of a [singleton](../../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) | calls the predicate | calls a generated public wrapper, which takes an internal service through its handle ([AWT247](../../09-diagnostics.md#awt247) with the reason when the module can't generate it) |
 | `private` member of an `internal`, `partial` module | calls a generated internal wrapper | can't import the module |
 
 ### Factory and instance members

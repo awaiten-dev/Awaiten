@@ -247,7 +247,7 @@ internal static partial class Sources
 			else if (skipped.Predicate)
 			{
 				EmitSkipReason(builder, depth + 2, skipped.MarkerName, skipped.Reason,
-					"Generated from a module [Decorate]: why no wrapper calls this decorator predicate. An assembly granted",
+					"Generated from a module [Decorate] or [Singleton]: why no wrapper calls this predicate. An assembly granted",
 					"InternalsVisibleTo calls the predicate itself; a consuming container that cannot reports this reason.");
 			}
 			else if (skipped.EmptyCollection)

@@ -162,9 +162,9 @@ Every reported id with its default severity. The ids that are never reported are
 | [AWT243](#awt243) | Error | Language version too old for the generated code |
 | [AWT244](#awt244) | Error | Injected property not visible to the container |
 | [AWT245](#awt245) | Warning | `Factory` or `Instance` member may produce null |
-| [AWT246](#awt246) | Error | Invalid decorator predicate |
-| [AWT247](#awt247) | Error | Decorator predicate not accessible |
-| [AWT248](#awt248) | Error | Invalid decorator predicate parameter |
+| [AWT246](#awt246) | Error | Invalid predicate |
+| [AWT247](#awt247) | Error | Predicate not accessible |
+| [AWT248](#awt248) | Error | Invalid predicate parameter |
 | [AWT249](#awt249) | Warning | Open decorator or composite applies to no closing |
 | [AWT250](#awt250) | Warning | Collection over an imported service is empty |
 | [AWT252](#awt252) | Error | Collection fixed empty by a module of another assembly |
@@ -177,6 +177,7 @@ Every reported id with its default severity. The ids that are never reported are
 | [AWT259](#awt259) | Error | Relationship type registered as a service |
 | [AWT261](#awt261) | Error | Consumer cannot own what its Func builds |
 | [AWT262](#awt262) | Warning | `ConsumerOwned` entry never applies |
+| [AWT263](#awt263) | Error | `Eager` and `EagerWhen` on one registration |
 
 ## Graph correctness
 
@@ -714,7 +715,7 @@ public static partial class CoffeeShop;
 An eager singleton is async-initialized and cannot be constructed synchronously at container build time.
 :::
 
-An eager singleton is built with its decorators, so an async-initialized decorator reports it too.
+An eager singleton is built with its decorators, so an async-initialized decorator reports it too. A singleton with an `EagerWhen` predicate is reported as well, since the root builds it synchronously whenever the predicate allows it.
 
 A module doesn't know whether the container that imports it opts into `AsyncSafety.SyncAfterInit`, so for an eager singleton the module itself makes async-initialized, with a convention, an async factory or an async `OnActivated` hook, the library's build reports a warning instead. Every importing container with the default still reports the error. When a container in the library's own assembly imports the module, the library's build leaves it to that container.
 
@@ -731,7 +732,7 @@ public sealed class EspressoMachine : IWarmUp
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Remove `Eager = true`: `InitializeAsync` on the root already warms every async singleton. If it must be built at construction, opt into `[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]`.
+**Fix:** Remove `Eager = true` or `EagerWhen`: `InitializeAsync` on the root already warms every async singleton. If it must be built at construction, opt into `[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]`.
 
 ### AWT219: Typed resolve names a service the container withholds from that call \{#awt219\}
 
@@ -1010,7 +1011,7 @@ public static partial class CoffeeShop
 ### AWT166: Conflicting lifecycle directives \{#awt166\}
 
 :::danger[Error]
-An implementation is registered with conflicting `OnActivated`/`OnRelease`/`Eager` directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not.
+An implementation is registered with conflicting `OnActivated`/`OnRelease`/`Eager`/`EagerWhen` directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not.
 :::
 
 ```csharp expect=AWT166
@@ -1025,7 +1026,7 @@ public static partial class CoffeeShop
 }
 ```
 
-A hook is identified by its declaring type and its name, so methods of the same name on a module and on the container, or on two modules, are different hooks and conflict. Registrations naming the same method of the same type share it.
+A hook is identified by its declaring type and its name, so methods of the same name on a module and on the container, or on two modules, are different hooks and conflict. Registrations naming the same method of the same type share it. The same holds for an `EagerWhen` predicate, and a later registration that sets `EagerWhen` conflicts with a first one that sets `Eager = true`.
 
 The library's build reports this too for an implementation a module builds through a [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses), since a container in another assembly serves all its registrations from one instance.
 
@@ -1045,6 +1046,26 @@ public static partial class CoffeeShop
 ```
 
 **Fix:** Name the same hook on the registration, so the scan agrees with it, or exclude the type from the scan and register it explicitly under the marker.
+
+### AWT263: `Eager` and `EagerWhen` on one registration \{#awt263\}
+
+:::danger[Error]
+A `[Singleton]` sets both `Eager = true` and `EagerWhen`.
+:::
+
+`Eager` builds the singleton when the root is created in every run, so the predicate would never decide anything. The singleton stays eager.
+
+```csharp expect=AWT263
+[Container]
+// highlight-next-line
+[Singleton<EspressoMachine>(Eager = true, EagerWhen = nameof(PreheatOnStartup))]   // Eager already decides
+public static partial class CoffeeShop
+{
+    private static bool PreheatOnStartup => true;
+}
+```
+
+**Fix:** Keep `EagerWhen` to [build the singleton at startup](./04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) only when the predicate allows it, or `Eager = true` to build it in every run.
 
 ### AWT189: Lifecycle hook parameter cannot be a runtime argument \{#awt189\}
 
@@ -1505,13 +1526,13 @@ public static partial class CoffeeShop;
 
 **Fix:** Register the members under that key (`[Transient<PrinterChannel, IReceiptChannel>(Key = "kitchen")]`), or change the composite's `Key`.
 
-### AWT246: Invalid decorator predicate \{#awt246\}
+### AWT246: Invalid predicate \{#awt246\}
 
 :::danger[Error]
-A `[Decorate]`'s `When` names no predicate the root can evaluate: the type that declares the `[Decorate]` (the container, a module or an extended container) has no member of that name, or it is not a static non-generic method, readable property or field of type `bool`, or several methods of that name return `bool`.
+A `[Decorate]`'s `When` or a `[Singleton]`'s `EagerWhen` names no predicate the root can evaluate: the type that declares the attribute (the container, a module or an extended container) has no member of that name, or it is not a static non-generic method, readable property or field of type `bool`, or several methods of that name return `bool`.
 :::
 
-A predicate returning `Task<bool>` or `ValueTask<bool>` is reported too, because the root evaluates it synchronously. The decorator is left out.
+A predicate returning `Task<bool>` or `ValueTask<bool>` is reported too, because the root evaluates it synchronously. The decorator is left out, and a singleton with an invalid `EagerWhen` is built on first resolve.
 
 ```csharp expect=AWT246
 [Container]
@@ -1524,17 +1545,17 @@ public static partial class CoffeeShop
 }
 ```
 
-The predicate is looked up only on the type that declares the `[Decorate]`, so a module's decorator never finds a member of the container. The module's own build reports it too when no container of its assembly imports the module.
+The predicate is looked up only on the type that declares the attribute, so a module's decorator or singleton never finds a member of the container. The module's own build reports it too when no container of its assembly imports the module.
 
-**Fix:** Name a static `bool` method, property or field of the type that declares the `[Decorate]`. Compute an asynchronous value before you create the root and let the predicate read it.
+**Fix:** Name a static `bool` method, property or field of the type that declares the attribute. Compute an asynchronous value before you create the root and let the predicate read it.
 
-### AWT247: Decorator predicate not accessible \{#awt247\}
+### AWT247: Predicate not accessible \{#awt247\}
 
 :::danger[Error]
-A `[Decorate]` on a module or an extended container names a predicate the generated container cannot call: it is private, or the module or container is in another assembly, the predicate is not public and the owner generated no wrapper for it.
+A `[Decorate]`'s `When` or a `[Singleton]`'s `EagerWhen` on a module or an extended container names a predicate the generated container cannot call: it is private, or the module or container is in another assembly, the predicate is not public and the owner generated no wrapper for it.
 :::
 
-The decorator is left out.
+The decorator is left out, and a singleton with an inaccessible `EagerWhen` is built on first resolve.
 
 ```csharp expect=AWT247
 [Module]
@@ -1555,10 +1576,10 @@ A container in another assembly sees only the public members of a module or base
 
 **Fix:** Make the predicate `internal` or `public`. For a container in another assembly, make the module `partial`, make the predicate's parameter types public or register the internal ones in the library, or grant the container's assembly `InternalsVisibleTo`.
 
-### AWT248: Invalid decorator predicate parameter \{#awt248\}
+### AWT248: Invalid predicate parameter \{#awt248\}
 
 :::danger[Error]
-A decorator predicate takes a parameter the root cannot supply before it evaluates the predicate once per root: a runtime `[Arg]`, a parameter passed by reference, a relationship such as `Func<T>` or `Lazy<T>`, a collection, or a service that is scoped, transient, built for each consumer or initialized asynchronously.
+A `When` or `EagerWhen` predicate takes a parameter the root cannot supply before it evaluates the predicate once per root: a runtime `[Arg]`, a parameter passed by reference, a relationship such as `Func<T>` or `Lazy<T>`, a collection, or a service that is scoped, transient, built for each consumer or initialized asynchronously.
 :::
 
 ```csharp expect=AWT248
@@ -1765,10 +1786,10 @@ public static partial class CoffeeShop;
 ### AWT207: `Eager` or `Instance` on an open generic registration \{#awt207\}
 
 :::danger[Error]
-`Eager` or `Instance` is set on an open generic `typeof` registration.
+`Eager`, `EagerWhen` or `Instance` is set on an open generic `typeof` registration.
 :::
 
-Both describe one concrete instance, but the closings of an open generic are whatever the graph asks for, so eagerly building "every closing" would start services because some other consumer happens to close the generic, and one pre-built instance cannot be every closing. Register the closings you want eager or pre-built with a closed type.
+Each describes one concrete instance, but the closings of an open generic are whatever the graph asks for, so eagerly building "every closing" would start services because some other consumer happens to close the generic, and one pre-built instance cannot be every closing. Register the closings you want eager or pre-built with a closed type.
 
 ```csharp expect=AWT207
 [Container]
@@ -1778,7 +1799,7 @@ Both describe one concrete instance, but the closings of an open generic are wha
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Remove `Eager` or `Instance` from the open generic registration and register each closing you want eager or pre-built with a closed type, as the second line does.
+**Fix:** Remove `Eager`, `EagerWhen` or `Instance` from the open generic registration and register each closing you want eager or pre-built with a closed type, as the second line does.
 
 ### AWT208: Generic factory has the wrong number of type parameters \{#awt208\}
 

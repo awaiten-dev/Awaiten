@@ -71,7 +71,7 @@ public static partial class TestCoffeeShop
 
 ## A replacement replaces in full
 
-A registration written directly on the extending container replaces every inherited registration of the same service and key, before anything else is decided. The replaced registration is gone: it is never constructed, it is missing from `IEnumerable<T>` and from keyed collections, and its `Eager` construction and lifecycle hooks go with it. Because it is gone, it does not collide with the replacement either: a replacement with another lifetime or another `Factory` is not a conflict.
+A registration written directly on the extending container replaces every inherited registration of the same service and key, before anything else is decided. The replaced registration is gone: it is never constructed, it is missing from `IEnumerable<T>` and from keyed collections, and its `Eager` or `EagerWhen` construction and lifecycle hooks go with it. Because it is gone, it does not collide with the replacement either: a replacement with another lifetime or another `Factory` is not a conflict.
 
 - **Keys.** A keyed registration replaces only the inherited registration with the same key. A `WhenInjectedInto` registration has a key of its own per consumer, so a plain registration does not replace it, and a `WhenInjectedInto` registration replaces only the one for the same consumer.
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
@@ -133,6 +133,8 @@ public async Task TestCoffeeBar_SkipsTheAudit()
 ```
 
 The predicate runs in the extending container. When the test lives in another assembly, the base generates a public wrapper for the internal predicate, and the extending container calls it. A private predicate is an error in any assembly ([AWT247](../09-diagnostics.md#awt247)). An internal one whose parameter types are not all public gets no wrapper, so it is an error in another assembly too, unless the base's assembly grants the test assembly `InternalsVisibleTo`.
+
+An inherited [`EagerWhen`](../04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) works the same way: replace a service its predicate takes, and the extending container decides whether the singleton is built when the root is created, so a test container can leave a client that starts polling unbuilt until a test resolves it.
 
 ## Per-test doubles from the host
 
