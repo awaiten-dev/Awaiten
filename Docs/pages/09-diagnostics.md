@@ -3315,7 +3315,7 @@ The container can't name a [closing over an internal type](./05-registration/08-
 
 ## Extending containers
 
-These concern a container that [extends](./05-registration/09-extending-containers.md) another with `[Container(Extends = typeof(...))]`. Each is reported on the `Extends` argument, except [AWT264](#awt264), which is reported on the parameter.
+These concern a container that [extends](./05-registration/09-extending-containers.md) another with `[Container(Extends = typeof(...))]`. Each is reported on the `Extends` argument, except [AWT264](#awt264), which is reported on the parameter, or on its registration when the parameter comes from another assembly.
 
 ### AWT222: `Extends` target is not a container \{#awt222\}
 
@@ -3459,6 +3459,7 @@ A parameter marked `[Inherited]` cannot take the registration its factory's regi
 - **An unsupported shape.** The parameter takes a collection, an `Owned<T>` or a `Func` with runtime arguments instead of the service, `Lazy<T>`, `Func<T>` or their async forms.
 - **Another service.** The parameter's service is not the one the registration serves.
 - **Nothing replaced.** The base has no registration of the service under the registration's key, or the registration has `Fallback` and so replaces nothing.
+- **No single registration.** The base registers the service several times, as a collection or as the members of a composite, registers it only through an open generic registration, or imports it with `[ImportService<T>]`. A composite that serves the service in place of the registration leaves nothing to take either.
 
 The parameter receives nothing.
 
@@ -3476,7 +3477,24 @@ public static partial class TestCoffeeShop
 }
 ```
 
-**Fix:** Move `[Inherited]` to the factory of the registration that replaces the base's, with the same service and key, or remove it.
+A base that registers the service more than once has no single registration to take:
+
+```csharp expect=AWT264
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Singleton<CashTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+
+[Container(Extends = typeof(CoffeeShop))]
+[Singleton<IPaymentTerminal>(Factory = nameof(Terminal))]
+public static partial class TestCoffeeShop
+{
+    // highlight-next-line
+    private static IPaymentTerminal Terminal([Inherited] IPaymentTerminal production) => production;   // CoffeeShop registers two terminals
+}
+```
+
+**Fix:** Move `[Inherited]` to the factory of the registration that replaces the base's, with the same service and key, or remove it. When the base has no single closed registration of the service, remove `[Inherited]` and build the production service in the factory, or key the base's registrations and replace one of them under its key.
 
 ## Keyed collections
 

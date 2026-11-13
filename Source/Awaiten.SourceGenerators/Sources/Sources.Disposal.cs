@@ -110,9 +110,11 @@ internal static partial class Sources
 	/// <summary>
 	///     Emits <c>__Disown</c> and <c>__DisownAsync</c> on the base <c>Scope</c>: they remove the newest
 	///     <c>__disposables</c> entry that tracks a just-built instance, which its consumer owns and disposes. AWT261
-	///     guarantees that the instance is the only entry its build added.
+	///     guarantees that the instance is the only entry its build added. With <paramref name="keptInherited" />, an
+	///     instance a registration kept for <c>[Inherited]</c> tracks stays its own: a replacement that returns it built
+	///     nothing the consumer could own.
 	/// </summary>
-	private static void EmitDisownHelpers(StringBuilder builder, int depth, bool asyncOnlyDisposals)
+	private static void EmitDisownHelpers(StringBuilder builder, int depth, bool asyncOnlyDisposals, bool keptInherited)
 	{
 		AppendXmlSummary(builder, depth, "Stops tracking <paramref name=\"instance\" />, which the consumer that built it owns.");
 		Indent(builder, depth).AppendLine("private protected T __Disown<T>(T instance)");
@@ -125,6 +127,21 @@ internal static partial class Sources
 		builder.AppendLine();
 		Indent(builder, depth + 1).AppendLine("lock (__gate)");
 		Indent(builder, depth + 1).AppendLine("{");
+		if (keptInherited)
+		{
+			Indent(builder, depth + 2).AppendLine("if (__inheritedTracked is { } __inherited)");
+			Indent(builder, depth + 2).AppendLine("{");
+			Indent(builder, depth + 3).AppendLine("foreach (object __entry in __inherited)");
+			Indent(builder, depth + 3).AppendLine("{");
+			Indent(builder, depth + 4).AppendLine("if (ReferenceEquals(__entry, instance))");
+			Indent(builder, depth + 4).AppendLine("{");
+			Indent(builder, depth + 5).AppendLine("return instance;");
+			Indent(builder, depth + 4).AppendLine("}");
+			Indent(builder, depth + 3).AppendLine("}");
+			Indent(builder, depth + 2).AppendLine("}");
+			builder.AppendLine();
+		}
+
 		Indent(builder, depth + 2).AppendLine("if (__disposables is { } __tracked)");
 		Indent(builder, depth + 2).AppendLine("{");
 		Indent(builder, depth + 3).AppendLine("for (int i = __tracked.Count - 1; i >= 0; i--)");
@@ -148,6 +165,18 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("return __Disown(await instance.ConfigureAwait(false));");
 		Indent(builder, depth).AppendLine("}");
+	}
+
+	/// <summary>
+	///     Records <paramref name="target" />, just added to <c>__disposables</c>, in <c>__inheritedTracked</c> when
+	///     <paramref name="instance" /> is a registration kept for <c>[Inherited]</c> (see <see cref="EmitDisownHelpers" />).
+	/// </summary>
+	private static void EmitInheritedTracking(StringBuilder builder, int depth, InstanceModel instance, string target)
+	{
+		if (IsKeptForInherited(instance))
+		{
+			Indent(builder, depth).Append("(__s.__inheritedTracked ??= new global::System.Collections.Generic.List<object>()).Add(").Append(target).AppendLine(");");
+		}
 	}
 
 	/// <summary>The <c>__disposables</c> entry that tracks <paramref name="target" />: itself, or wrapped with its guidance.</summary>
@@ -545,6 +574,7 @@ internal static partial class Sources
 		Indent(builder, depth + 1).AppendLine("if (!__raced)");
 		Indent(builder, depth + 1).AppendLine("{");
 		Indent(builder, depth + 2).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(DisposableEntry(instance, "created")).AppendLine(");");
+		EmitInheritedTracking(builder, depth + 2, instance, "created");
 		Indent(builder, depth + 1).AppendLine("}");
 		Indent(builder, depth).AppendLine("}");
 		builder.AppendLine();

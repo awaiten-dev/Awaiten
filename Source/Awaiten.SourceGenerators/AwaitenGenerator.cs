@@ -927,7 +927,8 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		Dictionary<string, PredicateModel> Predicates,
 		Dictionary<string, string> ClosingFaults,
 		HashSet<InjectPropertyEntry> ReportedHandleEntries,
-		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations);
+		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations,
+		Dictionary<ServiceKey, FactoryFault> InheritedFaults);
 
 	/// <summary>
 	///     The mutable coalesced graph state the decorator-chain and composite builders rewrite in place: the
@@ -1123,7 +1124,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// closings of an open import are checked once the instances are built (ReportOpenExternalServices).
 		ReportContradictingExternalServices(externalServiceTypes, serviceToImpl, containerSymbol, diagnostics);
 
-		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>(), skippedModuleRegistrations);
+		BuildContext buildContext = new(containerSymbol, compilation, serviceToImpl, decoratorInner, compositeCollections, wellKnown, constraintRejected, deferredRejections, external, variance, consumedConditionals, injectProperties, CollectDispatchCandidates(raw, serviceToImpl), diagnostics, ServedTypesOf(raw, serviceMembers, keyedMembers), factories, new AsyncInitializerScopes(compilation), new SameCompilationModules(compilation), new HiddenInjectedProperties(compilation), new Dictionary<string, PredicateModel>(StringComparer.Ordinal), closingFaults, new HashSet<InjectPropertyEntry>(), skippedModuleRegistrations, inheritance?.InheritedFaults ?? new Dictionary<ServiceKey, FactoryFault>());
 
 		// Validate each implementation, select its constructor and build the instance.
 		foreach (ImplInfo info in implOrder)

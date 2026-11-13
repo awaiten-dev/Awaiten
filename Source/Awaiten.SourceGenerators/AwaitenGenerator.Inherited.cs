@@ -9,6 +9,9 @@ partial class AwaitenGenerator
 	/// <summary>The cause of AWT264 for an <c>[Inherited]</c> parameter that is not one of a replacement's factory.</summary>
 	private const string InheritedPlacement = "[Inherited] applies only to a parameter of a Factory member that a registration declared on a container with Extends names";
 
+	/// <summary>The remedy of AWT264 when the base has no single registration that <c>[Inherited]</c> can take.</summary>
+	private const string InheritedBuildRemedy = "remove [Inherited] and build the production service in the factory";
+
 	/// <summary>Whether <paramref name="parameter" /> is marked <c>[Inherited]</c>.</summary>
 	private static bool IsInheritedParameter(IParameterSymbol parameter) => HasAwaitenAttribute(parameter.GetAttributes(), "InheritedAttribute");
 
@@ -25,13 +28,13 @@ partial class AwaitenGenerator
 		if (model.Kind == DependencyKind.Arg || HasAwaitenAttribute(parameter.GetAttributes(), "FromKeyAttribute"))
 		{
 			string other = model.Kind == DependencyKind.Arg ? "[Arg]" : "[FromKey]";
-			ReportInvalidInherited(parameter, $"it also carries {other}", $"remove {other}, since [Inherited] takes the key of the registration it replaces", context.Diagnostics);
+			ReportInvalidInherited(parameter, info.Location, $"it also carries {other}", $"remove {other}, since [Inherited] takes the key of the registration it replaces", context.Diagnostics);
 			return absent;
 		}
 
 		if (info.Production != ProductionKind.Factory || info.Origin is not null || info.DeclaredBy is not null || ReadExtends(context.ContainerSymbol) is not { } baseContainer)
 		{
-			ReportInvalidInherited(parameter, InheritedPlacement, "remove [Inherited]", context.Diagnostics);
+			ReportInvalidInherited(parameter, info.Location, InheritedPlacement, "remove [Inherited]", context.Diagnostics);
 			return absent;
 		}
 
@@ -39,6 +42,7 @@ partial class AwaitenGenerator
 		{
 			ReportInvalidInherited(
 				parameter,
+				info.Location,
 				$"it takes '{Display(parameter.Type.ToDisplayString(FullyQualified))}'",
 				$"take '{service}' as itself, Lazy<T>, Func<T>, Task<T>, Lazy<Task<T>> or Func<Task<T>>",
 				context.Diagnostics);
@@ -53,10 +57,24 @@ partial class AwaitenGenerator
 				.Select(entry => entry.Key))
 			.Distinct()
 			.ToList();
+		if (served.Count == 0 && info.OwningServiceOrImpl == model.ServiceType)
+		{
+			// A composite took over the service, so the registration serves it only as a member of the composite.
+			FactoryFault? fault = context.InheritedFaults.Where(entry => entry.Key.Service == model.ServiceType).Select(entry => (FactoryFault?)entry.Value).FirstOrDefault();
+			ReportInvalidInherited(
+				parameter,
+				info.Location,
+				fault?.Reason ?? $"a composite serves '{service}' in place of its registration, which therefore replaces no single registration",
+				fault?.Remedy ?? InheritedBuildRemedy,
+				context.Diagnostics);
+			return absent;
+		}
+
 		if (served.Count == 0)
 		{
 			ReportInvalidInherited(
 				parameter,
+				info.Location,
 				$"its registration serves '{Display(info.OwningServiceOrImpl)}', not '{service}'",
 				$"take '{Display(info.OwningServiceOrImpl)}', the service the registration replaces",
 				context.Diagnostics);
@@ -74,13 +92,18 @@ partial class AwaitenGenerator
 
 		if (kept.Count > 1)
 		{
-			ReportInvalidInherited(parameter, $"its registration replaces '{service}' under several keys", "register a factory per key", context.Diagnostics);
+			ReportInvalidInherited(parameter, info.Location, $"its registration replaces '{service}' under several keys", "register a factory per key", context.Diagnostics);
+		}
+		else if (served.Select(serviceKey => context.InheritedFaults.TryGetValue(serviceKey, out FactoryFault fault) ? fault : (FactoryFault?)null).FirstOrDefault(fault => fault is not null) is { } fault)
+		{
+			ReportInvalidInherited(parameter, info.Location, fault.Reason, fault.Remedy, context.Diagnostics);
 		}
 		else if (!served.Any(serviceKey => context.ConstraintRejected.Contains($"{model.ServiceType}{RejectedKeySeparator}{InheritedKey(serviceKey.Key)}")))
 		{
 			// A replaced registration the extending container cannot build is already reported (AWT226) and dropped.
 			ReportInvalidInherited(
 				parameter,
+				info.Location,
 				$"the base '{Display(baseContainer.ToDisplayString(FullyQualified))}' has no registration of '{service}' that its registration replaces",
 				"remove [Inherited], or take the service from a registration the base declares under the same key",
 				context.Diagnostics);
@@ -93,14 +116,14 @@ partial class AwaitenGenerator
 	///     Reports AWT264 for an <c>[Inherited]</c> parameter outside a replacement's factory (a constructor, a lifecycle
 	///     hook, an async initializer or a decorator predicate) and returns <see langword="true" /> when it is one.
 	/// </summary>
-	private static bool ReportMisplacedInherited(IParameterSymbol parameter, List<DiagnosticInfo> diagnostics)
+	private static bool ReportMisplacedInherited(IParameterSymbol parameter, LocationInfo? fallback, List<DiagnosticInfo> diagnostics)
 	{
 		if (!IsInheritedParameter(parameter))
 		{
 			return false;
 		}
 
-		ReportInvalidInherited(parameter, InheritedPlacement, "remove [Inherited]", diagnostics);
+		ReportInvalidInherited(parameter, fallback, InheritedPlacement, "remove [Inherited]", diagnostics);
 		return true;
 	}
 
@@ -112,7 +135,11 @@ partial class AwaitenGenerator
 		=> model.Kind is DependencyKind.Direct or DependencyKind.Lazy or DependencyKind.LazyTask
 		   || (model.Kind is DependencyKind.Func or DependencyKind.FuncTask or DependencyKind.Task && model.FuncArgTypes.AsArray().Length == 0 &&!model.ProducesOwned);
 
-	private static void ReportInvalidInherited(IParameterSymbol parameter, string cause, string remedy, List<DiagnosticInfo> diagnostics)
+	/// <summary>
+	///     Reports AWT264 for <paramref name="parameter" /> once, at its own location or, for a parameter read from another
+	///     assembly, at <paramref name="fallback" />, the location of its registration or of the attribute that names it.
+	/// </summary>
+	private static void ReportInvalidInherited(IParameterSymbol parameter, LocationInfo? fallback, string cause, string remedy, List<DiagnosticInfo> diagnostics)
 	{
 		ISymbol owner = parameter.ContainingSymbol;
 		string ownerDisplay = owner is IMethodSymbol { MethodKind: MethodKind.Constructor, } constructor
@@ -120,10 +147,13 @@ partial class AwaitenGenerator
 			: $"{Display(owner.ContainingType.ToDisplayString(FullyQualified))}.{owner.Name}";
 		DiagnosticInfo diagnostic = new(
 			Diagnostics.InvalidInheritedParameter,
-			LocationInfo.From(parameter.Locations.FirstOrDefault()),
+			LocationInfo.From(parameter.Locations.FirstOrDefault()) ?? fallback,
 			new EquatableArray<string>([parameter.Name, ownerDisplay, cause, remedy,]));
 		// One cause per parameter: a Fallback registration is reported before coalescing, which may still classify it.
-		if (!diagnostics.Any(reported => reported.Descriptor == Diagnostics.InvalidInheritedParameter && Equals(reported.Location, diagnostic.Location)))
+		if (!diagnostics.Any(reported => reported.Descriptor == Diagnostics.InvalidInheritedParameter
+		                                 && Equals(reported.Location, diagnostic.Location)
+		                                 && reported.MessageArgs.AsArray()[0] == parameter.Name
+		                                 && reported.MessageArgs.AsArray()[1] == ownerDisplay))
 		{
 			diagnostics.Add(diagnostic);
 		}
@@ -141,7 +171,7 @@ partial class AwaitenGenerator
 				         .SelectMany(method => method.Parameters)
 				         .Where(IsInheritedParameter))
 			{
-				ReportInvalidInherited(parameter, "its registration has Fallback, so it replaces nothing", "remove Fallback, or remove [Inherited]", diagnostics);
+				ReportInvalidInherited(parameter, LocationInfo.From(registration.Location), "its registration has Fallback, so it replaces nothing", "remove Fallback, or remove [Inherited]", diagnostics);
 			}
 		}
 	}

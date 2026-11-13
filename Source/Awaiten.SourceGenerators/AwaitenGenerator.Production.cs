@@ -1263,7 +1263,7 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in hookParameters)
 		{
 			ParameterModel parameterModel = ClassifyParameter(parameter, asynchronous, context.External.ServiceTypes);
-			if (ReportMisplacedInherited(parameter, context.Diagnostics))
+			if (ReportMisplacedInherited(parameter, info.Location, context.Diagnostics))
 			{
 				parameters.Add(parameterModel with { Kind = DependencyKind.Absent, Key = null, });
 				continue;

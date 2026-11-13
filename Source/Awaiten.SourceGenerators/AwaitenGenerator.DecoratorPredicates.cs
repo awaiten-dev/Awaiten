@@ -261,7 +261,7 @@ partial class AwaitenGenerator
 		{
 			ParameterModel model = ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes);
 			model = model with { Location = model.Location ?? attributeLocation, };
-			if (ReportMisplacedInherited(parameter, context.Diagnostics))
+			if (ReportMisplacedInherited(parameter, attributeLocation, context.Diagnostics))
 			{
 				continue;
 			}

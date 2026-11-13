@@ -1086,11 +1086,13 @@ internal static partial class Sources
 			Indent(builder, depth).Append("if (").Append(target).AppendLine(test);
 			Indent(builder, depth).AppendLine("{");
 			Indent(builder, depth + 1).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(target).AppendLine(");");
+			EmitInheritedTracking(builder, depth + 1, instance, target);
 			Indent(builder, depth).AppendLine("}");
 		}
 		else if (disposal == DisposalTracking.Static)
 		{
 			Indent(builder, depth).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(DisposableEntry(instance, target)).AppendLine(");");
+			EmitInheritedTracking(builder, depth, instance, target);
 		}
 
 		CloseInheritedCheck(builder, outer, instance);

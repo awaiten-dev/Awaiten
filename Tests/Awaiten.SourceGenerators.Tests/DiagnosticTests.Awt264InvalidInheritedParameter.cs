@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Awaiten.SourceGenerators.Tests;
 
 public partial class DiagnosticTests
@@ -259,6 +261,221 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).HasSingle().Which
 				.Contains("*error AWT264*it takes '*'; take 'MyCode.IStore' as itself, Lazy<T>, Func<T>*").AsWildcard();
+		}
+
+		[Test]
+		public async Task ReportsABaseThatRegistersTheServiceSeveralTimes()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IStore { }
+			                                       public sealed class DiskStore : IStore { }
+			                                       public sealed class CloudStore : IStore { }
+
+			                                       [Container]
+			                                       [Singleton<DiskStore, IStore>]
+			                                       [Singleton<CloudStore, IStore>]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<IStore>(Factory = nameof(Store))]
+			                                       public static partial class TestShop
+			                                       {
+			                                           private static IStore Store([Inherited] IStore production) => production;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT264*the base 'MyCode.Shop' registers several 'MyCode.IStore', so [Inherited] cannot pick one; remove [Inherited] and build the production service in the factory, or key the registrations in the base and replace one of them under its key").AsWildcard()
+				.Because("the base's collection has no single registration to keep, and its synthetic key must not leak into a duplicate key error");
+		}
+
+		[Test]
+		public async Task ReportsABaseThatRegistersACompositeOverTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Collections.Generic;
+
+			                                       namespace MyCode;
+
+			                                       public interface IStore { }
+			                                       public sealed class DiskStore : IStore { }
+			                                       public sealed class CloudStore : IStore { }
+			                                       public sealed class CompositeStore(IEnumerable<IStore> stores) : IStore { public IEnumerable<IStore> Stores => stores; }
+
+			                                       [Container]
+			                                       [Singleton<DiskStore, IStore>]
+			                                       [Singleton<CloudStore, IStore>]
+			                                       [Composite<CompositeStore, IStore>]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<IStore>(Factory = nameof(Store))]
+			                                       public static partial class TestShop
+			                                       {
+			                                           private static IStore Store([Inherited] IStore production) => production;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT264*the base 'MyCode.Shop' registers several 'MyCode.IStore', so [Inherited] cannot pick one*").AsWildcard()
+				.Because("the composite fronts several members, none of which is the one registration [Inherited] would take");
+		}
+
+		[Test]
+		public async Task ReportsABaseCompositeThatServesTheServiceInPlaceOfTheReplacement()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Collections.Generic;
+
+			                                       namespace MyCode;
+
+			                                       public interface IStore { }
+			                                       public sealed class DiskStore : IStore { }
+			                                       public sealed class CompositeStore(IEnumerable<IStore> stores) : IStore { public IEnumerable<IStore> Stores => stores; }
+
+			                                       [Container]
+			                                       [Singleton<DiskStore, IStore>]
+			                                       [Composite<CompositeStore, IStore>]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<IStore>(Factory = nameof(Store))]
+			                                       public static partial class TestShop
+			                                       {
+			                                           private static IStore Store([Inherited] IStore production) => production;
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT264*but a composite serves 'MyCode.IStore' in place of its registration, which therefore replaces no single registration; remove [Inherited] and build the production service in the factory").AsWildcard()
+				.Because("the replacement joins the composite as a member, and the message must not read as if it served another service");
+		}
+
+		[Test]
+		public async Task ReportsAnOpenGenericRegistrationOfTheBase()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+
+			                                       namespace MyCode;
+
+			                                       public interface IRepo<T> { }
+			                                       public sealed class Repo<T> : IRepo<T> { }
+			                                       public sealed class WrappedRepo(IRepo<int> inner) : IRepo<int> { public IRepo<int> Inner => inner; }
+
+			                                       [Container]
+			                                       [Singleton(typeof(Repo<>), typeof(IRepo<>))]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<IRepo<int>>(Factory = nameof(Repo))]
+			                                       public static partial class TestShop
+			                                       {
+			                                           private static IRepo<int> Repo([Inherited] IRepo<int> production) => new WrappedRepo(production);
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT264*the base 'MyCode.Shop' registers 'MyCode.IRepo<int>' only through an open generic registration, which [Inherited] cannot take; remove [Inherited] and build the production service in the factory, or register 'MyCode.IRepo<int>' closed in the base").AsWildcard();
+		}
+
+		[Test]
+		public async Task ReportsAServiceTheBaseImports()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System;
+
+			                                       namespace MyCode;
+
+			                                       public interface IStore { }
+
+			                                       [Container]
+			                                       [ImportService<IStore>]
+			                                       public static partial class Shop;
+
+			                                       [Container(Extends = typeof(Shop))]
+			                                       [Singleton<IStore>(Factory = nameof(Store))]
+			                                       public static partial class TestShop
+			                                       {
+			                                           private static IStore Store([Inherited] Func<IStore> production) => production();
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*error AWT264*the base 'MyCode.Shop' imports 'MyCode.IStore' with [ImportService<T>], which [Inherited] cannot take; remove [Inherited] and build the production service in the factory").AsWildcard();
+		}
+
+		[Test]
+		public async Task ReportsEachParameterOfAModuleInAnotherAssembly()
+		{
+			GeneratorResult result = Generator.RunWithReferencedAssembly("""
+			                                                             using Awaiten;
+			                                                             using System;
+
+			                                                             namespace ModuleAssembly;
+
+			                                                             public interface IStore { }
+			                                                             public interface IClock { }
+
+			                                                             [Module]
+			                                                             [Singleton<IStore>(Factory = nameof(Store))]
+			                                                             [Singleton<IClock>(Factory = nameof(Clock))]
+			                                                             public static class TestModule
+			                                                             {
+			                                                                 public static IStore Store([Inherited] Func<IStore> production) => production();
+
+			                                                                 public static IClock Clock([Inherited] Func<IClock> production) => production();
+			                                                             }
+			                                                             """, """
+			                                                                  using Awaiten;
+			                                                                  using ModuleAssembly;
+
+			                                                                  namespace MyCode;
+
+			                                                                  public sealed class DiskStore : IStore { }
+			                                                                  public sealed class SystemClock : IClock { }
+
+			                                                                  [Container]
+			                                                                  [Singleton<DiskStore, IStore>]
+			                                                                  [Singleton<SystemClock, IClock>]
+			                                                                  public static partial class Shop;
+
+			                                                                  [Container(Extends = typeof(Shop))]
+			                                                                  [Import(typeof(TestModule))]
+			                                                                  public static partial class TestShop;
+			                                                                  """);
+
+			await That(result.Diagnostics).HasCount(2);
+			await That(result.Diagnostics.Where(diagnostic => diagnostic.StartsWith("(15,", StringComparison.Ordinal) && diagnostic.Contains("error AWT264"))).HasCount(2)
+				.Because("a parameter read from metadata has no source location, so each is reported at the [Import] of its module");
+			await That(result.Diagnostics).Contains("*'ModuleAssembly.TestModule.Store'*").AsWildcard();
+			await That(result.Diagnostics).Contains("*'ModuleAssembly.TestModule.Clock'*").AsWildcard();
+		}
+
+		[Test]
+		public async Task DoesNotKeepTheReplacedRegistrationForAnOverloadTheFactoryDoesNotResolveTo()
+		{
+			GeneratorResult result = Run("""
+			                             [Container(Extends = typeof(Shop))]
+			                             [Scoped<DiskStore>]
+			                             [Singleton<IStore>(Factory = nameof(Store))]
+			                             public static partial class TestShop
+			                             {
+			                                 private static IStore Store() => new FakeStore();
+
+			                                 private static void Store([Inherited] IStore production) { }
+			                             }
+			                             """);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("only the overload the factory resolves to decides whether the replaced singleton store is kept, which would conflict with the scoped one");
 		}
 	}
 

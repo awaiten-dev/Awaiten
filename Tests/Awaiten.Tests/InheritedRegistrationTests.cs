@@ -165,6 +165,99 @@ public partial class InheritedRegistrationTests
 
 			await That(fake.Disposals).IsEqualTo(0);
 		}
+
+		[Test]
+		public async Task SuppressDisposal_LeavesTheReturnedInheritedInstanceToItsRegistration()
+		{
+			DiskStore production;
+			await using (SuppressedStoreShop.Root shop = new(new SettingsResolver(new StoreSettings())))
+			{
+				production = (DiskStore)((LoggingStore)shop.Resolve<IStore>()).Inner;
+			}
+
+			await That(production.Disposals).IsEqualTo(1)
+				.Because("SuppressDisposal applies to the replacement's own output, while the inherited registration still disposes the production instance");
+		}
+
+		[Test]
+		public async Task AScopedReplacementLeavesAnInheritedSingletonToTheRoot()
+		{
+			DiskStore production;
+			await using (ScopedOverSingletonShop.Root shop = new())
+			{
+				await using (IAwaitenScope scope = shop.CreateScope())
+				{
+					production = (DiskStore)scope.Resolve<IStore>();
+				}
+
+				await That(production.Disposals).IsEqualTo(0)
+					.Because("the scope only took the root's singleton through its replacement and does not own it");
+			}
+
+			await That(production.Disposals).IsEqualTo(1);
+		}
+
+		[Test]
+		public async Task AFactoryThatThrowsAfterTakingTheInheritedInstanceLeavesItToItsRegistration()
+		{
+			DiskStore production;
+			await using (ThrowingStoreShop.Root shop = new())
+			{
+				await That(() => shop.Resolve<IStore>()).Throws<InvalidOperationException>();
+				production = (DiskStore)shop.Resolve<StoreCapture>().Production!;
+
+				await That(production.Disposals).IsEqualTo(0)
+					.Because("the replacement's failure has no output to tear down, and the production singleton stays cached");
+			}
+
+			await That(production.Disposals).IsEqualTo(1);
+		}
+	}
+
+	public class ConsumerOwnership
+	{
+		[Test]
+		public async Task WithoutADouble_TheRootStillDisposesTheProductionSingleton()
+		{
+			DiskStore production;
+			await using (ConsumerOwnedStoreShop.Root shop = new(new SettingsResolver(new StoreSettings())))
+			{
+				production = (DiskStore)shop.Resolve<Barista>().Take();
+			}
+
+			await That(production.Disposals).IsEqualTo(1)
+				.Because("the consumer owns only what the replacement builds, not the shared instance it takes through [Inherited]");
+		}
+
+		[Test]
+		public async Task WithADouble_TheConsumerOwnsTheDouble()
+		{
+			FakeStore fake = new();
+			await using (ConsumerOwnedStoreShop.Root shop = new(new SettingsResolver(new StoreSettings { Store = fake, })))
+			{
+				await That(shop.Resolve<Barista>().Take()).IsSameAs(fake);
+			}
+
+			await That(fake.Disposals).IsEqualTo(0)
+				.Because("the consumer owns the double the transient replacement returns, so the root does not dispose it");
+		}
+	}
+
+	public class Contexts
+	{
+		[Test]
+		public async Task WhenInjectedInto_OnlyTheTargetedConsumerGetsTheReplacement()
+		{
+			await using ContextTestShop.Root shop = new();
+
+			StoreConsumer consumer = shop.Resolve<StoreConsumer>();
+
+			await That(consumer.Store).Is<WrappedStore>();
+			await That(((WrappedStore)consumer.Store).Inner).Is<SpecialStore>()
+				.Because("[Inherited] takes the base's registration for the same consumer");
+			await That(shop.Resolve<OtherStoreConsumer>().Store).Is<DiskStore>();
+			await That(shop.Resolve<IStore>()).Is<DiskStore>();
+		}
 	}
 
 	public class Keys
@@ -194,6 +287,30 @@ public partial class InheritedRegistrationTests
 
 			await That(kiln).Is<Kiln>();
 			await That(((Kiln)kiln).Hot).IsTrue();
+		}
+
+		[Test]
+		public async Task ATaskOfTheInheritedRegistrationIsAwaited()
+		{
+			await using TaskKilnShop.Root shop = new();
+
+			IKiln kiln = await shop.ResolveAsync<IKiln>();
+
+			await That(kiln).Is<Kiln>();
+			await That(((Kiln)kiln).Hot).IsTrue();
+			await That(shop.Resolve<BuildLog>().Entries).HasCount(1);
+		}
+
+		[Test]
+		public async Task ALazyTaskOfTheInheritedRegistrationIsAwaited()
+		{
+			await using LazyTaskKilnShop.Root shop = new();
+
+			IKiln kiln = await shop.ResolveAsync<IKiln>();
+
+			await That(kiln).Is<Kiln>();
+			await That(((Kiln)kiln).Hot).IsTrue();
+			await That(shop.Resolve<BuildLog>().Entries).HasCount(1);
 		}
 
 		[Test]
@@ -257,6 +374,15 @@ public partial class InheritedRegistrationTests
 	public class CrossAssembly
 	{
 		[Test]
+		public async Task AModuleInAnotherAssemblyServesItsFactoryRegistration()
+		{
+			await using LampTestShop.Root shop = new();
+
+			await That(shop.Resolve<IFriendFactoryLamp>().Lit).IsTrue()
+				.Because("the replaced registration is built through the module's factory, and the module's hook runs on it");
+		}
+
+		[Test]
 		public async Task ABaseInAnotherAssemblyServesItsRegistration()
 		{
 			await using SupportClockTestShop.Root shop = new();
@@ -311,6 +437,28 @@ public partial class InheritedRegistrationTests
 	public sealed class WrappedStore(IStore inner) : IStore
 	{
 		public IStore Inner { get; } = inner;
+	}
+
+	public sealed class SpecialStore : IStore;
+
+	public sealed class StoreConsumer(IStore store)
+	{
+		public IStore Store { get; } = store;
+	}
+
+	public sealed class OtherStoreConsumer(IStore store)
+	{
+		public IStore Store { get; } = store;
+	}
+
+	public sealed class Barista(Func<IStore> stores)
+	{
+		public IStore Take() => stores();
+	}
+
+	public sealed class StoreCapture
+	{
+		public IStore? Production { get; set; }
 	}
 
 	public sealed class KeyedConsumer([FromKey("backup")] IStore backup, IStore primary)
@@ -497,7 +645,7 @@ public partial class InheritedRegistrationTests
 	[Singleton<IStore>(Factory = nameof(Backup), Key = "backup")]
 	public static partial class KeyedTestShop
 	{
-		private static IStore Backup([Inherited] IStore production) => new WrappedStore(production);
+		private static WrappedStore Backup([Inherited] IStore production) => new(production);
 	}
 
 	[Container]
@@ -523,7 +671,80 @@ public partial class InheritedRegistrationTests
 	[Singleton<IKiln>(Factory = nameof(Kiln))]
 	public static partial class FakeKilnShop
 	{
-		private static IKiln Kiln([Inherited] Func<Task<IKiln>> production) => new FakeKiln();
+		private static FakeKiln Kiln([Inherited] Func<Task<IKiln>> production) => new();
+	}
+
+	[Container(Extends = typeof(AsyncShop))]
+	[Singleton<IKiln>(Factory = nameof(KilnAsync))]
+	public static partial class TaskKilnShop
+	{
+		private static async Task<IKiln> KilnAsync([Inherited] Task<IKiln> production) => await production;
+	}
+
+	[Container(Extends = typeof(AsyncShop))]
+	[Singleton<IKiln>(Factory = nameof(KilnAsync))]
+	public static partial class LazyTaskKilnShop
+	{
+		private static async Task<IKiln> KilnAsync([Inherited] Lazy<Task<IKiln>> production) => await production.Value;
+	}
+
+	[Container]
+	[Singleton<BuildLog>]
+	[Singleton<DiskStore, IStore>]
+	public static partial class SingletonStoreShop;
+
+	[Container(Extends = typeof(SingletonStoreShop))]
+	[ImportService<StoreSettings>]
+	[Transient<IStore>(Factory = nameof(Store))]
+	[Singleton<Barista>(ConsumerOwned = [typeof(IStore),])]
+	public static partial class ConsumerOwnedStoreShop
+	{
+		private static IStore Store(StoreSettings settings, [Inherited] Func<IStore> production) => settings.Store ?? production();
+	}
+
+	[Container(Extends = typeof(SingletonStoreShop))]
+	[Scoped<IStore>(Factory = nameof(Store))]
+	public static partial class ScopedOverSingletonShop
+	{
+		private static IStore Store([Inherited] IStore production) => production;
+	}
+
+	[Container(Extends = typeof(SingletonStoreShop))]
+	[Singleton<StoreCapture>]
+	[Singleton<IStore>(Factory = nameof(Store))]
+	public static partial class ThrowingStoreShop
+	{
+		private static IStore Store(StoreCapture capture, [Inherited] IStore production)
+		{
+			capture.Production = production;
+			throw new InvalidOperationException("The double could not be set up.");
+		}
+	}
+
+	[Container]
+	[Singleton<BuildLog>]
+	[Singleton<DiskStore, IStore>]
+	[Singleton<SpecialStore, IStore>(WhenInjectedInto = typeof(StoreConsumer))]
+	[Singleton<StoreConsumer>]
+	[Singleton<OtherStoreConsumer>]
+	public static partial class ContextShop;
+
+	[Container(Extends = typeof(ContextShop))]
+	[Singleton<IStore>(Factory = nameof(Store), WhenInjectedInto = typeof(StoreConsumer))]
+	public static partial class ContextTestShop
+	{
+		private static WrappedStore Store([Inherited] IStore production) => new(production);
+	}
+
+	[Container]
+	[Import(typeof(SupportFriendFactoryHookModule))]
+	public static partial class LampShop;
+
+	[Container(Extends = typeof(LampShop))]
+	[Singleton<IFriendFactoryLamp>(Factory = nameof(Lamp))]
+	public static partial class LampTestShop
+	{
+		private static IFriendFactoryLamp Lamp([Inherited] IFriendFactoryLamp production) => production;
 	}
 
 	[Container(Extends = typeof(SupportBaseContainer))]

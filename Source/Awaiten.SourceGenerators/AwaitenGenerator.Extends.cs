@@ -165,9 +165,20 @@ partial class AwaitenGenerator
 			.Where(registration => !registration.Weak)
 			.Select(OpenServiceKey));
 
-		HashSet<ServiceKey> kept = new(own
-			.Where(registration => !registration.Weak && TakesInherited(inheritance.Container, registration))
-			.Select(registration => new ServiceKey(registration.ServiceType, EffectiveKey(registration.Key, registration.WhenInjectedInto))));
+		Dictionary<ServiceKey, RawRegistration> kept = new();
+		foreach (RawRegistration registration in own.Where(registration => !registration.Weak && TakesInherited(inheritance, registration)))
+		{
+			kept[new ServiceKey(registration.ServiceType, EffectiveKey(registration.Key, registration.WhenInjectedInto))] = registration;
+		}
+
+		// The base registers some kept services more than once (a collection, or the members of a composite), so no
+		// single registration can be kept: they are all replaced, and the [Inherited] parameter is reported.
+		HashSet<ServiceKey> several = new(result
+			.Where(registration => inheritance.Owns(registration.Origin) && !ownImports.Contains(registration.ServiceType))
+			.GroupBy(registration => new ServiceKey(registration.ServiceType, EffectiveKey(registration.Key, registration.WhenInjectedInto)))
+			.Where(group => kept.ContainsKey(group.Key) && group.Select(registration => (registration.ImplementationType, registration.ProductionMember)).Distinct().Count() > 1)
+			.Select(group => group.Key));
+		HashSet<ServiceKey> found = new();
 
 		for (int index = result.Count - 1; index >= 0; index--)
 		{
@@ -178,15 +189,43 @@ partial class AwaitenGenerator
 			}
 
 			string? effectiveKey = EffectiveKey(registration.Key, registration.WhenInjectedInto);
-			if (!ownImports.Contains(registration.ServiceType) && kept.Contains(new ServiceKey(registration.ServiceType, effectiveKey)))
+			ServiceKey serviceKey = new(registration.ServiceType, effectiveKey);
+			if (!ownImports.Contains(registration.ServiceType) && kept.ContainsKey(serviceKey) && !several.Contains(serviceKey))
 			{
+				found.Add(serviceKey);
 				// Kept for the replacement's [Inherited] parameter under a key nothing else names; the replacement
 				// decides startup, so its Eager and EagerWhen go.
 				result[index] = registration with { Key = InheritedKey(effectiveKey), WhenInjectedInto = null, Eager = false, EagerWhen = null, };
 			}
-			else if (ownImports.Contains(registration.ServiceType) || replaced.Contains(new ServiceKey(registration.ServiceType, effectiveKey)))
+			else if (ownImports.Contains(registration.ServiceType) || replaced.Contains(serviceKey))
 			{
 				result.RemoveAt(index);
+			}
+		}
+
+		HashSet<string> baseImports = OwnClosedImportServices(inheritance.Base);
+		foreach (KeyValuePair<ServiceKey, RawRegistration> entry in kept.Where(entry => !found.Contains(entry.Key)))
+		{
+			string service = Display(entry.Key.Service);
+			string baseName = Display(inheritance.Base.ToDisplayString(FullyQualified));
+			if (several.Contains(entry.Key))
+			{
+				inheritance.InheritedFaults[entry.Key] = new FactoryFault(
+					$"the base '{baseName}' registers several '{service}', so [Inherited] cannot pick one",
+					$"{InheritedBuildRemedy}, or key the registrations in the base and replace one of them under its key");
+			}
+			else if (baseImports.Contains(entry.Key.Service))
+			{
+				inheritance.InheritedFaults[entry.Key] = new FactoryFault($"the base '{baseName}' imports '{service}' with [ImportService<T>], which [Inherited] cannot take", InheritedBuildRemedy);
+			}
+			else if (entry.Value.ServiceSymbol is { IsGenericType: true, } closed
+			         && open.Any(registration => inheritance.Owns(registration.Origin)
+			                                     && SymbolEqualityComparer.Default.Equals(registration.Service.OriginalDefinition, closed.OriginalDefinition)
+			                                     && OpenServiceKey(registration).Key == entry.Key.Key))
+			{
+				inheritance.InheritedFaults[entry.Key] = new FactoryFault(
+					$"the base '{baseName}' registers '{service}' only through an open generic registration, which [Inherited] cannot take",
+					$"{InheritedBuildRemedy}, or register '{service}' closed in the base");
 			}
 		}
 
@@ -200,16 +239,22 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
-	///     Whether the <c>Factory</c> member of <paramref name="registration" />, declared on <paramref name="container" />,
-	///     has an overload with an <c>[Inherited]</c> parameter over the registration's service, whose replaced registrations
-	///     <see cref="ReplaceInherited" /> then keeps for that parameter.
+	///     Whether the <c>Factory</c> member of <paramref name="registration" />, declared on the extending container, resolves
+	///     to a method with an <c>[Inherited]</c> parameter over the registration's service, whose replaced registrations
+	///     <see cref="ReplaceInherited" /> then keeps for that parameter. Another overload of the member does not count.
 	/// </summary>
-	private static bool TakesInherited(INamedTypeSymbol container, RawRegistration registration)
-		=> registration is { Production: ProductionKind.Factory, ProductionMember: { } member, }
-		   && MembersNamed(container, member).OfType<IMethodSymbol>()
-			   .SelectMany(method => method.Parameters)
-			   .Any(parameter => HasAwaitenAttribute(parameter.GetAttributes(), "InheritedAttribute")
-			                     && InheritedServiceType(parameter.Type).ToDisplayString(FullyQualified) == registration.ServiceType);
+	private static bool TakesInherited(Inheritance inheritance, RawRegistration registration)
+	{
+		if (registration is not { Production: ProductionKind.Factory, ProductionMember: { } member, GenericFactory: false, })
+		{
+			return false;
+		}
+
+		List<IMethodSymbol> factories = FindFactoryCandidates(inheritance.Container, member, registration.Implementation, inheritance.Compilation);
+		return factories.Count == 1
+		       && factories[0].Parameters.Any(parameter => IsInheritedParameter(parameter)
+		                                                   && InheritedServiceType(parameter.Type).ToDisplayString(FullyQualified) == registration.ServiceType);
+	}
 
 	/// <summary>
 	///     The service an <c>[Inherited]</c> parameter of <paramref name="type" /> takes: the type itself, or the service a
@@ -581,6 +626,14 @@ partial class AwaitenGenerator
 		public INamedTypeSymbol Base { get; }
 
 		public Location? Location { get; }
+
+		public Compilation Compilation => _compilation;
+
+		/// <summary>
+		///     The services a replacement's factory takes with <c>[Inherited]</c> whose replaced registration
+		///     <see cref="ReplaceInherited" /> could not keep, with the cause and remedy AWT264 reports for the parameter.
+		/// </summary>
+		public Dictionary<ServiceKey, FactoryFault> InheritedFaults { get; } = new();
 
 		/// <summary>Whether <paramref name="origin" /> is the base or a module the base imports.</summary>
 		public bool Owns(INamedTypeSymbol? origin) => origin is not null && _origins.Contains(origin);
