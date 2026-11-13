@@ -5,7 +5,7 @@
  * `benchmarks` branch. The committed file doubles as a fallback so `npm start`/`npm run build` work in a clean
  * checkout.
  */
-import React, {type ReactElement, useState} from 'react';
+import React, {type ReactElement, useEffect, useRef, useState} from 'react';
 import benchmarks from '@site/src/data/benchmarks.json';
 import styles from './styles.module.css';
 
@@ -16,6 +16,17 @@ const LIBRARY_DISPLAY_NAMES: Record<string, string> = {
   SimpleInjector: 'Simple Injector',
 };
 const SOURCE_URL = 'https://github.com/awaiten-dev/Awaiten/blob/main/Benchmarks/Awaiten.Benchmarks';
+/**
+ * How long a bar takes to grow across the whole track. All bars grow at the same speed, so each one finishes after a
+ * time proportional to its value; the measured nanoseconds themselves would be far too short to see.
+ */
+const RACE_MS = 1_000;
+/**
+ * Scales the extra run time of a cut bar, which grows with the square root of how far it exceeds the cut: a
+ * proportional one would take minutes, a logarithmic one hides how much slower the slowest containers are.
+ */
+const OVERTIME_SCALE = 0.4;
+const SLIDE_MS = 150;
 
 type ScenarioInfo = {label: string; unit: string; source: string; describe: (size?: string) => string};
 
@@ -164,12 +175,61 @@ function displayName(library: string): string {
   return LIBRARY_DISPLAY_NAMES[library] ?? library;
 }
 
-function Chart({title, metric, rows, baseline}: {title: string; metric: Metric; rows: Row[]; baseline: Sample}): ReactElement | null {
+type Race = {width: number; cut: boolean; grow: number; overtime: number};
+
+function raceOf(value: number, cap: number): Race {
+  const cut = value > cap;
+  const width = cut ? 100 : (value / cap) * 100;
+  return {
+    width,
+    cut,
+    grow: (width / 100) * RACE_MS,
+    overtime: cut ? OVERTIME_SCALE * RACE_MS * (Math.sqrt(value / cap) - 1) : 0,
+  };
+}
+
+/**
+ * The value shown after `elapsed` ms: linear while the bar grows, then the inverse of the square-root overtime, so
+ * the count speeds up once the bar is cut.
+ */
+function valueAt(value: number, cap: number, race: Race, elapsed: number): number {
+  if (elapsed >= race.grow + race.overtime) return value;
+  if (elapsed < race.grow) return (elapsed / race.grow) * Math.min(value, cap);
+  return cap * (1 + (elapsed - race.grow) / (OVERTIME_SCALE * RACE_MS)) ** 2;
+}
+
+function useRaceClock(running: boolean, end: number): number {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!running) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setElapsed(Infinity);
+      return undefined;
+    }
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      setElapsed(now - start);
+      if (now - start < end) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [running, end]);
+  return elapsed;
+}
+
+function Chart({title, metric, rows, baseline, racing}: {title: string; metric: Metric; rows: Row[]; baseline: Sample; racing: boolean}): ReactElement | null {
   const values = rows.map(row => row.sample[metric]);
-  if (values.some(v => v === undefined)) return null;
-  const positive = (values as number[]).filter(v => v > 0);
+  const complete = values.every(v => v !== undefined);
+  const positive = complete ? (values as number[]).filter(v => v > 0) : [];
   // Bars beyond four times the smallest value are cut, so one slow container does not flatten all the others.
   const cap = positive.length > 0 ? Math.min(...positive) * 4 : 1;
+  const end = Math.max(0, ...positive.map(v => {
+    const race = raceOf(v, cap);
+    return race.grow + race.overtime;
+  }));
+  const elapsed = useRaceClock(racing, end);
+  if (!complete) return null;
   const sorted = [...rows].sort((a, b) => a.sample[metric]! - b.sample[metric]!);
 
   return (
@@ -182,19 +242,30 @@ function Chart({title, metric, rows, baseline}: {title: string; metric: Metric; 
         {sorted.map(row => {
           const value = row.sample[metric]!;
           const isBaseline = row.library === BASELINE_LIBRARY;
-          const cut = value > cap;
-          const width = cut ? 100 : (value / cap) * 100;
+          const race = raceOf(value, cap);
           const comparison = compare(baseline[metric]!, value, metric, row.name);
+          const raw = value > 0 ? valueAt(value, cap, race, elapsed) : value;
+          const shown = metric === 'memoryBytes' ? Math.round(raw) : raw;
+          const slides = Math.max(2, 2 * Math.round(race.overtime / (2 * SLIDE_MS)));
+          const barStyle = {
+            width: `${race.width}%`,
+            animationDuration: `${race.grow}ms`,
+            '--grow': `${race.grow}ms`,
+            '--slide': `${race.overtime / slides}ms`,
+            '--slides': slides,
+          } as React.CSSProperties;
           return (
             <div key={row.library} className={isBaseline ? `${styles.chartRow} ${styles.chartRowBaseline}` : styles.chartRow} title={isBaseline ? `Awaiten: ${FORMAT[metric](value)}` : comparison.title}>
               <span className={styles.chartName}>{row.name}</span>
               <span className={styles.track}>
                 {value > 0 && (
-                  <span className={cut ? `${styles.bar} ${styles.barCut}` : styles.bar} style={{width: `${width}%`}} />
+                  <span className={race.cut ? `${styles.bar} ${styles.barCut}` : styles.bar} style={barStyle} />
                 )}
               </span>
-              <span className={styles.chartValue}>{FORMAT[metric](value)}</span>
-              <span className={styles.chartFactor}>{isBaseline ? '' : comparison.text}</span>
+              <span className={styles.chartValue}>{FORMAT[metric](shown)}</span>
+              <span className={styles.chartFactor}>
+                {isBaseline ? '' : shown === value ? comparison.text : compare(baseline[metric]!, shown, metric, row.name).text}
+              </span>
             </div>
           );
         })}
@@ -311,6 +382,20 @@ export default function AwaitenBenchmarkResult(): ReactElement {
   const scenarios = SCENARIO_ORDER.filter(name => data.benchmarks[name]);
   const [scenario, setScenario] = useState(scenarios[0]);
   const [preferredParameter, setPreferredParameter] = useState<string>();
+  const resultRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  const [race, setRace] = useState(0);
+  useEffect(() => {
+    if (!resultRef.current) return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(resultRef.current);
+    return () => observer.disconnect();
+  }, []);
   if (!scenario) {
     return <div className={styles.error}>No benchmark data.</div>;
   }
@@ -331,7 +416,7 @@ export default function AwaitenBenchmarkResult(): ReactElement {
   }));
 
   return (
-    <div className={styles.result}>
+    <div ref={resultRef} className={styles.result}>
       <div className={styles.picker} role="group" aria-label="Scenario">
         {scenarios.map(name => (
           <button
@@ -363,14 +448,19 @@ export default function AwaitenBenchmarkResult(): ReactElement {
       {baseline ? (
         <>
           <Headline rows={rows} baseline={baseline} info={info} />
-          <div className={styles.charts}>
-            <Chart title="Time" metric="timeNs" rows={rows} baseline={baseline} />
-            <Chart title="Memory" metric="memoryBytes" rows={rows} baseline={baseline} />
+          <div key={`${scenario}/${parameter}/${race}`} className={inView ? `${styles.charts} ${styles.racing}` : styles.charts}>
+            <Chart title="Time" metric="timeNs" rows={rows} baseline={baseline} racing={inView} />
+            <Chart title="Memory" metric="memoryBytes" rows={rows} baseline={baseline} racing={inView} />
           </div>
-          <p className={styles.note}>
-            Bars longer than four times the fastest container are cut so the others stay comparable. Hover a bar or
-            a multiple for the exact comparison.
-          </p>
+          <div className={styles.noteRow}>
+            <p className={styles.note}>
+              Bars longer than four times the fastest container are cut so the others stay comparable. Hover a bar or
+              a multiple for the exact comparison.
+            </p>
+            <button type="button" className={styles.chip} onClick={() => setRace(r => r + 1)}>
+              Race again
+            </button>
+          </div>
           <Scoreboard rows={rows} baseline={baseline} />
         </>
       ) : (
