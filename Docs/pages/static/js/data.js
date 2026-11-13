@@ -1962,6 +1962,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
@@ -2291,7 +2297,8 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
@@ -2624,7 +2631,8 @@ window.BENCHMARK_DATA = {
           6.724975656185832,
           4.770783368211526,
           6.965924181044102,
-          6.418721887927789
+          6.418721887927789,
+          3.1760004988083472
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2636,6 +2644,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3303,7 +3312,8 @@ window.BENCHMARK_DATA = {
           7.397512113054593,
           6.526549853957617,
           6.917462213834127,
-          7.312287811438242
+          7.312287811438242,
+          3.814791447793444
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3315,6 +3325,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3982,7 +3993,8 @@ window.BENCHMARK_DATA = {
           125.10849435512836,
           83.29912773200444,
           136.71783386866252,
-          116.09143945376078
+          116.09143945376078,
+          56.48111260334651
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3994,6 +4006,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4657,7 +4670,8 @@ window.BENCHMARK_DATA = {
           9.138424622019132,
           6.503454297780991,
           9.582084967692692,
-          9.13134053349495
+          9.13134053349495,
+          4.5075397749741875
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4669,6 +4683,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5328,7 +5343,8 @@ window.BENCHMARK_DATA = {
           10.649898132930199,
           8.450425938765209,
           11.920760746513094,
-          10.816686540842056
+          10.816686540842056,
+          5.697163964311282
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5340,6 +5356,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7638,6 +7655,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
@@ -7967,7 +7990,8 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
@@ -8300,7 +8324,8 @@ window.BENCHMARK_DATA = {
           7.460126606623332,
           5.935927597949138,
           6.760019344091416,
-          7.103454048816975
+          7.103454048816975,
+          3.1740994190176326
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8312,6 +8337,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8979,7 +9005,8 @@ window.BENCHMARK_DATA = {
           7.558005342526095,
           6.533831862466676,
           6.973612398902575,
-          7.3195691750599785
+          7.3195691750599785,
+          3.826666634243268
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8991,6 +9018,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9658,7 +9686,8 @@ window.BENCHMARK_DATA = {
           117.38326307932536,
           86.32691322054181,
           139.43012488683064,
-          140.75829776695795
+          140.75829776695795,
+          54.846379556826186
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9670,6 +9699,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10333,7 +10363,8 @@ window.BENCHMARK_DATA = {
           9.146059264739355,
           6.869242996970812,
           9.641964048147202,
-          9.099850284365507
+          9.099850284365507,
+          4.552576032280922
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10345,6 +10376,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11004,7 +11036,8 @@ window.BENCHMARK_DATA = {
           14.09018779794375,
           8.261291206947394,
           16.019012661774955,
-          14.347620436123439
+          14.347620436123439,
+          5.780623037616412
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11016,6 +11049,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13314,6 +13348,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
@@ -13643,7 +13683,8 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
@@ -13976,7 +14017,8 @@ window.BENCHMARK_DATA = {
           22.64449506600698,
           11.883148687226432,
           27.68347166577975,
-          20.73461650212606
+          20.73461650212606,
+          16.543949167927106
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14248,6 +14290,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14655,7 +14698,8 @@ window.BENCHMARK_DATA = {
           1523.6987042744954,
           825.3150572458903,
           1725.1976654052735,
-          1488.762935256958
+          1488.762935256958,
+          1164.3487535204206
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14667,6 +14711,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15334,7 +15379,8 @@ window.BENCHMARK_DATA = {
           24509.57162475586,
           19038.39244733538,
           25386.183732096353,
-          29835.312353515626
+          29835.312353515626,
+          26103.837927246095
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15672,7 +15718,8 @@ window.BENCHMARK_DATA = {
           32476,
           32477,
           32474,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16009,7 +16056,8 @@ window.BENCHMARK_DATA = {
           666.0008653004965,
           404.6052895784378,
           703.9586375100272,
-          732.295866216932
+          732.295866216932,
+          566.2842385927836
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16039,6 +16087,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16680,7 +16729,8 @@ window.BENCHMARK_DATA = {
           11401.0069569179,
           6939.325558980306,
           12361.864490763346,
-          12100.75055367606
+          12100.75055367606,
+          9085.10774230957
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17013,6 +17063,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -18990,6 +19041,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
@@ -19319,7 +19376,8 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
@@ -19652,7 +19710,8 @@ window.BENCHMARK_DATA = {
           290.77687209447225,
           82.41419093949455,
           245.76352656682332,
-          192.78212594985962
+          192.78212594985962,
+          120.09791884422302
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19924,6 +19983,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20331,7 +20391,8 @@ window.BENCHMARK_DATA = {
           14119.246208699544,
           7862.218373979841,
           15054.267866007487,
-          15103.33003133138
+          15103.33003133138,
+          10849.149013264974
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20343,6 +20404,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21010,7 +21072,8 @@ window.BENCHMARK_DATA = {
           589109.7459309896,
           460989.6998372396,
           587725.269391741,
-          740202.7669503348
+          740202.7669503348,
+          631911.8210797991
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21348,7 +21411,8 @@ window.BENCHMARK_DATA = {
           719003,
           718367,
           718984,
-          740458
+          740458,
+          719706
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21685,7 +21749,8 @@ window.BENCHMARK_DATA = {
           40770.48544108073,
           24951.748613993328,
           41122.838271077475,
-          44434.07219587053
+          44434.07219587053,
+          38063.62802327474
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22019,7 +22084,8 @@ window.BENCHMARK_DATA = {
           80344,
           80349,
           80344,
-          80008
+          80008,
+          80971
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22356,7 +22422,8 @@ window.BENCHMARK_DATA = {
           338341.5186848958,
           209029.46952311197,
           339344.9700520833,
-          368946.05182291666
+          368946.05182291666,
+          276445.3409179688
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22690,7 +22757,8 @@ window.BENCHMARK_DATA = {
           571205,
           573093,
           571203,
-          572993
+          572993,
+          572978
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24642,6 +24710,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
@@ -24967,7 +25041,8 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
@@ -25296,7 +25371,8 @@ window.BENCHMARK_DATA = {
           270.73038009007774,
           216.06346259911854,
           243.9749357064565,
-          442.11010065078733
+          442.11010065078733,
+          266.282258717219
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25331,6 +25407,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25967,7 +26044,8 @@ window.BENCHMARK_DATA = {
           619.8033185005188,
           469.23016198476154,
           517.0239828109741,
-          621.7550377845764
+          621.7550377845764,
+          588.9412403787885
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25979,6 +26057,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26638,7 +26717,8 @@ window.BENCHMARK_DATA = {
           6810.7125773111975,
           5171.9021842956545,
           4146.754992675781,
-          6796.058345249721
+          6796.058345249721,
+          6484.333868408203
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -26722,6 +26802,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27309,7 +27390,8 @@ window.BENCHMARK_DATA = {
           427.6365304311117,
           345.6843486150106,
           338.4790616989136,
-          415.0232257525126
+          415.0232257525126,
+          390.456392065684
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27321,6 +27403,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -27980,7 +28063,8 @@ window.BENCHMARK_DATA = {
           761.1126542772565,
           566.4097559792655,
           556.8317747751872,
-          756.095302327474
+          756.095302327474,
+          709.8180127825055
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27992,6 +28076,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
