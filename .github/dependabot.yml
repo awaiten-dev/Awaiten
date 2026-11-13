@@ -32,6 +32,11 @@ updates:
     # The analyzers and generators only load in compilers at least as new as the Roslyn they reference.
     ignore:
       - dependency-name: "Microsoft.CodeAnalysis*"
+      # Keep the bridge on Microsoft.Extensions 10, so .NET 8 and .NET 10 apps are not forced onto 11.
+      - dependency-name: "Microsoft.Extensions.DependencyInjection*"
+        versions: [">= 11"]
+      - dependency-name: "Microsoft.Extensions.Hosting*"
+        versions: [">= 11"]
 
   - package-ecosystem: "npm"
     directory: "/Docs/site"
