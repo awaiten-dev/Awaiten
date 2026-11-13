@@ -1974,6 +1974,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:55 2026 \u002B0100",
         "message": "chore: bump EnricoMi/publish-unit-test-result-action from 2.25.0 to 2.26.0 (#431)"
+      },
+      {
+        "sha": "a5c6891165869bc8aa1328c0be798952a4415d93",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 07:46:10 2026 \u002B0100",
+        "message": "feat: build a singleton at startup only when a predicate allows it (EagerWhen) (#429)"
       }
     ],
     "labels": [
@@ -2305,7 +2311,8 @@ window.BENCHMARK_DATA = {
       "1fd18c8d",
       "20f08187",
       "856ced65",
-      "e78008ec"
+      "e78008ec",
+      "a5c68911"
     ],
     "datasets": [
       {
@@ -2640,7 +2647,8 @@ window.BENCHMARK_DATA = {
           6.965924181044102,
           6.418721887927789,
           3.1760004988083472,
-          5.8194133671266695
+          5.8194133671266695,
+          6.1892910232146585
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2652,6 +2660,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3323,7 +3332,8 @@ window.BENCHMARK_DATA = {
           6.917462213834127,
           7.312287811438242,
           3.814791447793444,
-          5.856443824512618
+          5.856443824512618,
+          5.87456248452266
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3335,6 +3345,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4006,7 +4017,8 @@ window.BENCHMARK_DATA = {
           136.71783386866252,
           116.09143945376078,
           56.48111260334651,
-          129.10515659650167
+          129.10515659650167,
+          134.23091452916464
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4018,6 +4030,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4685,7 +4698,8 @@ window.BENCHMARK_DATA = {
           9.582084967692692,
           9.13134053349495,
           4.5075397749741875,
-          7.854370750486851
+          7.854370750486851,
+          8.047012307322943
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4697,6 +4711,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5360,7 +5375,8 @@ window.BENCHMARK_DATA = {
           11.920760746513094,
           10.816686540842056,
           5.697163964311282,
-          11.853519839048385
+          11.853519839048385,
+          10.720348246892293
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5372,6 +5388,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7684,6 +7701,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:55 2026 \u002B0100",
         "message": "chore: bump EnricoMi/publish-unit-test-result-action from 2.25.0 to 2.26.0 (#431)"
+      },
+      {
+        "sha": "a5c6891165869bc8aa1328c0be798952a4415d93",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 07:46:10 2026 \u002B0100",
+        "message": "feat: build a singleton at startup only when a predicate allows it (EagerWhen) (#429)"
       }
     ],
     "labels": [
@@ -8015,7 +8038,8 @@ window.BENCHMARK_DATA = {
       "1fd18c8d",
       "20f08187",
       "856ced65",
-      "e78008ec"
+      "e78008ec",
+      "a5c68911"
     ],
     "datasets": [
       {
@@ -8350,7 +8374,8 @@ window.BENCHMARK_DATA = {
           6.760019344091416,
           7.103454048816975,
           3.1740994190176326,
-          6.207999863794872
+          6.207999863794872,
+          6.480455790956815
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8362,6 +8387,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9033,7 +9059,8 @@ window.BENCHMARK_DATA = {
           6.973612398902575,
           7.3195691750599785,
           3.826666634243268,
-          6.109017057220141
+          6.109017057220141,
+          5.943500805113997
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9045,6 +9072,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9716,7 +9744,8 @@ window.BENCHMARK_DATA = {
           139.43012488683064,
           140.75829776695795,
           54.846379556826186,
-          129.4791845480601
+          129.4791845480601,
+          134.54195994990212
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9728,6 +9757,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10395,7 +10425,8 @@ window.BENCHMARK_DATA = {
           9.641964048147202,
           9.099850284365507,
           4.552576032280922,
-          7.876017053212438
+          7.876017053212438,
+          8.224775984883308
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10407,6 +10438,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11070,7 +11102,8 @@ window.BENCHMARK_DATA = {
           16.019012661774955,
           14.347620436123439,
           5.780623037616412,
-          15.897788798809051
+          15.897788798809051,
+          10.71948139667511
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11082,6 +11115,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13394,6 +13428,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:55 2026 \u002B0100",
         "message": "chore: bump EnricoMi/publish-unit-test-result-action from 2.25.0 to 2.26.0 (#431)"
+      },
+      {
+        "sha": "a5c6891165869bc8aa1328c0be798952a4415d93",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 07:46:10 2026 \u002B0100",
+        "message": "feat: build a singleton at startup only when a predicate allows it (EagerWhen) (#429)"
       }
     ],
     "labels": [
@@ -13725,7 +13765,8 @@ window.BENCHMARK_DATA = {
       "1fd18c8d",
       "20f08187",
       "856ced65",
-      "e78008ec"
+      "e78008ec",
+      "a5c68911"
     ],
     "datasets": [
       {
@@ -14060,7 +14101,8 @@ window.BENCHMARK_DATA = {
           27.68347166577975,
           20.73461650212606,
           16.543949167927106,
-          16.827603636185327
+          16.827603636185327,
+          11.714113898575306
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14332,6 +14374,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14743,7 +14786,8 @@ window.BENCHMARK_DATA = {
           1725.1976654052735,
           1488.762935256958,
           1164.3487535204206,
-          1318.7326939900715
+          1318.7326939900715,
+          792.1507074991862
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14755,6 +14799,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15426,7 +15471,8 @@ window.BENCHMARK_DATA = {
           25386.183732096353,
           29835.312353515626,
           26103.837927246095,
-          26488.96894124349
+          26488.96894124349,
+          17690.157267252605
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15765,6 +15811,7 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32482,
+          32478,
           32478,
           32478
         ],
@@ -16105,7 +16152,8 @@ window.BENCHMARK_DATA = {
           703.9586375100272,
           732.295866216932,
           566.2842385927836,
-          631.8685262680053
+          631.8685262680053,
+          407.9170180638631
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16135,6 +16183,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16780,7 +16829,8 @@ window.BENCHMARK_DATA = {
           12361.864490763346,
           12100.75055367606,
           9085.10774230957,
-          9502.130497741698
+          9502.130497741698,
+          6900.758491007487
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17113,6 +17163,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -19104,6 +19155,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:55 2026 \u002B0100",
         "message": "chore: bump EnricoMi/publish-unit-test-result-action from 2.25.0 to 2.26.0 (#431)"
+      },
+      {
+        "sha": "a5c6891165869bc8aa1328c0be798952a4415d93",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 07:46:10 2026 \u002B0100",
+        "message": "feat: build a singleton at startup only when a predicate allows it (EagerWhen) (#429)"
       }
     ],
     "labels": [
@@ -19435,7 +19492,8 @@ window.BENCHMARK_DATA = {
       "1fd18c8d",
       "20f08187",
       "856ced65",
-      "e78008ec"
+      "e78008ec",
+      "a5c68911"
     ],
     "datasets": [
       {
@@ -19770,7 +19828,8 @@ window.BENCHMARK_DATA = {
           245.76352656682332,
           192.78212594985962,
           120.09791884422302,
-          125.27329961458842
+          125.27329961458842,
+          83.25129363366536
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20042,6 +20101,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20453,7 +20513,8 @@ window.BENCHMARK_DATA = {
           15054.267866007487,
           15103.33003133138,
           10849.149013264974,
-          11148.415479532878
+          11148.415479532878,
+          7352.47830418178
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20465,6 +20526,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21136,7 +21198,8 @@ window.BENCHMARK_DATA = {
           587725.269391741,
           740202.7669503348,
           631911.8210797991,
-          645086.5292317708
+          645086.5292317708,
+          433475.59083909256
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21476,7 +21539,8 @@ window.BENCHMARK_DATA = {
           718984,
           740458,
           719706,
-          721166
+          721166,
+          718417
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21815,7 +21879,8 @@ window.BENCHMARK_DATA = {
           41122.838271077475,
           44434.07219587053,
           38063.62802327474,
-          37477.20838216146
+          37477.20838216146,
+          24985.042960030692
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22151,7 +22216,8 @@ window.BENCHMARK_DATA = {
           80344,
           80008,
           80971,
-          80968
+          80968,
+          79823
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22490,7 +22556,8 @@ window.BENCHMARK_DATA = {
           339344.9700520833,
           368946.05182291666,
           276445.3409179688,
-          286781.4410481771
+          286781.4410481771,
+          189030.3639948918
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22826,7 +22893,8 @@ window.BENCHMARK_DATA = {
           571203,
           572993,
           572978,
-          573060
+          573060,
+          573040
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24790,6 +24858,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:55 2026 \u002B0100",
         "message": "chore: bump EnricoMi/publish-unit-test-result-action from 2.25.0 to 2.26.0 (#431)"
+      },
+      {
+        "sha": "a5c6891165869bc8aa1328c0be798952a4415d93",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 07:46:10 2026 \u002B0100",
+        "message": "feat: build a singleton at startup only when a predicate allows it (EagerWhen) (#429)"
       }
     ],
     "labels": [
@@ -25117,7 +25191,8 @@ window.BENCHMARK_DATA = {
       "1fd18c8d",
       "20f08187",
       "856ced65",
-      "e78008ec"
+      "e78008ec",
+      "a5c68911"
     ],
     "datasets": [
       {
@@ -25448,7 +25523,8 @@ window.BENCHMARK_DATA = {
           243.9749357064565,
           442.11010065078733,
           266.282258717219,
-          294.7585385004679
+          294.7585385004679,
+          303.5486866065434
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25483,6 +25559,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -26123,7 +26200,8 @@ window.BENCHMARK_DATA = {
           517.0239828109741,
           621.7550377845764,
           588.9412403787885,
-          639.3577314785549
+          639.3577314785549,
+          652.2545047906729
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -26135,6 +26213,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26798,7 +26877,8 @@ window.BENCHMARK_DATA = {
           4146.754992675781,
           6796.058345249721,
           6484.333868408203,
-          5108.640026385968
+          5108.640026385968,
+          5240.1409747783955
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -26882,6 +26962,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27473,7 +27554,8 @@ window.BENCHMARK_DATA = {
           338.4790616989136,
           415.0232257525126,
           390.456392065684,
-          427.02977418899536
+          427.02977418899536,
+          427.95887562206815
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27485,6 +27567,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -28148,7 +28231,8 @@ window.BENCHMARK_DATA = {
           556.8317747751872,
           756.095302327474,
           709.8180127825055,
-          738.2238626480103
+          738.2238626480103,
+          724.2913686207363
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -28160,6 +28244,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
