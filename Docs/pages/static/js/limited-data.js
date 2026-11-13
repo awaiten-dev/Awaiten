@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
-        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
-      },
-      {
         "sha": "e6e6ef6a9e06103af95d751f98560930af776f9f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:17:13 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
-      "a60c39f3",
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.1384932309389115,
           3.2592487797141074,
           4.6295954287052155,
           5.078262385725975,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           5.8194133671266695,
           6.1892910232146585,
           4.804449540376663,
-          6.426383812840168
+          6.426383812840168,
+          3.3519368304737975
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.227070654077189,
           4.382670057316621,
           6.714144401825392,
           10.114786507685979,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           5.856443824512618,
           5.87456248452266,
           5.050852117935817,
-          7.447781280676524
+          7.447781280676524,
+          4.148203492696796
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          58.92312007745107,
           71.83644655545552,
           86.40624153614044,
           84.87249032088688,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           129.10515659650167,
           134.23091452916464,
           127.66682359150478,
-          122.4504742304484
+          122.4504742304484,
+          61.14370497862498
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          5.0427367428938545,
           5.52214155288843,
           7.103266820311546,
           7.068444192409515,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           7.854370750486851,
           8.047012307322943,
           7.233307792672089,
-          9.302802842855453
+          9.302802842855453,
+          5.037225277296135
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.500400451819102,
           6.488900598670755,
           8.730206049978733,
           8.503545660773913,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           11.853519839048385,
           10.720348246892293,
           8.92818333208561,
-          10.57907674908638
+          10.57907674908638,
+          6.220947410662969
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
-        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
-      },
-      {
         "sha": "e6e6ef6a9e06103af95d751f98560930af776f9f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:17:13 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
-      "a60c39f3",
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.2524077610245774,
           3.3745072404188767,
           5.215921892651489,
           5.361481161912282,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.207999863794872,
           6.480455790956815,
           5.1442216237386065,
-          7.418329860155399
+          7.418329860155399,
+          3.19826413889726
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.113212288490364,
           4.153423052813325,
           6.510384636123975,
           6.8044650458863805,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           6.109017057220141,
           5.943500805113997,
           5.113884472846985,
-          7.335016893652769
+          7.335016893652769,
+          4.1024008473524685
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          61.06955904620035,
           58.96051316994887,
           86.48267342363086,
           84.56546711921692,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           129.4791845480601,
           134.54195994990212,
           124.66913404464722,
-          115.13147605260214
+          115.13147605260214,
+          59.460494654519216
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          5.046418905258179,
           5.473196189318385,
           7.084830126592091,
           6.835013265411059,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           7.876017053212438,
           8.224775984883308,
           7.244121613105138,
-          9.195835985740025
+          9.195835985740025,
+          5.013056363910437
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.485480271776518,
           6.585546483950956,
           8.502661064267159,
           8.50854913038867,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           15.897788798809051,
           10.71948139667511,
           9.025907775121075,
-          13.924811059236527
+          13.924811059236527,
+          6.109464001442705
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
-        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
-      },
-      {
         "sha": "e6e6ef6a9e06103af95d751f98560930af776f9f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 08:17:13 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
-      "a60c39f3",
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          21.397937925656638,
           22.652274149656296,
           22.48820370634397,
           12.056393227974574,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           16.827603636185327,
           11.714113898575306,
           17.241100547711053,
-          21.234356405479566
+          21.234356405479566,
+          25.384815736611685
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1429.630593079787,
           1549.9739187558491,
           1395.903124745687,
           858.3328734397888,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1318.7326939900715,
           792.1507074991862,
           1222.4137235005696,
-          1541.8386530194964
+          1541.8386530194964,
+          1676.135283279419
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29670.144881184897,
           31145.888079833985,
           19194.04303917518,
           18006.26173048753,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           26488.96894124349,
           17690.157267252605,
           25901.499727376304,
-          30635.191552734374
+          30635.191552734374,
+          31443.20744541713
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32482,
           32477,
           32474,
           32477,
@@ -2685,6 +2684,7 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
+          32478,
           32478
         ],
         "borderColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          693.8861024220785,
           732.1201538721721,
           550.4507327079773,
           436.70985237757367,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           631.8685262680053,
           407.9170180638631,
           627.7118209203085,
-          763.2647468703134
+          763.2647468703134,
+          819.4810942967732
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12265.60683186849,
           12178.012446085611,
           9556.839626857212,
           7348.271180289133,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           9502.130497741698,
           6900.758491007487,
           9101.689353942871,
-          12378.5675684611
+          12378.5675684611,
+          13042.077461751302
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2889,7 +2889,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
-        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
-      },
       {
         "sha": "e6e6ef6a9e06103af95d751f98560930af776f9f",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
-      "a60c39f3",
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          205.76495444774628,
           183.44456083433968,
           248.02184969584147,
           82.48458672563235,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           125.27329961458842,
           83.25129363366536,
           115.94337101166064,
-          220.177922468919
+          220.177922468919,
+          291.4133881092072
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          15835.222729492187,
           15505.474245198568,
           12336.88778483073,
           8158.400577545166,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           11148.415479532878,
           7352.47830418178,
           11056.050164358956,
-          15198.877040608724
+          15198.877040608724,
+          16592.364489746094
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          748355.1879882812,
           747036.8886067708,
           440132.3209635417,
           462918.0396158854,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           645086.5292317708,
           433475.59083909256,
           643393.9521484375,
-          760823.6350260417
+          760823.6350260417,
+          784553.2708984375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740471,
           737145,
           720432,
           741104,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           721166,
           718417,
           721149,
-          740459
+          740459,
+          719101
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          44344.6630452474,
           44498.11613769531,
           30926.629934457633,
           24611.990987141926,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           37477.20838216146,
           24985.042960030692,
           37623.24524739583,
-          45377.0992553711
+          45377.0992553711,
+          48677.34121907552
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80005,
           79366,
           80959,
           80306,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80968,
           79823,
           80970,
-          80009
+          80009,
+          80357
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          384236.80810546875,
           388209.52415364585,
           257922.27794471153,
           209899.1421875,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           286781.4410481771,
           189030.3639948918,
           278854.32744140626,
-          375984.0517578125
+          375984.0517578125,
+          428095.8125325521
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573253,
           573105,
           571193,
           573054,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573060,
           573040,
           573073,
-          573023
+          573023,
+          573107
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "a60c39f323df74fed57fcdbee306f2b6c1a7637d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 08:02:40 2026 \u002B0100",
-        "message": "fix: report a collection of relationships such as IEnumerable\u003CLazy\u003CT\u003E\u003E instead of resolving it empty (AWT254) (#390)"
-      },
       {
         "sha": "e6e6ef6a9e06103af95d751f98560930af776f9f",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 09:09:05 2026 \u002B0100",
         "message": "docs: let the architecture test leave out modules in the domain assembly instead of a namespace (#439)"
+      },
+      {
+        "sha": "f2126edfef043967b2ce1df5e77e06f05bce129a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Fri Nov 13 10:10:56 2026 \u002B0100",
+        "message": "feat: let a replacement\u0027s factory take the registration it replaces with [Inherited] (#428)"
       }
     ],
     "labels": [
-      "a60c39f3",
       "e6e6ef6a",
       "7de755a9",
       "1d79291b",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "e78008ec",
       "a5c68911",
       "caed6092",
-      "5035d891"
+      "5035d891",
+      "f2126edf"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          246.98568859100342,
           181.07877033097404,
           175.39294339929307,
           210.71675288677216,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           294.7585385004679,
           303.5486866065434,
           262.3517687479655,
-          255.50943960462297
+          255.50943960462297,
+          175.25422083536785
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          550.9879857472012,
           434.77578960146224,
           406.3035115877787,
           464.2076938311259,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           639.3577314785549,
           652.2545047906729,
           541.6232180595398,
-          587.1072974205017
+          587.1072974205017,
+          397.865706718885
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4165.627890450613,
           3989.693291590764,
           3598.6709171295165,
           5002.926874287923,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           5108.640026385968,
           5240.1409747783955,
           4326.15854699271,
-          6409.323629651751
+          6409.323629651751,
+          3569.871804646083
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          348.57420552571614,
           278.8882144519261,
           251.13995416959128,
           347.69412949879967,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           427.02977418899536,
           427.95887562206815,
           364.2500877698263,
-          392.34098408772394
+          392.34098408772394,
+          256.40726774079457
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          617.5849662144979,
           443.880597337087,
           378.1760669435774,
           551.8412367502848,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           738.2238626480103,
           724.2913686207363,
           564.4525542940412,
-          694.5350073496501
+          694.5350073496501,
+          390.31239697138466
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
