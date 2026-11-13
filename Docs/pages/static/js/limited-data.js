@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "fd3bd790cd327c83277cbf63d2f9b72b00907be3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
-        "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
-      },
-      {
         "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
-      "fd3bd790",
       "1ea8f53b",
       "577526ae",
       "334a5265",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.894198450446129,
           5.062600819269816,
           4.966567849119504,
           5.550651819507281,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.724975656185832,
           4.770783368211526,
           6.965924181044102,
-          6.418721887927789
+          6.418721887927789,
+          3.1760004988083472
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.3878815472126,
           6.987462297081947,
           6.980060916680556,
           7.576795262949807,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.397512113054593,
           6.526549853957617,
           6.917462213834127,
-          7.312287811438242
+          7.312287811438242,
+          3.814791447793444
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          107.67774178187052,
           87.07520695527394,
           86.78386902014414,
           116.66026000976562,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           125.10849435512836,
           83.29912773200444,
           136.71783386866252,
-          116.09143945376078
+          116.09143945376078,
+          56.48111260334651
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.275738577047983,
           6.576782878488302,
           6.551566925148169,
           7.751890886823336,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           9.138424622019132,
           6.503454297780991,
           9.582084967692692,
-          9.13134053349495
+          9.13134053349495,
+          4.5075397749741875
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.224516476576145,
           8.218172819568561,
           8.406056973338128,
           10.836464149753253,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.649898132930199,
           8.450425938765209,
           11.920760746513094,
-          10.816686540842056
+          10.816686540842056,
+          5.697163964311282
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "fd3bd790cd327c83277cbf63d2f9b72b00907be3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
-        "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
-      },
-      {
         "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
-      "fd3bd790",
       "1ea8f53b",
       "577526ae",
       "334a5265",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          6.611179616588813,
           5.449599730968475,
           5.223373205615924,
           5.927369300808225,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.460126606623332,
           5.935927597949138,
           6.760019344091416,
-          7.103454048816975
+          7.103454048816975,
+          3.1740994190176326
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.377891616026561,
           6.4948844359471245,
           6.563417880733808,
           7.590932343403498,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.558005342526095,
           6.533831862466676,
           6.973612398902575,
-          7.3195691750599785
+          7.3195691750599785,
+          3.826666634243268
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          109.4550149679184,
           86.37873775164286,
           87.53744614124298,
           115.17275561605182,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           117.38326307932536,
           86.32691322054181,
           139.43012488683064,
-          140.75829776695795
+          140.75829776695795,
+          54.846379556826186
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.45606922677585,
           6.525325658229681,
           6.83127282674496,
           7.8329867997339795,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           9.146059264739355,
           6.869242996970812,
           9.641964048147202,
-          9.099850284365507
+          9.099850284365507,
+          4.552576032280922
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          15.142993927001953,
           11.400471327560288,
           8.897611404458681,
           14.302532023191452,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.09018779794375,
           8.261291206947394,
           16.019012661774955,
-          14.347620436123439
+          14.347620436123439,
+          5.780623037616412
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "fd3bd790cd327c83277cbf63d2f9b72b00907be3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
-        "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
-      },
-      {
         "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
         "author": "Valentin Breu\u00DF",
         "date": "Mon Nov 9 23:23:28 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
-      "fd3bd790",
       "1ea8f53b",
       "577526ae",
       "334a5265",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          20.376885552491462,
           15.453640865428108,
           27.995723311106364,
           15.42710392177105,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           22.64449506600698,
           11.883148687226432,
           27.68347166577975,
-          20.73461650212606
+          20.73461650212606,
+          16.543949167927106
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1544.639522298177,
           1128.2967041560582,
           1551.888201268514,
           1160.0908798217774,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1523.6987042744954,
           825.3150572458903,
           1725.1976654052735,
-          1488.762935256958
+          1488.762935256958,
+          1164.3487535204206
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29528.224931989396,
           25647.628584798178,
           21468.87774251302,
           25958.00174822126,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           24509.57162475586,
           19038.39244733538,
           25386.183732096353,
-          29835.312353515626
+          29835.312353515626,
+          26103.837927246095
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32482,
           32478,
           32474,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32476,
           32477,
           32474,
-          32482
+          32482,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          732.9072152455648,
           590.8100794474284,
           614.9301128387451,
           575.3943471227374,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           666.0008653004965,
           404.6052895784378,
           703.9586375100272,
-          732.295866216932
+          732.295866216932,
+          566.2842385927836
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11724.33779296875,
           8552.611133030483,
           10774.726749965123,
           8692.970078688402,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           11401.0069569179,
           6939.325558980306,
           12361.864490763346,
-          12100.75055367606
+          12100.75055367606,
+          9085.10774230957
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2894,7 +2894,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2934,6 +2933,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "fd3bd790cd327c83277cbf63d2f9b72b00907be3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
-        "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
-      },
       {
         "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
-      "fd3bd790",
       "1ea8f53b",
       "577526ae",
       "334a5265",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          184.67231543858847,
           116.61137425899506,
           465.42472038269045,
           116.34357515176137,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           290.77687209447225,
           82.41419093949455,
           245.76352656682332,
-          192.78212594985962
+          192.78212594985962,
+          120.09791884422302
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14840.922075398763,
           10641.770828833947,
           14268.510801188151,
           10621.98017018636,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14119.246208699544,
           7862.218373979841,
           15054.267866007487,
-          15103.33003133138
+          15103.33003133138,
+          10849.149013264974
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          740214.4744140625,
           648489.83125,
           514764.913016183,
           631864.66328125,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           589109.7459309896,
           460989.6998372396,
           587725.269391741,
-          740202.7669503348
+          740202.7669503348,
+          631911.8210797991
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          741804,
           742572,
           736060,
           736840,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           719003,
           718367,
           718984,
-          740458
+          740458,
+          719706
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          43968.168973795575,
           37666.859545898435,
           34457.15897827149,
           35994.562635149276,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           40770.48544108073,
           24951.748613993328,
           41122.838271077475,
-          44434.07219587053
+          44434.07219587053,
+          38063.62802327474
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80305,
           80971,
           79663,
           80969,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80344,
           80349,
           80344,
-          80008
+          80008,
+          80971
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          354152.77034505206,
           286337.12470703124,
           289584.4117713341,
           285667.90533854166,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           338341.5186848958,
           209029.46952311197,
           339344.9700520833,
-          368946.05182291666
+          368946.05182291666,
+          276445.3409179688
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573125,
           573075,
           571194,
           573137,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           571205,
           573093,
           571203,
-          572993
+          572993,
+          572978
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "fd3bd790cd327c83277cbf63d2f9b72b00907be3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Mon Nov 9 22:43:45 2026 \u002B0100",
-        "message": "fix: name the root cause of an internal service other modules cannot build, and why a module carries no factory for a decorator or composite (#377)"
-      },
       {
         "sha": "1ea8f53bd33a5e2087b19b303d131a5e5c9e7d47",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
         "message": "chore: Bump the fallout group with 2 updates (#432)"
+      },
+      {
+        "sha": "856ced6519cf1b1277269efb23c9244ce48f05e0",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:32 2026 \u002B0100",
+        "message": "chore: bump softprops/action-gh-release from 3.0.3 to 3.0.4 (#430)"
       }
     ],
     "labels": [
-      "fd3bd790",
       "1ea8f53b",
       "577526ae",
       "334a5265",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "f23bc30e",
       "2e662652",
       "1fd18c8d",
-      "20f08187"
+      "20f08187",
+      "856ced65"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          303.7810037136078,
           165.43737277984619,
           214.54987364155906,
           298.7991311073303,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           270.73038009007774,
           216.06346259911854,
           243.9749357064565,
-          442.11010065078733
+          442.11010065078733,
+          266.282258717219
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          661.4443685825055,
           394.1065882047017,
           480.1638413111369,
           714.2716532487136,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           619.8033185005188,
           469.23016198476154,
           517.0239828109741,
-          621.7550377845764
+          621.7550377845764,
+          588.9412403787885
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          5243.8683718363445,
           3553.927965927124,
           5045.387864430745,
           6604.018590654646,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6810.7125773111975,
           5171.9021842956545,
           4146.754992675781,
-          6796.058345249721
+          6796.058345249721,
+          6484.333868408203
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          440.30626249313354,
           251.3947126865387,
           352.64866021474205,
           440.8242521286011,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           427.6365304311117,
           345.6843486150106,
           338.4790616989136,
-          415.0232257525126
+          415.0232257525126,
+          390.456392065684
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          734.9259516852243,
           409.6868533066341,
           562.2753379821777,
           775.7329833984375,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           761.1126542772565,
           566.4097559792655,
           556.8317747751872,
-          756.095302327474
+          756.095302327474,
+          709.8180127825055
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
