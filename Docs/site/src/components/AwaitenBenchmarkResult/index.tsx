@@ -22,11 +22,17 @@ const SOURCE_URL = 'https://github.com/awaiten-dev/Awaiten/blob/main/Benchmarks/
  */
 const RACE_MS = 1_000;
 /**
- * Scales the extra run time of a cut bar, which grows with the square root of how far it exceeds the cut: a
- * proportional one would take minutes, a logarithmic one hides how much slower the slowest containers are.
+ * A cut bar keeps running in proportion to its value up to this many track lengths, then logarithmically, because
+ * the slowest containers would otherwise take minutes.
  */
-const OVERTIME_SCALE = 0.4;
-const SLIDE_MS = 150;
+const PROPORTIONAL_TRACKS = 8;
+const LOG_SCALE = 0.3;
+/**
+ * The cut mark moves at a fixed speed, one full sweep per `SLIDE_MS`, so a short overtime gives a shorter sweep
+ * instead of a faster one.
+ */
+const SLIDE_MS = 350;
+const SLIDE_PX = 26;
 
 type ScenarioInfo = {label: string; unit: string; source: string; describe: (size?: string) => string};
 
@@ -184,18 +190,28 @@ function raceOf(value: number, cap: number): Race {
     width,
     cut,
     grow: (width / 100) * RACE_MS,
-    overtime: cut ? OVERTIME_SCALE * RACE_MS * (Math.sqrt(value / cap) - 1) : 0,
+    overtime: cut ? (runTime(value / cap) - 1) * RACE_MS : 0,
   };
 }
 
 /**
- * The value shown after `elapsed` ms: linear while the bar grows, then the inverse of the square-root overtime, so
- * the count speeds up once the bar is cut.
+ * The run time in tracks of a bar `tracks` times as long as the track: proportional up to `PROPORTIONAL_TRACKS`,
+ * logarithmic beyond.
+ */
+function runTime(tracks: number): number {
+  if (tracks <= PROPORTIONAL_TRACKS) return tracks;
+  return PROPORTIONAL_TRACKS * (1 + LOG_SCALE * Math.log(tracks / PROPORTIONAL_TRACKS));
+}
+
+/**
+ * The value shown after `elapsed` ms, the inverse of `runTime`, so the count speeds up once the run time is
+ * logarithmic.
  */
 function valueAt(value: number, cap: number, race: Race, elapsed: number): number {
   if (elapsed >= race.grow + race.overtime) return value;
-  if (elapsed < race.grow) return (elapsed / race.grow) * Math.min(value, cap);
-  return cap * (1 + (elapsed - race.grow) / (OVERTIME_SCALE * RACE_MS)) ** 2;
+  const t = elapsed / RACE_MS;
+  const tracks = t <= PROPORTIONAL_TRACKS ? t : PROPORTIONAL_TRACKS * Math.exp((t / PROPORTIONAL_TRACKS - 1) / LOG_SCALE);
+  return Math.min(value, cap * tracks);
 }
 
 function useRaceClock(running: boolean, end: number): number {
@@ -218,18 +234,28 @@ function useRaceClock(running: boolean, end: number): number {
   return elapsed;
 }
 
-function Chart({title, metric, rows, baseline, racing}: {title: string; metric: Metric; rows: Row[]; baseline: Sample; racing: boolean}): ReactElement | null {
+/**
+ * The cut of a chart and when its slowest bar finishes, or `undefined` when a container lacks the metric.
+ */
+function scaleOf(rows: Row[], metric: Metric): {cap: number; end: number} | undefined {
   const values = rows.map(row => row.sample[metric]);
-  const complete = values.every(v => v !== undefined);
-  const positive = complete ? (values as number[]).filter(v => v > 0) : [];
+  if (values.some(v => v === undefined)) return undefined;
+  const positive = (values as number[]).filter(v => v > 0);
   // Bars beyond four times the smallest value are cut, so one slow container does not flatten all the others.
   const cap = positive.length > 0 ? Math.min(...positive) * 4 : 1;
   const end = Math.max(0, ...positive.map(v => {
     const race = raceOf(v, cap);
     return race.grow + race.overtime;
   }));
-  const elapsed = useRaceClock(racing, end);
-  if (!complete) return null;
+  return {cap, end};
+}
+
+function Chart({title, metric, rows, baseline, racing, finished}: {title: string; metric: Metric; rows: Row[]; baseline: Sample; racing: boolean; finished: boolean}): ReactElement | null {
+  const scale = scaleOf(rows, metric);
+  const clock = useRaceClock(racing && !finished, scale?.end ?? 0);
+  if (!scale) return null;
+  const {cap} = scale;
+  const elapsed = finished ? Infinity : clock;
   const sorted = [...rows].sort((a, b) => a.sample[metric]! - b.sample[metric]!);
 
   return (
@@ -246,13 +272,15 @@ function Chart({title, metric, rows, baseline, racing}: {title: string; metric: 
           const comparison = compare(baseline[metric]!, value, metric, row.name);
           const raw = value > 0 ? valueAt(value, cap, race, elapsed) : value;
           const shown = metric === 'memoryBytes' ? Math.round(raw) : raw;
-          const slides = Math.max(2, 2 * Math.round(race.overtime / (2 * SLIDE_MS)));
+          const slides = Math.max(1, Math.round(race.overtime / (2 * SLIDE_MS)));
+          const sweep = Math.min(1, race.overtime / slides / (2 * SLIDE_MS)) * SLIDE_PX;
           const barStyle = {
             width: `${race.width}%`,
             animationDuration: `${race.grow}ms`,
             '--grow': `${race.grow}ms`,
             '--slide': `${race.overtime / slides}ms`,
             '--slides': slides,
+            '--sweep': `${sweep}px`,
           } as React.CSSProperties;
           return (
             <div key={row.library} className={isBaseline ? `${styles.chartRow} ${styles.chartRowBaseline}` : styles.chartRow} title={isBaseline ? `Awaiten: ${FORMAT[metric](value)}` : comparison.title}>
@@ -374,6 +402,25 @@ function Scoreboard({rows, baseline}: {rows: Row[]; baseline: Sample}): ReactEle
   );
 }
 
+/**
+ * Skips to the results while the race runs and starts it again once it is over.
+ */
+function RaceButton({running, end, onSkip, onReplay}: {running: boolean; end: number; onSkip: () => void; onReplay: () => void}): ReactElement {
+  const [over, setOver] = useState(false);
+  useEffect(() => {
+    if (!running) return undefined;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timeout = setTimeout(() => setOver(true), reducedMotion ? 0 : end);
+    return () => clearTimeout(timeout);
+  }, [running, end]);
+  const done = over || !running;
+  return (
+    <button type="button" className={styles.chip} onClick={done ? onReplay : onSkip}>
+      {done ? 'Race again' : 'Skip to results'}
+    </button>
+  );
+}
+
 function sizeOf(parameter: string): string | undefined {
   return parameter.split('=')[1];
 }
@@ -385,6 +432,7 @@ export default function AwaitenBenchmarkResult(): ReactElement {
   const resultRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   const [race, setRace] = useState(0);
+  const [skippedRace, setSkippedRace] = useState<string>();
   useEffect(() => {
     if (!resultRef.current) return undefined;
     const observer = new IntersectionObserver(([entry]) => {
@@ -414,6 +462,8 @@ export default function AwaitenBenchmarkResult(): ReactElement {
     version: data.versions?.[library],
     sample: samples[library],
   }));
+  const raceKey = `${scenario}/${parameter}/${race}`;
+  const skipped = skippedRace === raceKey;
 
   return (
     <div ref={resultRef} className={styles.result}>
@@ -448,18 +498,24 @@ export default function AwaitenBenchmarkResult(): ReactElement {
       {baseline ? (
         <>
           <Headline rows={rows} baseline={baseline} info={info} />
-          <div key={`${scenario}/${parameter}/${race}`} className={inView ? `${styles.charts} ${styles.racing}` : styles.charts}>
-            <Chart title="Time" metric="timeNs" rows={rows} baseline={baseline} racing={inView} />
-            <Chart title="Memory" metric="memoryBytes" rows={rows} baseline={baseline} racing={inView} />
+          <div
+            key={raceKey}
+            className={`${styles.charts} ${inView ? styles.racing : ''} ${skipped ? styles.finished : ''}`}>
+            <Chart title="Time" metric="timeNs" rows={rows} baseline={baseline} racing={inView} finished={skipped} />
+            <Chart title="Memory" metric="memoryBytes" rows={rows} baseline={baseline} racing={inView} finished={skipped} />
           </div>
           <div className={styles.noteRow}>
             <p className={styles.note}>
               Bars longer than four times the fastest container are cut so the others stay comparable. Hover a bar or
               a multiple for the exact comparison.
             </p>
-            <button type="button" className={styles.chip} onClick={() => setRace(r => r + 1)}>
-              Race again
-            </button>
+            <RaceButton
+              key={raceKey}
+              running={inView && !skipped}
+              end={Math.max(scaleOf(rows, 'timeNs')?.end ?? 0, scaleOf(rows, 'memoryBytes')?.end ?? 0)}
+              onSkip={() => setSkippedRace(raceKey)}
+              onReplay={() => setRace(r => r + 1)}
+            />
           </div>
           <Scoreboard rows={rows} baseline={baseline} />
         </>

@@ -238,7 +238,7 @@
 .racing .barCut::after {
   animation:
     appear 0s var(--grow) backwards,
-    slide var(--slide) ease-in-out var(--grow) var(--slides) alternate;
+    slide var(--slide) ease-in-out var(--grow) var(--slides);
 }
 
 @keyframes appear {
@@ -248,9 +248,14 @@
 }
 
 @keyframes slide {
-  to {
-    right: 40px;
+  50% {
+    right: calc(14px + var(--sweep));
   }
+}
+
+.finished .bar,
+.finished .barCut::after {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
