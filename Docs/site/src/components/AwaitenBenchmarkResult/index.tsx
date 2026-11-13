@@ -22,11 +22,17 @@ const SOURCE_URL = 'https://github.com/awaiten-dev/Awaiten/blob/main/Benchmarks/
  */
 const RACE_MS = 1_000;
 /**
- * Scales the extra run time of a cut bar, which grows with the square root of how far it exceeds the cut: a
- * proportional one would take minutes, a logarithmic one hides how much slower the slowest containers are.
+ * A cut bar keeps running in proportion to its value up to this many track lengths, then logarithmically, because
+ * the slowest containers would otherwise take minutes.
  */
-const OVERTIME_SCALE = 0.4;
-const SLIDE_MS = 150;
+const PROPORTIONAL_TRACKS = 8;
+const LOG_SCALE = 0.3;
+/**
+ * The cut mark moves at a fixed speed, one full sweep per `SLIDE_MS`, so a short overtime gives a shorter sweep
+ * instead of a faster one.
+ */
+const SLIDE_MS = 350;
+const SLIDE_PX = 26;
 
 type ScenarioInfo = {label: string; unit: string; source: string; describe: (size?: string) => string};
 
@@ -184,18 +190,28 @@ function raceOf(value: number, cap: number): Race {
     width,
     cut,
     grow: (width / 100) * RACE_MS,
-    overtime: cut ? OVERTIME_SCALE * RACE_MS * (Math.sqrt(value / cap) - 1) : 0,
+    overtime: cut ? (runTime(value / cap) - 1) * RACE_MS : 0,
   };
 }
 
 /**
- * The value shown after `elapsed` ms: linear while the bar grows, then the inverse of the square-root overtime, so
- * the count speeds up once the bar is cut.
+ * The run time in tracks of a bar `tracks` times as long as the track: proportional up to `PROPORTIONAL_TRACKS`,
+ * logarithmic beyond.
+ */
+function runTime(tracks: number): number {
+  if (tracks <= PROPORTIONAL_TRACKS) return tracks;
+  return PROPORTIONAL_TRACKS * (1 + LOG_SCALE * Math.log(tracks / PROPORTIONAL_TRACKS));
+}
+
+/**
+ * The value shown after `elapsed` ms, the inverse of `runTime`, so the count speeds up once the run time is
+ * logarithmic.
  */
 function valueAt(value: number, cap: number, race: Race, elapsed: number): number {
   if (elapsed >= race.grow + race.overtime) return value;
-  if (elapsed < race.grow) return (elapsed / race.grow) * Math.min(value, cap);
-  return cap * (1 + (elapsed - race.grow) / (OVERTIME_SCALE * RACE_MS)) ** 2;
+  const t = elapsed / RACE_MS;
+  const tracks = t <= PROPORTIONAL_TRACKS ? t : PROPORTIONAL_TRACKS * Math.exp((t / PROPORTIONAL_TRACKS - 1) / LOG_SCALE);
+  return Math.min(value, cap * tracks);
 }
 
 function useRaceClock(running: boolean, end: number): number {
@@ -246,13 +262,15 @@ function Chart({title, metric, rows, baseline, racing}: {title: string; metric: 
           const comparison = compare(baseline[metric]!, value, metric, row.name);
           const raw = value > 0 ? valueAt(value, cap, race, elapsed) : value;
           const shown = metric === 'memoryBytes' ? Math.round(raw) : raw;
-          const slides = Math.max(2, 2 * Math.round(race.overtime / (2 * SLIDE_MS)));
+          const slides = Math.max(1, Math.round(race.overtime / (2 * SLIDE_MS)));
+          const sweep = Math.min(1, race.overtime / slides / (2 * SLIDE_MS)) * SLIDE_PX;
           const barStyle = {
             width: `${race.width}%`,
             animationDuration: `${race.grow}ms`,
             '--grow': `${race.grow}ms`,
             '--slide': `${race.overtime / slides}ms`,
             '--slides': slides,
+            '--sweep': `${sweep}px`,
           } as React.CSSProperties;
           return (
             <div key={row.library} className={isBaseline ? `${styles.chartRow} ${styles.chartRowBaseline}` : styles.chartRow} title={isBaseline ? `Awaiten: ${FORMAT[metric](value)}` : comparison.title}>
