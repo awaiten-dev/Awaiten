@@ -161,12 +161,6 @@
   background: var(--ifm-color-emphasis-200);
 }
 
-.thick {
-  max-width: 26rem;
-  height: 0.625rem;
-  border-radius: 5px;
-}
-
 .breaking {
   background: var(--ifm-color-danger);
 }
