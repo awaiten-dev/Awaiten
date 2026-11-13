@@ -1944,6 +1944,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
         "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
+      },
+      {
+        "sha": "2e66265294570d6fa5792c617ed9f8fd035f3e64",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:26:49 2026 \u002B0100",
+        "message": "chore: Bump the tunit group with 1 update (#433)"
       }
     ],
     "labels": [
@@ -2270,7 +2276,8 @@ window.BENCHMARK_DATA = {
       "8b613a55",
       "8fd557e3",
       "4d763195",
-      "f23bc30e"
+      "f23bc30e",
+      "2e662652"
     ],
     "datasets": [
       {
@@ -2600,7 +2607,8 @@ window.BENCHMARK_DATA = {
           3.3774269952305724,
           4.569760790963968,
           4.788992305951459,
-          6.724975656185832
+          6.724975656185832,
+          4.770783368211526
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2612,6 +2620,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3273,7 +3282,8 @@ window.BENCHMARK_DATA = {
           3.855277065932751,
           6.680790423200681,
           5.045931176344554,
-          7.397512113054593
+          7.397512113054593,
+          6.526549853957617
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3285,6 +3295,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3946,7 +3957,8 @@ window.BENCHMARK_DATA = {
           60.522289379437765,
           86.36527078151703,
           118.85646391709646,
-          125.10849435512836
+          125.10849435512836,
+          83.29912773200444
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3958,6 +3970,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4615,7 +4628,8 @@ window.BENCHMARK_DATA = {
           4.7459359303116795,
           6.094791850873402,
           7.3918998291095095,
-          9.138424622019132
+          9.138424622019132,
+          6.503454297780991
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4627,6 +4641,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5280,7 +5295,8 @@ window.BENCHMARK_DATA = {
           6.302549221685955,
           8.502746078584876,
           8.700169250369072,
-          10.649898132930199
+          10.649898132930199,
+          8.450425938765209
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5292,6 +5308,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7569,6 +7586,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
         "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
+      },
+      {
+        "sha": "2e66265294570d6fa5792c617ed9f8fd035f3e64",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:26:49 2026 \u002B0100",
+        "message": "chore: Bump the tunit group with 1 update (#433)"
       }
     ],
     "labels": [
@@ -7895,7 +7918,8 @@ window.BENCHMARK_DATA = {
       "8b613a55",
       "8fd557e3",
       "4d763195",
-      "f23bc30e"
+      "f23bc30e",
+      "2e662652"
     ],
     "datasets": [
       {
@@ -8225,7 +8249,8 @@ window.BENCHMARK_DATA = {
           3.258035199344158,
           6.022801181444755,
           5.3802798618872965,
-          7.460126606623332
+          7.460126606623332,
+          5.935927597949138
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8237,6 +8262,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8898,7 +8924,8 @@ window.BENCHMARK_DATA = {
           3.8555272902761186,
           6.7907362924172325,
           5.06335816582044,
-          7.558005342526095
+          7.558005342526095,
+          6.533831862466676
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8910,6 +8937,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9571,7 +9599,8 @@ window.BENCHMARK_DATA = {
           57.58755241121565,
           83.82006335258484,
           118.51953384081523,
-          117.38326307932536
+          117.38326307932536,
+          86.32691322054181
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9583,6 +9612,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10240,7 +10270,8 @@ window.BENCHMARK_DATA = {
           4.629209374742849,
           6.213790068030358,
           7.396051007509231,
-          9.146059264739355
+          9.146059264739355,
+          6.869242996970812
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10252,6 +10283,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10905,7 +10937,8 @@ window.BENCHMARK_DATA = {
           6.045997931559881,
           8.48157165486079,
           8.71180018463305,
-          14.09018779794375
+          14.09018779794375,
+          8.261291206947394
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10917,6 +10950,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13194,6 +13228,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
         "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
+      },
+      {
+        "sha": "2e66265294570d6fa5792c617ed9f8fd035f3e64",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:26:49 2026 \u002B0100",
+        "message": "chore: Bump the tunit group with 1 update (#433)"
       }
     ],
     "labels": [
@@ -13520,7 +13560,8 @@ window.BENCHMARK_DATA = {
       "8b613a55",
       "8fd557e3",
       "4d763195",
-      "f23bc30e"
+      "f23bc30e",
+      "2e662652"
     ],
     "datasets": [
       {
@@ -13850,7 +13891,8 @@ window.BENCHMARK_DATA = {
           12.588376453518867,
           22.922509256998698,
           20.188160140599525,
-          22.64449506600698
+          22.64449506600698,
+          11.883148687226432
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14122,6 +14164,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14523,7 +14566,8 @@ window.BENCHMARK_DATA = {
           829.447088094858,
           1591.446944645473,
           1560.0456837972006,
-          1523.6987042744954
+          1523.6987042744954,
+          825.3150572458903
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14535,6 +14579,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15196,7 +15241,8 @@ window.BENCHMARK_DATA = {
           19293.274759145883,
           30715.92072753906,
           29522.42311314174,
-          24509.57162475586
+          24509.57162475586,
+          19038.39244733538
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15531,7 +15577,8 @@ window.BENCHMARK_DATA = {
           32477,
           32482,
           32482,
-          32476
+          32476,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15865,7 +15912,8 @@ window.BENCHMARK_DATA = {
           448.39477183024087,
           775.625108273824,
           774.751190884908,
-          666.0008653004965
+          666.0008653004965,
+          404.6052895784378
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15895,6 +15943,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16530,7 +16579,8 @@ window.BENCHMARK_DATA = {
           7685.035360209147,
           12770.108057462252,
           11882.675614493233,
-          11401.0069569179
+          11401.0069569179,
+          6939.325558980306
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16861,7 +16911,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18819,6 +18870,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
         "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
+      },
+      {
+        "sha": "2e66265294570d6fa5792c617ed9f8fd035f3e64",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:26:49 2026 \u002B0100",
+        "message": "chore: Bump the tunit group with 1 update (#433)"
       }
     ],
     "labels": [
@@ -19145,7 +19202,8 @@ window.BENCHMARK_DATA = {
       "8b613a55",
       "8fd557e3",
       "4d763195",
-      "f23bc30e"
+      "f23bc30e",
+      "2e662652"
     ],
     "datasets": [
       {
@@ -19475,7 +19533,8 @@ window.BENCHMARK_DATA = {
           88.15125351746877,
           295.86944624582924,
           187.04954946041107,
-          290.77687209447225
+          290.77687209447225,
+          82.41419093949455
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19747,6 +19806,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20148,7 +20208,8 @@ window.BENCHMARK_DATA = {
           8179.538434709822,
           16370.880337524413,
           14613.589503696987,
-          14119.246208699544
+          14119.246208699544,
+          7862.218373979841
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20160,6 +20221,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20821,7 +20883,8 @@ window.BENCHMARK_DATA = {
           467888.838671875,
           770288.6768229167,
           743857.658984375,
-          589109.7459309896
+          589109.7459309896,
+          460989.6998372396
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21156,7 +21219,8 @@ window.BENCHMARK_DATA = {
           735812,
           741745,
           741755,
-          719003
+          719003,
+          718367
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21490,7 +21554,8 @@ window.BENCHMARK_DATA = {
           25428.433173043388,
           45966.31479492188,
           45210.771488444014,
-          40770.48544108073
+          40770.48544108073,
+          24951.748613993328
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21821,7 +21886,8 @@ window.BENCHMARK_DATA = {
           81165,
           80302,
           80303,
-          80344
+          80344,
+          80349
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22155,7 +22221,8 @@ window.BENCHMARK_DATA = {
           222363.59921875,
           380953.9745117187,
           375173.6207682292,
-          338341.5186848958
+          338341.5186848958,
+          209029.46952311197
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22486,7 +22553,8 @@ window.BENCHMARK_DATA = {
           573056,
           572962,
           573138,
-          571205
+          571205,
+          573093
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24420,6 +24488,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Thu Nov 12 19:13:46 2026 \u002B0100",
         "message": "fix: report a module scan match without a matching interface like a container scan does (#427)"
+      },
+      {
+        "sha": "2e66265294570d6fa5792c617ed9f8fd035f3e64",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:26:49 2026 \u002B0100",
+        "message": "chore: Bump the tunit group with 1 update (#433)"
       }
     ],
     "labels": [
@@ -24742,7 +24816,8 @@ window.BENCHMARK_DATA = {
       "8b613a55",
       "8fd557e3",
       "4d763195",
-      "f23bc30e"
+      "f23bc30e",
+      "2e662652"
     ],
     "datasets": [
       {
@@ -25068,7 +25143,8 @@ window.BENCHMARK_DATA = {
           284.72612229983014,
           214.40004153251647,
           167.76656784330095,
-          270.73038009007774
+          270.73038009007774,
+          216.06346259911854
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25103,6 +25179,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25733,7 +25810,8 @@ window.BENCHMARK_DATA = {
           606.2042676485502,
           458.0186004638672,
           390.3100924125084,
-          619.8033185005188
+          619.8033185005188,
+          469.23016198476154
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25745,6 +25823,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26398,7 +26477,8 @@ window.BENCHMARK_DATA = {
           6877.787338256836,
           5005.859122975668,
           3418.973902482253,
-          6810.7125773111975
+          6810.7125773111975,
+          5171.9021842956545
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -26482,6 +26562,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27063,7 +27144,8 @@ window.BENCHMARK_DATA = {
           442.738272190094,
           351.03126567204794,
           255.65110795838493,
-          427.6365304311117
+          427.6365304311117,
+          345.6843486150106
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27075,6 +27157,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -27728,7 +27811,8 @@ window.BENCHMARK_DATA = {
           746.5196462631226,
           553.0438563028971,
           407.9703657786051,
-          761.1126542772565
+          761.1126542772565,
+          566.4097559792655
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27740,6 +27824,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
