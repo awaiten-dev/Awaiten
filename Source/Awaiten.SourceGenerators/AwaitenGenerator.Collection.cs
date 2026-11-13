@@ -99,6 +99,7 @@ partial class AwaitenGenerator
 		if (inheritance is not null)
 		{
 			ReplaceInherited(inheritance, own, ownOpen, result, open);
+			ReportFallbackInherited(containerSymbol, own, diagnostics);
 			BuildThroughBaseFactories(inheritance, result, constraintRejected, diagnostics);
 			ReportUnbuildableInheritedOpen(inheritance, open, diagnostics);
 		}

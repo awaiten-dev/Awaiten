@@ -215,6 +215,11 @@ namespace Awaiten
     {
         public ImportServicesAttribute() { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    public sealed class InheritedAttribute : System.Attribute
+    {
+        public InheritedAttribute() { }
+    }
     [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public sealed class InjectAttribute : System.Attribute
     {

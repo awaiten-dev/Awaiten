@@ -261,6 +261,11 @@ partial class AwaitenGenerator
 		{
 			ParameterModel model = ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes);
 			model = model with { Location = model.Location ?? attributeLocation, };
+			if (ReportMisplacedInherited(parameter, attributeLocation, context.Diagnostics))
+			{
+				continue;
+			}
+
 			string? problem = parameter.RefKind != RefKind.None ? "it is passed by reference"
 				: model.Kind == DependencyKind.Arg ? "it is a runtime [Arg], which no caller supplies"
 				: model.Kind is not (DependencyKind.Direct or DependencyKind.External) ? "it is a relationship or a collection"

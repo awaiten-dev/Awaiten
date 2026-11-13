@@ -139,6 +139,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 		EmitDisposedGuard(builder, depth + 1, "__s.");
 		EmitPredicateGuard(builder, depth + 1, instance, context, asynchronous: false);
+		EmitInheritedSlot(builder, depth + 1, instance);
 
 		// The `created` variable is needed for any post-construction work: disposal tracking, wiring deferred
 		// members, queuing OnRelease, or running OnActivated. A transient is not cached, so its deferred members
@@ -158,7 +159,7 @@ internal static partial class Sources
 				Indent(builder, depth + 1).AppendLine("}");
 				Indent(builder, depth + 1).AppendLine("catch (global::System.Exception __failure)");
 				Indent(builder, depth + 1).AppendLine("{");
-				EmitGuardedTeardown(builder, depth + 2, asyncDisposal, asyncContext: false);
+				EmitGuardedTeardown(builder, depth + 2, instance, asyncDisposal, asyncContext: false);
 				builder.AppendLine();
 				EmitRethrowAfterGuardedTeardown(builder, depth + 2);
 				Indent(builder, depth + 1).AppendLine("}");
@@ -598,6 +599,7 @@ internal static partial class Sources
 		Indent(builder, depth + 1).Append("async ").Append(task).Append('<').Append(type).Append("> ").Append(creator).AppendLine("()");
 		Indent(builder, depth + 1).AppendLine("{");
 		EmitPredicateGuard(builder, depth + 2, instance, context, asynchronous: true);
+		EmitInheritedSlot(builder, depth + 2, instance);
 		Indent(builder, depth + 2).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
 		EmitGuardedWiringAndInit(builder, depth + 2, instance, context, emitDeferred);
 		Indent(builder, depth + 2).AppendLine("return created;");
@@ -636,7 +638,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("catch (global::System.Exception __failure)");
 		Indent(builder, depth).AppendLine("{");
 		// Dispose the instance we constructed but failed to wire/activate/initialize, then rethrow the original failure.
-		EmitGuardedTeardown(builder, depth + 1, context.AsyncDisposal, asyncContext: true);
+		EmitGuardedTeardown(builder, depth + 1, instance, context.AsyncDisposal, asyncContext: true);
 		builder.AppendLine();
 		EmitRethrowAfterGuardedTeardown(builder, depth + 1);
 		Indent(builder, depth).AppendLine("}");
@@ -672,6 +674,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 		EmitDisposedGuard(builder, depth + 1, "__s.");
 		EmitPredicateGuard(builder, depth + 1, instance, context, asynchronous: true);
+		EmitInheritedSlot(builder, depth + 1, instance);
 		Indent(builder, depth + 1).Append(instance.ConstructedType).Append(" created = ").Append(construction).AppendLine(";");
 		EmitGuardedWiringAndInit(builder, depth + 1, instance, context, emitDeferred);
 		Indent(builder, depth + 1).AppendLine("return created;");
@@ -685,6 +688,19 @@ internal static partial class Sources
 	///     own to initialize; its async dependency was already awaited during construction).
 	/// </summary>
 	private static void EmitAsyncInitialization(StringBuilder builder, int depth, InstanceModel instance, string variable, EmitContext context)
+	{
+		if (instance.AsyncInitializers.AsArray().Length == 0)
+		{
+			return;
+		}
+
+		int outer = depth;
+		depth = OpenInheritedCheck(builder, depth, instance, variable);
+		EmitAsyncInitializerCalls(builder, depth, instance, variable, context);
+		CloseInheritedCheck(builder, outer, instance);
+	}
+
+	private static void EmitAsyncInitializerCalls(StringBuilder builder, int depth, InstanceModel instance, string variable, EmitContext context)
 	{
 		foreach (AsyncInitializerModel initializer in instance.AsyncInitializers.AsArray())
 		{
@@ -847,7 +863,9 @@ internal static partial class Sources
 		{
 			// A requesting-type factory is built fresh per consumer (never cached), so there is nothing to warm,
 			// and its async resolver takes the requesting type, which the argument-free warm-up call cannot supply.
-			if (instances[i].IsAsyncTainted && instances[i].Lifetime == lifetime && !instances[i].IsParameterized && !instances[i].IsRequestingTypeFactory)
+			// A registration kept only for an [Inherited] parameter is built when that parameter reaches it, never ahead.
+			if (instances[i].IsAsyncTainted && instances[i].Lifetime == lifetime && !instances[i].IsParameterized && !instances[i].IsRequestingTypeFactory
+			    && !IsKeptForInherited(instances[i]))
 			{
 				targets.Add(i);
 			}
@@ -906,6 +924,7 @@ internal static partial class Sources
 		EmitDisposedGuard(builder, depth + 2, "__s.");
 		Indent(builder, depth + 2).Append("if (__s.").Append(field).AppendLine(" is null)");
 		Indent(builder, depth + 2).AppendLine("{");
+		EmitInheritedSlot(builder, depth + 3, instance);
 		if (!deferred)
 		{
 			if (instance.OnActivated is not null)
@@ -975,7 +994,7 @@ internal static partial class Sources
 				// rollback (which only unpublishes) never leaves it disposed twice. `!` suppresses CS8600 on the
 				// nullable field under the (object) cast that guards against a sealed-type CS8121; when construction
 				// itself threw the field is still null, but the teardown's `is` check makes that a no-op.
-				EmitGuardedTeardown(builder, depth + 4, asyncDisposal, asyncContext: false, "__s." + field + "!");
+				EmitGuardedTeardown(builder, depth + 4, instance, asyncDisposal, asyncContext: false, "__s." + field + "!");
 				builder.AppendLine();
 			}
 
@@ -1052,6 +1071,13 @@ internal static partial class Sources
 	/// </summary>
 	private static void EmitCachedDisposalRegistration(StringBuilder builder, int depth, InstanceModel instance, string target, DisposalTracking disposal, bool asyncDisposal)
 	{
+		if (disposal == DisposalTracking.None)
+		{
+			return;
+		}
+
+		int outer = depth;
+		depth = OpenInheritedCheck(builder, depth, instance, target);
 		if (disposal == DisposalTracking.Runtime)
 		{
 			string test = asyncDisposal
@@ -1060,12 +1086,16 @@ internal static partial class Sources
 			Indent(builder, depth).Append("if (").Append(target).AppendLine(test);
 			Indent(builder, depth).AppendLine("{");
 			Indent(builder, depth + 1).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(target).AppendLine(");");
+			EmitInheritedTracking(builder, depth + 1, instance, target);
 			Indent(builder, depth).AppendLine("}");
 		}
 		else if (disposal == DisposalTracking.Static)
 		{
 			Indent(builder, depth).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(DisposableEntry(instance, target)).AppendLine(");");
+			EmitInheritedTracking(builder, depth, instance, target);
 		}
+
+		CloseInheritedCheck(builder, outer, instance);
 	}
 
 	/// <summary>

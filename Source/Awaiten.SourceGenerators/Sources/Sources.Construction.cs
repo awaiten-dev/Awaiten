@@ -246,6 +246,10 @@ internal static partial class Sources
 			{
 				arguments.Append("true");
 			}
+			else if (AwaitenGenerator.IsInheritedKey(parameters[p].Key))
+			{
+				arguments.Append(KeptInherited(parameters[p], DependencyValue(parameters[p], instances, names, serviceToIndex, asynchronous, requestingType)));
+			}
 			else
 			{
 				arguments.Append(DependencyValue(parameters[p], instances, names, serviceToIndex, asynchronous, requestingType));
@@ -277,6 +281,11 @@ internal static partial class Sources
 				produced = $"({produced})!";
 			}
 
+			if (TakesInherited(instance))
+			{
+				produced = $"__inherited.Built({produced})";
+			}
+
 			MemberModel[] afterFactory = AfterFactoryMembers(instance);
 			if (afterFactory.Length > 0)
 			{
@@ -288,6 +297,132 @@ internal static partial class Sources
 		}
 
 		return $"new {instance.ConstructedType}({arguments}){MemberInitializer(instance, instances, names, serviceToIndex, asynchronous)}";
+	}
+
+	/// <summary>
+	///     Whether a factory of <paramref name="instance" /> takes the registration its registration replaces through an
+	///     <c>[Inherited]</c> parameter, so its build declares an <c>__inherited</c> slot that remembers every instance the
+	///     parameter hands out until the factory returns. An output that is one of them belongs to the inherited registration:
+	///     the replacement neither tracks it for disposal nor runs its own hooks, async initializers or failure teardown on it.
+	/// </summary>
+	private static bool TakesInherited(InstanceModel instance)
+		=> instance.ConstructorParameters.AsArray().Any(parameter => AwaitenGenerator.IsInheritedKey(parameter.Key));
+
+	/// <summary>Whether <paramref name="instance" /> serves only <c>[Inherited]</c> parameters, as a replaced registration of the base.</summary>
+	private static bool IsKeptForInherited(InstanceModel instance)
+		=> instance.Services.AsArray() is { Length: > 0, } services && services.All(service => AwaitenGenerator.IsInheritedKey(service.Key));
+
+	/// <summary>Whether any instance <see cref="TakesInherited" />, so the <c>Scope</c> needs <c>__InheritedSlot</c>.</summary>
+	private static bool HasInheritedParameters(InstanceModel[] instances) => instances.Any(TakesInherited);
+
+	/// <summary>Declares the <c>__inherited</c> slot before the build of an instance that <see cref="TakesInherited" />.</summary>
+	private static void EmitInheritedSlot(StringBuilder builder, int depth, InstanceModel instance)
+	{
+		if (TakesInherited(instance))
+		{
+			Indent(builder, depth).AppendLine("__InheritedSlot __inherited = new __InheritedSlot();");
+		}
+	}
+
+	/// <summary>
+	///     Opens the condition that skips what the replacement does to its output (disposal tracking, a hook, an async
+	///     initializer or a failure teardown) when <paramref name="target" /> is an instance an <c>[Inherited]</c> parameter
+	///     handed out (see <see cref="TakesInherited" />), returning the depth inside it. <see cref="CloseInheritedCheck" />
+	///     closes it.
+	/// </summary>
+	private static int OpenInheritedCheck(StringBuilder builder, int depth, InstanceModel instance, string target)
+	{
+		if (!TakesInherited(instance))
+		{
+			return depth;
+		}
+
+		Indent(builder, depth).Append("if (!__inherited.Owns(").Append(target).AppendLine("))");
+		Indent(builder, depth).AppendLine("{");
+		return depth + 1;
+	}
+
+	/// <inheritdoc cref="OpenInheritedCheck" />
+	private static void CloseInheritedCheck(StringBuilder builder, int depth, InstanceModel instance)
+	{
+		if (TakesInherited(instance))
+		{
+			Indent(builder, depth).AppendLine("}");
+		}
+	}
+
+	/// <summary>The value of an <c>[Inherited]</c> argument, recording each instance it hands out in <c>__inherited</c>.</summary>
+	private static string KeptInherited(ParameterModel parameter, string value)
+		=> parameter.Kind switch
+		{
+			DependencyKind.Func => $"__inherited.KeepFunc({value})",
+			DependencyKind.Lazy => $"__inherited.KeepLazy({value})",
+			DependencyKind.Task => $"__inherited.KeepTask({value})",
+			DependencyKind.FuncTask => $"__inherited.KeepFuncTask({value})",
+			DependencyKind.LazyTask => $"__inherited.KeepLazyTask({value})",
+			_ => $"__inherited.Keep({value})",
+		};
+
+	/// <summary>Emits <c>__InheritedSlot</c> on the base <c>Scope</c> (see <see cref="TakesInherited" />).</summary>
+	private static void EmitInheritedSlotType(StringBuilder builder, int depth)
+	{
+		const string task = "global::System.Threading.Tasks.Task";
+		AppendXmlSummary(builder, depth, "Remembers the instances an [Inherited] parameter handed out while its replacement was built.");
+		Indent(builder, depth).AppendLine("private protected sealed class __InheritedSlot");
+		Indent(builder, depth).AppendLine("{");
+		Indent(builder, depth + 1).AppendLine("private readonly global::System.Collections.Generic.List<object?> _handedOut = new global::System.Collections.Generic.List<object?>();");
+		Indent(builder, depth + 1).AppendLine("private bool _built;");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("internal T Keep<T>(T instance)");
+		Indent(builder, depth + 1).AppendLine("{");
+		// A Func or Lazy the output keeps may hand out more later, which no longer decides the build.
+		Indent(builder, depth + 2).AppendLine("lock (_handedOut)");
+		Indent(builder, depth + 2).AppendLine("{");
+		Indent(builder, depth + 3).AppendLine("if (!_built)");
+		Indent(builder, depth + 3).AppendLine("{");
+		Indent(builder, depth + 4).AppendLine("_handedOut.Add(instance);");
+		Indent(builder, depth + 3).AppendLine("}");
+		Indent(builder, depth + 2).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 2).AppendLine("return instance;");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("internal T Built<T>(T output)");
+		Indent(builder, depth + 1).AppendLine("{");
+		Indent(builder, depth + 2).AppendLine("lock (_handedOut)");
+		Indent(builder, depth + 2).AppendLine("{");
+		Indent(builder, depth + 3).AppendLine("_built = true;");
+		Indent(builder, depth + 2).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 2).AppendLine("return output;");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("internal bool Owns(object? output)");
+		Indent(builder, depth + 1).AppendLine("{");
+		Indent(builder, depth + 2).AppendLine("lock (_handedOut)");
+		Indent(builder, depth + 2).AppendLine("{");
+		Indent(builder, depth + 3).AppendLine("foreach (object? instance in _handedOut)");
+		Indent(builder, depth + 3).AppendLine("{");
+		Indent(builder, depth + 4).AppendLine("if (ReferenceEquals(instance, output))");
+		Indent(builder, depth + 4).AppendLine("{");
+		Indent(builder, depth + 5).AppendLine("return true;");
+		Indent(builder, depth + 4).AppendLine("}");
+		Indent(builder, depth + 3).AppendLine("}");
+		Indent(builder, depth + 2).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 2).AppendLine("return false;");
+		Indent(builder, depth + 1).AppendLine("}");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("internal global::System.Func<T> KeepFunc<T>(global::System.Func<T> produce) => () => Keep(produce());");
+		builder.AppendLine();
+		Indent(builder, depth + 1).AppendLine("internal global::System.Lazy<T> KeepLazy<T>(global::System.Lazy<T> lazy) => new global::System.Lazy<T>(() => Keep(lazy.Value));");
+		builder.AppendLine();
+		Indent(builder, depth + 1).Append("internal async ").Append(task).Append("<T> KeepTask<T>(").Append(task).AppendLine("<T> pending) => Keep(await pending.ConfigureAwait(false));");
+		builder.AppendLine();
+		Indent(builder, depth + 1).Append("internal global::System.Func<").Append(task).Append("<T>> KeepFuncTask<T>(global::System.Func<").Append(task).AppendLine("<T>> produce) => () => KeepTask(produce());");
+		builder.AppendLine();
+		Indent(builder, depth + 1).Append("internal global::System.Lazy<").Append(task).Append("<T>> KeepLazyTask<T>(global::System.Lazy<").Append(task).Append("<T>> lazy) => new global::System.Lazy<").Append(task).AppendLine("<T>>(() => KeepTask(lazy.Value));");
+		Indent(builder, depth).AppendLine("}");
 	}
 
 	/// <summary>

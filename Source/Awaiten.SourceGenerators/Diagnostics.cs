@@ -2907,4 +2907,22 @@ internal static class Diagnostics
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT263"));
+
+	/// <summary>
+	///     A parameter marked <c>[Inherited]</c> cannot take the registration its factory's registration replaces: the
+	///     parameter is not one of a <c>Factory</c> member that a registration of a container with <c>Extends</c> names,
+	///     it also carries <c>[Arg]</c> or <c>[FromKey]</c>, it takes a shape other than the service, <c>Lazy</c>,
+	///     <c>Func</c> or their async forms, it names another service than the registration, or the registration
+	///     replaces no single closed registration the base builds (none, several, an open generic or an imported
+	///     service). <c>{0}</c> is the parameter, <c>{1}</c> its owner, <c>{2}</c> the cause and
+	///     <c>{3}</c> the remedy. The parameter receives nothing.
+	/// </summary>
+	public static readonly DiagnosticDescriptor InvalidInheritedParameter = new(
+		"AWT264",
+		"Invalid [Inherited] parameter",
+		"Parameter '{0}' of '{1}' is marked [Inherited], but {2}; {3}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT264"));
 }

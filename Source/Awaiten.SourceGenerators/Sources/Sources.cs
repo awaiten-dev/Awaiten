@@ -111,6 +111,12 @@ internal static partial class Sources
 
 		/// <summary>Whether a consumer owns what a <c>Func</c> builds, so the <c>Scope</c> needs <c>__Disown</c>.</summary>
 		public bool ConsumerOwned { get; } = HasConsumerOwned(Instances);
+
+		/// <summary>Whether a factory takes an <c>[Inherited]</c> parameter, so the <c>Scope</c> needs <c>__InheritedSlot</c>.</summary>
+		public bool Inherited { get; } = HasInheritedParameters(Instances);
+
+		/// <summary>Whether a registration is kept for <c>[Inherited]</c>, so the <c>Scope</c> needs <c>__inheritedTracked</c>.</summary>
+		public bool KeptInherited { get; } = Instances.Any(IsKeptForInherited);
 	}
 
 	/// <summary>
@@ -386,6 +392,12 @@ internal static partial class Sources
 		Indent(fields, body).AppendLine("private protected readonly object __gate = new object();");
 		Indent(fields, body).AppendLine("private protected volatile bool __disposed;");
 		Indent(fields, body).AppendLine("private protected global::System.Collections.Generic.List<object>? __disposables;");
+		// The tracked instances of registrations kept for [Inherited], which __Disown never hands to a consumer.
+		if (context.KeptInherited)
+		{
+			Indent(fields, body).AppendLine("private protected global::System.Collections.Generic.List<object>? __inheritedTracked;");
+		}
+
 		// The queued OnRelease actions, run (reverse creation order) ahead of __disposables on teardown. Emitted
 		// only when some registration names an OnRelease hook, so containers without one carry no extra field.
 		if (HasReleaseHooks(instances))
@@ -507,7 +519,13 @@ internal static partial class Sources
 		if (context.ConsumerOwned)
 		{
 			Separate(helpers);
-			EmitDisownHelpers(helpers, body, context.AsyncOnlyDisposals);
+			EmitDisownHelpers(helpers, body, context.AsyncOnlyDisposals, context.KeptInherited);
+		}
+
+		if (context.Inherited)
+		{
+			Separate(helpers);
+			EmitInheritedSlotType(helpers, body);
 		}
 
 		// The external-resolution helpers are emitted only when the container imports from the host, so a container

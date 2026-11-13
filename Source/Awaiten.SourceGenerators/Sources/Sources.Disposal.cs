@@ -110,9 +110,11 @@ internal static partial class Sources
 	/// <summary>
 	///     Emits <c>__Disown</c> and <c>__DisownAsync</c> on the base <c>Scope</c>: they remove the newest
 	///     <c>__disposables</c> entry that tracks a just-built instance, which its consumer owns and disposes. AWT261
-	///     guarantees that the instance is the only entry its build added.
+	///     guarantees that the instance is the only entry its build added. With <paramref name="keptInherited" />, an
+	///     instance a registration kept for <c>[Inherited]</c> tracks stays its own: a replacement that returns it built
+	///     nothing the consumer could own.
 	/// </summary>
-	private static void EmitDisownHelpers(StringBuilder builder, int depth, bool asyncOnlyDisposals)
+	private static void EmitDisownHelpers(StringBuilder builder, int depth, bool asyncOnlyDisposals, bool keptInherited)
 	{
 		AppendXmlSummary(builder, depth, "Stops tracking <paramref name=\"instance\" />, which the consumer that built it owns.");
 		Indent(builder, depth).AppendLine("private protected T __Disown<T>(T instance)");
@@ -125,6 +127,21 @@ internal static partial class Sources
 		builder.AppendLine();
 		Indent(builder, depth + 1).AppendLine("lock (__gate)");
 		Indent(builder, depth + 1).AppendLine("{");
+		if (keptInherited)
+		{
+			Indent(builder, depth + 2).AppendLine("if (__inheritedTracked is { } __inherited)");
+			Indent(builder, depth + 2).AppendLine("{");
+			Indent(builder, depth + 3).AppendLine("foreach (object __entry in __inherited)");
+			Indent(builder, depth + 3).AppendLine("{");
+			Indent(builder, depth + 4).AppendLine("if (ReferenceEquals(__entry, instance))");
+			Indent(builder, depth + 4).AppendLine("{");
+			Indent(builder, depth + 5).AppendLine("return instance;");
+			Indent(builder, depth + 4).AppendLine("}");
+			Indent(builder, depth + 3).AppendLine("}");
+			Indent(builder, depth + 2).AppendLine("}");
+			builder.AppendLine();
+		}
+
 		Indent(builder, depth + 2).AppendLine("if (__disposables is { } __tracked)");
 		Indent(builder, depth + 2).AppendLine("{");
 		Indent(builder, depth + 3).AppendLine("for (int i = __tracked.Count - 1; i >= 0; i--)");
@@ -148,6 +165,18 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("{");
 		Indent(builder, depth + 1).AppendLine("return __Disown(await instance.ConfigureAwait(false));");
 		Indent(builder, depth).AppendLine("}");
+	}
+
+	/// <summary>
+	///     Records <paramref name="target" />, just added to <c>__disposables</c>, in <c>__inheritedTracked</c> when
+	///     <paramref name="instance" /> is a registration kept for <c>[Inherited]</c> (see <see cref="EmitDisownHelpers" />).
+	/// </summary>
+	private static void EmitInheritedTracking(StringBuilder builder, int depth, InstanceModel instance, string target)
+	{
+		if (IsKeptForInherited(instance))
+		{
+			Indent(builder, depth).Append("(__s.__inheritedTracked ??= new global::System.Collections.Generic.List<object>()).Add(").Append(target).AppendLine(");");
+		}
 	}
 
 	/// <summary>The <c>__disposables</c> entry that tracks <paramref name="target" />: itself, or wrapped with its guidance.</summary>
@@ -220,7 +249,8 @@ internal static partial class Sources
 			return;
 		}
 
-		Indent(builder, depth);
+		int inner = OpenInheritedCheck(builder, depth, instance, variable);
+		Indent(builder, inner);
 		if (instance.IsAsyncActivation)
 		{
 			builder.Append("await ");
@@ -229,6 +259,7 @@ internal static partial class Sources
 		builder.Append(instance.OnActivated).Append('(').Append(variable)
 			.Append(HookArguments(instance.ActivationParameters, instance, context, asynchronous))
 			.AppendLine(instance.IsAsyncActivation ? ").ConfigureAwait(false);" : ");");
+		CloseInheritedCheck(builder, depth, instance);
 	}
 
 	/// <summary>
@@ -271,8 +302,10 @@ internal static partial class Sources
 			return;
 		}
 
-		string arguments = EmitReleaseCaptures(builder, depth, instance, context, asynchronous);
-		EmitReleaseAdd(builder, depth, instance, variable, arguments, context.AsyncReleases);
+		int inner = OpenInheritedCheck(builder, depth, instance, variable);
+		string arguments = EmitReleaseCaptures(builder, inner, instance, context, asynchronous);
+		EmitReleaseAdd(builder, inner, instance, variable, arguments, context.AsyncReleases);
+		CloseInheritedCheck(builder, depth, instance);
 	}
 
 	/// <summary>
@@ -347,9 +380,11 @@ internal static partial class Sources
 			return;
 		}
 
-		Indent(builder, depth).Append(type).Append(" __released = __s.").Append(field).AppendLine(";");
-		string arguments = EmitReleaseCaptures(builder, depth, instance, context, asynchronous);
-		EmitReleaseAdd(builder, depth, instance, "__released", arguments, context.AsyncReleases);
+		int inner = OpenInheritedCheck(builder, depth, instance, "__s." + field);
+		Indent(builder, inner).Append(type).Append(" __released = __s.").Append(field).AppendLine(";");
+		string arguments = EmitReleaseCaptures(builder, inner, instance, context, asynchronous);
+		EmitReleaseAdd(builder, inner, instance, "__released", arguments, context.AsyncReleases);
+		CloseInheritedCheck(builder, depth, instance);
 	}
 
 	/// <summary>
@@ -511,6 +546,8 @@ internal static partial class Sources
 	private static void EmitFreshDisposalTracking(StringBuilder builder, int depth, InstanceModel instance, bool asyncDisposal, bool asyncContext)
 	{
 		DisposalTracking disposal = DisposalOf(instance);
+		int outer = depth;
+		depth = OpenInheritedCheck(builder, depth, instance, "created");
 
 		// A runtime disposal check lets the whole lock be skipped for a realized output that turns out not to be
 		// disposable (release, when present, takes its own lock after activation, so it no longer forces this one).
@@ -537,6 +574,7 @@ internal static partial class Sources
 		Indent(builder, depth + 1).AppendLine("if (!__raced)");
 		Indent(builder, depth + 1).AppendLine("{");
 		Indent(builder, depth + 2).Append("(__s.__disposables ??= new global::System.Collections.Generic.List<object>()).Add(").Append(DisposableEntry(instance, "created")).AppendLine(");");
+		EmitInheritedTracking(builder, depth + 2, instance, "created");
 		Indent(builder, depth + 1).AppendLine("}");
 		Indent(builder, depth).AppendLine("}");
 		builder.AppendLine();
@@ -551,6 +589,8 @@ internal static partial class Sources
 			depth--;
 			Indent(builder, depth).AppendLine("}");
 		}
+
+		CloseInheritedCheck(builder, outer, instance);
 	}
 
 	/// <summary>
@@ -570,6 +610,8 @@ internal static partial class Sources
 
 		// Resolve the captured release dependencies before the lock: on the async path an async-tainted dependency
 		// is awaited, which cannot occur inside a lock. The instance itself is the by-value `created` local.
+		int outer = depth;
+		depth = OpenInheritedCheck(builder, depth, instance, "created");
 		string arguments = EmitReleaseCaptures(builder, depth, instance, context, asynchronous);
 		Indent(builder, depth).AppendLine("lock (__s.__gate)");
 		Indent(builder, depth).AppendLine("{");
@@ -578,6 +620,7 @@ internal static partial class Sources
 		EmitReleaseAdd(builder, depth + 2, instance, "created", arguments, context.AsyncReleases);
 		Indent(builder, depth + 1).AppendLine("}");
 		Indent(builder, depth).AppendLine("}");
+		CloseInheritedCheck(builder, outer, instance);
 	}
 
 	/// <summary>
@@ -620,12 +663,13 @@ internal static partial class Sources
 	///     The caller finishes its cleanup and then emits <see cref="EmitRethrowAfterGuardedTeardown" />. Shared by
 	///     the async and synchronous guarded-wiring resolvers.
 	/// </summary>
-	private static void EmitGuardedTeardown(StringBuilder builder, int depth, bool asyncDisposal, bool asyncContext, string instance = "created")
+	private static void EmitGuardedTeardown(StringBuilder builder, int depth, InstanceModel built, bool asyncDisposal, bool asyncContext, string instance = "created")
 	{
 		Indent(builder, depth).AppendLine("global::System.Exception? __disposalFailure = null;");
 		Indent(builder, depth).AppendLine("try");
 		Indent(builder, depth).AppendLine("{");
-		EmitRacedTeardown(builder, depth + 1, asyncDisposal, asyncContext, instance);
+		EmitRacedTeardown(builder, OpenInheritedCheck(builder, depth + 1, built, instance), asyncDisposal, asyncContext, instance);
+		CloseInheritedCheck(builder, depth + 1, built);
 		Indent(builder, depth).AppendLine("}");
 		Indent(builder, depth).AppendLine("catch (global::System.Exception __caught)");
 		Indent(builder, depth).AppendLine("{");

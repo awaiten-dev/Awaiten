@@ -71,7 +71,7 @@ public static partial class TestCoffeeShop
 
 ## A replacement replaces in full
 
-A registration written directly on the extending container replaces every inherited registration of the same service and key, before anything else is decided. The replaced registration is gone: it is never constructed, it is missing from `IEnumerable<T>` and from keyed collections, and its `Eager` or `EagerWhen` construction and lifecycle hooks go with it. Because it is gone, it does not collide with the replacement either: a replacement with another lifetime or another `Factory` is not a conflict.
+A registration written directly on the extending container replaces every inherited registration of the same service and key, before anything else is decided. Unless the replacement's factory takes it with [`[Inherited]`](#fall-back-to-production-per-test), the replaced registration is gone: it is never constructed, it is missing from `IEnumerable<T>` and from keyed collections, and its `Eager` or `EagerWhen` construction and lifecycle hooks go with it. Because it is gone, it does not collide with the replacement either: a replacement with another lifetime or another `Factory` is not a conflict.
 
 - **Keys.** A keyed registration replaces only the inherited registration with the same key. A `WhenInjectedInto` registration has a key of its own per consumer, so a plain registration does not replace it, and a `WhenInjectedInto` registration replaces only the one for the same consumer.
 - **Collections.** A registration of `T` replaces every inherited `T`. The extending container cannot add a member to an inherited collection without replacing the others; register every member it should hold.
@@ -80,6 +80,7 @@ A registration written directly on the extending container replaces every inheri
 - **Fallback.** A registration with `Fallback` is an [overridable default](./08-modules/index.md#overridable-defaults), as in a module, so it replaces nothing. An inherited registration without `Fallback` replaces it, and next to an inherited default it is a further member of the service's collections, which wins single resolution because the extending container's own registrations come first.
 - **Decorators.** The inherited decorators wrap the replacement, also one the host provides through [`[ImportService<T>]`](#per-test-doubles-from-the-host), except an inherited decorator with `AllKeys`, which cannot wrap an import ([AWT123](../09-diagnostics.md#awt123)). A `[Decorate]` on the extending container wraps the inherited decorators, whatever their `Order`, so a test wraps production. An inherited decorator cannot be removed, but a test can [switch it off](#switch-an-inherited-decorator-off).
 - **Shared instances.** When the base registers one implementation under several services, replacing one of them leaves the others on the production implementation, which then no longer shares an instance with the replacement.
+- **`[Inherited]`.** A parameter of the replacement's `Factory` marked `[Inherited]` takes the registration it replaces, which is kept for that parameter alone. See [fall back to production per test](#fall-back-to-production-per-test).
 
 ```csharp
 [Container]
@@ -161,6 +162,60 @@ public sealed class TerminalResolver(IPaymentTerminal terminal) : IExternalResol
 ```
 
 See [external services](../07-hosting/02-external-services.mdx) for the resolver and for the MS.DI bridge, which supplies it automatically.
+
+## Fall back to production per test
+
+An imported service must be supplied by every test that uses the container. When most tests want production and only some want a double, import a settings type instead and replace the service with a factory that takes the double from it, or else the production registration through a parameter marked `[Inherited]`.
+
+```csharp
+using System.Diagnostics.CodeAnalysis;
+
+public sealed class TestDoubles
+{
+    public IPaymentTerminal? Terminal { get; init; }
+}
+
+[Container(Extends = typeof(CoffeeShop))]
+[ImportService<TestDoubles>]
+// highlight-next-line
+[Singleton<IPaymentTerminal>(Factory = nameof(Terminal))]
+public static partial class PerTestCoffeeShop
+{
+    private static IPaymentTerminal Terminal(TestDoubles doubles, [Inherited] Func<IPaymentTerminal> production)
+        => doubles.Terminal ?? production();
+}
+
+public sealed class DoublesResolver(TestDoubles doubles) : IExternalResolver
+{
+    public bool TryResolve(Type serviceType, object? key, [NotNullWhen(true)] out object? instance)
+    {
+        instance = serviceType == typeof(TestDoubles) ? doubles : null;
+        return instance is not null;
+    }
+}
+
+[Test]
+public async Task Checkout_ChargesTheDouble()
+{
+    FakeTerminal terminal = new();
+    await using PerTestCoffeeShop.Root shop = new(new DoublesResolver(new TestDoubles { Terminal = terminal }));
+
+    await shop.Resolve<Checkout>().PayAsync(3.50m);
+
+    await That(terminal.Charged).IsEqualTo(3.50m);
+}
+```
+
+A test that passes `new TestDoubles()` gets the `CardTerminal` of `CoffeeShop`. The service stays Awaiten-owned, and the factory decides once per instance of its lifetime, so resolving it asks the host nothing.
+
+- **Where.** `[Inherited]` goes on a parameter of a `Factory` member that a registration of the extending container names, and takes the registration of the base that this registration replaces: the same service, and the same key or `WhenInjectedInto` consumer. Anywhere else, or together with `[Arg]` or `[FromKey]`, it is an error ([AWT264](../09-diagnostics.md#awt264)).
+- **One closed registration.** The base must register the service once, as a closed registration it builds. It is an error ([AWT264](../09-diagnostics.md#awt264)) when the base registers the service several times, as a collection or as the members of a composite, registers it only through an open generic registration, or imports it with `[ImportService<T>]`.
+- **Shapes.** Take the service as itself, `Lazy<T>` or `Func<T>`, or as `Task<T>`, `Lazy<Task<T>>` or `Func<Task<T>>`. A `Func` or `Lazy` builds the production registration only when called, so a test with a double never builds it. An async-initialized registration is reached through the async shapes only, as anywhere else.
+- **The kept registration.** It keeps its lifetime, lifecycle hooks, async initialization and disposal, so a `Func` over a singleton returns the one production instance of the root. It serves nothing else: no `Resolve`, no `IEnumerable<T>` or keyed collection, no decorator and no host such as the MS.DI bridge sees it. Its `Eager` or `EagerWhen` is dropped, because the replacement decides startup, and nothing of it is built when no `[Inherited]` parameter reaches it.
+- **Decorators.** The inherited decorators wrap the replacement, so they apply once, not to the production instance as well.
+- **Lifetimes.** The usual checks apply between the replacement and the kept registration: a singleton replacement over a scoped one is a [captive dependency](../09-diagnostics.md#awt105).
+- **Ownership.** When the factory returns an instance the `[Inherited]` parameter handed out, that instance belongs to the kept registration: the replacement doesn't dispose it, and its own lifecycle hooks and async initializers don't run on it, so production is activated, initialized and released once. Any other output, such as a double, is treated like any factory output, and `SuppressDisposal` leaves it to its owner. A consumer that lists the service in `ConsumerOwned` owns only such an output, never the production instance. Ownership is decided per build: a factory that keeps the production instance itself (`cached ??= production()`) and returns it from a later build returns an instance the parameter did not hand out in that build, so it is treated as a double.
+- **Bases and modules in other assemblies.** The kept registration is built like any inherited one, also through the factory of a module the base imports, so the [accessibility](#accessibility) rules apply to it.
 
 ## Extends compared with Import and Fallback
 

@@ -270,6 +270,17 @@ private static ILogger CreateLogger([RequestingType] Type? consumer) => /* … *
 
 Goes on a parameter, once. A parameter that is not `Type` is [AWT162](../09-diagnostics.md#awt162).
 
+### Inherited
+
+Marks a parameter of a `Factory` method on a container with `Extends` that takes the registration of the base which the method's registration replaces, so a test container can fall back to production. Take the service as itself, `Lazy<T>`, `Func<T>` or their async forms. It has no properties. See [Extending containers](../05-registration/09-extending-containers.md#fall-back-to-production-per-test).
+
+```csharp no-compile
+private static IPaymentTerminal Terminal(TestDoubles doubles, [Inherited] Func<IPaymentTerminal> production)
+    => doubles.Terminal ?? production();
+```
+
+Goes on a parameter, once. Anywhere else, or together with `[Arg]` or `[FromKey]`, it is [AWT264](../09-diagnostics.md#awt264).
+
 ## Enums
 
 ### Lifetime
