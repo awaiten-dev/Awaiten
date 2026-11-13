@@ -253,6 +253,11 @@
   }
 }
 
+.finished .bar,
+.finished .barCut::after {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bar,
   .racing .barCut::after {
