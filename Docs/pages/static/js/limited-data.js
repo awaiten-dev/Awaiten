@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "09c633b2e9c7c00a32f0c35221f00e3be713f71c",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
-        "message": "feat: warn when a collection over an imported service has no member (#385)"
-      },
-      {
         "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
-      "09c633b2",
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.0574310661426614,
           6.548656642436981,
           6.521912140341906,
           5.775131902098655,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.399770854757382,
           4.860039963076512,
           3.201268791158994,
-          6.21166401853164
+          6.21166401853164,
+          6.180821465452512
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.080403942614794,
           8.244261731704077,
           7.397376200982502,
           7.259319060123884,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.345700619121392,
           6.95814897865057,
           3.923768685864551,
-          10.020161247679166
+          10.020161247679166,
+          10.376993904511133
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          59.084083267620635,
           127.46344637870789,
           111.89372821648915,
           134.40190279483795,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           112.22446834189552,
           88.42695304552714,
           56.72980957371848,
-          114.50940085252127
+          114.50940085252127,
+          115.90216409365335
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          5.134451225399971,
           8.786192470788956,
           9.017092248797416,
           8.792338166099329,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.188874436418216,
           6.443626171847185,
           4.469610226842073,
-          8.50270507360498
+          8.50270507360498,
+          8.591319015622139
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.319663459701197,
           11.032033746441206,
           11.460336261987687,
           10.861475057899952,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.749388809005419,
           8.220005206763744,
           5.977495563881738,
-          11.261467321560932
+          11.261467321560932,
+          10.897044329770974
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "09c633b2e9c7c00a32f0c35221f00e3be713f71c",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
-        "message": "feat: warn when a collection over an imported service has no member (#385)"
-      },
-      {
         "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
-      "09c633b2",
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.260497453312079,
           6.827638457928385,
           6.807349735072681,
           6.804768294095993,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.433005154132843,
           5.216453750928243,
           3.291904219488303,
-          6.973292630452376
+          6.973292630452376,
+          6.957348134900842
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.131661187609037,
           8.154115958015124,
           7.311314771572749,
           7.336752681859902,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.833350397646427,
           6.716735363006592,
           3.9192779724796614,
-          8.7291562674301
+          8.7291562674301,
+          8.712620777579454
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          58.72935757637024,
           128.95174657503765,
           110.74178948402405,
           135.8047717412313,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           110.03129856927055,
           87.8477542479833,
           54.75116766874607,
-          110.16743755340576
+          110.16743755340576,
+          112.7673612912496
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.844839874406656,
           8.802481403308255,
           8.97908839583397,
           8.780185304582119,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.169195892719122,
           6.85277642806371,
           4.671618827680747,
-          7.758266403124883
+          7.758266403124883,
+          9.085034889834267
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.157886114258032,
           14.6186617399965,
           14.90526368121306,
           14.155925347254826,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.029957552368824,
           11.372998410463333,
           5.804354172945023,
-          14.829002106189728
+          14.829002106189728,
+          14.766388502717017
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "09c633b2e9c7c00a32f0c35221f00e3be713f71c",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
-        "message": "feat: warn when a collection over an imported service has no member (#385)"
-      },
-      {
         "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
-      "09c633b2",
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          31.80365855353219,
           15.856938873018537,
           17.210004693695478,
           11.355789773662885,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           20.550241253773372,
           21.149382303158443,
           15.635852775971095,
-          21.528445130586626
+          21.528445130586626,
+          12.174908942409925
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1895.9765813010079,
           1160.960160191854,
           1378.822917175293,
           756.774569443294,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1523.1749202183314,
           1469.2484045028687,
           1097.816152708871,
-          1537.2213566643852
+          1537.2213566643852,
+          811.2067292758396
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          24551.011034284318,
           25370.002144949776,
           26703.86502511161,
           17963.49279315655,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           29917.062534877234,
           30320.094319661457,
           17857.625376383465,
-          29947.849357096355
+          29947.849357096355,
+          18718.950766427177
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32477,
           32478,
           32478,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32482,
           32482,
           32474,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          739.5335021018982,
           616.2078762735639,
           606.8067962964376,
           392.3377999578203,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           738.9720098495484,
           774.0555228551228,
           568.6855466206869,
-          760.291862487793
+          760.291862487793,
+          404.1462012699672
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          13896.199937947591,
           8975.595078604561,
           10846.294733683268,
           6496.906109946115,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           12048.559979952299,
           12113.944552103678,
           8189.433624267578,
-          12942.883726501464
+          12942.883726501464,
+          6458.415947469076
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24760,
-          24760,
           24761,
           24760,
           24761,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "09c633b2e9c7c00a32f0c35221f00e3be713f71c",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
-        "message": "feat: warn when a collection over an imported service has no member (#385)"
-      },
       {
         "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
-      "09c633b2",
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          413.02755339940387,
           115.91868620259422,
           129.9867902823857,
           79.93580618699391,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           199.51943543752034,
           185.85317792892457,
           167.65236700375874,
-          229.90483828953333
+          229.90483828953333,
+          76.88119270971843
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          15932.423860677083,
           10815.49388478597,
           12162.541552225748,
           7051.084931509836,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           15539.916112263998,
           14472.360782078335,
           9344.578490121025,
-          16250.187390136718
+          16250.187390136718,
+          7479.476569112142
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          575030.7221304086,
           640086.6211588542,
           646589.6358173077,
           415662.7752685547,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           738973.4303850447,
           734399.8752790178,
           427608.122140067,
-          755988.4709123884
+          755988.4709123884,
+          422382.4083426339
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          719702,
           740033,
           719056,
           739741,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           740463,
           741733,
           735366,
-          738520
+          738520,
+          735271
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          44754.377607073104,
           38302.58962140764,
           37605.20837402344,
           23624.480237688338,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           45175.41973876953,
           43864.7286705604,
           30867.83323451451,
-          47401.05213216146
+          47401.05213216146,
+          22903.65350811298
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80546,
           81193,
           80355,
           80005,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80011,
           80302,
           79664,
-          80082
+          80082,
+          79667
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          386860.846867488,
           263089.0813927284,
           319969.7874348958,
           201012.80314127603,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           361331.18876953126,
           353100.46025390626,
           239819.74799804686,
-          384538.38580729166
+          384538.38580729166,
+          181268.19709123884
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          572305,
           573120,
           573128,
           572994,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573074,
           573059,
           571208,
-          573090
+          573090,
+          573085
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "09c633b2e9c7c00a32f0c35221f00e3be713f71c",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 10:24:26 2026 \u002B0100",
-        "message": "feat: warn when a collection over an imported service has no member (#385)"
-      },
       {
         "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Fri Nov 13 20:41:31 2026 \u002B0100",
         "message": "docs: drop the summary from major versions in the changelog (#446)"
+      },
+      {
+        "sha": "3de226e594d75684ec8e91f67529f37e8cb25af3",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
+        "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
       }
     ],
     "labels": [
-      "09c633b2",
       "94a196c1",
       "d5a33c56",
       "ee8564a4",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "7871aad4",
       "95c9a72a",
       "a16eaedf",
-      "99187c77"
+      "99187c77",
+      "3de226e5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          270.83425542513527,
           253.48829164505005,
           386.9695495446523,
           270.68413615226746,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           178.6451291356768,
           288.9003121852875,
           164.55925500392914,
-          208.21065068244934
+          208.21065068244934,
+          207.6969141960144
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          645.9735329491751,
           596.2519153448252,
           602.007378578186,
           631.0310197194417,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           410.5092167173113,
           460.3266388007573,
           374.71216102746814,
-          447.3234804698399
+          447.3234804698399,
+          451.2680216789246
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6883.969565255301,
           6554.1670018514,
           6593.193232218425,
           6762.296631949289,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           3554.5630146906924,
           4894.100114695231,
           3347.54144014631,
-          4666.524297860952
+          4666.524297860952,
+          4634.27742207845
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          411.19897117614744,
           392.00403475761414,
           443.43413117726647,
           422.56473077138264,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           262.4480411529541,
           342.1455665588379,
           239.6430368934359,
-          331.0886113460247
+          331.0886113460247,
+          329.81409594217934
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          748.4599643120399,
           713.798678334554,
           702.8311220169068,
           750.3718147913615,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           415.82570018087114,
           542.7291932423909,
           371.0008008139474,
-          546.8135286477896
+          546.8135286477896,
+          521.5203612872532
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
