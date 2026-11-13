@@ -1956,6 +1956,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:27:24 2026 \u002B0100",
         "message": "chore: Bump Microsoft.Bcl.AsyncInterfaces from 10.0.14 to 11.0.0 (#435)"
+      },
+      {
+        "sha": "20f081879bfdf90caed2b4dd23de6e052ad1be5b",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
+        "message": "chore: Bump the fallout group with 2 updates (#432)"
       }
     ],
     "labels": [
@@ -2284,7 +2290,8 @@ window.BENCHMARK_DATA = {
       "4d763195",
       "f23bc30e",
       "2e662652",
-      "1fd18c8d"
+      "1fd18c8d",
+      "20f08187"
     ],
     "datasets": [
       {
@@ -2616,7 +2623,8 @@ window.BENCHMARK_DATA = {
           4.788992305951459,
           6.724975656185832,
           4.770783368211526,
-          6.965924181044102
+          6.965924181044102,
+          6.418721887927789
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2628,6 +2636,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3293,7 +3302,8 @@ window.BENCHMARK_DATA = {
           5.045931176344554,
           7.397512113054593,
           6.526549853957617,
-          6.917462213834127
+          6.917462213834127,
+          7.312287811438242
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3305,6 +3315,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3970,7 +3981,8 @@ window.BENCHMARK_DATA = {
           118.85646391709646,
           125.10849435512836,
           83.29912773200444,
-          136.71783386866252
+          136.71783386866252,
+          116.09143945376078
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3982,6 +3994,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4643,7 +4656,8 @@ window.BENCHMARK_DATA = {
           7.3918998291095095,
           9.138424622019132,
           6.503454297780991,
-          9.582084967692692
+          9.582084967692692,
+          9.13134053349495
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4655,6 +4669,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5312,7 +5327,8 @@ window.BENCHMARK_DATA = {
           8.700169250369072,
           10.649898132930199,
           8.450425938765209,
-          11.920760746513094
+          11.920760746513094,
+          10.816686540842056
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5324,6 +5340,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7615,6 +7632,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:27:24 2026 \u002B0100",
         "message": "chore: Bump Microsoft.Bcl.AsyncInterfaces from 10.0.14 to 11.0.0 (#435)"
+      },
+      {
+        "sha": "20f081879bfdf90caed2b4dd23de6e052ad1be5b",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
+        "message": "chore: Bump the fallout group with 2 updates (#432)"
       }
     ],
     "labels": [
@@ -7943,7 +7966,8 @@ window.BENCHMARK_DATA = {
       "4d763195",
       "f23bc30e",
       "2e662652",
-      "1fd18c8d"
+      "1fd18c8d",
+      "20f08187"
     ],
     "datasets": [
       {
@@ -8275,7 +8299,8 @@ window.BENCHMARK_DATA = {
           5.3802798618872965,
           7.460126606623332,
           5.935927597949138,
-          6.760019344091416
+          6.760019344091416,
+          7.103454048816975
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8287,6 +8312,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8952,7 +8978,8 @@ window.BENCHMARK_DATA = {
           5.06335816582044,
           7.558005342526095,
           6.533831862466676,
-          6.973612398902575
+          6.973612398902575,
+          7.3195691750599785
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -8964,6 +8991,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9629,7 +9657,8 @@ window.BENCHMARK_DATA = {
           118.51953384081523,
           117.38326307932536,
           86.32691322054181,
-          139.43012488683064
+          139.43012488683064,
+          140.75829776695795
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -9641,6 +9670,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10302,7 +10332,8 @@ window.BENCHMARK_DATA = {
           7.396051007509231,
           9.146059264739355,
           6.869242996970812,
-          9.641964048147202
+          9.641964048147202,
+          9.099850284365507
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10314,6 +10345,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10971,7 +11003,8 @@ window.BENCHMARK_DATA = {
           8.71180018463305,
           14.09018779794375,
           8.261291206947394,
-          16.019012661774955
+          16.019012661774955,
+          14.347620436123439
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -10983,6 +11016,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13274,6 +13308,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:27:24 2026 \u002B0100",
         "message": "chore: Bump Microsoft.Bcl.AsyncInterfaces from 10.0.14 to 11.0.0 (#435)"
+      },
+      {
+        "sha": "20f081879bfdf90caed2b4dd23de6e052ad1be5b",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
+        "message": "chore: Bump the fallout group with 2 updates (#432)"
       }
     ],
     "labels": [
@@ -13602,7 +13642,8 @@ window.BENCHMARK_DATA = {
       "4d763195",
       "f23bc30e",
       "2e662652",
-      "1fd18c8d"
+      "1fd18c8d",
+      "20f08187"
     ],
     "datasets": [
       {
@@ -13934,7 +13975,8 @@ window.BENCHMARK_DATA = {
           20.188160140599525,
           22.64449506600698,
           11.883148687226432,
-          27.68347166577975
+          27.68347166577975,
+          20.73461650212606
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14206,6 +14248,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -14611,7 +14654,8 @@ window.BENCHMARK_DATA = {
           1560.0456837972006,
           1523.6987042744954,
           825.3150572458903,
-          1725.1976654052735
+          1725.1976654052735,
+          1488.762935256958
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -14623,6 +14667,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15288,7 +15333,8 @@ window.BENCHMARK_DATA = {
           29522.42311314174,
           24509.57162475586,
           19038.39244733538,
-          25386.183732096353
+          25386.183732096353,
+          29835.312353515626
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15625,7 +15671,8 @@ window.BENCHMARK_DATA = {
           32482,
           32476,
           32477,
-          32474
+          32474,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -15961,7 +16008,8 @@ window.BENCHMARK_DATA = {
           774.751190884908,
           666.0008653004965,
           404.6052895784378,
-          703.9586375100272
+          703.9586375100272,
+          732.295866216932
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -15991,6 +16039,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -16630,7 +16679,8 @@ window.BENCHMARK_DATA = {
           11882.675614493233,
           11401.0069569179,
           6939.325558980306,
-          12361.864490763346
+          12361.864490763346,
+          12100.75055367606
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -16963,6 +17013,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -18933,6 +18984,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:27:24 2026 \u002B0100",
         "message": "chore: Bump Microsoft.Bcl.AsyncInterfaces from 10.0.14 to 11.0.0 (#435)"
+      },
+      {
+        "sha": "20f081879bfdf90caed2b4dd23de6e052ad1be5b",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
+        "message": "chore: Bump the fallout group with 2 updates (#432)"
       }
     ],
     "labels": [
@@ -19261,7 +19318,8 @@ window.BENCHMARK_DATA = {
       "4d763195",
       "f23bc30e",
       "2e662652",
-      "1fd18c8d"
+      "1fd18c8d",
+      "20f08187"
     ],
     "datasets": [
       {
@@ -19593,7 +19651,8 @@ window.BENCHMARK_DATA = {
           187.04954946041107,
           290.77687209447225,
           82.41419093949455,
-          245.76352656682332
+          245.76352656682332,
+          192.78212594985962
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -19865,6 +19924,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -20270,7 +20330,8 @@ window.BENCHMARK_DATA = {
           14613.589503696987,
           14119.246208699544,
           7862.218373979841,
-          15054.267866007487
+          15054.267866007487,
+          15103.33003133138
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -20282,6 +20343,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -20947,7 +21009,8 @@ window.BENCHMARK_DATA = {
           743857.658984375,
           589109.7459309896,
           460989.6998372396,
-          587725.269391741
+          587725.269391741,
+          740202.7669503348
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21284,7 +21347,8 @@ window.BENCHMARK_DATA = {
           741755,
           719003,
           718367,
-          718984
+          718984,
+          740458
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -21620,7 +21684,8 @@ window.BENCHMARK_DATA = {
           45210.771488444014,
           40770.48544108073,
           24951.748613993328,
-          41122.838271077475
+          41122.838271077475,
+          44434.07219587053
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -21953,7 +22018,8 @@ window.BENCHMARK_DATA = {
           80303,
           80344,
           80349,
-          80344
+          80344,
+          80008
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22289,7 +22355,8 @@ window.BENCHMARK_DATA = {
           375173.6207682292,
           338341.5186848958,
           209029.46952311197,
-          339344.9700520833
+          339344.9700520833,
+          368946.05182291666
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -22622,7 +22689,8 @@ window.BENCHMARK_DATA = {
           573138,
           571205,
           573093,
-          571203
+          571203,
+          572993
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24568,6 +24636,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 06:27:24 2026 \u002B0100",
         "message": "chore: Bump Microsoft.Bcl.AsyncInterfaces from 10.0.14 to 11.0.0 (#435)"
+      },
+      {
+        "sha": "20f081879bfdf90caed2b4dd23de6e052ad1be5b",
+        "author": "dependabot[bot]",
+        "date": "Fri Nov 13 06:28:00 2026 \u002B0100",
+        "message": "chore: Bump the fallout group with 2 updates (#432)"
       }
     ],
     "labels": [
@@ -24892,7 +24966,8 @@ window.BENCHMARK_DATA = {
       "4d763195",
       "f23bc30e",
       "2e662652",
-      "1fd18c8d"
+      "1fd18c8d",
+      "20f08187"
     ],
     "datasets": [
       {
@@ -25220,7 +25295,8 @@ window.BENCHMARK_DATA = {
           167.76656784330095,
           270.73038009007774,
           216.06346259911854,
-          243.9749357064565
+          243.9749357064565,
+          442.11010065078733
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -25255,6 +25331,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -25889,7 +25966,8 @@ window.BENCHMARK_DATA = {
           390.3100924125084,
           619.8033185005188,
           469.23016198476154,
-          517.0239828109741
+          517.0239828109741,
+          621.7550377845764
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -25901,6 +25979,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -26558,7 +26637,8 @@ window.BENCHMARK_DATA = {
           3418.973902482253,
           6810.7125773111975,
           5171.9021842956545,
-          4146.754992675781
+          4146.754992675781,
+          6796.058345249721
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -26642,6 +26722,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -27227,7 +27308,8 @@ window.BENCHMARK_DATA = {
           255.65110795838493,
           427.6365304311117,
           345.6843486150106,
-          338.4790616989136
+          338.4790616989136,
+          415.0232257525126
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -27239,6 +27321,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -27896,7 +27979,8 @@ window.BENCHMARK_DATA = {
           407.9703657786051,
           761.1126542772565,
           566.4097559792655,
-          556.8317747751872
+          556.8317747751872,
+          756.095302327474
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27908,6 +27992,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
