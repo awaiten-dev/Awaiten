@@ -161,7 +161,7 @@ The price is that the domain assembly now references Awaiten, and a host on anot
 
 Awaiten guards part of this for you: applying a composition attribute (`[Singleton]`, `[Scan]`, and the like) in an assembly that declares no `[Container]` is the suppressible warning [AWT134](./09-diagnostics.md#awt134). A `[Module]` class is exempt, so the module above does not trip it. That guard is best-effort, and it goes quiet in a single-project app that mixes the root with its domain. To enforce the full boundary, add an **architecture test** that asserts your domain and application assemblies carry no reference to Awaiten outside their module's namespace. That turns a convention into a red build the day someone crosses the line.
 
-[aweXpect.Reflection](https://docs.testably.org/aweXpect/extensions/aweXpect.Reflection/) expresses that rule directly. Point it at the assembly that holds your domain code, leave out its module's namespace, and assert the rest depends on nothing in the `Awaiten` namespace:
+[aweXpect.Reflection](https://docs.testably.org/aweXpect/extensions/aweXpect.Reflection/) expresses that rule directly. Point it at the assembly that holds your domain code, leave out its module's namespace, and assert the rest depends on nothing in the `Awaiten` namespace. The example needs aweXpect.Reflection 4, which builds on aweXpect 4; version 3 has no `WhichAreNotWithinNamespace`:
 
 ```csharp
 using aweXpect;
