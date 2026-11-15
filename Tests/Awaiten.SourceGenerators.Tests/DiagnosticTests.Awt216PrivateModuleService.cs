@@ -290,5 +290,49 @@ public partial class DiagnosticTests
 					.Because("nothing can resolve or depend on a service the container cannot name");
 			}
 		}
+
+		public class Extends
+		{
+			private static string Source(string registration) => $$"""
+				using Awaiten;
+
+				namespace Lib;
+
+				public static partial class Outer
+				{
+					private interface IWarmer { }
+					internal sealed class Warmer : IWarmer { }
+
+					[Module]
+					{{registration}}
+					public static partial class DataModule;
+
+					[Container]
+					[Import(typeof(DataModule))]
+					public static partial class BaseContainer;
+				}
+
+				[Container(Extends = typeof(Outer.BaseContainer))]
+				public static partial class Derived;
+				""";
+
+			[Test]
+			public async Task EagerSingleton_IsReportedAsInaccessibleInherited()
+			{
+				GeneratorResult result = Generator.Run(Source("[Singleton<Warmer, IWarmer>(Eager = true)]"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT226*").AsWildcard()
+					.Because("the derived container cannot name the inherited service, so the inheritance reports it rather than silently never starting the eager singleton");
+			}
+
+			[Test]
+			public async Task PlainSingleton_IsReportedAsInaccessibleInherited()
+			{
+				GeneratorResult result = Generator.Run(Source("[Singleton<Warmer, IWarmer>]"));
+
+				await That(result.Diagnostics).HasSingle().Which.Contains("*AWT226*").AsWildcard()
+					.Because("the inheritance reports an inherited registration the derived container cannot name");
+			}
+		}
 	}
 }

@@ -274,7 +274,7 @@ partial class AwaitenGenerator
 	///     whose service and member this container cannot reach, and which the module builds through no handle, is
 	///     dropped like a constructed one (see <see cref="SelfCompiledRegistration" />). A registration of a module in the
 	///     container's own assembly under a service private to the module that the container cannot name is reported as
-	///     AWT216 and dropped.
+	///     AWT216 and dropped, unless the module is inherited through <c>Extends</c>, whose inheritance reports it (AWT226).
 	/// </summary>
 	private static void CollectLifetimeRegistrations(
 		LifetimeCollectionContext context,
@@ -390,8 +390,9 @@ partial class AwaitenGenerator
 			}
 
 			// A container that cannot name a service private to the module reports the registration rather than emit code that
-			// names the service. A registered type private to the module is reported as AWT216 itself.
-			if (fromModule && skipGeneratedScanRegistrations && !conflictingDirectives
+			// names the service. A registered type private to the module is reported as AWT216 itself. An inherited module's
+			// registration is kept for the inheritance to report (AWT226).
+			if (fromModule && skipGeneratedScanRegistrations && !conflictingDirectives && !context.Inherited
 			    && service is INamedTypeSymbol named
 			    && TypeHiddenInModule(named, origin!, context.Compilation) is { } hiddenService
 			    && context.Container is { } container
