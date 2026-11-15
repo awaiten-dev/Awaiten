@@ -1251,7 +1251,7 @@ partial class AwaitenGenerator
 		return new DiagnosticInfo(
 			Diagnostics.RegisteredTypeLessAccessible,
 			LocationInfo.From(location),
-			new EquatableArray<string>([name, Display(restricted.ToDisplayString(FullyQualified)), $"'{name}' is registered under {relation}, so {namers} can name the service", PrivateServiceRemedy(hiddenService),]));
+			new EquatableArray<string>([name, Display(restricted.OriginalDefinition.ToDisplayString(FullyQualified)), $"'{name}' is registered under {relation}, so {namers} can name the service", PrivateServiceRemedy(hiddenService),]));
 	}
 
 	/// <summary>
@@ -1275,7 +1275,7 @@ partial class AwaitenGenerator
 	///     private to the module, naming the type whose accessibility hides it (see <see cref="RestrictedType" />).
 	/// </summary>
 	private static string PrivateServiceRemedy(INamedTypeSymbol hiddenService)
-		=> $"register it under an accessible service, or make '{Display(RestrictedType(hiddenService).ToDisplayString(FullyQualified))}' internal or public";
+		=> $"register it under an accessible service, or make '{Display(RestrictedType(hiddenService).OriginalDefinition.ToDisplayString(FullyQualified))}' internal or public";
 
 	/// <summary>The first parameter of <paramref name="factory" /> whose type is private to <paramref name="module" /> (see <see cref="TypeHiddenInModule" />), or <see langword="null" />.</summary>
 	private static IParameterSymbol? HiddenParameter(IMethodSymbol factory, INamedTypeSymbol module, Compilation compilation)

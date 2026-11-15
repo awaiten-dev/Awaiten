@@ -155,6 +155,28 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task LibraryBuild_GenericService_NamesItsDefinition()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				[Module]
+				[Singleton<DataModule.Warmer, DataModule.IWarmer<int>>(Eager = true)]
+				public static partial class DataModule
+				{
+					private interface IWarmer<T> { }
+					internal sealed class Warmer : IWarmer<int> { }
+				}
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.IWarmer<T>' is private or protected*; register it under an accessible service, or make 'Lib.DataModule.IWarmer<T>' internal or public").AsWildcard()
+				.Because("the accessibility belongs to the generic definition, not to one construction of it");
+		}
+
+		[Test]
 		public async Task SameAssembly_ContainerThatDeclaresTheService_NamesTheService()
 		{
 			GeneratorResult result = Generator.Run("""
