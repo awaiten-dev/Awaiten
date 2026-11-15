@@ -265,6 +265,46 @@
   flex: none;
 }
 
+.added {
+  color: #8ee08e;
+  background: rgba(142, 224, 142, 0.12);
+  border-radius: 3px;
+}
+
+.success {
+  border-top-color: #1f3a2a;
+  background: #121a15;
+  color: #d3f2dc;
+}
+
+.successId {
+  font-family: var(--ifm-font-family-monospace);
+  font-weight: 500;
+  color: #121a15;
+  background: #8ee08e;
+  border-radius: 4px;
+  padding: 0 0.45rem;
+  flex: none;
+}
+
+.fix {
+  margin-left: auto;
+  flex: none;
+  font: inherit;
+  font-weight: 600;
+  color: #e3eded;
+  background: transparent;
+  border: 1px solid #4a5a5a;
+  border-radius: 6px;
+  padding: 0.1rem 0.7rem;
+  cursor: pointer;
+}
+
+.fix:hover {
+  border-color: #3fb8b0;
+  color: #ffffff;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
