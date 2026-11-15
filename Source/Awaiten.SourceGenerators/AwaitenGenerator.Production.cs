@@ -17,6 +17,11 @@ partial class AwaitenGenerator
 		Dictionary<ServiceKey, string> serviceToImpl = context.ServiceToImpl;
 		WellKnownTypes wellKnown = context.WellKnown;
 		List<DiagnosticInfo> diagnostics = context.Diagnostics;
+		if (info.ConstructVia is not null || info.ProductionMember is not null)
+		{
+			context.Names.ReportOwner(info.Origin);
+		}
+
 		context.Names.Report(info.Symbol, info.DeclaredBy ?? info.Origin ?? containerSymbol, "registers", info.Location);
 
 		string? resolverType = null;
@@ -267,6 +272,7 @@ partial class AwaitenGenerator
 			}
 
 			ReportWhenUnregistered(dependency, service.Type, info, context);
+			context.Names.ReportOwner(producer.ContainingType);
 			members.Add(new MemberModel(name, dependency, Deferred: true, call));
 		}
 
@@ -320,7 +326,13 @@ partial class AwaitenGenerator
 		IEnumerable<string> filled = producer.Parameters.Skip(FirstPropertyOrdinal(producer)).Select(parameter => parameter.Name).Concat(members.Select(member => member.MemberName));
 		int count = members.Count;
 		DiscoverInjectedMembers(info, injection, entries, members, afterFactory: true, implementation, filled.ToList(), context.ReportedHandleEntries);
-		return members.Count > count ? $"{alias.ContainingType.ToDisplayString(FullyQualified)}.{alias.Name}" : null;
+		if (members.Count == count)
+		{
+			return null;
+		}
+
+		context.Names.ReportOwner(alias.ContainingType);
+		return $"{alias.ContainingType.ToDisplayString(FullyQualified)}.{alias.Name}";
 	}
 
 	/// <summary>
@@ -1018,6 +1030,7 @@ partial class AwaitenGenerator
 		// The hook's own origin (the registration that named it), not the implementation's winning Origin: two
 		// scan registrations with different origins can fill the two slots, and each name binds only on its owner.
 		INamedTypeSymbol? origin = release ? info.OnReleaseOrigin : info.OnActivatedOrigin;
+		context.Names.ReportOwner(origin);
 
 		// An implementation hidden in its module or base container keeps a hook only when its owner generated the
 		// wrapper (see SelfCompiledRegistration, SameCompilationScanRegistration and BuildThroughBaseFactories), so the

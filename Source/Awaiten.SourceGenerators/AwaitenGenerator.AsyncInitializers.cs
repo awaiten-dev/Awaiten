@@ -333,6 +333,7 @@ partial class AwaitenGenerator
 				if (InternalsMembers(owner, ConventionWrapperName(convention)).OfType<IMethodSymbol>()
 					    .FirstOrDefault(method => method.Parameters.Length > 0 && context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly)) is { } wrapper)
 				{
+					context.Names.ReportOwner(owner);
 					models.Add(new AsyncInitializerModel(
 						$"{owner.ToDisplayString(FullyQualified)}.{InternalsClass}",
 						wrapper.Name,
@@ -432,6 +433,7 @@ partial class AwaitenGenerator
 			if (names.Add(name)
 			    && InternalsMembers(module, name).OfType<IMethodSymbol>().FirstOrDefault(method => context.Compilation.IsSymbolAccessibleWithin(method, context.Compilation.Assembly)) is { } wrapper)
 			{
+				context.Names.ReportOwner(module);
 				models.Add(new AsyncInitializerModel(
 					$"{module.ToDisplayString(FullyQualified)}.{InternalsClass}",
 					name,

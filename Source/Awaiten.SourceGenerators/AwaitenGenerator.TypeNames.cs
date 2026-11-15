@@ -8,47 +8,28 @@ namespace Awaiten.SourceGenerators;
 partial class AwaitenGenerator
 {
 	/// <summary>
-	///     Adds <see cref="Diagnostics.AmbiguousTypeName">AWT260</see> to a model without errors for each module or base container
-	///     its generated code names but cannot (see <see cref="AmbiguousTypeNames.ReportModules" />). A base of the same assembly
-	///     reports the modules it imports itself.
-	/// </summary>
-	private static ContainerModel ReportUnnamedModules(ContainerModel model, INamedTypeSymbol containerSymbol, Compilation compilation, CancellationToken cancellationToken)
-	{
-		List<ImportedModule> modules = CollectImportedModules(containerSymbol, new List<DiagnosticInfo>());
-		if (ResolveExtends(containerSymbol, new List<DiagnosticInfo>(), cancellationToken) is { } extended)
-		{
-			modules = InheritBase(extended, modules);
-			if (SymbolEqualityComparer.Default.Equals(extended.Symbol.ContainingAssembly, compilation.Assembly))
-			{
-				modules.RemoveAll(module => module is { Inherited: true, IsBase: false, });
-			}
-		}
-
-		List<DiagnosticInfo> diagnostics = new();
-		new AmbiguousTypeNames(compilation, diagnostics).ReportModules(modules, containerSymbol, () => EmitContainer(model, _ => { }));
-		return diagnostics.Count == 0
-			? model
-			: model with { Diagnostics = new EquatableArray<DiagnosticInfo>([..model.Diagnostics.AsArray(), ..diagnostics,]), };
-	}
-
-	/// <summary>
 	///     Reports <see cref="Diagnostics.AmbiguousTypeName">AWT260</see> for a type the container's graph needs that its generated
 	///     code cannot name: another type of the same full name that the container's assembly can access, declared by another
 	///     referenced assembly or by the project itself, makes <c>global::</c> name both (CS0433) or the project's own. Each such type
-	///     is reported once, where it first enters the graph.
+	///     is reported once, where it first enters the graph. The generated code names an imported module or the extended base
+	///     container only to call into it, or to name a type nested in it, which reports it at its import or the <c>Extends</c>.
 	/// </summary>
 	/// <remarks>Lives only inside one graph build and never reaches a model.</remarks>
 	internal sealed class AmbiguousTypeNames
 	{
 		private readonly Compilation _compilation;
 		private readonly List<DiagnosticInfo> _diagnostics;
+		private readonly INamedTypeSymbol _container;
+		private readonly List<ImportedModule> _modules;
 		private readonly Dictionary<INamedTypeSymbol, string[]?> _assemblies = new(SymbolEqualityComparer.Default);
 		private readonly HashSet<INamedTypeSymbol> _reported = new(SymbolEqualityComparer.Default);
 
-		public AmbiguousTypeNames(Compilation compilation, List<DiagnosticInfo> diagnostics)
+		public AmbiguousTypeNames(Compilation compilation, List<DiagnosticInfo> diagnostics, INamedTypeSymbol container, List<ImportedModule> modules)
 		{
 			_compilation = compilation;
 			_diagnostics = diagnostics;
+			_container = container;
+			_modules = modules;
 		}
 
 		/// <summary>
@@ -58,6 +39,54 @@ partial class AwaitenGenerator
 		/// </summary>
 		public void Report(ITypeSymbol type, ISymbol needer, string verb, LocationInfo? location)
 			=> ReportWithin(type, type, needer is INamedTypeSymbol { Name: InternalsClass, ContainingType: { } owner, } ? owner : needer, verb, location);
+
+		/// <summary>
+		///     Reports the imported module or extended base container that <paramref name="owner" /> is or is nested in, whose member
+		///     the generated code calls, such as a handle, a factory, a hook, a predicate or a wrapper it generates.
+		/// </summary>
+		public void ReportOwner(INamedTypeSymbol? owner)
+		{
+			if (owner is not null && ImportOf(owner) is { } module)
+			{
+				ReportModule(module);
+			}
+		}
+
+		/// <summary>The imported module or extended base container that <paramref name="type" /> is or is nested in, or <see langword="null" />.</summary>
+		private ImportedModule? ImportOf(INamedTypeSymbol type)
+		{
+			for (INamedTypeSymbol? current = type.OriginalDefinition; current is not null; current = current.ContainingType)
+			{
+				if (_modules.FirstOrDefault(module => SymbolEqualityComparer.Default.Equals(module.Symbol, current)) is { } module)
+				{
+					return module;
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		///     Reports <paramref name="module" /> as imported by the container, or by the base container for a module it inherits, or
+		///     extended for the base itself, at that import or the <c>Extends</c>.
+		/// </summary>
+		private void ReportModule(ImportedModule module)
+		{
+			ISymbol needer = module is { Inherited: true, IsBase: false, }
+				? _modules.FirstOrDefault(candidate => candidate.IsBase)?.Symbol ?? _container
+				: _container;
+			ReportDefinition(Outermost(module.Symbol).OriginalDefinition, module.Symbol, needer, module.IsBase ? "extends" : "imports", LocationInfo.From(module.ImportLocation));
+		}
+
+		private static INamedTypeSymbol Outermost(INamedTypeSymbol type)
+		{
+			while (type.ContainingType is { } containing)
+			{
+				type = containing;
+			}
+
+			return type;
+		}
 
 		/// <summary>
 		///     Reports each top-level type definition <paramref name="part" /> of <paramref name="type" /> spells, which <c>global::</c>
@@ -74,13 +103,15 @@ partial class AwaitenGenerator
 					ReportWithin(pointer.PointedAtType, type, needer, verb, location);
 					break;
 				case INamedTypeSymbol named:
-					INamedTypeSymbol outermost = named;
-					while (outermost.ContainingType is { } containing)
+					if (ImportOf(named) is { } module)
 					{
-						outermost = containing;
+						ReportModule(module);
+					}
+					else
+					{
+						ReportDefinition(Outermost(named).OriginalDefinition, type, needer, verb, location);
 					}
 
-					ReportDefinition(outermost.OriginalDefinition, type, needer, verb, location);
 					for (INamedTypeSymbol? current = named; current is not null; current = current.ContainingType)
 					{
 						foreach (ITypeSymbol argument in current.TypeArguments)
@@ -203,52 +234,6 @@ partial class AwaitenGenerator
 					ReportKey(registration.KeyType, declarer, location);
 				}
 			}
-		}
-
-		/// <summary>
-		///     Reports each of <paramref name="modules" /> that the generated code cannot name but <paramref name="source" /> names, as
-		///     imported by <paramref name="container" />, or by the base container for a module it inherits, or extended for the base
-		///     itself. The container names a module only to call into it, such as a handle, a factory, a hook or a wrapper the module
-		///     generates, so the emitted source tells which modules it names; it is emitted only when a module cannot be named.
-		/// </summary>
-		public void ReportModules(List<ImportedModule> modules, INamedTypeSymbol container, Func<string> source)
-		{
-			ISymbol baseContainer = modules.FirstOrDefault(module => module.IsBase)?.Symbol ?? container;
-			string? emitted = null;
-			foreach (ImportedModule module in modules)
-			{
-				INamedTypeSymbol outermost = module.Symbol;
-				while (outermost.ContainingType is { } containing)
-				{
-					outermost = containing;
-				}
-
-				if (AssembliesDeclaring(outermost.OriginalDefinition) is null)
-				{
-					continue;
-				}
-
-				emitted ??= source();
-				if (Names(emitted, module.Symbol.ToDisplayString(FullyQualified)))
-				{
-					Report(module.Symbol, module.Inherited && !module.IsBase ? baseContainer : container, module.IsBase ? "extends" : "imports", LocationInfo.From(module.ImportLocation));
-				}
-			}
-		}
-
-		/// <summary>Whether <paramref name="source" /> spells the full name <paramref name="type" />, not just a longer name it starts.</summary>
-		private static bool Names(string source, string type)
-		{
-			for (int index = source.IndexOf(type, StringComparison.Ordinal); index >= 0; index = source.IndexOf(type, index + 1, StringComparison.Ordinal))
-			{
-				int end = index + type.Length;
-				if (end == source.Length || !(char.IsLetterOrDigit(source[end]) || source[end] == '_'))
-				{
-					return true;
-				}
-			}
-
-			return false;
 		}
 
 		private static string Enumerate(string[] assemblies)

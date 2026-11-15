@@ -129,13 +129,13 @@ internal sealed record DecorateRegistration(
 
 /// <summary>
 ///     The <c>When</c> predicate of a <c>[Decorate]</c> or the <c>EagerWhen</c> predicate of a <c>[Singleton]</c>: the
-///     fully qualified static <see cref="Member" /> the root reads,
+///     fully qualified static <see cref="Member" /> the root reads, the module or container that declares it (<see cref="Owner" />),
 ///     the <see cref="Method" /> it calls when the member is a method (whose parameters the root resolves), and the
 ///     attribute's location. <see cref="Declared" /> names the predicate the user declared when <see cref="Member" /> is
 ///     the wrapper its owner generated for it.
 /// </summary>
 /// <remarks>An intermediate type carrying live Roslyn symbols; see <see cref="RawRegistration" />.</remarks>
-internal sealed record DecoratorPredicate(string Member, IMethodSymbol? Method, Location? Location, string? Declared = null);
+internal sealed record DecoratorPredicate(string Member, INamedTypeSymbol Owner, IMethodSymbol? Method, Location? Location, string? Declared = null);
 
 /// <summary>
 ///     The generated factory of a module or base container (<see cref="Owner" />) that builds a decorator or composite

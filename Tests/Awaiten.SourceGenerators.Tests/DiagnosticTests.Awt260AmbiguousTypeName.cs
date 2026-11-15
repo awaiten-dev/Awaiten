@@ -361,6 +361,42 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task AGenericTypeThatSharesTheNameOfAModuleTheContainerNeverNames_IsNotReported()
+		{
+			const string module = "[Module] [Singleton<First.Kettle>] [Singleton<Lib.Mod<int>>] public static partial class Mod { } public sealed class Mod<T> { }";
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, BaseShop("public sealed class Kettle { }", module), Library("Second", "public static class Mod { }", registrations: ""), Extending);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("'global::Lib.Mod<int>' names the generic type of another arity, and the container never calls into the module 'Lib.Mod'");
+		}
+
+		[Test]
+		public async Task AModuleOfAnExtendedContainerOfTheSameAssembly_IsReportedOnceForTheBaseContainer()
+		{
+			(Compilation first, _) = Generator.RunGenerator(Library("First", HandledModule, registrations: "", types: Kettle), [], [], "FirstAssembly");
+			(Compilation second, _) = Generator.RunGenerator(Library("Second", "public static class Mod { }", registrations: ""), [], [], "SecondAssembly");
+			const string consumer = """
+				extern alias Other;
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(Other::Lib.Mod))]
+				public static partial class BaseShop;
+
+				[Container(Extends = typeof(BaseShop))]
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult result = Generator.RunWithReferences(consumer, [Generator.EmitToReference(first).WithAliases(["Other",]), Generator.EmitToReference(second),]);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("MyCode.BaseShop", verb: "imports", type: "Lib.Mod", line: "7", declared: "Lib.Mod"))
+				.Because("the base container reports the module it imports itself, so the extending container does not report it again");
+		}
+
+		[Test]
 		public async Task AModuleTheContainerImportsThroughAnAlias_IsReportedForTheContainer()
 		{
 			(Compilation first, _) = Generator.RunGenerator(Library("First", HandledModule, registrations: "", types: Kettle), [], [], "FirstAssembly");

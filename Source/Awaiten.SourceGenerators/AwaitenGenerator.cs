@@ -712,12 +712,6 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			GrantsInternalsVisibleTo(compilation.Assembly) ? new EquatableArray<SkippedRegistration>(graph.Factories.HookSkips.ToArray()) : default,
 			DeclaresNotNullWhen: declaresNotNullWhen,
 			ConventionWrappers: new EquatableArray<ConventionWrapper>(graph.Factories.ConventionWrappers.ToArray()));
-		if (model.HasErrors)
-		{
-			return model;
-		}
-
-		model = ReportUnnamedModules(model, containerSymbol, compilation, cancellationToken);
 		return model.HasErrors ? model : VerifyDependencies(model, LocationInfo.From(containerSymbol.Locations.FirstOrDefault()));
 	}
 
@@ -1003,7 +997,7 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 		// parameter or [Inject] property - to the external provider, while every other unresolved dependency keeps the
 		// AWT101 check. Bundled with the blanket flag as the container's external-resolution surface, threaded through
 		// the coalescing phase that decides constructor satisfiability.
-		AmbiguousTypeNames names = new(compilation, diagnostics);
+		AmbiguousTypeNames names = new(compilation, diagnostics, containerSymbol, modules);
 		ExternalServiceTypes externalServiceTypes = CollectExternalServiceTypes(containerSymbol, modules, compilation, diagnostics, names);
 
 		// An extending container's own registration replaces an inherited [ImportService<T>] of that type, as it

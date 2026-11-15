@@ -62,7 +62,7 @@ partial class AwaitenGenerator
 			return ThroughWrapper(out predicate);
 		}
 
-		predicate = new DecoratorPredicate($"{owner.ToDisplayString(FullyQualified)}.{name}", usable[0] as IMethodSymbol, location);
+		predicate = new DecoratorPredicate($"{owner.ToDisplayString(FullyQualified)}.{name}", owner, usable[0] as IMethodSymbol, location);
 		return true;
 
 		// Only an owner in another assembly carries the wrapper: one in this assembly generates it in this same run.
@@ -78,7 +78,7 @@ partial class AwaitenGenerator
 			}
 
 			string ownerName = owner.ToDisplayString(FullyQualified);
-			wrapped = new DecoratorPredicate($"{ownerName}.{InInternals(wrapperName)}", wrapper as IMethodSymbol, location, $"{ownerName}.{name}");
+			wrapped = new DecoratorPredicate($"{ownerName}.{InInternals(wrapperName)}", owner, wrapper as IMethodSymbol, location, $"{ownerName}.{name}");
 			return true;
 		}
 	}
@@ -230,6 +230,7 @@ partial class AwaitenGenerator
 
 	private static PredicateModel BuildPredicate(DecoratorPredicate predicate, string service, BuildContext context)
 	{
+		context.Names.ReportOwner(predicate.Owner);
 		if (!context.Predicates.TryGetValue(predicate.Member, out PredicateModel? model))
 		{
 			model = ClassifyPredicateParameters(predicate, service, context);
