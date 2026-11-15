@@ -65,8 +65,8 @@ public partial class DiagnosticTests
 			}
 			""";
 
-		private static string Expected(string module, string verb = "registers", string type = "Lib.Clock", string line = "6", string column = "2")
-			=> $"({line},{column}): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of the types";
+		private static string Expected(string module, string verb = "registers", string type = "Lib.Clock", string line = "6", string column = "2", string declared = "Lib.Clock")
+			=> $"({line},{column}): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named '{declared}'; keep the container in a project that references only one of them, or rename one of the types";
 
 		private static GeneratorResult Run(Setup setup, string first, string second, string consumer)
 		{
@@ -305,6 +305,93 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule", verb: "imports"))
 				.Because("the container's by-type dispatch asks the host for the imported clock by its type");
+		}
+
+		[Test]
+		public async Task TheTypeOfAnAsyncInitializer_IsReportedForTheModuleThatDeclaresIt()
+		{
+			string first = Library(
+				"First",
+				"public interface IWarmUp { System.Threading.Tasks.Task WarmUpAsync(); }",
+				"[AsyncInitializer<Lib.IWarmUp>(nameof(Lib.IWarmUp.WarmUpAsync))] [Singleton<Service>]",
+				"public sealed class Service : Lib.IWarmUp { public System.Threading.Tasks.Task WarmUpAsync() => System.Threading.Tasks.Task.CompletedTask; }");
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", "public interface IWarmUp { }", registrations: ""), ImportFirst);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule", verb: "declares as an async initializer", type: "Lib.IWarmUp", declared: "Lib.IWarmUp"))
+				.Because("the container casts the instance to the initializer's type to run it");
+		}
+
+		private const string HandledModule = "[Module] [Singleton<First.Kettle>] public static partial class Mod { }";
+
+		private const string Kettle = "public sealed class Kettle { internal Kettle() { } }";
+
+		private const string Extending = """
+			using Awaiten;
+
+			namespace MyCode;
+
+			[Container(Extends = typeof(First.BaseShop))]
+			public static partial class MyContainer;
+			""";
+
+		private static string BaseShop(string kettle, string module = HandledModule)
+			=> Library("First", module, registrations: "", types: $"{kettle} [Container] [Import(typeof(Lib.Mod))] public static partial class BaseShop;");
+
+		[Test]
+		[Arguments(Kettle, HandledModule)]
+		[Arguments("public sealed class Kettle { }", "[Module] [Singleton<First.Kettle>(OnActivated = nameof(Activate))] public static partial class Mod { public static void Activate(First.Kettle kettle) { } }")]
+		[Arguments("public sealed class Kettle { }", "[Module] [Singleton<First.Kettle>(Factory = nameof(Create))] public static partial class Mod { public static First.Kettle Create() => new(); }")]
+		[Arguments("public sealed class Kettle { }", "[Module] [Singleton<First.Kettle>(EagerWhen = nameof(Eager))] public static partial class Mod { public static bool Eager() => true; }")]
+		public async Task AModuleOfAnExtendedContainer_IsReportedForTheBaseContainerThatImportsIt(string kettle, string module)
+		{
+			GeneratorResult result = Run(Setup.ImplementationAssembly, BaseShop(kettle, module), Library("Second", "public static class Mod { }", registrations: ""), Extending);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.BaseShop", verb: "imports", type: "Lib.Mod", line: "5", column: "12", declared: "Lib.Mod"))
+				.Because("a handle, a hook, a factory or a predicate the module declares makes the container name the module's type");
+		}
+
+		[Test]
+		public async Task AModuleTheContainerNeverNames_IsNotReported()
+		{
+			GeneratorResult result = Run(Setup.ImplementationAssembly, BaseShop("public sealed class Kettle { }"), Library("Second", "public static class Mod { }", registrations: ""), Extending);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container constructs the public kettle itself, so its generated code never names the module");
+		}
+
+		[Test]
+		public async Task AModuleTheContainerImportsThroughAnAlias_IsReportedForTheContainer()
+		{
+			(Compilation first, _) = Generator.RunGenerator(Library("First", HandledModule, registrations: "", types: Kettle), [], [], "FirstAssembly");
+			(Compilation second, _) = Generator.RunGenerator(Library("Second", "public static class Mod { }", registrations: ""), [], [], "SecondAssembly");
+			const string consumer = """
+				extern alias Other;
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(Other::Lib.Mod))]
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult result = Generator.RunWithReferences(consumer, [Generator.EmitToReference(first).WithAliases(["Other",]), Generator.EmitToReference(second),]);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("MyCode.MyContainer", verb: "imports", type: "Lib.Mod", line: "7", declared: "Lib.Mod"))
+				.Because("'global::Lib.Mod' names the second library's type, so the container cannot name the module it imports through the alias");
+		}
+
+		[Test]
+		public async Task ASameNamedTypeOfAnAliasedReference_IsNotReported()
+		{
+			(Compilation first, _) = Generator.RunGenerator(Library("First"), [], [], "FirstAssembly");
+			(Compilation second, _) = Generator.RunGenerator(Library("Second", registrations: ""), [], [], "SecondAssembly");
+
+			GeneratorResult result = Generator.RunWithReferences(ImportFirst, [Generator.EmitToReference(first), Generator.EmitToReference(second).WithAliases(["Other",]),]);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the second library's clock is reachable only through its alias, so 'global::Lib.Clock' names only the first one");
 		}
 
 		[Test]

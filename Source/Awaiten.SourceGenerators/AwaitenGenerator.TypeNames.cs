@@ -8,6 +8,30 @@ namespace Awaiten.SourceGenerators;
 partial class AwaitenGenerator
 {
 	/// <summary>
+	///     Adds <see cref="Diagnostics.AmbiguousTypeName">AWT260</see> to a model without errors for each module or base container
+	///     its generated code names but cannot (see <see cref="AmbiguousTypeNames.ReportModules" />). A base of the same assembly
+	///     reports the modules it imports itself.
+	/// </summary>
+	private static ContainerModel ReportUnnamedModules(ContainerModel model, INamedTypeSymbol containerSymbol, Compilation compilation, CancellationToken cancellationToken)
+	{
+		List<ImportedModule> modules = CollectImportedModules(containerSymbol, new List<DiagnosticInfo>());
+		if (ResolveExtends(containerSymbol, new List<DiagnosticInfo>(), cancellationToken) is { } extended)
+		{
+			modules = InheritBase(extended, modules);
+			if (SymbolEqualityComparer.Default.Equals(extended.Symbol.ContainingAssembly, compilation.Assembly))
+			{
+				modules.RemoveAll(module => module is { Inherited: true, IsBase: false, });
+			}
+		}
+
+		List<DiagnosticInfo> diagnostics = new();
+		new AmbiguousTypeNames(compilation, diagnostics).ReportModules(modules, containerSymbol, () => EmitContainer(model, _ => { }));
+		return diagnostics.Count == 0
+			? model
+			: model with { Diagnostics = new EquatableArray<DiagnosticInfo>([..model.Diagnostics.AsArray(), ..diagnostics,]), };
+	}
+
+	/// <summary>
 	///     Reports <see cref="Diagnostics.AmbiguousTypeName">AWT260</see> for a type the container's graph needs that its generated
 	///     code cannot name: another type of the same full name that the container's assembly can access, declared by another
 	///     referenced assembly or by the project itself, makes <c>global::</c> name both (CS0433) or the project's own. Each such type
@@ -153,8 +177,7 @@ partial class AwaitenGenerator
 			INamespaceSymbol? resolved = _compilation.GlobalNamespace;
 			while (resolved is not null && names.Count > 0)
 			{
-				string name = names.Pop();
-				resolved = resolved.GetNamespaceMembers().FirstOrDefault(member => member.Name == name);
+				resolved = resolved.GetMembers(names.Pop()).OfType<INamespaceSymbol>().FirstOrDefault();
 			}
 
 			return resolved;
@@ -180,6 +203,52 @@ partial class AwaitenGenerator
 					ReportKey(registration.KeyType, declarer, location);
 				}
 			}
+		}
+
+		/// <summary>
+		///     Reports each of <paramref name="modules" /> that the generated code cannot name but <paramref name="source" /> names, as
+		///     imported by <paramref name="container" />, or by the base container for a module it inherits, or extended for the base
+		///     itself. The container names a module only to call into it, such as a handle, a factory, a hook or a wrapper the module
+		///     generates, so the emitted source tells which modules it names; it is emitted only when a module cannot be named.
+		/// </summary>
+		public void ReportModules(List<ImportedModule> modules, INamedTypeSymbol container, Func<string> source)
+		{
+			ISymbol baseContainer = modules.FirstOrDefault(module => module.IsBase)?.Symbol ?? container;
+			string? emitted = null;
+			foreach (ImportedModule module in modules)
+			{
+				INamedTypeSymbol outermost = module.Symbol;
+				while (outermost.ContainingType is { } containing)
+				{
+					outermost = containing;
+				}
+
+				if (AssembliesDeclaring(outermost.OriginalDefinition) is null)
+				{
+					continue;
+				}
+
+				emitted ??= source();
+				if (Names(emitted, module.Symbol.ToDisplayString(FullyQualified)))
+				{
+					Report(module.Symbol, module.Inherited && !module.IsBase ? baseContainer : container, module.IsBase ? "extends" : "imports", LocationInfo.From(module.ImportLocation));
+				}
+			}
+		}
+
+		/// <summary>Whether <paramref name="source" /> spells the full name <paramref name="type" />, not just a longer name it starts.</summary>
+		private static bool Names(string source, string type)
+		{
+			for (int index = source.IndexOf(type, StringComparison.Ordinal); index >= 0; index = source.IndexOf(type, index + 1, StringComparison.Ordinal))
+			{
+				int end = index + type.Length;
+				if (end == source.Length || !(char.IsLetterOrDigit(source[end]) || source[end] == '_'))
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		private static string Enumerate(string[] assemblies)

@@ -712,6 +712,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 			GrantsInternalsVisibleTo(compilation.Assembly) ? new EquatableArray<SkippedRegistration>(graph.Factories.HookSkips.ToArray()) : default,
 			DeclaresNotNullWhen: declaresNotNullWhen,
 			ConventionWrappers: new EquatableArray<ConventionWrapper>(graph.Factories.ConventionWrappers.ToArray()));
+		if (model.HasErrors)
+		{
+			return model;
+		}
+
+		model = ReportUnnamedModules(model, containerSymbol, compilation, cancellationToken);
 		return model.HasErrors ? model : VerifyDependencies(model, LocationInfo.From(containerSymbol.Locations.FirstOrDefault()));
 	}
 

@@ -353,6 +353,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
+			context.Names.Report(convention.Type, convention.Owner, "declares as an async initializer", info.Location);
 			models.Add(new AsyncInitializerModel(
 				convention.Type.ToDisplayString(FullyQualified),
 				convention.Name,
