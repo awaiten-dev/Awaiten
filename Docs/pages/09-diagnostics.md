@@ -6115,11 +6115,13 @@ public static partial class GrindingModule;
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Rename one of the types or namespaces, or keep the container in a project that references only one of the assemblies that declare it. When the container needs no type of one of the assemblies, give its reference an alias in the project file instead, with `Aliases` on the `ProjectReference` or `PackageReference`, so the generated code names only the other assembly's type:
+**Fix:** Rename one of the types or namespaces, or keep the container in a project that references only one of the assemblies that declare it. When nothing the container needs lives in one of the assemblies, not even a module it imports, give that reference an alias in the project file instead, with `Aliases` on the `ProjectReference` or `PackageReference`, so the generated code names only the other assembly's type:
 
 ```xml
 <ProjectReference Include="..\CoffeeShop.Grinding\CoffeeShop.Grinding.csproj" Aliases="Grinding" />
 ```
+
+The alias doesn't help when the container needs a type of the aliased assembly or imports a module from it, even through the alias: the generated code names everything through `global::`, which doesn't reach the aliased assembly, so it can't name that type or module.
 
 ## Generator bugs
 
