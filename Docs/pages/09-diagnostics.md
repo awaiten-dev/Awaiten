@@ -1435,6 +1435,8 @@ The container never checks the result. When the member produces `null` at run ti
 An `OnActivated`/`OnRelease` registration names a member that is not a usable lifecycle hook.
 :::
 
+<ApplyFix id="AWT164">
+
 ```csharp expect=AWT164
 [Container]
 // highlight-next-line
@@ -1444,6 +1446,18 @@ public static partial class CoffeeShop
     private static bool Ready = false;
 }
 ```
+
+```csharp isolated
+[Container]
+[Singleton<EspressoMachine>(OnActivated = nameof(Ready))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static void Ready(EspressoMachine machine) { }   // a static method that accepts the machine
+}
+```
+
+</ApplyFix>
 
 The message names the type the hook's first parameter must accept, the implementation, and ends with the reason when a method of a module that would fit is out of reach. A `private` hook of a module is no hook for a type the container constructs, since only the module itself can call it. An `internal` hook of a module in another assembly is called through the public wrapper the module generates (see [modules](./05-registration/08-modules/02-library-module-rules.md#non-public-members)), so the container reports this only when the module generated none. The message then says so, and names why when the module's metadata shows it, for example for a generic module or one that isn't `partial`.
 
@@ -1457,6 +1471,8 @@ A generic method is a usable hook only where a closing binds its type parameters
 An `OnActivated`/`OnRelease` lifecycle hook is set on a pre-built `Instance` registration, which the container does not own.
 :::
 
+<ApplyFix id="AWT165">
+
 ```csharp expect=AWT165
 [Container]
 [Singleton<MenuBoard>(Instance = nameof(Menu), OnRelease = nameof(Archive))]
@@ -1468,6 +1484,18 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+// highlight-next-line
+[Singleton<MenuBoard>(Instance = nameof(Menu))]   // whoever creates the instance cleans it up
+public static partial class CoffeeShop
+{
+    private static MenuBoard Menu { get; } = new();
+}
+```
+
+</ApplyFix>
+
 **Fix:** Remove the hook and run that code where you create the instance yourself, or register the type for construction (by constructor or `Factory`) instead of as an `Instance`.
 
 ### AWT166: Conflicting lifecycle directives \{#awt166\}
@@ -1475,6 +1503,8 @@ public static partial class CoffeeShop
 :::danger[Error]
 An implementation is registered with conflicting `OnActivated`/`OnRelease`/`Eager`/`EagerWhen` directives that coalescing would silently drop, or a scan names a hook the registration that owns the instance does not.
 :::
+
+<ApplyFix id="AWT166">
 
 ```csharp expect=AWT166
 [Container]
@@ -1488,6 +1518,20 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<EspressoMachine, IWarmable>(OnActivated = nameof(Calibrate))]
+// highlight-next-line
+[Singleton<EspressoMachine, IMachine>]   // unset, so it merges with Calibrate
+public static partial class CoffeeShop
+{
+    private static void Calibrate(object m) { }
+    private static void Preheat(object m) { }
+}
+```
+
+</ApplyFix>
+
 A hook is identified by its declaring type and its name, so methods of the same name on a module and on the container, or on two modules, are different hooks and conflict. Registrations naming the same method of the same type share it. The same holds for an `EagerWhen` predicate, and a later registration that sets `EagerWhen` conflicts with a first one that sets `Eager = true`.
 
 The library's build reports this too for an implementation a module builds through a [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses), since a container in another assembly serves all its registrations from one instance.
@@ -1495,6 +1539,8 @@ The library's build reports this too for an implementation a module builds throu
 **Fix:** Declare one hook for the implementation: set it on one registration and leave it unset on the others (an unset directive merges with the winner's), or name the same method on all of them. To let the container replace a module's registration, hooks included, mark the module's registration `Fallback`.
 
 A [scan](./05-registration/07-scanning.md#lifecycle-hooks) that names a hook for a match whose instance a registration of the type owns is reported too. The scan yields to the registration, so the shared instance runs the registration's hook in that slot, or none, and the scan's hook would never run. Unlike two registrations, a registration that leaves the hook unset does not take the scan's: the scan hook is reported unless the registration names the same method. This holds for a keyed registration and for one of a module, also in a container of another assembly. A scan an extending container inherits from its base is not reported: the extending container's registration replaces that scan's hooks.
+
+<ApplyFix id="AWT166">
 
 ```csharp expect=AWT166
 [Container]
@@ -1507,6 +1553,19 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+// highlight-next-line
+[Singleton<Espresso, IDrink>(OnActivated = nameof(Prime))]   // agrees with the scan's hook
+[Scan<IDrink>(OnActivated = nameof(Prime))]
+public static partial class CoffeeShop
+{
+    private static void Prime(IDrink drink) { }
+}
+```
+
+</ApplyFix>
+
 **Fix:** Name the same hook on the registration, so the scan agrees with it, or exclude the type from the scan and register it explicitly under the marker.
 
 ### AWT263: `Eager` and `EagerWhen` on one registration \{#awt263\}
@@ -1516,6 +1575,8 @@ A `[Singleton]` sets both `Eager = true` and `EagerWhen`.
 :::
 
 `Eager` builds the singleton when the root is created in every run, so the predicate would never decide anything. The singleton stays eager.
+
+<ApplyFix id="AWT263">
 
 ```csharp expect=AWT263
 [Container]
@@ -1527,6 +1588,18 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+// highlight-next-line
+[Singleton<EspressoMachine>(EagerWhen = nameof(PreheatOnStartup))]   // the predicate decides
+public static partial class CoffeeShop
+{
+    private static bool PreheatOnStartup => true;
+}
+```
+
+</ApplyFix>
+
 **Fix:** Keep `EagerWhen` to [build the singleton at startup](./04-core-concepts/01-lifetimes.md#build-a-singleton-at-startup) only when the predicate allows it, or `Eager = true` to build it in every run.
 
 ### AWT189: Lifecycle hook parameter cannot be a runtime argument \{#awt189\}
@@ -1535,15 +1608,31 @@ public static partial class CoffeeShop
 A lifecycle hook parameter (after the instance) is marked `[Arg]`, but a hook resolves its parameters from the graph.
 :::
 
+<ApplyFix id="AWT189">
+
 ```csharp expect=AWT189
 [Container]
+[Singleton<Settings>]
 [Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
 public static partial class CoffeeShop
 {
     // highlight-next-line
-    private static void Calibrate(EspressoMachine machine, [Arg] int count) { }   // no Func<…> call site supplies an [Arg]
+    private static void Calibrate(EspressoMachine machine, [Arg] Settings settings) { }   // no Func<…> call site supplies an [Arg]
 }
 ```
+
+```csharp isolated
+[Container]
+[Singleton<Settings>]
+[Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static void Calibrate(EspressoMachine machine, Settings settings) { }   // resolved from the graph
+}
+```
+
+</ApplyFix>
 
 **Fix:** Drop `[Arg]` and let the parameter resolve from the graph, or move the value into a registered service the hook can take.
 
@@ -1554,6 +1643,8 @@ A lifecycle hook (`OnActivated` / `OnRelease`) names an overloaded method, so th
 :::
 
 A hook is looked up by simple name on its owner (the container, or a module whose registration or `[Scan]` names it), so two accepting overloads leave the choice (and the graph dependencies the extra parameters resolve) order-dependent. A generic overload counts beside a non-generic one when the call infers its type arguments from the instance, as `Calibrate<T>(T machine)` does, since the generated call names no type arguments and C# could pick it. So does a `params` overload that takes the instance as its element, as `Calibrate(params EspressoMachine[] machines)` does. Give the hook a unique name, exactly as a factory method must be unambiguous.
+
+<ApplyFix id="AWT190">
 
 ```csharp expect=AWT190
 [Container]
@@ -1566,6 +1657,19 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<EspressoMachine>(OnActivated = nameof(Calibrate))]
+public static partial class CoffeeShop
+{
+    private static void Calibrate(EspressoMachine machine) { }
+    // highlight-next-line
+    private static void CalibrateWithSettings(EspressoMachine machine, Settings settings) { }   // Calibrate is the only hook now
+}
+```
+
+</ApplyFix>
+
 **Fix:** Rename one of the overloads, for example to `CalibrateWithSettings`, and point the hook at the one you mean.
 
 ### AWT191: Release hook parameter cannot defer resolution \{#awt191\}
@@ -1575,6 +1679,8 @@ An `OnRelease` hook parameter is a `Func`/`Lazy` relationship, which would defer
 :::
 
 A release dependency is captured at construction, but a `Func<T>` or `Lazy<T>` captures only a resolver delegate. The hook runs while its owner is being disposed, so invoking the delegate there always throws. Take the dependency directly instead: it is resolved at construction and, released in reverse creation order, still alive when the hook uses it. An `OnActivated` hook may take `Func`/`Lazy` parameters freely, since it runs while the owner is alive.
+
+<ApplyFix id="AWT191">
 
 ```csharp expect=AWT191
 [Container]
@@ -1587,6 +1693,19 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<BufferPool>]
+[Transient<Buffer>(OnRelease = nameof(ReturnToPool))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static void ReturnToPool(Buffer buffer, BufferPool pool) { }   // captured at construction, still alive during teardown
+}
+```
+
+</ApplyFix>
+
 **Fix:** Take the dependency directly: `ReturnToPool(Buffer buffer, BufferPool pool)`.
 
 ### AWT232: Unsupported asynchronous lifecycle hook \{#awt232\}
@@ -1596,6 +1715,8 @@ A lifecycle hook is asynchronous in a way the container cannot run.
 :::
 
 The container awaits a hook that returns `Task` or `ValueTask`. A hook that returns `Task<T>` or `ValueTask<T>` has a result the container would throw away. An asynchronous `OnRelease` hook runs in `DisposeAsync`, which has no `CancellationToken` to pass, so it cannot take one.
+
+<ApplyFix id="AWT232">
 
 ```csharp expect=AWT232
 [Container]
@@ -1608,6 +1729,20 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<PaymentTerminal>(OnActivated = nameof(ConnectAsync), OnRelease = nameof(DisconnectAsync))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static Task ConnectAsync(PaymentTerminal terminal) => Task.CompletedTask;   // nothing to throw away
+    // highlight-next-line
+    private static Task DisconnectAsync(PaymentTerminal terminal) => Task.CompletedTask;   // takes no token
+}
+```
+
+</ApplyFix>
+
 **Fix:** Return `Task` or `ValueTask` instead of `Task<T>` or `ValueTask<T>`. Remove the `CancellationToken` parameter from an asynchronous `OnRelease` hook.
 
 ## Runtime arguments
@@ -1617,6 +1752,8 @@ public static partial class CoffeeShop
 :::danger[Error]
 A `Func<TArg...,T>` or `Func<TArg...,Task<T>>` relationship's runtime arguments do not match the service's `[Arg]` parameters.
 :::
+
+<ApplyFix id="AWT113">
 
 ```csharp expect=AWT113
 public sealed class Cup([Arg] string size);
@@ -1629,6 +1766,19 @@ public sealed class Counter(Func<int, Cup> cups);   // the [Arg] is string, not 
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Cup([Arg] string size);
+// highlight-next-line
+public sealed class Counter(Func<string, Cup> cups);   // matches the string [Arg]
+
+[Container]
+[Transient<Cup>]
+[Singleton<Counter>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Make the `Func`'s argument types match the `[Arg]` parameters, in order: `Func<string, Cup>`.
 
 ### AWT114: Parameterized service must be transient \{#awt114\}
@@ -1636,6 +1786,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A service with `[Arg]` parameters is registered with a non-Transient lifetime.
 :::
+
+<ApplyFix id="AWT114">
 
 ```csharp expect=AWT114
 public sealed class Cup([Arg] string size);
@@ -1646,6 +1798,17 @@ public sealed class Cup([Arg] string size);
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Cup([Arg] string size);
+
+[Container]
+// highlight-next-line
+[Transient<Cup>]    // built fresh from its size on every request
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Register the service as `[Transient<Cup>]`; it is built fresh from its arguments on every request anyway.
 
 ### AWT115: Parameterized service requires a `Func` factory \{#awt115\}
@@ -1653,6 +1816,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A service with `[Arg]` parameters is required as a plain, `Lazy<T>`, or `Task<T>` dependency instead of a `Func<TArg...,T>`.
 :::
+
+<ApplyFix id="AWT115">
 
 ```csharp expect=AWT115
 public sealed class Cup([Arg] string size);
@@ -1664,6 +1829,19 @@ public sealed class Barista(Cup cup);   // must ask for Func<string, Cup>
 [Singleton<Barista>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class Cup([Arg] string size);
+// highlight-next-line
+public sealed class Barista(Func<string, Cup> cups);   // passes the size on each call
+
+[Container]
+[Transient<Cup>]
+[Singleton<Barista>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Depend on `Func<string, Cup>` and pass the size when you call it: `Barista(Func<string, Cup> cups)`.
 
@@ -1677,6 +1855,8 @@ A root-owned instance takes a `Func`, a `Func<…,Task<T>>` or a dispatch dictio
 
 Under strict lifetime safety (the default) this is a non-suppressible error; under `LifetimeSafety.Loose` it relaxes to a suppressible warning.
 
+<ApplyFix id="AWT118">
+
 ```csharp expect=AWT118
 public sealed class BrewSession : IDisposable { public void Dispose() { } }
 // highlight-next-line
@@ -1688,16 +1868,20 @@ public sealed class Counter(Func<BrewSession> sessions);   // each call strands 
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). When the consumer disposes each instance itself, list the service in [`ConsumerOwned`](./04-core-concepts/04-lifetime-safety.md#let-a-consumer-own-what-its-func-builds) on its registration instead. A [dispatch dictionary](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) has no `Owned` form: register its holder as `Scoped` instead, so each scope disposes what the dictionary builds. A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
-
-```csharp
+```csharp isolated
+public sealed class BrewSession : IDisposable { public void Dispose() { } }
+// highlight-next-line
 public sealed class Counter(Func<Owned<BrewSession>> sessions);   // each handle disposes its own session
 
-[Container]
+[Container]                          // strict lifetime safety (the default)
 [Transient<BrewSession>]
 [Singleton<Counter>]
 public static partial class CoffeeShop;
 ```
+
+</ApplyFix>
+
+**Fix:** Hand out a disposal handle instead: take `Func<Owned<BrewSession>>` and dispose each handle when you are done with it (an async factory takes `Func<Task<Owned<T>>>`). When the consumer disposes each instance itself, list the service in [`ConsumerOwned`](./04-core-concepts/04-lifetime-safety.md#let-a-consumer-own-what-its-func-builds) on its registration instead. A [dispatch dictionary](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type) has no `Owned` form: register its holder as `Scoped` instead, so each scope disposes what the dictionary builds. A `Func<T>` held by a scoped consumer is bounded by its scope and is not reported.
 
 ### AWT261: Consumer cannot own what its Func builds \{#awt261\}
 
@@ -1714,6 +1898,8 @@ The consumer can only dispose the instance it holds. Reported are:
 
 Singleton and scoped dependencies belong to their own owner and are not reported. Every route to the service counts: a `Func<T>`, a `Func<TArg…, T>`, a `Func<…, Task<T>>` and each entry of a dispatch dictionary.
 
+<ApplyFix id="AWT261">
+
 ```csharp expect=AWT261
 public sealed class Filter : IDisposable { public void Dispose() { } }
 public sealed class BrewSession(Filter filter) : IDisposable { public void Dispose() { } }
@@ -1727,6 +1913,22 @@ public sealed class Barista(Func<BrewSession> sessions);   // disposing a sessio
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Filter : IDisposable { public void Dispose() { } }
+public sealed class BrewSession(Filter filter) : IDisposable { public void Dispose() { } }
+// highlight-next-line
+public sealed class Barista(Func<Owned<BrewSession>> sessions);   // each handle disposes the session and its filter
+
+[Container]
+[Transient<Filter>]
+[Transient<BrewSession>]
+// highlight-next-line
+[Singleton<Barista>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the service from `ConsumerOwned` and take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. A consumer that is already scoped or transient only needs the entry removed. Making the inner disposable a singleton or scoped service works too, when it may be shared.
 
 ### AWT262: `ConsumerOwned` entry never applies \{#awt262\}
@@ -1736,6 +1938,8 @@ A consumer lists a service in `ConsumerOwned`, but takes no `Func` or dispatch d
 :::
 
 Only those build an instance per call that the consumer could own. A `Lazy<T>`, a direct dependency or a `Func` over a singleton or scoped service hands out an instance the container keeps owning, and a service that is not disposable or sets `SuppressDisposal` leaves nothing to own. On an open generic consumer, the entry is reported only when no closing uses it.
+
+<ApplyFix id="AWT262">
 
 ```csharp expect=AWT262
 // highlight-next-line
@@ -1747,6 +1951,18 @@ public sealed class Barista(Lazy<BrewSession> session);   // a Lazy builds one s
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista(Lazy<BrewSession> session);   // a Lazy builds one session, which the container owns
+
+[Container]
+[Transient<BrewSession>]
+// highlight-next-line
+[Singleton<Barista>]   // no entry for what the container owns
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the entry, or list the type the consumer's `Func` names.
 
 ### AWT121: `Owned<T>` handle requested through `Lazy` \{#awt121\}
@@ -1756,6 +1972,8 @@ An `Owned<T>` disposal handle is requested through a `Lazy<Owned<T>>` or `Lazy<T
 :::
 
 It is reported for an `Optional` injected property too, because nothing could ever fill it.
+
+<ApplyFix id="AWT121">
 
 ```csharp expect=AWT121
 public sealed class BrewSession : IDisposable { public void Dispose() { } }
@@ -1768,6 +1986,19 @@ public sealed class Counter(Lazy<Owned<BrewSession>> sessions);   // Owned canno
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class BrewSession : IDisposable { public void Dispose() { } }
+// highlight-next-line
+public sealed class Counter(Owned<BrewSession> session);   // the handle requested directly
+
+[Container]
+[Transient<BrewSession>]
+[Singleton<Counter>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Request the handle directly as `Owned<BrewSession>`, or through `Func<Owned<BrewSession>>`, `Task<Owned<BrewSession>>` or `Func<Task<Owned<BrewSession>>>`.
 
 ### AWT192: `SuppressDisposal` on a pre-built instance \{#awt192\}
@@ -1777,6 +2008,8 @@ public static partial class CoffeeShop;
 :::
 
 Remove it, or register the type for construction (by constructor or `Factory`) instead of as an `Instance`.
+
+<ApplyFix id="AWT192">
 
 ```csharp expect=AWT192
 public sealed class Boiler : IDisposable { public void Dispose() { } }
@@ -1790,6 +2023,20 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+public sealed class Boiler : IDisposable { public void Dispose() { } }
+
+[Container]
+// highlight-next-line
+[Singleton<Boiler>(Instance = nameof(Shared))]   // whoever creates the instance disposes it
+public static partial class CoffeeShop
+{
+    private static Boiler Shared { get; } = new();
+}
+```
+
+</ApplyFix>
+
 **Fix:** Remove `SuppressDisposal`; a pre-built `Instance` is never disposed by the container. If the container should build the object but not dispose it, register it by constructor or `Factory` with `SuppressDisposal = true`.
 
 ### AWT214: Suppressed disposal in a container projected into MS.DI \{#awt214\}
@@ -1799,6 +2046,8 @@ A container is projected into Microsoft.Extensions.DependencyInjection with `Add
 :::
 
 MS.DI disposes every disposable instance a projected registration hands out, so the suppression cannot hold, and the projection throws at startup. Remove `SuppressDisposal`, register a pre-built `Instance` you own, or resolve the service from the container directly through an [`AwaitenServiceProvider`](./07-hosting/01-msdi-bridge.md#or-let-awaiten-own-everything) instead of projecting the container. The analyzer sees a projection that names the container's `Root` in the container's own project; elsewhere the startup check still applies.
+
+<ApplyFix id="AWT214">
 
 ```csharp expect=AWT214
 using Awaiten.Extensions.DependencyInjection;
@@ -1814,6 +2063,22 @@ public sealed class Grinder : IDisposable { public void Dispose() { } }
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+using Awaiten.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
+new ServiceCollection().AddAwaitenContainer<CoffeeShop.Root>();
+
+public sealed class Grinder : IDisposable { public void Dispose() { } }
+
+[Container]
+// highlight-next-line
+[Singleton<Grinder>]   // disposed with the projection, as MS.DI expects
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove `SuppressDisposal = true` from the projected container, register a pre-built `Instance` you own, or serve the service through an `AwaitenServiceProvider` instead of projecting the container.
 
 ## Decorators and composites
@@ -1826,6 +2091,8 @@ A `[Decorate]` names a service with no registration to decorate.
 
 Without `Keys` or `AllKeys`, a decorator wraps only unkeyed registrations, so a service registered only under keys counts as not registered. A service declared with `[ImportService<T>]` is [decorated](./05-registration/03-decorators.md#decorate-an-imported-service) without a registration, except by a decorator with `AllKeys`, whose keys only the host knows, or by an open decorator over an open import, whose closings the container does not know. `[ImportServices]` declares no service imported, so it does not count. A decorator with an empty `Keys` selects nothing to decorate, so it is reported whether the service is registered, imported or an open generic. An open generic `[Decorate(typeof(D<>), typeof(IService<>))]` without `Keys` that matches no closing decorates nothing and is not reported as AWT123 but as the warning [AWT249](#awt249) when the container declares it itself rather than importing it from a module or inheriting it from a base, like an open composite.
 
+<ApplyFix id="AWT123">
+
 ```csharp expect=AWT123
 public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;
 
@@ -1834,6 +2101,18 @@ public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;
 [Decorate<LoggingTerminal, IPaymentTerminal>]   // nothing registers IPaymentTerminal
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;
+
+[Container]
+// highlight-next-line
+[Singleton<CardTerminal, IPaymentTerminal>]   // the registration the decorator wraps
+[Decorate<LoggingTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 It is not reported for a closed `[Decorate]` when the service's registration was left out for another error, such as an inherited registration the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once. An empty `Keys` on a module's `[Decorate]` is wrong for every container that imports the module, so the module's own build reports it and a container that imports the module doesn't repeat it. A container reports it at its `[Import]` for a module whose generated metadata does not record that check.
 
@@ -1845,6 +2124,8 @@ It is not reported for a closed `[Decorate]` when the service's registration was
 A decorator has no single constructor parameter that receives the inner instance: none accepts the decorated service, or several do and none of them converts to all the others.
 :::
 
+<ApplyFix id="AWT124">
+
 ```csharp expect=AWT124
 // highlight-next-line
 public sealed class LoggingTerminal : IPaymentTerminal;   // no IPaymentTerminal inner parameter
@@ -1854,6 +2135,18 @@ public sealed class LoggingTerminal : IPaymentTerminal;   // no IPaymentTerminal
 [Decorate<LoggingTerminal, IPaymentTerminal>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class LoggingTerminal(IPaymentTerminal inner) : IPaymentTerminal;   // receives the inner terminal
+
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 For a closed `[Decorate]` of a module whose decorator has no constructor with such a parameter, whatever the constructor's accessibility, the module's own build reports it, and a container that imports the module doesn't repeat it. When only some constructors lack it, the container that selects one reports it. A container reports it at its `[Import]` for a module whose generated metadata does not record that check.
 
@@ -1865,6 +2158,8 @@ For a closed `[Decorate]` of a module whose decorator has no constructor with su
 A `[Composite]` implementation has no collection parameter of the composed service to fan out to.
 :::
 
+<ApplyFix id="AWT130">
+
 ```csharp expect=AWT130
 // highlight-next-line
 public sealed class CompositeReceiptChannel : IReceiptChannel;   // no IEnumerable<IReceiptChannel> parameter
@@ -1875,6 +2170,18 @@ public sealed class CompositeReceiptChannel : IReceiptChannel;   // no IEnumerab
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// highlight-next-line
+public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channels) : IReceiptChannel;   // fans out to every channel
+
+[Container]
+[Transient<PrinterChannel, IReceiptChannel>]
+[Composite<CompositeReceiptChannel, IReceiptChannel>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Add a collection parameter of the composed service: `CompositeReceiptChannel(IEnumerable<IReceiptChannel> channels)`.
 
 ### AWT131: Composite is also registered as a member of its own service \{#awt131\}
@@ -1882,6 +2189,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Composite]` type is also registered as an ordinary member of the service it composes.
 :::
+
+<ApplyFix id="AWT131">
 
 ```csharp expect=AWT131
 public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channels) : IReceiptChannel;
@@ -1893,6 +2202,17 @@ public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channel
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channels) : IReceiptChannel;
+
+[Container]
+// highlight-next-line
+[Composite<CompositeReceiptChannel, IReceiptChannel>]   // the composite's only registration
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the ordinary registration and keep only the `[Composite]`; the composite is never a member of its own fan-out.
 
 ### AWT132: Multiple composites for one service \{#awt132\}
@@ -1900,6 +2220,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 More than one `[Composite]` names the same service.
 :::
+
+<ApplyFix id="AWT132">
 
 ```csharp expect=AWT132
 [Container]
@@ -1909,6 +2231,15 @@ More than one `[Composite]` names the same service.
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+// highlight-next-line
+[Composite<CompositeReceiptChannel, IReceiptChannel>]   // one composite for the service
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Keep one `[Composite]` per service and remove the others; only the first one is used.
 
 ### AWT133: Composite collection parameter is not of the composed service \{#awt133\}
@@ -1916,6 +2247,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A `[Composite]`'s collection parameter is of a base type of the composed service, not the composed service itself.
 :::
+
+<ApplyFix id="AWT133">
 
 ```csharp expect=AWT133
 // IReceiptChannel : IChannel
@@ -1928,6 +2261,19 @@ public sealed class CompositeReceiptChannel(IEnumerable<IChannel> channels) : IR
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// IReceiptChannel : IChannel
+// highlight-next-line
+public sealed class CompositeReceiptChannel(IEnumerable<IReceiptChannel> channels) : IReceiptChannel;   // exactly the composed service
+
+[Container]
+[Transient<PrinterChannel, IReceiptChannel>]
+[Composite<CompositeReceiptChannel, IReceiptChannel>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Make the element type exactly the composed service: `IEnumerable<IReceiptChannel> channels`.
 
 ### AWT210: Decorated key not registered \{#awt210\}
@@ -1938,6 +2284,8 @@ A key in a `[Decorate]`'s `Keys` matches no registration of the decorated servic
 
 A `null` entry names the unkeyed registrations. For the open generic `typeof` form, no closing of the service is registered under the key.
 
+<ApplyFix id="AWT210">
+
 ```csharp expect=AWT210
 [Container]
 [Singleton<CardTerminal, IPaymentTerminal>]
@@ -1945,6 +2293,17 @@ A `null` entry names the unkeyed registrations. For the open generic `typeof` fo
 [Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { "backup" })]   // nothing is registered under "backup"
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+// highlight-next-line
+[Singleton<SpareTerminal, IPaymentTerminal>(Key = "backup")]   // the registration the "backup" key wraps
+[Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { "backup" })]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 It is not reported for the open generic form when a closing of the service under that key was left out for another error, such as an inherited closing the extending container cannot build ([AWT226](#awt226)), so the one cause is reported once. A closing left out under another key doesn't explain the key, so a typo in it is still reported.
 
@@ -1958,6 +2317,8 @@ A `[Decorate]` sets both `Keys` and `AllKeys`.
 
 `AllKeys` already selects every key, so set one or the other. The decorator is skipped.
 
+<ApplyFix id="AWT211">
+
 ```csharp expect=AWT211
 [Container]
 [Singleton<CardTerminal, IPaymentTerminal>]
@@ -1965,6 +2326,16 @@ A `[Decorate]` sets both `Keys` and `AllKeys`.
 [Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { null }, AllKeys = true)]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+// highlight-next-line
+[Decorate<LoggingTerminal, IPaymentTerminal>(Keys = new object?[] { null })]   // only the unkeyed registration
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 For a module's `[Decorate]`, the module's own build reports it, and a container that imports the module doesn't repeat it. A container reports it at its `[Import]` for a module whose generated metadata does not record that check.
 
@@ -1978,6 +2349,8 @@ A `[Composite]`'s `Key` matches no registration of the composed service, so the 
 
 For the open generic `typeof` form, no closing of the service is registered under the key.
 
+<ApplyFix id="AWT212">
+
 ```csharp expect=AWT212
 [Container]
 [Transient<PrinterChannel, IReceiptChannel>]
@@ -1985,6 +2358,16 @@ For the open generic `typeof` form, no closing of the service is registered unde
 [Composite<CompositeReceiptChannel, IReceiptChannel>(Key = "kitchen")]   // nothing is registered under "kitchen"
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Transient<PrinterChannel, IReceiptChannel>(Key = "kitchen")]   // a member the "kitchen" composite fronts
+[Composite<CompositeReceiptChannel, IReceiptChannel>(Key = "kitchen")]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Register the members under that key (`[Transient<PrinterChannel, IReceiptChannel>(Key = "kitchen")]`), or change the composite's `Key`.
 
@@ -1995,6 +2378,8 @@ A `[Decorate]`'s `When` or a `[Singleton]`'s `EagerWhen` names no predicate the 
 :::
 
 A predicate returning `Task<bool>` or `ValueTask<bool>` is reported too, because the root evaluates it synchronously. The decorator is left out, and a singleton with an invalid `EagerWhen` is built on first resolve.
+
+<ApplyFix id="AWT246">
 
 ```csharp expect=AWT246
 [Container]
@@ -2007,6 +2392,19 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static bool AuditPayments() => true;   // a plain bool the root can evaluate
+}
+```
+
+</ApplyFix>
+
 The predicate is looked up only on the type that declares the attribute, so a module's decorator or singleton never finds a member of the container. The module's own build reports it too when no container of its assembly imports the module.
 
 **Fix:** Name a static `bool` method, property or field of the type that declares the attribute. Compute an asynchronous value before you create the root and let the predicate read it.
@@ -2018,6 +2416,8 @@ A `[Decorate]`'s `When` or a `[Singleton]`'s `EagerWhen` on a module or an exten
 :::
 
 The decorator is left out, and a singleton with an inaccessible `EagerWhen` is built on first resolve.
+
+<ApplyFix id="AWT247">
 
 ```csharp expect=AWT247
 [Module]
@@ -2034,6 +2434,23 @@ public static partial class PaymentModule
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Module]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class PaymentModule
+{
+    // highlight-next-line
+    internal static bool AuditPayments => true;   // internal, so the container of this assembly can call it
+}
+
+[Container]
+[Import(typeof(PaymentModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 A container in another assembly sees only the public members of a module or base container. It calls an `internal` predicate through the public wrapper that a public, `partial` module or a public base container generates for it, and a container in an assembly the owner's assembly grants `InternalsVisibleTo` calls the predicate directly. When the owner generated no wrapper, the message names why when the owner's metadata tells: the module isn't `partial`, or a parameter has a type the wrapper can't take, such as an internal type that no module of the library registers. The module's own build reports a private predicate of a module no container of its assembly imports, so the library that declares the module sees the error before its consumers do. It doesn't report an internal predicate, which a container in its own assembly can call.
 
 **Fix:** Make the predicate `internal` or `public`. For a container in another assembly, make the module `partial`, make the predicate's parameter types public or register the internal ones in the library, or grant the container's assembly `InternalsVisibleTo`.
@@ -2043,6 +2460,8 @@ A container in another assembly sees only the public members of a module or base
 :::danger[Error]
 A `When` or `EagerWhen` predicate takes a parameter the root cannot supply before it evaluates the predicate once per root: a runtime `[Arg]`, a parameter passed by reference, a relationship such as `Func<T>` or `Lazy<T>`, a collection, or a service that is scoped, transient, built for each consumer or initialized asynchronously.
 :::
+
+<ApplyFix id="AWT248">
 
 ```csharp expect=AWT248
 [Container]
@@ -2056,6 +2475,21 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Scoped<Order>]
+[Singleton<Settings>]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Decorate<LoggingTerminal, IPaymentTerminal>(When = nameof(AuditPayments))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static bool AuditPayments(Settings settings) => true;   // a singleton, the same for the whole root
+}
+```
+
+</ApplyFix>
+
 **Fix:** Take only singletons, `Instance` registrations or imported services that are not initialized asynchronously, or read the value the predicate needs from a singleton such as a settings object. A decision that varies per scope or per call belongs in the decorator itself, which can take its options and pass calls through when it is disabled.
 
 ### AWT249: Open decorator or composite applies to no closing \{#awt249\}
@@ -2066,6 +2500,8 @@ An unkeyed open generic `[Decorate]` or `[Composite]` that a container declares 
 
 Usually the service type is wrong. A warning, not an error, because a base container meant only for [extension](./05-registration/09-extending-containers.md) may declare it for the closings its extending containers register.
 
+<ApplyFix id="AWT249">
+
 ```csharp expect=AWT249
 [Container]
 [Transient(typeof(Handler<>), typeof(IHandler<>))]
@@ -2073,6 +2509,17 @@ Usually the service type is wrong. A warning, not an error, because a base conta
 [Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]   // nothing registers or consumes a closing of IHandler<T>
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+[Transient(typeof(Handler<>), typeof(IHandler<>))]
+// highlight-next-line
+[Transient<Handler<Order>, IHandler<Order>>]   // a closing the decorator wraps
+[Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 It is not reported for an open decorator or composite that a module or an extended base declares, since the containers that import or extend them register the closings, nor when a closing of the service was left out for another error, such as a constraint violation ([AWT126](#awt126)). A closed decorator without a registration is [AWT123](#awt123), and a key no closing has is [AWT210](#awt210) or [AWT212](#awt212). It is reported at the attribute, so you can suppress it there with `#pragma warning disable AWT249` or `[SuppressMessage]`.
 
