@@ -24,7 +24,7 @@
   font-size: clamp(2.4rem, 6vw, 4rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
-  max-width: 13em;
+  max-width: 15em;
   color: #f4f8f8;
   text-wrap: balance;
 }
