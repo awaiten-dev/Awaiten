@@ -21,7 +21,7 @@ partial class AwaitenGenerator
 		private readonly List<DiagnosticInfo> _diagnostics;
 		private readonly INamedTypeSymbol _container;
 		private readonly List<ImportedModule> _modules;
-		private readonly Dictionary<INamedTypeSymbol, string[]?> _assemblies = new(SymbolEqualityComparer.Default);
+		private readonly Dictionary<INamedTypeSymbol, (string Name, string[] Assemblies)?> _clashes = new(SymbolEqualityComparer.Default);
 		private readonly HashSet<INamedTypeSymbol> _reported = new(SymbolEqualityComparer.Default);
 
 		public AmbiguousTypeNames(Compilation compilation, List<DiagnosticInfo> diagnostics, INamedTypeSymbol container, List<ImportedModule> modules)
@@ -126,7 +126,7 @@ partial class AwaitenGenerator
 
 		private void ReportDefinition(INamedTypeSymbol definition, ITypeSymbol type, ISymbol needer, string verb, LocationInfo? location)
 		{
-			if (AssembliesDeclaring(definition) is { } assemblies && _reported.Add(definition))
+			if (ClashOf(definition) is { } clash && _reported.Add(definition))
 			{
 				_diagnostics.Add(new DiagnosticInfo(
 					Diagnostics.AmbiguousTypeName,
@@ -135,8 +135,8 @@ partial class AwaitenGenerator
 						Display(type.ToDisplayString(FullyQualified)),
 						Display(needer.ToDisplayString(FullyQualified)),
 						verb,
-						Enumerate(assemblies),
-						Display(definition.ToDisplayString(FullyQualified)),
+						Enumerate(clash.Assemblies),
+						clash.Name,
 					])));
 			}
 		}
@@ -161,57 +161,71 @@ partial class AwaitenGenerator
 		}
 
 		/// <summary>
-		///     The names of the assemblies that declare a type of <paramref name="definition" />'s full name the compilation's
-		///     assembly can access, when there is more than one and <paramref name="definition" /> is not the project's own, which
-		///     <c>global::</c> then names; else <see langword="null" />. A type the compilation's assembly cannot access is never
-		///     named by the generated code, and does not get in the way of the one it names. A type spelled by its keyword, such as
-		///     <c>string</c>, always names the core library's.
+		///     What keeps <c>global::</c> from naming <paramref name="definition" /> when it is not the project's own, else
+		///     <see langword="null" />: the full name of a namespace of it that another assembly declares an accessible type of (CS0434),
+		///     or its own full name when another assembly declares an accessible type of that name and arity (CS0433, or the project's
+		///     own wins) or a namespace of that name (CS0434), with the names of the assemblies that declare them. A type the
+		///     compilation's assembly cannot access is never named by the generated code and does not get in the way of the one it
+		///     names, but a namespace does, whatever its types. A type spelled by its keyword, such as <c>string</c>, always names the
+		///     core library's.
 		/// </summary>
-		private string[]? AssembliesDeclaring(INamedTypeSymbol definition)
+		private (string Name, string[] Assemblies)? ClashOf(INamedTypeSymbol definition)
 		{
-			if (_assemblies.TryGetValue(definition, out string[]? cached))
+			if (_clashes.TryGetValue(definition, out (string Name, string[] Assemblies)? cached))
 			{
 				return cached;
 			}
 
-			string[]? assemblies = null;
+			(string Name, string[] Assemblies)? clash = null;
 			if (definition is { TypeKind: not TypeKind.Error, ContainingAssembly: { } assembly, }
 			    && definition.ToDisplayString(FullyQualified).StartsWith("global::", StringComparison.Ordinal)
 			    && !SymbolEqualityComparer.Default.Equals(assembly, _compilation.Assembly)
-			    && _compilation.IsSymbolAccessibleWithin(definition, _compilation.Assembly)
-			    && NamespaceOf(definition) is { } ns)
+			    && Accessible(definition))
 			{
-				string[] others = ns.GetTypeMembers(definition.Name, definition.Arity)
-					.Where(candidate => !SymbolEqualityComparer.Default.Equals(candidate, definition)
-					                    && _compilation.IsSymbolAccessibleWithin(candidate, _compilation.Assembly))
-					.Select(candidate => candidate.ContainingAssembly.Name)
-					.ToArray();
-				if (others.Length > 0)
+				Stack<string> names = new();
+				for (INamespaceSymbol? ns = definition.ContainingNamespace; ns is { IsGlobalNamespace: false, }; ns = ns.ContainingNamespace)
 				{
-					assemblies = others.Append(assembly.Name).Distinct().OrderBy(name => name, StringComparer.Ordinal).ToArray();
+					names.Push(ns.Name);
+				}
+
+				INamespaceSymbol? resolved = _compilation.GlobalNamespace;
+				string? prefix = null;
+				while (clash is null && resolved is not null && names.Count > 0)
+				{
+					string name = names.Pop();
+					prefix = prefix is null ? name : $"{prefix}.{name}";
+					clash = Clash(prefix, assembly, resolved.GetTypeMembers(name, 0).Where(Accessible).Select(type => type.ContainingAssembly));
+					resolved = resolved.GetMembers(name).OfType<INamespaceSymbol>().FirstOrDefault();
+				}
+
+				if (clash is null && resolved is not null)
+				{
+					IEnumerable<IAssemblySymbol> namespaces = definition.Arity == 0
+						? resolved.GetMembers(definition.Name).OfType<INamespaceSymbol>().SelectMany(ns => ns.ConstituentNamespaces).Select(ns => ns.ContainingAssembly)
+						: [];
+					clash = Clash(
+						Display(definition.ToDisplayString(FullyQualified)),
+						assembly,
+						resolved.GetTypeMembers(definition.Name, definition.Arity)
+							.Where(candidate => !SymbolEqualityComparer.Default.Equals(candidate, definition) && Accessible(candidate))
+							.Select(candidate => candidate.ContainingAssembly)
+							.Concat(namespaces));
 				}
 			}
 
-			_assemblies[definition] = assemblies;
-			return assemblies;
+			_clashes[definition] = clash;
+			return clash;
 		}
 
-		/// <summary>The namespace of the compilation that <c>global::</c> resolves the namespace of <paramref name="definition" /> to.</summary>
-		private INamespaceSymbol? NamespaceOf(INamedTypeSymbol definition)
+		private bool Accessible(INamedTypeSymbol type) => _compilation.IsSymbolAccessibleWithin(type, _compilation.Assembly);
+
+		/// <summary>The clash of <paramref name="name" /> between <paramref name="assembly" /> and <paramref name="others" />, or <see langword="null" /> when there are none.</summary>
+		private static (string Name, string[] Assemblies)? Clash(string name, IAssemblySymbol assembly, IEnumerable<IAssemblySymbol?> others)
 		{
-			Stack<string> names = new();
-			for (INamespaceSymbol? ns = definition.ContainingNamespace; ns is { IsGlobalNamespace: false, }; ns = ns.ContainingNamespace)
-			{
-				names.Push(ns.Name);
-			}
-
-			INamespaceSymbol? resolved = _compilation.GlobalNamespace;
-			while (resolved is not null && names.Count > 0)
-			{
-				resolved = resolved.GetMembers(names.Pop()).OfType<INamespaceSymbol>().FirstOrDefault();
-			}
-
-			return resolved;
+			string[] names = others.OfType<IAssemblySymbol>().Select(other => other.Name).ToArray();
+			return names.Length == 0
+				? null
+				: (name, names.Append(assembly.Name).Distinct().OrderBy(other => other, StringComparer.Ordinal).ToArray());
 		}
 
 		/// <summary>

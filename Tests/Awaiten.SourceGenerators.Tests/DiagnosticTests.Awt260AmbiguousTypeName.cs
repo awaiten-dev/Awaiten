@@ -66,7 +66,7 @@ public partial class DiagnosticTests
 			""";
 
 		private static string Expected(string module, string verb = "registers", string type = "Lib.Clock", string line = "6", string column = "2", string declared = "Lib.Clock")
-			=> $"({line},{column}): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named '{declared}'; keep the container in a project that references only one of them, or rename one of the types";
+			=> $"({line},{column}): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type or namespace named '{declared}'; keep the container in a project that references only one of them, or rename one of them";
 
 		private static GeneratorResult Run(Setup setup, string first, string second, string consumer)
 		{
@@ -458,6 +458,39 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		[Arguments("public")]
+		[Arguments("internal")]
+		public async Task ANamespaceOfTheSameFullName_IsReported(string accessibility)
+		{
+			GeneratorResult result = Run(
+				Setup.ImplementationAssembly,
+				Library("First"),
+				Library("Second", clock: $"namespace Clock {{ {accessibility} sealed class Tick {{ }} }}", registrations: ""),
+				ImportFirst);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule"))
+				.Because("'global::Lib.Clock' conflicts with the namespace 'Lib.Clock' of the second library (CS0434), whatever the accessibility of the types in it");
+		}
+
+		[Test]
+		public async Task ATypeNamedLikeANamespaceOfTheType_IsReported()
+		{
+			GeneratorResult result = Run(Setup.ImplementationAssembly, Library("First"), "public class Lib { }", ImportFirst);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule", declared: "Lib"))
+				.Because("'global::Lib' conflicts with the type 'Lib' of the second library (CS0434), so 'global::Lib.Clock' cannot name the clock");
+		}
+
+		[Test]
+		public async Task ATypeNamedLikeANamespaceOfTheTypeInternalToTheOtherAssembly_IsNotReported()
+		{
+			GeneratorResult result = Run(Setup.ImplementationAssembly, Library("First"), "internal class Lib { }", ImportFirst);
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container cannot see the second library's internal type 'Lib', so 'global::Lib' names only the namespace");
+		}
+
+		[Test]
 		public async Task ASameNamedTypeInternalToTheOtherAssembly_IsNotReported()
 		{
 			GeneratorResult result = Run(
@@ -489,7 +522,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = RunInFirstAssembly("[Import(typeof(ClockModule))]\n[Import(typeof(Second.ClockModule))]");
 
 			await That(result.Diagnostics.Where(diagnostic => !diagnostic.Contains("warning CS0436"))).HasSingle().Which.IsEqualTo(
-				"(18,2): error AWT260: The generated container cannot name 'Lib.Clock', which 'Second.ClockModule' registers, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of the types")
+				"(18,2): error AWT260: The generated container cannot name 'Lib.Clock', which 'Second.ClockModule' registers, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type or namespace named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of them")
 				.Because("'global::Lib.Clock' names the clock of the container's own assembly, as in the module's own attribute, so only the other library's clock cannot be named");
 		}
 

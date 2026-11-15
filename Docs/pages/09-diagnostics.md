@@ -6090,10 +6090,10 @@ On .NET Framework and netstandard2.0 without a polyfill, only code in the same p
 ### AWT260: Type the container cannot name \{#awt260\}
 
 :::danger[Error]
-The container needs a type that its generated code can't name, because another assembly the project references, or the project itself, declares a type of the same full name that the project can access.
+The container needs a type that its generated code can't name, because another assembly the project references, or the project itself, declares a type of the same full name that the project can access, a namespace of that name, or a type named like one of its namespaces.
 :::
 
-C# names such a type only through an `extern alias`, which Awaiten can't add to your project, so the generated code wouldn't compile. A type the project declares itself wins over a referenced one of the same name, so a container in that project can name its own type but not the other one. A key counts too: the generated code spells the enum of a key such as `Key = Timing.Speed.Fast` and the type of a `typeof` key wherever it dispatches by the key or passes it to the host. So do the type of an `[AsyncInitializer<T>]`, and an imported module or extended base container whose handle, factory, hook or predicate the generated code calls. The container reports each such type once, at the `[Import]` of the module that registers, takes, imports, uses it as a key or declares it as an async initializer, at the `Extends` of an inherited one, or at the registration, and names the assemblies that declare it. Types of the same name that the container never needs, or that are internal to another assembly the project has no `InternalsVisibleTo` for, aren't reported.
+C# names such a type only through an `extern alias`, which Awaiten can't add to your project, so the generated code wouldn't compile. A namespace `Timing.Timer` gets in the way of the type `Timing.Timer` whatever types it holds, and so does a type `Timing` the project can access. A type the project declares itself wins over a referenced one of the same name, so a container in that project can name its own type but not the other one. A key counts too: the generated code spells the enum of a key such as `Key = Timing.Speed.Fast` and the type of a `typeof` key wherever it dispatches by the key or passes it to the host. So do the type of an `[AsyncInitializer<T>]`, and an imported module or extended base container whose handle, factory, hook or predicate the generated code calls. The container reports each such type once, at the `[Import]` of the module that registers, takes, imports, uses it as a key or declares it as an async initializer, at the `Extends` of an inherited one, or at the registration, and names the assemblies that declare the type or namespace in the way. Types of the same name that the container never needs, or that are internal to another assembly the project has no `InternalsVisibleTo` for, aren't reported.
 
 ```csharp no-compile
 // In the library CoffeeShop.Brewing:
@@ -6115,7 +6115,7 @@ public static partial class GrindingModule;
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Rename one of the types, or keep the container in a project that references only one of the assemblies that declare it. When the container needs no type of one of the assemblies, give its reference an alias in the project file instead, with `Aliases` on the `ProjectReference` or `PackageReference`, so the generated code names only the other assembly's type:
+**Fix:** Rename one of the types or namespaces, or keep the container in a project that references only one of the assemblies that declare it. When the container needs no type of one of the assemblies, give its reference an alias in the project file instead, with `Aliases` on the `ProjectReference` or `PackageReference`, so the generated code names only the other assembly's type:
 
 ```xml
 <ProjectReference Include="..\CoffeeShop.Grinding\CoffeeShop.Grinding.csproj" Aliases="Grinding" />
