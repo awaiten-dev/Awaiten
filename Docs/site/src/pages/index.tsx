@@ -51,12 +51,12 @@ function BuildCheck(): ReactElement {
         {fixed ? (
           <>
             <span className={styles.successId}>BUILD</span>
-            <span>Succeeded. The cup awaits the machine, so it never gets a cold one.</span>
+            <span className={styles.message}>Succeeded. The cup awaits the machine, so it never gets a cold one.</span>
           </>
         ) : (
           <>
             <span className={styles.errorId}>AWT119</span>
-            <span>
+            <span className={styles.message}>
               A synchronous Func relationship targets an async-initialized service. Take{' '}
               <code>Func&lt;Task&lt;EspressoMachine&gt;&gt;</code> and await it.
             </span>
