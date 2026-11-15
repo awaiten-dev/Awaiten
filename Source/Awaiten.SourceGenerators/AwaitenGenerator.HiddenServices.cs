@@ -357,6 +357,8 @@ partial class AwaitenGenerator
 		private readonly Lazy<List<INamedTypeSymbol>> _classes;
 		private readonly Lazy<bool> _scansOrOpenRegistrations;
 		private readonly Lazy<List<(INamedTypeSymbol Type, INamedTypeSymbol Service)>> _scannedServices;
+		private readonly Lazy<HashSet<INamedTypeSymbol>> _openServices;
+		private readonly Lazy<List<(INamedTypeSymbol Type, INamedTypeSymbol Service)>> _registeredServices;
 		private Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>>? _buildable;
 		private HandleDemand? _demand;
 
@@ -372,6 +374,12 @@ partial class AwaitenGenerator
 			_scansOrOpenRegistrations = new Lazy<bool>(() => Registrations.Keys.Any(module => module.GetAttributes().Any(attribute =>
 				attribute.AttributeClass is { Name: "ScanAttribute", } or { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, })));
 			_scannedServices = new Lazy<List<(INamedTypeSymbol Type, INamedTypeSymbol Service)>>(CollectScannedServices);
+			_openServices = new Lazy<HashSet<INamedTypeSymbol>>(CollectOpenServices);
+			_registeredServices = new Lazy<List<(INamedTypeSymbol Type, INamedTypeSymbol Service)>>(() => Registrations.Where(entry => IsExternallyAccessible(entry.Key))
+				.SelectMany(entry => entry.Value)
+				.Select(registration => (registration.Implementation, registration.Service))
+				.Concat(ScannedServices)
+				.ToList());
 			foreach (INamedTypeSymbol module in TypesWith(compilation.Assembly.GlobalNamespace, "ModuleAttribute"))
 			{
 				Registrations[module] = ConstructedModuleRegistrations(module, compilation, members: true).ToList();
@@ -523,57 +531,74 @@ partial class AwaitenGenerator
 		}
 
 		/// <summary>
-		///     The services a <c>[Scan]</c> or an open generic registration of a module of the assembly may register a class of
-		///     the assembly under, which <see cref="Registrations" /> does not hold. Cautiously, a class a scan may match counts
-		///     under the scan's marker and every interface it implements, whatever the scan's <c>As</c>, and a generic class
-		///     counts under every interface it implements, with its own type parameters, once a module has a <c>typeof</c>
-		///     registration, which an open generic registration may close.
+		///     The services a <c>[Scan]</c> of a module another assembly can name may register a class of the assembly under,
+		///     which <see cref="Registrations" /> does not hold: the exposures its <c>As</c> selects for each class its marker
+		///     and filters may match (see <see cref="AccessibleExposures" />).
 		/// </summary>
 		public List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> ScannedServices => _scannedServices.Value;
+
+		/// <summary>
+		///     The definitions of the services an unkeyed, non-contextual open generic registration of a module another
+		///     assembly can name registers under, which may close to any construction of them.
+		/// </summary>
+		public HashSet<INamedTypeSymbol> OpenServices => _openServices.Value;
+
+		/// <summary>
+		///     Every implementation a module another assembly can name registers, with the service it registers it under,
+		///     including those of <see cref="ScannedServices" />.
+		/// </summary>
+		public List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> RegisteredServices => _registeredServices.Value;
 
 		private List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> CollectScannedServices()
 		{
 			List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> scanned = new();
-			if (!_scansOrOpenRegistrations.Value)
+			foreach (INamedTypeSymbol module in Registrations.Keys.Where(IsExternallyAccessible))
 			{
-				return scanned;
-			}
-
-			List<AttributeData> attributes = Registrations.Keys.SelectMany(module => module.GetAttributes()).ToList();
-			List<(ScanFilters Filters, INamedTypeSymbol? Marker)> scans = attributes
-				.Where(attribute => attribute.AttributeClass is { Name: "ScanAttribute", } attributeClass
-				                    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
-				                    && (ScanMarker(attribute, attributeClass) is not null || IsMarkerlessScan(attribute, attributeClass)))
-				.Select(attribute => (ScanFiltersOf(attribute), ScanMarker(attribute, attribute.AttributeClass!)))
-				.ToList();
-			bool open = attributes.Any(attribute => attribute.AttributeClass is { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, });
-			foreach (INamedTypeSymbol type in _classes.Value)
-			{
-				if (type.IsGenericType)
+				ModuleScanContext context = new(module, _compilation, new List<DiagnosticInfo>(), new HashSet<string>(StringComparer.Ordinal));
+				foreach (AttributeData attribute in module.GetAttributes())
 				{
-					if (open)
+					if (attribute.AttributeClass is not { Name: "ScanAttribute", } attributeClass
+					    || attributeClass.ContainingNamespace?.ToDisplayString() != AttributeNamespace)
 					{
-						scanned.AddRange(type.AllInterfaces.Select(contract => (type, contract)));
+						continue;
 					}
 
-					continue;
-				}
-
-				foreach ((ScanFilters filters, INamedTypeSymbol? marker) in scans)
-				{
-					if (IsScanCandidate(type, marker, _compilation) && PassesScanFilters(type, filters, new ScanFilterHits()))
+					INamedTypeSymbol? marker = ScanMarker(attribute, attributeClass);
+					if (marker is null && !IsMarkerlessScan(attribute, attributeClass))
 					{
-						if (marker is not null)
-						{
-							scanned.Add((type, marker));
-						}
+						continue;
+					}
 
-						scanned.AddRange(type.AllInterfaces.Select(contract => (type, contract)));
+					ScanMatch match = new(ScanExposureOf(attribute), ScanLifetime(attribute), null, false, null, null);
+					ScanMarkerInfo markerInfo = new(marker, marker is not null && IsOpenGenericMarker(marker), marker?.OriginalDefinition);
+					ScanFilters filters = ScanFiltersOf(attribute);
+					foreach (INamedTypeSymbol type in _classes.Value.Where(type => IsScanCandidate(type, marker, _compilation) && PassesScanFilters(type, filters, new ScanFilterHits())))
+					{
+						scanned.AddRange(AccessibleExposures(type, match, markerInfo, context).Select(service => (type, service)));
 					}
 				}
 			}
 
 			return scanned;
+		}
+
+		private HashSet<INamedTypeSymbol> CollectOpenServices()
+		{
+			HashSet<INamedTypeSymbol> open = new(SymbolEqualityComparer.Default);
+			foreach (AttributeData attribute in Registrations.Keys.Where(IsExternallyAccessible).SelectMany(module => module.GetAttributes()))
+			{
+				if (attribute.AttributeClass is { Name: "SingletonAttribute" or "TransientAttribute" or "ScopedAttribute", IsGenericType: false, } attributeClass
+				    && attributeClass.ContainingNamespace?.ToDisplayString() == AttributeNamespace
+				    && TryReadTypeofPair(attribute, out INamedTypeSymbol implementation, out INamedTypeSymbol service)
+				    && implementation.IsUnboundGenericType
+				    && NamedKeyArgument(attribute) is null
+				    && NamedTypeArgument(attribute, "WhenInjectedInto", _compilation) is null)
+				{
+					open.Add(service.OriginalDefinition);
+				}
+			}
+
+			return open;
 		}
 
 		/// <summary>Whether the class <paramref name="type" />, or a closing of it, converts to <paramref name="service" />.</summary>
@@ -2044,11 +2069,11 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     Whether a module of the assembly another assembly can name registers a public service other than
-	///     <paramref name="element" /> that an unkeyed collection of <paramref name="element" /> holds through variance, or a
-	///     <c>[Scan]</c> or an open generic registration of a module of the assembly may (see
-	///     <see cref="AssemblyModuleIndex.ScannedServices" />). A container of the module's own assembly orders its
-	///     registrations among those of the internal services by registration, which a generated member that takes the
-	///     public members apart from the handles cannot match.
+	///     <paramref name="element" /> that an unkeyed collection of <paramref name="element" /> holds through variance, a
+	///     <c>[Scan]</c> of such a module may (see <see cref="AssemblyModuleIndex.ScannedServices" />), or an open generic
+	///     registration of such a module may close to (see <see cref="AssemblyModuleIndex.OpenServices" />). A container of
+	///     the module's own assembly orders its registrations among those of the internal services by registration, which a
+	///     generated member that takes the public members apart from the handles cannot match.
 	/// </summary>
 	private static bool HoldsPublicVariant(INamedTypeSymbol element, HiddenServices hidden)
 		=> element is { TypeKind: TypeKind.Interface, IsGenericType: true, }
@@ -2059,29 +2084,22 @@ partial class AwaitenGenerator
 			       && VarianceCompatible(registration.Service, element, hidden.Compilation)
 			       && NamedTypeArgument(registration.Attribute, "WhenInjectedInto", hidden.Compilation) is null))
 		       || hidden.Assembly.ScannedServices.Exists(scanned =>
-			       IsExternallyAccessible(scanned.Service)
-			       && !SymbolEqualityComparer.Default.Equals(scanned.Service, element)
-			       && (scanned.Type.IsGenericType
-				       ? SymbolEqualityComparer.Default.Equals(scanned.Service.OriginalDefinition, element.OriginalDefinition)
-				       : VarianceCompatible(scanned.Service, element, hidden.Compilation))));
+			       !SymbolEqualityComparer.Default.Equals(scanned.Service, element)
+			       && VarianceCompatible(scanned.Service, element, hidden.Compilation))
+		       || (hidden.Assembly.OpenServices.Contains(element.OriginalDefinition) && IsExternallyAccessible(element.OriginalDefinition)));
 
 	/// <summary>
-	///     Whether a module of the assembly another assembly can name registers an implementation under
-	///     <paramref name="element" /> and under one of the internal <paramref name="variants" />, or a <c>[Scan]</c> of a
-	///     module of the assembly may register it under either (see <see cref="AssemblyModuleIndex.ScannedServices" />). A
-	///     container of the module's own assembly holds its one instance once, while a generated member that takes the public
-	///     members apart from the handles would hold it twice.
+	///     Whether a module of the assembly another assembly can name registers an implementation, or a <c>[Scan]</c> of
+	///     such a module may register it, under <paramref name="element" /> and under one of the internal
+	///     <paramref name="variants" /> (see <see cref="AssemblyModuleIndex.RegisteredServices" />). A container of the
+	///     module's own assembly holds its one instance once, while a generated member that takes the public members apart
+	///     from the handles would hold it twice.
 	/// </summary>
 	private static bool SharesInstance(INamedTypeSymbol element, List<INamedTypeSymbol> variants, HiddenServices hidden)
 	{
-		List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> registered = hidden.Assembly.Registrations.Where(entry => IsExternallyAccessible(entry.Key))
-			.SelectMany(entry => entry.Value)
-			.Select(registration => (registration.Implementation, registration.Service))
-			.Concat(hidden.Assembly.ScannedServices)
-			.ToList();
-		return registered.Exists(variant => variants.Contains(variant.Service, SymbolEqualityComparer.Default)
-		                                    && registered.Exists(exact => SymbolEqualityComparer.Default.Equals(exact.Service, element)
-		                                                                  && SymbolEqualityComparer.Default.Equals(exact.Type, variant.Type)));
+		List<(INamedTypeSymbol Type, INamedTypeSymbol Service)> registered = hidden.Assembly.RegisteredServices;
+		HashSet<INamedTypeSymbol> exact = new(registered.Where(entry => SymbolEqualityComparer.Default.Equals(entry.Service, element)).Select(entry => entry.Type), SymbolEqualityComparer.Default);
+		return exact.Count > 0 && registered.Exists(entry => exact.Contains(entry.Type) && variants.Contains(entry.Service, SymbolEqualityComparer.Default));
 	}
 
 	/// <summary>

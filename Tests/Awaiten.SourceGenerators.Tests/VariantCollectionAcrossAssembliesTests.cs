@@ -514,6 +514,50 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
+		public async Task AnOpenGenericRegistrationOfAnotherService_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton(typeof(Box<>))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Box<T> { } internal sealed class Never<T> : IHandler<int> { }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the open generic registration closes only to 'Box<T>', which the collection never holds, and no registration names 'Never<T>'");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+		}
+
+		[Test]
+		public async Task AClosedTypeofRegistration_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton(typeof(Box))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Box { } public sealed class Gen<T> : IHandler<T> { }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a typeof registration of a closed type registers no open generic, so no registration names 'Gen<T>'");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+		}
+
+		[Test]
+		public async Task AScanThatRegistersOnlyItsMarker_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Scan<IMarker>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public interface IMarker { } internal sealed class Marked : IMarker, IHandler<object> { }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the scan registers 'Marked' as 'IMarker' only, not as the 'IHandler<object>' it implements");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+		}
+
+		[Test]
+		public async Task AnInternalElementTypeNextToAClosedTypeofRegistration_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: "[Singleton<SecretHandler, IHandler<ISecret>>]\n[Singleton(typeof(Box))]", handlers: "IEnumerable<IHandler<SubDerived>> handlers")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Box { } public sealed class Gen<T> : IHandler<T> { }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a typeof registration of a closed type registers no open generic, so the collection holds only the internal variant service");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("global::System.Linq.Enumerable.Select<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+		}
+
+		[Test]
 		public async Task AParameterNamedLikeThePublicCollection_KeepsTheGeneratedNameApart()
 		{
 			string library = Library().Replace(
