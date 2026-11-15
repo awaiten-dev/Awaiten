@@ -187,10 +187,65 @@
   color: #f5b85a;
 }
 
+.code,
+.errorCard {
+  --code-background: #f6f8f8;
+  --code-foreground: #1f2d2d;
+  --code-border: #dde6e6;
+  --code-keyword: #0550ae;
+  --code-attribute: #9a5b0b;
+  --code-type: #127a73;
+  --code-comment: #6a7f7f;
+  --code-squiggle: #d1242f;
+  --code-added: #1a7f37;
+  --code-added-background: rgba(26, 127, 55, 0.12);
+  --code-strong: #000000;
+  --error-background: #fff1f0;
+  --error-border: #f5c2bd;
+  --error-foreground: #5c1a14;
+  --error-badge: #cf222e;
+  --error-badge-foreground: #ffffff;
+  --success-background: #effaf2;
+  --success-border: #b7e4c4;
+  --success-foreground: #12391f;
+  --success-badge: #1a7f37;
+  --success-badge-foreground: #ffffff;
+  --fix-foreground: #1f2d2d;
+  --fix-border: #b8c6c6;
+  border: 1px solid var(--code-border);
+}
+
+[data-theme='dark'] .code,
+[data-theme='dark'] .errorCard {
+  --code-background: #0f1a1a;
+  --code-foreground: #cfe0e0;
+  --code-border: #243838;
+  --code-keyword: #6fa8dc;
+  --code-attribute: #f5b85a;
+  --code-type: #7fd8cf;
+  --code-comment: #6e8c8c;
+  --code-squiggle: #ff6b6b;
+  --code-added: #8ee08e;
+  --code-added-background: rgba(142, 224, 142, 0.12);
+  --code-strong: #ffffff;
+  --error-background: #1a1414;
+  --error-border: #3a2424;
+  --error-foreground: #f2d6d3;
+  --error-badge: #ff8a80;
+  --error-badge-foreground: #1a1414;
+  --success-background: #121a15;
+  --success-border: #1f3a2a;
+  --success-foreground: #d3f2dc;
+  --success-badge: #8ee08e;
+  --success-badge-foreground: #121a15;
+  --fix-foreground: #e3eded;
+  --fix-border: #4a5a5a;
+}
+
 .code {
   margin: 0;
-  background: #0f1a1a;
-  color: #cfe0e0;
+  background: var(--code-background);
+  color: var(--code-foreground);
   border-radius: 12px;
   padding: 1.1rem 1.35rem;
   font-family: var(--ifm-font-family-monospace);
@@ -200,34 +255,29 @@
   white-space: pre;
 }
 
-[data-theme='dark'] .code,
-[data-theme='dark'] .errorCard {
-  border: 1px solid #243838;
-}
-
 .kw {
-  color: #6fa8dc;
+  color: var(--code-keyword);
 }
 
 .attr {
-  color: #f5b85a;
+  color: var(--code-attribute);
 }
 
 .type {
-  color: #7fd8cf;
+  color: var(--code-type);
 }
 
 .comment {
-  color: #6e8c8c;
+  color: var(--code-comment);
 }
 
 .squiggle {
-  text-decoration: underline wavy #ff6b6b;
+  text-decoration: underline wavy var(--code-squiggle);
   text-underline-offset: 4px;
 }
 
 .errorCard {
-  background: #0f1a1a;
+  background: var(--code-background);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -238,50 +288,50 @@
 }
 
 .error {
-  border-top: 1px solid #3a2424;
-  background: #1a1414;
+  border-top: 1px solid var(--error-border);
+  background: var(--error-background);
   padding: 0.9rem 1.25rem;
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
   font-size: 0.875rem;
-  color: #f2d6d3;
+  color: var(--error-foreground);
 }
 
 .error code {
   background: none;
   border: 0;
   padding: 0;
-  color: #ffffff;
+  color: var(--code-strong);
 }
 
 .errorId {
   font-family: var(--ifm-font-family-monospace);
   font-weight: 500;
-  color: #1a1414;
-  background: #ff8a80;
+  color: var(--error-badge-foreground);
+  background: var(--error-badge);
   border-radius: 4px;
   padding: 0 0.45rem;
   flex: none;
 }
 
 .added {
-  color: #8ee08e;
-  background: rgba(142, 224, 142, 0.12);
+  color: var(--code-added);
+  background: var(--code-added-background);
   border-radius: 3px;
 }
 
 .success {
-  border-top-color: #1f3a2a;
-  background: #121a15;
-  color: #d3f2dc;
+  border-top-color: var(--success-border);
+  background: var(--success-background);
+  color: var(--success-foreground);
 }
 
 .successId {
   font-family: var(--ifm-font-family-monospace);
   font-weight: 500;
-  color: #121a15;
-  background: #8ee08e;
+  color: var(--success-badge-foreground);
+  background: var(--success-badge);
   border-radius: 4px;
   padding: 0 0.45rem;
   flex: none;
@@ -292,9 +342,9 @@
   flex: none;
   font: inherit;
   font-weight: 600;
-  color: #e3eded;
+  color: var(--fix-foreground);
   background: transparent;
-  border: 1px solid #4a5a5a;
+  border: 1px solid var(--fix-border);
   border-radius: 6px;
   padding: 0.1rem 0.7rem;
   cursor: pointer;
@@ -302,7 +352,7 @@
 
 .fix:hover {
   border-color: #3fb8b0;
-  color: #ffffff;
+  color: var(--code-strong);
 }
 
 .chips {
@@ -328,13 +378,17 @@
 
 .service {
   display: flex;
-  gap: 0.9rem;
-  align-items: baseline;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.15rem;
+  line-height: 1.35;
   border-radius: 12px;
-  padding: 0.9rem 1.1rem;
+  padding: 0.7rem 1.1rem 0.9rem;
   background: var(--ifm-color-emphasis-100);
   border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.service .muted {
+  font-size: 0.875rem;
 }
 
 .serviceWarm {
