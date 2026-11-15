@@ -467,7 +467,7 @@ partial class AwaitenGenerator
 			{
 				INamedTypeSymbol definition = registration.Implementation.OriginalDefinition;
 				inheritance.ReportPrivate(
-					$"The type '{Display(registration.ImplementationType)}'",
+					$"The type '{DisplayInstance(registration.ImplementationType)}'",
 					new FactoryFault(UnsupportedPrivateShape, $"make '{Display(definition.ToDisplayString(FullyQualified))}' internal"),
 					diagnostics);
 			}
@@ -493,7 +493,7 @@ partial class AwaitenGenerator
 				Diagnostics.ScanTypePrivate,
 				LocationInfo.From(inheritance.Location),
 				new EquatableArray<string>([
-					Display(registration.ImplementationType),
+					DisplayInstance(registration.ImplementationType),
 					$"'{type}' is private or protected and the extending container '{Display(inheritance.Container.ToDisplayString(FullyQualified))}' cannot reach it",
 					$"make '{type}' internal",
 				]));
@@ -804,7 +804,7 @@ partial class AwaitenGenerator
 		{
 			if (!registration.IsScan)
 			{
-				ReportPrivate($"The type '{Display(registration.ImplementationType)}'", fault, diagnostics);
+				ReportPrivate($"The type '{DisplayInstance(registration.ImplementationType)}'", fault, diagnostics);
 				return;
 			}
 
@@ -812,7 +812,7 @@ partial class AwaitenGenerator
 				Diagnostics.ScanTypePrivate,
 				LocationInfo.From(Location),
 				new EquatableArray<string>([
-					Display(registration.ImplementationType),
+					DisplayInstance(registration.ImplementationType),
 					$"the extending container '{Display(Container.ToDisplayString(FullyQualified))}' cannot build it, because {fault.Reason}",
 					fault.Remedy,
 				]));

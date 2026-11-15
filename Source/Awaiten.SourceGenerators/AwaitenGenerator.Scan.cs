@@ -1168,10 +1168,20 @@ partial class AwaitenGenerator
 		}
 	}
 
+	/// <summary>
+	///     The types nested in <paramref name="type" />, except those the generator adds to a module or container in its
+	///     <c>Internals</c> class, a name AWT235 reserves there, so a scan never matches a type the user did not write.
+	/// </summary>
 	private static IEnumerable<INamedTypeSymbol> EnumerateNested(INamedTypeSymbol type)
 	{
 		foreach (INamedTypeSymbol nested in type.GetTypeMembers())
 		{
+			if (nested.Name == InternalsClass
+			    && (HasAwaitenAttribute(type.GetAttributes(), "ModuleAttribute") || HasAwaitenAttribute(type.GetAttributes(), "ContainerAttribute")))
+			{
+				continue;
+			}
+
 			yield return nested;
 			foreach (INamedTypeSymbol deeper in EnumerateNested(nested))
 			{

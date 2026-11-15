@@ -400,7 +400,8 @@ public class ModuleScanInstanceHandleTests
 			foreach (GeneratorResult result in new[] { sameAssembly, friend, })
 			{
 				await That(result.Diagnostics).HasSingle().Which
-					.Contains("*warning AWT199: 'Lib.Roaster' is matched by scans naming conflicting OnActivated hooks ('Hook' and 'Lib.PluginModule.*'); the first scan's 'Hook' is used").AsWildcard();
+					.Contains("*warning AWT199: 'Lib.Roaster' is matched by scans naming conflicting OnActivated hooks ('Hook' and 'Lib.PluginModule.Activate'); the first scan's 'Hook' is used").AsWildcard()
+					.Because("the module's hook is named as the module declares it, not by the wrapper a friend container calls");
 			}
 
 			foreach (GeneratorResult result in new[] { external, reference, })

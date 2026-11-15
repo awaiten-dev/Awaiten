@@ -608,7 +608,7 @@ partial class AwaitenGenerator
 					Diagnostics.ScanLifetimeConflict,
 					LocationInfo.From(registration.Location),
 					new EquatableArray<string>([
-						Display(registration.ImplementationType),
+						DisplayInstance(registration.ImplementationType),
 						info.Lifetime.ToString(),
 						registration.Lifetime.ToString(),
 					])));
@@ -892,7 +892,7 @@ partial class AwaitenGenerator
 					Diagnostics.ScanHookConflict,
 					LocationInfo.From(registration.Location),
 					new EquatableArray<string>([
-						Display(registration.ImplementationType),
+						DisplayInstance(registration.ImplementationType),
 						slot,
 						QualifiedHookDisplay(current.Name, current.Origin),
 						QualifiedHookDisplay(name, registration.Origin),

@@ -166,6 +166,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 			AwaitenGenerator.RemoveBaseDiagnostics(detected, Detect(CachedGraph(graphByContainer, baseContainer, compilation, cancellationToken).Graph, strict), type, baseContainer);
 		}
 
+		AwaitenGenerator.NameGeneratedMembers(type, compilation, detected, cancellationToken);
 		foreach (DiagnosticInfo diagnostic in detected)
 		{
 			report(diagnostic.ToDiagnostic(compilation, cancellationToken));
@@ -185,6 +186,7 @@ public sealed class AwaitenAnalyzer : DiagnosticAnalyzer
 				.Where(diagnostic => ReferenceEquals(diagnostic.Descriptor, Diagnostics.OptionalPropertyIsInitOnly) || ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct)), type, extended);
 		}
 
+		AwaitenGenerator.NameGeneratedMembers(type, compilation, fromGraph, cancellationToken);
 		foreach (DiagnosticInfo diagnostic in fromGraph.Where(diagnostic => !ReferenceEquals(diagnostic.Descriptor, Diagnostics.NullableProduct) || nullableProducts.TryAdd(diagnostic, true)))
 		{
 			report(diagnostic.ToDiagnostic(compilation, cancellationToken));

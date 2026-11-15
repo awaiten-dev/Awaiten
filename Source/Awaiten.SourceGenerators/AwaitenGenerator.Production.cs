@@ -568,7 +568,7 @@ partial class AwaitenGenerator
 	///     generated code.
 	/// </summary>
 	private static bool IsNullableProduct(ITypeSymbol produced, ISymbol member, ImplInfo info, List<DiagnosticInfo>? diagnostics)
-		=> IsNullableProduct(produced, member, info.Production, info.ProductionMember!, info.OwningServiceOrImpl, info.Location, diagnostics);
+		=> IsNullableProduct(produced, member, info.Production, UserMemberName(info.ProductionMember)!, info.OwningServiceOrImpl, info.Location, diagnostics);
 
 	/// <summary>
 	///     The form of the <see cref="ImplInfo" /> overload for the wrapper a module generates over its <c>Factory</c> or
@@ -930,7 +930,7 @@ partial class AwaitenGenerator
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.NotInstantiable,
 				info.Location,
-				new EquatableArray<string>([Display(info.ImplementationType),])));
+				new EquatableArray<string>([DisplayInstance(info.ImplementationType),])));
 			return null;
 		}
 
@@ -950,7 +950,7 @@ partial class AwaitenGenerator
 			diagnostics.Add(new DiagnosticInfo(
 				Diagnostics.NoAccessibleConstructor,
 				info.Location,
-				new EquatableArray<string>([Display(info.ImplementationType),])));
+				new EquatableArray<string>([DisplayInstance(info.ImplementationType),])));
 		}
 
 		return constructor;
@@ -1062,7 +1062,7 @@ partial class AwaitenGenerator
 				Diagnostics.GenericHookAmbiguousMarker,
 				info.Location,
 				new EquatableArray<string>([
-					Display(info.ImplementationType),
+					DisplayInstance(info.ImplementationType),
 					hookName,
 					string.Join(", ", ambiguousMethods[0].Select(form => Display(form.ToDisplayString(FullyQualified)))),
 				])));

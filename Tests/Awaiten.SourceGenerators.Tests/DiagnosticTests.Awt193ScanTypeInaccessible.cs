@@ -35,6 +35,42 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task DoesNotMatchTheTypesGeneratedIntoAModuleOfTheScannedAssembly()
+		{
+			const string library = """
+				using Awaiten;
+
+				namespace Lib;
+
+				public interface IKettle { }
+				internal interface IHiddenKettle { }
+				public sealed class Kettle : IKettle, IHiddenKettle, System.IDisposable { public void Dispose() { } }
+
+				[Module]
+				[Singleton<Kettle, IKettle>]
+				[Singleton<Kettle, IHiddenKettle>]
+				public static partial class KettleModule { }
+				""";
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssembly(library, """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Scan(As = ScanAs.MatchingInterface, InAssembliesOf = new[] { typeof(Lib.IKettle) })]
+				public static partial class MyContainer
+				{
+				}
+				""");
+
+			await That(Generator.Run(library).Sources.Single(source => source.Key.Contains("KettleModule")).Value).Contains("class Disposable")
+				.Because("the module generates a handle variant whose name matches IDisposable");
+			await That(result.Diagnostics).DoesNotContain("*Internals.*").AsWildcard()
+				.Because("a scan considers only the types the user wrote, never those the generator adds to a module");
+		}
+
+		[Test]
 		public async Task ReportsOnlyForTypesTheMarkerMatched()
 		{
 			GeneratorResult result = Generator.RunWithReferencedAssembly("""
