@@ -64,6 +64,8 @@ partial class AwaitenGenerator
 	{
 		List<ParameterModel> parameters = new();
 		int firstProperty = IsGeneratedOwnerFactory(producer) ? FirstPropertyOrdinal(producer) : int.MaxValue;
+		bool mirrorsConstructor = producer.MethodKind == MethodKind.Constructor || producer.ContainingType.Name == InternalsClass;
+		ISymbol needer = mirrorsConstructor ? info.Symbol : producer.ContainingType;
 		foreach (IParameterSymbol parameter in producer.Parameters)
 		{
 			// A [RequestingType] parameter of a Factory method is filled at each construction site with the
@@ -103,7 +105,7 @@ partial class AwaitenGenerator
 			}
 
 			ParameterModel parameterModel = ClassifyParameter(parameter, asyncFactory, context.External.ServiceTypes);
-			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), producer.MethodKind == MethodKind.Constructor || producer.ContainingType.Name == InternalsClass ? info.Symbol : producer.ContainingType, info.Location);
+			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), needer, info.Location);
 
 			ReportUnsupportedFromKey(parameter.GetAttributes(), parameterModel.Location ?? info.Location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
