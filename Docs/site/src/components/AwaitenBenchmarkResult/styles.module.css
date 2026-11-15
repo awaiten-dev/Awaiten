@@ -227,8 +227,13 @@
   right: 14px;
   width: 4px;
   height: 20px;
-  background: var(--ifm-background-color);
+  /* Infima's light --ifm-background-color is transparent, which would hide the cut. */
+  background: #ffffff;
   transform: skewX(-20deg);
+}
+
+[data-theme='dark'] .barCut::after {
+  background: var(--ifm-background-color);
 }
 
 .charts:not(.racing) .barCut::after {
