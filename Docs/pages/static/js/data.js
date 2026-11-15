@@ -2064,6 +2064,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
         "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
+      },
+      {
+        "sha": "26d2b827bb1e24ef76a6a99408968dcd65208c31",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
+        "message": "docs: give the MS.DI bridge package its own readme (#452)"
       }
     ],
     "labels": [
@@ -2410,7 +2416,8 @@ window.BENCHMARK_DATA = {
       "8e369646",
       "3f0f5847",
       "07cfe8c2",
-      "05bb7e4b"
+      "05bb7e4b",
+      "26d2b827"
     ],
     "datasets": [
       {
@@ -2760,7 +2767,8 @@ window.BENCHMARK_DATA = {
           4.776268797261374,
           3.613962657749653,
           4.493054451154811,
-          4.885869432489077
+          4.885869432489077,
+          5.36995926896731
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2772,6 +2780,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3473,7 +3482,8 @@ window.BENCHMARK_DATA = {
           6.984609433015188,
           4.28559078325828,
           10.18953454941511,
-          5.183230943481127
+          5.183230943481127,
+          4.953431856135527
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3485,6 +3495,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4186,7 +4197,8 @@ window.BENCHMARK_DATA = {
           86.92117908171245,
           59.33983593781789,
           81.9806181532996,
-          83.3758025487264
+          83.3758025487264,
+          90.54128817717235
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4198,6 +4210,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4895,7 +4908,8 @@ window.BENCHMARK_DATA = {
           6.987176124254862,
           5.468502915898958,
           6.495318057139714,
-          7.270933516323566
+          7.270933516323566,
+          7.050607152283192
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4907,6 +4921,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5600,7 +5615,8 @@ window.BENCHMARK_DATA = {
           7.957722759590699,
           6.397512823343277,
           8.196108097831408,
-          9.306074449419976
+          9.306074449419976,
+          9.314715558290482
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5612,6 +5628,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8029,6 +8046,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
         "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
+      },
+      {
+        "sha": "26d2b827bb1e24ef76a6a99408968dcd65208c31",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
+        "message": "docs: give the MS.DI bridge package its own readme (#452)"
       }
     ],
     "labels": [
@@ -8375,7 +8398,8 @@ window.BENCHMARK_DATA = {
       "8e369646",
       "3f0f5847",
       "07cfe8c2",
-      "05bb7e4b"
+      "05bb7e4b",
+      "26d2b827"
     ],
     "datasets": [
       {
@@ -8725,7 +8749,8 @@ window.BENCHMARK_DATA = {
           5.858759254217148,
           3.505540642639001,
           5.643168432513873,
-          5.433435425162315
+          5.433435425162315,
+          5.4860353092352545
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8737,6 +8762,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9438,7 +9464,8 @@ window.BENCHMARK_DATA = {
           6.4986580690512294,
           4.084409437009266,
           6.492936626076698,
-          5.183690492312113
+          5.183690492312113,
+          4.929526242117087
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9450,6 +9477,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10151,7 +10179,8 @@ window.BENCHMARK_DATA = {
           86.90341363350551,
           57.31076587097986,
           83.60974811656135,
-          91.9871676603953
+          91.9871676603953,
+          94.22805569001606
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10163,6 +10192,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10860,7 +10890,8 @@ window.BENCHMARK_DATA = {
           6.845354836434126,
           5.153056103984515,
           6.304063688715299,
-          7.321986206372579
+          7.321986206372579,
+          7.042978735764821
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10872,6 +10903,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11565,7 +11597,8 @@ window.BENCHMARK_DATA = {
           11.240085488983564,
           6.176099208990733,
           11.190335395080703,
-          9.380757914235195
+          9.380757914235195,
+          9.431027582713536
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11577,6 +11610,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13994,6 +14028,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
         "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
+      },
+      {
+        "sha": "26d2b827bb1e24ef76a6a99408968dcd65208c31",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
+        "message": "docs: give the MS.DI bridge package its own readme (#452)"
       }
     ],
     "labels": [
@@ -14340,7 +14380,8 @@ window.BENCHMARK_DATA = {
       "8e369646",
       "3f0f5847",
       "07cfe8c2",
-      "05bb7e4b"
+      "05bb7e4b",
+      "26d2b827"
     ],
     "datasets": [
       {
@@ -14690,7 +14731,8 @@ window.BENCHMARK_DATA = {
           19.05229126214981,
           15.197190183401108,
           16.84804885515145,
-          19.739927955468495
+          19.739927955468495,
+          20.8931482454141
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14962,6 +15004,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15403,7 +15446,8 @@ window.BENCHMARK_DATA = {
           1234.154906463623,
           1105.969940321786,
           1321.3346879323324,
-          1385.9273497263591
+          1385.9273497263591,
+          1579.0168847304124
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15415,6 +15459,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16116,7 +16161,8 @@ window.BENCHMARK_DATA = {
           18955.57728474935,
           26063.35580851237,
           26656.57560511998,
-          28577.445922851562
+          28577.445922851562,
+          23945.750130208333
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16471,7 +16517,8 @@ window.BENCHMARK_DATA = {
           32474,
           32477,
           32478,
-          32477
+          32477,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16825,7 +16872,8 @@ window.BENCHMARK_DATA = {
           598.8708000183105,
           562.8104838643756,
           606.3419670422871,
-          666.4399871144976
+          666.4399871144976,
+          675.7931944773748
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16855,6 +16903,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17530,7 +17579,8 @@ window.BENCHMARK_DATA = {
           9330.768003336589,
           8493.332765851703,
           9241.650056966146,
-          11059.049945576986
+          11059.049945576986,
+          11847.880068097797
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17880,6 +17930,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760,
           24760
         ],
@@ -19959,6 +20010,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
         "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
+      },
+      {
+        "sha": "26d2b827bb1e24ef76a6a99408968dcd65208c31",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
+        "message": "docs: give the MS.DI bridge package its own readme (#452)"
       }
     ],
     "labels": [
@@ -20305,7 +20362,8 @@ window.BENCHMARK_DATA = {
       "8e369646",
       "3f0f5847",
       "07cfe8c2",
-      "05bb7e4b"
+      "05bb7e4b",
+      "26d2b827"
     ],
     "datasets": [
       {
@@ -20655,7 +20713,8 @@ window.BENCHMARK_DATA = {
           189.44310727119446,
           112.88182388884681,
           123.00668654441833,
-          176.68948692541855
+          176.68948692541855,
+          223.20657223065695
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20927,6 +20986,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21368,7 +21428,8 @@ window.BENCHMARK_DATA = {
           9870.238414219448,
           10477.38352915446,
           11880.2013865153,
-          14049.012476094564
+          14049.012476094564,
+          13735.502510579427
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21380,6 +21441,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22081,7 +22143,8 @@ window.BENCHMARK_DATA = {
           451709.5766438802,
           626558.4642857143,
           643417.9010184152,
-          677428.160295759
+          677428.160295759,
+          584623.1793619791
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22436,7 +22499,8 @@ window.BENCHMARK_DATA = {
           720432,
           740080,
           719712,
-          719048
+          719048,
+          718361
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22790,7 +22854,8 @@ window.BENCHMARK_DATA = {
           34023.08697102864,
           34266.18303629557,
           37138.6849609375,
-          41569.062272135416
+          41569.062272135416,
+          42113.82793317522
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23141,7 +23206,8 @@ window.BENCHMARK_DATA = {
           80958,
           80006,
           80967,
-          80351
+          80351,
+          80502
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23495,7 +23561,8 @@ window.BENCHMARK_DATA = {
           262129.21103515624,
           257944.15345982142,
           291763.38636997767,
-          331213.7118326823
+          331213.7118326823,
+          352992.81865234376
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23846,7 +23913,8 @@ window.BENCHMARK_DATA = {
           571196,
           573123,
           573155,
-          572979
+          572979,
+          572319
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25900,6 +25968,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
         "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
+      },
+      {
+        "sha": "26d2b827bb1e24ef76a6a99408968dcd65208c31",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
+        "message": "docs: give the MS.DI bridge package its own readme (#452)"
       }
     ],
     "labels": [
@@ -26242,7 +26316,8 @@ window.BENCHMARK_DATA = {
       "8e369646",
       "3f0f5847",
       "07cfe8c2",
-      "05bb7e4b"
+      "05bb7e4b",
+      "26d2b827"
     ],
     "datasets": [
       {
@@ -26588,7 +26663,8 @@ window.BENCHMARK_DATA = {
           218.54078121980032,
           221.50644157727558,
           209.17865710258485,
-          240.83710476557414
+          240.83710476557414,
+          215.61416826248168
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26623,6 +26699,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27293,7 +27370,8 @@ window.BENCHMARK_DATA = {
           462.35647120475767,
           494.42184925079346,
           450.5077077070872,
-          537.5160094774686
+          537.5160094774686,
+          472.11740328470864
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27305,6 +27383,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27998,7 +28077,8 @@ window.BENCHMARK_DATA = {
           5114.196900503976,
           3902.6728037516277,
           4643.940037536621,
-          3957.097930399577
+          3957.097930399577,
+          4959.9291056315105
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28082,6 +28162,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28703,7 +28784,8 @@ window.BENCHMARK_DATA = {
           345.55010681152345,
           328.9941456476847,
           334.9437454859416,
-          342.23865235646565
+          342.23865235646565,
+          344.49069452285767
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28715,6 +28797,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29408,7 +29491,8 @@ window.BENCHMARK_DATA = {
           567.230474618765,
           547.9262587865194,
           527.8662853240967,
-          551.2304685592651
+          551.2304685592651,
+          547.2115219751994
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29420,6 +29504,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
