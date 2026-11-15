@@ -2058,6 +2058,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
@@ -2403,7 +2409,8 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
@@ -2752,7 +2759,8 @@ window.BENCHMARK_DATA = {
           6.180821465452512,
           4.776268797261374,
           3.613962657749653,
-          4.493054451154811
+          4.493054451154811,
+          4.885869432489077
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2764,6 +2772,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3463,7 +3472,8 @@ window.BENCHMARK_DATA = {
           10.376993904511133,
           6.984609433015188,
           4.28559078325828,
-          10.18953454941511
+          10.18953454941511,
+          5.183230943481127
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3475,6 +3485,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4174,7 +4185,8 @@ window.BENCHMARK_DATA = {
           115.90216409365335,
           86.92117908171245,
           59.33983593781789,
-          81.9806181532996
+          81.9806181532996,
+          83.3758025487264
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4186,6 +4198,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4881,7 +4894,8 @@ window.BENCHMARK_DATA = {
           8.591319015622139,
           6.987176124254862,
           5.468502915898958,
-          6.495318057139714
+          6.495318057139714,
+          7.270933516323566
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4893,6 +4907,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5584,7 +5599,8 @@ window.BENCHMARK_DATA = {
           10.897044329770974,
           7.957722759590699,
           6.397512823343277,
-          8.196108097831408
+          8.196108097831408,
+          9.306074449419976
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5596,6 +5612,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8006,6 +8023,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
@@ -8351,7 +8374,8 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
@@ -8700,7 +8724,8 @@ window.BENCHMARK_DATA = {
           6.957348134900842,
           5.858759254217148,
           3.505540642639001,
-          5.643168432513873
+          5.643168432513873,
+          5.433435425162315
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8712,6 +8737,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9411,7 +9437,8 @@ window.BENCHMARK_DATA = {
           8.712620777579454,
           6.4986580690512294,
           4.084409437009266,
-          6.492936626076698
+          6.492936626076698,
+          5.183690492312113
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9423,6 +9450,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10122,7 +10150,8 @@ window.BENCHMARK_DATA = {
           112.7673612912496,
           86.90341363350551,
           57.31076587097986,
-          83.60974811656135
+          83.60974811656135,
+          91.9871676603953
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10134,6 +10163,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10829,7 +10859,8 @@ window.BENCHMARK_DATA = {
           9.085034889834267,
           6.845354836434126,
           5.153056103984515,
-          6.304063688715299
+          6.304063688715299,
+          7.321986206372579
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10841,6 +10872,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11532,7 +11564,8 @@ window.BENCHMARK_DATA = {
           14.766388502717017,
           11.240085488983564,
           6.176099208990733,
-          11.190335395080703
+          11.190335395080703,
+          9.380757914235195
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11544,6 +11577,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13954,6 +13988,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
@@ -14299,7 +14339,8 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
@@ -14648,7 +14689,8 @@ window.BENCHMARK_DATA = {
           12.174908942409925,
           19.05229126214981,
           15.197190183401108,
-          16.84804885515145
+          16.84804885515145,
+          19.739927955468495
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14920,6 +14962,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15359,7 +15402,8 @@ window.BENCHMARK_DATA = {
           811.2067292758396,
           1234.154906463623,
           1105.969940321786,
-          1321.3346879323324
+          1321.3346879323324,
+          1385.9273497263591
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15371,6 +15415,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16070,7 +16115,8 @@ window.BENCHMARK_DATA = {
           18718.950766427177,
           18955.57728474935,
           26063.35580851237,
-          26656.57560511998
+          26656.57560511998,
+          28577.445922851562
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16424,7 +16470,8 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32477,
-          32478
+          32478,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16777,7 +16824,8 @@ window.BENCHMARK_DATA = {
           404.1462012699672,
           598.8708000183105,
           562.8104838643756,
-          606.3419670422871
+          606.3419670422871,
+          666.4399871144976
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16807,6 +16855,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17480,7 +17529,8 @@ window.BENCHMARK_DATA = {
           6458.415947469076,
           9330.768003336589,
           8493.332765851703,
-          9241.650056966146
+          9241.650056966146,
+          11059.049945576986
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17830,6 +17880,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -19902,6 +19953,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
@@ -20247,7 +20304,8 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
@@ -20596,7 +20654,8 @@ window.BENCHMARK_DATA = {
           76.88119270971843,
           189.44310727119446,
           112.88182388884681,
-          123.00668654441833
+          123.00668654441833,
+          176.68948692541855
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20868,6 +20927,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21307,7 +21367,8 @@ window.BENCHMARK_DATA = {
           7479.476569112142,
           9870.238414219448,
           10477.38352915446,
-          11880.2013865153
+          11880.2013865153,
+          14049.012476094564
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21319,6 +21380,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22018,7 +22080,8 @@ window.BENCHMARK_DATA = {
           422382.4083426339,
           451709.5766438802,
           626558.4642857143,
-          643417.9010184152
+          643417.9010184152,
+          677428.160295759
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22372,7 +22435,8 @@ window.BENCHMARK_DATA = {
           735271,
           720432,
           740080,
-          719712
+          719712,
+          719048
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22725,7 +22789,8 @@ window.BENCHMARK_DATA = {
           22903.65350811298,
           34023.08697102864,
           34266.18303629557,
-          37138.6849609375
+          37138.6849609375,
+          41569.062272135416
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23075,7 +23140,8 @@ window.BENCHMARK_DATA = {
           79667,
           80958,
           80006,
-          80967
+          80967,
+          80351
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23428,7 +23494,8 @@ window.BENCHMARK_DATA = {
           181268.19709123884,
           262129.21103515624,
           257944.15345982142,
-          291763.38636997767
+          291763.38636997767,
+          331213.7118326823
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23778,7 +23845,8 @@ window.BENCHMARK_DATA = {
           573085,
           571196,
           573123,
-          573155
+          573155,
+          572979
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25826,6 +25894,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
@@ -26167,7 +26241,8 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
@@ -26512,7 +26587,8 @@ window.BENCHMARK_DATA = {
           207.6969141960144,
           218.54078121980032,
           221.50644157727558,
-          209.17865710258485
+          209.17865710258485,
+          240.83710476557414
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26547,6 +26623,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27215,7 +27292,8 @@ window.BENCHMARK_DATA = {
           451.2680216789246,
           462.35647120475767,
           494.42184925079346,
-          450.5077077070872
+          450.5077077070872,
+          537.5160094774686
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27227,6 +27305,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27918,7 +27997,8 @@ window.BENCHMARK_DATA = {
           4634.27742207845,
           5114.196900503976,
           3902.6728037516277,
-          4643.940037536621
+          4643.940037536621,
+          3957.097930399577
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28002,6 +28082,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28621,7 +28702,8 @@ window.BENCHMARK_DATA = {
           329.81409594217934,
           345.55010681152345,
           328.9941456476847,
-          334.9437454859416
+          334.9437454859416,
+          342.23865235646565
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28633,6 +28715,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29324,7 +29407,8 @@ window.BENCHMARK_DATA = {
           521.5203612872532,
           567.230474618765,
           547.9262587865194,
-          527.8662853240967
+          527.8662853240967,
+          551.2304685592651
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29336,6 +29420,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
