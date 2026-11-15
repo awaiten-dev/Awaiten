@@ -55,7 +55,9 @@ public static class Program
 		string guidance = string.Empty;
 		try
 		{
+#pragma warning disable S6966 // the check covers the synchronous by-type miss
 			root.Resolve(requested);
+#pragma warning restore S6966
 		}
 		catch (InvalidOperationException exception)
 		{

@@ -15,8 +15,10 @@ public sealed partial class RegisteredRelationshipTypeTests
 
 		await That(root.Resolve<Func<IClock>>()()).IsExactly<SpecialClock>()
 			.Because("the registration of Func<IClock> wins the dispatch slot over the built-in relationship");
+#pragma warning disable CA2263 // the test covers the Type-based overload
 		await That(((Func<IClock>)root.Resolve(typeof(Func<IClock>)))()).IsExactly<SpecialClock>()
 			.Because("the untyped resolve dispatches to the same registration");
+#pragma warning restore CA2263
 		await That(root.Resolve<Lazy<IClock>>("special").Value).IsExactly<SpecialClock>()
 			.Because("a keyed resolve serves a keyed registration of a relationship type like any other service");
 	}

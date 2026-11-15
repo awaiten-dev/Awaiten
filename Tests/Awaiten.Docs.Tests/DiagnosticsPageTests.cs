@@ -9,12 +9,18 @@ using Microsoft.CodeAnalysis;
 
 namespace Awaiten.Docs.Tests;
 
-public sealed class DiagnosticsPageTests
+public sealed partial class DiagnosticsPageTests
 {
 	private static readonly string[] Lines = File.ReadAllLines(GetPagePath());
-	private static readonly Regex DiagnosticId = new(@"AWT\d+");
-	private static readonly Regex InlineCode = new("`[^`]*`");
-	private static readonly Regex SentenceBreak = new(@"(?<!\be\.g|\bi\.e)[.!?] +[A-Z\[]");
+
+	[GeneratedRegex(@"AWT\d+")]
+	private static partial Regex DiagnosticId();
+
+	[GeneratedRegex("`[^`]*`")]
+	private static partial Regex InlineCode();
+
+	[GeneratedRegex(@"(?<!\be\.g|\bi\.e)[.!?] +[A-Z\[]")]
+	private static partial Regex SentenceBreak();
 
 	/// <summary>
 	///     The descriptors of <c>Awaiten.SourceGenerators.Diagnostics</c>, read by reflection because the class is internal.
@@ -55,7 +61,7 @@ public sealed class DiagnosticsPageTests
 			.Contains(admonition!);
 		string[] summary = Lines.Skip(Array.IndexOf(Lines, admonition, heading) + 1).TakeWhile(line => line != ":::").ToArray();
 		await That(summary).HasCount(1).Because("the admonition summary is one line");
-		await That(SentenceBreak.IsMatch(InlineCode.Replace(summary[0], "Code"))).IsFalse()
+		await That(SentenceBreak().IsMatch(InlineCode().Replace(summary[0], "Code"))).IsFalse()
 			.Because("the admonition summarizes the diagnostic in one sentence, and the details follow it");
 		string? indexRow = Lines.FirstOrDefault(line => line.StartsWith($"| [{id}](#{anchor}) |"));
 		await That(indexRow).IsNotNull().Because($"{id} needs a row in the index");
@@ -70,8 +76,8 @@ public sealed class DiagnosticsPageTests
 	[Test]
 	public async Task Page_ShouldOnlyDocumentDiagnosticsWithDescriptor()
 	{
-		string[] headingIds = Lines.Where(line => line.StartsWith("### AWT")).Select(line => DiagnosticId.Match(line).Value).ToArray();
-		string[] indexIds = Lines.Where(line => line.StartsWith("| [AWT")).Select(line => DiagnosticId.Match(line).Value).ToArray();
+		string[] headingIds = Lines.Where(line => line.StartsWith("### AWT")).Select(line => DiagnosticId().Match(line).Value).ToArray();
+		string[] indexIds = Lines.Where(line => line.StartsWith("| [AWT")).Select(line => DiagnosticId().Match(line).Value).ToArray();
 
 		await That(headingIds).IsNotEmpty();
 		await That(headingIds.Except(Ids())).IsEmpty().Because("every section belongs to a diagnostic");

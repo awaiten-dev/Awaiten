@@ -183,9 +183,11 @@ public partial class RuntimeArgumentTests
 		{
 			using RuntimeArgumentContainer.Root container = new();
 
+#pragma warning disable CA2263 // the test covers the Type-based overload
 			await That(() => container.Resolve(typeof(Lazy<Badge>))).Throws<InvalidOperationException>()
 				.WithMessage($"No registration for type '{typeof(Lazy<Badge>)}' on this container.")
 				.Because("only a service built from runtime arguments gets the factory remedy");
+#pragma warning restore CA2263
 		}
 
 		public interface IBrewInitializable

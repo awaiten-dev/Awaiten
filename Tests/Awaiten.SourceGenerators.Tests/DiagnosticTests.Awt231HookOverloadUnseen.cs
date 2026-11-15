@@ -516,7 +516,7 @@ public partial class DiagnosticTests
 					.Because("a container in the module's assembly counts the generic overload the call infers");
 			}
 
-			private static IEnumerable<string?> HookCallTargets(string library)
+			private static List<string?> HookCallTargets(string library)
 			{
 				(Compilation output, _) = Generator.RunGenerator(library, [], []);
 				return output.SyntaxTrees.SelectMany(tree => tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
