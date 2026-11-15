@@ -970,6 +970,91 @@ partial class AwaitenGenerator
 	}
 
 	/// <summary>
+	///     AWT265 for each public variant service that a collection passed to a generated member of a module holds, when the
+	///     member takes the collection as the public collection of its element type followed by the handles of the internal
+	///     service it holds through variance. A container in the module's assembly holds the variance members by the
+	///     coalescing order of their services (see <see cref="InPrecedenceOrder" />), so a public variant service whose
+	///     first registration follows the first alias of the internal service would come after the handles there, while the
+	///     member always puts it before them. Reported at the import of the module that registers it, or else at its
+	///     registration.
+	/// </summary>
+	private static void ReportVariantCollectionsOrderedDifferently(
+		List<RawRegistration> raw,
+		List<InstanceModel> instances,
+		List<LocationInfo?> instanceLocations,
+		List<ServiceMembers> collections,
+		VarianceState variance,
+		List<ImportedModule> modules,
+		List<DiagnosticInfo> diagnostics)
+	{
+		List<RawRegistration> ordered = InPrecedenceOrder(raw)
+			.Select(entry => entry.Registration)
+			.Where(registration => registration is { Key: null, WhenInjectedInto: null, })
+			.ToList();
+		if (!ordered.Exists(registration => registration.Aliased is not null))
+		{
+			return;
+		}
+
+		HashSet<DiagnosticInfo> reported = new();
+		for (int i = 0; i < instances.Count; i++)
+		{
+			InstanceModel instance = instances[i];
+			List<ParameterModel> dependencies = instance.ConstructorParameters.AsArray()
+				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+				.Concat(instance.HookParameters())
+				.ToList();
+			for (int position = 0; position + 1 < dependencies.Count; position++)
+			{
+				ParameterModel dependency = dependencies[position];
+				ParameterModel next = dependencies[position + 1];
+				if (dependency is not { Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, Key: null, }
+				    || next is not { Kind: DependencyKind.Enumerable, Key: null, })
+				{
+					continue;
+				}
+
+				int alias = ordered.FindIndex(registration => registration.Aliased is not null && registration.ServiceType == next.ServiceType);
+				if (alias < 0
+				    || variance.CollectionElements.FirstOrDefault(requested => requested.ServiceType == dependency.ServiceType).Symbol is not { } element
+				    || collections.Find(collection => collection.Service == dependency.ServiceType && collection.Key is null) is not { } members)
+				{
+					continue;
+				}
+
+				RawRegistration handled = ordered[alias];
+				HashSet<string> leading = new(ordered.Take(alias).Select(registration => registration.ServiceType), StringComparer.Ordinal);
+				foreach (RawRegistration registration in ordered.Skip(alias + 1).Where(registration => registration is { Aliased: null, ServiceSymbol: { IsGenericType: true, TypeKind: TypeKind.Interface, } service, }
+				                                                                                      && registration.ServiceType != dependency.ServiceType
+				                                                                                      && !leading.Contains(registration.ServiceType)
+				                                                                                      && VarianceCompatible(service, element, variance.Compilation)
+				                                                                                      && members.Implementations.AsArray().Contains(registration.ImplementationType)))
+				{
+					ImportedModule? import = modules.Find(module => SymbolEqualityComparer.Default.Equals(module.Symbol, registration.Origin));
+					string owner = Display(handled.Origin!.ToDisplayString(FullyQualified));
+					DiagnosticInfo diagnostic = new(
+						Diagnostics.VariantCollectionOrderDiffers,
+						LocationInfo.From(import?.ImportLocation ?? registration.Location) ?? dependency.Location ?? instanceLocations[i],
+						new EquatableArray<string>([
+							DisplayInstance(instance.ImplementationType),
+							Display(dependency.ServiceType),
+							Display(registration.ImplementationType),
+							import is null ? "the container" : $"the module '{Display(import.Symbol.ToDisplayString(FullyQualified))}'",
+							Display(registration.ServiceType),
+							Display(handled.Aliased!.ServiceType),
+							owner,
+							import is not null && PrecedenceRank(registration) <= PrecedenceRank(handled) ? $", or import '{Display(import.Symbol.ToDisplayString(FullyQualified))}' ahead of '{owner}'" : string.Empty,
+						]));
+					if (reported.Add(diagnostic))
+					{
+						diagnostics.Add(diagnostic);
+					}
+				}
+			}
+		}
+	}
+
+	/// <summary>
 	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers
 	///     <paramref name="implementation" /> other than through a member that names only its service, or scans it, so a
 	///     container of that assembly with the same imports keeps one instance of it (see <see cref="AssignMemberIdentities" />).

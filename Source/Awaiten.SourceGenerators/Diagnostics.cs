@@ -2925,4 +2925,20 @@ internal static class Diagnostics
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		helpLinkUri: HelpLink("AWT264"));
+
+	/// <summary>
+	///     A generated member of an imported module of another assembly takes a collection of a variant interface as the
+	///     public collection of its element type followed by the handles of the one internal service the collection holds
+	///     through variance, and the public collection holds a public variant service that a container in the module's
+	///     assembly, ordering the variance members by registration, would hold after the internal service. <c>{3}</c>
+	///     names who registers it and <c>{7}</c> adds the import that would reorder it, when one does.
+	/// </summary>
+	public static readonly DiagnosticDescriptor VariantCollectionOrderDiffers = new(
+		"AWT265",
+		"Variant collection ordered differently than in the module's assembly",
+		"'{0}' takes a collection of '{1}' that holds '{2}', which {3} registers under '{4}', before the registrations of '{5}' that '{6}' serves through generated handles, while a container in the assembly of '{6}' holds it after them; register '{2}' under '{1}' instead{7}",
+		"Awaiten",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: HelpLink("AWT265"));
 }

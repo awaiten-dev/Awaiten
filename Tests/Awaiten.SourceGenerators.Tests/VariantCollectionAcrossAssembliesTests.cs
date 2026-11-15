@@ -533,7 +533,7 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
-		public async Task APublicVariantServiceOfAnotherLibrary_GoesBeforeTheInternalOneOnlyInAnotherAssembly()
+		public async Task APublicVariantServiceOfAnotherLibraryImportedAfterTheModule_IsReportedInAnotherAssembly()
 		{
 			const string shared = "namespace Lib; public interface IHandler<in T> { }";
 			const string other = """
@@ -551,11 +551,11 @@ public class VariantCollectionAcrossAssembliesTests
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([shared, other, library,], App.Replace("[Import(typeof(Lib.BrewModule))]", imports));
 
 			await That(own.Diagnostics).IsEmpty();
-			await That(result.Diagnostics).IsEmpty();
 			await That(own.Sources["Awaiten.Lib.OwnContainer.g.cs"]).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveSecretHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) })")
 				.Because("a container of the module's assembly orders the variant members by registration, and it imports the module first");
-			await That(Container(result)).Contains("Registration_Reader_").And.Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_")
-				.Because("a container of another assembly passes every public member, the variant one of another library included, before the handles of the internal one");
+			await That(result.Diagnostics).Contains("*error AWT265: 'Lib.Reader' takes a collection of 'Lib.IHandler<Lib.Derived>' that holds 'Ext.AnyHandler'*").AsWildcard()
+				.Because("a container of another assembly can pass the public variant member only before the handles of the internal one");
+			await That(result.Diagnostics).Contains("*error AWT265: 'Lib.Counting' takes a collection of 'Lib.IHandler<Lib.Derived>' that holds 'Ext.AnyHandler'*").AsWildcard();
 		}
 
 		[Test]

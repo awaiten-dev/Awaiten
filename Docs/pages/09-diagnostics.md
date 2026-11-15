@@ -181,6 +181,7 @@ Every reported id with its default severity.
 | [AWT262](#awt262) | Warning | `ConsumerOwned` entry never applies |
 | [AWT263](#awt263) | Error | `Eager` and `EagerWhen` on one registration |
 | [AWT264](#awt264) | Error | Invalid `[Inherited]` parameter |
+| [AWT265](#awt265) | Error | Variant collection ordered differently than in the module's assembly |
 
 ## Graph correctness
 
@@ -4889,7 +4890,7 @@ public static partial class CoffeeModule;
 
 </ApplyFix>
 
-The factory takes the [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. An unkeyed collection of a variant interface, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, holds every registration of a service that converts to its element type, so the factory takes it through the handle of the one internal service of the module's assembly it holds, such as `IHandler<Message>`. When the element type is public, the factory takes the collection of the element type as well and passes its members first, as a container in the module's own assembly holds the exact registrations before those it holds through variance. Those members include a public variant service that another library or the consuming container registers, so it goes before the internal ones ([library module rules](./05-registration/08-modules/02-library-module-rules.md#how-a-dependent-may-take-it)).
+The factory takes the [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. An unkeyed collection of a variant interface, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, holds every registration of a service that converts to its element type, so the factory takes it through the handle of the one internal service of the module's assembly it holds, such as `IHandler<Message>`. When the element type is public, the factory takes the collection of the element type as well and passes its members first, as a container in the module's own assembly holds the exact registrations before those it holds through variance. Those members include a public variant service that another library or the consuming container registers, which goes before the internal ones, so the consuming container reports [AWT265](#awt265) when a container in the module's assembly would put it after them ([library module rules](./05-registration/08-modules/02-library-module-rules.md#how-a-dependent-may-take-it)).
 
 A collection of a variant interface is reported too when it would hold:
 
@@ -5192,6 +5193,45 @@ public static partial class CoffeeShop;
 When the decorator's assembly grants the container nothing either, the container calls the module's factory, and the collection it passes empty is reported as [AWT252](#awt252) instead.
 
 **Fix:** Grant the container's assembly `InternalsVisibleTo` in the library that registers the element, so the container registers it under the service itself. Or make the service public, so the library registers it without a handle.
+
+### AWT265: Variant collection ordered differently than in the module's assembly \{#awt265\}
+
+:::danger[Error]
+A collection that an imported module of another assembly takes through the handles of an internal variant service holds a public variant service that a container in the module's assembly would put after those handles.
+:::
+
+A collection of a variant interface with a public element type, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, can hold an internal service of the module's assembly through variance, such as `IHandler<IAudited>`. The module's [generated member](./05-registration/08-modules/02-library-module-rules.md#how-a-dependent-may-take-it) then takes the collection of the element type from the container and the handles of the internal service, and passes the public members first. A container in the module's assembly holds the exact members first and then the variance members, ordered by the first registration of their service. Registrations without `Fallback` come before [overridable defaults](./05-registration/08-modules/index.md#overridable-defaults), open generic closings and scan matches, and within each group the container's own registrations come before those of its imports, in import order. A public variant service that the container or another imported module registers, such as `IHandler<object>`, would come after the internal service there whenever its first registration follows the module's first registration of the internal service in that order. The container in another assembly can only pass it before the handles, so it reports this error at the `[Import]` of the module that registers the service, or at the container's registration, naming the type that takes the collection. A variant service whose first registration comes first builds the same order and isn't reported.
+
+```csharp no-compile
+// In the library CoffeeShop.Orders, which grants the application nothing:
+internal interface IAudited;
+public class Order : IAudited;
+public sealed class OrderHandler : IHandler<Order>;
+internal sealed class AuditHandler : IHandler<IAudited>;
+internal sealed class OrderLog(IEnumerable<IHandler<Order>> handlers) : IOrderLog;
+
+[Module]
+[Singleton<OrderHandler, IHandler<Order>>]
+[Singleton<AuditHandler, IHandler<IAudited>>]
+[Singleton<OrderLog, IOrderLog>]
+public static partial class OrdersModule;
+
+// In the library CoffeeShop.Tracing:
+public sealed class TraceHandler : IHandler<object>;
+
+[Module]
+[Singleton<TraceHandler, IHandler<object>>]
+public static partial class TracingModule;
+
+// In the application:
+[Container]
+[Import(typeof(OrdersModule))]
+// highlight-next-line
+[Import(typeof(TracingModule))]   // TraceHandler would come before AuditHandler here
+public static partial class CoffeeShop;
+```
+
+**Fix:** Register the implementation under the collection's element type instead, such as `IHandler<Order>`, so the collection holds it among the exact members, which lead in every assembly. Or import its module ahead of the module that takes the collection, or register it on the container without `Fallback`, so its first registration comes first. The message offers the import only when it reorders the registration: a module registration with `Fallback` still follows the module's registration without one.
 
 ### AWT253: Closing over an internal type cannot be served \{#awt253\}
 
