@@ -278,8 +278,8 @@ public partial class DiagnosticTests
 				GeneratorResult result = Generator.Run(granted ? Granted(Library, "Friend") : Library);
 
 				await That(result.Diagnostics).HasSingle().Which
-					.Contains("*AWT216*'Lib.DataModule.Warmer'*registered as the private service 'Lib.DataModule.IWarmer'; register it under an accessible service, or make 'Lib.DataModule.Warmer' internal or public").AsWildcard()
-					.Because("no container can name the service to hold the singleton it starts");
+					.Contains("*AWT216*'Lib.DataModule.Warmer'*registered as the private service 'Lib.DataModule.IWarmer'; register it under an accessible service, or make 'Lib.DataModule.IWarmer' internal or public").AsWildcard()
+					.Because("no container can name the service to hold the singleton it starts, and making only the implementation internal leaves the service private");
 			}
 
 			[Test]
