@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
-        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
-      },
-      {
         "sha": "d5a33c56ff81d9a0fac74d1e07edf06c8e723847",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:17:41 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
-      "94a196c1",
       "d5a33c56",
       "ee8564a4",
       "7a956220",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          6.548656642436981,
           6.521912140341906,
           5.775131902098655,
           4.450600648423036,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           4.860039963076512,
           3.201268791158994,
           6.21166401853164,
-          6.180821465452512
+          6.180821465452512,
+          4.776268797261374
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.244261731704077,
           7.397376200982502,
           7.259319060123884,
           6.992311848203341,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           6.95814897865057,
           3.923768685864551,
           10.020161247679166,
-          10.376993904511133
+          10.376993904511133,
+          6.984609433015188
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          127.46344637870789,
           111.89372821648915,
           134.40190279483795,
           82.01765375932058,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           88.42695304552714,
           56.72980957371848,
           114.50940085252127,
-          115.90216409365335
+          115.90216409365335,
+          86.92117908171245
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.786192470788956,
           9.017092248797416,
           8.792338166099329,
           6.983292210102081,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           6.443626171847185,
           4.469610226842073,
           8.50270507360498,
-          8.591319015622139
+          8.591319015622139,
+          6.987176124254862
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.032033746441206,
           11.460336261987687,
           10.861475057899952,
           8.664843387405078,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           8.220005206763744,
           5.977495563881738,
           11.261467321560932,
-          10.897044329770974
+          10.897044329770974,
+          7.957722759590699
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
-        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
-      },
-      {
         "sha": "d5a33c56ff81d9a0fac74d1e07edf06c8e723847",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:17:41 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
-      "94a196c1",
       "d5a33c56",
       "ee8564a4",
       "7a956220",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          6.827638457928385,
           6.807349735072681,
           6.804768294095993,
           5.216705909619729,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           5.216453750928243,
           3.291904219488303,
           6.973292630452376,
-          6.957348134900842
+          6.957348134900842,
+          5.858759254217148
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          8.154115958015124,
           7.311314771572749,
           7.336752681859902,
           6.5211620809776445,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           6.716735363006592,
           3.9192779724796614,
           8.7291562674301,
-          8.712620777579454
+          8.712620777579454,
+          6.4986580690512294
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          128.95174657503765,
           110.74178948402405,
           135.8047717412313,
           82.46291610399882,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           87.8477542479833,
           54.75116766874607,
           110.16743755340576,
-          112.7673612912496
+          112.7673612912496,
+          86.90341363350551
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          8.802481403308255,
           8.97908839583397,
           8.780185304582119,
           7.116367216904958,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           6.85277642806371,
           4.671618827680747,
           7.758266403124883,
-          9.085034889834267
+          9.085034889834267,
+          6.845354836434126
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          14.6186617399965,
           14.90526368121306,
           14.155925347254826,
           11.65871397192989,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           11.372998410463333,
           5.804354172945023,
           14.829002106189728,
-          14.766388502717017
+          14.766388502717017,
+          11.240085488983564
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
-        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
-      },
-      {
         "sha": "d5a33c56ff81d9a0fac74d1e07edf06c8e723847",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 11:17:41 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
-      "94a196c1",
       "d5a33c56",
       "ee8564a4",
       "7a956220",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          15.856938873018537,
           17.210004693695478,
           11.355789773662885,
           11.948181760098253,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           21.149382303158443,
           15.635852775971095,
           21.528445130586626,
-          12.174908942409925
+          12.174908942409925,
+          19.05229126214981
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1160.960160191854,
           1378.822917175293,
           756.774569443294,
           789.140913327535,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1469.2484045028687,
           1097.816152708871,
           1537.2213566643852,
-          811.2067292758396
+          811.2067292758396,
+          1234.154906463623
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          25370.002144949776,
           26703.86502511161,
           17963.49279315655,
           18286.056832449776,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           30320.094319661457,
           17857.625376383465,
           29947.849357096355,
-          18718.950766427177
+          18718.950766427177,
+          18955.57728474935
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32478,
           32478,
           32478,
           32477,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32482,
           32474,
           32482,
-          32477
+          32477,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          616.2078762735639,
           606.8067962964376,
           392.3377999578203,
           399.55577427546183,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           774.0555228551228,
           568.6855466206869,
           760.291862487793,
-          404.1462012699672
+          404.1462012699672,
+          598.8708000183105
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8975.595078604561,
           10846.294733683268,
           6496.906109946115,
           6431.167266845703,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           12113.944552103678,
           8189.433624267578,
           12942.883726501464,
-          6458.415947469076
+          6458.415947469076,
+          9330.768003336589
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2886,7 +2886,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          24760,
           24761,
           24760,
           24761,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
-        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
-      },
       {
         "sha": "d5a33c56ff81d9a0fac74d1e07edf06c8e723847",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
-      "94a196c1",
       "d5a33c56",
       "ee8564a4",
       "7a956220",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          115.91868620259422,
           129.9867902823857,
           79.93580618699391,
           78.85371221814837,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           185.85317792892457,
           167.65236700375874,
           229.90483828953333,
-          76.88119270971843
+          76.88119270971843,
+          189.44310727119446
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          10815.49388478597,
           12162.541552225748,
           7051.084931509836,
           7343.2852366129555,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14472.360782078335,
           9344.578490121025,
           16250.187390136718,
-          7479.476569112142
+          7479.476569112142,
+          9870.238414219448
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          640086.6211588542,
           646589.6358173077,
           415662.7752685547,
           431242.5265950521,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           734399.8752790178,
           427608.122140067,
           755988.4709123884,
-          422382.4083426339
+          422382.4083426339,
+          451709.5766438802
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740033,
           719056,
           739741,
           738684,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           741733,
           735366,
           738520,
-          735271
+          735271,
+          720432
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          38302.58962140764,
           37605.20837402344,
           23624.480237688338,
           23294.43122427804,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           43864.7286705604,
           30867.83323451451,
           47401.05213216146,
-          22903.65350811298
+          22903.65350811298,
+          34023.08697102864
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          81193,
           80355,
           80005,
           80174,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80302,
           79664,
           80082,
-          79667
+          79667,
+          80958
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          263089.0813927284,
           319969.7874348958,
           201012.80314127603,
           195366.51264299665,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           353100.46025390626,
           239819.74799804686,
           384538.38580729166,
-          181268.19709123884
+          181268.19709123884,
+          262129.21103515624
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573120,
           573128,
           572994,
           573073,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573059,
           571208,
           573090,
-          573085
+          573085,
+          571196
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "94a196c1d022f82a4eb33b2da94ab5f9083f5cd8",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 11:06:52 2026 \u002B0100",
-        "message": "fix: report AWT255 instead of crashing the generator when an error-free container cannot be wired (#395)"
-      },
       {
         "sha": "d5a33c56ff81d9a0fac74d1e07edf06c8e723847",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
-      "94a196c1",
       "d5a33c56",
       "ee8564a4",
       "7a956220",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          253.48829164505005,
           386.9695495446523,
           270.68413615226746,
           311.09230405943737,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           288.9003121852875,
           164.55925500392914,
           208.21065068244934,
-          207.6969141960144
+          207.6969141960144,
+          218.54078121980032
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          596.2519153448252,
           602.007378578186,
           631.0310197194417,
           608.2099921886737,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           460.3266388007573,
           374.71216102746814,
           447.3234804698399,
-          451.2680216789246
+          451.2680216789246,
+          462.35647120475767
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6554.1670018514,
           6593.193232218425,
           6762.296631949289,
           6651.838255818685,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4894.100114695231,
           3347.54144014631,
           4666.524297860952,
-          4634.27742207845
+          4634.27742207845,
+          5114.196900503976
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          392.00403475761414,
           443.43413117726647,
           422.56473077138264,
           398.9099724292755,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           342.1455665588379,
           239.6430368934359,
           331.0886113460247,
-          329.81409594217934
+          329.81409594217934,
+          345.55010681152345
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          713.798678334554,
           702.8311220169068,
           750.3718147913615,
           736.2486159642538,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           542.7291932423909,
           371.0008008139474,
           546.8135286477896,
-          521.5203612872532
+          521.5203612872532,
+          567.230474618765
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
