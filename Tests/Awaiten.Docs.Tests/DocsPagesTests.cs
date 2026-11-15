@@ -71,6 +71,61 @@ public sealed class DocsPagesTests
 	}
 
 	[Test]
+	public async Task Extract_ShouldReadTheIsolatedMarker()
+	{
+		string[] lines =
+		[
+			"```csharp isolated",
+			"int a = 1;",
+			"```",
+		];
+
+		List<CodeBlock> blocks = CodeBlock.Extract("page.md", lines);
+
+		await That(blocks).IsEqualTo([new CodeBlock("page.md", 2, "int a = 1;", Isolated: true),]);
+	}
+
+	[Test]
+	public async Task GetErrors_ShouldNotShareTheTypesOfAnIsolatedBlock()
+	{
+		CodeBlock isolated = new("page.md", 1, """
+		                                        public sealed class Cup(Grinder grinder);
+
+		                                        [Container]
+		                                        [Singleton<Grinder>]
+		                                        [Transient<Cup>]
+		                                        public static partial class CoffeeShop;
+		                                        """, Isolated: true);
+		CodeBlock other = new("page.md", 10, """
+		                                     [Container]
+		                                     [Transient<Cup>]
+		                                     public static partial class Counter;
+		                                     """);
+
+		List<string> errors = SnippetCompiler.GetErrors([isolated, other,], ScaffoldFiles("page.md"));
+
+		await That(errors).IsEmpty()
+			.Because("the other block registers the scaffold's Cup, not the one the isolated block declares");
+	}
+
+	[Test]
+	public async Task GetErrors_WhenAnIsolatedBlockReportsADiagnostic_ShouldFail()
+	{
+		CodeBlock block = new("page.md", 1, """
+		                                     public sealed class Cup(Grinder grinder);
+
+		                                     [Container]
+		                                     [Transient<Cup>]
+		                                     public static partial class CoffeeShop;
+		                                     """, Isolated: true);
+
+		List<string> errors = SnippetCompiler.GetErrors([block,], ScaffoldFiles("page.md"));
+
+		await That(errors).HasSingle().Which.StartsWith("page.md(1): expected nothing, but found")
+			.And.Contains("AWT101");
+	}
+
+	[Test]
 	public async Task GetErrors_ShouldReportThePageAndLineOfTheBlock()
 	{
 		CodeBlock block = new("Docs/pages/page.md", 10, "int value = 1;\nvalue.Foo();");

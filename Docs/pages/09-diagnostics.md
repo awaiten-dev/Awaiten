@@ -4,6 +4,8 @@ toc_max_heading_level: 2
 keywords: [diagnostics, AWT, compile error, warning, analyzer, severity, editorconfig, suppress]
 ---
 
+import ApplyFix from '@site/src/components/ApplyFix';
+
 # Diagnostics
 
 Awaiten checks your wiring while it builds. A mistake that other containers would surface at startup, or on the first resolve in production, is a compile error here. The barista never reaches for a cup that is not there.
@@ -22,7 +24,7 @@ The examples reuse a few coffee-shop types (`Grinder`, `EspressoMachine`, `Order
 
 ## Index
 
-Every reported id with its default severity. The ids that are never reported are listed under [reserved ids](#reserved-ids).
+Every reported id with its default severity.
 
 | Id | Severity | Title |
 | --- | --- | --- |
@@ -584,6 +586,8 @@ These keep async-initialized services from being reached before they are ready.
 A synchronous factory's body provably produces a concrete type that an async initializer convention matches, while its declared return type does not.
 :::
 
+<ApplyFix id="AWT106">
+
 ```csharp expect=AWT106
 public sealed class AsyncBrewer : IBrewer, IWarmUp
 {
@@ -601,6 +605,25 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+public sealed class AsyncBrewer : IBrewer, IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+
+[Container]
+[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+[Singleton<IBrewer>(Factory = nameof(MakeBrewer))]
+public static partial class CoffeeShop
+{
+    // the concrete return type shows the initialization
+    // highlight-next-line
+    private static AsyncBrewer MakeBrewer() => new AsyncBrewer();
+}
+```
+
+</ApplyFix>
+
 For a module's factory, the library's build reports it, since a container in another assembly or in one the library grants `InternalsVisibleTo` sees no body. A container in the library's own assembly leaves it to that build, so every container agrees. Likewise, the factory of a base container in another assembly is checked only in the base's own build, with the conventions the base declares. When the concrete type is private to the module, no container can name it as the return type ([AWT234](#awt234)), so the message suggests only the async factory or making the type `internal`.
 
 **Fix:** Declare the concrete type as the factory's return type (here `AsyncBrewer`), so the container sees the initialization, or make the factory `async Task<IBrewer>` and initialize the instance inside it.
@@ -610,6 +633,8 @@ For a module's factory, the library's build reports it, since a container in ano
 :::danger[Error]
 A synchronous `Func`/`Lazy`/`Owned` relationship targets an async-initialized service.
 :::
+
+<ApplyFix id="AWT119">
 
 ```csharp expect=AWT119
 public sealed class EspressoMachine : IWarmUp
@@ -626,9 +651,12 @@ public sealed class Barista(Func<EspressoMachine> machine);   // sync Func over 
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Take a deferred async shape such as `Func<Task<EspressoMachine>>`, `Task<EspressoMachine>` or `Lazy<Task<EspressoMachine>>` and await it, which keeps the consumer synchronously resolvable. Alternatively resolve through `ResolveAsync`, or set `AsyncSafety.SyncAfterInit` on the `[Container]` and warm it with `InitializeAsync`.
-
-```csharp
+```csharp isolated
+public sealed class EspressoMachine : IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+// highlight-next-line
 public sealed class Barista(Func<Task<EspressoMachine>> machine);   // awaited on demand
 
 [Container]
@@ -638,11 +666,17 @@ public sealed class Barista(Func<Task<EspressoMachine>> machine);   // awaited o
 public static partial class CoffeeShop;
 ```
 
+</ApplyFix>
+
+**Fix:** Take a deferred async shape such as `Func<Task<EspressoMachine>>`, `Task<EspressoMachine>` or `Lazy<Task<EspressoMachine>>` and await it, which keeps the consumer synchronously resolvable. Alternatively resolve through `ResolveAsync`, or set `AsyncSafety.SyncAfterInit` on the `[Container]` and warm it with `InitializeAsync`.
+
 ### AWT120: Async-tainted service reached synchronously \{#awt120\}
 
 :::danger[Error]
 A synchronous `Func`/`Lazy`/`Owned` relationship reaches an async-tainted service transitively.
 :::
+
+<ApplyFix id="AWT120">
 
 ```csharp expect=AWT120
 public sealed class EspressoMachine : IWarmUp
@@ -661,6 +695,25 @@ public sealed class Barista(Func<Grinder> grinder);      // sync Func reaches it
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class EspressoMachine : IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+public sealed class Grinder(EspressoMachine machine);    // async-tainted through the machine
+// highlight-next-line
+public sealed class Barista(Func<Task<Grinder>> grinder);   // awaited on demand
+
+[Container]
+[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+[Singleton<EspressoMachine>]
+[Transient<Grinder>]
+[Singleton<Barista>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** As for [AWT119](#awt119): take `Func<Task<Grinder>>` (or another awaited shape) and await it, resolve through `ResolveAsync`, or set `AsyncSafety.SyncAfterInit` on the `[Container]`.
 
 ### AWT122: Async-tainted service reached synchronously through a collection \{#awt122\}
@@ -668,6 +721,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A collection dependency has an async-tainted member but is materialized synchronously.
 :::
+
+<ApplyFix id="AWT122">
 
 ```csharp expect=AWT122
 public sealed class Latte : IDrink, IWarmUp
@@ -684,6 +739,23 @@ public sealed class Menu(IEnumerable<IDrink> drinks);   // sync collection with 
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Latte : IDrink, IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+// highlight-next-line
+public sealed class Menu(IAsyncEnumerable<IDrink> drinks);   // awaits each member
+
+[Container]
+[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+[Transient<Latte, IDrink>]
+[Singleton<Menu>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Consume the collection through a shape that awaits its members, `IAsyncEnumerable<IDrink>` or `Task<IReadOnlyList<IDrink>>`, set `AsyncSafety.SyncAfterInit` on the `[Container]` and resolve after `InitializeAsync`, or keep the async member out of the collection.
 
 ### AWT156: Synchronous dispose of a container that requires asynchronous disposal \{#awt156\}
@@ -693,6 +765,8 @@ A generated `Root`/`Scope` is disposed synchronously although its container owns
 :::
 
 A synchronous `Dispose` cannot await either one. It skips them, finishes the rest of the teardown and then throws.
+
+<ApplyFix id="AWT156">
 
 ```csharp expect=AWT156
 // highlight-next-line
@@ -708,6 +782,22 @@ public sealed class Boiler : IAsyncDisposable
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// highlight-next-line
+await using (CoffeeShop.Root shop = new()) { }   // awaits the Boiler's teardown
+
+public sealed class Boiler : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => default;
+}
+
+[Container]
+[Singleton<Boiler>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Dispose asynchronously: `await using (CoffeeShop.Root shop = new()) { }`, or `await shop.DisposeAsync()`.
 
 ### AWT161: Eager async-initialized singleton \{#awt161\}
@@ -719,6 +809,8 @@ An eager singleton is async-initialized and cannot be constructed synchronously 
 An eager singleton is built with its decorators, so an async-initialized decorator reports it too. A singleton with an `EagerWhen` predicate is reported as well, since the root builds it synchronously whenever the predicate allows it.
 
 A module doesn't know whether the container that imports it opts into `AsyncSafety.SyncAfterInit`, so for an eager singleton the module itself makes async-initialized, with a convention, an async factory or an async `OnActivated` hook, the library's build reports a warning instead. Every importing container with the default still reports the error. When a container in the library's own assembly imports the module, the library's build leaves it to that container.
+
+<ApplyFix id="AWT161">
 
 ```csharp expect=AWT161
 public sealed class EspressoMachine : IWarmUp
@@ -733,6 +825,21 @@ public sealed class EspressoMachine : IWarmUp
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class EspressoMachine : IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+
+[Container]
+[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+// highlight-next-line
+[Singleton<EspressoMachine>]   // InitializeAsync warms it
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove `Eager = true` or `EagerWhen`: `InitializeAsync` on the root already warms every async singleton. If it must be built at construction, opt into `[Container(AsyncSafety = AsyncSafety.SyncAfterInit)]`.
 
 ### AWT219: Typed resolve names a service the container withholds from that call \{#awt219\}
@@ -744,6 +851,8 @@ A typed `Resolve<T>()` or `ResolveAsync<T>()` on a generated `Root` or `Scope` n
 The warning carries the guidance the exception would. It checks the same calls as [AWT218](#awt218), keyed ones included, and leaves the same calls to run time.
 
 A receiver typed as `Scope` may hold the `Root` itself, because the `Root` derives from `Scope`, or a child scope, which serves what the `Root` withholds. So only a receiver typed as `Root` is checked for what the `Root` withholds, and a `Scope` variable that holds the `Root` throws at run time without a warning.
+
+<ApplyFix id="AWT219">
 
 ```csharp expect=AWT219
 CoffeeShop.Root root = new();
@@ -761,6 +870,24 @@ public sealed class EspressoMachine : IWarmUp
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+CoffeeShop.Root root = new();
+// highlight-next-line
+await root.ResolveAsync<EspressoMachine>(cancellationToken);   // waits for the warm-up
+
+public sealed class EspressoMachine : IWarmUp
+{
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+}
+
+[Container]
+[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))]
+[Singleton<EspressoMachine>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Follow the guidance in the message: resolve an async-initialized service with `await root.ResolveAsync<EspressoMachine>(cancellationToken)` or through an async shape such as `Func<Task<EspressoMachine>>`, and a withheld transient through `Owned<T>` or from a child scope. Alternatively opt into `AsyncSafety.SyncAfterInit` or `LifetimeSafety.Loose` on the `[Container]`.
 
 ### AWT233: Invalid async initializer \{#awt233\}
@@ -770,6 +897,8 @@ An `[AsyncInitializer<T>]` names a method the container cannot await through `T`
 :::
 
 The method must be the only one of that name on `T`, its base types and interfaces. It must be an instance method that is not generic, that the container or module can access, and that returns `Task` or `ValueTask`. Its parameters are passed by value and carry no `[Arg]`, `[FromKey]` or `[Inject]`.
+
+<ApplyFix id="AWT233">
 
 ```csharp expect=AWT233
 public interface IWarmable
@@ -783,6 +912,21 @@ public interface IWarmable
 [AsyncInitializer<IWarmable>(nameof(IWarmable.WarmUpAsync))]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public interface IWarmable
+{
+    Task PreheatAsync();
+    // highlight-next-line
+    Task WarmUpAsync(CancellationToken ct);   // the only WarmUpAsync
+}
+
+[Container]
+[AsyncInitializer<IWarmable>(nameof(IWarmable.WarmUpAsync))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Name a single method that returns `Task` or `ValueTask`, renaming an overload if needed. If the setup needs a keyed service or other Awaiten metadata, use an asynchronous [`OnActivated` hook](./05-registration/02-lifecycle-hooks.md#asynchronous-activation) instead, which keeps that metadata on the container.
 
@@ -3910,9 +4054,3 @@ Owned<Cup> owned = root.Resolve<Owned<Cup>>();      // the container builds the 
 ```
 
 **Fix:** Resolve `Owned<T>`, as the second line does, or inject `Func<Owned<T>>`. Suppress the warning in source only for a deliberate construction, such as a test double.
-
-## Reserved ids
-
-AWT137, AWT176 and AWT217 are not reported. They stay reserved and are never reused for another diagnostic.
-
-An id that is neither in the index nor in this list belongs to no diagnostic.

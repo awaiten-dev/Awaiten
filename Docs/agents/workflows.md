@@ -48,6 +48,7 @@ Always run in Release and compare before and after on the same machine.
   - `Scaffold/Scaffold.cs` holds the global usings, the coffee-shop types the pages take for granted and a prelude of variables such as `shop` (an `IAwaitenRoot`), `cancellationToken` and `ct`. A page-specific addition goes in `Scaffold/<page>.cs`, for example a container that a page uses without showing it. `Tests/Support/CoffeeShop.Domain/CoffeeShopDomain.cs` is linked in, so its namespace `CoffeeShop` hides a page's `CoffeeShop.Root` when the page declares no container the block can see.
   - ```` ```csharp no-compile ```` excludes a block. Keep it for fragments that cannot compile, like a list of parameter types, or a scenario that needs a second assembly; anything else should compile.
   - ```` ```csharp expect=AWT101 ```` (or `expect=AWT170,AWT101`) marks a block that shows a mistake: it compiles on its own with the page's unmarked blocks and must report exactly the listed ids, compiler errors included, and nothing else. Its types are never shared with the page.
+  - ```` ```csharp isolated ```` compiles on its own like an `expect=` block but must report nothing, for a variant whose types must not replace the page's shared ones, such as the fixed example of a diagnostic.
   - An error points at `Docs/pages/<page>.md(line,column)`. Docusaurus ignores the extra words after the language, so the markers do not show on the site.
 
 ## Build pipeline (Fallout)

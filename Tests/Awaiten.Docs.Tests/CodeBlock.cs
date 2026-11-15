@@ -10,12 +10,26 @@ namespace Awaiten.Docs.Tests;
 ///     The comma-separated diagnostic ids that the block shows on purpose, from an <c>expect=</c> marker, or empty
 ///     when the block has to compile cleanly.
 /// </param>
-internal sealed record CodeBlock(string Page, int Line, string Code, string Expect = "")
+/// <param name="Isolated">
+///     Whether the block compiles on its own like a block with an <c>expect=</c> marker but has to compile cleanly,
+///     e.g. the fixed variant of a mistake, whose types must not replace the ones the page shares.
+/// </param>
+internal sealed record CodeBlock(string Page, int Line, string Code, string Expect = "", bool Isolated = false)
 {
 	/// <summary>
 	///     The info-string marker that excludes a block from the compile check.
 	/// </summary>
 	public const string NoCompile = "no-compile";
+
+	/// <summary>
+	///     The info-string marker of an <see cref="Isolated" /> block.
+	/// </summary>
+	public const string IsolatedMarker = "isolated";
+
+	/// <summary>
+	///     Whether the block compiles on its own instead of together with the page's other blocks.
+	/// </summary>
+	public bool IsMarked => Expect.Length > 0 || Isolated;
 
 	/// <summary>
 	///     The info-string prefix of the diagnostic ids that a block reports on purpose, e.g. <c>expect=AWT101,AWT102</c>.
@@ -59,7 +73,8 @@ internal sealed record CodeBlock(string Page, int Line, string Code, string Expe
 			{
 				string expect = info.FirstOrDefault(part => part.StartsWith(ExpectPrefix))?.Substring(ExpectPrefix.Length)
 				                ?? "";
-				blocks.Add(new CodeBlock(page, start + 1, string.Join("\n", lines, start, i - start), expect));
+				blocks.Add(new CodeBlock(page, start + 1, string.Join("\n", lines, start, i - start), expect,
+					info.Contains(IsolatedMarker)));
 			}
 		}
 
