@@ -590,6 +590,7 @@ partial class AwaitenGenerator
 		    && (registration.Eager || registration.EagerWhen is not null || TraitsOf(registration.Implementation, DeclaredAsyncInitializers(module, compilation, null)).AsyncInitializers.Count > 0))
 		{
 			INamedTypeSymbol? hiddenService = TypeHiddenInModule(service, module, compilation);
+			INamedTypeSymbol? restricted = hiddenService is null ? null : RestrictedType(hiddenService);
 			DiagnosticInfo diagnostic = new(
 				Diagnostics.ModuleRegistrationNotSelfCompiled,
 				LocationInfo.From(context.FallbackLocation),
@@ -597,8 +598,8 @@ partial class AwaitenGenerator
 					Display(module.ToDisplayString(FullyQualified)),
 					Display(registration.Implementation.ToDisplayString(FullyQualified)),
 					"handle",
-					hiddenService is not null
-						? $"the service it is registered under, '{Display(service.ToDisplayString(FullyQualified))}', is private to the module, so no container can name it"
+					restricted is not null
+						? $"the service it is registered under, '{Display(service.ToDisplayString(FullyQualified))}', {(SymbolEqualityComparer.Default.Equals(service, restricted) ? "is" : $"is hidden by '{Display(restricted.OriginalDefinition.ToDisplayString(FullyQualified))}', which is")} private to the module, so no container can name it"
 						: ModuleShapeReason(module)
 						  ?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
 							  ? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
@@ -639,8 +640,8 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     The remedy an AWT231 for <paramref name="type" /> of the imported <paramref name="module" /> ends with, chosen by
-	///     the cause this container sees. No grant reaches a type private to the module, so that is made internal or
-	///     public. A class of a third assembly without a constructor this container can reach needs the grant of that
+	///     the cause this container sees. No grant reaches a type private to the module, so that type or the class that
+	///     hides it (see <see cref="RestrictedType" />) is made internal or public. A class of a third assembly without a constructor this container can reach needs the grant of that
 	///     assembly instead, unless the module produces it through a member (<paramref name="constructed" /> false). A
 	///     container whose assembly the module's assembly grants <c>InternalsVisibleTo</c> is told what the
 	///     grant does not reach (the type, <paramref name="member" /> or the constructors) before
@@ -651,7 +652,7 @@ partial class AwaitenGenerator
 		bool granted = module.ContainingAssembly.GivesAccessTo(compilation.Assembly);
 		if (TypeHiddenInModule(type.OriginalDefinition, module, compilation) is { } hidden)
 		{
-			string name = Display(hidden.OriginalDefinition.ToDisplayString(FullyQualified));
+			string name = Display(RestrictedType(hidden).OriginalDefinition.ToDisplayString(FullyQualified));
 			return granted
 				? $"the InternalsVisibleTo grant to this assembly reaches only internal members, not '{name}', which is private to the module; make it internal or public"
 				: $"make '{name}', which is private to the module, internal or public";

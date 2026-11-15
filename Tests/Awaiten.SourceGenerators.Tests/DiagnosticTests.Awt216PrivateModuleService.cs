@@ -59,6 +59,20 @@ public partial class DiagnosticTests
 			}
 			""";
 
+		private const string NestedInPrivateClass = """
+			using Awaiten;
+
+			namespace Lib;
+
+			[Module]
+			[Singleton<DataModule.Warmer, DataModule.Inner.IWarmer>(Eager = true)]
+			public static partial class DataModule
+			{
+				private static class Inner { internal interface IWarmer { } }
+				internal sealed class Warmer : Inner.IWarmer { }
+			}
+			""";
+
 		private static string Granted(string library)
 			=> library.Replace("namespace Lib;", "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]\nnamespace Lib;");
 
@@ -105,23 +119,39 @@ public partial class DiagnosticTests
 		[Test]
 		public async Task LibraryBuild_ServiceNestedInAPrivateClass_NamesThePrivateClass()
 		{
-			GeneratorResult result = Generator.Run("""
-				using Awaiten;
-
-				namespace Lib;
-
-				[Module]
-				[Singleton<DataModule.Warmer, DataModule.Inner.IWarmer>(Eager = true)]
-				public static partial class DataModule
-				{
-					private static class Inner { internal interface IWarmer { } }
-					internal sealed class Warmer : Inner.IWarmer { }
-				}
-				""");
+			GeneratorResult result = Generator.Run(NestedInPrivateClass);
 
 			await That(result.Diagnostics).HasSingle().Which
 				.Contains("*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.Inner' is private or protected and 'Lib.DataModule.Warmer' is registered under the service 'Lib.DataModule.Inner.IWarmer', which is nested in it, so only a container in 'Lib.DataModule' can name the service; register it under an accessible service, or make 'Lib.DataModule.Inner' internal or public").AsWildcard()
 				.Because("the internal service is hidden by the private class that encloses it, so only changing that class helps");
+		}
+
+		[Test]
+		public async Task External_ServiceNestedInAPrivateClass_NamesThePrivateClass()
+		{
+			GeneratorResult full = Generator.RunWithGeneratedReferencedAssembly(NestedInPrivateClass, Consumer);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(NestedInPrivateClass, Consumer);
+
+			foreach (GeneratorResult result in new[] { full, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*AWT231*'Lib.DataModule.Warmer'*the service it is registered under, 'Lib.DataModule.Inner.IWarmer', is hidden by 'Lib.DataModule.Inner', which is private to the module, so no container can name it; make 'Lib.DataModule.Inner', which is private to the module, internal or public").AsWildcard()
+					.Because("the internal service is hidden by the private class that encloses it, so only changing that class helps");
+			}
+		}
+
+		[Test]
+		public async Task Friend_ServiceNestedInAPrivateClass_NamesThePrivateClass()
+		{
+			GeneratorResult full = Generator.RunWithGeneratedReferencedAssembly(Granted(NestedInPrivateClass), Consumer);
+			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(Granted(NestedInPrivateClass), Consumer);
+
+			foreach (GeneratorResult result in new[] { full, reference, })
+			{
+				await That(result.Diagnostics).HasSingle().Which
+					.Contains("*AWT231*'Lib.DataModule.Warmer'*'Lib.DataModule.Inner.IWarmer', is hidden by 'Lib.DataModule.Inner', which is private to the module, so no container can name it; the InternalsVisibleTo grant to this assembly reaches only internal members, not 'Lib.DataModule.Inner', which is private to the module; make it internal or public").AsWildcard()
+					.Because("the grant reaches the internal service, but not the private class that hides it");
+			}
 		}
 
 		[Test]
