@@ -2076,6 +2076,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
         "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
+      },
+      {
+        "sha": "8f6fc0110e691d915f092c70dd89f2db62fa8996",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 11:30:19 2026 \u002B0100",
+        "message": "docs: let visitors apply the AWT119 fix on the start page (#456)"
       }
     ],
     "labels": [
@@ -2424,7 +2430,8 @@ window.BENCHMARK_DATA = {
       "07cfe8c2",
       "05bb7e4b",
       "26d2b827",
-      "6c639092"
+      "6c639092",
+      "8f6fc011"
     ],
     "datasets": [
       {
@@ -2776,7 +2783,8 @@ window.BENCHMARK_DATA = {
           4.493054451154811,
           4.885869432489077,
           5.36995926896731,
-          3.1309515833854675
+          3.1309515833854675,
+          3.2094251200556756
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2788,6 +2796,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3493,7 +3502,8 @@ window.BENCHMARK_DATA = {
           10.18953454941511,
           5.183230943481127,
           4.953431856135527,
-          3.8676047133547917
+          3.8676047133547917,
+          4.491474976906409
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3505,6 +3515,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4210,7 +4221,8 @@ window.BENCHMARK_DATA = {
           81.9806181532996,
           83.3758025487264,
           90.54128817717235,
-          55.290693807601926
+          55.290693807601926,
+          56.73686396224158
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4222,6 +4234,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4923,7 +4936,8 @@ window.BENCHMARK_DATA = {
           6.495318057139714,
           7.270933516323566,
           7.050607152283192,
-          4.885108144581318
+          4.885108144581318,
+          4.944731956223647
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4935,6 +4949,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5632,7 +5647,8 @@ window.BENCHMARK_DATA = {
           8.196108097831408,
           9.306074449419976,
           9.314715558290482,
-          6.4760489123208185
+          6.4760489123208185,
+          5.953073079387347
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5644,6 +5660,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8075,6 +8092,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
         "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
+      },
+      {
+        "sha": "8f6fc0110e691d915f092c70dd89f2db62fa8996",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 11:30:19 2026 \u002B0100",
+        "message": "docs: let visitors apply the AWT119 fix on the start page (#456)"
       }
     ],
     "labels": [
@@ -8423,7 +8446,8 @@ window.BENCHMARK_DATA = {
       "07cfe8c2",
       "05bb7e4b",
       "26d2b827",
-      "6c639092"
+      "6c639092",
+      "8f6fc011"
     ],
     "datasets": [
       {
@@ -8775,7 +8799,8 @@ window.BENCHMARK_DATA = {
           5.643168432513873,
           5.433435425162315,
           5.4860353092352545,
-          3.012202424498705
+          3.012202424498705,
+          3.2518424868583677
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8787,6 +8812,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9492,7 +9518,8 @@ window.BENCHMARK_DATA = {
           6.492936626076698,
           5.183690492312113,
           4.929526242117087,
-          3.849089041352272
+          3.849089041352272,
+          3.882897440592448
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9504,6 +9531,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10209,7 +10237,8 @@ window.BENCHMARK_DATA = {
           83.60974811656135,
           91.9871676603953,
           94.22805569001606,
-          54.32514867385228
+          54.32514867385228,
+          55.94136485031673
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10221,6 +10250,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10922,7 +10952,8 @@ window.BENCHMARK_DATA = {
           6.304063688715299,
           7.321986206372579,
           7.042978735764821,
-          4.6546314691503845
+          4.6546314691503845,
+          4.525096282362938
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10934,6 +10965,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11631,7 +11663,8 @@ window.BENCHMARK_DATA = {
           11.190335395080703,
           9.380757914235195,
           9.431027582713536,
-          7.715936244527499
+          7.715936244527499,
+          8.027398418386777
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11643,6 +11676,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14074,6 +14108,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
         "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
+      },
+      {
+        "sha": "8f6fc0110e691d915f092c70dd89f2db62fa8996",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 11:30:19 2026 \u002B0100",
+        "message": "docs: let visitors apply the AWT119 fix on the start page (#456)"
       }
     ],
     "labels": [
@@ -14422,7 +14462,8 @@ window.BENCHMARK_DATA = {
       "07cfe8c2",
       "05bb7e4b",
       "26d2b827",
-      "6c639092"
+      "6c639092",
+      "8f6fc011"
     ],
     "datasets": [
       {
@@ -14774,7 +14815,8 @@ window.BENCHMARK_DATA = {
           16.84804885515145,
           19.739927955468495,
           20.8931482454141,
-          24.267798242966332
+          24.267798242966332,
+          15.387274567570005
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15046,6 +15088,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15491,7 +15534,8 @@ window.BENCHMARK_DATA = {
           1321.3346879323324,
           1385.9273497263591,
           1579.0168847304124,
-          1695.9831771850586
+          1695.9831771850586,
+          1268.205707359314
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15503,6 +15547,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16208,7 +16253,8 @@ window.BENCHMARK_DATA = {
           26656.57560511998,
           28577.445922851562,
           23945.750130208333,
-          30882.25197753906
+          30882.25197753906,
+          26501.176461356026
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16565,7 +16611,8 @@ window.BENCHMARK_DATA = {
           32478,
           32477,
           32476,
-          32482
+          32482,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16921,7 +16968,8 @@ window.BENCHMARK_DATA = {
           606.3419670422871,
           666.4399871144976,
           675.7931944773748,
-          781.2806811650594
+          781.2806811650594,
+          566.1717166900635
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16951,6 +16999,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17630,7 +17679,8 @@ window.BENCHMARK_DATA = {
           9241.650056966146,
           11059.049945576986,
           11847.880068097797,
-          13596.654512532552
+          13596.654512532552,
+          9249.794694010418
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17983,6 +18033,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -20073,6 +20124,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
         "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
+      },
+      {
+        "sha": "8f6fc0110e691d915f092c70dd89f2db62fa8996",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 11:30:19 2026 \u002B0100",
+        "message": "docs: let visitors apply the AWT119 fix on the start page (#456)"
       }
     ],
     "labels": [
@@ -20421,7 +20478,8 @@ window.BENCHMARK_DATA = {
       "07cfe8c2",
       "05bb7e4b",
       "26d2b827",
-      "6c639092"
+      "6c639092",
+      "8f6fc011"
     ],
     "datasets": [
       {
@@ -20773,7 +20831,8 @@ window.BENCHMARK_DATA = {
           123.00668654441833,
           176.68948692541855,
           223.20657223065695,
-          225.2023660024007
+          225.2023660024007,
+          115.26911681890488
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21045,6 +21104,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21490,7 +21550,8 @@ window.BENCHMARK_DATA = {
           11880.2013865153,
           14049.012476094564,
           13735.502510579427,
-          16643.872123209636
+          16643.872123209636,
+          10583.517529078892
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21502,6 +21563,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22207,7 +22269,8 @@ window.BENCHMARK_DATA = {
           643417.9010184152,
           677428.160295759,
           584623.1793619791,
-          776785.7880208333
+          776785.7880208333,
+          645570.0091471354
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22564,7 +22627,8 @@ window.BENCHMARK_DATA = {
           719712,
           719048,
           718361,
-          741734
+          741734,
+          742570
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22920,7 +22984,8 @@ window.BENCHMARK_DATA = {
           37138.6849609375,
           41569.062272135416,
           42113.82793317522,
-          45804.29245867048
+          45804.29245867048,
+          34909.81332397461
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23273,7 +23338,8 @@ window.BENCHMARK_DATA = {
           80967,
           80351,
           80502,
-          80304
+          80304,
+          80972
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23629,7 +23695,8 @@ window.BENCHMARK_DATA = {
           291763.38636997767,
           331213.7118326823,
           352992.81865234376,
-          385335.5640950521
+          385335.5640950521,
+          266748.7948811849
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23982,7 +24049,8 @@ window.BENCHMARK_DATA = {
           573155,
           572979,
           572319,
-          573058
+          573058,
+          573025
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26048,6 +26116,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
         "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
+      },
+      {
+        "sha": "8f6fc0110e691d915f092c70dd89f2db62fa8996",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 11:30:19 2026 \u002B0100",
+        "message": "docs: let visitors apply the AWT119 fix on the start page (#456)"
       }
     ],
     "labels": [
@@ -26392,7 +26466,8 @@ window.BENCHMARK_DATA = {
       "07cfe8c2",
       "05bb7e4b",
       "26d2b827",
-      "6c639092"
+      "6c639092",
+      "8f6fc011"
     ],
     "datasets": [
       {
@@ -26740,7 +26815,8 @@ window.BENCHMARK_DATA = {
           209.17865710258485,
           240.83710476557414,
           215.61416826248168,
-          251.07527208328247
+          251.07527208328247,
+          268.7091848373413
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26775,6 +26851,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27449,7 +27526,8 @@ window.BENCHMARK_DATA = {
           450.5077077070872,
           537.5160094774686,
           472.11740328470864,
-          563.6497727907621
+          563.6497727907621,
+          628.1399805886405
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27461,6 +27539,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28158,7 +28237,8 @@ window.BENCHMARK_DATA = {
           4643.940037536621,
           3957.097930399577,
           4959.9291056315105,
-          4161.550901285807
+          4161.550901285807,
+          6596.507446543375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28242,6 +28322,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28867,7 +28948,8 @@ window.BENCHMARK_DATA = {
           334.9437454859416,
           342.23865235646565,
           344.49069452285767,
-          360.19007431666057
+          360.19007431666057,
+          422.04404945373534
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28879,6 +28961,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29576,7 +29659,8 @@ window.BENCHMARK_DATA = {
           527.8662853240967,
           551.2304685592651,
           547.2115219751994,
-          560.2264629364014
+          560.2264629364014,
+          712.1413963953654
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29588,6 +29672,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
