@@ -308,7 +308,7 @@ public class AsyncActivationHookTests
 
 			await That(result.Diagnostics).IsEmpty();
 			string source = result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
-			await That(source).Contains("await global::Lib.TerminalModule.Connect(*, cancellationToken, *)").AsWildcard()
+			await That(source).Contains(@"await global::Lib\.TerminalModule\.Connect\([^\r\n]*, cancellationToken, [^\r\n]*\)").AsRegex()
 				.Because("the consumer calls the registration's internal hook directly, awaits it and passes the resolve-time token");
 			await That(source).Contains("await global::Lib.TerminalModule.Warm(*, cancellationToken)").AsWildcard()
 				.Because("the consumer registers the skipped scan match itself and awaits its internal hook");
