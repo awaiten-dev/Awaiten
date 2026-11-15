@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
-        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
-      },
-      {
         "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
-      "d9c60864",
       "aabdd154",
       "960833f0",
       "e817eb93",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.898658965031306,
           4.856297322114309,
           5.652835548917452,
           6.4454745521148045,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           3.2094251200556756,
           4.496221236884594,
           4.8665497452020645,
-          4.607786413530508
+          4.607786413530508,
+          6.093704267271927
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.9869589404417916,
           7.003430208563804,
           6.704157524307569,
           7.318477579034292,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           4.491474976906409,
           7.093025511928967,
           6.562765183930214,
-          6.70681179372164
+          6.70681179372164,
+          7.420413282513619
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          85.28057911396027,
           83.27869965632756,
           88.40025683811733,
           122.02847677866617,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           56.73686396224158,
           85.39519882202148,
           83.25525436951564,
-          111.45567421913147
+          111.45567421913147,
+          114.69360857350486
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.9404090712467825,
           7.082697822497441,
           7.346101135015488,
           9.412309763332209,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           4.944731956223647,
           6.525771235426267,
           6.958725513021151,
-          6.852937843402227
+          6.852937843402227,
+          8.79134801030159
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.637163414557774,
           8.274770711859068,
           8.9696418804427,
           11.071410642067592,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           5.953073079387347,
           8.219523332439936,
           8.225537696055003,
-          8.497764383043561
+          8.497764383043561,
+          11.214144220948219
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
-        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
-      },
-      {
         "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
-      "d9c60864",
       "aabdd154",
       "960833f0",
       "e817eb93",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.654750616422722,
           5.275314815342426,
           6.027301663389573,
           7.432137180368105,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           3.2518424868583677,
           5.779097292820612,
           5.133004271735747,
-          5.772331357995669
+          5.772331357995669,
+          7.111666173736254
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.49940995986645,
           6.819443034132322,
           6.565504011511803,
           7.3415846735239025,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           3.882897440592448,
           6.769792049058846,
           6.5658314436674114,
-          6.7797162511519025
+          6.7797162511519025,
+          7.3016666024923325
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          84.72578719946054,
           82.81950867970785,
           90.17035367488862,
           118.78043036460876,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           55.94136485031673,
           84.79647532304128,
           82.37858533859253,
-          90.15753780092511
+          90.15753780092511,
+          115.12882250944773
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.847327436506748,
           6.804089862566728,
           7.335381795962651,
           9.441650154193242,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           4.525096282362938,
           6.420308065414429,
           7.134467657407125,
-          6.711707663536072
+          6.711707663536072,
+          8.808945283293724
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.81320329606533,
           11.414701374677511,
           12.206180542707443,
           14.432101769106728,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           8.027398418386777,
           11.210276978520247,
           11.229386969254566,
-          11.473200420183796
+          11.473200420183796,
+          14.658022839824358
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
-        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
-      },
-      {
         "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
-      "d9c60864",
       "aabdd154",
       "960833f0",
       "e817eb93",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          29.02197804848353,
           11.815641371409098,
           15.051991778612138,
           15.519221342603366,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           15.387274567570005,
           13.187077821365424,
           18.33202973008156,
-          20.02487032688581
+          20.02487032688581,
+          26.091725317637124
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1718.548883846828,
           761.1358243397304,
           892.9150653203328,
           1158.2514842987061,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1268.205707359314,
           905.0568009058635,
           1283.8252174377442,
-          1446.0559182848249
+          1446.0559182848249,
+          1744.8394143031194
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          25095.459439958846,
           16987.624342698316,
           17848.1404683431,
           25567.942521158853,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           26501.176461356026,
           18901.194083077567,
           19590.879669189453,
-          29914.16717936198
+          29914.16717936198,
+          24527.711933680945
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32474,
           32478,
           32478,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32474,
-          32482
+          32482,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          705.683532851083,
           386.35295190811155,
           419.0346734046936,
           559.6678658894131,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           566.1717166900635,
           442.0327991417476,
           528.2075997034709,
-          717.1185344696045
+          717.1185344696045,
+          702.3361131032308
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12399.423900897686,
           6363.951000213623,
           6911.6642613728845,
           8875.194906107585,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           9249.794694010418,
           7086.59296299861,
           8623.416878836495,
-          12071.343186442058
+          12071.343186442058,
+          12632.519585745675
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2888,7 +2888,6 @@ window.BENCHMARK_DATA = {
         "data": [
           24760,
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2933,6 +2932,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
-        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
-      },
       {
         "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
-      "d9c60864",
       "aabdd154",
       "960833f0",
       "e817eb93",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          364.71540654500325,
           79.88588464260101,
           80.78373035589854,
           121.91440677642822,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           115.26911681890488,
           87.05249939646039,
           195.91406992503576,
-          193.98084578514099
+          193.98084578514099,
+          231.84851010640463
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14769.036908976237,
           7025.484086608887,
           7382.471024576823,
           10827.005392456054,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           10583.517529078892,
           7792.027885437012,
           10767.154841831752,
-          14795.455138070243
+          14795.455138070243,
+          14595.544774373373
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          588662.9877604167,
           416450.51927083335,
           432318.16998697916,
           643494.5221121652,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           645570.0091471354,
           453261.9762995793,
           455469.7250600961,
-          727184.6685546875
+          727184.6685546875,
+          580111.6348031851
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          719414,
           735423,
           738692,
           740789,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           742570,
           736435,
           741067,
-          739888
+          739888,
+          735966
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          40813.885681152344,
           22303.146776471818,
           22956.337223597937,
           37862.306388346355,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           34909.81332397461,
           24311.871470133465,
           31148.041365403395,
-          44390.18093167819
+          44390.18093167819,
+          44402.54018961589
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80317,
           79672,
           81089,
           80297,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80972,
           79362,
           80292,
-          79600
+          79600,
+          79669
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          346058.7358022836,
           186965.29064127605,
           196796.92210286457,
           272954.5664813702,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           266748.7948811849,
           206306.20056966145,
           256280.64750976564,
-          366986.8137044271
+          366986.8137044271,
+          364932.3745768229
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          571195,
           572943,
           573009,
           573023,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573025,
           572961,
           571221,
-          573105
+          573105,
+          572254
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "d9c60864094ed44102752218a9ba263213c972f3",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 14:40:11 2026 \u002B0100",
-        "message": "fix: run the conventions of an internal implementation a module\u0027s Factory member returns under a public service in containers of other assemblies (#404)"
-      },
       {
         "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
-      "d9c60864",
       "aabdd154",
       "960833f0",
       "e817eb93",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          213.60745930671692,
           167.304328753398,
           242.36123204231262,
           275.539402621133,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           268.7091848373413,
           216.3019554535548,
           214.00994461377462,
-          304.4780270258586
+          304.4780270258586,
+          292.2314308166504
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          472.33360290527344,
           402.16801146098544,
           599.6545494715373,
           632.8092979284434,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           628.1399805886405,
           460.0785423687526,
           458.0163222789764,
-          479.9282199382782
+          479.9282199382782,
+          693.1580897649129
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          4962.40820719401,
           3700.684037072318,
           6546.551977539062,
           6916.981851704915,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6596.507446543375,
           4857.840915425619,
           4929.094286600749,
-          5024.044424947103
+          5024.044424947103,
+          6613.568184443882
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          348.35470520655315,
           255.01846878869193,
           384.4101921081543,
           420.43762197494505,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           422.04404945373534,
           332.94369614919026,
           343.6696006774902,
-          344.24076855977376
+          344.24076855977376,
+          423.65775464375815
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          559.073273726872,
           397.3597171123211,
           801.5906909306844,
           764.5977710996356,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           712.1413963953654,
           546.4219949086507,
           536.8448115666707,
-          557.6261625971113
+          557.6261625971113,
+          778.0527131398519
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
