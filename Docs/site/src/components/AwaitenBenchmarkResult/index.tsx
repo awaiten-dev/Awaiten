@@ -25,7 +25,7 @@ const RACE_MS = 1_000;
  * A cut bar keeps running in proportion to its value up to this many track lengths, then logarithmically, because
  * the slowest containers would otherwise take minutes.
  */
-const PROPORTIONAL_TRACKS = 8;
+const PROPORTIONAL_TRACKS = 4;
 const LOG_SCALE = 0.3;
 /**
  * The cut mark moves at a fixed speed, one full sweep per `SLIDE_MS`, so a short overtime gives a shorter sweep
