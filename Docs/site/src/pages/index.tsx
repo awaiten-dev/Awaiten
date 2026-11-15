@@ -196,10 +196,12 @@ export default function Home(): ReactElement {
                 <div className={styles.service}>
                   <span className={styles.lifetime}>Scoped</span>
                   <span className={styles.serviceName}>Order</span>
+                  <span className={styles.muted}>shared within one order</span>
                 </div>
                 <div className={styles.service}>
                   <span className={styles.lifetime}>Transient</span>
                   <span className={styles.serviceName}>Cup</span>
+                  <span className={styles.muted}>fresh every time you ask</span>
                 </div>
               </div>
             </div>
