@@ -1929,7 +1929,7 @@ public static partial class CoffeeShop;
 
 </ApplyFix>
 
-**Fix:** Remove the service from `ConsumerOwned` and take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. A consumer that is already scoped or transient only needs the entry removed. Making the inner disposable a singleton or scoped service works too, when it may be shared.
+**Fix:** Remove the service from `ConsumerOwned`, then either take `Func<Owned<BrewSession>>`, whose handle disposes everything the build created, or register the consumer as `Scoped`, so its scope disposes what its `Func` builds. A consumer that is already scoped or transient only needs the entry removed. Making the inner disposable a singleton or scoped service works too, when it may be shared.
 
 ### AWT262: `ConsumerOwned` entry never applies \{#awt262\}
 
@@ -2006,8 +2006,6 @@ public static partial class CoffeeShop;
 :::danger[Error]
 `SuppressDisposal` is set on a pre-built `Instance`, which the container does not own or dispose, so it has no effect.
 :::
-
-Remove it, or register the type for construction (by constructor or `Factory`) instead of as an `Instance`.
 
 <ApplyFix id="AWT192">
 
@@ -2512,7 +2510,6 @@ public static partial class CoffeeShop;
 
 ```csharp isolated
 [Container]
-[Transient(typeof(Handler<>), typeof(IHandler<>))]
 // highlight-next-line
 [Transient<Handler<Order>, IHandler<Order>>]   // a closing the decorator wraps
 [Decorate(typeof(LoggingBehavior<>), typeof(IHandler<>))]
@@ -2681,7 +2678,7 @@ public static partial class CoffeeShop;
 ### AWT127: Open generic registration is not an unbound generic \{#awt127\}
 
 :::danger[Error]
-The `typeof`-argument form of `[Decorate]` or `[Composite]` must receive unbound open generic types.
+A `typeof` registration pairs an unbound generic with a closed or non-generic type, or a `typeof` `[Decorate]` or `[Composite]` receives a type that is not an unbound generic.
 :::
 
 A lifetime attribute's `typeof` form accepts a closed pair, but when one of its two types is an unbound generic, both must be.
@@ -3037,6 +3034,8 @@ public static partial class CoffeeShop;
 A deferred property cycle still traverses a construction-time edge that duplicates a cached participant or recurses forever.
 :::
 
+<ApplyFix id="AWT147">
+
 ```csharp expect=AWT147
 // highlight-next-line
 public sealed class A(B b);                                       // construction-time edge into the cycle
@@ -3048,7 +3047,20 @@ public sealed class B { [Inject(Deferred = true)] public A? A { get; set; } }
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Turn the remaining constructor parameter into an `[Inject(Deferred = true)]` property too, and register one participant as a singleton or scoped, since a cycle of transients never terminates ([AWT145](#awt145)). Or remove one of the dependencies.
+```csharp isolated
+public sealed class A(B b);                                       // construction-time edge into the cycle
+public sealed class B { [Inject(Deferred = true)] public A? A { get; set; } }
+
+[Container]
+[Transient<A>]
+// highlight-next-line
+[Singleton<B>]   // cached, so the edge from A reaches the cached B
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
+**Fix:** Register the participant that the constructor depends on (here `B`) as a singleton or scoped, so the construction edge reaches a cached instance; the constructor's owner must stay transient. Or turn the remaining constructor parameter into an `[Inject(Deferred = true)]` property and cache one participant ([AWT145](#awt145)), or remove one of the dependencies.
 
 ### AWT157: Optional injected property is required \{#awt157\}
 
@@ -3567,7 +3579,7 @@ public static partial class CoffeeShop;
 ```
 
 ```csharp isolated
-public sealed class GrinderPlugin : IPlugin;   // assignable, but filtered out by the pattern below
+public sealed class GrinderPlugin : IPlugin;   // assignable and kept by the pattern below
 
 [Container]
 // highlight-next-line
@@ -3661,7 +3673,7 @@ public static partial class CoffeeShop;
 ```csharp isolated
 public interface IEspresso;
 public sealed class Espresso : IEspresso;
-public sealed class Ristretto : IEspresso;   // no IRistretto, so it is not registered
+public sealed class Ristretto : IEspresso;   // no IRistretto, but registered as itself
 
 [Container]
 // highlight-next-line
@@ -3706,18 +3718,32 @@ public static partial class CoffeeShop;
 ### AWT184: Markerless scan registered nothing \{#awt184\}
 
 :::warning[Warning]
-A markerless `[Scan]` matched candidate types but registered none of them.
+A markerless `[Scan]` registered no type: its filters matched none, or no match had the exposure its `As` asks for.
 :::
 
+<ApplyFix id="AWT184">
+
 ```csharp expect=AWT184
+public sealed class OldGrinder;   // matched by the pattern, but implements no IOldGrinder
+
 [Container]
-// Nothing under CoffeeShop.Legacy follows the I + name convention, so nothing registers.
 // highlight-next-line
-[Scan(As = ScanAs.MatchingInterface, NamespacePatterns = ["CoffeeShop.Legacy.**"])]
+[Scan(As = ScanAs.MatchingInterface, NamePatterns = ["Old*"])]
 public static partial class CoffeeShop;
 ```
 
-**Fix:** Widen the filters until they match the types you mean, and with `ScanAs.MatchingInterface` check that the matches follow the `I` + name convention.
+```csharp isolated
+public sealed class OldGrinder;   // matched by the pattern, but implements no IOldGrinder
+
+[Container]
+// highlight-next-line
+[Scan(As = ScanAs.Self | ScanAs.MatchingInterface, NamePatterns = ["Old*"])]   // Self registers OldGrinder as itself
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
+**Fix:** Widen the filters until they match the types you mean. With `ScanAs.MatchingInterface`, check that the matches follow the `I` + name convention, or add `ScanAs.Self` to register them as themselves.
 
 ### AWT185: Scan exposes matches nowhere \{#awt185\}
 
@@ -3835,8 +3861,6 @@ Where [AWT188](#awt188) is about an interface the match cannot be exposed under,
 
 A match from another assembly names that assembly in the message and suggests moving the scan into a `[Module]` there: a [module's scan](./05-registration/08-modules/02-library-module-rules.md#self-compiled-scans) runs in the module's own build and generates a factory per internal match, so any container that imports the module registers the matches.
 
-**Fix:** Move the scan into a `[Module]` in the type's assembly, make the type public, grant the container's assembly `InternalsVisibleTo`, or exclude it with a `NamePatterns` or `NamespacePatterns` entry.
-
 A `public` class of another assembly whose constructors are all `internal` is skipped the same way: the container can name it but cannot call a constructor, which an explicit registration reports as [AWT104](#awt104). The message names the constructors as the reason. An assembly granted `InternalsVisibleTo` calls them and registers the match, and a module scan in the type's assembly builds it through the module's generated factory. A match the container shares with another registration of the type, such as one a module of that assembly builds, is kept, unless that registration is a `Fallback` default the container replaces.
 
 ```csharp no-compile
@@ -3848,8 +3872,6 @@ public sealed class Grinder : IEquipment { internal Grinder() { } }
 [Scan<IEquipment>(InAssembliesOf = [typeof(IEquipment)])]
 public static partial class CoffeeShop;
 ```
-
-**Fix:** Make a constructor public, move the scan into a `[Module]` in the type's assembly, grant the container's assembly `InternalsVisibleTo`, or exclude the type from the scan.
 
 A type nested privately in the container is a match like any other: the generated resolvers return an accessible type it converts to (see [AWT216](#awt216)). The scan skips it with this warning, and names the reason, only where no such type exists, so a private type never turns a scan into an error:
 
@@ -3869,11 +3891,15 @@ public static partial class CoffeeShop
 }
 ```
 
+**Fix:** Move the scan into a `[Module]` in the type's assembly, make the type (or a constructor) public, grant the container's assembly `InternalsVisibleTo`, or exclude it with a `NamePatterns` or `NamespacePatterns` entry. Expose a private nested type through `ScanAs.Marker` or `ScanAs.MatchingInterface`.
+
 ### AWT198: Ambiguous generic hook marker \{#awt198\}
 
 :::danger[Error]
 A generic lifecycle hook on an open-generic `[Scan]` marker could bind a match through more than one closed marker form, so its type arguments are ambiguous.
 :::
+
+<ApplyFix id="AWT198">
 
 ```csharp expect=AWT198
 public interface IView<TViewModel>;
@@ -3888,6 +3914,21 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+public interface IView<TViewModel>;
+// highlight-next-line
+public sealed class DualView : IView<Orders>;   // one closing, so TViewModel is Orders
+
+[Container]
+[Scan(typeof(IView<>), As = ScanAs.Marker, OnActivated = nameof(Wire))]
+public static partial class CoffeeShop
+{
+    private static void Wire<TViewModel>(IView<TViewModel> view) { }
+}
+```
+
+</ApplyFix>
+
 A [generic scan hook](./05-registration/07-scanning.md#lifecycle-hooks) binds its type argument from a closed marker form, so it needs exactly one it can bind. `DualView`, which closes `IView<>` at both `Orders` and `Payments`, offers two; the same happens when two scans bind the same generic hook through differently-closed markers of one type. Register the type explicitly with the intended hook, or split the family so only one closed form binds it.
 
 <details>
@@ -3897,7 +3938,7 @@ Only forms the hook could actually bind count: matching arity, type arguments th
 
 </details>
 
-**Fix:** Register the type explicitly with the hook you intend, or split the family so only one closed marker form binds the hook.
+**Fix:** Close the marker only once on the type, or register the type explicitly and name a non-generic hook in its `OnActivated`.
 
 ### AWT199: Scans register one implementation with conflicting lifecycle hooks \{#awt199\}
 
