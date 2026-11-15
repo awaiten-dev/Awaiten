@@ -1229,17 +1229,27 @@ partial class AwaitenGenerator
 
 	/// <summary>
 	///     AWT216 for <paramref name="implementation" />, which a container can name, registered under
-	///     <paramref name="service" />, which is or carries <paramref name="hiddenService" />, private to the module, so
-	///     only a container nested in the type that declares <paramref name="hiddenService" /> can name the service. The module's build reports it for a singleton a container
-	///     starts, a container of the module's assembly that cannot name the service for any lifetime (see
-	///     <see cref="CollectLifetimeRegistrations" />).
+	///     <paramref name="service" />, which is or carries <paramref name="hiddenService" />, private to the module.
+	///     The module's build reports it for a singleton a container starts. A container of the module's assembly that
+	///     cannot name the service reports it for any lifetime (see <see cref="CollectLifetimeRegistrations" />).
 	/// </summary>
 	private static DiagnosticInfo PrivateModuleService(INamedTypeSymbol implementation, INamedTypeSymbol service, INamedTypeSymbol hiddenService, Location? location)
 	{
 		string name = Display(implementation.ToDisplayString(FullyQualified));
+		INamedTypeSymbol restricted = hiddenService;
+		while (restricted.DeclaredAccessibility is not (Accessibility.Private or Accessibility.Protected or Accessibility.ProtectedAndInternal)
+		       && restricted.ContainingType is { } containing)
+		{
+			restricted = containing;
+		}
+
+		string declarer = Display(restricted.ContainingType!.ToDisplayString(FullyQualified));
+		string namers = restricted.DeclaredAccessibility == Accessibility.Private
+			? $"only a container nested in '{declarer}'"
+			: $"only a container nested in '{declarer}' or in a class derived from it";
 		string reason = SymbolEqualityComparer.Default.Equals(service, hiddenService)
-			? $"'{name}' is registered under it, so no container can name the service"
-			: $"'{name}' is registered under the service '{Display(service.ToDisplayString(FullyQualified))}', which carries it, so no container can name the service";
+			? $"'{name}' is registered under it, so {namers} can name the service"
+			: $"'{name}' is registered under the service '{Display(service.ToDisplayString(FullyQualified))}', which carries it, so {namers} can name the service";
 		return new DiagnosticInfo(
 			Diagnostics.RegisteredTypeLessAccessible,
 			LocationInfo.From(location),

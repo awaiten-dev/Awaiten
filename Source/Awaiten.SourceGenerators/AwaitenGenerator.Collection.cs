@@ -398,11 +398,7 @@ partial class AwaitenGenerator
 			    && !context.Compilation.IsSymbolAccessibleWithin(named, container)
 			    && !IsHiddenInModule(registration.Implementation, origin!, context.Compilation))
 			{
-				DiagnosticInfo diagnostic = PrivateModuleService(registration.Implementation, named, hiddenService, location);
-				if (!diagnostics.Contains(diagnostic))
-				{
-					diagnostics.Add(diagnostic);
-				}
+				diagnostics.Add(PrivateModuleService(registration.Implementation, named, hiddenService, location));
 
 				if (context.Rejected is { } rejected)
 				{
@@ -474,7 +470,7 @@ partial class AwaitenGenerator
 		                     && !module.ContainingAssembly.GivesAccessTo(compilation.Assembly)
 		                     && (GeneratedFactory(module, implementation, compilation) is not null || SkippedRegistrationReason(module, implementation) is not null);
 		if (registration.ServiceSymbol is not { } service
-		    || TypeHiddenInModule(service, module, compilation) is not null
+		    || (!sameCompilation && TypeHiddenInModule(service, module, compilation) is not null)
 		    || (!SelfCompilesRegistration(module, implementation, service, compilation) && !hiddenMembers))
 		{
 			if (!sameCompilation

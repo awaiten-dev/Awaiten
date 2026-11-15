@@ -74,8 +74,32 @@ public partial class DiagnosticTests
 			GeneratorResult result = Generator.Run(Library(registrations, implementation));
 
 			await That(result.Diagnostics).HasSingle().Which
-				.Contains($"*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.IWarmer' is private or protected and 'Lib.DataModule.Warmer' is registered under it, so no container can name the service; {Remedy}").AsWildcard()
-				.Because("a container starts the singleton though nothing depends on it, and none can name the service to hold it");
+				.Contains($"*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.IWarmer' is private or protected and 'Lib.DataModule.Warmer' is registered under it, so only a container nested in 'Lib.DataModule' can name the service; {Remedy}").AsWildcard()
+				.Because("a container starts the singleton though nothing depends on it, and only a container nested in the module can name the service to hold it");
+		}
+
+		[Test]
+		public async Task LibraryBuild_ProtectedService_NamesTheDerivedClassesToo()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public class Outer
+				{
+					protected interface IWarmer { }
+					internal sealed class Warmer : IWarmer { }
+
+					[Module]
+					[Singleton<Warmer, IWarmer>(Eager = true)]
+					public static partial class DataModule;
+				}
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*AWT216*so only a container nested in 'Lib.Outer' or in a class derived from it can name the service;*").AsWildcard()
+				.Because("a container nested in a class derived from 'Lib.Outer' can name its protected service too");
 		}
 
 		[Test]
@@ -189,6 +213,31 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).IsEmpty()
 				.Because("a container nested in the module can name a service private to the module");
+		}
+
+		[Test]
+		public async Task SameAssembly_ContainerNestedInTheModule_ReportsAPrivateImplementation()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				[Module]
+				[Singleton<DataModule.Warmer, DataModule.IWarmer>]
+				public static partial class DataModule
+				{
+					private interface IWarmer { }
+					private sealed class Warmer : IWarmer { }
+
+					[Container]
+					[Import(typeof(DataModule))]
+					public static partial class SameContainer;
+				}
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which.Contains("*AWT216*'Lib.DataModule.Warmer'*private service 'Lib.DataModule.IWarmer'*").AsWildcard()
+				.Because("the generated resolvers would have to return the private implementation or the private service, and their signatures can name neither");
 		}
 
 		[Test]
