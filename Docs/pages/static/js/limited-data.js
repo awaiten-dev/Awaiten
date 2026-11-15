@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
-        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
-      },
-      {
         "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
         "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
+      },
+      {
+        "sha": "7f28496a15bdb5743635fb13c3c0d5add0746ed8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
+        "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
       }
     ],
     "labels": [
-      "aabdd154",
       "960833f0",
       "e817eb93",
       "05a7d32c",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "1f2dd297",
       "dc3ec857",
       "a3e03104",
-      "01d88b94"
+      "01d88b94",
+      "7f28496a"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.856297322114309,
           5.652835548917452,
           6.4454745521148045,
           6.445080806102071,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           4.496221236884594,
           4.8665497452020645,
           4.607786413530508,
-          6.093704267271927
+          6.093704267271927,
+          6.45959644416968
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.003430208563804,
           6.704157524307569,
           7.318477579034292,
           7.530204546451569,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.093025511928967,
           6.562765183930214,
           6.70681179372164,
-          7.420413282513619
+          7.420413282513619,
+          7.381175364057223
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          83.27869965632756,
           88.40025683811733,
           122.02847677866617,
           120.90929767290751,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           85.39519882202148,
           83.25525436951564,
           111.45567421913147,
-          114.69360857350486
+          114.69360857350486,
+          116.61729702949523
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.082697822497441,
           7.346101135015488,
           9.412309763332209,
           8.788216279198727,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           6.525771235426267,
           6.958725513021151,
           6.852937843402227,
-          8.79134801030159
+          8.79134801030159,
+          8.560977884133656
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.274770711859068,
           8.9696418804427,
           11.071410642067592,
           10.548220241069794,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           8.219523332439936,
           8.225537696055003,
           8.497764383043561,
-          11.214144220948219
+          11.214144220948219,
+          10.695165998169355
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
-        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
-      },
-      {
         "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
         "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
+      },
+      {
+        "sha": "7f28496a15bdb5743635fb13c3c0d5add0746ed8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
+        "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
       }
     ],
     "labels": [
-      "aabdd154",
       "960833f0",
       "e817eb93",
       "05a7d32c",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "1f2dd297",
       "dc3ec857",
       "a3e03104",
-      "01d88b94"
+      "01d88b94",
+      "7f28496a"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.275314815342426,
           6.027301663389573,
           7.432137180368105,
           7.222330558300018,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           5.779097292820612,
           5.133004271735747,
           5.772331357995669,
-          7.111666173736254
+          7.111666173736254,
+          7.446444692356246
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.819443034132322,
           6.565504011511803,
           7.3415846735239025,
           7.409464634381807,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           6.769792049058846,
           6.5658314436674114,
           6.7797162511519025,
-          7.3016666024923325
+          7.3016666024923325,
+          7.260914143174887
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          82.81950867970785,
           90.17035367488862,
           118.78043036460876,
           119.53935468196869,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           84.79647532304128,
           82.37858533859253,
           90.15753780092511,
-          115.12882250944773
+          115.12882250944773,
+          115.50207410653432
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.804089862566728,
           7.335381795962651,
           9.441650154193242,
           8.7871981151402,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           6.420308065414429,
           7.134467657407125,
           6.711707663536072,
-          8.808945283293724
+          8.808945283293724,
+          8.69056950722422
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.414701374677511,
           12.206180542707443,
           14.432101769106728,
           13.898424118757248,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           11.210276978520247,
           11.229386969254566,
           11.473200420183796,
-          14.658022839824358
+          14.658022839824358,
+          14.414421653747558
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
-        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
-      },
-      {
         "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 15:37:24 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
         "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
+      },
+      {
+        "sha": "7f28496a15bdb5743635fb13c3c0d5add0746ed8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
+        "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
       }
     ],
     "labels": [
-      "aabdd154",
       "960833f0",
       "e817eb93",
       "05a7d32c",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "1f2dd297",
       "dc3ec857",
       "a3e03104",
-      "01d88b94"
+      "01d88b94",
+      "7f28496a"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          11.815641371409098,
           15.051991778612138,
           15.519221342603366,
           19.221892208854356,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           13.187077821365424,
           18.33202973008156,
           20.02487032688581,
-          26.091725317637124
+          26.091725317637124,
+          28.964905460675556
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          761.1358243397304,
           892.9150653203328,
           1158.2514842987061,
           1381.5789431163244,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           905.0568009058635,
           1283.8252174377442,
           1446.0559182848249,
-          1744.8394143031194
+          1744.8394143031194,
+          1428.8253724416097
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          16987.624342698316,
           17848.1404683431,
           25567.942521158853,
           24553.56516810826,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18901.194083077567,
           19590.879669189453,
           29914.16717936198,
-          24527.711933680945
+          24527.711933680945,
+          19679.38916015625
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2639,7 +2639,6 @@ window.BENCHMARK_DATA = {
           32478,
           32478,
           32478,
-          32478,
           32477,
           32482,
           32482,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32478,
           32474,
           32482,
-          32476
+          32476,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          386.35295190811155,
           419.0346734046936,
           559.6678658894131,
           603.2862009048462,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           442.0327991417476,
           528.2075997034709,
           717.1185344696045,
-          702.3361131032308
+          702.3361131032308,
+          558.6419350941976
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6363.951000213623,
           6911.6642613728845,
           8875.194906107585,
           9996.344518025717,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           7086.59296299861,
           8623.416878836495,
           12071.343186442058,
-          12632.519585745675
+          12632.519585745675,
+          9534.123675755092
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24760,
-          24760,
           24761,
           24761,
           24760,
@@ -2932,6 +2931,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
-        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
-      },
       {
         "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
         "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
+      },
+      {
+        "sha": "7f28496a15bdb5743635fb13c3c0d5add0746ed8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
+        "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
       }
     ],
     "labels": [
-      "aabdd154",
       "960833f0",
       "e817eb93",
       "05a7d32c",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "1f2dd297",
       "dc3ec857",
       "a3e03104",
-      "01d88b94"
+      "01d88b94",
+      "7f28496a"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          79.88588464260101,
           80.78373035589854,
           121.91440677642822,
           125.81308767000834,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           87.05249939646039,
           195.91406992503576,
           193.98084578514099,
-          231.84851010640463
+          231.84851010640463,
+          212.54042260987418
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7025.484086608887,
           7382.471024576823,
           10827.005392456054,
           11758.13661311223,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7792.027885437012,
           10767.154841831752,
           14795.455138070243,
-          14595.544774373373
+          14595.544774373373,
+          12413.500618489583
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          416450.51927083335,
           432318.16998697916,
           643494.5221121652,
           646613.1810825893,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           453261.9762995793,
           455469.7250600961,
           727184.6685546875,
-          580111.6348031851
+          580111.6348031851,
+          469993.2900390625
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          735423,
           738692,
           740789,
           740464,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           736435,
           741067,
           739888,
-          735966
+          735966,
+          737382
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          22303.146776471818,
           22956.337223597937,
           37862.306388346355,
           38211.43512369792,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           24311.871470133465,
           31148.041365403395,
           44390.18093167819,
-          44402.54018961589
+          44402.54018961589,
+          33226.94885253906
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          79672,
           81089,
           80297,
           80014,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           79362,
           80292,
           79600,
-          79669
+          79669,
+          79924
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          186965.29064127605,
           196796.92210286457,
           272954.5664813702,
           316808.66324869794,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           206306.20056966145,
           256280.64750976564,
           366986.8137044271,
-          364932.3745768229
+          364932.3745768229,
+          270459.9739583333
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          572943,
           573009,
           573023,
           573108,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           572961,
           571221,
           573105,
-          572254
+          572254,
+          571190
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "aabdd154cfa8ca79daaa8dcf52f1e9a030259340",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 15:00:27 2026 \u002B0100",
-        "message": "build: update aweXpect to 4.0.0-pre.4 (#406)"
-      },
       {
         "sha": "960833f06bf977b2f4c82804f70840e7ac7b2b2f",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
         "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
+      },
+      {
+        "sha": "7f28496a15bdb5743635fb13c3c0d5add0746ed8",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
+        "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
       }
     ],
     "labels": [
-      "aabdd154",
       "960833f0",
       "e817eb93",
       "05a7d32c",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "1f2dd297",
       "dc3ec857",
       "a3e03104",
-      "01d88b94"
+      "01d88b94",
+      "7f28496a"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          167.304328753398,
           242.36123204231262,
           275.539402621133,
           268.9508735656738,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           216.3019554535548,
           214.00994461377462,
           304.4780270258586,
-          292.2314308166504
+          292.2314308166504,
+          269.4216096242269
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          402.16801146098544,
           599.6545494715373,
           632.8092979284434,
           630.7711837768554,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           460.0785423687526,
           458.0163222789764,
           479.9282199382782,
-          693.1580897649129
+          693.1580897649129,
+          718.6849763576801
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          3700.684037072318,
           6546.551977539062,
           6916.981851704915,
           6760.0615234375,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4857.840915425619,
           4929.094286600749,
           5024.044424947103,
-          6613.568184443882
+          6613.568184443882,
+          6547.482480367024
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          255.01846878869193,
           384.4101921081543,
           420.43762197494505,
           418.9902131954829,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           332.94369614919026,
           343.6696006774902,
           344.24076855977376,
-          423.65775464375815
+          423.65775464375815,
+          414.79872903823855
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          397.3597171123211,
           801.5906909306844,
           764.5977710996356,
           741.6504019419352,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           546.4219949086507,
           536.8448115666707,
           557.6261625971113,
-          778.0527131398519
+          778.0527131398519,
+          723.7572080748422
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
