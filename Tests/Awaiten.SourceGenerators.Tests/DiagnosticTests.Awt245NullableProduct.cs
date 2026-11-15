@@ -308,8 +308,8 @@ public partial class DiagnosticTests
 				await That(library.Diagnostics).IsEmpty()
 					.Because("the public wrapper over the internal factory spells [MaybeNull] as a nullable return");
 				await That(result.Diagnostics).IsEmpty();
-				await That(reports).HasCount(1)
-					.Because("the container sees the possible null through the wrapper");
+				await That(reports).HasCount(1).And.Contains("*warning AWT245*The Factory 'Make' *").AsWildcard()
+					.Because("the container sees the possible null through the wrapper, and names the member the user wrote rather than the wrapper");
 			}
 			[Test]
 			public async Task AnOpenGenericFactoryOfAModuleInAnotherAssembly_ReportsOnceAndCompilesWithoutWarnings()
@@ -360,10 +360,10 @@ public partial class DiagnosticTests
 			}
 
 			[Test]
-			[Arguments("private static Secret? Make() => new Secret();", "Factory = nameof(Make)")]
-			[Arguments("[return: System.Diagnostics.CodeAnalysis.MaybeNull] private static Secret Make() => new Secret();", "Factory = nameof(Make)")]
-			[Arguments("private static Secret? Shared { get; } = new Secret();", "Instance = nameof(Shared)")]
-			public async Task AMemberOfAModuleReturningAPrivateNullableType_CompilesWithoutWarnings(string member, string production)
+			[Arguments("private static Secret? Make() => new Secret();", "Factory = nameof(Make)", "The Factory 'Make' ")]
+			[Arguments("[return: System.Diagnostics.CodeAnalysis.MaybeNull] private static Secret Make() => new Secret();", "Factory = nameof(Make)", "The Factory 'Make' ")]
+			[Arguments("private static Secret? Shared { get; } = new Secret();", "Instance = nameof(Shared)", "The Instance 'Shared' ")]
+			public async Task AMemberOfAModuleReturningAPrivateNullableType_CompilesWithoutWarnings(string member, string production, string named)
 			{
 				string library = $$"""
 				                   #nullable enable
@@ -392,8 +392,8 @@ public partial class DiagnosticTests
 				await That(libraryResult.Diagnostics).IsEmpty()
 					.Because("the wrapper exposes the private type as the nullable registered type");
 				await That(result.Diagnostics).IsEmpty();
-				await That(reports).HasCount(1)
-					.Because("the container sees the possible null through the wrapper");
+				await That(reports).HasCount(1).And.Contains($"*warning AWT245*{named}*").AsWildcard()
+					.Because("the container sees the possible null through the wrapper, and names the member the user wrote rather than the wrapper");
 			}
 
 			private static string HandleLibrary(string registration, string member) => $$"""

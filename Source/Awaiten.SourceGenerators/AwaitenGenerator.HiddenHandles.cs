@@ -22,14 +22,34 @@ partial class AwaitenGenerator
 	private const string HiddenKeyMarker = "@hidden:";
 
 	/// <summary>
-	///     Rewrites each diagnostic argument that names a generated handle of an imported module of another assembly to the
-	///     internal service it holds, as <c>Lib.BeanStore (internal to module Lib.CoffeeModule)</c>, which the message
-	///     quotes like any other type, so a message never names a type the user did not write. A handle inside a longer
-	///     argument, such as a type argument, is named by the service alone. A generated hook wrapper is named by the
-	///     hook the module declares. <paramref name="called" /> holds the members the container's graph calls (see
-	///     <see cref="CalledMembers" />).
+	///     Reports AWT238 (see <see cref="ReportMissingHandleProviders" />) and names the generated members of the imported
+	///     modules of another assembly in the diagnostics by what the user wrote.
+	///     <paramref name="called" /> holds the members the container's graph calls (see <see cref="CalledMembers" />).
 	/// </summary>
 	private static void NameHiddenServices(INamedTypeSymbol container, Compilation compilation, HashSet<string> called, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
+	{
+		(List<ImportedModule> imported, List<INamedTypeSymbol> modules) = ModulesOfOtherAssemblies(container, compilation, cancellationToken);
+		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, called, diagnostics);
+		NameGeneratedMembers(modules.Concat(providers), compilation, diagnostics);
+	}
+
+	/// <summary>
+	///     Names the generated members of the imported modules of another assembly in the diagnostics the analyzer reports
+	///     for <paramref name="container" /> by what the user wrote, as the generator does for its own.
+	/// </summary>
+	internal static void NameGeneratedMembers(INamedTypeSymbol container, Compilation compilation, List<DiagnosticInfo> diagnostics, CancellationToken cancellationToken)
+	{
+		if (diagnostics.Count == 0)
+		{
+			return;
+		}
+
+		(List<ImportedModule> imported, List<INamedTypeSymbol> modules) = ModulesOfOtherAssemblies(container, compilation, cancellationToken);
+		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, new HashSet<string>(StringComparer.Ordinal), new List<DiagnosticInfo>());
+		NameGeneratedMembers(modules.Concat(providers), compilation, diagnostics);
+	}
+
+	private static (List<ImportedModule> Imported, List<INamedTypeSymbol> Modules) ModulesOfOtherAssemblies(INamedTypeSymbol container, Compilation compilation, CancellationToken cancellationToken)
 	{
 		List<ImportedModule> imported = CollectImportedModules(container, new List<DiagnosticInfo>());
 		if (ReadExtends(container) is { } baseContainer)
@@ -46,7 +66,19 @@ partial class AwaitenGenerator
 			.Where(module => !SymbolEqualityComparer.Default.Equals(module.ContainingAssembly, compilation.Assembly))
 			.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)
 			.ToList();
-		List<INamedTypeSymbol> providers = ReportMissingHandleProviders(imported, modules, compilation, called, diagnostics);
+		return (imported, modules);
+	}
+
+	/// <summary>
+	///     Rewrites each diagnostic argument that names a generated handle of one of the <paramref name="modules" /> to the
+	///     internal service it holds, as <c>Lib.BeanStore (internal to module Lib.CoffeeModule)</c>, which the message
+	///     quotes like any other type, so a message never names a type the user did not write. A handle inside a longer
+	///     argument, such as a type argument, is named by the service alone. A generated hook wrapper is named by the
+	///     hook the module declares, and the wrapper of a scan match's hook slot by the hook the module's scans name for
+	///     that slot when they all name the same one.
+	/// </summary>
+	private static void NameGeneratedMembers(IEnumerable<INamedTypeSymbol> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	{
 		if (diagnostics.Count == 0)
 		{
 			return;
@@ -54,7 +86,7 @@ partial class AwaitenGenerator
 
 		Dictionary<string, (string Service, string Module)> handles = new(StringComparer.Ordinal);
 		Dictionary<string, string> hooks = new(StringComparer.Ordinal);
-		foreach (INamedTypeSymbol module in modules.Concat(providers))
+		foreach (INamedTypeSymbol module in modules)
 		{
 			string moduleName = Display(module.ToDisplayString(FullyQualified));
 			foreach (ModuleRegistration registration in ConstructedModuleRegistrations(module, compilation, members: true))
@@ -83,6 +115,30 @@ partial class AwaitenGenerator
 				if (ClosingHandleOf(handle) is var (_, closing))
 				{
 					handles[Display(handle.ToDisplayString(FullyQualified))] = (Display(closing), moduleName);
+				}
+			}
+
+			foreach (bool release in new[] { false, true, })
+			{
+				string slot = release ? "OnRelease" : "OnActivated";
+				List<string> scanHooks = module.GetAttributes()
+					.Where(attribute => attribute.AttributeClass is { Name: "ScanAttribute", })
+					.Select(attribute => NamedArgument(attribute, slot))
+					.OfType<string>()
+					.Distinct(StringComparer.Ordinal)
+					.ToList();
+				if (scanHooks.Count != 1)
+				{
+					continue;
+				}
+
+				foreach (string wrapper in module.GetAttributes()
+					         .Where(attribute => attribute.AttributeClass is { Name: "GeneratedScanRegistrationAttribute", })
+					         .Select(attribute => NamedArgument(attribute, slot))
+					         .OfType<string>()
+					         .Where(wrapper => wrapper.StartsWith(InInternals(string.Empty), StringComparison.Ordinal)))
+				{
+					hooks[$"{moduleName}.{wrapper}"] = $"{moduleName}.{scanHooks[0]}";
 				}
 			}
 

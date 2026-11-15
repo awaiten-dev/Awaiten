@@ -531,9 +531,9 @@ public class ModuleHiddenRuntimeArgumentTests
 			string[] friend = await Analyzer.RunWithReferencedAssembly<AwaitenAnalyzer>(library.Replace("using Awaiten;", "using Awaiten;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"TestAssembly\")]"), ExternalContainer);
 
 			await That(same).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118"));
-			await That(external).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118"))
-				.Because("each call of the factory a singleton holds strands a disposable on the root, through a handle too");
-			await That(friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118"));
+			await That(external).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118") && diagnostic.Contains("'Lib.IBrew (internal to module Lib.CoffeeModule)'") && !diagnostic.Contains("Hidden_"))
+				.Because("each call of the factory a singleton holds strands a disposable on the root, through a handle too, which the message names by the service it holds");
+			await That(friend).HasSingle().Matching(diagnostic => diagnostic.Contains("AWT118") && !diagnostic.Contains("Hidden_"));
 		}
 
 		[Test]

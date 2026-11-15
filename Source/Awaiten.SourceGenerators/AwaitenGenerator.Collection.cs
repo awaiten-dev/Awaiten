@@ -576,7 +576,7 @@ partial class AwaitenGenerator
 						  ?? (GrantsInternalsVisibleTo(module.ContainingAssembly)
 							  ? "it leaves the singleton to the assemblies it grants InternalsVisibleTo"
 							  : "its build reported an error for the module or ran without the Awaiten generator"),
-					NotSelfCompiledRemedy(module, hiddenService ?? (ITypeSymbol)registration.Implementation, compilation, $"make '{Display(registration.ImplementationType)}' and the service it is registered under public"),
+					NotSelfCompiledRemedy(module, hiddenService ?? (ITypeSymbol)registration.Implementation, compilation, $"make '{DisplayInstance(registration.ImplementationType)}' and the service it is registered under public"),
 				]));
 			if (!context.Diagnostics.Contains(diagnostic))
 			{
