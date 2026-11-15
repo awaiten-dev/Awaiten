@@ -2100,6 +2100,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
@@ -2452,7 +2458,8 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
@@ -2808,7 +2815,8 @@ window.BENCHMARK_DATA = {
           3.2094251200556756,
           4.496221236884594,
           4.8665497452020645,
-          4.607786413530508
+          4.607786413530508,
+          6.093704267271927
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2820,6 +2828,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3533,7 +3542,8 @@ window.BENCHMARK_DATA = {
           4.491474976906409,
           7.093025511928967,
           6.562765183930214,
-          6.70681179372164
+          6.70681179372164,
+          7.420413282513619
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3545,6 +3555,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4258,7 +4269,8 @@ window.BENCHMARK_DATA = {
           56.73686396224158,
           85.39519882202148,
           83.25525436951564,
-          111.45567421913147
+          111.45567421913147,
+          114.69360857350486
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4270,6 +4282,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4979,7 +4992,8 @@ window.BENCHMARK_DATA = {
           4.944731956223647,
           6.525771235426267,
           6.958725513021151,
-          6.852937843402227
+          6.852937843402227,
+          8.79134801030159
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4991,6 +5005,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5696,7 +5711,8 @@ window.BENCHMARK_DATA = {
           5.953073079387347,
           8.219523332439936,
           8.225537696055003,
-          8.497764383043561
+          8.497764383043561,
+          11.214144220948219
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5708,6 +5724,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8167,6 +8184,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
@@ -8519,7 +8542,8 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
@@ -8875,7 +8899,8 @@ window.BENCHMARK_DATA = {
           3.2518424868583677,
           5.779097292820612,
           5.133004271735747,
-          5.772331357995669
+          5.772331357995669,
+          7.111666173736254
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8887,6 +8912,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9600,7 +9626,8 @@ window.BENCHMARK_DATA = {
           3.882897440592448,
           6.769792049058846,
           6.5658314436674114,
-          6.7797162511519025
+          6.7797162511519025,
+          7.3016666024923325
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9612,6 +9639,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10325,7 +10353,8 @@ window.BENCHMARK_DATA = {
           55.94136485031673,
           84.79647532304128,
           82.37858533859253,
-          90.15753780092511
+          90.15753780092511,
+          115.12882250944773
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10337,6 +10366,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11046,7 +11076,8 @@ window.BENCHMARK_DATA = {
           4.525096282362938,
           6.420308065414429,
           7.134467657407125,
-          6.711707663536072
+          6.711707663536072,
+          8.808945283293724
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11058,6 +11089,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11763,7 +11795,8 @@ window.BENCHMARK_DATA = {
           8.027398418386777,
           11.210276978520247,
           11.229386969254566,
-          11.473200420183796
+          11.473200420183796,
+          14.658022839824358
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11775,6 +11808,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14234,6 +14268,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
@@ -14586,7 +14626,8 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
@@ -14942,7 +14983,8 @@ window.BENCHMARK_DATA = {
           15.387274567570005,
           13.187077821365424,
           18.33202973008156,
-          20.02487032688581
+          20.02487032688581,
+          26.091725317637124
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15214,6 +15256,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15667,7 +15710,8 @@ window.BENCHMARK_DATA = {
           1268.205707359314,
           905.0568009058635,
           1283.8252174377442,
-          1446.0559182848249
+          1446.0559182848249,
+          1744.8394143031194
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15679,6 +15723,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16392,7 +16437,8 @@ window.BENCHMARK_DATA = {
           26501.176461356026,
           18901.194083077567,
           19590.879669189453,
-          29914.16717936198
+          29914.16717936198,
+          24527.711933680945
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16753,7 +16799,8 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32474,
-          32482
+          32482,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17113,7 +17160,8 @@ window.BENCHMARK_DATA = {
           566.1717166900635,
           442.0327991417476,
           528.2075997034709,
-          717.1185344696045
+          717.1185344696045,
+          702.3361131032308
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17143,6 +17191,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17830,7 +17879,8 @@ window.BENCHMARK_DATA = {
           9249.794694010418,
           7086.59296299861,
           8623.416878836495,
-          12071.343186442058
+          12071.343186442058,
+          12632.519585745675
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18185,6 +18235,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -20301,6 +20352,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
@@ -20653,7 +20710,8 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
@@ -21009,7 +21067,8 @@ window.BENCHMARK_DATA = {
           115.26911681890488,
           87.05249939646039,
           195.91406992503576,
-          193.98084578514099
+          193.98084578514099,
+          231.84851010640463
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21281,6 +21340,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21734,7 +21794,8 @@ window.BENCHMARK_DATA = {
           10583.517529078892,
           7792.027885437012,
           10767.154841831752,
-          14795.455138070243
+          14795.455138070243,
+          14595.544774373373
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21746,6 +21807,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22459,7 +22521,8 @@ window.BENCHMARK_DATA = {
           645570.0091471354,
           453261.9762995793,
           455469.7250600961,
-          727184.6685546875
+          727184.6685546875,
+          580111.6348031851
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22820,7 +22883,8 @@ window.BENCHMARK_DATA = {
           742570,
           736435,
           741067,
-          739888
+          739888,
+          735966
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23180,7 +23244,8 @@ window.BENCHMARK_DATA = {
           34909.81332397461,
           24311.871470133465,
           31148.041365403395,
-          44390.18093167819
+          44390.18093167819,
+          44402.54018961589
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23537,7 +23602,8 @@ window.BENCHMARK_DATA = {
           80972,
           79362,
           80292,
-          79600
+          79600,
+          79669
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23897,7 +23963,8 @@ window.BENCHMARK_DATA = {
           266748.7948811849,
           206306.20056966145,
           256280.64750976564,
-          366986.8137044271
+          366986.8137044271,
+          364932.3745768229
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24254,7 +24321,8 @@ window.BENCHMARK_DATA = {
           573025,
           572961,
           571221,
-          573105
+          573105,
+          572254
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26344,6 +26412,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 12:43:28 2026 \u002B0100",
         "message": "docs: let readers apply the fix of a diagnostic in place (#458)"
+      },
+      {
+        "sha": "01d88b94a44bc85bf15c346c60e25336bf2f0d21",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 13:54:28 2026 \u002B0100",
+        "message": "fix!: pass the public members of a variant collection through a module\u0027s factory next to the handle of the internal variant service (#453)"
       }
     ],
     "labels": [
@@ -26692,7 +26766,8 @@ window.BENCHMARK_DATA = {
       "8f6fc011",
       "1f2dd297",
       "dc3ec857",
-      "a3e03104"
+      "a3e03104",
+      "01d88b94"
     ],
     "datasets": [
       {
@@ -27044,7 +27119,8 @@ window.BENCHMARK_DATA = {
           268.7091848373413,
           216.3019554535548,
           214.00994461377462,
-          304.4780270258586
+          304.4780270258586,
+          292.2314308166504
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27079,6 +27155,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27761,7 +27838,8 @@ window.BENCHMARK_DATA = {
           628.1399805886405,
           460.0785423687526,
           458.0163222789764,
-          479.9282199382782
+          479.9282199382782,
+          693.1580897649129
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27773,6 +27851,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28478,7 +28557,8 @@ window.BENCHMARK_DATA = {
           6596.507446543375,
           4857.840915425619,
           4929.094286600749,
-          5024.044424947103
+          5024.044424947103,
+          6613.568184443882
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28562,6 +28642,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -29195,7 +29276,8 @@ window.BENCHMARK_DATA = {
           422.04404945373534,
           332.94369614919026,
           343.6696006774902,
-          344.24076855977376
+          344.24076855977376,
+          423.65775464375815
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -29207,6 +29289,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29912,7 +29995,8 @@ window.BENCHMARK_DATA = {
           712.1413963953654,
           546.4219949086507,
           536.8448115666707,
-          557.6261625971113
+          557.6261625971113,
+          778.0527131398519
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29924,6 +30008,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
