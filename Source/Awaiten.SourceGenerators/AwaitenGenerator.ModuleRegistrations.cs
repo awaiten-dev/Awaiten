@@ -1230,8 +1230,9 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     AWT216 for <paramref name="implementation" />, which a container can name, registered under
 	///     <paramref name="service" />, which is or carries <paramref name="hiddenService" />, private to the module, so
-	///     no container can name the service. The module's build reports it for a singleton a container starts, a
-	///     container of the module's assembly for any lifetime (see <see cref="CollectLifetimeRegistrations" />).
+	///     only a container nested in the type that declares <paramref name="hiddenService" /> can name the service. The module's build reports it for a singleton a container
+	///     starts, a container of the module's assembly that cannot name the service for any lifetime (see
+	///     <see cref="CollectLifetimeRegistrations" />).
 	/// </summary>
 	private static DiagnosticInfo PrivateModuleService(INamedTypeSymbol implementation, INamedTypeSymbol service, INamedTypeSymbol hiddenService, Location? location)
 	{

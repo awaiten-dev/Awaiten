@@ -273,7 +273,8 @@ partial class AwaitenGenerator
 	///     the generic form. A <c>Factory</c> or <c>Instance</c> registration of an imported module in another assembly
 	///     whose service and member this container cannot reach, and which the module builds through no handle, is
 	///     dropped like a constructed one (see <see cref="SelfCompiledRegistration" />). A registration of a module in the
-	///     container's own assembly under a service private to the module is reported as AWT216 and dropped.
+	///     container's own assembly under a service private to the module that the container cannot name is reported as
+	///     AWT216 and dropped.
 	/// </summary>
 	private static void CollectLifetimeRegistrations(
 		LifetimeCollectionContext context,
@@ -388,11 +389,13 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			// The module's own assembly cannot name a service private to the module either, so the container reports the
-			// registration rather than emit code that names the service. A registered type private to the module is reported as AWT216 itself.
+			// A container that cannot name a service private to the module reports the registration rather than emit code that
+			// names the service. A registered type private to the module is reported as AWT216 itself.
 			if (fromModule && skipGeneratedScanRegistrations && !conflictingDirectives
 			    && service is INamedTypeSymbol named
 			    && TypeHiddenInModule(named, origin!, context.Compilation) is { } hiddenService
+			    && context.Container is { } container
+			    && !context.Compilation.IsSymbolAccessibleWithin(named, container)
 			    && !IsHiddenInModule(registration.Implementation, origin!, context.Compilation))
 			{
 				DiagnosticInfo diagnostic = PrivateModuleService(registration.Implementation, named, hiddenService, location);

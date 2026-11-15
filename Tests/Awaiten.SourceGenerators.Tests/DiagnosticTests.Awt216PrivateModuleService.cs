@@ -140,6 +140,58 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task SameAssembly_ContainerNestedBesideTheModule_NamesTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				public static partial class Outer
+				{
+					private interface IWarmer { }
+					internal sealed class Warmer : IWarmer { }
+
+					[Module]
+					[Singleton<Warmer, IWarmer>(Eager = true)]
+					public static partial class DataModule;
+
+					[Container]
+					[Import(typeof(DataModule))]
+					public static partial class SameContainer;
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a container nested in the class that declares the private service can name it");
+		}
+
+		[Test]
+		public async Task SameAssembly_ContainerNestedInTheModule_NamesTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				[Module]
+				[Singleton<DataModule.Warmer, DataModule.IWarmer>(Eager = true)]
+				public static partial class DataModule
+				{
+					private interface IWarmer { }
+					internal sealed class Warmer : IWarmer { }
+
+					[Container]
+					[Import(typeof(DataModule))]
+					public static partial class SameContainer;
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a container nested in the module can name a service private to the module");
+		}
+
+		[Test]
 		[Arguments(Eager)]
 		[Arguments(AsyncInitialized)]
 		[Arguments(KeyedEager)]
