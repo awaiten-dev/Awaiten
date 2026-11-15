@@ -2040,6 +2040,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
@@ -2382,7 +2388,8 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
@@ -2728,7 +2735,8 @@ window.BENCHMARK_DATA = {
           4.860039963076512,
           3.201268791158994,
           6.21166401853164,
-          6.180821465452512
+          6.180821465452512,
+          4.776268797261374
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2740,6 +2748,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3433,7 +3442,8 @@ window.BENCHMARK_DATA = {
           6.95814897865057,
           3.923768685864551,
           10.020161247679166,
-          10.376993904511133
+          10.376993904511133,
+          6.984609433015188
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3445,6 +3455,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4138,7 +4149,8 @@ window.BENCHMARK_DATA = {
           88.42695304552714,
           56.72980957371848,
           114.50940085252127,
-          115.90216409365335
+          115.90216409365335,
+          86.92117908171245
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4150,6 +4162,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4839,7 +4852,8 @@ window.BENCHMARK_DATA = {
           6.443626171847185,
           4.469610226842073,
           8.50270507360498,
-          8.591319015622139
+          8.591319015622139,
+          6.987176124254862
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4851,6 +4865,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5536,7 +5551,8 @@ window.BENCHMARK_DATA = {
           8.220005206763744,
           5.977495563881738,
           11.261467321560932,
-          10.897044329770974
+          10.897044329770974,
+          7.957722759590699
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5548,6 +5564,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7937,6 +7954,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
@@ -8279,7 +8302,8 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
@@ -8625,7 +8649,8 @@ window.BENCHMARK_DATA = {
           5.216453750928243,
           3.291904219488303,
           6.973292630452376,
-          6.957348134900842
+          6.957348134900842,
+          5.858759254217148
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8637,6 +8662,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9330,7 +9356,8 @@ window.BENCHMARK_DATA = {
           6.716735363006592,
           3.9192779724796614,
           8.7291562674301,
-          8.712620777579454
+          8.712620777579454,
+          6.4986580690512294
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9342,6 +9369,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10035,7 +10063,8 @@ window.BENCHMARK_DATA = {
           87.8477542479833,
           54.75116766874607,
           110.16743755340576,
-          112.7673612912496
+          112.7673612912496,
+          86.90341363350551
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10047,6 +10076,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10736,7 +10766,8 @@ window.BENCHMARK_DATA = {
           6.85277642806371,
           4.671618827680747,
           7.758266403124883,
-          9.085034889834267
+          9.085034889834267,
+          6.845354836434126
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10748,6 +10779,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11433,7 +11465,8 @@ window.BENCHMARK_DATA = {
           11.372998410463333,
           5.804354172945023,
           14.829002106189728,
-          14.766388502717017
+          14.766388502717017,
+          11.240085488983564
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11445,6 +11478,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13834,6 +13868,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
@@ -14176,7 +14216,8 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
@@ -14522,7 +14563,8 @@ window.BENCHMARK_DATA = {
           21.149382303158443,
           15.635852775971095,
           21.528445130586626,
-          12.174908942409925
+          12.174908942409925,
+          19.05229126214981
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14794,6 +14836,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15227,7 +15270,8 @@ window.BENCHMARK_DATA = {
           1469.2484045028687,
           1097.816152708871,
           1537.2213566643852,
-          811.2067292758396
+          811.2067292758396,
+          1234.154906463623
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15239,6 +15283,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -15932,7 +15977,8 @@ window.BENCHMARK_DATA = {
           30320.094319661457,
           17857.625376383465,
           29947.849357096355,
-          18718.950766427177
+          18718.950766427177,
+          18955.57728474935
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16283,7 +16329,8 @@ window.BENCHMARK_DATA = {
           32482,
           32474,
           32482,
-          32477
+          32477,
+          32474
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16633,7 +16680,8 @@ window.BENCHMARK_DATA = {
           774.0555228551228,
           568.6855466206869,
           760.291862487793,
-          404.1462012699672
+          404.1462012699672,
+          598.8708000183105
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16663,6 +16711,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17330,7 +17379,8 @@ window.BENCHMARK_DATA = {
           12113.944552103678,
           8189.433624267578,
           12942.883726501464,
-          6458.415947469076
+          6458.415947469076,
+          9330.768003336589
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17677,7 +17727,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19731,6 +19782,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
@@ -20073,7 +20130,8 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
@@ -20419,7 +20477,8 @@ window.BENCHMARK_DATA = {
           185.85317792892457,
           167.65236700375874,
           229.90483828953333,
-          76.88119270971843
+          76.88119270971843,
+          189.44310727119446
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20691,6 +20750,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21124,7 +21184,8 @@ window.BENCHMARK_DATA = {
           14472.360782078335,
           9344.578490121025,
           16250.187390136718,
-          7479.476569112142
+          7479.476569112142,
+          9870.238414219448
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21136,6 +21197,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21829,7 +21891,8 @@ window.BENCHMARK_DATA = {
           734399.8752790178,
           427608.122140067,
           755988.4709123884,
-          422382.4083426339
+          422382.4083426339,
+          451709.5766438802
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22180,7 +22243,8 @@ window.BENCHMARK_DATA = {
           741733,
           735366,
           738520,
-          735271
+          735271,
+          720432
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22530,7 +22594,8 @@ window.BENCHMARK_DATA = {
           43864.7286705604,
           30867.83323451451,
           47401.05213216146,
-          22903.65350811298
+          22903.65350811298,
+          34023.08697102864
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -22877,7 +22942,8 @@ window.BENCHMARK_DATA = {
           80302,
           79664,
           80082,
-          79667
+          79667,
+          80958
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23227,7 +23293,8 @@ window.BENCHMARK_DATA = {
           353100.46025390626,
           239819.74799804686,
           384538.38580729166,
-          181268.19709123884
+          181268.19709123884,
+          262129.21103515624
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23574,7 +23641,8 @@ window.BENCHMARK_DATA = {
           573059,
           571208,
           573090,
-          573085
+          573085,
+          571196
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25604,6 +25672,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Fri Nov 13 19:50:02 2026 \u002B0000",
         "message": "chore: Bump Microsoft.Testing.Extensions.TrxReport from 2.5.2 to 2.5.3 (#441)"
+      },
+      {
+        "sha": "8e36964632e25bfaf29e0f23d1d036ddcd5eecb7",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 07:58:11 2026 \u002B0100",
+        "message": "fix: describe an instance handle as holding an implementation (#448)"
       }
     ],
     "labels": [
@@ -25942,7 +26016,8 @@ window.BENCHMARK_DATA = {
       "95c9a72a",
       "a16eaedf",
       "99187c77",
-      "3de226e5"
+      "3de226e5",
+      "8e369646"
     ],
     "datasets": [
       {
@@ -26284,7 +26359,8 @@ window.BENCHMARK_DATA = {
           288.9003121852875,
           164.55925500392914,
           208.21065068244934,
-          207.6969141960144
+          207.6969141960144,
+          218.54078121980032
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26319,6 +26395,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -26981,7 +27058,8 @@ window.BENCHMARK_DATA = {
           460.3266388007573,
           374.71216102746814,
           447.3234804698399,
-          451.2680216789246
+          451.2680216789246,
+          462.35647120475767
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -26993,6 +27071,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27678,7 +27757,8 @@ window.BENCHMARK_DATA = {
           4894.100114695231,
           3347.54144014631,
           4666.524297860952,
-          4634.27742207845
+          4634.27742207845,
+          5114.196900503976
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -27762,6 +27842,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28375,7 +28456,8 @@ window.BENCHMARK_DATA = {
           342.1455665588379,
           239.6430368934359,
           331.0886113460247,
-          329.81409594217934
+          329.81409594217934,
+          345.55010681152345
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28387,6 +28469,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29072,7 +29155,8 @@ window.BENCHMARK_DATA = {
           542.7291932423909,
           371.0008008139474,
           546.8135286477896,
-          521.5203612872532
+          521.5203612872532,
+          567.230474618765
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29084,6 +29168,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
