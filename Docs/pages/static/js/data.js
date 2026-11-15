@@ -2112,6 +2112,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
         "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
+      },
+      {
+        "sha": "b2989a3fdd8ad6b7f74e5e778bcc5d45e7059905",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
+        "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
       }
     ],
     "labels": [
@@ -2466,7 +2472,8 @@ window.BENCHMARK_DATA = {
       "dc3ec857",
       "a3e03104",
       "01d88b94",
-      "7f28496a"
+      "7f28496a",
+      "b2989a3f"
     ],
     "datasets": [
       {
@@ -2824,7 +2831,8 @@ window.BENCHMARK_DATA = {
           4.8665497452020645,
           4.607786413530508,
           6.093704267271927,
-          6.45959644416968
+          6.45959644416968,
+          5.493897254977908
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2836,6 +2844,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3553,7 +3562,8 @@ window.BENCHMARK_DATA = {
           6.562765183930214,
           6.70681179372164,
           7.420413282513619,
-          7.381175364057223
+          7.381175364057223,
+          7.676724751408283
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3565,6 +3575,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4282,7 +4293,8 @@ window.BENCHMARK_DATA = {
           83.25525436951564,
           111.45567421913147,
           114.69360857350486,
-          116.61729702949523
+          116.61729702949523,
+          153.60318970680237
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4294,6 +4306,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5007,7 +5020,8 @@ window.BENCHMARK_DATA = {
           6.958725513021151,
           6.852937843402227,
           8.79134801030159,
-          8.560977884133656
+          8.560977884133656,
+          7.058628069857757
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5019,6 +5033,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5728,7 +5743,8 @@ window.BENCHMARK_DATA = {
           8.225537696055003,
           8.497764383043561,
           11.214144220948219,
-          10.695165998169355
+          10.695165998169355,
+          10.011832524091005
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5740,6 +5756,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8213,6 +8230,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
         "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
+      },
+      {
+        "sha": "b2989a3fdd8ad6b7f74e5e778bcc5d45e7059905",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
+        "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
       }
     ],
     "labels": [
@@ -8567,7 +8590,8 @@ window.BENCHMARK_DATA = {
       "dc3ec857",
       "a3e03104",
       "01d88b94",
-      "7f28496a"
+      "7f28496a",
+      "b2989a3f"
     ],
     "datasets": [
       {
@@ -8925,7 +8949,8 @@ window.BENCHMARK_DATA = {
           5.133004271735747,
           5.772331357995669,
           7.111666173736254,
-          7.446444692356246
+          7.446444692356246,
+          6.119948010891676
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8937,6 +8962,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9654,7 +9680,8 @@ window.BENCHMARK_DATA = {
           6.5658314436674114,
           6.7797162511519025,
           7.3016666024923325,
-          7.260914143174887
+          7.260914143174887,
+          7.735215707619985
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9666,6 +9693,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10383,7 +10411,8 @@ window.BENCHMARK_DATA = {
           82.37858533859253,
           90.15753780092511,
           115.12882250944773,
-          115.50207410653432
+          115.50207410653432,
+          149.07192371686298
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10395,6 +10424,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11108,7 +11138,8 @@ window.BENCHMARK_DATA = {
           7.134467657407125,
           6.711707663536072,
           8.808945283293724,
-          8.69056950722422
+          8.69056950722422,
+          7.1305940470525195
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11120,6 +11151,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11829,7 +11861,8 @@ window.BENCHMARK_DATA = {
           11.229386969254566,
           11.473200420183796,
           14.658022839824358,
-          14.414421653747558
+          14.414421653747558,
+          13.234943156441053
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11841,6 +11874,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14314,6 +14348,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
         "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
+      },
+      {
+        "sha": "b2989a3fdd8ad6b7f74e5e778bcc5d45e7059905",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
+        "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
       }
     ],
     "labels": [
@@ -14668,7 +14708,8 @@ window.BENCHMARK_DATA = {
       "dc3ec857",
       "a3e03104",
       "01d88b94",
-      "7f28496a"
+      "7f28496a",
+      "b2989a3f"
     ],
     "datasets": [
       {
@@ -15026,7 +15067,8 @@ window.BENCHMARK_DATA = {
           18.33202973008156,
           20.02487032688581,
           26.091725317637124,
-          28.964905460675556
+          28.964905460675556,
+          16.942977609237037
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15298,6 +15340,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15755,7 +15798,8 @@ window.BENCHMARK_DATA = {
           1283.8252174377442,
           1446.0559182848249,
           1744.8394143031194,
-          1428.8253724416097
+          1428.8253724416097,
+          1235.0869812284197
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15767,6 +15811,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16484,7 +16529,8 @@ window.BENCHMARK_DATA = {
           19590.879669189453,
           29914.16717936198,
           24527.711933680945,
-          19679.38916015625
+          19679.38916015625,
+          21158.49082438151
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16847,7 +16893,8 @@ window.BENCHMARK_DATA = {
           32474,
           32482,
           32476,
-          32474
+          32474,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17209,7 +17256,8 @@ window.BENCHMARK_DATA = {
           528.2075997034709,
           717.1185344696045,
           702.3361131032308,
-          558.6419350941976
+          558.6419350941976,
+          587.2011609395345
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17239,6 +17287,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17930,7 +17979,8 @@ window.BENCHMARK_DATA = {
           8623.416878836495,
           12071.343186442058,
           12632.519585745675,
-          9534.123675755092
+          9534.123675755092,
+          9429.258019002278
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18285,6 +18335,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -20415,6 +20466,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
         "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
+      },
+      {
+        "sha": "b2989a3fdd8ad6b7f74e5e778bcc5d45e7059905",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
+        "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
       }
     ],
     "labels": [
@@ -20769,7 +20826,8 @@ window.BENCHMARK_DATA = {
       "dc3ec857",
       "a3e03104",
       "01d88b94",
-      "7f28496a"
+      "7f28496a",
+      "b2989a3f"
     ],
     "datasets": [
       {
@@ -21127,7 +21185,8 @@ window.BENCHMARK_DATA = {
           195.91406992503576,
           193.98084578514099,
           231.84851010640463,
-          212.54042260987418
+          212.54042260987418,
+          181.63950233459474
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21399,6 +21458,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21856,7 +21916,8 @@ window.BENCHMARK_DATA = {
           10767.154841831752,
           14795.455138070243,
           14595.544774373373,
-          12413.500618489583
+          12413.500618489583,
+          10251.407950846355
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21868,6 +21929,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22585,7 +22647,8 @@ window.BENCHMARK_DATA = {
           455469.7250600961,
           727184.6685546875,
           580111.6348031851,
-          469993.2900390625
+          469993.2900390625,
+          498750.82163783483
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22948,7 +23011,8 @@ window.BENCHMARK_DATA = {
           741067,
           739888,
           735966,
-          737382
+          737382,
+          741732
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23310,7 +23374,8 @@ window.BENCHMARK_DATA = {
           31148.041365403395,
           44390.18093167819,
           44402.54018961589,
-          33226.94885253906
+          33226.94885253906,
+          32516.71357014974
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23669,7 +23734,8 @@ window.BENCHMARK_DATA = {
           80292,
           79600,
           79669,
-          79924
+          79924,
+          80293
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24031,7 +24097,8 @@ window.BENCHMARK_DATA = {
           256280.64750976564,
           366986.8137044271,
           364932.3745768229,
-          270459.9739583333
+          270459.9739583333,
+          278026.8831705729
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24390,7 +24457,8 @@ window.BENCHMARK_DATA = {
           571221,
           573105,
           572254,
-          571190
+          571190,
+          571206
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26492,6 +26560,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 13:54:56 2026 \u002B0100",
         "message": "fix!: report a module registration under a service private to the module instead of emitting code that names it (AWT216) (#454)"
+      },
+      {
+        "sha": "b2989a3fdd8ad6b7f74e5e778bcc5d45e7059905",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
+        "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
       }
     ],
     "labels": [
@@ -26842,7 +26916,8 @@ window.BENCHMARK_DATA = {
       "dc3ec857",
       "a3e03104",
       "01d88b94",
-      "7f28496a"
+      "7f28496a",
+      "b2989a3f"
     ],
     "datasets": [
       {
@@ -27196,7 +27271,8 @@ window.BENCHMARK_DATA = {
           214.00994461377462,
           304.4780270258586,
           292.2314308166504,
-          269.4216096242269
+          269.4216096242269,
+          301.0997473512377
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27231,6 +27307,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27917,7 +27994,8 @@ window.BENCHMARK_DATA = {
           458.0163222789764,
           479.9282199382782,
           693.1580897649129,
-          718.6849763576801
+          718.6849763576801,
+          723.7802462211022
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27929,6 +28007,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28638,7 +28717,8 @@ window.BENCHMARK_DATA = {
           4929.094286600749,
           5024.044424947103,
           6613.568184443882,
-          6547.482480367024
+          6547.482480367024,
+          6705.375603812082
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28722,6 +28802,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -29359,7 +29440,8 @@ window.BENCHMARK_DATA = {
           343.6696006774902,
           344.24076855977376,
           423.65775464375815,
-          414.79872903823855
+          414.79872903823855,
+          449.1674390939566
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -29371,6 +29453,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -30080,7 +30163,8 @@ window.BENCHMARK_DATA = {
           536.8448115666707,
           557.6261625971113,
           778.0527131398519,
-          723.7572080748422
+          723.7572080748422,
+          778.219951248169
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -30092,6 +30176,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
