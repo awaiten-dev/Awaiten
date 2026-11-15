@@ -498,8 +498,8 @@ internal static partial class Sources
 	}
 
 	/// <summary>
-	///     Emits the handle of a service the module registers under an internal type (see <see cref="HiddenHandle" />): a
-	///     public class another assembly can name but neither create nor unwrap, plus a sealed variant for each disposal
+	///     Emits the handle of a service the module registers under an internal type, or the instance handle of an
+	///     implementation it builds (see <see cref="HiddenHandle" />): a public class another assembly can name but neither create nor unwrap, plus a sealed variant for each disposal
 	///     shape an implementation of the service needs, which forwards disposal to the instance.
 	/// </summary>
 	private static void EmitHiddenHandle(StringBuilder builder, int depth, HiddenHandle handle, bool scan = false)
@@ -509,6 +509,12 @@ internal static partial class Sources
 			AppendXmlSummary(builder, depth,
 				"Generated from a module [Scan]: holds the instance of an implementation the module's scans expose under several",
 				"interfaces, so a consuming container in another assembly shares it without naming the implementation. Not intended to be used directly.");
+		}
+		else if (handle.Instance)
+		{
+			AppendXmlSummary(builder, depth,
+				"Generated from a module registration: holds the instance of an implementation the module builds, so a consuming",
+				"container in another assembly builds and shares it between its services without naming the implementation. Not intended to be used directly.");
 		}
 		else
 		{

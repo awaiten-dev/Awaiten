@@ -369,6 +369,33 @@ public class ModuleHiddenServiceTests
 			.Because("the declaring module emits the handle even when its own scan keeps it from building the implementation");
 	}
 
+	[Test]
+	public async Task InstanceHandle_IsDocumentedAsHoldingAnImplementation()
+	{
+		GeneratorResult result = RunLibrary("""
+			using Awaiten;
+
+			namespace Lib;
+
+			public interface IKettle { }
+			internal interface IHiddenKettle { }
+			public sealed class Kettle : IKettle, IHiddenKettle { }
+
+			[Module]
+			[Singleton<Kettle, IKettle>]
+			[Singleton<Kettle, IHiddenKettle>]
+			public static partial class KettleModule { }
+			""");
+		string module = ModuleSource(result);
+		string instanceHandle = module.Substring(0, module.IndexOf("public class HiddenInstance_Kettle_", StringComparison.Ordinal));
+		string serviceHandle = module.Substring(0, module.IndexOf("public class Hidden_IHiddenKettle_", StringComparison.Ordinal));
+
+		await That(instanceHandle.Substring(instanceHandle.LastIndexOf("<summary>", StringComparison.Ordinal))).Contains("holds the instance of an implementation the module builds")
+			.Because("the instance handle holds the implementation, not a service the module registers under an internal type");
+		await That(serviceHandle.Substring(serviceHandle.LastIndexOf("<summary>", StringComparison.Ordinal))).Contains("a service the module registers under an internal")
+			.Because("the handle of the internal service holds that service");
+	}
+
 	public class StartedSingletons
 	{
 		private static string Library(string registration, bool partial = true, bool grant = false) => $$"""

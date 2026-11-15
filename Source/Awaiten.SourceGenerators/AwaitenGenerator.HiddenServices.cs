@@ -1169,13 +1169,14 @@ partial class AwaitenGenerator
 				wrap || (constructed && traits is { Disposable: true, AsyncDisposable: false, }),
 				wrap || (constructed && traits is { Disposable: false, AsyncDisposable: true, }),
 				wrap || (constructed && traits is { Disposable: true, AsyncDisposable: true, }),
-				wrap));
+				wrap,
+				Instance: true));
 		}
 
 		foreach (HiddenImplementation producer in built.Where(candidate => candidate.Producer is not null))
 		{
 			bool wrap = producer.Production == ProductionKind.Factory;
-			handles.Add(new HiddenHandle(HiddenInstanceName(producer.Implementation, producer.Producer), InstanceValueType(producer.Implementation, compilation), wrap, wrap, wrap, wrap));
+			handles.Add(new HiddenHandle(HiddenInstanceName(producer.Implementation, producer.Producer), InstanceValueType(producer.Implementation, compilation), wrap, wrap, wrap, wrap, Instance: true));
 		}
 
 		return (factories, handles, aliases, initializers);
