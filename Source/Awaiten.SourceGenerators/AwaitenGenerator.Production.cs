@@ -1287,7 +1287,7 @@ partial class AwaitenGenerator
 				continue;
 			}
 
-			context.Names.Report(parameter.Type, parameter.ContainingSymbol.ContainingType ?? info.Symbol, "takes", info.Location);
+			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), parameter.ContainingSymbol.ContainingType ?? info.Symbol, info.Location);
 
 			// AWT189: a hook parameter cannot be a runtime [Arg]. Dropped so it contributes no (unresolvable) graph
 			// edge and no emitted argument; the error already fails the build.

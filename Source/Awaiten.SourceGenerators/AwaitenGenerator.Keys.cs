@@ -74,6 +74,28 @@ partial class AwaitenGenerator
 		return null;
 	}
 
+	/// <summary>
+	///     The type a key constant spells in the generated code: the enum of an enum constant or the operand of a
+	///     <c>typeof(...)</c>, else <see langword="null" />.
+	/// </summary>
+	private static ITypeSymbol? KeyType(TypedConstant constant)
+		=> constant.Kind switch
+		{
+			TypedConstantKind.Enum => constant.Type,
+			TypedConstantKind.Type => constant.Value as ITypeSymbol,
+			_ => null,
+		};
+
+	/// <summary>The <see cref="KeyType" /> of the <c>Key</c> named argument of <paramref name="attribute" />.</summary>
+	private static ITypeSymbol? NamedKeyType(AttributeData attribute)
+		=> attribute.NamedArguments.Where(argument => argument.Key == "Key").Select(argument => KeyType(argument.Value)).FirstOrDefault();
+
+	/// <summary>The <see cref="KeyType" /> of the <c>[FromKey]</c> among <paramref name="attributes" />.</summary>
+	private static ITypeSymbol? FromKeyType(ImmutableArray<AttributeData> attributes)
+		=> TryGetAwaitenAttribute(attributes, "FromKeyAttribute", out AttributeData? attribute) && attribute!.ConstructorArguments.Length == 1
+			? KeyType(attribute.ConstructorArguments[0])
+			: null;
+
 	// The simple member name of the enum constant with the given underlying value, or "" for a value with no named
 	// member (e.g. an unnamed flags combination). Included in the encoding so diagnostics and emission can render the
 	// user-written PaymentProvider.Stripe. Two aliased members with the same underlying value resolve to the first and

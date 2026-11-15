@@ -103,7 +103,7 @@ partial class AwaitenGenerator
 			}
 
 			ParameterModel parameterModel = ClassifyParameter(parameter, asyncFactory, context.External.ServiceTypes);
-			context.Names.Report(parameter.Type, producer.MethodKind == MethodKind.Constructor || producer.ContainingType.Name == InternalsClass ? info.Symbol : producer.ContainingType, "takes", info.Location);
+			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), producer.MethodKind == MethodKind.Constructor || producer.ContainingType.Name == InternalsClass ? info.Symbol : producer.ContainingType, info.Location);
 
 			ReportUnsupportedFromKey(parameter.GetAttributes(), parameterModel.Location ?? info.Location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
@@ -656,6 +656,7 @@ partial class AwaitenGenerator
 			if (ClassifyInjectedMember(property, info, context, spec) is { } member)
 			{
 				members.Add(member);
+				context.Names.ReportKey(entry.KeyType, info.Symbol, info.Location);
 			}
 		}
 	}
@@ -759,7 +760,7 @@ partial class AwaitenGenerator
 
 		ParameterModel dependency = ClassifyDependency(
 			property.Type, property.GetAttributes(), asyncFactory: false, location, externalServiceTypes);
-		context.Names.Report(property.Type, info.Symbol, "takes", info.Location);
+		context.Names.ReportDependency(property.Type, property.GetAttributes(), info.Symbol, info.Location);
 
 		// A container-side [InjectProperty<TImpl>] entry supplies its key directly (the property is a POCO member
 		// with no [FromKey]); an [Inject] property's key is already read from its [FromKey] above (KeyOverride null).
@@ -1597,7 +1598,7 @@ partial class AwaitenGenerator
 	///     <c>IExternalResolver</c>, forwarding any <c>[FromKey]</c> key. A <c>typeof</c> argument that is neither a
 	///     closed type nor an unbound generic definition is AWT215.
 	/// </summary>
-	private static ExternalServiceTypes CollectExternalServiceTypes(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics, AmbiguousTypeNames? names = null)
+	private static ExternalServiceTypes CollectExternalServiceTypes(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics, AmbiguousTypeNames? names)
 	{
 		ExternalServiceTypes types = new();
 		foreach ((AttributeData attribute, Location? fallbackLocation, bool inherited, INamedTypeSymbol? module) in AttributesOf(containerSymbol, modules))

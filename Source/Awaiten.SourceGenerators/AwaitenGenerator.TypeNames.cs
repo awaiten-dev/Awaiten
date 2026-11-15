@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Awaiten.SourceGenerators.Entities;
 using Awaiten.SourceGenerators.Internals;
 using Microsoft.CodeAnalysis;
@@ -28,26 +29,80 @@ partial class AwaitenGenerator
 
 		/// <summary>
 		///     Reports each type within <paramref name="type" /> (itself, its type arguments, element types and containing types) that
-		///     the generated code cannot name, as needed by <paramref name="needer" />, which <paramref name="verb" /> it.
+		///     the generated code cannot name, as needed by <paramref name="needer" />, which <paramref name="verb" /> it. A generated
+		///     <c>Internals</c> class stands for the type the user wrote it for.
 		/// </summary>
 		public void Report(ITypeSymbol type, ISymbol needer, string verb, LocationInfo? location)
+			=> ReportWithin(type, type, needer is INamedTypeSymbol { Name: InternalsClass, ContainingType: { } owner, } ? owner : needer, verb, location);
+
+		/// <summary>
+		///     Reports each top-level type definition <paramref name="part" /> of <paramref name="type" /> spells, which <c>global::</c>
+		///     looks up by its full name.
+		/// </summary>
+		private void ReportWithin(ITypeSymbol part, ITypeSymbol type, ISymbol needer, string verb, LocationInfo? location)
 		{
-			foreach (INamedTypeSymbol definition in OutermostDefinitions(type))
+			switch (part)
 			{
-				if (AssembliesDeclaring(definition) is { } assemblies && _reported.Add(definition))
-				{
-					_diagnostics.Add(new DiagnosticInfo(
-						Diagnostics.AmbiguousTypeName,
-						location,
-						new EquatableArray<string>([
-							Display(type.ToDisplayString(FullyQualified)),
-							Display(needer.ToDisplayString(FullyQualified)),
-							verb,
-							Enumerate(assemblies),
-							Display(definition.ToDisplayString(FullyQualified)),
-						])));
-				}
+				case IArrayTypeSymbol array:
+					ReportWithin(array.ElementType, type, needer, verb, location);
+					break;
+				case IPointerTypeSymbol pointer:
+					ReportWithin(pointer.PointedAtType, type, needer, verb, location);
+					break;
+				case INamedTypeSymbol named:
+					INamedTypeSymbol outermost = named;
+					while (outermost.ContainingType is { } containing)
+					{
+						outermost = containing;
+					}
+
+					ReportDefinition(outermost.OriginalDefinition, type, needer, verb, location);
+					for (INamedTypeSymbol? current = named; current is not null; current = current.ContainingType)
+					{
+						foreach (ITypeSymbol argument in current.TypeArguments)
+						{
+							ReportWithin(argument, type, needer, verb, location);
+						}
+					}
+
+					break;
 			}
+		}
+
+		private void ReportDefinition(INamedTypeSymbol definition, ITypeSymbol type, ISymbol needer, string verb, LocationInfo? location)
+		{
+			if (AssembliesDeclaring(definition) is { } assemblies && _reported.Add(definition))
+			{
+				_diagnostics.Add(new DiagnosticInfo(
+					Diagnostics.AmbiguousTypeName,
+					location,
+					new EquatableArray<string>([
+						Display(type.ToDisplayString(FullyQualified)),
+						Display(needer.ToDisplayString(FullyQualified)),
+						verb,
+						Enumerate(assemblies),
+						Display(definition.ToDisplayString(FullyQualified)),
+					])));
+			}
+		}
+
+		/// <summary>
+		///     Reports the type a key spells in the generated code, an enum or the operand of a <c>typeof(...)</c> (see
+		///     <see cref="KeyType" />), as used by <paramref name="needer" />.
+		/// </summary>
+		public void ReportKey(ITypeSymbol? keyType, ISymbol needer, LocationInfo? location)
+		{
+			if (keyType is not null)
+			{
+				Report(keyType, needer, "uses as a key", location);
+			}
+		}
+
+		/// <summary>Reports a dependency of <paramref name="type" /> that <paramref name="needer" /> takes, and the key of its <c>[FromKey]</c>.</summary>
+		public void ReportDependency(ITypeSymbol type, ImmutableArray<AttributeData> attributes, ISymbol needer, LocationInfo? location)
+		{
+			Report(type, needer, "takes", location);
+			ReportKey(FromKeyType(attributes), needer, location);
 		}
 
 		/// <summary>
@@ -105,38 +160,10 @@ partial class AwaitenGenerator
 			return resolved;
 		}
 
-		/// <summary>The top-level type definitions <paramref name="type" /> spells, each of which <c>global::</c> looks up by its full name.</summary>
-		private static IEnumerable<INamedTypeSymbol> OutermostDefinitions(ITypeSymbol type)
-		{
-			switch (type)
-			{
-				case IArrayTypeSymbol array:
-					return OutermostDefinitions(array.ElementType);
-				case IPointerTypeSymbol pointer:
-					return OutermostDefinitions(pointer.PointedAtType);
-				case INamedTypeSymbol named:
-					List<INamedTypeSymbol> definitions = new();
-					INamedTypeSymbol outermost = named;
-					for (INamedTypeSymbol? current = named; current is not null; current = current.ContainingType)
-					{
-						outermost = current;
-						foreach (ITypeSymbol argument in current.TypeArguments)
-						{
-							definitions.AddRange(OutermostDefinitions(argument));
-						}
-					}
-
-					definitions.Insert(0, outermost.OriginalDefinition);
-					return definitions;
-				default:
-					return [];
-			}
-		}
-
 		/// <summary>
-		///     Reports the service of each registration in <paramref name="raw" /> that joins the graph, which the container names in
-		///     its resolvers, as declared by the container or module the registration comes from. A default another registration
-		///     replaces never joins it.
+		///     Reports the service and the key of each registration in <paramref name="raw" /> that joins the graph, which the container
+		///     names in its resolvers and keyed dispatch, as declared by the container or module the registration comes from. A default
+		///     another registration replaces never joins it.
 		/// </summary>
 		public void ReportServices(List<RawRegistration> raw, Dictionary<ServiceKey, List<string>> serviceMembers, INamedTypeSymbol containerSymbol)
 		{
@@ -147,7 +174,10 @@ partial class AwaitenGenerator
 				    && serviceMembers.TryGetValue(key, out List<string>? members)
 				    && members.Contains(registration.ImplementationType))
 				{
-					Report(service, registration.Declarer ?? registration.Origin ?? containerSymbol, "registers", LocationInfo.From(registration.Location));
+					ISymbol declarer = registration.Declarer ?? registration.Origin ?? containerSymbol;
+					LocationInfo? location = LocationInfo.From(registration.Location);
+					Report(service, declarer, "registers", location);
+					ReportKey(registration.KeyType, declarer, location);
 				}
 			}
 		}

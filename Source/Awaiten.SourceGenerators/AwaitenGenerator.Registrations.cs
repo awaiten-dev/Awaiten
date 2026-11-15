@@ -36,7 +36,8 @@ namespace Awaiten.SourceGenerators;
 ///     handle takes when it is the first registration that survives coalescing. <c>Declarer</c> is the container or module
 ///     that declares a registration whose <c>Origin</c> became the module whose generated factory or alias it calls (see
 ///     <c>ShareGeneratedRegistrationFactories</c> and <c>ShareHandleWithRegistrations</c>), which AWT155 and AWT167 judge
-///     it by and its lifecycle hooks bind on.
+///     it by and its lifecycle hooks bind on. <c>KeyType</c> is the type the <c>Key</c> spells in the generated code, an enum or the
+///     operand of a <c>typeof</c>, which AWT260 checks.
 /// </summary>
 /// <remarks>
 ///     <see cref="Location" /> is the live Roslyn location (with its syntax tree), not an equatable
@@ -81,7 +82,8 @@ internal sealed record RawRegistration(
 	RawRegistration? Aliased = null,
 	INamedTypeSymbol? Declarer = null,
 	IReadOnlyList<string>? ConsumerOwned = null,
-	DecoratorPredicate? EagerWhen = null);
+	DecoratorPredicate? EagerWhen = null,
+	ITypeSymbol? KeyType = null);
 
 /// <summary>
 ///     An imported module: its symbol and the location of the container's <c>[Import]</c> attribute that

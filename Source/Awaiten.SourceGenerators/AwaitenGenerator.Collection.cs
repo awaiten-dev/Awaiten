@@ -380,7 +380,8 @@ partial class AwaitenGenerator
 				SuppressDisposal: NamedFlag(attribute, "SuppressDisposal"),
 				WhenInjectedInto: whenInjectedInto,
 				ConsumerOwned: NamedTypeArrayArgument(attribute, "ConsumerOwned"),
-				EagerWhen: eagerWhen);
+				EagerWhen: eagerWhen,
+				KeyType: NamedKeyType(attribute));
 
 			if (fromModule && !conflictingDirectives && !skipGeneratedScanRegistrations
 			    && ThroughHandle(registration, context.Compilation, implicitHandles, context.Imports ?? []) is { } handled)
@@ -1930,9 +1931,10 @@ partial class AwaitenGenerator
 	///     implementation to fill, plus the same per-property flags an <c>[Inject]</c> attribute carries. The
 	///     container-side counterpart of an <c>[Inject]</c> property, matched to a registration by its
 	///     implementation type (see <see cref="CollectInjectProperties" />). <see cref="Inherited" /> marks an entry of
-	///     an extended base (see <see cref="InheritInjectProperties" />).
+	///     an extended base (see <see cref="InheritInjectProperties" />). <see cref="KeyType" /> is the type the
+	///     <see cref="Key" /> spells in the generated code (see <see cref="AwaitenGenerator.KeyType(TypedConstant)" />).
 	/// </summary>
-	private sealed record InjectPropertyEntry(string PropertyName, bool Optional, bool Deferred, string? Key, LocationInfo? Location, bool Inherited = false);
+	private sealed record InjectPropertyEntry(string PropertyName, bool Optional, bool Deferred, string? Key, LocationInfo? Location, bool Inherited = false, ITypeSymbol? KeyType = null);
 
 	/// <summary>
 	///     Reads the container's <c>[InjectProperty&lt;TImplementation&gt;(name)]</c> and
@@ -1983,7 +1985,8 @@ partial class AwaitenGenerator
 				NamedFlag(attribute, "Optional"),
 				NamedFlag(attribute, "Deferred"),
 				NamedKeyArgument(attribute),
-				location));
+				location,
+				KeyType: NamedKeyType(attribute)));
 		}
 
 		return map;

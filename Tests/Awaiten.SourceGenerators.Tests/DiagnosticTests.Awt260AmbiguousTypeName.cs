@@ -65,8 +65,8 @@ public partial class DiagnosticTests
 			}
 			""";
 
-		private static string Expected(string module, string verb = "registers", string type = "Lib.Clock", string line = "6")
-			=> $"({line},2): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of the types";
+		private static string Expected(string module, string verb = "registers", string type = "Lib.Clock", string line = "6", string column = "2")
+			=> $"({line},{column}): error AWT260: The generated container cannot name '{type}', which '{module}' {verb}, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of the types";
 
 		private static GeneratorResult Run(Setup setup, string first, string second, string consumer)
 		{
@@ -160,6 +160,140 @@ public partial class DiagnosticTests
 
 			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.Service", verb: "takes", type: "System.Collections.Generic.IEnumerable<Lib.Clock>"))
 				.Because("the container builds the empty collection as an array of the clock's type");
+		}
+
+		[Test]
+		[Arguments("public enum Clock { Fast }", "Lib.Clock.Fast", "Lib.Clock")]
+		[Arguments("public sealed class Clock { }", "typeof(Lib.Clock)", "Lib.Clock")]
+		[Arguments("public sealed class Clock { }", "typeof(System.Collections.Generic.List<Lib.Clock>)", "System.Collections.Generic.List<Lib.Clock>")]
+		public async Task ARegistrationKey_IsReportedForTheModuleThatUsesIt(string clock, string key, string type)
+		{
+			string first = Library("First", clock, $"[Singleton<Service>(Key = {key})]", "public sealed class Service { }");
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", clock, registrations: ""), ImportFirst);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule", verb: "uses as a key", type: type))
+				.Because("the container's keyed dispatch spells the key, and so its type, in the generated code");
+		}
+
+		[Test]
+		[Arguments("public enum Clock { Fast }", "Lib.Clock.Fast")]
+		[Arguments("public sealed class Clock { }", "typeof(Lib.Clock)")]
+		public async Task AKeyOfADependencyImportedFromTheHost_IsReportedForTheTypeThatTakesIt(string clock, string key)
+		{
+			string first = Library(
+				"First",
+				clock,
+				"[Singleton<Consumer>]",
+				$"public sealed class Service {{ }} public sealed class Consumer {{ public Consumer([FromKey({key})] Service service) {{ }} }}");
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", clock, registrations: ""), ImportFirst.Replace("[Container]", "[Container]\n[ImportService<First.Service>]"));
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.Consumer", verb: "uses as a key", line: "7"))
+				.Because("the container forwards the key to its host when it asks for the service");
+		}
+
+		[Test]
+		public async Task AKeyOfAnOpenGenericRegistration_IsReportedForTheModuleThatUsesIt()
+		{
+			string first = Library(
+				"First",
+				"public enum Clock { Fast }",
+				"[Singleton(typeof(Holder<>), typeof(IHolder<>), Key = Lib.Clock.Fast)]",
+				"public interface IHolder<T> { } public sealed class Holder<T> : IHolder<T> { } public sealed class Service { public Service([FromKey(Lib.Clock.Fast)] IHolder<string> holder) { } } [Module] [Singleton<Service>] public static partial class ServiceModule { }");
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", "public enum Clock { Fast }", registrations: ""), ImportFirst.Replace("[Import(typeof(First.ClockModule))]", "[Import(typeof(First.ClockModule))]\n[Import(typeof(First.ServiceModule))]"));
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.ClockModule", verb: "uses as a key"))
+				.Because("each closing of the open registration keeps its key, which the keyed dispatch spells");
+		}
+
+		[Test]
+		public async Task AKeyOfAPropertyEntryOfAnExtendedContainer_IsReportedForTheTypeWhosePropertyItIs()
+		{
+			string first = Library(
+				"First",
+				"public enum Clock { Fast }",
+				registrations: "",
+				types: "public sealed class Service { } public sealed class Consumer { public Service? Service { get; set; } } [Container] [ImportService<Service>] [Singleton<Consumer>] [InjectProperty<Consumer>(nameof(Consumer.Service), Key = Lib.Clock.Fast)] public static partial class BaseShop;");
+			const string consumer = """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container(Extends = typeof(First.BaseShop))]
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", "public enum Clock { Fast }", registrations: ""), consumer);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.Consumer", verb: "uses as a key", line: "5", column: "12"))
+				.Because("the container forwards the entry's key to its host when it asks for the property's service");
+		}
+
+		[Test]
+		[Arguments(
+			"public sealed class Clock : First.IService { public Clock(First.IService inner) { } }",
+			"[Singleton<Service, IService>] [Decorate<Lib.Clock, IService>]",
+			"public interface IService { } public sealed class Service : IService { }",
+			"Lib.Clock", "First.ClockModule", "registers")]
+		[Arguments(
+			"public sealed class Clock : First.IService { public Clock(System.Collections.Generic.IEnumerable<First.IService> services) { } }",
+			"[Singleton<Service, IService>] [Composite<Lib.Clock, IService>]",
+			"public interface IService { } public sealed class Service : IService { }",
+			"Lib.Clock", "First.ClockModule", "registers")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[Singleton(typeof(Holder<>), typeof(IHolder<>))] [Singleton<Service>]",
+			"public interface IHolder<T> { } public sealed class Holder<T> : IHolder<T> { } public sealed class Service { public Service(IHolder<Lib.Clock> holder) { } }",
+			"First.IHolder<Lib.Clock>", "First.ClockModule", "registers")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[Transient<Service>]",
+			"public sealed class Service { public Service([Arg] Lib.Clock clock) { } }",
+			"Lib.Clock", "First.Service", "takes")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[Singleton<Service>(OnActivated = nameof(Activate))]",
+			"public sealed class Service { } public static partial class ClockModule { internal static void Activate(Service service, Lib.Clock clock) { } }",
+			"Lib.Clock", "First.ClockModule", "takes")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[AsyncInitializer<IWarmUp>(nameof(IWarmUp.WarmUpAsync))] [Singleton<Service>]",
+			"public interface IWarmUp { System.Threading.Tasks.Task WarmUpAsync(Lib.Clock clock); } public sealed class Service : IWarmUp { public System.Threading.Tasks.Task WarmUpAsync(Lib.Clock clock) => System.Threading.Tasks.Task.CompletedTask; }",
+			"Lib.Clock", "First.IWarmUp", "takes")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[Singleton<Service, IService>] [Decorate<Decorator, IService>(When = nameof(Audit))]",
+			"public interface IService { } public sealed class Service : IService { } public sealed class Decorator : IService { public Decorator(IService inner) { } } public static partial class ClockModule { internal static bool Audit(Lib.Clock clock) => true; }",
+			"Lib.Clock", "First.ClockModule", "takes")]
+		public async Task AFeatureThatNamesTheType_ReportsIt(string clock, string registrations, string types, string type, string needer, string verb)
+		{
+			string first = Library("First", clock, registrations, types);
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", registrations: ""), ImportFirst.Replace("[Container]", "[Container]\n[ImportServices]"));
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected(needer, verb: verb, type: type, line: "7"))
+				.Because("decorators, composites, open generic closings, runtime arguments, hooks, async initializers and decorator predicates each make the container spell the type, here of a clock it asks its host for");
+		}
+
+		[Test]
+		public async Task AnExtendedContainerOfAnotherAssembly_IsReportedForTheBaseContainer()
+		{
+			string first = Library("First", registrations: "", types: "[Container] [Singleton<Lib.Clock>] public static partial class BaseShop;");
+			const string consumer = """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container(Extends = typeof(First.BaseShop))]
+				public static partial class MyContainer;
+				""";
+
+			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", registrations: ""), consumer);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected("First.BaseShop", line: "5", column: "12"))
+				.Because("the extending container builds the base container's registrations itself");
 		}
 
 		[Test]

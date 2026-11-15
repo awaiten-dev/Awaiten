@@ -260,7 +260,7 @@ partial class AwaitenGenerator
 		foreach (IParameterSymbol parameter in method.Parameters)
 		{
 			ParameterModel model = ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes);
-			context.Names.Report(parameter.Type, method.ContainingType, "takes", attributeLocation);
+			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), method.ContainingType, attributeLocation);
 			model = model with { Location = model.Location ?? attributeLocation, };
 			if (ReportMisplacedInherited(parameter, attributeLocation, context.Diagnostics))
 			{
