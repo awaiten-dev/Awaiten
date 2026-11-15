@@ -5200,7 +5200,7 @@ When the decorator's assembly grants the container nothing either, the container
 A collection that an imported module of another assembly takes through the handles of an internal variant service holds a public variant service that a container in the module's assembly would put after those handles.
 :::
 
-A collection of a variant interface with a public element type, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, can hold an internal service of the module's assembly through variance, such as `IHandler<IAudited>`. The module's [generated member](./05-registration/08-modules/02-library-module-rules.md#how-a-dependent-may-take-it) then takes the collection of the element type from the container and the handles of the internal service, and passes the public members first. A container in the module's assembly holds the exact members first and then the variance members, ordered by the first registration of their service. Registrations without `Fallback` come before [overridable defaults](./05-registration/08-modules/index.md#overridable-defaults), open generic closings and scan matches, and within each group the container's own registrations come before those of its imports, in import order. A public variant service that the container or another imported module registers, such as `IHandler<object>`, would come after the internal service there whenever its first registration follows the module's first registration of the internal service in that order. The container in another assembly can only pass it before the handles, so it reports this error at the `[Import]` of the module that registers the service, or at the container's registration, naming the type that takes the collection. A variant service whose first registration comes first builds the same order and isn't reported.
+<ApplyFix id="AWT265">
 
 ```csharp no-compile
 // In the library CoffeeShop.Orders, which grants the application nothing:
@@ -5230,6 +5230,39 @@ public static partial class TracingModule;
 [Import(typeof(TracingModule))]   // TraceHandler would come before AuditHandler here
 public static partial class CoffeeShop;
 ```
+
+```csharp no-compile
+// In the library CoffeeShop.Orders, which grants the application nothing:
+internal interface IAudited;
+public class Order : IAudited;
+public sealed class OrderHandler : IHandler<Order>;
+internal sealed class AuditHandler : IHandler<IAudited>;
+internal sealed class OrderLog(IEnumerable<IHandler<Order>> handlers) : IOrderLog;
+
+[Module]
+[Singleton<OrderHandler, IHandler<Order>>]
+[Singleton<AuditHandler, IHandler<IAudited>>]
+[Singleton<OrderLog, IOrderLog>]
+public static partial class OrdersModule;
+
+// In the library CoffeeShop.Tracing:
+public sealed class TraceHandler : IHandler<object>;
+
+[Module]
+[Singleton<TraceHandler, IHandler<object>>]
+public static partial class TracingModule;
+
+// In the application:
+[Container]
+// highlight-next-line
+[Import(typeof(TracingModule))]   // imported first, so TraceHandler comes first in every assembly
+[Import(typeof(OrdersModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
+A collection of a variant interface with a public element type, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, can hold an internal service of the module's assembly through variance, such as `IHandler<IAudited>`. The module's [generated member](./05-registration/08-modules/02-library-module-rules.md#how-a-dependent-may-take-it) then takes the collection of the element type from the container and the handles of the internal service, and passes the public members first. A container in the module's assembly holds the exact members first and then the variance members, ordered by the first registration of their service. Registrations without `Fallback` come before [overridable defaults](./05-registration/08-modules/index.md#overridable-defaults), open generic closings and scan matches, and within each group the container's own registrations come before those of its imports, in import order. A public variant service that the container or another imported module registers, such as `IHandler<object>`, would come after the internal service there whenever its first registration follows the module's first registration of the internal service in that order. The container in another assembly can only pass it before the handles, so it reports this error at the `[Import]` of the module that registers the service, or at the container's registration, naming the type that takes the collection. A variant service whose first registration comes first builds the same order and isn't reported.
 
 **Fix:** Register the implementation under the collection's element type instead, such as `IHandler<Order>`, so the collection holds it among the exact members, which lead in every assembly. Or import its module ahead of the module that takes the collection, or register it on the container without `Fallback`, so its first registration comes first. The message offers the import only when it reorders the registration: a module registration with `Fallback` still follows the module's registration without one.
 
