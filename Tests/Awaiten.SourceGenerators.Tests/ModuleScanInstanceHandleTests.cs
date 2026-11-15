@@ -206,7 +206,7 @@ public class ModuleScanInstanceHandleTests
 			Consumer.Replace("public static partial class MyContainer;", "[InjectProperty<Roaster>(nameof(Roaster.Backup))]\npublic static partial class MyContainer;"));
 
 		await That(result.Diagnostics).IsEmpty();
-		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains("*Internals.Alias_Roaster_*(__instance).Backup = __value0;*").AsWildcard()
+		await That(result.Sources["Awaiten.MyCode.MyContainer.g.cs"]).Contains(@"Internals\.Alias_Roaster_\w+\(__instance\)\.Backup = __value0;").AsRegex()
 			.Because("the container sets the entry through the scan's alias on the instance the scan handle built");
 	}
 

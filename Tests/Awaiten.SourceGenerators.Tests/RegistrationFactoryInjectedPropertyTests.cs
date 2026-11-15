@@ -152,7 +152,7 @@ public class RegistrationFactoryInjectedPropertyTests
 			Containers containers = RunEverywhere(Module, clock: true);
 
 			await That(containers.AllDiagnostics).IsEmpty();
-			await That(ContainerSource(containers.Other, "AppContainer")).Contains("Registration_Greeter_*(*, true)").AsWildcard()
+			await That(ContainerSource(containers.Other, "AppContainer")).Contains(@"Registration_Greeter_\w+\([^\r\n]*, true\)").AsRegex()
 				.Because("the consumer resolves the registered clock and marks it present");
 		}
 

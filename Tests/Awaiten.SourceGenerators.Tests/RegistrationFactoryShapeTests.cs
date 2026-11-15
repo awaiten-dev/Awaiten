@@ -1854,7 +1854,7 @@ public class RegistrationFactoryShapeTests
 			await That(result.Diagnostics).IsEmpty();
 			string source = result.Sources.Single(source => source.Key.Contains("TestShop")).Value;
 			await That(source).Contains("await global::Lib.Shop.Internals.Factory_CreateClockAsync_*(cancellationToken)").AsWildcard();
-			await That(source).Contains("await global::Lib.Shop.Internals.Hook_OnActivated_Grinder_*(*, cancellationToken)").AsWildcard();
+			await That(source).Contains(@"await global::Lib\.Shop\.Internals\.Hook_OnActivated_Grinder_\w+\([^\r\n]*, cancellationToken\)").AsRegex();
 		}
 
 		[Test]
@@ -1950,7 +1950,7 @@ public class RegistrationFactoryShapeTests
 
 			await That(result.Diagnostics).IsEmpty();
 			string source = result.Sources.Single(source => source.Key.Contains("TestShop")).Value;
-			await That(source).Contains("await global::Lib.Shop.Internals.Hook_OnActivated_Greeter_*(*, cancellationToken)").AsWildcard();
+			await That(source).Contains(@"await global::Lib\.Shop\.Internals\.Hook_OnActivated_Greeter_\w+\([^\r\n]*, cancellationToken\)").AsRegex();
 			await That(source).Contains("global::Lib.Shop.Internals.Decorator_LoudGreeter_").AsWildcard();
 		}
 
@@ -1990,7 +1990,7 @@ public class RegistrationFactoryShapeTests
 			await That(baseResult.Diagnostics).IsEmpty();
 			await That(result.Diagnostics).IsEmpty();
 			string source = result.Sources.Single(source => source.Key.Contains("TestShop")).Value;
-			await That(source).Contains("await global::Lib.Shop.Internals.Hook_OnActivated_Greeter_*(*, cancellationToken)").AsWildcard();
+			await That(source).Contains(@"await global::Lib\.Shop\.Internals\.Hook_OnActivated_Greeter_\w+\([^\r\n]*, cancellationToken\)").AsRegex();
 			await That(source).Contains("global::Lib.Shop.Internals.Composite_AllGreeters_").AsWildcard();
 		}
 
@@ -2022,7 +2022,7 @@ public class RegistrationFactoryShapeTests
 
 			await That(result.Diagnostics).IsEmpty();
 			string source = result.Sources.Single(source => source.Key.Contains("AppContainer")).Value;
-			await That(source).Contains("await global::Lib.GreetingModule.Internals.Hook_OnActivated_Greeter_*(*, cancellationToken)").AsWildcard();
+			await That(source).Contains(@"await global::Lib\.GreetingModule\.Internals\.Hook_OnActivated_Greeter_\w+\([^\r\n]*, cancellationToken\)").AsRegex();
 			await That(source).Contains("global::Lib.GreetingModule.Internals.Decorator_LoudGreeter_").AsWildcard();
 		}
 	}

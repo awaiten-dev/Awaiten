@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Awaiten.SourceGenerators.Tests;
 
@@ -269,16 +270,16 @@ public class CrossContainerAgreementTests
 			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, consumer);
 			GeneratorResult friend = Generator.RunWithGeneratedReferencedAssembly(Friend(library), consumer);
 
-			await That(Generator.Run(library).Sources.Values).Contains("*HiddenRegistration_Greeter_*").AsWildcard()
+			await That(Generator.Run(library).Sources.Values).Contains(source => source.Contains("HiddenRegistration_Greeter_"))
 				.Because("the modules build the implementation into a shared instance handle");
 			await That(same.Diagnostics).IsEmpty();
 			await That(ContainerSource(same, "MyContainer")).Contains("Backup = ");
 			await That(external.Diagnostics).IsEmpty()
 				.Because("the container sets the entry on the instance the handle built, as a container of the module's own assembly sets it while constructing the implementation");
-			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard()
+			await That(ContainerSource(external, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex()
 				.Because("the container reaches the implementation through the module's alias that returns it from the handle");
 			await That(reference.Diagnostics).IsEmpty();
-			await That(ContainerSource(reference, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(reference, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 			await That(friend.Diagnostics).IsEmpty()
 				.Because("a friend constructs the implementation itself and fills the entry");
 			await That(ContainerSource(friend, "MyContainer")).Contains("Backup = ");
@@ -297,7 +298,7 @@ public class CrossContainerAgreementTests
 			GeneratorResult external = Generator.RunWithGeneratedReferencedAssembly(library, Consumer);
 			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, Consumer);
 
-			await That(Generator.Run(library).Sources.Values).Contains("*HiddenRegistration_Greeter_*(global::Lib.IClock @Clock) => new *(new global::Lib.Greeter() { Clock = @Clock });*").AsWildcard()
+			await That(Generator.Run(library).Sources.Values).Contains(source => Regex.IsMatch(source, @"HiddenRegistration_Greeter_\w+\(global::Lib\.IClock @Clock\) => new [^\r\n]*\(new global::Lib\.Greeter\(\) \{ Clock = @Clock \}\);"))
 				.Because("the factory of the handle sets the internal property on the instance it builds");
 			await That(external.Diagnostics).IsEmpty();
 			await That(reference.Diagnostics).IsEmpty();
@@ -338,9 +339,9 @@ public class CrossContainerAgreementTests
 				.Because("only the module that declares something internal builds the implementation into an instance handle, which the other registration shares through an alias");
 			await That(external.Diagnostics).IsEmpty()
 				.Because("the container sets the entry through the alias on the instance the handle built, which the other registration shares");
-			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(external, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 			await That(reference.Diagnostics).IsEmpty();
-			await That(ContainerSource(reference, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(reference, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 		}
 
 		[Test]
@@ -394,9 +395,9 @@ public class CrossContainerAgreementTests
 			await That(ContainerSource(same, "MyContainer")).Contains("Backup = ");
 			await That(external.Diagnostics).IsEmpty()
 				.Because("the entry of the definition reaches the closing the handle builds, which the container sets through the module's alias");
-			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Brew_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(external, "MyContainer")).Contains(@"Internals\.Alias_Brew_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 			await That(reference.Diagnostics).IsEmpty();
-			await That(ContainerSource(reference, "MyContainer")).Contains("*Internals.Alias_Brew_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(reference, "MyContainer")).Contains(@"Internals\.Alias_Brew_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 		}
 
 		[Test]
@@ -441,10 +442,10 @@ public class CrossContainerAgreementTests
 				.Because("the module's scan builds the match it exposes under two services into an instance handle, which the container's registration shares through an alias");
 			await That(external.Diagnostics).IsEmpty()
 				.Because("the container sets the entry through the scan's alias on the instance the scan handle built");
-			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(external, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 			GeneratorResult reference = Generator.RunWithGeneratedReferenceAssembly(library, consumer);
 			await That(reference.Diagnostics).IsEmpty();
-			await That(ContainerSource(reference, "MyContainer")).Contains("*Internals.Alias_Greeter_*(__instance).Backup = __value0;*").AsWildcard();
+			await That(ContainerSource(reference, "MyContainer")).Contains(@"Internals\.Alias_Greeter_\w+\(__instance\)\.Backup = __value0;").AsRegex();
 		}
 
 		[Test]
@@ -833,7 +834,7 @@ public class CrossContainerAgreementTests
 			await That(Generator.RunWithGeneratedReferencedAssembly(Granting(Library), Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
 			await That(external.Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
 			await That(Generator.RunWithGeneratedReferenceAssembly(Library, Consumer(entry)).Diagnostics).HasSingle().Which.Contains("*AWT181*'Clock'*").AsWildcard();
-			await That(ContainerSource(external, "MyContainer")).Contains("*Internals.Alias_Greeter_*Spare = *").AsWildcard();
+			await That(ContainerSource(external, "MyContainer")).Contains(@"Internals\.Alias_Greeter_[^\r\n]*Spare = ").AsRegex();
 		}
 
 		[Test]

@@ -74,7 +74,7 @@ public class InjectedPropertyVarianceTests
 
 	[Test]
 	[Arguments("public sealed class", "Handler = ")]
-	[Arguments("internal sealed class", "Registration_OrderConsumer_*(*, true)")]
+	[Arguments("internal sealed class", @"Registration_OrderConsumer_\w+\(\w+\(\w+\), true\)")]
 	public async Task AnOptionalProperty_IsFilledByAVariantRegistrationEverywhere(string type, string otherFill)
 	{
 		string library = Library("[Inject(Optional = true)] public IHandler<OrderPlaced> Handler { get; set; }", type);
@@ -86,7 +86,7 @@ public class InjectedPropertyVarianceTests
 		await That(other.Diagnostics).IsEmpty();
 		await That(same.Sources.Single(source => source.Key.Contains("LibContainer")).Value).Contains("Handler = ")
 			.Because("a variant registration is not a missing one, so the optional property is filled rather than left at its default");
-		await That(other.Sources.Single(source => source.Key.Contains("AppContainer")).Value).Contains(otherFill).AsWildcard()
+		await That(other.Sources.Single(source => source.Key.Contains("AppContainer")).Value).Contains(otherFill).AsRegex()
 			.Because("a container in another assembly fills the property, or marks it present for the module's factory, alike");
 	}
 

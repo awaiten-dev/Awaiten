@@ -14,12 +14,14 @@ public sealed partial class LoweredModuleMemberErrorTests
 
 		await That(container.Resolve<LoweredMemberBarista>().Clock).IsNotNull()
 			.Because("the graph that does not need the left out registrations is wired");
+#pragma warning disable CA2263 // the test covers the Type-based overload
 		await That(() => container.Resolve(typeof(ILoweredMemberRepository<LoweredMemberBarista>))).Throws<InvalidOperationException>()
 			.WithMessage("*No registration*").AsWildcard()
 			.Because("the open registration whose generic member is private is left out");
 		await That(() => container.Resolve(typeof(ILoweredMemberGrinder))).Throws<InvalidOperationException>()
 			.WithMessage("*No registration*").AsWildcard()
 			.Because("the closed registration whose member takes a ref parameter is left out");
+#pragma warning restore CA2263
 	}
 
 	public interface ILoweredMemberRepository<T>;

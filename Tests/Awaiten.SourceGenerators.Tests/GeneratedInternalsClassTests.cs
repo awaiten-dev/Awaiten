@@ -72,7 +72,7 @@ public class GeneratedInternalsClassTests
 			""");
 
 		await That(result.Diagnostics).IsEmpty();
-		await That(result.Sources["Awaiten.MyCode.Shop.g.cs"]).Contains("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]*internal static class Internals*{*internal static global::MyCode.IGrinder Registration_Grinder_*() => new global::MyCode.Shop.Grinder();").AsWildcard()
+		await That(result.Sources["Awaiten.MyCode.Shop.g.cs"]).Contains(@"\[global::System\.ComponentModel\.EditorBrowsable\(global::System\.ComponentModel\.EditorBrowsableState\.Never\)\]\s*internal static class Internals\s*\{[^}]*internal static global::MyCode\.IGrinder Registration_Grinder_\w+\(\) => new global::MyCode\.Shop\.Grinder\(\);").AsRegex()
 			.Because("an extending container reaches an internal class through InternalsVisibleTo, and a public one would add an empty type to a public container's API");
 		await That(result.Sources["Awaiten.MyCode.TestShop.g.cs"]).Contains("global::MyCode.Shop.Internals.Registration_Grinder_");
 	}
