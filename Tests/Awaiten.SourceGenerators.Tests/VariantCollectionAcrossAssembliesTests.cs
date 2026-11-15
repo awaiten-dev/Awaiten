@@ -465,6 +465,55 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
+		public async Task APublicVariantServiceOfAScan_IsReportedInTheModulesBuild()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: """
+				[Singleton<DerivedHandler, IHandler<Derived>>]
+				[Singleton<SecretHandler, IHandler<ISecret>>]
+				[Scan<IHandler<object>>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton)]
+				[Singleton<OtherDerivedHandler, IHandler<Derived>>]
+				"""));
+
+			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>' as 'System.Collections.Generic.IEnumerable<Lib.IHandler<Lib.Derived>>'*").AsWildcard()
+				.Because("the scan registers the public 'ObjectHandler' as 'IHandler<object>', which a container of the module's assembly orders among the internal variant service by registration");
+		}
+
+		[Test]
+		public async Task AScanOfTheExactService_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: """
+				[Singleton<DerivedHandler, IHandler<Derived>>]
+				[Singleton<SecretHandler, IHandler<ISecret>>]
+				[Scan<IHandler<Derived>>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton, NamePatterns = new[] { "OtherDerivedHandler", })]
+				"""));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the scan registers a public handler under the exact service only, which the public collection holds");
+		}
+
+		[Test]
+		public async Task APublicVariantServiceOfAnOpenGenericRegistration_IsReportedInTheModulesBuild()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton(typeof(AnyHandler<>), typeof(IHandler<>))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class AnyHandler<T> : IHandler<T> { }"));
+
+			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>'*").AsWildcard()
+				.Because("the open generic registration may close to a public service the collection holds through variance");
+		}
+
+		[Test]
+		public async Task AnImplementationAScanRegistersUnderTheExactService_IsReportedInTheModulesBuild()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: """
+				[Singleton<PublicBothHandler, IHandler<ISecret>>]
+				[Scan<IHandler<Derived>>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton, NamePatterns = new[] { "PublicBothHandler", })]
+				""").Replace("public interface IBrew { }", "public interface IBrew { } public sealed class PublicBothHandler : IHandler<Derived>, IHandler<ISecret> { }"));
+
+			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>'*").AsWildcard()
+				.Because("the scan registers 'PublicBothHandler' under the exact service, so the public members and the handles would hold its one instance twice");
+		}
+
+		[Test]
 		public async Task AParameterNamedLikeThePublicCollection_KeepsTheGeneratedNameApart()
 		{
 			string library = Library().Replace(
