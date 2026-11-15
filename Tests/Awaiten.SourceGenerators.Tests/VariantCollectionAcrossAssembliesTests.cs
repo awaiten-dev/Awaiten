@@ -410,6 +410,45 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
+		public async Task ADeferredProperty_IsSetWithThePublicMembersBeforeTheHandles()
+		{
+			string library = Library().Replace(
+				"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+				"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } [Inject(Deferred = true)] public IEnumerable<IHandler<Derived>> Late { get; set; } = null!; }");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+			GeneratorResult own = Generator.Run(OwnAssembly(library));
+
+			await That(module.Diagnostics).IsEmpty();
+			await That(Module(module)).Contains("_Late(global::Lib.IReader @awaiten__instance, global::System.Collections.Generic.IEnumerable<global::Lib.IHandler<global::Lib.Derived>> @awaiten__exact_Late, global::System.Collections.Generic.IEnumerable<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(result.Diagnostics).IsEmpty();
+			await That(Container(result)).Contains("_Late(__s._iReader, new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_")
+				.Because("the container calls the setter with the public handlers it registers before the handle of the internal one, which the setter concatenates as the module's own assembly orders them");
+			await That(own.Diagnostics).IsEmpty();
+			await That(Container(own)).Contains(".Late = new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveSecretHandler(__s.__root) };");
+		}
+
+		[Test]
+		public async Task AnAsyncInitializer_TakesThePublicMembersBeforeTheHandles()
+		{
+			string library = Library()
+				.Replace("internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+					"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } internal System.Threading.Tasks.Task StartAsync(IEnumerable<IHandler<Derived>> seen) => System.Threading.Tasks.Task.CompletedTask; }")
+				.Replace("[Module]", "[Module]\n[AsyncInitializer<Reader>(nameof(Reader.StartAsync))]");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+
+			await That(module.Diagnostics).IsEmpty();
+			await That(Module(module)).Contains("global::System.Collections.Generic.IEnumerable<global::Lib.IHandler<global::Lib.Derived>> @awaiten__exact_seen, global::System.Collections.Generic.IEnumerable<global::Lib.BrewModule.Internals.Hidden_IHandler_")
+				.Because("the initializer's wrapper takes the public members before the handles, like the factory");
+			await That(result.Diagnostics).IsEmpty();
+			await That(Container(result)).Contains("new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_").Exactly(3)
+				.Because("the container passes the public members and the handles to the initializer, the factory and the decorator");
+		}
+
+		[Test]
 		public async Task AHookParameter_TakesThePublicMembersBeforeTheHandles()
 		{
 			string library = Library()
@@ -448,6 +487,75 @@ public class VariantCollectionAcrossAssembliesTests
 			await That(Module(module)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
 			await That(result.Diagnostics).IsEmpty();
 			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_");
+		}
+
+		[Test]
+		public async Task AKeyedInternalVariantServiceNextToAPublicVariantService_KeepsThePublicCollection()
+		{
+			string library = Library(registrations: """
+				[Singleton<DerivedHandler, IHandler<Derived>>]
+				[Singleton<SecretHandler, IHandler<ISecret>>(Key = "k")]
+				[Singleton<ObjectHandler, IHandler<object>>]
+				""");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+			GeneratorResult own = Generator.Run(OwnAssembly(library));
+
+			await That(module.Diagnostics).IsEmpty()
+				.Because("the keyed internal registration never joins the unkeyed collection, so the collection holds only public services");
+			await That(result.Diagnostics).IsEmpty();
+			await That(Container(result)).Contains("Registration_Reader_").And.Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveObjectHandler(__s.__root) })");
+			await That(own.Diagnostics).IsEmpty();
+			await That(Container(own)).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveObjectHandler(__s.__root) })");
+		}
+
+		[Test]
+		public async Task AKeyedInternalVariantServiceNextToAnotherInternalVariantService_TakesTheHandlesOfTheUnkeyedOne()
+		{
+			string library = Library(registrations: """
+				[Singleton<DerivedHandler, IHandler<Derived>>]
+				[Singleton<SecretHandler, IHandler<ISecret>>(Key = "k")]
+				[Singleton<OtherHandler, IHandler<IOther>>]
+				""").Replace("public class Derived : ISecret { }", "internal interface IOther { } public class Derived : ISecret, IOther { } internal sealed class OtherHandler : IHandler<IOther> { }");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+			GeneratorResult own = Generator.Run(OwnAssembly(library));
+
+			await That(module.Diagnostics).IsEmpty()
+				.Because("the keyed internal registration never joins the unkeyed collection, so it holds the variant registrations of one internal service");
+			await That(Module(module)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, global::System.Collections.Generic.IEnumerable<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(result.Diagnostics).IsEmpty();
+			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(own.Diagnostics).IsEmpty();
+			await That(Container(own)).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherHandler(__s.__root) })");
+		}
+
+		[Test]
+		public async Task APublicVariantServiceOfAnotherLibrary_GoesBeforeTheInternalOneOnlyInAnotherAssembly()
+		{
+			const string shared = "namespace Lib; public interface IHandler<in T> { }";
+			const string other = """
+				using Awaiten;
+				namespace Ext;
+				public sealed class AnyHandler : Lib.IHandler<object> { }
+				[Module]
+				[Singleton<AnyHandler, Lib.IHandler<object>>]
+				public static partial class AnyModule { }
+				""";
+			string library = Library().Replace("public interface IHandler<in T> { }", "");
+			string imports = "[Import(typeof(Lib.BrewModule))]\n[Import(typeof(Ext.AnyModule))]";
+
+			GeneratorResult own = Generator.RunWithGeneratedReferencedAssemblyChain([shared, other,], library + "\n[Container]\n" + imports + "\npublic static partial class OwnContainer { }");
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([shared, other, library,], App.Replace("[Import(typeof(Lib.BrewModule))]", imports));
+
+			await That(own.Diagnostics).IsEmpty();
+			await That(result.Diagnostics).IsEmpty();
+			await That(own.Sources["Awaiten.Lib.OwnContainer.g.cs"]).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveSecretHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) })")
+				.Because("a container of the module's assembly orders the variant members by registration, and it imports the module first");
+			await That(Container(result)).Contains("Registration_Reader_").And.Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_")
+				.Because("a container of another assembly passes every public member, the variant one of another library included, before the handles of the internal one");
 		}
 
 		[Test]

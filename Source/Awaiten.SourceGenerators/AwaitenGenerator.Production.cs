@@ -251,20 +251,34 @@ partial class AwaitenGenerator
 		string closing = producer.IsGenericMethod ? $"<{string.Join(", ", producer.TypeArguments.Select(argument => argument.ToDisplayString(FullyQualified)))}>" : string.Empty;
 		foreach (IMethodSymbol setter in DeferredSetters(producer))
 		{
-			ParameterModel dependency = RedirectVariance(
-				RedirectContextualBinding(ClassifyParameter(setter.Parameters[1], asyncFactory: false, context.External.ServiceTypes), info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation),
-				setter.Parameters[1].Type, context.ServiceToImpl, context.Variance);
-			RecordRequestedCollectionElement(dependency, setter.Parameters[1].Type, context.Variance);
-			if (setter.Parameters[1].HasExplicitDefaultValue && IsMissingOptional(dependency, setter.Parameters[1].Type, context.ServiceToImpl, context.External.ServiceTypes))
+			IParameterSymbol service = setter.Parameters[setter.Parameters.Length - 1];
+			ParameterModel dependency = Classify(service);
+			if (service.HasExplicitDefaultValue && IsMissingOptional(dependency, service.Type, context.ServiceToImpl, context.External.ServiceTypes))
 			{
 				continue;
 			}
 
-			ReportWhenUnregistered(dependency, setter.Parameters[1].Type, info, context);
-			members.Add(new MemberModel(setter.Name.Substring(prefix.Length), dependency, Deferred: true, $"{producer.ContainingType.ToDisplayString(FullyQualified)}.{setter.Name}{closing}"));
+			string name = setter.Name.Substring(prefix.Length);
+			string call = $"{producer.ContainingType.ToDisplayString(FullyQualified)}.{setter.Name}{closing}";
+			if (setter.Parameters.Length == 3)
+			{
+				members.Add(new MemberModel(name, Classify(setter.Parameters[1]), Deferred: true, call, Leading: true));
+			}
+
+			ReportWhenUnregistered(dependency, service.Type, info, context);
+			members.Add(new MemberModel(name, dependency, Deferred: true, call));
 		}
 
 		return members;
+
+		ParameterModel Classify(IParameterSymbol parameter)
+		{
+			ParameterModel dependency = RedirectVariance(
+				RedirectContextualBinding(ClassifyParameter(parameter, asyncFactory: false, context.External.ServiceTypes), info, context.ServiceToImpl, context.ConsumedConditionals, context.Compilation),
+				parameter.Type, context.ServiceToImpl, context.Variance);
+			RecordRequestedCollectionElement(dependency, parameter.Type, context.Variance);
+			return dependency;
+		}
 	}
 
 	/// <summary>
@@ -337,7 +351,8 @@ partial class AwaitenGenerator
 	/// <summary>
 	///     The setter wrappers next to the generated factory <paramref name="factory" /> (see <see cref="DeferredSetterName" />),
 	///     or none for any other method. A wrapper next to a generic factory is generic too, so it is constructed with the
-	///     factory's type arguments.
+	///     factory's type arguments. A wrapper of a collection that holds an internal service through variance takes the
+	///     public collection before the handles (see <see cref="FactoryParameter.Exact" />).
 	/// </summary>
 	private static IEnumerable<IMethodSymbol> DeferredSetters(IMethodSymbol factory)
 	{
@@ -348,7 +363,7 @@ partial class AwaitenGenerator
 
 		string prefix = DeferredSetterName(factory.Name, string.Empty);
 		return factory.ContainingType.GetMembers().OfType<IMethodSymbol>()
-			.Where(method => method is { IsStatic: true, Parameters.Length: 2, } && method.Arity == factory.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal))
+			.Where(method => method is { IsStatic: true, Parameters.Length: 2 or 3, } && method.Arity == factory.Arity && method.Name.StartsWith(prefix, StringComparison.Ordinal))
 			.Select(method => factory.IsGenericMethod ? method.Construct(factory.TypeArguments.ToArray()) : method);
 	}
 

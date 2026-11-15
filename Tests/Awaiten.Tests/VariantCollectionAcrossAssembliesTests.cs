@@ -28,6 +28,28 @@ public class VariantCollectionAcrossAssembliesTests
 		await That(container.Resolve<IVariantCollectionReader>().Handlers).IsEqualTo(["first", "second", "secret", "first", "second", "secret",])
 			.Because("the registration and its decorator receive the public handlers of the event in registration order and then the internal handler through contravariance, as in the module's own assembly");
 	}
+
+	[Test]
+	public async Task AnotherAssembly_SetsTheDeferredPropertyWithThePublicMembersBeforeTheVariantRegistration()
+	{
+		await using LateVariantCollectionContainer.Root container = new();
+
+		ILateVariantCollectionReader reader = await container.ResolveAsync<ILateVariantCollectionReader>();
+
+		await That(reader.Late).IsEqualTo(["first", "second", "secret",])
+			.Because("the deferred property holds the public handlers in registration order and then the internal handler through contravariance, as in the module's own assembly");
+		await That(reader.Initialized).IsEqualTo(["first", "second", "secret",])
+			.Because("the async initializer receives the same collection as the property");
+	}
+
+	[Test]
+	public async Task AnotherAssembly_PassesThePublicMembersBeforeTheCovariantRegistration()
+	{
+		using CovariantCollectionContainer.Root container = new();
+
+		await That(container.Resolve<IProducerVariantCollectionReader>().Producers).IsEqualTo(["first", "second", "secret",])
+			.Because("the collection holds the public producers in registration order and then the internal producer through covariance, as in the module's own assembly");
+	}
 }
 
 [Container]
@@ -37,3 +59,11 @@ public static partial class VariantCollectionContainer;
 [Container]
 [Import(typeof(CrossAssemblyPublicVariantCollectionModule))]
 public static partial class PublicVariantCollectionContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyLateVariantCollectionModule))]
+public static partial class LateVariantCollectionContainer;
+
+[Container]
+[Import(typeof(CrossAssemblyCovariantCollectionModule))]
+public static partial class CovariantCollectionContainer;
