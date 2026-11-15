@@ -298,6 +298,7 @@ The container treats the internal service like one it constructs itself:
 
 - For a factory with runtime arguments, the container passes a factory of the handle with the same arguments, and builds the internal service from them like any service with `[Arg]` parameters.
 - An unkeyed collection of a variant interface holds a registration of a service that converts to its element type, as in the library's own assembly: a collection of `IHandler<Order>` for a contravariant `IHandler<in T>` takes the handle of `IHandler<Message>` when a module of the library registers only that one.
+- When the element type is public, a container in another assembly puts every public member first, the exact ones and then the variant ones, each in registration order, and the members of the internal service last. That includes a public variant service that a module of another library or the container registers, such as `IHandler<object>`. A container in the library's own assembly orders all variant members by registration instead, so it puts such a service after the internal one when it imports the library's module first.
 
 ### One instance per implementation
 
