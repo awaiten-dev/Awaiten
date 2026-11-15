@@ -273,6 +273,11 @@ partial class AwaitenGenerator
 
 			ReportWhenUnregistered(dependency, service.Type, info, context);
 			context.Names.ReportOwner(producer.ContainingType);
+			foreach (IParameterSymbol parameter in setter.Parameters.Skip(1))
+			{
+				context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), info.Symbol, info.Location);
+			}
+
 			members.Add(new MemberModel(name, dependency, Deferred: true, call));
 		}
 

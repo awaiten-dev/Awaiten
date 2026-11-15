@@ -267,6 +267,11 @@ public partial class DiagnosticTests
 			"[Singleton<Service, IService>] [Decorate<Decorator, IService>(When = nameof(Audit))]",
 			"public interface IService { } public sealed class Service : IService { } public sealed class Decorator : IService { public Decorator(IService inner) { } } public static partial class ClockModule { internal static bool Audit(Lib.Clock clock) => true; }",
 			"Lib.Clock", "First.ClockModule", "takes")]
+		[Arguments(
+			"public sealed class Clock { }",
+			"[Singleton<Service>]",
+			"public sealed class Service { internal Service() { } [Inject(Deferred = true)] public System.Collections.Generic.IEnumerable<Lib.Clock> Clock { get; set; } = null!; }",
+			"System.Collections.Generic.IEnumerable<Lib.Clock>", "First.Service", "takes")]
 		public async Task AFeatureThatNamesTheType_ReportsIt(string clock, string registrations, string types, string type, string needer, string verb)
 		{
 			string first = Library("First", clock, registrations, types);
@@ -274,7 +279,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = Run(Setup.ImplementationAssembly, first, Library("Second", registrations: ""), ImportFirst.Replace("[Container]", "[Container]\n[ImportServices]"));
 
 			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected(needer, verb: verb, type: type, line: "7"))
-				.Because("decorators, composites, open generic closings, runtime arguments, hooks, async initializers and decorator predicates each make the container spell the type, here of a clock it asks its host for");
+				.Because("decorators, composites, open generic closings, runtime arguments, hooks, async initializers, decorator predicates and deferred setters each make the container spell the type, here of a clock it asks its host for");
 		}
 
 		[Test]
