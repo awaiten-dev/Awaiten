@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<Description>Microsoft.Extensions.DependencyInjection interop for Awaiten.</Description>
+		<PackageReadmeSourceFile>$(MSBuildProjectDirectory)/README.md</PackageReadmeSourceFile>
 	</PropertyGroup>
 
 	<ItemGroup>
