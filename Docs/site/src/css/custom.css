@@ -1,4 +1,10 @@
+@import '@fontsource-variable/recursive/full.css';
+
 :root {
+  --ifm-font-family-base: 'Recursive Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+  --ifm-font-family-monospace: 'Recursive Variable', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --ifm-heading-font-weight: 800;
   --ifm-color-primary: #0e6e6e;
   --ifm-color-primary-dark: #0d6363;
   --ifm-color-primary-darker: #0c5e5e;
@@ -18,6 +24,19 @@
   --ifm-color-primary-lighter: #5cc3bc;
   --ifm-color-primary-lightest: #79cdc8;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Recursive switches between sans, casual and mono through its MONO and CASL axes, and a font-variation-settings value replaces rather than merges, so each role lists both. */
+body {
+  font-variation-settings: 'MONO' 0, 'CASL' 0;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-variation-settings: 'MONO' 0, 'CASL' 1;
+  letter-spacing: -0.02em;
+}
+code, pre, kbd, samp {
+  font-variation-settings: 'MONO' 1, 'CASL' 1;
+  letter-spacing: normal;
 }
 
 .docs-doc-id-benchmarks article,
