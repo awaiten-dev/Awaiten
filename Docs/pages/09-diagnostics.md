@@ -177,6 +177,7 @@ Every reported id with its default severity.
 | [AWT257](#awt257) | Error | Collection misses a registration served through a handle |
 | [AWT258](#awt258) | Error | Collection imported from the external resolver |
 | [AWT259](#awt259) | Error | Relationship type registered as a service |
+| [AWT260](#awt260) | Error | Type the container cannot name |
 | [AWT261](#awt261) | Error | Consumer cannot own what its Func builds |
 | [AWT262](#awt262) | Warning | `ConsumerOwned` entry never applies |
 | [AWT263](#awt263) | Error | `Eager` and `EagerWhen` on one registration |
@@ -6059,7 +6060,7 @@ It is reported at the `[ImportService]`, for the `typeof` form and an unbound co
 
 ## Project setup
 
-This checks that the project can compile the code Awaiten generates.
+These check that the project can compile the code Awaiten generates.
 
 ### AWT243: Language version too old for the generated code \{#awt243\}
 
@@ -6085,6 +6086,42 @@ A container, and a module that generates code, needs C# 9 or later; a module tha
 ```
 
 On .NET Framework and netstandard2.0 without a polyfill, only code in the same project from C# 11 learns that the `out` instance of `TryResolve` is not null when it returns `true`. For that annotation in other assemblies or below C# 11, add a polyfill such as the `Nullable` package or PolySharp.
+
+### AWT260: Type the container cannot name \{#awt260\}
+
+:::danger[Error]
+The container needs a type that its generated code can't name, because another assembly the project references, or the project itself, declares a type of the same full name that the project can access, a namespace of that name, or a type named like one of its namespaces.
+:::
+
+C# names such a type only through an `extern alias`, which Awaiten can't add to your project, so the generated code wouldn't compile. A namespace `Timing.Timer` gets in the way of the type `Timing.Timer` whatever types it holds, and so does a type `Timing` the project can access. A type the project declares itself wins over a referenced one of the same name, so a container in that project can name its own type but not the other one, and its generated code gets the same CS0436 warning as your own code that names it, which fails the build under `TreatWarningsAsErrors`. A key counts too: the generated code spells the enum of a key such as `Key = Timing.Speed.Fast` and the type of a `typeof` key wherever it dispatches by the key or passes it to the host. So do the type of an `[AsyncInitializer<T>]`, and an imported module or extended base container whose handle, factory, hook or predicate the generated code calls. The container reports each such type once, at the `[Import]` of the module that registers, takes, imports, uses it as a key or declares it as an async initializer, at the `Extends` of an inherited one, or at the registration, and names the assemblies that declare the type or namespace in the way. Types of the same name that the container never needs, or that are internal to another assembly the project has no `InternalsVisibleTo` for, aren't reported.
+
+```csharp no-compile
+// In the library CoffeeShop.Brewing:
+namespace Timing { public sealed class Timer; }
+
+[Module]
+[Singleton<Timing.Timer>]
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Grinding, which declares Timing.Timer too:
+[Module]
+[Singleton<Timing.Timer>]
+public static partial class GrindingModule;
+
+// In the application, which references both libraries:
+[Container]
+[Import(typeof(BrewingModule))]    // AWT260 for the Timer of CoffeeShop.Brewing
+[Import(typeof(GrindingModule))]   // AWT260 for the Timer of CoffeeShop.Grinding
+public static partial class CoffeeShop;
+```
+
+**Fix:** Rename one of the types or namespaces, or keep the container in a project that references only one of the assemblies that declare it. When the project itself declares one of them, only the rename helps. When nothing the container needs lives in one of the assemblies, not even a module it imports, give that reference an alias in the project file instead, with `Aliases` on the `ProjectReference` or `PackageReference`, so the generated code names only the other assembly's type:
+
+```xml
+<ProjectReference Include="..\CoffeeShop.Grinding\CoffeeShop.Grinding.csproj" Aliases="Grinding" />
+```
+
+The alias doesn't help when the container needs a type of the aliased assembly or imports a module from it, even through the alias: the generated code names everything through `global::`, which doesn't reach the aliased assembly, so it can't name that type or module.
 
 ## Generator bugs
 

@@ -524,7 +524,7 @@ partial class AwaitenGenerator
 			{
 				ImmutableArray<AttributeData> attributes = entry.Key.GetAttributes();
 				return HasAwaitenAttribute(attributes, "ImportServicesAttribute")
-				       || CollectExternalServiceTypes(entry.Key, new List<ImportedModule>(), _compilation, new List<DiagnosticInfo>()).Routes(serviceType)
+				       || CollectExternalServiceTypes(entry.Key, new List<ImportedModule>(), _compilation, new List<DiagnosticInfo>(), null).Routes(serviceType)
 				       || entry.Value.Any(registration => NamedKeyArgument(registration.Attribute) == key
 				                                          && (registration.Service.ToDisplayString(FullyQualified) == serviceType
 				                                              || (variant is not null && VarianceCompatible(registration.Service, variant, _compilation))));

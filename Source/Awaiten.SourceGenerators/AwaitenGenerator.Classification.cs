@@ -64,6 +64,8 @@ partial class AwaitenGenerator
 	{
 		List<ParameterModel> parameters = new();
 		int firstProperty = IsGeneratedOwnerFactory(producer) ? FirstPropertyOrdinal(producer) : int.MaxValue;
+		bool mirrorsConstructor = producer.MethodKind == MethodKind.Constructor || producer.ContainingType.Name == InternalsClass;
+		ISymbol needer = mirrorsConstructor ? info.Symbol : producer.ContainingType;
 		foreach (IParameterSymbol parameter in producer.Parameters)
 		{
 			// A [RequestingType] parameter of a Factory method is filled at each construction site with the
@@ -103,6 +105,7 @@ partial class AwaitenGenerator
 			}
 
 			ParameterModel parameterModel = ClassifyParameter(parameter, asyncFactory, context.External.ServiceTypes);
+			context.Names.ReportDependency(parameter.Type, parameter.GetAttributes(), needer, info.Location);
 
 			ReportUnsupportedFromKey(parameter.GetAttributes(), parameterModel.Location ?? info.Location, DisplayInstance(info.ImplementationType), context.Diagnostics);
 
@@ -559,7 +562,8 @@ partial class AwaitenGenerator
 		List<(string ServiceType, INamedTypeSymbol Symbol)> DispatchCandidates,
 		VarianceState Variance,
 		List<DiagnosticInfo> Diagnostics,
-		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations);
+		Dictionary<ServiceKey, (string Module, string Reason)> SkippedModuleRegistrations,
+		AmbiguousTypeNames Names);
 
 	/// <summary>
 	///     The per-property injection flags: how the member is assigned (<see cref="Deferred" />), whether a missing
@@ -654,6 +658,7 @@ partial class AwaitenGenerator
 			if (ClassifyInjectedMember(property, info, context, spec) is { } member)
 			{
 				members.Add(member);
+				context.Names.ReportKey(entry.KeyType, info.Symbol, info.Location);
 			}
 		}
 	}
@@ -757,6 +762,7 @@ partial class AwaitenGenerator
 
 		ParameterModel dependency = ClassifyDependency(
 			property.Type, property.GetAttributes(), asyncFactory: false, location, externalServiceTypes);
+		context.Names.ReportDependency(property.Type, property.GetAttributes(), info.Symbol, info.Location);
 
 		// A container-side [InjectProperty<TImpl>] entry supplies its key directly (the property is a POCO member
 		// with no [FromKey]); an [Inject] property's key is already read from its [FromKey] above (KeyOverride null).
@@ -1594,7 +1600,7 @@ partial class AwaitenGenerator
 	///     <c>IExternalResolver</c>, forwarding any <c>[FromKey]</c> key. A <c>typeof</c> argument that is neither a
 	///     closed type nor an unbound generic definition is AWT215.
 	/// </summary>
-	private static ExternalServiceTypes CollectExternalServiceTypes(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics)
+	private static ExternalServiceTypes CollectExternalServiceTypes(INamedTypeSymbol containerSymbol, List<ImportedModule> modules, Compilation compilation, List<DiagnosticInfo> diagnostics, AmbiguousTypeNames? names)
 	{
 		ExternalServiceTypes types = new();
 		foreach ((AttributeData attribute, Location? fallbackLocation, bool inherited, INamedTypeSymbol? module) in AttributesOf(containerSymbol, modules))
@@ -1626,6 +1632,11 @@ partial class AwaitenGenerator
 				}
 
 				continue;
+			}
+
+			if (service is not null)
+			{
+				names?.Report(service, module ?? containerSymbol, "imports", LocationInfo.From(attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? fallbackLocation));
 			}
 
 			if (attributeClass is { IsGenericType: true, TypeArguments.Length: 1, })

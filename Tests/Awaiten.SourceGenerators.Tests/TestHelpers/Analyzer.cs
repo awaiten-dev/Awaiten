@@ -45,7 +45,7 @@ public static class Analyzer
 		where TAnalyzer : DiagnosticAnalyzer, new()
 	{
 		(Compilation referenced, _) = Generator.RunGenerator(referencedSource, [], [], "ReferencedAssembly");
-		return Run<TAnalyzer>(source, [referenced.ToMetadataReference(),], []);
+		return Run<TAnalyzer>(source, [Generator.ToCompilationReference(referenced),], []);
 	}
 
 	/// <summary>

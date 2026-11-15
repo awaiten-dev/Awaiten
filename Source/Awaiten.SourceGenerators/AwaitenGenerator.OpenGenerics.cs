@@ -171,6 +171,7 @@ partial class AwaitenGenerator
 			OnRelease = NamedArgument(attribute, "OnRelease"),
 			SuppressDisposal = NamedFlag(attribute, "SuppressDisposal"),
 			ConsumerOwned = NamedTypeArrayArgument(attribute, "ConsumerOwned"),
+			KeyType = NamedKeyType(attribute),
 			Inheritance = context.Inherited ? context.Inheritance : null,
 		});
 
@@ -864,7 +865,8 @@ partial class AwaitenGenerator
 			OnActivatedMarkers: candidate.OnActivated is null ? null : markers,
 			OnReleaseMarkers: candidate.OnRelease is null ? null : markers,
 			GenericFactory: candidate.Factory is not null,
-			ConsumerOwned: candidate.ConsumerOwned);
+			ConsumerOwned: candidate.ConsumerOwned,
+			KeyType: candidate.KeyType);
 	}
 
 	/// <summary>
@@ -1422,6 +1424,9 @@ partial class AwaitenGenerator
 		public bool SuppressDisposal { get; init; }
 
 		public IReadOnlyList<string>? ConsumerOwned { get; init; }
+
+		/// <summary>The type the <see cref="Key" /> spells in the generated code (see <see cref="AwaitenGenerator.KeyType(TypedConstant)" />).</summary>
+		public ITypeSymbol? KeyType { get; init; }
 
 		/// <summary>
 		///     The live <see cref="Location" />, which every closing takes, so a diagnostic about one points at the open
