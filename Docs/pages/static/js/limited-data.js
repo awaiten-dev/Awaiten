@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "7a9562206edbdbf2620c6fcd94a7feb74b872d31",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
-        "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
-      },
-      {
         "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
-      "7a956220",
       "bcee41a6",
       "291cf485",
       "54f5274d",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          4.450600648423036,
           4.873906595366342,
           2.9457818379004794,
           6.770831393344062,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.180821465452512,
           4.776268797261374,
           3.613962657749653,
-          4.493054451154811
+          4.493054451154811,
+          4.885869432489077
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.992311848203341,
           6.58147020637989,
           3.8238707493458475,
           7.584012808708044,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           10.376993904511133,
           6.984609433015188,
           4.28559078325828,
-          10.18953454941511
+          10.18953454941511,
+          5.183230943481127
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          82.01765375932058,
           88.54239027500152,
           53.08613698681196,
           138.00487294197083,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           115.90216409365335,
           86.92117908171245,
           59.33983593781789,
-          81.9806181532996
+          81.9806181532996,
+          83.3758025487264
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          6.983292210102081,
           6.2062579164902365,
           4.304672426978747,
           8.839598982532818,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.591319015622139,
           6.987176124254862,
           5.468502915898958,
-          6.495318057139714
+          6.495318057139714,
+          7.270933516323566
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          8.664843387405078,
           8.378528677920501,
           5.97646344502767,
           11.287941343017987,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.897044329770974,
           7.957722759590699,
           6.397512823343277,
-          8.196108097831408
+          8.196108097831408,
+          9.306074449419976
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "7a9562206edbdbf2620c6fcd94a7feb74b872d31",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
-        "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
-      },
-      {
         "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
-      "7a956220",
       "bcee41a6",
       "291cf485",
       "54f5274d",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          5.216705909619729,
           5.119235810178977,
           3.191168364423972,
           7.644117609659831,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           6.957348134900842,
           5.858759254217148,
           3.505540642639001,
-          5.643168432513873
+          5.643168432513873,
+          5.433435425162315
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.5211620809776445,
           6.5100541317037175,
           3.83591697536982,
           7.5561093756785755,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           8.712620777579454,
           6.4986580690512294,
           4.084409437009266,
-          6.492936626076698
+          6.492936626076698,
+          5.183690492312113
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          82.46291610399882,
           88.34174400170645,
           53.424855187535286,
           137.85095125834147,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           112.7673612912496,
           86.90341363350551,
           57.31076587097986,
-          83.60974811656135
+          83.60974811656135,
+          91.9871676603953
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          7.116367216904958,
           6.3008042344680195,
           4.585012193024158,
           8.956692815820377,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           9.085034889834267,
           6.845354836434126,
           5.153056103984515,
-          6.304063688715299
+          6.304063688715299,
+          7.321986206372579
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.65871397192989,
           11.492693759004275,
           7.622767894218366,
           13.821164477329988,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.766388502717017,
           11.240085488983564,
           6.176099208990733,
-          11.190335395080703
+          11.190335395080703,
+          9.380757914235195
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "7a9562206edbdbf2620c6fcd94a7feb74b872d31",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
-        "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
-      },
-      {
         "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 12:53:50 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
-      "7a956220",
       "bcee41a6",
       "291cf485",
       "54f5274d",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          11.948181760098253,
           16.002887023346766,
           21.187805954615275,
           15.418529229504722,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           12.174908942409925,
           19.05229126214981,
           15.197190183401108,
-          16.84804885515145
+          16.84804885515145,
+          19.739927955468495
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          789.140913327535,
           1209.8488957722982,
           1518.490240097046,
           1186.745524597168,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           811.2067292758396,
           1234.154906463623,
           1105.969940321786,
-          1321.3346879323324
+          1321.3346879323324,
+          1385.9273497263591
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          18286.056832449776,
           26564.365462239584,
           29684.5962890625,
           25778.082755533855,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18718.950766427177,
           18955.57728474935,
           26063.35580851237,
-          26656.57560511998
+          26656.57560511998,
+          28577.445922851562
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32477,
           32478,
           32482,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32477,
           32474,
           32477,
-          32478
+          32478,
+          32477
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          399.55577427546183,
           603.0380295239962,
           724.146023495992,
           573.2673449516296,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           404.1462012699672,
           598.8708000183105,
           562.8104838643756,
-          606.3419670422871
+          606.3419670422871,
+          666.4399871144976
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6431.167266845703,
           10261.483468119304,
           11889.21452331543,
           8748.149718064527,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6458.415947469076,
           9330.768003336589,
           8493.332765851703,
-          9241.650056966146
+          9241.650056966146,
+          11059.049945576986
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24761,
-          24761,
           24760,
           24761,
           24760,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "7a9562206edbdbf2620c6fcd94a7feb74b872d31",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
-        "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
-      },
       {
         "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
-      "7a956220",
       "bcee41a6",
       "291cf485",
       "54f5274d",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          78.85371221814837,
           120.54474376042684,
           187.10423607826232,
           115.21089958293098,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           76.88119270971843,
           189.44310727119446,
           112.88182388884681,
-          123.00668654441833
+          123.00668654441833,
+          176.68948692541855
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7343.2852366129555,
           11806.962111409504,
           14755.798307291667,
           10376.999211992535,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7479.476569112142,
           9870.238414219448,
           10477.38352915446,
-          11880.2013865153
+          11880.2013865153,
+          14049.012476094564
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          431242.5265950521,
           642586.4630998884,
           723232.9299479167,
           644957.576953125,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           422382.4083426339,
           451709.5766438802,
           626558.4642857143,
-          643417.9010184152
+          643417.9010184152,
+          677428.160295759
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          738684,
           740075,
           719727,
           742568,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           735271,
           720432,
           740080,
-          719712
+          719712,
+          719048
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          23294.43122427804,
           36770.80592128209,
           43452.675728934155,
           34953.855377197266,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           22903.65350811298,
           34023.08697102864,
           34266.18303629557,
-          37138.6849609375
+          37138.6849609375,
+          41569.062272135416
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80174,
           80008,
           80968,
           80973,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           79667,
           80958,
           80006,
-          80967
+          80967,
+          80351
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          195366.51264299665,
           299409.31233723956,
           357579.4454101563,
           270134.17755998886,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           181268.19709123884,
           262129.21103515624,
           257944.15345982142,
-          291763.38636997767
+          291763.38636997767,
+          331213.7118326823
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573073,
           573026,
           573106,
           573122,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573085,
           571196,
           573123,
-          573155
+          573155,
+          572979
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "7a9562206edbdbf2620c6fcd94a7feb74b872d31",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 12:06:52 2026 \u002B0100",
-        "message": "fix: ask for the module of an internal service only when a container in another assembly calls a member that takes it (#396)"
-      },
       {
         "sha": "bcee41a67d92dea0ddde2fe94fe8c7789faf52cd",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
         "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
+      },
+      {
+        "sha": "05bb7e4ba88f4ef6f6390cede8f5f982668b85de",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:30:05 2026 \u002B0100",
+        "message": "fix: name what the user wrote in diagnostics instead of generated members (#449)"
       }
     ],
     "labels": [
-      "7a956220",
       "bcee41a6",
       "291cf485",
       "54f5274d",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "3de226e5",
       "8e369646",
       "3f0f5847",
-      "07cfe8c2"
+      "07cfe8c2",
+      "05bb7e4b"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          311.09230405943737,
           173.46318972110748,
           159.1125980445317,
           477.56817887624106,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           207.6969141960144,
           218.54078121980032,
           221.50644157727558,
-          209.17865710258485
+          209.17865710258485,
+          240.83710476557414
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          608.2099921886737,
           415.8773260116577,
           367.44888928958346,
           637.5130145390829,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           451.2680216789246,
           462.35647120475767,
           494.42184925079346,
-          450.5077077070872
+          450.5077077070872,
+          537.5160094774686
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6651.838255818685,
           3637.188513619559,
           3324.8055519104005,
           6910.902172342936,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4634.27742207845,
           5114.196900503976,
           3902.6728037516277,
-          4643.940037536621
+          4643.940037536621,
+          3957.097930399577
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          398.9099724292755,
           258.95505294799807,
           229.09815839620737,
           431.36748530069985,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           329.81409594217934,
           345.55010681152345,
           328.9941456476847,
-          334.9437454859416
+          334.9437454859416,
+          342.23865235646565
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          736.2486159642538,
           388.4252785682678,
           377.52228422164916,
           784.5602609770639,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           521.5203612872532,
           567.230474618765,
           547.9262587865194,
-          527.8662853240967
+          527.8662853240967,
+          551.2304685592651
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
