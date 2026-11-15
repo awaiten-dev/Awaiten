@@ -56,9 +56,10 @@ internal sealed record ConventionWrapper(string Name, string ConventionType, str
 ///     (<see cref="Disposable" />, <see cref="AsyncDisposable" />, <see cref="BothDisposable" />) implements the
 ///     interfaces and forwards them, so a container disposes exactly what the implementation implements. With
 ///     <see cref="Wrap" />, a factory member's result may be any subtype, so the handle carries every variant and a
-///     method that picks one by the instance's runtime type.
+///     method that picks one by the instance's runtime type. <see cref="Instance" /> marks the instance handle of an
+///     implementation rather than the handle of a service.
 /// </summary>
-internal sealed record HiddenHandle(string Name, string ValueType, bool Disposable, bool AsyncDisposable, bool BothDisposable, bool Wrap = false);
+internal sealed record HiddenHandle(string Name, string ValueType, bool Disposable, bool AsyncDisposable, bool BothDisposable, bool Wrap = false, bool Instance = false);
 
 /// <summary>
 ///     The generated public handle of a closing of a public generic service over a type internal to the module's
