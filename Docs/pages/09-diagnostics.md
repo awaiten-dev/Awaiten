@@ -2630,6 +2630,8 @@ public static partial class CoffeeShop;
 A `[Scan(As = ScanAs.Marker)]` matched a type with no assignable interface.
 :::
 
+<ApplyFix id="AWT139">
+
 ```csharp expect=AWT139
 public abstract class Report;
 // highlight-next-line
@@ -2639,6 +2641,18 @@ public sealed class QuarterlyReport : Report;   // a Report, but implements no i
 [Scan(typeof(Report), As = ScanAs.Marker)]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public abstract class Report;
+public sealed class QuarterlyReport : Report;   // a Report, but implements no interface
+
+[Container]
+// highlight-next-line
+[Scan(typeof(Report), As = ScanAs.Self | ScanAs.Marker)]   // Self registers it as itself
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 A `[Scan]` on a `[Module]` reports it the same way.
 
@@ -2650,12 +2664,27 @@ A `[Scan]` on a `[Module]` reports it the same way.
 A `[Scan(InAssembliesOf = …)]` named an assembly with no candidate types.
 :::
 
+<ApplyFix id="AWT140">
+
 ```csharp expect=AWT140
+public sealed class GrinderPlugin : IPlugin;
+
 [Container]
 // highlight-next-line
 [Scan(typeof(IPlugin), InAssembliesOf = new[] { typeof(string) })]   // that assembly has no IPlugin types
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class GrinderPlugin : IPlugin;
+
+[Container]
+// highlight-next-line
+[Scan(typeof(IPlugin), InAssembliesOf = new[] { typeof(GrinderPlugin) })]   // the assembly that holds the plugins
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Name a type from the assembly that holds the implementations, and check that its project is referenced and the marker is the right one.
 
@@ -2664,6 +2693,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan(SkipUnconstructable = true)]` match the container cannot construct is skipped.
 :::
+
+<ApplyFix id="AWT141">
 
 ```csharp expect=AWT141
 public sealed class LegacyPlugin : IPlugin
@@ -2677,6 +2708,20 @@ public sealed class LegacyPlugin : IPlugin
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class LegacyPlugin : IPlugin
+{
+    // highlight-next-line
+    public LegacyPlugin() { }   // accessible, so it registers
+}
+
+[Container]
+[Scan(typeof(IPlugin), SkipUnconstructable = true)]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Make the match constructable (an accessible constructor, registered dependencies) so it registers, or exclude it from the scan to state that the skip is intended.
 
 ### AWT142: Scans register one implementation with conflicting lifetimes \{#awt142\}
@@ -2684,6 +2729,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 Scans register one implementation with conflicting lifetimes.
 :::
+
+<ApplyFix id="AWT142">
 
 ```csharp expect=AWT142
 public sealed class Widget : IPlugin, IHandler;   // matched by both scans
@@ -2695,6 +2742,18 @@ public sealed class Widget : IPlugin, IHandler;   // matched by both scans
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Widget : IPlugin, IHandler;   // matched by both scans
+
+[Container]
+[Scan(typeof(IPlugin), Lifetime = Lifetime.Singleton)]
+// highlight-next-line
+[Scan(typeof(IHandler), Lifetime = Lifetime.Singleton)]   // the scans agree on Widget
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 The scans of imported modules count too, in any assembly, and the container's own scans come before theirs.
 
 **Fix:** Give the overlapping scans the same `Lifetime`, exclude the type from one of them, or register it explicitly, which the scans yield to.
@@ -2705,12 +2764,27 @@ The scans of imported modules count too, in any assembly, and the container's ow
 A `[Scan(InAssembliesOf = …)]` resolved to no assembly at all.
 :::
 
+<ApplyFix id="AWT143">
+
 ```csharp expect=AWT143
+public sealed class GrinderPlugin : IPlugin;
+
 [Container]
 // highlight-next-line
 [Scan(typeof(IPlugin), InAssembliesOf = new Type[0])]   // no assemblies to scan
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class GrinderPlugin : IPlugin;
+
+[Container]
+// highlight-next-line
+[Scan(typeof(IPlugin), InAssembliesOf = new[] { typeof(GrinderPlugin) })]   // scans the assembly of GrinderPlugin
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** List one type from each assembly to scan, or remove `InAssembliesOf` to scan the container's own assembly.
 
@@ -2719,6 +2793,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan]`'s name, namespace or exclude filters removed every marker-assignable match.
 :::
+
+<ApplyFix id="AWT172">
 
 ```csharp expect=AWT172
 public sealed class GrinderPlugin : IPlugin;   // assignable, but filtered out by the pattern below
@@ -2729,6 +2805,17 @@ public sealed class GrinderPlugin : IPlugin;   // assignable, but filtered out b
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class GrinderPlugin : IPlugin;   // assignable, but filtered out by the pattern below
+
+[Container]
+// highlight-next-line
+[Scan<IPlugin>(NamePatterns = ["*Plugin"])]   // keeps GrinderPlugin
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Loosen the `NamePatterns`, `NamespacePatterns` or `Exclude` filters so they keep the types you mean, here `NamePatterns = ["*Plugin"]`.
 
 ### AWT173: Scan exclusion never matched \{#awt173\}
@@ -2736,6 +2823,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan]` exclusion (an `Exclude` type or a `!`-prefixed pattern) matched no candidate.
 :::
+
+<ApplyFix id="AWT173">
 
 ```csharp expect=AWT173
 public sealed class GrinderPlugin : IPlugin;
@@ -2746,6 +2835,17 @@ public sealed class GrinderPlugin : IPlugin;
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class GrinderPlugin : IPlugin;
+
+[Container]
+// highlight-next-line
+[Scan<IPlugin>]   // no stale exclusion left
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the stale exclusion, or update it to the type's new name.
 
 ### AWT174: Scan pattern matches every candidate \{#awt174\}
@@ -2753,6 +2853,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan]` include pattern matches every candidate, so it does not narrow the scan.
 :::
+
+<ApplyFix id="AWT174">
 
 ```csharp expect=AWT174
 public sealed class GrinderPlugin : IPlugin;
@@ -2763,6 +2865,17 @@ public sealed class GrinderPlugin : IPlugin;
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class GrinderPlugin : IPlugin;
+
+[Container]
+// highlight-next-line
+[Scan<IPlugin>]   // the same matches without the pattern
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the pattern; it does not narrow anything.
 
 ### AWT182: Assembly scan matched a type with no matching interface \{#awt182\}
@@ -2770,6 +2883,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan(As = ScanAs.MatchingInterface)]` matched a type that implements no interface named `I` + its own name.
 :::
+
+<ApplyFix id="AWT182">
 
 ```csharp expect=AWT182
 public interface IEspresso;
@@ -2781,6 +2896,19 @@ public sealed class Ristretto : IEspresso;   // no IRistretto, so it is not regi
 [Scan<IEspresso>(As = ScanAs.MatchingInterface)]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public interface IEspresso;
+public sealed class Espresso : IEspresso;
+public sealed class Ristretto : IEspresso;   // no IRistretto, so it is not registered
+
+[Container]
+// highlight-next-line
+[Scan<IEspresso>(As = ScanAs.Self | ScanAs.MatchingInterface)]   // Self registers Ristretto as itself
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 A markerless scan skips such a type silently. A `[Scan]` on a `[Module]` reports it the same way.
 
@@ -2794,12 +2922,23 @@ A markerless `[Scan]` includes the `Marker` exposure, or declares no filter that
 
 A scan is scoped by an `InAssembliesOf`, or by a `NamePatterns` or `NamespacePatterns` filter whose every pattern names something. A pattern made only of wildcards, such as `NamePatterns = ["*"]`, `NamespacePatterns = ["**"]` or the depth-only `"**.*"`, matches every type, also next to a narrower pattern, since the patterns of one filter are combined with OR. A markerless scan whose only filter is such a pattern is reported too.
 
+<ApplyFix id="AWT183">
+
 ```csharp expect=AWT183
 [Container]
 // highlight-next-line
 [Scan(As = ScanAs.MatchingInterface)]   // markerless, but no NamePatterns/NamespacePatterns/InAssembliesOf
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Scan(As = ScanAs.MatchingInterface, NamePatterns = ["*Printer"])]   // scoped to the printers
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Give a markerless scan an `InAssembliesOf`, or a `NamePatterns` or `NamespacePatterns` filter whose patterns each name something (`"*Brewer"`, `"CoffeeShop.Brewing.**"`), and leave `ScanAs.Marker` out of its `As`, since there is no marker.
 
@@ -2825,12 +2964,23 @@ public static partial class CoffeeShop;
 A `[Scan]`'s `As` resolved to no `ScanAs` flag, so it would register nothing (usually `&` written for `|`).
 :::
 
+<ApplyFix id="AWT185">
+
 ```csharp expect=AWT185
 [Container]
 // highlight-next-line
 [Scan<IDrink>(As = ScanAs.Self & ScanAs.Marker)]   // & is empty; use | to combine flags
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Scan<IDrink>(As = ScanAs.Self | ScanAs.Marker)]   // | combines both flags
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Combine flags with `|` (`ScanAs.Self | ScanAs.Marker`), or omit `As` for the `Self` default.
 
@@ -2839,6 +2989,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 A `[Scan(As = ScanAs.MatchingInterface)]` matched a type implementing several same-named convention interfaces, so it registers under each of them.
 :::
+
+<ApplyFix id="AWT187">
 
 ```csharp expect=AWT187
 namespace CoffeeShop.Old { public interface IMenu; }
@@ -2857,6 +3009,25 @@ namespace CoffeeShop
     public static partial class Shop;
 }
 ```
+
+```csharp isolated
+namespace CoffeeShop.Old { public interface IMenu; }
+namespace CoffeeShop.New { public interface IMenu; }
+
+namespace CoffeeShop
+{
+    public interface IShopService;
+
+    // highlight-next-line
+    public sealed class Menu : IShopService, New.IMenu;   // a single convention interface
+
+    [Container]
+    [Scan<IShopService>(As = ScanAs.MatchingInterface)]
+    public static partial class Shop;
+}
+```
+
+</ApplyFix>
 
 Reported only when several interfaces actually register (an inaccessible candidate is dropped, which [AWT188](#awt188) covers when the match registers nothing) and only for a marker scan: a markerless `[Scan]` registers the ambiguous match silently, like the other per-match scan warnings.
 
@@ -2973,6 +3144,8 @@ Only forms the hook could actually bind count: matching arity, type arguments th
 Two `[Scan]` attributes match one implementation with conflicting lifecycle hooks; the first scan's hook is used.
 :::
 
+<ApplyFix id="AWT199">
+
 ```csharp expect=AWT199
 public sealed class Widget : IPlugin, IHandler;   // matched by both scans
 
@@ -2986,6 +3159,22 @@ public static partial class CoffeeShop
     private static void HandlerStarted(object instance) { }
 }
 ```
+
+```csharp isolated
+public sealed class Widget : IPlugin, IHandler;   // matched by both scans
+
+[Container]
+[Scan(typeof(IPlugin), OnActivated = nameof(PluginStarted))]
+// highlight-next-line
+[Scan(typeof(IHandler), OnActivated = nameof(PluginStarted))]   // the same hook, so the scans merge
+public static partial class CoffeeShop
+{
+    private static void PluginStarted(object instance) { }
+    private static void HandlerStarted(object instance) { }
+}
+```
+
+</ApplyFix>
 
 Which method ran for `Widget` would depend on attribute order, so the contradiction is surfaced instead, mirroring [AWT142](#awt142) for lifetimes. Overlapping scans that agree are fine: two scans naming the *same* method merge, and so do scans hooking *different* slots (one scan's `OnActivated` combines with another's `OnRelease`). A hook name is owner-relative, though: a module `[Scan]` resolves its hooks against the module and a container `[Scan]` against the container, so a module scan and a container scan naming the same method name still conflict, because each means its own method. An explicit registration of the type is not reported here: a scan yields to it, and a scan hook it does not name too is [AWT166](#awt166) instead.
 
@@ -3786,6 +3975,8 @@ These concern a container that [extends](./05-registration/09-extending-containe
 
 A `[Module]` is imported with `[Import]`, not extended.
 
+<ApplyFix id="AWT222">
+
 ```csharp expect=AWT222
 [Module]
 [Singleton<Grinder>]
@@ -3796,6 +3987,19 @@ public static partial class GrinderModule;
 public static partial class TestCoffeeShop;
 ```
 
+```csharp isolated
+[Module]
+[Singleton<Grinder>]
+public static partial class GrinderModule;
+
+[Container]
+// highlight-next-line
+[Import(typeof(GrinderModule))]   // a module is imported
+public static partial class TestCoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Name a non-generic `[Container]` in `Extends`, or `[Import]` the module instead.
 
 ### AWT223: Container extends itself \{#awt223\}
@@ -3804,12 +4008,23 @@ public static partial class TestCoffeeShop;
 A container names itself in `Extends`, so it has no base to inherit from.
 :::
 
+<ApplyFix id="AWT223">
+
 ```csharp expect=AWT223
 // highlight-next-line
 [Container(Extends = typeof(CoffeeShop))]
 [Singleton<Grinder>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+[Container]
+[Singleton<Grinder>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Name the container whose composition this one starts from, or remove `Extends`.
 
@@ -3820,6 +4035,8 @@ The base named by `Extends` itself extends another container.
 :::
 
 Extending is one level deep, so the registrations of a container come only from its own declaration or from its one base. Nothing is inherited.
+
+<ApplyFix id="AWT224">
 
 ```csharp expect=AWT224
 [Container]
@@ -3834,6 +4051,21 @@ public static partial class TestCoffeeShop;
 public static partial class SlowTestCoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+[Singleton<Grinder>]
+public static partial class CoffeeShop;
+
+[Container(Extends = typeof(CoffeeShop))]
+public static partial class TestCoffeeShop;
+
+// highlight-next-line
+[Container(Extends = typeof(CoffeeShop))]   // extends the production container directly
+public static partial class SlowTestCoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Extend the production container directly, and move what the middle container adds into a `[Module]` that both import.
 
 ### AWT225: Container with `Extends` sets an inherited option \{#awt225\}
@@ -3843,6 +4075,8 @@ A container with `Extends` sets `AsyncSafety` or `LifetimeSafety`.
 :::
 
 Both decide how the graph is validated, and the extending container inherits them from its base, so a test graph is checked exactly like the production graph it reuses. The setting is ignored.
+
+<ApplyFix id="AWT225">
 
 ```csharp expect=AWT225
 [Container]
@@ -3854,6 +4088,18 @@ public static partial class CoffeeShop;
 public static partial class TestCoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+[Singleton<Grinder>]
+public static partial class CoffeeShop;
+
+// highlight-next-line
+[Container(Extends = typeof(CoffeeShop))]   // validated like CoffeeShop
+public static partial class TestCoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the option from the extending container. Set it on the base if production needs it.
 
 ### AWT226: Inherited member is not accessible \{#awt226\}
@@ -3863,6 +4109,8 @@ A factory, instance member, lifecycle hook, constructor or scanned type that a c
 :::
 
 It is also reported when an implementation private to the base cannot be built through the factory the base generates for it. The generated extending container calls inherited members from its own code, so it must see them; an inaccessible scan match would otherwise be silently missing from the test graph. The inherited declaration is ignored.
+
+<ApplyFix id="AWT226">
 
 ```csharp expect=AWT226
 [Container]
@@ -3877,6 +4125,21 @@ public static partial class CoffeeShop
 public static partial class TestCoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+[Singleton<MenuBoard>(Factory = nameof(LoadMenu))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    internal static MenuBoard LoadMenu() => MenuBoard.Load();   // internal: TestCoffeeShop is in the same assembly
+}
+
+[Container(Extends = typeof(CoffeeShop))]
+public static partial class TestCoffeeShop;
+```
+
+</ApplyFix>
+
 A base in another assembly that grants `InternalsVisibleTo` generates an internal wrapper for a private `Factory` or `Instance` member or lifecycle hook its registrations name, so the extending container calls the wrapper and reports nothing. This error stays for a member whose signature names a type private to the base, for a generic factory, and for an extending container in the base's own assembly.
 
 It is also reported for a public type the base registers, scans, decorates or composes itself whose `[Inject]` property, or a property an `[InjectProperty]` entry of the base fills, is `internal` or has an `internal` setter, when the extending container lives in another assembly without `InternalsVisibleTo`: it doesn't see the property, so it would build the type without it. Make the property public, or grant the extending container's assembly `InternalsVisibleTo`.
@@ -3889,6 +4152,8 @@ An implementation nested privately in the base, or in a class that contains the 
 - **A shape the factory cannot express.** The closed type has an `Optional` or `Deferred` injected property, a hook parameter marked `[Arg]`, `[FromKey]` or `[Inject]`, or a parameter type private to the base. Make the type `internal`.
 - **An open generic shape the generic factory cannot express.** A private open generic registration, decorator or composite is built through a generic factory the extending container closes per closing. The generic factory fills `Optional` and `Deferred` `[Inject]` properties, and runs its lifecycle hooks through generic wrappers, but not when a type parameter is constrained to a type private to the base, a hook can't be wrapped, or an `[InjectProperty]` entry of the base for it is `Optional` or `Deferred` or names one of its closings. Make the type `internal`.
 - **A hook overload the extending container doesn't see.** A lifecycle hook of a private open generic registration has a `private` overload that accepts some closing too, which a container in the base's assembly reports as ambiguous ([AWT190](#awt190)). An extending container in another assembly doesn't see the overload, so it can't tell which closings the generic wrapper would run the wrong overload for, and reports every closing. The same goes for a public hook of a module the base imports beside an `internal` overload that accepts the registered type too: an extending container in another assembly that doesn't see the overload reports the type instead of calling the public one. Give the hook methods distinct names.
+
+<ApplyFix id="AWT226">
 
 ```csharp expect=AWT226
 [Container]
@@ -3907,6 +4172,25 @@ public static partial class CoffeeShop
 public static partial class TestCoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+[Singleton<BurrGrinder, IGrinder>]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    internal sealed class BurrGrinder : IGrinder   // internal: TestCoffeeShop builds it without a factory
+    {
+        [Inject(Optional = true)]
+        public ITimeSystem? Time { get; set; }
+    }
+}
+
+[Container(Extends = typeof(CoffeeShop))]
+public static partial class TestCoffeeShop;
+```
+
+</ApplyFix>
+
 ### AWT264: Invalid `[Inherited]` parameter \{#awt264\}
 
 :::danger[Error]
@@ -3924,6 +4208,8 @@ A parameter marked `[Inherited]` cannot take the registration its factory's regi
 
 The parameter receives nothing.
 
+<ApplyFix id="AWT264">
+
 ```csharp expect=AWT264
 [Container]
 [Singleton<CardTerminal, IPaymentTerminal>]
@@ -3938,7 +4224,25 @@ public static partial class TestCoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+
+[Container(Extends = typeof(CoffeeShop))]
+// highlight-next-line
+[Singleton<IPaymentTerminal>(Factory = nameof(Terminal))]   // replaces CoffeeShop's terminal
+public static partial class TestCoffeeShop
+{
+    private static IPaymentTerminal Terminal([Inherited] IPaymentTerminal production) => production;
+}
+```
+
+</ApplyFix>
+
 A base that registers the service more than once has no single registration to take:
+
+<ApplyFix id="AWT264">
 
 ```csharp expect=AWT264
 [Container]
@@ -3955,6 +4259,23 @@ public static partial class TestCoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<CardTerminal, IPaymentTerminal>]
+[Singleton<CashTerminal, IPaymentTerminal>]
+public static partial class CoffeeShop;
+
+[Container(Extends = typeof(CoffeeShop))]
+[Singleton<IPaymentTerminal>(Factory = nameof(Terminal))]
+public static partial class TestCoffeeShop
+{
+    // highlight-next-line
+    private static IPaymentTerminal Terminal() => new CardTerminal();   // builds the production terminal itself
+}
+```
+
+</ApplyFix>
+
 **Fix:** Move `[Inherited]` to the factory of the registration that replaces the base's, with the same service and key, or remove it. When the base has no single closed registration of the service, remove `[Inherited]` and build the production service in the factory, or key the base's registrations and replace one of them under its key.
 
 ## Keyed collections
@@ -3964,6 +4285,8 @@ public static partial class TestCoffeeShop
 :::danger[Error]
 A keyed dictionary (`IReadOnlyDictionary<TKey, TService>`) has a key type that is neither `string` nor an enum, or one whose keyed registrations do not all match it.
 :::
+
+<ApplyFix id="AWT159">
 
 ```csharp expect=AWT159
 // highlight-next-line
@@ -3975,6 +4298,18 @@ public sealed class Router(IReadOnlyDictionary<int, IMilk> milks);   // the key 
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// highlight-next-line
+public sealed class Router(IReadOnlyDictionary<string, IMilk> milks);   // the key type of every registration
+
+[Container]
+[Singleton<OatMilk, IMilk>(Key = "Oat")]
+[Singleton<Router>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Use a key type that every keyed registration of the service carries, a `string` or an enum: `IReadOnlyDictionary<string, IMilk>`.
 
 ### AWT160: `[FromKey]` on a keyed collection \{#awt160\}
@@ -3982,6 +4317,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A `[FromKey]` is applied to a synthesized keyed collection (`IReadOnlyDictionary<string, TService>`), which resolves every key.
 :::
+
+<ApplyFix id="AWT160">
 
 ```csharp expect=AWT160
 // highlight-next-line
@@ -3993,6 +4330,18 @@ public sealed class Router([FromKey("Oat")] IReadOnlyDictionary<string, IMilk> m
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// highlight-next-line
+public sealed class Router(IReadOnlyDictionary<string, IMilk> milks);   // milks["Oat"] picks the key
+
+[Container]
+[Singleton<OatMilk, IMilk>(Key = "Oat")]
+[Singleton<Router>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the `[FromKey]` and pick the key from the dictionary (`milks["Oat"]`), take the single service with `[FromKey("Oat")] IMilk milk`, or register a dictionary service under that key, which takes precedence over the synthesized one.
 
 ### AWT213: Unsupported runtime-type dispatch dictionary \{#awt213\}
@@ -4002,6 +4351,8 @@ A runtime-type dispatch dictionary (`IReadOnlyDictionary<Type, Func<TBase>>`) ca
 :::
 
 See [Dispatch by runtime type](./06-resolution/04-keyed-dictionaries.md#dispatch-by-runtime-type).
+
+<ApplyFix id="AWT213">
 
 ```csharp expect=AWT213
 public interface IOrderHandler;
@@ -4019,6 +4370,25 @@ public sealed class Counter(IReadOnlyDictionary<Type, Func<IOrderHandler>> handl
 [Singleton<Counter>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public interface IOrderHandler;
+public interface IOrderHandler<T> : IOrderHandler;
+// highlight-next-line
+public interface IRefundHandler<T>;   // its own family, not under IOrderHandler
+public sealed class OrderPlacedHandler : IOrderHandler<OrderPlaced>;
+public sealed class OrderPlacedRefund : IRefundHandler<OrderPlaced>;
+
+public sealed class Counter(IReadOnlyDictionary<Type, Func<IOrderHandler>> handlers);
+
+[Container]
+[Singleton<OrderPlacedHandler, IOrderHandler<OrderPlaced>>]
+[Singleton<OrderPlacedRefund, IRefundHandler<OrderPlaced>>]
+[Singleton<Counter>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Request `IReadOnlyDictionary<Type, Func<TBase>>` over a non-generic base interface, without `[FromKey]`, and let only one generic family with one type argument implement that base (here, do not derive `IRefundHandler<T>` from `IOrderHandler`).
 
