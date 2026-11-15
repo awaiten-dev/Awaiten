@@ -540,6 +540,7 @@ internal static partial class Sources
 	private static void EmitDeferredAssignments(StringBuilder builder, int depth, InstanceModel instance, string variable, EmitContext context, bool asynchronous)
 	{
 		string requestingType = RequestingTypeOf(instance);
+		string? leading = null;
 		foreach (MemberModel member in instance.InjectedMembers.AsArray())
 		{
 			if (!member.Deferred)
@@ -548,9 +549,16 @@ internal static partial class Sources
 			}
 
 			string value = DependencyValue(member.Dependency, context.Instances, context.Names, context.ServiceToIndex, asynchronous, requestingType);
+			if (member.Leading)
+			{
+				leading = value;
+				continue;
+			}
+
 			if (member.Setter is { } setter)
 			{
-				Indent(builder, depth).Append(setter).Append('(').Append(variable).Append(", ").Append(value).AppendLine(");");
+				Indent(builder, depth).Append(setter).Append('(').Append(variable).Append(", ").Append(leading is null ? string.Empty : $"{leading}, ").Append(value).AppendLine(");");
+				leading = null;
 				continue;
 			}
 

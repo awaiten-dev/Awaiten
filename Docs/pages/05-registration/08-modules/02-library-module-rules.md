@@ -298,6 +298,7 @@ The container treats the internal service like one it constructs itself:
 
 - For a factory with runtime arguments, the container passes a factory of the handle with the same arguments, and builds the internal service from them like any service with `[Arg]` parameters.
 - An unkeyed collection of a variant interface holds a registration of a service that converts to its element type, as in the library's own assembly: a collection of `IHandler<Order>` for a contravariant `IHandler<in T>` takes the handle of `IHandler<Message>` when a module of the library registers only that one.
+- When the element type is public, a container in another assembly puts every public member first, the exact ones and then the variant ones, each in registration order, and the members of the internal service last. That includes a public variant service that a module of another library or the container registers, such as `IHandler<object>`. A container in the library's own assembly orders all variant members by registration instead, so it would put such a service after the internal one when its first registration follows the library's, for example when the container imports the library's module first. The container in another assembly reports that case as [AWT265](../../09-diagnostics.md#awt265).
 
 ### One instance per implementation
 
@@ -514,6 +515,7 @@ A container reads what the generator adds to a library only in the form its own 
 - A module records the collections its factories pass empty. For a module whose metadata lacks that record, the container doesn't report [AWT252](../../09-diagnostics.md#awt252).
 - A self-compiled scan records which async initializer conventions each match needs and whether it is disposable. For a generated scan registration whose metadata lacks that record, the container goes by the type the factory returns, as for any factory.
 - For a type a module builds into an instance handle, the container sets an `[InjectProperty]` entry through a member that returns the instance from the handle. A module whose metadata lacks that member makes the entry [AWT178](../../09-diagnostics.md#awt178).
+- A deferred `[Inject]` property that takes a collection of a variant interface, which holds an internal service of the module through variance, is set through a generated setter that takes the public members and the handles of that service apart. A container of an older Awaiten version doesn't recognize that setter and never sets the property, without a diagnostic, so a container that imports such a library needs an Awaiten version at least as new as the library's.
 
 Rebuild such a library with the Awaiten version the container uses.
 

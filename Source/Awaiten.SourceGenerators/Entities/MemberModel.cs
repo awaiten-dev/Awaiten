@@ -19,5 +19,8 @@ namespace Awaiten.SourceGenerators.Entities;
 ///     <see cref="AfterFactoryType" /> is the property type of a container-side <c>[InjectProperty]</c> member of an
 ///     implementation built through an owner's generated factory read from metadata, which the factory does not take, so
 ///     the container assigns it on the instance the factory returns, before anything else sees it.
+///     A <see cref="Leading" /> member is the public collection that the <see cref="Setter" /> of the next member takes
+///     before the handles of the internal service the collection holds through variance, so the container passes it to
+///     that call instead of setting it on its own.
 /// </summary>
-internal sealed record MemberModel(string MemberName, ParameterModel Dependency, bool Deferred = false, string? Setter = null, string? PresenceFlag = null, string? AfterFactoryType = null);
+internal sealed record MemberModel(string MemberName, ParameterModel Dependency, bool Deferred = false, string? Setter = null, string? PresenceFlag = null, string? AfterFactoryType = null, bool Leading = false);

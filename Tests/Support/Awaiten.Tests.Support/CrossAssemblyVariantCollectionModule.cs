@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Awaiten.Tests.Support;
 
@@ -51,3 +52,159 @@ internal sealed class HandlingVariantCollectionBrew(IVariantCollectionBrew inner
 [Transient<OtherGeneralVariantCollectionHandler, IVariantCollectionHandler<VariantCollectionEvent>>]
 [Decorate<HandlingVariantCollectionBrew, IVariantCollectionBrew>]
 public static partial class CrossAssemblyVariantCollectionModule;
+
+/// <summary>A reader that reports the handlers it and its decorator received.</summary>
+public interface IVariantCollectionReader
+{
+	/// <summary>The names of the handlers the reader and then its decorator received, in order.</summary>
+	IReadOnlyList<string> Handlers { get; }
+}
+
+/// <summary>A public contravariant handler.</summary>
+public interface IPublicVariantCollectionHandler<in T>
+{
+	/// <summary>The name of the handler.</summary>
+	string Name { get; }
+}
+
+internal interface ISecretVariantCollectionEvent;
+
+/// <summary>A public event that implements an internal one.</summary>
+public sealed class PublicVariantCollectionEvent : ISecretVariantCollectionEvent;
+
+/// <summary>A public handler of the public event.</summary>
+public sealed class FirstPublicVariantCollectionHandler : IPublicVariantCollectionHandler<PublicVariantCollectionEvent>
+{
+	/// <inheritdoc />
+	public string Name => "first";
+}
+
+/// <summary>Another public handler of the public event.</summary>
+public sealed class SecondPublicVariantCollectionHandler : IPublicVariantCollectionHandler<PublicVariantCollectionEvent>
+{
+	/// <inheritdoc />
+	public string Name => "second";
+}
+
+internal sealed class SecretVariantCollectionHandler : IPublicVariantCollectionHandler<ISecretVariantCollectionEvent>
+{
+	public string Name => "secret";
+}
+
+internal sealed class VariantCollectionReader(IEnumerable<IPublicVariantCollectionHandler<PublicVariantCollectionEvent>> handlers) : IVariantCollectionReader
+{
+	public IReadOnlyList<string> Handlers { get; } = [..handlers.Select(handler => handler.Name),];
+}
+
+internal sealed class HandlingVariantCollectionReader(IVariantCollectionReader inner, IReadOnlyList<IPublicVariantCollectionHandler<PublicVariantCollectionEvent>> handlers) : IVariantCollectionReader
+{
+	public IReadOnlyList<string> Handlers { get; } = [..inner.Handlers, ..handlers.Select(handler => handler.Name),];
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose registration and decorator take a collection of a public contravariant handler of a public
+///     event, while the module registers two public handlers of that event and, between them, one of an internal event it
+///     implements. The collection holds the exact handlers in registration order and then the internal one through
+///     variance in a container of this assembly, and through the public collection and the handle of the internal handler
+///     in one of another assembly.
+/// </summary>
+[Module]
+[Singleton<FirstPublicVariantCollectionHandler, IPublicVariantCollectionHandler<PublicVariantCollectionEvent>>]
+[Singleton<SecretVariantCollectionHandler, IPublicVariantCollectionHandler<ISecretVariantCollectionEvent>>]
+[Transient<SecondPublicVariantCollectionHandler, IPublicVariantCollectionHandler<PublicVariantCollectionEvent>>]
+[Singleton<VariantCollectionReader, IVariantCollectionReader>]
+[Decorate<HandlingVariantCollectionReader, IVariantCollectionReader>]
+public static partial class CrossAssemblyPublicVariantCollectionModule;
+
+/// <summary>A reader that reports the handlers its deferred property and its async initializer received.</summary>
+public interface ILateVariantCollectionReader
+{
+	/// <summary>The names of the handlers the deferred property holds, in order.</summary>
+	IReadOnlyList<string> Late { get; }
+
+	/// <summary>The names of the handlers the async initializer received, in order.</summary>
+	IReadOnlyList<string> Initialized { get; }
+}
+
+internal sealed class LateVariantCollectionReader : ILateVariantCollectionReader
+{
+	[Inject(Deferred = true)]
+	public IEnumerable<IPublicVariantCollectionHandler<PublicVariantCollectionEvent>> Handlers { get; set; } = null!;
+
+	public IReadOnlyList<string> Late => [..Handlers.Select(handler => handler.Name),];
+
+	public IReadOnlyList<string> Initialized { get; private set; } = [];
+
+	internal Task StartAsync(IEnumerable<IPublicVariantCollectionHandler<PublicVariantCollectionEvent>> handlers)
+	{
+		Initialized = [..handlers.Select(handler => handler.Name),];
+		return Task.CompletedTask;
+	}
+}
+
+/// <summary>
+///     A <c>[Module]</c> like <see cref="CrossAssemblyPublicVariantCollectionModule" /> whose registration takes the
+///     collection through a deferred property and its async initializer instead of its constructor.
+/// </summary>
+[Module]
+[AsyncInitializer<LateVariantCollectionReader>(nameof(LateVariantCollectionReader.StartAsync))]
+[Singleton<FirstPublicVariantCollectionHandler, IPublicVariantCollectionHandler<PublicVariantCollectionEvent>>]
+[Singleton<SecretVariantCollectionHandler, IPublicVariantCollectionHandler<ISecretVariantCollectionEvent>>]
+[Transient<SecondPublicVariantCollectionHandler, IPublicVariantCollectionHandler<PublicVariantCollectionEvent>>]
+[Singleton<LateVariantCollectionReader, ILateVariantCollectionReader>]
+public static partial class CrossAssemblyLateVariantCollectionModule;
+
+/// <summary>A reader that reports the producers it received.</summary>
+public interface IProducerVariantCollectionReader
+{
+	/// <summary>The names of the producers the reader received, in order.</summary>
+	IReadOnlyList<string> Producers { get; }
+}
+
+/// <summary>A public covariant producer.</summary>
+public interface IPublicVariantCollectionProducer<out T>
+{
+	/// <summary>The name of the producer.</summary>
+	string Name { get; }
+}
+
+/// <summary>A public product.</summary>
+public class PublicVariantCollectionProduct;
+
+internal sealed class SecretVariantCollectionProduct : PublicVariantCollectionProduct;
+
+/// <summary>A public producer of the public product.</summary>
+public sealed class FirstPublicVariantCollectionProducer : IPublicVariantCollectionProducer<PublicVariantCollectionProduct>
+{
+	/// <inheritdoc />
+	public string Name => "first";
+}
+
+/// <summary>Another public producer of the public product.</summary>
+public sealed class SecondPublicVariantCollectionProducer : IPublicVariantCollectionProducer<PublicVariantCollectionProduct>
+{
+	/// <inheritdoc />
+	public string Name => "second";
+}
+
+internal sealed class SecretVariantCollectionProducer : IPublicVariantCollectionProducer<SecretVariantCollectionProduct>
+{
+	public string Name => "secret";
+}
+
+internal sealed class ProducerVariantCollectionReader(IEnumerable<IPublicVariantCollectionProducer<PublicVariantCollectionProduct>> producers) : IProducerVariantCollectionReader
+{
+	public IReadOnlyList<string> Producers { get; } = [..producers.Select(producer => producer.Name),];
+}
+
+/// <summary>
+///     A <c>[Module]</c> whose registration takes a collection of a public covariant producer of a public product, while
+///     the module registers two public producers of that product and, between them, one of an internal product derived
+///     from it, which the collection holds through covariance.
+/// </summary>
+[Module]
+[Singleton<FirstPublicVariantCollectionProducer, IPublicVariantCollectionProducer<PublicVariantCollectionProduct>>]
+[Singleton<SecretVariantCollectionProducer, IPublicVariantCollectionProducer<SecretVariantCollectionProduct>>]
+[Transient<SecondPublicVariantCollectionProducer, IPublicVariantCollectionProducer<PublicVariantCollectionProduct>>]
+[Singleton<ProducerVariantCollectionReader, IProducerVariantCollectionReader>]
+public static partial class CrossAssemblyCovariantCollectionModule;

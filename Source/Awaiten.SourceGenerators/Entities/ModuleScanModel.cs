@@ -288,12 +288,23 @@ internal sealed record ScanSkip(string MarkerName, string ImplementationMetadata
 ///     <see cref="Fixed" /> parameter is left off the signature and always passes its <see cref="Argument" />. A
 ///     parameter that takes a <see cref="Closing" /> handle names the handle the module declares for it,
 ///     <see cref="EmptyCollectionRecord" /> names the constant that records an empty collection it passes (AWT252), and
-///     <see cref="EmptyCollectionElement" /> is the documentation id of its element type.
+///     <see cref="EmptyCollectionElement" /> is the documentation id of its element type. A collection that takes the
+///     handles of an internal service it holds through variance takes the public collection of its element type as
+///     well, declared as <see cref="Exact" /> right before it and named <see cref="ExactName" />, and its
+///     <see cref="Argument" /> projects only the handles.
 /// </summary>
-internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null, string? EmptyCollectionRecord = null, string? EmptyCollectionElement = null)
+internal readonly record struct FactoryParameter(string Type, string Name, string? Attributes = null, string? Argument = null, bool Fixed = false, ClosingHandle? Closing = null, string? EmptyCollectionRecord = null, string? EmptyCollectionElement = null, string? Exact = null, string? ExactName = null)
 {
 	/// <summary>The expression the generated member passes on for this parameter.</summary>
-	public string ArgumentExpression => Argument ?? $"@{Name}";
+	public string ArgumentExpression => Exact is null
+		? Argument ?? $"@{Name}"
+		: $"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Concat(@{ExactParameterName}, {Argument}))";
+
+	/// <summary>
+	///     The name of the public collection declared as <see cref="Exact" />: <see cref="ExactName" /> once the generated
+	///     member named it away from its other parameters, else <see cref="AwaitenGenerator.ExactCollectionName" />.
+	/// </summary>
+	public string ExactParameterName => ExactName ?? AwaitenGenerator.ExactCollectionName(Name);
 }
 
 /// <summary>
