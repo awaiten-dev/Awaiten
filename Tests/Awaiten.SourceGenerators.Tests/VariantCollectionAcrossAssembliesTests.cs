@@ -279,7 +279,7 @@ public class VariantCollectionAcrossAssembliesTests
 				.Because("the collection holds the public exact handlers, which no handle serves, before the internal variant one");
 			await That(Module(result)).Contains("global::Lib.IBrew @inner, global::System.Collections.Generic.IEnumerable<global::Lib.IHandler<global::Lib.Derived>> @awaiten__exact_handlers, global::System.Collections.Generic.IEnumerable<global::Lib.BrewModule.Internals.Hidden_IHandler_")
 				.Because("the decorator's factory takes the public members too");
-			await That(Module(result)).Contains("global::System.Linq.Enumerable.Concat<global::Lib.IHandler<global::Lib.Derived>>(@awaiten__exact_handlers, global::System.Linq.Enumerable.Select<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(Module(result)).Contains("global::System.Linq.Enumerable.Concat(@awaiten__exact_handlers, global::System.Linq.Enumerable.Select<global::Lib.BrewModule.Internals.Hidden_IHandler_");
 		}
 
 		[Test]
@@ -462,6 +462,22 @@ public class VariantCollectionAcrossAssembliesTests
 
 			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>'*").AsWildcard()
 				.Because("a container of the module's assembly holds the one instance once, while the public members and the handles would hold it twice");
+		}
+
+		[Test]
+		public async Task AParameterNamedLikeThePublicCollection_KeepsTheGeneratedNameApart()
+		{
+			string library = Library().Replace(
+				"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+				"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers, IBrew awaiten__exact_handlers) { } }");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+
+			await That(module.Diagnostics).IsEmpty()
+				.Because("the public collection the factory takes as well is named away from the parameters it mirrors");
+			await That(Module(module)).Contains("@awaiten__exact_handlers_, global::System.Collections.Generic.IEnumerable<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(result.Diagnostics).IsEmpty();
 		}
 	}
 }

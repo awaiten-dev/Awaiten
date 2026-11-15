@@ -1954,7 +1954,7 @@ partial class AwaitenGenerator
 				HiddenShape.FuncWithArgumentsOwned => ($"global::System.Func<{argumentTypes}global::Awaiten.Owned<{handle}>>",
 					$"({lambdaArguments}) => global::Awaiten.Internals.AwaitenOwnedProjection.Map(@{name}({lambdaArguments}), {unwrap})"),
 				HiddenShape.Collection when exact is not null => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
-					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Concat<{element}>(@{ExactCollectionName(name)}, global::System.Linq.Enumerable.Select<{handle}, {element}>(@{name}, {unwrap})))"),
+					$"global::System.Linq.Enumerable.Select<{handle}, {element}>(@{name}, {unwrap})"),
 				HiddenShape.Collection => (type is IArrayTypeSymbol ? $"{handle}[]" : $"global::System.Collections.Generic.{type.Name}<{handle}>",
 					$"global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select{(element is null ? "" : $"<{handle}, {element}>")}(@{name}, {unwrap}))"),
 				_ => (handle, $"@{name}.Value"),
@@ -2088,6 +2088,7 @@ partial class AwaitenGenerator
 		{
 			IArrayTypeSymbol array => ReferencedHiddenService(array.ElementType, hidden),
 			INamedTypeSymbol named => hidden.Services.ContainsKey(named) || (IsHiddenService(named, hidden.Module, hidden.Compilation) && hidden.Provider(named) is not null)
+	///     The generated member suffixes it away from the names of its other parameters (see <see cref="FactoryParameter.ExactName" />).
 				? named
 				: named.TypeArguments.Select(argument => ReferencedHiddenService(argument, hidden)).FirstOrDefault(service => service is not null),
 			_ => null,

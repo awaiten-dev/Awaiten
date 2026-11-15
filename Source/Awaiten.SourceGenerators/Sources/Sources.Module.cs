@@ -339,7 +339,7 @@ internal static partial class Sources
 			AppendXmlSummary(builder, depth,
 				"Generated from a module [AsyncInitializer]: runs the convention on the instance a handle holds, so a consuming",
 				"container initializes a service the module builds through a handle.");
-			FactoryParameter[] parameters = initializer.Parameters.AsArray();
+			FactoryParameter[] parameters = WithUnusedExactNames(initializer.Parameters.AsArray());
 			Indent(builder, depth).Append("public static ").Append(initializer.ReturnType).Append(' ').Append(initializer.Name).Append('(')
 				.Append(initializer.HandleType).Append(" @awaiten__instance").Append(string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}")))
 				.Append(") => ((").Append(initializer.ConventionType).Append(")@awaiten__instance.Value).").Append(initializer.Method).Append('(')
@@ -371,7 +371,7 @@ internal static partial class Sources
 		AppendXmlSummary(builder, depth,
 			$"Generated from a {owner} [AsyncInitializer]: runs the convention on an instance the {owner} {(owner == "module" ? "registers" : "builds")}, so a consuming",
 			"container in another assembly initializes it without naming the convention.");
-		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(wrapper.Parameters.AsArray());
 		string instance = UnusedName("awaiten__instance", parameters);
 		Indent(builder, depth).Append("public static ").Append(wrapper.ReturnType).Append(' ').Append(wrapper.Name).Append("(object @").Append(instance)
 			.Append(string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}")))
@@ -627,7 +627,7 @@ internal static partial class Sources
 		Indent(builder, depth).AppendLine("}");
 		if (closing.Implementation is { } implementation)
 		{
-			FactoryParameter[] parameters = closing.Parameters.AsArray();
+			FactoryParameter[] parameters = WithUnusedExactNames(closing.Parameters.AsArray());
 			builder.AppendLine();
 			AppendXmlSummary(builder, depth,
 				"Generated from a module registration: builds the closing the handle holds from the module's open generic registration,",
@@ -681,7 +681,7 @@ internal static partial class Sources
 
 		AppendXmlSummary(builder, depth, summary);
 
-		FactoryParameter[] parameters = factory.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(factory.Parameters.AsArray());
 		string[] members = factory.Members.AsArray();
 		string[] optional = factory.OptionalMembers.AsArray();
 		string signature = string.Join(", ", parameters.Select((parameter, index) => (Parameter: parameter, Index: index)).Where(entry => !entry.Parameter.Fixed).Select(entry => entry.Index < parameters.Length - optional.Length
@@ -765,7 +765,7 @@ internal static partial class Sources
 	/// </summary>
 	private static void EmitFactoryWithOptionalMembers(StringBuilder builder, int depth, RegistrationFactory factory, string accessibility, string signature, string arguments)
 	{
-		FactoryParameter[] parameters = factory.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(factory.Parameters.AsArray());
 		string[] members = factory.Members.AsArray();
 		string[] optional = factory.OptionalMembers.AsArray();
 		int first = parameters.Length - members.Length - optional.Length;
@@ -876,7 +876,7 @@ internal static partial class Sources
 			return;
 		}
 
-		FactoryParameter[] parameters = wrapper.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(wrapper.Parameters.AsArray());
 		builder.Append(wrapper.TypeParameters).Append('(').Append(string.Join(", ", parameters.Select(MirroredParameter))).Append(')').Append(wrapper.Constraints).Append(" => ").Append(wrapper.Awaited ? "await " : string.Empty).Append(wrapper.Target)
 			.Append('(').Append(string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression))).Append(')').AppendLine(wrapper.Awaited ? ".ConfigureAwait(false);" : ";");
 	}
@@ -886,8 +886,34 @@ internal static partial class Sources
 	///     collection it takes as well (see <see cref="FactoryParameter.Exact" />).
 	/// </summary>
 	private static string MirroredParameter(FactoryParameter parameter)
-		=> (parameter.Exact is { } exact ? $"{exact} @{AwaitenGenerator.ExactCollectionName(parameter.Name)}, " : string.Empty)
+		=> (parameter.Exact is { } exact ? $"{exact} @{parameter.ExactParameterName}, " : string.Empty)
 		   + $"{parameter.Attributes}{parameter.Type} @{parameter.Name}";
+
+	/// <summary>
+	///     <paramref name="parameters" /> with the public collection each takes as well (see <see cref="FactoryParameter.Exact" />)
+	///     suffixed away from the names of the others, like <see cref="UnusedName" />.
+	/// </summary>
+	private static FactoryParameter[] WithUnusedExactNames(FactoryParameter[] parameters)
+	{
+		HashSet<string> taken = new(parameters.Select(parameter => parameter.Name), StringComparer.Ordinal);
+		FactoryParameter[] named = new FactoryParameter[parameters.Length];
+		for (int index = 0; index < parameters.Length; index++)
+		{
+			named[index] = parameters[index];
+			if (parameters[index].Exact is not null)
+			{
+				string name = AwaitenGenerator.ExactCollectionName(parameters[index].Name);
+				while (!taken.Add(name))
+				{
+					name += "_";
+				}
+
+				named[index] = parameters[index] with { ExactName = name, };
+			}
+		}
+
+		return named;
+	}
 
 	private static void EmitModuleFactory(StringBuilder builder, int depth, ModuleFactory factory)
 	{
@@ -907,7 +933,7 @@ internal static partial class Sources
 
 		// Parameter names are emitted verbatim-prefixed: a scanned constructor may legally name a parameter with a
 		// reserved keyword ('@event'), whose symbol name carries no '@', and the prefix is harmless otherwise.
-		FactoryParameter[] parameters = factory.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(factory.Parameters.AsArray());
 		string signature = string.Join(", ", parameters.Select(MirroredParameter));
 		string arguments = string.Join(", ", parameters.Select(parameter => parameter.ArgumentExpression));
 		string construction = $"new {factory.ImplementationType}({arguments})";
@@ -938,7 +964,7 @@ internal static partial class Sources
 	{
 		AppendXmlSummary(builder, depth, summary);
 
-		FactoryParameter[] parameters = hook.Parameters.AsArray();
+		FactoryParameter[] parameters = WithUnusedExactNames(hook.Parameters.AsArray());
 		string signature = string.Concat(parameters.Select(parameter => $", {MirroredParameter(parameter)}"));
 		string arguments = string.Concat(parameters.Select(parameter => $", {parameter.ArgumentExpression}"));
 
