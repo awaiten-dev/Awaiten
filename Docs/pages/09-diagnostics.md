@@ -2096,6 +2096,8 @@ An open generic registration's implementation and service have different arity.
 
 The open `[Decorate]`/`[Composite]` `typeof` forms are held to the same rule (decorator/composite arity must match the service).
 
+<ApplyFix id="AWT125">
+
 ```csharp expect=AWT125
 [Container]
 // highlight-next-line
@@ -2103,9 +2105,20 @@ The open `[Decorate]`/`[Composite]` `typeof` forms are held to the same rule (de
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+// highlight-next-line
+[Transient(typeof(Repository<>), typeof(IRepository<>))]   // one type parameter each
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Pair an implementation and a service with the same number of type parameters: `[Transient(typeof(Repository<>), typeof(IRepository<>))]`.
 
 The same error reports an open implementation, decorator, composite or service nested in a generic type. A closing of the service supplies only the type arguments of the nested type itself, so nothing binds those of the type that contains it:
+
+<ApplyFix id="AWT125">
 
 ```csharp expect=AWT125
 public class Catalog<TShop>
@@ -2119,6 +2132,21 @@ public class Catalog<TShop>
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+// highlight-next-line
+public class Catalog   // not generic, so a closing binds every type parameter
+{
+    public sealed class Repository<T> : IRepository<T>;
+}
+
+[Container]
+// highlight-next-line
+[Transient(typeof(Catalog.Repository<>), typeof(IRepository<>))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Declare the type outside the generic type, or nest it in a non-generic one.
 
 ### AWT126: Open generic constraint violation \{#awt126\}
@@ -2131,6 +2159,8 @@ Each open registration that cannot build the closing is reported, and the messag
 
 When several open registrations share a service, a registration whose constraints reject a closing is skipped for it without a diagnostic as long as another registration builds it. Under keys or contexts, a request under the key or context of the skipped registration that nothing else serves reports it, with the key in the message (see [split the closings by constraints](./05-registration/06-open-generics.md#split-the-closings-by-constraints)).
 
+<ApplyFix id="AWT126">
+
 ```csharp expect=AWT126
 public sealed class Repository<T> : IRepository<T> where T : class;
 // highlight-next-line
@@ -2142,6 +2172,19 @@ public sealed class Ledger(IRepository<int> repo);   // int is not a class
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Repository<T> : IRepository<T> where T : class;
+// highlight-next-line
+public sealed class Ledger(IRepository<Order> repo);   // Order is a class
+
+[Container]
+[Transient(typeof(Repository<>), typeof(IRepository<>))]
+[Singleton<Ledger>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Depend on a closing that satisfies the constraints (here a reference type, such as `IRepository<Order>`), or relax the implementation's constraint.
 
 ### AWT171: Decorator or composite skips a constraint-violating closing \{#awt171\}
@@ -2151,6 +2194,8 @@ The decorator/composite counterpart to [AWT126](#awt126): a closing of an open g
 :::
 
 A warning, not an error, because the base service still resolves. That one closing is left as-is (undecorated/unfronted), and the remaining closings are decorated/composed as usual.
+
+<ApplyFix id="AWT171">
 
 ```csharp expect=AWT171
 public interface IHandler<T> { }
@@ -2167,6 +2212,23 @@ public sealed class Counter(IHandler<int> handler);   // needs the closing IHand
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public interface IHandler<T> { }
+public sealed class Handler<T> : IHandler<T> { }
+// highlight-next-line
+public sealed class Logging<T>(IHandler<T> inner) : IHandler<T>;   // any T, so IHandler<int> is decorated too
+
+public sealed class Counter(IHandler<int> handler);   // needs the closing IHandler<int>
+
+[Container]
+[Transient(typeof(Handler<>), typeof(IHandler<>))]
+[Transient<Counter>]
+[Decorate(typeof(Logging<>), typeof(IHandler<>))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Relax the decorator's or composite's constraint so it covers every closing (here drop `where T : class`). If the closing should stay undecorated, the warning says exactly that and can be left as is.
 
 ### AWT127: Open generic registration is not an unbound generic \{#awt127\}
@@ -2177,12 +2239,23 @@ The `typeof`-argument form of `[Decorate]` or `[Composite]` must receive unbound
 
 A lifetime attribute's `typeof` form accepts a closed pair, but when one of its two types is an unbound generic, both must be.
 
+<ApplyFix id="AWT127">
+
 ```csharp expect=AWT127
 [Container]
 // highlight-next-line
 [Transient(typeof(Repository<>), typeof(IRepository<Order>))]   // open implementation, closed service
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Transient(typeof(Repository<>), typeof(IRepository<>))]   // unbound on both sides
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Pass unbound generics on both sides, `typeof(Repository<>), typeof(IRepository<>)`, or register the closed pair with the generic form: `[Transient<Repository<Order>, IRepository<Order>>]`.
 
@@ -2194,6 +2267,8 @@ An open generic implementation does not expose its service with type parameters 
 
 The open `[Decorate]`/`[Composite]` `typeof` forms are held to the same rule.
 
+<ApplyFix id="AWT128">
+
 ```csharp expect=AWT128
 // highlight-next-line
 public sealed class Map<TKey, TValue> : IMap<TValue, TKey>;   // parameters swapped
@@ -2202,6 +2277,17 @@ public sealed class Map<TKey, TValue> : IMap<TValue, TKey>;   // parameters swap
 [Transient(typeof(Map<,>), typeof(IMap<,>))]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Map<TKey, TValue> : IMap<TKey, TValue>;   // parameters in declaration order
+
+[Container]
+[Transient(typeof(Map<,>), typeof(IMap<,>))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Expose the service with the implementation's type parameters in declaration order: `Map<TKey, TValue> : IMap<TKey, TValue>`.
 
@@ -2234,6 +2320,8 @@ A closed `typeof` registration's implementation is not a class or interface assi
 
 The generic form `[Singleton<RealTimeSystem, ITimeSystem>]` rejects such a pair through its type constraints; the `typeof` form has none, so Awaiten reports it.
 
+<ApplyFix id="AWT206">
+
 ```csharp expect=AWT206
 // highlight-next-line
 public sealed class RealTimeSystem;   // does not implement ITimeSystem
@@ -2242,6 +2330,17 @@ public sealed class RealTimeSystem;   // does not implement ITimeSystem
 [Singleton(typeof(RealTimeSystem), typeof(ITimeSystem))]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class RealTimeSystem : ITimeSystem;   // assignable to its service
+
+[Container]
+[Singleton(typeof(RealTimeSystem), typeof(ITimeSystem))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Let the implementation implement the service (`public sealed class RealTimeSystem : ITimeSystem;`), or use the generic form `[Singleton<RealTimeSystem, ITimeSystem>]`, whose constraints check the pair.
 
@@ -2253,6 +2352,8 @@ public static partial class CoffeeShop;
 
 Each describes one concrete instance, but the closings of an open generic are whatever the graph asks for, so eagerly building "every closing" would start services because some other consumer happens to close the generic, and one pre-built instance cannot be every closing. Register the closings you want eager or pre-built with a closed type.
 
+<ApplyFix id="AWT207">
+
 ```csharp expect=AWT207
 [Container]
 // highlight-next-line
@@ -2260,6 +2361,16 @@ Each describes one concrete instance, but the closings of an open generic are wh
 [Singleton(typeof(Cache<Order>), typeof(ICache<Order>), Eager = true)]  // fine: one closed type
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Singleton(typeof(Cache<>), typeof(ICache<>))]                        // closings built on demand
+[Singleton(typeof(Cache<Order>), typeof(ICache<Order>), Eager = true)]  // fine: one closed type
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Remove `Eager`, `EagerWhen` or `Instance` from the open generic registration and register each closing you want eager or pre-built with a closed type, as the second line does.
 
@@ -2271,6 +2382,8 @@ The `Factory` of an open generic `typeof` registration is not a generic method w
 
 Awaiten closes the factory per closing with the closed service's type arguments, in declaration order, so the method needs one type parameter for each of the service's. The registration is dropped.
 
+<ApplyFix id="AWT208">
+
 ```csharp expect=AWT208
 [Container]
 [Transient(typeof(IRepository<>), Factory = nameof(Create))]
@@ -2281,6 +2394,18 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Transient(typeof(IRepository<>), Factory = nameof(Create))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static IRepository<T> Create<T>() => new Repository<T>();   // one type parameter, like IRepository<>
+}
+```
+
+</ApplyFix>
+
 **Fix:** Make the factory a generic method with exactly the service's type parameters: `private static IRepository<T> Create<T>() => new Repository<T>();`.
 
 ### AWT209: Generic factory constraint violation \{#awt209\}
@@ -2290,6 +2415,8 @@ A closing of an open generic `typeof` registration violates the type-parameter c
 :::
 
 Like [AWT126](#awt126), the dependency that asked for it is unsatisfied. When another registration accepts the closing, the factory is skipped for it without a diagnostic.
+
+<ApplyFix id="AWT209">
 
 ```csharp expect=AWT209
 // highlight-next-line
@@ -2304,6 +2431,21 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+public sealed class Ledger(IRepository<int> numbers);   // int is not a class
+
+[Container]
+[Transient(typeof(IRepository<>), Factory = nameof(Create))]
+[Singleton<Ledger>]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static IRepository<T> Create<T>() => new Repository<T>();   // any T, int included
+}
+```
+
+</ApplyFix>
+
 **Fix:** Relax the factory's constraint so it covers the closing, or depend on a closing that satisfies it (here a reference type, such as `IRepository<Order>`).
 
 ## Property injection
@@ -2315,6 +2457,8 @@ An `[Inject]` property has no set or init accessor the container can assign thro
 :::
 
 An explicit interface implementation has no such accessor either. A container in another assembly also reports a `private` or `private protected` `[Inject]` property, or an explicit interface implementation, it can't see this way, since no container could assign it.
+
+<ApplyFix id="AWT136">
 
 ```csharp expect=AWT136
 public sealed class Barista
@@ -2329,6 +2473,21 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    // highlight-next-line
+    [Inject] public ITimeSystem? Time { get; set; }   // the container assigns it
+}
+
+[Container]
+[Transient<Barista>]
+[Singleton<RealTimeSystem, ITimeSystem>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Give the property an accessible `set` or `init` accessor (`{ get; set; }`), or remove `[Inject]`.
 
 ### AWT144: Deferred property is init-only or required \{#awt144\}
@@ -2336,6 +2495,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 An `[Inject(Deferred = true)]` property is init-only or required rather than assignable after construction.
 :::
+
+<ApplyFix id="AWT144">
 
 ```csharp expect=AWT144
 public sealed class Node
@@ -2349,6 +2510,20 @@ public sealed class Node
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Node
+{
+    // highlight-next-line
+    [Inject(Deferred = true)] public Node? Peer { get; set; }   // assigned after construction
+}
+
+[Container]
+[Singleton<Node>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Give the property a plain `set` accessor and do not mark it `required`: `public Node? Peer { get; set; }`.
 
 ### AWT145: Non-terminating deferred transient cycle \{#awt145\}
@@ -2356,6 +2531,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A deferred property cycle consists entirely of transients and cannot terminate.
 :::
+
+<ApplyFix id="AWT145">
 
 ```csharp expect=AWT145
 public sealed class A { [Inject(Deferred = true)] public B? B { get; set; } }
@@ -2367,6 +2544,19 @@ public sealed class B { [Inject(Deferred = true)] public A? A { get; set; } }
 [Transient<B>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class A { [Inject(Deferred = true)] public B? B { get; set; } }
+public sealed class B { [Inject(Deferred = true)] public A? A { get; set; } }
+
+[Container]
+// highlight-next-line
+[Singleton<A>]    // cached, so the cycle closes on it
+[Transient<B>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Make at least one participant a singleton or scoped (`[Singleton<A>]`), so the cycle closes on a cached instance, or break the cycle.
 
@@ -2419,6 +2609,8 @@ public static partial class CoffeeShop;
 An `[Inject(Optional = true)]` property is required and cannot be omitted from the object initializer.
 :::
 
+<ApplyFix id="AWT157">
+
 ```csharp expect=AWT157
 public sealed class Barista
 {
@@ -2431,6 +2623,20 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    // highlight-next-line
+    [Inject(Optional = true)] public ITimeSystem? Time { get; set; }   // may be omitted, so null when unregistered
+}
+
+[Container]
+[Transient<Barista>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Drop `required`, or drop `Optional = true` so that a missing dependency is reported as [AWT101](#awt101) instead.
 
 ### AWT158: Optional injected property is init-only \{#awt158\}
@@ -2438,6 +2644,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 An `[Inject(Optional = true)]` property is init-only, so an unregistered dependency leaves it permanently at its default.
 :::
+
+<ApplyFix id="AWT158">
 
 ```csharp expect=AWT158
 public sealed class Barista
@@ -2451,6 +2659,20 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    // highlight-next-line
+    [Inject(Optional = true)] public ITimeSystem? Time { get; set; }   // can still be assigned later
+}
+
+[Container]
+[Transient<Barista>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 It is reported at the property, or, for a type from another assembly, at the registration or the `[Import]` of its module. To keep the init-only accessor on purpose, suppress the warning there with `#pragma warning disable AWT158`.
 
 **Fix:** Give the property a plain `set` accessor, so a value can still be assigned after construction when the dependency is not registered.
@@ -2462,6 +2684,8 @@ An `[InjectProperty<T>]` names a member that is not a settable property on the i
 :::
 
 For an open-generic target such as `[InjectProperty(typeof(OrderBook<>), ...)]` the generic definition is checked, once.
+
+<ApplyFix id="AWT177">
 
 ```csharp expect=AWT177
 public sealed class Barista
@@ -2477,6 +2701,22 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    public ITimeSystem? Time { get; set; }
+}
+
+[Container]
+[Singleton<RealTimeSystem, ITimeSystem>]
+[Singleton<Barista>]
+// highlight-next-line
+[InjectProperty<Barista>(nameof(Barista.Time))]   // the compiler checks the name
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Name the property with `nameof(Barista.Time)`, and make sure it is a property with a `set` or `init` accessor rather than a field, method or read-only member.
 
 ### AWT178: `[InjectProperty]` on a non-constructed implementation \{#awt178\}
@@ -2486,6 +2726,8 @@ An `[InjectProperty<T>]` targets an implementation produced by a `Factory` or `I
 :::
 
 Such an instance is built whole by its source, so there is no object initializer for the container to fill.
+
+<ApplyFix id="AWT178">
 
 ```csharp expect=AWT178
 public sealed class Barista
@@ -2504,6 +2746,24 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    public ITimeSystem? Time { get; set; }
+}
+
+[Container]
+[Singleton<RealTimeSystem, ITimeSystem>]
+[Singleton<Barista>(Factory = nameof(MakeBarista))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static Barista MakeBarista(ITimeSystem time) => new() { Time = time };   // the factory sets the property
+}
+```
+
+</ApplyFix>
+
 A type that a module or base of another assembly builds through its [generated factory](./05-registration/08-modules/02-library-module-rules.md#internal-implementations), an open generic one included, is different: the container sets the entry's property on the instance the factory returns, before anything else sees it. Only an init-only property is reported there, since it can be set only while the factory constructs the instance. The same holds for a type a module of that assembly builds into a generated instance handle, also when another module, the container's own registration or a scan shares the handle's instance: the container sets the property on the instance the handle holds, before the module's hooks and async initializers run. A composite such a module builds through its generated factory is reported, because that factory returns the service rather than the composite. So is an entry for a type built into an instance handle when the container cannot set it through the handle: a `Deferred` entry, a type the module builds from runtime `[Arg]` arguments, or a module that generates no member returning the type from its handle. The message then names the module or base, why it builds the type and why the entry cannot reach it, since the container declares no `Factory` itself.
 
 **Fix:** Remove the `[InjectProperty]` entry and set the property in the factory, which can take the dependency as a parameter (`MakeBarista(ITimeSystem time) => new() { Time = time }`), or let the container construct the type. For a type a generated factory builds, give the property a `set` accessor. For a type a module of another assembly builds through its generated factory or instance handle, you can also grant the container's assembly `InternalsVisibleTo` in the module's assembly, so the container constructs the type itself and fills every entry; for a `Deferred` entry on such a type, removing `Deferred` works as well, unless the entry breaks a cycle.
@@ -2515,6 +2775,8 @@ Two `[InjectProperty]` entries name the same property of the same implementation
 :::
 
 The property is filled once; the duplicate is ignored. A closed entry and an open-generic `typeof` entry that meet on one closing are reported only when the closed entry repeats the open entry's `Key`, `Optional` and `Deferred`: the closed entry wins on its closing either way, so one that changes an option is a deliberate [specialization of that closing](./06-resolution/05-property-injection.md#open-generics-with-the-typeof-form) and is not reported. A deliberate duplicate can be suppressed at the ignored entry with `#pragma warning disable AWT179` or with `[SuppressMessage]`.
+
+<ApplyFix id="AWT179">
 
 ```csharp expect=AWT179
 public sealed class Barista
@@ -2531,6 +2793,22 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    public ITimeSystem? Time { get; set; }
+}
+
+[Container]
+[Singleton<RealTimeSystem, ITimeSystem>]
+[Singleton<Barista>]
+// highlight-next-line
+[InjectProperty<Barista>(nameof(Barista.Time))]   // one entry fills it
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove the duplicate entry, or suppress the warning where the duplicate is deliberate.
 
 ### AWT180: `[InjectProperty]` implementation is not registered \{#awt180\}
@@ -2538,6 +2816,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 An `[InjectProperty<T>]` names an implementation that has no container-constructed registration, so the entry is never applied: the type is unregistered, or it is an open generic no consumer closed.
 :::
+
+<ApplyFix id="AWT180">
 
 ```csharp expect=AWT180
 public sealed class Barista
@@ -2552,6 +2832,22 @@ public sealed class Barista
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class Barista
+{
+    public ITimeSystem? Time { get; set; }
+}
+
+[Container]
+[Singleton<RealTimeSystem, ITimeSystem>]
+// highlight-next-line
+[Singleton<Barista>]   // constructed by the container, so the entry applies
+[InjectProperty<Barista>(nameof(Barista.Time))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Register the implementation as a constructed service (`[Singleton<Barista>]`), or remove the entry. For a generic definition, make sure a consumer requires one of its closings.
 
 ### AWT181: `[InjectProperty]` duplicates an `[Inject]` property \{#awt181\}
@@ -2561,6 +2857,8 @@ A property carries both `[Inject]` and a container-side `[InjectProperty<T>]` en
 :::
 
 The property is filled once, from `[Inject]`, so the entry's `Optional`/`Deferred`/`Key` are ignored.
+
+<ApplyFix id="AWT181">
 
 ```csharp expect=AWT181
 public sealed class Barista
@@ -2575,6 +2873,22 @@ public sealed class Barista
 [InjectProperty<Barista>(nameof(Barista.Time))]   // [Inject] already fills it: remove one
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+public sealed class Barista
+{
+    // highlight-next-line
+    public ITimeSystem? Time { get; set; }   // only the entry fills it
+}
+
+[Container]
+[Singleton<RealTimeSystem, ITimeSystem>]
+[Singleton<Barista>]
+[InjectProperty<Barista>(nameof(Barista.Time))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Remove one of the two: the `[Inject]` attribute on the property or the `[InjectProperty]` entry on the container.
 
