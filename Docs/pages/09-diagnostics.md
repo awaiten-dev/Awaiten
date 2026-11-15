@@ -3966,6 +3966,8 @@ public static partial class CoffeeShop;
 An imported module has its own `[Import]`, which is not followed.
 :::
 
+<ApplyFix id="AWT150">
+
 ```csharp expect=AWT150
 [Module]
 // highlight-next-line
@@ -3978,6 +3980,20 @@ public static partial class PaymentModule;
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Module]
+[Singleton<CardTerminal, IPaymentTerminal>]
+public static partial class PaymentModule;
+
+[Container]
+[Import(typeof(PaymentModule))]
+// highlight-next-line
+[Import(typeof(BaseModule))]   // imported by the container directly
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Import the nested module on the container directly (`[Import(typeof(BaseModule))]`) and remove the `[Import]` from the module; imports are followed one level deep.
 
 ### AWT151: Imported module has no registrations \{#awt151\}
@@ -3985,6 +4001,8 @@ public static partial class CoffeeShop;
 :::warning[Warning]
 An imported module declares no registrations.
 :::
+
+<ApplyFix id="AWT151">
 
 ```csharp expect=AWT151
 [Module]
@@ -3996,6 +4014,19 @@ public static partial class EmptyModule;   // nothing to contribute
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Module]
+// highlight-next-line
+[Singleton<Grinder>]   // something to contribute
+public static partial class EmptyModule;
+
+[Container]
+[Import(typeof(EmptyModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Add the registrations the module is meant to contribute, or remove the `[Import]`.
 
 ### AWT152: Module must be static \{#awt152\}
@@ -4003,6 +4034,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 An imported `[Module]` class is not declared static.
 :::
+
+<ApplyFix id="AWT152">
 
 ```csharp expect=AWT152
 [Module]
@@ -4015,6 +4048,19 @@ public class PaymentModule;   // must be static
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Module]
+[Singleton<CardTerminal, IPaymentTerminal>]
+// highlight-next-line
+public static partial class PaymentModule;   // imported, never instantiated
+
+[Container]
+[Import(typeof(PaymentModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Declare the module `static`: `public static partial class PaymentModule;`.
 
 ### AWT153: Module `Factory` or `Instance` member not accessible \{#awt153\}
@@ -4022,6 +4068,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 A module `Factory`/`Instance` member is not accessible from the generated container.
 :::
+
+<ApplyFix id="AWT153">
 
 ```csharp expect=AWT153
 [Module]
@@ -4037,6 +4085,23 @@ public static partial class EquipmentModule
 [Import(typeof(EquipmentModule))]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Module]
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]
+public static partial class EquipmentModule
+{
+    // public, and without a parameter the container can't pass
+    // highlight-next-line
+    public static Grinder MakeGrinder() => new();
+}
+
+[Container]
+[Import(typeof(EquipmentModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 A private member of a `partial` module is reported only when the module can generate no wrapper for it, and then once, in the library's own build; overloads of it are [AWT112](#awt112) there instead. Otherwise the module generates an internal wrapper for it, which a container in the library's own assembly or in one the library grants `InternalsVisibleTo` calls, and for a public service whose parameter types are public also a public wrapper, which a container in another assembly calls. Such a container reaches a member that returns an internal implementation under several public services, or that takes a parameter of an internal service the module registers, through a [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses) instead. A module that is not `partial` cannot receive a wrapper and reports the member in its own build ([AWT194](#awt194)). A generic `Factory` member of an open registration gets no wrapper, so a private one is reported in the library's own build whether the module is `partial` or not. A parameter of a type private to the module is reported in the library's build instead ([AWT195](#awt195)), since no container can resolve it. An IDE sees the internal members of a project reference, so it reports an internal member of a module in another assembly that the module generated no public wrapper for as this error instead of [AWT108](#awt108) or [AWT109](#awt109), with the same reason. When you lower the error in the library's build or disable it with `#pragma`, the library's containers leave the registration out, so only a dependency on the service fails ([AWT101](#awt101)). A container in another assembly can't call the private member either and reports [AWT108](#awt108) or [AWT109](#awt109).
 
@@ -4070,6 +4135,8 @@ A `[Scan]` on a `[Module]` is [self-compiled in the module's own build](./05-reg
 Two imported modules strongly register the same service with different implementations, and something resolves the service singly.
 :::
 
+<ApplyFix id="AWT155">
+
 ```csharp expect=AWT155
 public sealed class ShiftTimer(ITimeSystem time);
 
@@ -4089,6 +4156,28 @@ public static partial class ModuleB;
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+public sealed class ShiftTimer(ITimeSystem time);
+
+[Module]
+[Singleton<RealTimeSystem, ITimeSystem>]
+public static partial class ModuleA;
+
+[Module]
+[Singleton<MockTimeSystem, ITimeSystem>]
+public static partial class ModuleB;
+
+[Container]
+[Import(typeof(ModuleA))]
+[Import(typeof(ModuleB))]
+// highlight-next-line
+[Singleton<RealTimeSystem, ITimeSystem>]   // the container decides single resolution
+[Singleton<ShiftTimer>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 Both registrations stay members of the service's collections, but a single `ITimeSystem` comes from the earlier import, which neither module shows. The container reports this only when a dependency in the graph resolves the service singly, directly or through a relationship such as `Func<T>`, `Lazy<T>` or `Owned<T>`. A service consumed only as a collection, a keyed dictionary or through a composite receives every contribution, so [plugin-style composition](./05-registration/08-modules/index.md#contribute-to-a-collection) stays silent. A `Resolve<T>()`, `ResolveAsync<T>()` or `Resolve(typeof(T))` on the generated `Root` or `Scope` that hands out the single winner reports it at the call instead: a resolve of the service itself, of `Func<T>`, `Lazy<T>`, `Owned<T>` or `Func<Owned<T>>` over it, or of a closed variant interface that [variance](./06-resolution/08-generic-variance.md) routes to it. A resolve through `IAwaitenRoot`, through the MS.DI bridge or with a `Type` known only at run time returns the earlier import's registration without a warning.
 
 **Fix:** Override the service on the container with a registration of its own, or make one module's registration an overridable default with `Fallback = Fallback.Warn` or `Fallback = Fallback.Silent`. When the service is also consumed as a collection or a keyed dictionary, don't use `Fallback`: the registration without it would drop the default from the collection. Register the implementation single resolution should use on the container as well, which decides single resolution and keeps every member, or depend on the collection where every contribution is meant. That keeps every member only for a constructed implementation the container can access, whose registration on the container coalesces with the module's: a `Factory` or `Instance` registration on the container is a member of its own, and an implementation internal to the module's assembly can't be registered on the container at all. The message says so when a contribution is of that kind. The message leaves out the `Fallback` advice in that case, and always at a `Resolve` call, since code outside the graph may resolve the collection too.
@@ -4099,12 +4188,27 @@ Both registrations stay members of the service's collections, but a single `ITim
 A `[Module]` that declares a `[Scan]`, or a registration of an implementation another assembly cannot construct, is not `partial` (or is nested in a type that is not), so it cannot be self-compiled.
 :::
 
+<ApplyFix id="AWT194">
+
 ```csharp expect=AWT194
+internal sealed class Roaster : IPlugin, IRoaster;
+
 [Module]
 [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
 // highlight-next-line
 public static class PluginModule;   // must be partial to receive the generated factories
 ```
+
+```csharp isolated
+internal sealed class Roaster : IPlugin, IRoaster;
+
+[Module]
+[Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+// highlight-next-line
+public static partial class PluginModule;   // receives the generated factories
+```
+
+</ApplyFix>
 
 ```csharp expect=AWT194
 internal sealed class Roaster : IRoaster;
@@ -4135,6 +4239,8 @@ public static class EquipmentModule   // must be partial to receive the wrapper 
 A self-compiled module `[Scan]` match or registration has a constructor or factory parameter of a type inaccessible outside the module's assembly.
 :::
 
+<ApplyFix id="AWT195">
+
 ```csharp expect=AWT195
 internal sealed class Secret;
 // highlight-next-line
@@ -4145,6 +4251,18 @@ internal sealed class Roaster(Secret secret) : IRoaster;   // Secret is internal
 public static partial class PluginModule;
 ```
 
+```csharp isolated
+// highlight-next-line
+public sealed class Secret;   // a consumer can name it
+internal sealed class Roaster(Secret secret) : IRoaster;
+
+[Module]
+[Scan<IRoaster>(As = ScanAs.MatchingInterface)]
+public static partial class PluginModule;
+```
+
+</ApplyFix>
+
 The generated factory is a `public` method whose parameters are resolved from the *consuming* container's graph, so each parameter type has to be nameable by the consumer. The same holds for the factory of an [internal implementation](./05-registration/08-modules/02-library-module-rules.md#internal-implementations) a module registers. A parameter of an internal type that the module itself registers with a constructor is fine: the factory takes it through a [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses). So is a public generic service closed over an internal type, such as `ILogger<Roaster>` for an internal `Roaster`: the factory takes it through a [closing handle](./05-registration/08-modules/02-library-module-rules.md#closings-over-internal-types), and the container decides who provides it ([AWT253](#awt253)). The implementation of such an internal service is reported when something needs the service, or when another module of the assembly registers the service as well, since a container in another assembly would then serve that module's implementation instead. An implementation or scan match that takes such a service through its constructor, its factory or an `[Inject]` property is not reported for it as well, and neither is an internal service that fails only because it takes another one: the module reports the cause once, where it arises, and a container in another assembly reports [AWT231](#awt231) for the implementation that takes the service. An `[Arg]` parameter of such a type is still reported, since the caller passes it to the factory and has to name its type, and so is an implementation private to the module, which no other assembly can construct instead; its message names the service the module cannot build rather than its accessibility. A parameter or `[Inject]` property of an internal service that only other modules of the assembly register, none of which can build it, is reported too, with the module that cannot build it and why, since nothing else reports that cause, and so is the implementation of an internal service that takes it. When that service fails only because it takes another internal service that can't be built, the message names what keeps that one from being built, and so on, even through a cycle of modules, so it names the cause to fix. Widen the parameter type's accessibility, or keep the type out of self-compilation. This is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, and a container that can't construct the implementation reports [AWT231](#awt231).
 
 The factory is as accessible as the module. The factory of an `internal` module, which builds the types private to it, is reached only from the module's own assembly and from assemblies it grants `InternalsVisibleTo`, so its parameter types may be internal too.
@@ -4154,6 +4272,8 @@ A parameter of a type private to the module, or to a class containing it, is rep
 **Fix:** Make the parameter type public, or exclude the match from the scan, or make a registered implementation and its constructor public.
 
 A parameter type private to the module, or to a class that contains it, has a message of its own, because widening it is not the remedy for a type that is meant to stay private. No container can register a service of such a type or resolve the parameter, and the factory cannot build it either without bypassing the lifetime and disposal the graph gives it. Depend on an accessible service the private type implements, and register the type under that service:
+
+<ApplyFix id="AWT195">
 
 ```csharp expect=AWT195
 [Module]
@@ -4168,11 +4288,28 @@ public static partial class BarModule
 }
 ```
 
+```csharp isolated
+[Module]
+[Singleton<Grinder, IGrinder>]
+[Singleton<Espresso, IDrink>]
+public static partial class BarModule
+{
+    private sealed class Grinder : IGrinder;
+
+    // highlight-next-line
+    private sealed class Espresso(IGrinder grinder) : IDrink;   // a service the container resolves
+}
+```
+
+</ApplyFix>
+
 ### AWT196: Module scan match has no accessible exposure \{#awt196\}
 
 :::warning[Warning]
 A self-compiled module `[Scan]` match has an exposure, but none that is accessible outside the module's assembly, so it is skipped.
 :::
+
+<ApplyFix id="AWT196">
 
 ```csharp expect=AWT196
 internal sealed class Roaster : IPlugin;
@@ -4182,6 +4319,17 @@ internal sealed class Roaster : IPlugin;
 [Scan<IPlugin>(As = ScanAs.Self)]   // Self exposes the internal type, which a consumer cannot name
 public static partial class PluginModule;
 ```
+
+```csharp isolated
+internal sealed class Roaster : IPlugin;
+
+[Module]
+// highlight-next-line
+[Scan<IPlugin>(As = ScanAs.Marker)]   // Marker exposes the public IPlugin
+public static partial class PluginModule;
+```
+
+</ApplyFix>
 
 A consumer resolves a self-compiled match only through an accessible interface. The match is skipped when every exposure it has names a type a consumer cannot name:
 
@@ -4202,6 +4350,8 @@ An `internal` module is imported only by its own assembly and by the assemblies 
 A self-compiled module registration of an internal implementation would be exposed under more than one service, or a module `[Scan]` match under more than one interface, and no generated handle can share its instance.
 :::
 
+<ApplyFix id="AWT197">
+
 ```csharp expect=AWT197
 [Module]
 // highlight-next-line
@@ -4211,6 +4361,18 @@ public static partial class PluginModule
     private sealed class Roaster : IPlugin, IRoaster;   // private to the module
 }
 ```
+
+```csharp isolated
+[Module]
+// highlight-next-line
+[Scan<IPlugin>(As = ScanAs.MatchingInterface)]   // only IRoaster applies
+public static partial class PluginModule
+{
+    private sealed class Roaster : IPlugin, IRoaster;   // private to the module
+}
+```
+
+</ApplyFix>
 
 ```csharp expect=AWT197
 [Module]
@@ -4242,6 +4404,8 @@ For an internal implementation registered under several services, a match its sc
 A self-compiled module `[Scan]` match or registration carries injection metadata the generated factory cannot mirror.
 :::
 
+<ApplyFix id="AWT200">
+
 ```csharp expect=AWT200
 internal sealed class Roaster : IRoaster
 {
@@ -4257,6 +4421,22 @@ internal sealed class Roaster : IRoaster
 public static partial class PluginModule;
 ```
 
+```csharp isolated
+internal sealed class Roaster : IRoaster
+{
+    public Roaster(ITimeSystem time) { }
+
+    // highlight-next-line
+    public IGrinder Grinder { get; set; }   // no attribute for the factory to mirror
+}
+
+[Module]
+[Scan<IRoaster>(As = ScanAs.MatchingInterface)]
+public static partial class PluginModule;
+```
+
+</ApplyFix>
+
 The generated factory reduces a match, or a registered [internal implementation](./05-registration/08-modules/02-library-module-rules.md#internal-implementations), to a parameter list resolved from the consuming container's graph. It copies an `[Arg]` or `[FromKey]` of a constructor parameter onto its own parameter. The factory of a registration also takes each `[Inject]` property as a parameter with the property's name and assigns it. An `Optional` property becomes an optional parameter with a presence flag, which a consumer sets only when it registers the service. A `Deferred` property gets a setter that a consumer calls after construction, and skips when the property is `Optional` too and the service is missing. What the factory cannot express is rejected, because the consumer would silently construct the type differently than a container in the module's own assembly would: an `[Inject]` property of a scan match, a property named like a constructor parameter or like the presence flag of another property (`awaiten__has_` or `awaiten__init_` and its name), one whose type another assembly can't name, or more than four init-only `Optional` properties on one type, collections aside, since the factory needs an object initializer for each combination of them that is present. So is what no container supports, which a container in the module's own assembly reports too: an `Optional` property that is required and not a collection ([AWT157](#awt157)), a `Deferred` property that is init-only or required ([AWT144](#awt144)), and a property without a setter the module can reach ([AWT136](#awt136)). Remove the attribute, keep the type out of self-compilation, or register it through a hand-written module factory. This is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module skips the factory, and a container that can't construct the implementation reports [AWT231](#awt231). A property without a setter the module can reach is reported either way, because a container granted `InternalsVisibleTo` doesn't see a private property and would leave it out. The same holds for a public decorator or composite whose `[Inject]` property is `internal`: a container in another assembly would construct it without the property, so the module reports what keeps its factory from setting it. When the module's assembly grants `InternalsVisibleTo` to any assembly, it skips such a decorator or composite like a registration, and a container without the grant reports [AWT231](#awt231).
 
 **Fix:** Remove the attribute, give a `Deferred` property, or the init-only `Optional` properties beyond the fourth, a plain `set` accessor, drop `required` from an `Optional` or `Deferred` property, rename a property named like a constructor parameter or a presence flag, exclude the match from the scan, or register the type through a hand-written module factory.
@@ -4267,12 +4447,27 @@ The generated factory reduces a match, or a registered [internal implementation]
 A generic `[Module]` (or one nested in a generic type) declares a `[Scan]`, or a registration of an implementation another assembly cannot construct.
 :::
 
+<ApplyFix id="AWT201">
+
 ```csharp expect=AWT201
+internal sealed class Roaster : IPlugin, IRoaster;
+
 [Module]
 [Scan<IPlugin>(As = ScanAs.MatchingInterface)]
 // highlight-next-line
 public static partial class PluginModule<T>;   // no closed PluginModule<T> exists to [Import]
 ```
+
+```csharp isolated
+internal sealed class Roaster : IPlugin, IRoaster;
+
+[Module]
+[Scan<IPlugin>(As = ScanAs.MatchingInterface)]
+// highlight-next-line
+public static partial class PluginModule;   // a consumer can [Import] it
+```
+
+</ApplyFix>
 
 A consumer imports a module by `typeof`, so there is no single closed module type to import from a generic declaration, and the generated partial could not re-open it by its bare name. Move the `[Scan]`, or the registration of the [internal implementation](./05-registration/08-modules/02-library-module-rules.md#internal-implementations), onto a non-generic module. A module without a `[Scan]` is reported only when its assembly grants `InternalsVisibleTo` to no assembly. Otherwise the module builds, and a container that can't construct the implementation reports [AWT231](#awt231). A module with a `[Scan]` keeps the error even when its assembly grants `InternalsVisibleTo`, because a container reads the matches from what the generator adds to the module. The message says so when the assembly grants `InternalsVisibleTo`.
 
@@ -4284,12 +4479,27 @@ A consumer imports a module by `typeof`, so there is no single closed module typ
 A module `[Scan]` declares `InAssembliesOf`, but a self-compiled scan sweeps only the module's own assembly.
 :::
 
+<ApplyFix id="AWT202">
+
 ```csharp expect=AWT202
+internal sealed class Roaster : IPlugin;
+
 [Module]
 // highlight-next-line
 [Scan<IPlugin>(As = ScanAs.Marker, InAssembliesOf = new[] { typeof(OtherLibMarker) })]
 public static partial class PluginModule;
 ```
+
+```csharp isolated
+internal sealed class Roaster : IPlugin;
+
+[Module]
+// highlight-next-line
+[Scan<IPlugin>(As = ScanAs.Marker)]   // sweeps the module's own assembly
+public static partial class PluginModule;
+```
+
+</ApplyFix>
 
 A self-compiled scan exists to reach the module's own `internal` types. Sweeping another assembly from a module would see only that assembly's public types, which a container `[Scan]` with `InAssembliesOf` already covers, so the module form would silently do less than the container form. Remove `InAssembliesOf` to scan the module's own assembly, or move the `[Scan]` onto the container.
 
@@ -4300,6 +4510,8 @@ A self-compiled scan exists to reach the module's own `internal` types. Sweeping
 :::danger[Error]
 A self-compiled module `[Scan]` or registration hook has a parameter, after the instance, whose type is not accessible outside the module's assembly.
 :::
+
+<ApplyFix id="AWT203">
 
 ```csharp expect=AWT203
 internal sealed class Secret;
@@ -4313,6 +4525,21 @@ public static partial class PluginModule
     internal static void Wire(Roaster roaster, Secret secret) { }   // Secret is internal to the module
 }
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Secret;   // a consumer can name it
+internal sealed class Roaster : IPlugin, IRoaster;
+
+[Module]
+[Scan<IPlugin>(As = ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
+public static partial class PluginModule
+{
+    internal static void Wire(Roaster roaster, Secret secret) { }
+}
+```
+
+</ApplyFix>
 
 The module emits a `public` wrapper for the hook of a scan, of a registered [internal implementation](./05-registration/08-modules/02-library-module-rules.md#internal-implementations), or the `internal` hook of a [`Factory` registration](./05-registration/08-modules/02-library-module-rules.md#non-public-members), and that wrapper's parameters after the instance are resolved from the consuming container's graph, so each type has to be nameable by the consumer, the same rule a self-compiled factory parameter gets ([AWT195](#awt195)). The instance parameter itself is exempt: it is the accessible exposure interface, cast back to the internal implementation inside the module. Widen the parameter type's accessibility, resolve a different dependency, or drop the hook. This doesn't apply when the module's assembly grants `InternalsVisibleTo` to any assembly and the hook is not generic: the module then emits no wrapper and reports no error, because such an assembly calls the hook directly. A container that can't reports [AWT231](#awt231). A hook of a type private to the module keeps the error. A parameter of an internal service that the module, or only another module of the library, registers but cannot build is not reported either, whether the hook belongs to a scan, a registration or a `Factory` registration: the module generates no wrapper for the hook, a container in the library's own assembly calls the hook directly, and a container in another assembly reports [AWT231](#awt231) naming that service, the module that can't build it and why. For a scan hook, and for the hook of an implementation registered under an internal service, the library's build still reports why the module can't build a service it registers itself ([AWT195](#awt195)).
 
@@ -4328,6 +4555,8 @@ A parameter type private to the module, or to a class that contains it, has a me
 A self-compiled module `[Scan]` or registration hook has a parameter, after the instance, marked `[FromKey]` or `[Inject]`.
 :::
 
+<ApplyFix id="AWT204">
+
 ```csharp expect=AWT204
 internal sealed class Roaster : IPlugin, IRoaster;
 
@@ -4339,6 +4568,20 @@ public static partial class PluginModule
     internal static void Wire(Roaster roaster, [FromKey("main")] ITimeSystem time) { }
 }
 ```
+
+```csharp isolated
+internal sealed class Roaster : IPlugin, IRoaster;
+
+[Module]
+[Scan<IPlugin>(As = ScanAs.MatchingInterface, OnActivated = nameof(Wire))]
+public static partial class PluginModule
+{
+    // highlight-next-line
+    internal static void Wire(Roaster roaster, ITimeSystem time) { }   // resolved plainly
+}
+```
+
+</ApplyFix>
 
 The hook's parameters after the instance mirror onto the generated `public` wrapper as a bare type-and-name signature, so the attribute's per-dependency semantics (a key, optionality, deferral) would be silently dropped: a cross-assembly consumer would resolve the plain type while a same-compilation container, binding the module's own hook directly, honored the attribute, so the same source would inject different instances depending on which side of the assembly boundary the consumer sits. This is the hook-parameter twin of the factory's [AWT200](#awt200), rejected rather than silently degraded. Remove the attribute, resolve the dependency plainly, or drop the hook. This doesn't apply when the module's assembly grants `InternalsVisibleTo` to any assembly and the hook is not generic: the module then emits no wrapper and reports no error, because such an assembly calls the hook directly. A container that can't reports [AWT231](#awt231). A hook of a type private to the module keeps the error.
 
@@ -4431,7 +4674,9 @@ An `internal` module is imported only by its own assembly and by the assemblies 
 
 A private `Factory` member of a module may return a type private to the module. No container can name that type, so every container sees the member return the registered type instead. A convention that initializes the private type but not the registered type would never run, so the library's build reports it. Declare the factory to return the registered type and initialize the instance in an async factory, or make the type `internal`.
 
-```csharp no-compile
+<ApplyFix id="AWT234">
+
+```csharp expect=AWT234
 // In a referenced library:
 internal sealed class Boiler;
 internal sealed class EspressoMachine : IMachine
@@ -4446,6 +4691,24 @@ internal sealed class EspressoMachine : IMachine
 public static partial class EquipmentModule;
 ```
 
+```csharp isolated
+// In a referenced library:
+internal sealed class Boiler;
+internal sealed class EspressoMachine : IMachine
+{
+    internal Task WarmUpAsync(Boiler boiler) => Task.CompletedTask;
+}
+
+[Module]
+[AsyncInitializer<EspressoMachine>(nameof(EspressoMachine.WarmUpAsync))]
+[Singleton<EspressoMachine, IMachine>]
+// highlight-next-line
+[Singleton<Boiler>]   // the wrapper takes Boiler through its generated handle
+public static partial class EquipmentModule;
+```
+
+</ApplyFix>
+
 **Fix:** Make the parameter types of the convention's method public or register the internal services in a module of the library, and make a convention type nested in the module `internal`. Or grant the container's assembly `InternalsVisibleTo` in the library: the module then builds no factory for the implementation, and that assembly constructs and initializes it itself. A convention type nested privately stays out of reach even then, so for it the message asks only to make it `internal` or `public`.
 
 ### AWT235: Reserved member name `Internals` \{#awt235\}
@@ -4455,6 +4718,8 @@ A `[Module]` or `[Container]` declares a member named `Internals`.
 :::
 
 The generator reserves this name for the nested class that holds the factories and wrappers it adds, so the module generates nothing and the container emits only its shell.
+
+<ApplyFix id="AWT235">
 
 ```csharp expect=AWT235
 [Container]
@@ -4466,6 +4731,18 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp isolated
+[Container]
+[Singleton<Grinder>]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    internal static class Helpers;   // any other name is free
+}
+```
+
+</ApplyFix>
+
 **Fix:** Rename the member.
 
 ### AWT236: Internal service registered in another module \{#awt236\}
@@ -4473,6 +4750,8 @@ public static partial class CoffeeShop
 :::danger[Error]
 A self-compiled module registration needs an internal service that the module doesn't register, and other modules of the same assembly register it, but none of them can share its handle.
 :::
+
+<ApplyFix id="AWT236">
 
 ```csharp expect=AWT236
 internal sealed class BeanStore;
@@ -4488,6 +4767,22 @@ public static class StorageModule;     // not partial, so it can't declare the h
 public static partial class CoffeeModule;
 ```
 
+```csharp isolated
+internal sealed class BeanStore;
+internal sealed class Grinder(BeanStore beans) : IGrinder;
+
+[Module]
+[Singleton<BeanStore>]
+// highlight-next-line
+public static partial class StorageModule;   // partial, so it declares the handle
+
+[Module]
+[Singleton<Grinder, IGrinder>]   // BeanStore is registered only in StorageModule
+public static partial class CoffeeModule;
+```
+
+</ApplyFix>
+
 A container in another assembly reaches an internal service only through its [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses), which one module of the assembly declares for all of them. Another module that registers the service serves the handle when it is `partial` and can build the service, also from internal services that further modules share. The message names every module that registers the service. When one of them could declare the handle but can't build the service, the error is [AWT195](#awt195) instead, which names that module and why it can't build the service. Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
 
 **Fix:** Make the other module `partial`, register the internal service in the module that needs it too, or move both registrations into one module.
@@ -4497,6 +4792,8 @@ A container in another assembly reaches an internal service only through its [ge
 :::danger[Error]
 A self-compiled module registration takes an internal service the module registers in a shape its generated factory can't pass on.
 :::
+
+<ApplyFix id="AWT237">
 
 ```csharp expect=AWT237
 internal sealed class BeanStore;
@@ -4509,6 +4806,19 @@ internal sealed class Grinder(Task<BeanStore> beans) : IGrinder;   // Task<T> of
 public static partial class CoffeeModule;
 ```
 
+```csharp isolated
+internal sealed class BeanStore;
+// highlight-next-line
+internal sealed class Grinder(BeanStore beans) : IGrinder;   // the internal service itself
+
+[Module]
+[Singleton<BeanStore>]
+[Singleton<Grinder, IGrinder>]
+public static partial class CoffeeModule;
+```
+
+</ApplyFix>
+
 The factory takes the [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses) of the internal service in the same shape and passes the instance it holds on. It can do that for the service itself and for `Func<T>`, `Lazy<T>`, `Owned<T>`, `Func<Owned<T>>`, `Func<TArg..., T>`, `Func<TArg..., Owned<T>>` and the collections of `T`, but not for other shapes such as `Task<T>`, `Lazy<Task<T>>`, `Func<TArg..., Task<T>>` or a keyed dictionary. An unkeyed collection of a variant interface, such as `IEnumerable<IHandler<Order>>` for a contravariant `IHandler<in T>`, holds every registration of a service that converts to its element type, so the factory takes it through the handle of the one internal service of the module's assembly it holds, such as `IHandler<Message>`. A collection that would hold the registrations of several internal services, such as `IHandler<Order>` and `IHandler<Message>`, is reported too, since one parameter takes the handles of one service. A decorator or composite that takes such a collection gets no factory instead, so a container in another assembly reports [AWT230](#awt230). Like [AWT195](#awt195), this is reported only when the module's assembly grants `InternalsVisibleTo` to no assembly.
 
 **Fix:** Take the internal service in one of the supported shapes, or make the service public. For a collection of several services, take a collection of each service, or make the services public, the element type included. Or register the variant implementations under the collection's element type instead of their own service, such as `IHandler<Order>` instead of `IHandler<Message>`, so the collection holds one service. A consumer of `IHandler<Message>` then no longer gets them. Registering them under the element type next to their own service is not enough, because the collection still holds the variant registration.
@@ -4518,6 +4828,8 @@ The factory takes the [generated handle](./05-registration/08-modules/02-library
 :::danger[Error]
 A container imports a module that needs an internal service of another module of its assembly, but not that other module.
 :::
+
+<ApplyFix id="AWT238">
 
 ```csharp no-compile
 // Lib
@@ -4535,6 +4847,26 @@ public static partial class CoffeeModule;
 [Import(typeof(CoffeeModule))]   // StorageModule is not imported
 public static partial class CoffeeShop;
 ```
+
+```csharp no-compile
+// Lib
+[Module]
+[Singleton<BeanStore>]
+public static partial class StorageModule;
+
+[Module]
+[Singleton<Grinder, IGrinder>]   // Grinder takes the internal BeanStore
+public static partial class CoffeeModule;
+
+// App
+[Container]
+[Import(typeof(CoffeeModule))]
+// highlight-next-line
+[Import(typeof(StorageModule))]   // registers BeanStore
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 The generated factory of `Grinder` takes the [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses) of `BeanStore`, which `StorageModule` declares and builds. Without importing `StorageModule`, nothing registers it. The same goes for a decorator or composite of such a service. A closed `[Composite]` that an imported module declares for the service builds it, so it needs no other import, even when no module registers a member for it to front. The container reports only this cause, not the missing dependency ([AWT101](#awt101)) or the decorated service without a registration ([AWT123](#awt123)) it leads to. Only what the container calls counts: the factory of a default the container replaces, or the factory and hooks of a scan match that shares the instance of another registration of its implementation, never run, so the services they take need no import.
 
@@ -4604,6 +4936,8 @@ A module builds an implementation through a [generated handle](./05-registration
 
 A module also builds a public implementation through a handle when its scans expose it under [several interfaces](./05-registration/08-modules/02-library-module-rules.md#several-interfaces). A registration of that implementation wins over the scan, as in the library's own assembly: the shared instance takes the registration's lifetime and `SuppressDisposal`, and the scan's hooks don't run. The handle still can't run a hook the registration sets. The same holds for a `[Scan]` of the container, or of another module of the library, that matches the implementation: it shares the instance and, when it comes first, decides its lifetime, but the handle can't run its hooks.
 
+<ApplyFix id="AWT241">
+
 ```csharp no-compile
 // In a referenced library, which does not grant the application InternalsVisibleTo:
 internal interface IBeanStore;
@@ -4624,6 +4958,28 @@ public static partial class CoffeeShop
 }
 ```
 
+```csharp no-compile
+// In a referenced library, which does not grant the application InternalsVisibleTo:
+internal interface IBeanStore;
+public sealed class BeanStore : IBeanStore;
+
+[Module]
+[Singleton<BeanStore, IBeanStore>]
+public static partial class CoffeeModule;
+
+// In the application:
+[Container]
+[Import(typeof(CoffeeModule))]
+// highlight-next-line
+[Singleton<BeanStore>]   // shares the handle's instance as it is
+public static partial class CoffeeShop
+{
+    private static void Fill(BeanStore store) { }
+}
+```
+
+</ApplyFix>
+
 **Fix:** Set the directive on the module's registration, or remove it from this one, or remove a hook from a registration or scan that shares the instance of a scan. Granting the container's assembly `InternalsVisibleTo` in the library lets the container construct the implementation itself.
 
 ### AWT252: Collection fixed empty by a module of another assembly \{#awt252\}
@@ -4633,6 +4989,8 @@ An imported module of another assembly passes a decorator or composite an empty 
 :::
 
 A module builds a decorator or composite that another assembly can't construct through a factory it generates in its own build. When the type takes a collection of an internal type that no module of its assembly registers, the factory passes the collection empty, since a container in that assembly would pass it empty too. A library that the module's assembly grants `InternalsVisibleTo` can still register the internal type, though. A container that imports both modules would then build the decorator with an empty collection, while a container in the module's assembly, or one that both libraries grant `InternalsVisibleTo`, passes it the other module's registration. So the container reports this error at the `[Import]` of the module, naming the type that receives the collection and the module or container that registers its elements. A registration counts whenever the collection would hold it, so one of a variant service counts too, while a `WhenInjectedInto` registration doesn't. A module whose generated metadata lacks the record of the collections it passes empty isn't reported.
+
+<ApplyFix id="AWT252">
 
 ```csharp no-compile
 // In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras InternalsVisibleTo:
@@ -4659,6 +5017,33 @@ public static partial class ExtrasModule;
 public static partial class CoffeeShop;
 ```
 
+```csharp no-compile
+// In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras InternalsVisibleTo:
+// highlight-next-line
+public interface IFlavor;   // the module's factory takes the flavors from the container
+internal sealed class FlavoredBrewer(IBrewer inner, IEnumerable<IFlavor> flavors) : IBrewer;
+
+[Module]
+[Singleton<DripBrewer, IBrewer>]
+[Decorate<FlavoredBrewer, IBrewer>]   // no module of this library registers IFlavor
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Extras:
+internal sealed class Vanilla : IFlavor;
+
+[Module]
+[Singleton<Vanilla, IFlavor>]
+public static partial class ExtrasModule;
+
+// In the application, which neither library grants InternalsVisibleTo:
+[Container]
+[Import(typeof(BrewingModule))]
+[Import(typeof(ExtrasModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Make the element type public, so the module's factory takes the collection from the container instead of passing it empty. Or grant the container's assembly `InternalsVisibleTo` in both libraries, so the container builds the decorator or composite itself and passes every registration of the element type.
 
 ### AWT257: Collection misses a registration served through a handle \{#awt257\}
@@ -4668,6 +5053,8 @@ A collection the container builds itself would miss a registration that an impor
 :::
 
 A module registers a service that is internal to another assembly through a [generated handle](./05-registration/08-modules/02-library-module-rules.md#services-only-the-module-uses), when its own assembly grants the container no `InternalsVisibleTo`. The container serves the registration through that handle, so it never registers it under the service itself. A container that can name the service anyway, because the service's assembly grants it `InternalsVisibleTo`, builds a collection of the service, such as the one of a decorator of that assembly, from its own registrations, and the collection would lack the module's registration. A container that both assemblies grant `InternalsVisibleTo`, or one in the module's assembly, passes it. So the container reports this error at the `[Import]` of the module that registers the element. A registration counts whenever the collection would hold it: one under the collection's key, a keyed one for a keyed dictionary, and an unkeyed one of a variant service. A `WhenInjectedInto` registration doesn't count, and neither does an [overridable default](./05-registration/08-modules/index.md#overridable-defaults) or an [inherited registration](./05-registration/09-extending-containers.md#a-replacement-replaces-in-full) that another registration of its service replaces.
+
+<ApplyFix id="AWT257">
 
 ```csharp no-compile
 // In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras and the application InternalsVisibleTo:
@@ -4694,6 +5081,33 @@ public static partial class ExtrasModule;
 public static partial class CoffeeShop;
 ```
 
+```csharp no-compile
+// In the library CoffeeShop.Brewing, which grants CoffeeShop.Extras and the application InternalsVisibleTo:
+// highlight-next-line
+public interface IFlavor;   // registered without a handle, so the container sees Vanilla
+internal sealed class FlavoredBrewer(IBrewer inner, IEnumerable<IFlavor> flavors) : IBrewer;
+
+[Module]
+[Singleton<DripBrewer, IBrewer>]
+[Decorate<FlavoredBrewer, IBrewer>]
+public static partial class BrewingModule;
+
+// In the library CoffeeShop.Extras, which grants the application nothing:
+public sealed class Vanilla : IFlavor;
+
+[Module]
+[Singleton<Vanilla, IFlavor>]
+public static partial class ExtrasModule;
+
+// In the application:
+[Container]
+[Import(typeof(BrewingModule))]
+[Import(typeof(ExtrasModule))]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 When the decorator's assembly grants the container nothing either, the container calls the module's factory, and the collection it passes empty is reported as [AWT252](#awt252) instead.
 
 **Fix:** Grant the container's assembly `InternalsVisibleTo` in the library that registers the element, so the container registers it under the service itself. Or make the service public, so the library registers it without a handle.
@@ -4703,6 +5117,8 @@ When the decorator's assembly grants the container nothing either, the container
 :::danger[Error]
 An implementation that an imported module of another assembly builds, or a hook, decorator predicate or async initializer of that module, takes a public generic service closed over a type internal to the module's assembly, and the container can neither ask its host for that closing nor build it from the module's own registration.
 :::
+
+<ApplyFix id="AWT253">
 
 ```csharp no-compile
 // In a referenced library, which does not grant the application InternalsVisibleTo:
@@ -4719,6 +5135,24 @@ public static partial class BrewingModule;
 [Singleton(typeof(Logger<>), typeof(ILogger<>))]   // can't be closed over the internal PourOver
 public static partial class CoffeeShop;
 ```
+
+```csharp no-compile
+// In a referenced library, which does not grant the application InternalsVisibleTo:
+internal sealed class PourOver(ILogger<PourOver> logger) : IBrewer;
+
+[Module]
+[Transient<PourOver, IBrewer>]
+public static partial class BrewingModule;
+
+// In the application:
+[Container]
+[Import(typeof(BrewingModule))]
+// highlight-next-line
+[ImportService(typeof(ILogger<>))]   // the host closes it over PourOver
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 The container can't name a [closing over an internal type](./05-registration/08-modules/02-library-module-rules.md#closings-over-internal-types) such as `ILogger<PourOver>`, so it serves the closing only in two ways: it asks its host when it imports the definition, or it builds the closing through the factory the module generated from its own open registration of the definition. The message says why neither applies: nothing provides the definition, the closing is keyed, which only the host serves, the module registers it only with `WhenInjectedInto`, which can't select that closing, the container or another module registers it, which would have to close it over a type it can't name, the container decorates or composes it, which couldn't apply to that closing, or the module registers it but generated no factory for the closing, for example because the registration names a hook, which the message names.
 
