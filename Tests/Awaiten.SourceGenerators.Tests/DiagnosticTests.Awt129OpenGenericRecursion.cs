@@ -35,6 +35,56 @@ public partial class DiagnosticTests
 		}
 
 		[Test]
+		public async Task DoesNotReportTheClosingItStoppedAtAsMissing()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Collections.Generic;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Seed { }
+			                                       public sealed class Node<T> { public Node(Node<List<T>> next) { } }
+			                                       public sealed class Root { public Root(Node<Seed> node) { } }
+
+			                                       [Container]
+			                                       [Transient(typeof(Node<>))]
+			                                       [Transient<Root>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT129*").AsWildcard().And.DoesNotContain("*AWT101*").AsWildcard()
+				.Because("the open registration would close the service expansion stopped at, so it is not missing but the follow-on of the recursion");
+		}
+
+		[Test]
+		public async Task DoesNotReportTheClosingsLeftWhenABranchingRecursionAbandonsExpansionAsMissing()
+		{
+			GeneratorResult result = Generator.Run("""
+			                                       using Awaiten;
+			                                       using System.Collections.Generic;
+
+			                                       namespace MyCode;
+
+			                                       public sealed class Seed { }
+			                                       public sealed class Node<T> { public Node(Node<List<T>> list, Node<T[]> array) { } }
+			                                       public sealed class Root { public Root(Node<Seed> node) { } }
+
+			                                       [Container]
+			                                       [Transient(typeof(Node<>))]
+			                                       [Transient<Root>]
+			                                       public static partial class MyContainer
+			                                       {
+			                                       }
+			                                       """);
+
+			await That(result.Diagnostics).Contains("*AWT129*").AsWildcard().And.DoesNotContain("*AWT101*").AsWildcard()
+				.Because("every closing left in the abandoned expansion is a follow-on of the recursion, not a missing registration");
+		}
+
+		[Test]
 		public async Task DoesNotReportForADeepButFiniteOpenGenericChain()
 		{
 			GeneratorResult result = Generator.Run("""

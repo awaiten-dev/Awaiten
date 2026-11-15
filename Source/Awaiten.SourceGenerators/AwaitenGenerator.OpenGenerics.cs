@@ -397,12 +397,19 @@ partial class AwaitenGenerator
 			if (context.Synthesized > MaxExpansionCount)
 			{
 				ReportExpansionTooDeep(impl, depth, context);
+				RejectUnexpanded(work);
+				while (worklist.Count > 0)
+				{
+					RejectUnexpanded(worklist.Dequeue());
+				}
+
 				break;
 			}
 
 			if (depth > MaxExpansionDepth)
 			{
 				ReportExpansionTooDeep(impl, depth, context);
+				RejectUnexpanded(work);
 				continue;
 			}
 
@@ -412,6 +419,20 @@ partial class AwaitenGenerator
 				    && expandedServices.Add(closed.ToDisplayString(FullyQualified)))
 				{
 					ExpandClosedService(closed, depth, context);
+				}
+			}
+		}
+
+		// The closings an abandoned unit of work needs are follow-ons of the AWT129 recursion, not missing (AWT101).
+		void RejectUnexpanded(ExpansionWork abandoned)
+		{
+			foreach (ITypeSymbol required in ScannedServiceTypes(abandoned, context))
+			{
+				if (required is INamedTypeSymbol { IsGenericType: true, IsUnboundGenericType: false, } closed
+				    && openServices.Contains(closed.ConstructedFrom)
+				    && !expandedServices.Contains(closed.ToDisplayString(FullyQualified)))
+				{
+					constraintRejected.Add(closed.ToDisplayString(FullyQualified));
 				}
 			}
 		}
