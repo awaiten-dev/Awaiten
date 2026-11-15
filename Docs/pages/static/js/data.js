@@ -2052,6 +2052,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:12:03 2026 \u002B0100",
         "message": "feat: shorten the benchmark race for slow containers (#450)"
+      },
+      {
+        "sha": "07cfe8c25005059c80a7fec59809b39f261c9bad",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
+        "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
       }
     ],
     "labels": [
@@ -2396,7 +2402,8 @@ window.BENCHMARK_DATA = {
       "99187c77",
       "3de226e5",
       "8e369646",
-      "3f0f5847"
+      "3f0f5847",
+      "07cfe8c2"
     ],
     "datasets": [
       {
@@ -2744,7 +2751,8 @@ window.BENCHMARK_DATA = {
           6.21166401853164,
           6.180821465452512,
           4.776268797261374,
-          3.613962657749653
+          3.613962657749653,
+          4.493054451154811
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2756,6 +2764,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3453,7 +3462,8 @@ window.BENCHMARK_DATA = {
           10.020161247679166,
           10.376993904511133,
           6.984609433015188,
-          4.28559078325828
+          4.28559078325828,
+          10.18953454941511
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3465,6 +3475,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4162,7 +4173,8 @@ window.BENCHMARK_DATA = {
           114.50940085252127,
           115.90216409365335,
           86.92117908171245,
-          59.33983593781789
+          59.33983593781789,
+          81.9806181532996
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4174,6 +4186,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4867,7 +4880,8 @@ window.BENCHMARK_DATA = {
           8.50270507360498,
           8.591319015622139,
           6.987176124254862,
-          5.468502915898958
+          5.468502915898958,
+          6.495318057139714
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4879,6 +4893,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5568,7 +5583,8 @@ window.BENCHMARK_DATA = {
           11.261467321560932,
           10.897044329770974,
           7.957722759590699,
-          6.397512823343277
+          6.397512823343277,
+          8.196108097831408
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5580,6 +5596,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -7983,6 +8000,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:12:03 2026 \u002B0100",
         "message": "feat: shorten the benchmark race for slow containers (#450)"
+      },
+      {
+        "sha": "07cfe8c25005059c80a7fec59809b39f261c9bad",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
+        "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
       }
     ],
     "labels": [
@@ -8327,7 +8350,8 @@ window.BENCHMARK_DATA = {
       "99187c77",
       "3de226e5",
       "8e369646",
-      "3f0f5847"
+      "3f0f5847",
+      "07cfe8c2"
     ],
     "datasets": [
       {
@@ -8675,7 +8699,8 @@ window.BENCHMARK_DATA = {
           6.973292630452376,
           6.957348134900842,
           5.858759254217148,
-          3.505540642639001
+          3.505540642639001,
+          5.643168432513873
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8687,6 +8712,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9384,7 +9410,8 @@ window.BENCHMARK_DATA = {
           8.7291562674301,
           8.712620777579454,
           6.4986580690512294,
-          4.084409437009266
+          4.084409437009266,
+          6.492936626076698
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9396,6 +9423,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10093,7 +10121,8 @@ window.BENCHMARK_DATA = {
           110.16743755340576,
           112.7673612912496,
           86.90341363350551,
-          57.31076587097986
+          57.31076587097986,
+          83.60974811656135
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10105,6 +10134,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10798,7 +10828,8 @@ window.BENCHMARK_DATA = {
           7.758266403124883,
           9.085034889834267,
           6.845354836434126,
-          5.153056103984515
+          5.153056103984515,
+          6.304063688715299
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10810,6 +10841,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11499,7 +11531,8 @@ window.BENCHMARK_DATA = {
           14.829002106189728,
           14.766388502717017,
           11.240085488983564,
-          6.176099208990733
+          6.176099208990733,
+          11.190335395080703
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11511,6 +11544,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -13914,6 +13948,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:12:03 2026 \u002B0100",
         "message": "feat: shorten the benchmark race for slow containers (#450)"
+      },
+      {
+        "sha": "07cfe8c25005059c80a7fec59809b39f261c9bad",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
+        "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
       }
     ],
     "labels": [
@@ -14258,7 +14298,8 @@ window.BENCHMARK_DATA = {
       "99187c77",
       "3de226e5",
       "8e369646",
-      "3f0f5847"
+      "3f0f5847",
+      "07cfe8c2"
     ],
     "datasets": [
       {
@@ -14606,7 +14647,8 @@ window.BENCHMARK_DATA = {
           21.528445130586626,
           12.174908942409925,
           19.05229126214981,
-          15.197190183401108
+          15.197190183401108,
+          16.84804885515145
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -14878,6 +14920,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15315,7 +15358,8 @@ window.BENCHMARK_DATA = {
           1537.2213566643852,
           811.2067292758396,
           1234.154906463623,
-          1105.969940321786
+          1105.969940321786,
+          1321.3346879323324
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15327,6 +15371,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16024,7 +16069,8 @@ window.BENCHMARK_DATA = {
           29947.849357096355,
           18718.950766427177,
           18955.57728474935,
-          26063.35580851237
+          26063.35580851237,
+          26656.57560511998
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16377,7 +16423,8 @@ window.BENCHMARK_DATA = {
           32482,
           32477,
           32474,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16729,7 +16776,8 @@ window.BENCHMARK_DATA = {
           760.291862487793,
           404.1462012699672,
           598.8708000183105,
-          562.8104838643756
+          562.8104838643756,
+          606.3419670422871
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16759,6 +16807,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17430,7 +17479,8 @@ window.BENCHMARK_DATA = {
           12942.883726501464,
           6458.415947469076,
           9330.768003336589,
-          8493.332765851703
+          8493.332765851703,
+          9241.650056966146
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17779,7 +17829,8 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -19845,6 +19896,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:12:03 2026 \u002B0100",
         "message": "feat: shorten the benchmark race for slow containers (#450)"
+      },
+      {
+        "sha": "07cfe8c25005059c80a7fec59809b39f261c9bad",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
+        "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
       }
     ],
     "labels": [
@@ -20189,7 +20246,8 @@ window.BENCHMARK_DATA = {
       "99187c77",
       "3de226e5",
       "8e369646",
-      "3f0f5847"
+      "3f0f5847",
+      "07cfe8c2"
     ],
     "datasets": [
       {
@@ -20537,7 +20595,8 @@ window.BENCHMARK_DATA = {
           229.90483828953333,
           76.88119270971843,
           189.44310727119446,
-          112.88182388884681
+          112.88182388884681,
+          123.00668654441833
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20809,6 +20868,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21246,7 +21306,8 @@ window.BENCHMARK_DATA = {
           16250.187390136718,
           7479.476569112142,
           9870.238414219448,
-          10477.38352915446
+          10477.38352915446,
+          11880.2013865153
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21258,6 +21319,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -21955,7 +22017,8 @@ window.BENCHMARK_DATA = {
           755988.4709123884,
           422382.4083426339,
           451709.5766438802,
-          626558.4642857143
+          626558.4642857143,
+          643417.9010184152
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22308,7 +22371,8 @@ window.BENCHMARK_DATA = {
           738520,
           735271,
           720432,
-          740080
+          740080,
+          719712
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22660,7 +22724,8 @@ window.BENCHMARK_DATA = {
           47401.05213216146,
           22903.65350811298,
           34023.08697102864,
-          34266.18303629557
+          34266.18303629557,
+          37138.6849609375
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23009,7 +23074,8 @@ window.BENCHMARK_DATA = {
           80082,
           79667,
           80958,
-          80006
+          80006,
+          80967
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23361,7 +23427,8 @@ window.BENCHMARK_DATA = {
           384538.38580729166,
           181268.19709123884,
           262129.21103515624,
-          257944.15345982142
+          257944.15345982142,
+          291763.38636997767
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23710,7 +23777,8 @@ window.BENCHMARK_DATA = {
           573090,
           573085,
           571196,
-          573123
+          573123,
+          573155
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25752,6 +25820,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:12:03 2026 \u002B0100",
         "message": "feat: shorten the benchmark race for slow containers (#450)"
+      },
+      {
+        "sha": "07cfe8c25005059c80a7fec59809b39f261c9bad",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:16:48 2026 \u002B0100",
+        "message": "fix: do not report the closings an AWT129 recursion left unexpanded as missing (#447)"
       }
     ],
     "labels": [
@@ -26092,7 +26166,8 @@ window.BENCHMARK_DATA = {
       "99187c77",
       "3de226e5",
       "8e369646",
-      "3f0f5847"
+      "3f0f5847",
+      "07cfe8c2"
     ],
     "datasets": [
       {
@@ -26436,7 +26511,8 @@ window.BENCHMARK_DATA = {
           208.21065068244934,
           207.6969141960144,
           218.54078121980032,
-          221.50644157727558
+          221.50644157727558,
+          209.17865710258485
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26471,6 +26547,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27137,7 +27214,8 @@ window.BENCHMARK_DATA = {
           447.3234804698399,
           451.2680216789246,
           462.35647120475767,
-          494.42184925079346
+          494.42184925079346,
+          450.5077077070872
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27149,6 +27227,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -27838,7 +27917,8 @@ window.BENCHMARK_DATA = {
           4666.524297860952,
           4634.27742207845,
           5114.196900503976,
-          3902.6728037516277
+          3902.6728037516277,
+          4643.940037536621
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -27922,6 +28002,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28539,7 +28620,8 @@ window.BENCHMARK_DATA = {
           331.0886113460247,
           329.81409594217934,
           345.55010681152345,
-          328.9941456476847
+          328.9941456476847,
+          334.9437454859416
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28551,6 +28633,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29240,7 +29323,8 @@ window.BENCHMARK_DATA = {
           546.8135286477896,
           521.5203612872532,
           567.230474618765,
-          547.9262587865194
+          547.9262587865194,
+          527.8662853240967
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29252,6 +29336,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
