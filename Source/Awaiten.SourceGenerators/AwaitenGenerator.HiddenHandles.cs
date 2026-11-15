@@ -883,6 +883,7 @@ partial class AwaitenGenerator
 	private static void ReportCollectionsMissingHandledRegistrations(
 		List<RawRegistration> raw,
 		List<InstanceModel> instances,
+		List<ParameterModel[]> instanceDependencies,
 		List<LocationInfo?> instanceLocations,
 		Dictionary<string, int> implToIndex,
 		VarianceState variance,
@@ -917,14 +918,11 @@ partial class AwaitenGenerator
 		for (int i = 0; i < instances.Count; i++)
 		{
 			InstanceModel instance = instances[i];
-			List<ParameterModel> dependencies = instance.ConstructorParameters.AsArray()
-				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
-				.Concat(instance.HookParameters())
-				.ToList();
-			for (int position = 0; position < dependencies.Count; position++)
+			ParameterModel[] dependencies = instanceDependencies[i];
+			for (int position = 0; position < dependencies.Length; position++)
 			{
 				ParameterModel dependency = dependencies[position];
-				ParameterModel? next = position + 1 < dependencies.Count ? dependencies[position + 1] : null;
+				ParameterModel? next = position + 1 < dependencies.Length ? dependencies[position + 1] : null;
 				bool keyed = dependency.Kind is DependencyKind.KeyedCollection or DependencyKind.AwaitedKeyedCollection;
 				if (!keyed && dependency.Kind is not (DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable))
 				{
@@ -942,9 +940,7 @@ partial class AwaitenGenerator
 						: aliased.Key == dependency.Key
 						  && (aliased.ServiceType == dependency.ServiceType
 						      || (element is { TypeKind: TypeKind.Interface, } && aliased.Key is null && VarianceCompatible(aliased.ServiceSymbol!, element, variance.Compilation)));
-					// Only a module's factory can follow the collection with the handles of the variant service, since user code cannot name handle types.
-					if (!member
-					    || (!keyed && dependency.Key is null && next is { Kind: DependencyKind.Enumerable, Key: null, } && next.ServiceType == registration.ServiceType))
+					if (!member || PairedWithHandles(dependency, next, element, registration, variance.Compilation))
 					{
 						continue;
 					}
@@ -975,48 +971,39 @@ partial class AwaitenGenerator
 	///     service it holds through variance. A container in the module's assembly holds the variance members by the
 	///     coalescing order of their services (see <see cref="InPrecedenceOrder" />), so a public variant service whose
 	///     first registration follows the first alias of the internal service would come after the handles there, while the
-	///     member always puts it before them. Reported at the import of the module that registers it, or else at its
-	///     registration.
+	///     member always puts it before them. An implementation that also joins the collection under the element type is
+	///     one of the exact members, which lead in every assembly. Reported at the import of the module that registers
+	///     it, or else at its registration. The fix to import that module ahead of the module of the handles is offered
+	///     only when the container imports both directly, since the imports of a base container precede its own.
 	/// </summary>
 	private static void ReportVariantCollectionsOrderedDifferently(
 		List<RawRegistration> raw,
 		List<InstanceModel> instances,
+		List<ParameterModel[]> instanceDependencies,
 		List<LocationInfo?> instanceLocations,
 		List<ServiceMembers> collections,
 		VarianceState variance,
 		List<ImportedModule> modules,
 		List<DiagnosticInfo> diagnostics)
 	{
-		List<RawRegistration> ordered = InPrecedenceOrder(raw)
-			.Select(entry => entry.Registration)
-			.Where(registration => registration is { Key: null, WhenInjectedInto: null, })
+		HashSet<int> dropped = DroppedOverridableDefaults(raw);
+		List<(RawRegistration Registration, int Index)> entries = InPrecedenceOrder(raw)
+			.Where(entry => entry.Registration is { Key: null, WhenInjectedInto: null, })
 			.ToList();
-		if (!ordered.Exists(registration => registration.Aliased is not null))
-		{
-			return;
-		}
-
+		List<RawRegistration> ordered = entries.ConvertAll(entry => entry.Registration);
 		HashSet<DiagnosticInfo> reported = new();
 		for (int i = 0; i < instances.Count; i++)
 		{
 			InstanceModel instance = instances[i];
-			List<ParameterModel> dependencies = instance.ConstructorParameters.AsArray()
-				.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
-				.Concat(instance.HookParameters())
-				.ToList();
-			for (int position = 0; position + 1 < dependencies.Count; position++)
+			ParameterModel[] dependencies = instanceDependencies[i];
+			for (int position = 0; position + 1 < dependencies.Length; position++)
 			{
 				ParameterModel dependency = dependencies[position];
 				ParameterModel next = dependencies[position + 1];
-				if (dependency is not { Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, Key: null, }
-				    || next is not { Kind: DependencyKind.Enumerable, Key: null, })
-				{
-					continue;
-				}
-
-				int alias = ordered.FindIndex(registration => registration.Aliased is not null && registration.ServiceType == next.ServiceType);
+				int alias = next.Kind == DependencyKind.Enumerable ? ordered.FindIndex(registration => registration.Aliased is not null && registration.ServiceType == next.ServiceType) : -1;
 				if (alias < 0
 				    || variance.CollectionElements.FirstOrDefault(requested => requested.ServiceType == dependency.ServiceType).Symbol is not { } element
+				    || !PairedWithHandles(dependency, next, element, ordered[alias], variance.Compilation)
 				    || collections.Find(collection => collection.Service == dependency.ServiceType && collection.Key is null) is not { } members)
 				{
 					continue;
@@ -1024,13 +1011,18 @@ partial class AwaitenGenerator
 
 				RawRegistration handled = ordered[alias];
 				HashSet<string> leading = new(ordered.Take(alias).Select(registration => registration.ServiceType), StringComparer.Ordinal);
+				HashSet<string> exact = new(entries
+					.Where(entry => entry.Registration.ServiceType == dependency.ServiceType && !dropped.Contains(entry.Index))
+					.Select(entry => entry.Registration.ImplementationType), StringComparer.Ordinal);
 				foreach (RawRegistration registration in ordered.Skip(alias + 1).Where(registration => registration is { Aliased: null, ServiceSymbol: { IsGenericType: true, TypeKind: TypeKind.Interface, } service, }
 				                                                                                      && registration.ServiceType != dependency.ServiceType
 				                                                                                      && !leading.Contains(registration.ServiceType)
+				                                                                                      && !exact.Contains(registration.ImplementationType)
 				                                                                                      && VarianceCompatible(service, element, variance.Compilation)
 				                                                                                      && members.Implementations.AsArray().Contains(registration.ImplementationType)))
 				{
 					ImportedModule? import = modules.Find(module => SymbolEqualityComparer.Default.Equals(module.Symbol, registration.Origin));
+					ImportedModule? ownerImport = modules.Find(module => SymbolEqualityComparer.Default.Equals(module.Symbol, handled.Origin));
 					string owner = Display(handled.Origin!.ToDisplayString(FullyQualified));
 					DiagnosticInfo diagnostic = new(
 						Diagnostics.VariantCollectionOrderDiffers,
@@ -1043,7 +1035,7 @@ partial class AwaitenGenerator
 							Display(registration.ServiceType),
 							Display(handled.Aliased!.ServiceType),
 							owner,
-							import is not null && PrecedenceRank(registration) <= PrecedenceRank(handled) ? $", or import '{Display(import.Symbol.ToDisplayString(FullyQualified))}' ahead of '{owner}'" : string.Empty,
+							import is { Inherited: false, } && ownerImport is { Inherited: false, } && PrecedenceRank(registration) <= PrecedenceRank(handled) ? $", or import '{Display(import.Symbol.ToDisplayString(FullyQualified))}' ahead of '{owner}'" : string.Empty,
 						]));
 					if (reported.Add(diagnostic))
 					{
@@ -1053,6 +1045,32 @@ partial class AwaitenGenerator
 			}
 		}
 	}
+
+	/// <summary>
+	///     The dependencies of <paramref name="instance" /> in the order a module's generated members take them: the
+	///     constructor parameters, the injected members and the hook parameters.
+	/// </summary>
+	private static ParameterModel[] DependenciesInOrder(InstanceModel instance)
+		=> instance.ConstructorParameters.AsArray()
+			.Concat(instance.InjectedMembers.AsArray().Select(member => member.Dependency))
+			.Concat(instance.HookParameters())
+			.ToArray();
+
+	/// <summary>
+	///     Whether <paramref name="next" /> takes the handles of the internal service that <paramref name="alias" /> serves
+	///     as the rest of the unkeyed collection <paramref name="collection" /> of <paramref name="element" />, which a
+	///     module's generated member takes as its public members followed by those handles. Only a module's member can
+	///     follow a collection with handles, since user code cannot name handle types, and only of a service the
+	///     collection holds through variance.
+	/// </summary>
+	private static bool PairedWithHandles(ParameterModel collection, ParameterModel? next, INamedTypeSymbol? element, RawRegistration alias, Compilation compilation)
+		=> collection is { Kind: DependencyKind.Enumerable or DependencyKind.AsyncEnumerable or DependencyKind.AwaitedEnumerable, Key: null, }
+		   && next is { Kind: DependencyKind.Enumerable, Key: null, }
+		   && next.ServiceType == alias.ServiceType
+		   && element is { TypeKind: TypeKind.Interface, }
+		   && alias.Aliased?.ServiceSymbol is { } service
+		   && !SymbolEqualityComparer.Default.Equals(service, element)
+		   && VarianceCompatible(service, element, compilation);
 
 	/// <summary>
 	///     Whether a module of the assembly of <paramref name="module" /> among the <paramref name="imports" /> registers

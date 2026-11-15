@@ -60,8 +60,8 @@ public partial class DiagnosticTests
 			public static partial class MyContainer;
 			""";
 
-		private static string OwnContainer(string attributes)
-			=> Library + "\n[Container]\n" + attributes + "\npublic static partial class OwnContainer { }";
+		private static string OwnContainer(string attributes, string library = Library)
+			=> library + "\n[Container]\n" + attributes + "\npublic static partial class OwnContainer { }";
 
 		private static string Container(GeneratorResult result) => result.Sources["Awaiten.MyCode.MyContainer.g.cs"];
 
@@ -156,6 +156,92 @@ public partial class DiagnosticTests
 				.Because("the collection holds 'AnyHandler' among the exact members, which lead in every assembly");
 			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveAnyHandler(__s.__root), Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_");
 			await That(own.Sources["Awaiten.Lib.OwnContainer.g.cs"]).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveAnyHandler(__s.__root), Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveSecretHandler(__s.__root) })");
+		}
+
+		[Test]
+		public async Task AnImplementationAlsoRegisteredUnderTheElementType_BuildsTheSameOrder()
+		{
+			const string registrations = "[Singleton<Ext.AnyHandler, Lib.IHandler<Lib.Derived>>]\n[Singleton<Ext.AnyHandler, Lib.IHandler<object>>]";
+			string library = Library.Replace("[Singleton<OtherDerivedHandler, IHandler<Derived>>]", "");
+			string other = Other.Replace("[Singleton<AnyHandler, Lib.IHandler<object>>]", registrations);
+			string ownLibrary = library + "\n[Module]\n" + registrations + "\npublic static partial class AnyModule { }";
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, library, other,], App("[Import(typeof(Ext.AnyModule))]"));
+			GeneratorResult own = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, Other,], OwnContainer("[Import(typeof(Lib.BrewModule))]\n[Import(typeof(Lib.AnyModule))]", ownLibrary));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the collection holds the one instance of 'AnyHandler' among the exact members, which lead in every assembly");
+			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(own.Sources["Awaiten.Lib.OwnContainer.g.cs"]).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveAnyHandler(__s.__root), Root.ResolveSecretHandler(__s.__root) })")
+				.Because("a container of the module's assembly holds the instance once, among the exact members, as the consuming container does");
+		}
+
+		[Test]
+		public async Task ADeferredProperty_IsReported()
+		{
+			string library = Library.Replace(
+				"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+				"internal sealed class Reader : IReader { [Inject(Deferred = true)] public IEnumerable<IHandler<Derived>> Late { get; set; } = null!; }");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, Other, library,], App("[Import(typeof(Ext.AnyModule))]"));
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected)
+				.Because("the deferred setter takes the public members before the handles, like the factory");
+		}
+
+		[Test]
+		public async Task AnAsyncInitializerParameter_IsReported()
+		{
+			string library = Library
+				.Replace(
+					"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+					"internal sealed class Reader : IReader { internal System.Threading.Tasks.Task StartAsync(IEnumerable<IHandler<Derived>> seen) => System.Threading.Tasks.Task.CompletedTask; }")
+				.Replace("[Module]", "[Module]\n[AsyncInitializer<Reader>(nameof(Reader.StartAsync))]");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, Other, library,], App("[Import(typeof(Ext.AnyModule))]"));
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(Expected)
+				.Because("the initializer's wrapper takes the public members before the handles, like the factory");
+		}
+
+		[Test]
+		public async Task AHandleCollectionOfAnUnrelatedService_IsNotReported()
+		{
+			string library = Library
+				.Replace("[Singleton<SecretHandler, IHandler<ISecret>>]", "[Singleton<Thing, IThing>]")
+				.Replace(
+					"internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers) { } }",
+					"internal interface IThing { } internal sealed class Thing : IThing { } internal sealed class Reader : IReader { public Reader(IEnumerable<IHandler<Derived>> handlers, IEnumerable<IThing> things) { } }");
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, Other, library,], App("[Import(typeof(Ext.AnyModule))]"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the collection of handlers holds no internal variant service, so the handles of 'IThing' after it are no part of it and every member is public");
+			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IThing");
+		}
+
+		[Test]
+		public async Task AModuleImportedAfterTheModuleOfABaseContainer_OffersNoReorderedImport()
+		{
+			string app = """
+				using Awaiten;
+
+				namespace MyCode;
+
+				[Container]
+				[Import(typeof(Lib.BrewModule))]
+				public static partial class Shop;
+
+				[Container(Extends = typeof(Shop))]
+				[Import(typeof(Ext.AnyModule))]
+				public static partial class TestShop;
+				""";
+
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([Shared, Other, Library,], app);
+
+			await That(result.Diagnostics).HasSingle().Which.IsEqualTo(
+					"(10,2): error AWT265: 'Lib.Reader' takes a collection of 'Lib.IHandler<Lib.Derived>' that holds 'Ext.AnyHandler', which the module 'Ext.AnyModule' registers under 'Lib.IHandler<object>', before the registrations of 'Lib.IHandler<Lib.ISecret>' that 'Lib.BrewModule' serves through generated handles, while a container in the assembly of 'Lib.BrewModule' holds it after them; register 'Ext.AnyHandler' under 'Lib.IHandler<Lib.Derived>' instead")
+				.Because("the registrations of the base's imports precede those of the extending container's imports, so no order of the container's imports puts 'AnyModule' ahead of 'BrewModule'");
 		}
 	}
 }

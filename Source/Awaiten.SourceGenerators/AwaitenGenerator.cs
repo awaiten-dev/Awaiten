@@ -1209,8 +1209,12 @@ public sealed partial class AwaitenGenerator : IIncrementalGenerator
 
 		List<KeyedServiceMembers> keyedCollections = BuiltKeyedCollections(keyedMemberOrder, keyedMembers, implToIndex);
 		ReportEmptyImportedCollections(instances, instanceLocations, collections, keyedCollections, externalServiceTypes, diagnostics);
-		ReportCollectionsMissingHandledRegistrations(raw, instances, instanceLocations, implToIndex, variance, modules, diagnostics);
-		ReportVariantCollectionsOrderedDifferently(raw, instances, instanceLocations, collections, variance, modules, diagnostics);
+		if (raw.Exists(registration => registration.Aliased is not null))
+		{
+			List<ParameterModel[]> instanceDependencies = instances.ConvertAll(DependenciesInOrder);
+			ReportCollectionsMissingHandledRegistrations(raw, instances, instanceDependencies, instanceLocations, implToIndex, variance, modules, diagnostics);
+			ReportVariantCollectionsOrderedDifferently(raw, instances, instanceDependencies, instanceLocations, collections, variance, modules, diagnostics);
+		}
 
 		// The variance candidates' service types (registration order), for the emitter's runtime variance
 		// fallback: an imperative Resolve of a differently-closed generic no consumer requested is matched here.
