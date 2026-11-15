@@ -436,6 +436,88 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
+		public async Task AKeyedPublicVariantService_KeepsTheFactory()
+		{
+			string library = Library(registrations: Registrations + "\n[Singleton<ObjectHandler, IHandler<object>>(Key = \"k\")]");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+
+			await That(module.Diagnostics).IsEmpty()
+				.Because("a keyed registration never joins an unkeyed collection, so the collection holds no public variant service");
+			await That(Module(module)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+			await That(result.Diagnostics).IsEmpty();
+			await That(Container(result)).Contains("(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root) }, new global::Lib.BrewModule.Internals.Hidden_IHandler_");
+		}
+
+		[Test]
+		public async Task AContextualPublicVariantService_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton<ObjectHandler, IHandler<object>>(WhenInjectedInto = typeof(Other))]\n[Singleton<Other>]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Other { public Other(IHandler<object> handler) { } }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a contextual registration only reaches the direct parameter of its consumer, never a collection");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+		}
+
+		[Test]
+		public async Task AKeyedRegistrationOfTheExactService_KeepsTheFactory()
+		{
+			string library = Library(registrations: "[Singleton<BothHandler, IHandler<Derived>>(Key = \"k\")]\n[Singleton<BothHandler, IHandler<ISecret>>]");
+
+			GeneratorResult module = Generator.Run(library);
+			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain([library,], App);
+
+			await That(module.Diagnostics).IsEmpty()
+				.Because("the keyed registration under the exact service joins no unkeyed collection, so the collection holds the instance only once, through the handle");
+			await That(Module(module)).Contains("Registration_Reader_").And.Contains("global::System.Linq.Enumerable.Select<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+			await That(result.Diagnostics).IsEmpty();
+		}
+
+		[Test]
+		public async Task AContextualRegistrationOfTheExactService_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: "[Singleton<BothHandler, IHandler<Derived>>(WhenInjectedInto = typeof(Other))]\n[Singleton<BothHandler, IHandler<ISecret>>]\n[Singleton<Other>]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class Other { public Other(IHandler<Derived> handler) { } }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the contextual registration under the exact service joins no collection, so the collection holds the instance only once, through the handle");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("global::System.Linq.Enumerable.Select<global::Lib.BrewModule.Internals.Hidden_IHandler_");
+		}
+
+		[Test]
+		public async Task AnOpenGenericRegistrationWhoseConstraintsAdmitNoVariantClosing_KeepsTheFactory()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton(typeof(StructHandler<>), typeof(IHandler<>))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class StructHandler<T> : IHandler<T> where T : struct { }"));
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("a closing for value types converts to no collection of handlers of the reference type 'Derived'");
+			await That(Module(result)).Contains("Registration_Reader_").And.Contains("@awaiten__exact_handlers, ");
+		}
+
+		[Test]
+		public async Task AnOpenGenericRegistrationForReferenceTypes_IsReportedInTheModulesBuild()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Singleton(typeof(ClassHandler<>), typeof(IHandler<>))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class ClassHandler<T> : IHandler<T> where T : class { }"));
+
+			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>'*").AsWildcard()
+				.Because("the constraint admits closings for reference types, which the collection holds through variance");
+		}
+
+		[Test]
+		public async Task APublicVariantServiceOfAScanThatMaySkipIt_IsReportedInTheModulesBuild()
+		{
+			GeneratorResult result = Generator.Run(Library(registrations: Registrations + "\n[Scan<IHandler<object>>(As = ScanAs.Marker, Lifetime = Lifetime.Singleton, NamePatterns = new[] { \"NeedyHandler\", }, SkipUnconstructable = true)]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public interface IMissing { } public sealed class NeedyHandler : IHandler<object> { public NeedyHandler(IMissing missing) { } }"));
+
+			await That(result.Diagnostics).Contains("*error AWT237: *'Lib.Reader'*takes the internal service 'Lib.IHandler<Lib.ISecret>'*").AsWildcard()
+				.Because("whether the scan skips 'NeedyHandler' depends on whether the consuming container provides 'IMissing', so a consumer that does holds it among the variant services");
+		}
+
+		[Test]
 		public async Task APublicVariantService_GivesTheDecoratorNoFactory()
 		{
 			GeneratorResult result = Generator.RunWithGeneratedReferencedAssemblyChain(
