@@ -1750,7 +1750,7 @@ public static partial class CoffeeShop;
 Open generic expansion nested too deep, indicating an unbounded generic recursion.
 :::
 
-```csharp expect=AWT129,AWT101
+```csharp expect=AWT129
 // highlight-next-line
 public sealed class Box<T>(Box<Box<T>> inner);   // Box<Order> needs Box<Box<Order>> needs ...
 public sealed class Consumer(Box<Order> box);
@@ -1761,7 +1761,7 @@ public sealed class Consumer(Box<Order> box);
 public static partial class CoffeeShop;
 ```
 
-It is reported at the open registration whose closings keep growing. The dependency on the closing it stopped at stays unsatisfied, so that dependency also reports [AWT101](#awt101).
+It is reported at the open registration whose closings keep growing.
 
 **Fix:** Break the recursion: an implementation must not depend on an ever-larger closing of its own open registration, as `Box<T>` does with `Box<Box<T>>`.
 
