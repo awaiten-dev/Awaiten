@@ -527,8 +527,8 @@ public partial class DiagnosticTests
 			GeneratorResult result = RunInFirstAssembly("[Import(typeof(ClockModule))]\n[Import(typeof(Second.ClockModule))]");
 
 			await That(result.Diagnostics.Where(diagnostic => !diagnostic.Contains("warning CS0436"))).HasSingle().Which.IsEqualTo(
-				"(18,2): error AWT260: The generated container cannot name 'Lib.Clock', which 'Second.ClockModule' registers, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type or namespace named 'Lib.Clock'; keep the container in a project that references only one of them, or rename one of them")
-				.Because("'global::Lib.Clock' names the clock of the container's own assembly, as in the module's own attribute, so only the other library's clock cannot be named");
+				"(18,2): error AWT260: The generated container cannot name 'Lib.Clock', which 'Second.ClockModule' registers, because the assemblies 'FirstAssembly' and 'SecondAssembly' each declare a type or namespace named 'Lib.Clock'; rename one of them")
+				.Because("'global::Lib.Clock' names the clock of the container's own assembly, as in the module's own attribute, so only the other library's clock cannot be named, and no choice of references helps while the project declares the clock itself");
 		}
 
 		[Test]

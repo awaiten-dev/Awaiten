@@ -2868,12 +2868,14 @@ internal static class Diagnostics
 	///     project itself, declares a type of the same full name that the container's assembly can access, a namespace of that
 	///     name, or a type named like one of its namespaces. Plain C# names such a type only through an <c>extern alias</c>, which
 	///     the generator cannot add, so the generated code would not compile (CS0433 or CS0434, or a type mismatch when the
-	///     project's own type wins). Reported once per type, at the import or registration that brings it into the graph.
+	///     project's own type wins). Reported once per type, at the import or registration that brings it into the graph. The
+	///     remedy suggests keeping the container in a project that references only one of the assemblies unless the project
+	///     itself declares the name, where only a rename helps.
 	/// </summary>
 	public static readonly DiagnosticDescriptor AmbiguousTypeName = new(
 		"AWT260",
 		"Type the container cannot name",
-		"The generated container cannot name '{0}', which '{1}' {2}, because the assemblies {3} each declare a type or namespace named '{4}'; keep the container in a project that references only one of them, or rename one of them",
+		"The generated container cannot name '{0}', which '{1}' {2}, because the assemblies {3} each declare a type or namespace named '{4}'; {5}",
 		"Awaiten",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,

@@ -137,6 +137,9 @@ partial class AwaitenGenerator
 						verb,
 						Enumerate(clash.Assemblies),
 						clash.Name,
+						clash.Assemblies.Contains(_compilation.AssemblyName)
+							? "rename one of them"
+							: "keep the container in a project that references only one of them, or rename one of them",
 					])));
 			}
 		}
