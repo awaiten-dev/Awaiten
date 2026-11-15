@@ -74,7 +74,7 @@ public partial class DiagnosticTests
 			GeneratorResult result = Generator.Run(Library(registrations, implementation));
 
 			await That(result.Diagnostics).HasSingle().Which
-				.Contains($"*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.IWarmer' is private or protected and 'Lib.DataModule.Warmer' is registered under it, so only a container nested in 'Lib.DataModule' can name the service; {Remedy}").AsWildcard()
+				.Contains($"*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.IWarmer' is private or protected and 'Lib.DataModule.Warmer' is registered under it, so only a container in 'Lib.DataModule' can name the service; {Remedy}").AsWildcard()
 				.Because("a container starts the singleton though nothing depends on it, and only a container nested in the module can name the service to hold it");
 		}
 
@@ -98,8 +98,55 @@ public partial class DiagnosticTests
 				""");
 
 			await That(result.Diagnostics).HasSingle().Which
-				.Contains("*AWT216*so only a container nested in 'Lib.Outer' or in a class derived from it can name the service;*").AsWildcard()
-				.Because("a container nested in a class derived from 'Lib.Outer' can name its protected service too");
+				.Contains("*AWT216*so only a container in 'Lib.Outer' or in a class derived from it in the library's assembly can name the service;*").AsWildcard()
+				.Because("a container nested in a class derived from 'Lib.Outer' can name its protected service too, but one in another assembly still drops the registration");
+		}
+
+		[Test]
+		public async Task LibraryBuild_ServiceNestedInAPrivateClass_NamesThePrivateClass()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				[Module]
+				[Singleton<DataModule.Warmer, DataModule.Inner.IWarmer>(Eager = true)]
+				public static partial class DataModule
+				{
+					private static class Inner { internal interface IWarmer { } }
+					internal sealed class Warmer : Inner.IWarmer { }
+				}
+				""");
+
+			await That(result.Diagnostics).HasSingle().Which
+				.Contains("*AWT216*'Lib.DataModule.Warmer' cannot be registered: 'Lib.DataModule.Inner' is private or protected and 'Lib.DataModule.Warmer' is registered under the service 'Lib.DataModule.Inner.IWarmer', which is nested in it, so only a container in 'Lib.DataModule' can name the service; register it under an accessible service, or make 'Lib.DataModule.Inner' internal or public").AsWildcard()
+				.Because("the internal service is hidden by the private class that encloses it, so only changing that class helps");
+		}
+
+		[Test]
+		public async Task SameAssembly_ContainerThatDeclaresTheService_NamesTheService()
+		{
+			GeneratorResult result = Generator.Run("""
+				using Awaiten;
+
+				namespace Lib;
+
+				[Container]
+				[Import(typeof(SameContainer.DataModule))]
+				public static partial class SameContainer
+				{
+					private interface IWarmer { }
+					internal sealed class Warmer : IWarmer { }
+
+					[Module]
+					[Singleton<Warmer, IWarmer>(Eager = true)]
+					public static partial class DataModule;
+				}
+				""");
+
+			await That(result.Diagnostics).IsEmpty()
+				.Because("the container that declares the private service can name it itself");
 		}
 
 		[Test]

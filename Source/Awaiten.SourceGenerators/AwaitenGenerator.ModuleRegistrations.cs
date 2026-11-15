@@ -1236,6 +1236,30 @@ partial class AwaitenGenerator
 	private static DiagnosticInfo PrivateModuleService(INamedTypeSymbol implementation, INamedTypeSymbol service, INamedTypeSymbol hiddenService, Location? location)
 	{
 		string name = Display(implementation.ToDisplayString(FullyQualified));
+		INamedTypeSymbol restricted = RestrictedType(hiddenService);
+		string declarer = Display(restricted.ContainingType!.ToDisplayString(FullyQualified));
+		string namers = restricted.DeclaredAccessibility == Accessibility.Private
+			? $"only a container in '{declarer}'"
+			: $"only a container in '{declarer}' or in a class derived from it in the library's assembly";
+		string relation = (SymbolEqualityComparer.Default.Equals(service, hiddenService), SymbolEqualityComparer.Default.Equals(hiddenService, restricted)) switch
+		{
+			(true, true) => "it",
+			(true, false) => $"the service '{Display(service.ToDisplayString(FullyQualified))}', which is nested in it",
+			(false, true) => $"the service '{Display(service.ToDisplayString(FullyQualified))}', which carries it",
+			_ => $"the service '{Display(service.ToDisplayString(FullyQualified))}', which carries '{Display(hiddenService.ToDisplayString(FullyQualified))}', nested in it",
+		};
+		return new DiagnosticInfo(
+			Diagnostics.RegisteredTypeLessAccessible,
+			LocationInfo.From(location),
+			new EquatableArray<string>([name, Display(restricted.ToDisplayString(FullyQualified)), $"'{name}' is registered under {relation}, so {namers} can name the service", PrivateServiceRemedy(hiddenService),]));
+	}
+
+	/// <summary>
+	///     <paramref name="hiddenService" /> or the class enclosing it that is private or protected, the type whose
+	///     accessibility hides it from the rest of the assembly.
+	/// </summary>
+	private static INamedTypeSymbol RestrictedType(INamedTypeSymbol hiddenService)
+	{
 		INamedTypeSymbol restricted = hiddenService;
 		while (restricted.DeclaredAccessibility is not (Accessibility.Private or Accessibility.Protected or Accessibility.ProtectedAndInternal)
 		       && restricted.ContainingType is { } containing)
@@ -1243,22 +1267,15 @@ partial class AwaitenGenerator
 			restricted = containing;
 		}
 
-		string declarer = Display(restricted.ContainingType!.ToDisplayString(FullyQualified));
-		string namers = restricted.DeclaredAccessibility == Accessibility.Private
-			? $"only a container nested in '{declarer}'"
-			: $"only a container nested in '{declarer}' or in a class derived from it";
-		string reason = SymbolEqualityComparer.Default.Equals(service, hiddenService)
-			? $"'{name}' is registered under it, so {namers} can name the service"
-			: $"'{name}' is registered under the service '{Display(service.ToDisplayString(FullyQualified))}', which carries it, so {namers} can name the service";
-		return new DiagnosticInfo(
-			Diagnostics.RegisteredTypeLessAccessible,
-			LocationInfo.From(location),
-			new EquatableArray<string>([name, Display(hiddenService.ToDisplayString(FullyQualified)), reason, PrivateServiceRemedy(hiddenService),]));
+		return restricted;
 	}
 
-	/// <summary>The AWT216 remedy for a registration under a service that is or carries <paramref name="hiddenService" />, private to the module.</summary>
+	/// <summary>
+	///     The AWT216 remedy for a registration under a service that is or carries <paramref name="hiddenService" />,
+	///     private to the module, naming the type whose accessibility hides it (see <see cref="RestrictedType" />).
+	/// </summary>
 	private static string PrivateServiceRemedy(INamedTypeSymbol hiddenService)
-		=> $"register it under an accessible service, or make '{Display(hiddenService.ToDisplayString(FullyQualified))}' internal or public";
+		=> $"register it under an accessible service, or make '{Display(RestrictedType(hiddenService).ToDisplayString(FullyQualified))}' internal or public";
 
 	/// <summary>The first parameter of <paramref name="factory" /> whose type is private to <paramref name="module" /> (see <see cref="TypeHiddenInModule" />), or <see langword="null" />.</summary>
 	private static IParameterSymbol? HiddenParameter(IMethodSymbol factory, INamedTypeSymbol module, Compilation compilation)

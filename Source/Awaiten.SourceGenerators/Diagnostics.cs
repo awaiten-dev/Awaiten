@@ -2183,7 +2183,8 @@ internal static class Diagnostics
 	///     does not allow them to expose a less accessible one (CS0050). <c>{2}</c> says why no such type exists (the
 	///     container cannot reach the type, a private type argument, a private service, or no accessible type covering
 	///     all services) and <c>{3}</c> the remedy. The registration is skipped. A module's registration under a service
-	///     private to the module is reported the same way with that service as <c>{1}</c>, since no container can name it.
+	///     private to the module is reported the same way with that service, or the private class enclosing it, as
+	///     <c>{1}</c>, since no container can name it.
 	/// </summary>
 	public static readonly DiagnosticDescriptor RegisteredTypeLessAccessible = new(
 		"AWT216",
