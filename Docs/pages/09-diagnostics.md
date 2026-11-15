@@ -3710,8 +3710,10 @@ public static partial class CoffeeShop;
 ### AWT167: Contextual binding never applies \{#awt167\}
 
 :::warning[Warning]
-A `WhenInjectedInto` contextual binding never applies because the named consumer has no unkeyed direct constructor parameter to redirect.
+A `WhenInjectedInto` contextual binding never applies because the named consumer has no unkeyed direct constructor parameter or `[Inject]` property to redirect.
 :::
+
+<ApplyFix id="AWT167">
 
 ```csharp expect=AWT167
 // highlight-next-line
@@ -3723,6 +3725,19 @@ public sealed class KitchenDisplay;   // has no IReceiptPrinter parameter to red
 [Singleton<KitchenDisplay>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class KitchenDisplay(IReceiptPrinter printer);   // receives the WidePrinter
+
+[Container]
+[Singleton<ThermalPrinter, IReceiptPrinter>]
+[Singleton<WidePrinter, IReceiptPrinter>(WhenInjectedInto = typeof(KitchenDisplay))]
+[Singleton<KitchenDisplay>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 A decorator or a composite is a consumer like any other, but a binding never reaches the inner parameter that receives the instance it wraps or the collection parameter it fans out over. A binding of the decorated service that names a type registered only as its decorator therefore never applies. A binding that names an open generic type, such as `typeof(LoggingBehavior<>)`, never applies either, because each consumer is a closing.
 
@@ -3736,6 +3751,8 @@ A registration sets both `WhenInjectedInto` and `Key`.
 
 A contextual binding is reached only through its consumer, so the `Key` could never be selected by a `[FromKey]` and is silently dropped. Remove one of the two.
 
+<ApplyFix id="AWT168">
+
 ```csharp expect=AWT168
 [Container]
 [Singleton<ThermalPrinter, IReceiptPrinter>]
@@ -3745,6 +3762,17 @@ A contextual binding is reached only through its consumer, so the `Key` could ne
 public static partial class CoffeeShop;
 ```
 
+```csharp isolated
+[Container]
+[Singleton<ThermalPrinter, IReceiptPrinter>]
+// highlight-next-line
+[Singleton<WidePrinter, IReceiptPrinter>(WhenInjectedInto = typeof(DriveThroughRegister))]   // reached through its consumer
+[Singleton<DriveThroughRegister>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
+
 **Fix:** Remove either `WhenInjectedInto` or `Key`.
 
 ### AWT169: Duplicate contextual binding \{#awt169\}
@@ -3752,6 +3780,8 @@ public static partial class CoffeeShop;
 :::danger[Error]
 Two different implementations set `WhenInjectedInto` for the same service and consumer, so both claim the one contextual slot for that consumer.
 :::
+
+<ApplyFix id="AWT169">
 
 ```csharp expect=AWT169
 [Container]
@@ -3761,6 +3791,17 @@ Two different implementations set `WhenInjectedInto` for the same service and co
 [Singleton<DriveThroughRegister>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+[Singleton<WidePrinter, IReceiptPrinter>(WhenInjectedInto = typeof(DriveThroughRegister))]
+// highlight-next-line
+[Singleton<ThermalPrinter, IReceiptPrinter>]   // the default for every other consumer
+[Singleton<DriveThroughRegister>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Keep one contextual binding per service and consumer, and remove the other.
 
@@ -3772,12 +3813,23 @@ A `Key` property or `[FromKey]` uses a constant whose type is not a supported ke
 
 A resolution key must be a `string`, an `enum` value, or a `typeof(...)`.
 
+<ApplyFix id="AWT170">
+
 ```csharp expect=AWT170
 [Container]
 // highlight-next-line
 [Singleton<OatMilk, IMilk>(Key = 5)]   // int is not a supported key type
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[Singleton<OatMilk, IMilk>(Key = "Oat")]   // a string key
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 An unsupported key in the `Keys` of a module's `[Decorate]` is reported by the module's own build, and a container that imports the module doesn't repeat it. A container reports it at its `[Import]` for a module whose generated metadata does not record that check.
 
@@ -3793,6 +3845,8 @@ A type is declared `[ImportService]` (drawn from the host provider) but is also 
 
 A type is either host-owned or Awaiten-owned, not both. For an open generic import such as `[ImportService(typeof(ILogger<>))]`, this is reported for each closing that a dependency routes to the host while the container also registers it, including a [closing over a type internal to a module's assembly](./05-registration/08-modules/02-library-module-rules.md#closings-over-internal-types) that the container can't name.
 
+<ApplyFix id="AWT175">
+
 ```csharp expect=AWT175
 [Container]
 [ImportService<IPaymentTerminal>]                 // declared external
@@ -3800,6 +3854,15 @@ A type is either host-owned or Awaiten-owned, not both. For an open generic impo
 [Singleton<CardTerminal, IPaymentTerminal>]      // …but is also registered, a contradiction
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+[Container]
+// highlight-next-line
+[ImportService<IPaymentTerminal>]                 // host-owned only
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Remove the registration to keep the service host-owned, or remove the `[ImportService]` to build it in the graph.
 
@@ -3838,6 +3901,8 @@ A relationship such as `Func<T>`, `Lazy<T>`, `Owned<T>` or `Task<T>` targets a s
 
 The external resolver hands back an instance, so only a direct dependency of the imported service is routed to it. The relationship would resolve from the graph, which has no registration of the service. It is reported for an `Optional` injected property too, because nothing could ever fill it. Under `[ImportServices]` alone, which declares no type imported, an unregistered relationship is [AWT101](#awt101), as is an unregistered injected property even in its direct form.
 
+<ApplyFix id="AWT242">
+
 ```csharp expect=AWT242
 // highlight-next-line
 public sealed class Checkout(Lazy<IPaymentTerminal> terminal);   // only a direct IPaymentTerminal comes from the host
@@ -3847,6 +3912,18 @@ public sealed class Checkout(Lazy<IPaymentTerminal> terminal);   // only a direc
 [Singleton<Checkout>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Checkout(IPaymentTerminal terminal);   // the host hands it over directly
+
+[Container]
+[ImportService<IPaymentTerminal>]
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 **Fix:** Depend on the imported service directly (`Checkout(IPaymentTerminal terminal)`); the host owns it and decides its lifetime. See [relationships and collections](./07-hosting/02-external-services.mdx#relationships-and-collections) of external services.
 
@@ -3858,6 +3935,8 @@ A collection, such as `IEnumerable<T>`, `IReadOnlyList<T>`, `T[]`, `IAsyncEnumer
 
 The external resolver serves only a direct dependency, and a collection contains only the container's own registrations, including variance matches, so the collection is always empty. Under `[ImportServices]` alone, which declares no type imported, an empty collection of an unregistered type is not reported.
 
+<ApplyFix id="AWT250">
+
 ```csharp expect=AWT250
 // highlight-next-line
 public sealed class Checkout(IEnumerable<IPaymentTerminal> terminals);   // always empty: the host's terminal never joins it
@@ -3867,6 +3946,18 @@ public sealed class Checkout(IEnumerable<IPaymentTerminal> terminals);   // alwa
 [Singleton<Checkout>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Checkout(IPaymentTerminal terminal);   // receives the host's terminal
+
+[Container]
+[ImportService<IPaymentTerminal>]
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 It is not reported when a variance match or a registered closing of an open import gives the collection a member. A warning, not an error, because an empty collection still works. It is reported at the parameter or property that takes the collection, so where an empty collection is intended, suppress it there with `#pragma warning disable AWT250`.
 
@@ -3880,6 +3971,8 @@ An `[ImportService]` names a collection shape: `IEnumerable<T>`, `T[]`, `IReadOn
 
 The container always builds a collection from its own registrations, so the external resolver is never asked for it.
 
+<ApplyFix id="AWT258">
+
 ```csharp expect=AWT258
 public sealed class Checkout(IEnumerable<IPaymentTerminal> terminals);
 
@@ -3889,6 +3982,19 @@ public sealed class Checkout(IEnumerable<IPaymentTerminal> terminals);
 [Singleton<Checkout>]
 public static partial class CoffeeShop;
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Checkout(IPaymentTerminal terminal);
+
+[Container]
+// highlight-next-line
+[ImportService<IPaymentTerminal>]   // the element is routed to the host
+[Singleton<Checkout>]
+public static partial class CoffeeShop;
+```
+
+</ApplyFix>
 
 It is reported at the `[ImportService]`, for the `typeof` form and an unbound collection definition such as `typeof(IEnumerable<>)` too. An import that a module declares is reported at the module's attribute, or at the container's `[Import]` when the module is in another assembly. A container that extends a base leaves the base's imports to the base. A dependency on the collection resolves the container's own collection and is not reported again. A collection of an imported element type is still reported as [AWT250](#awt250).
 
@@ -3966,6 +4072,8 @@ A resolver seam (`IAwaitenResolver`, `IAwaitenScope`, `IAwaitenRoot`, and the li
 
 Resolving from the container at run time is the Service Locator anti-pattern: it hides the type's real dependencies and defeats the compile-time graph check. Inject the dependency you actually need instead, or, if the type is a host-integration adapter, suppress this on it with a justification. The typed fast paths `IAwaitenResolver<T>` and `IAwaitenAsyncResolver<T>` are single-service seams and are not reported.
 
+<ApplyFix id="AWT135">
+
 ```csharp expect=AWT135
 // highlight-next-line
 public sealed class Barista(IAwaitenResolver resolver)   // locates dependencies at run time
@@ -3973,6 +4081,17 @@ public sealed class Barista(IAwaitenResolver resolver)   // locates dependencies
     public Cup Serve() => resolver.Resolve<Cup>();
 }
 ```
+
+```csharp isolated
+// highlight-next-line
+public sealed class Barista(Func<Cup> cups)   // states its real dependency
+{
+    // highlight-next-line
+    public Cup Serve() => cups();
+}
+```
+
+</ApplyFix>
 
 **Fix:** Inject what the type actually needs: `Barista(Func<Cup> cups)` for a fresh cup per call, or `Barista(Cup cup)` for one. Suppress the warning only on a host-integration adapter, as described below.
 
