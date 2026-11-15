@@ -515,6 +515,7 @@ A container reads what the generator adds to a library only in the form its own 
 - A module records the collections its factories pass empty. For a module whose metadata lacks that record, the container doesn't report [AWT252](../../09-diagnostics.md#awt252).
 - A self-compiled scan records which async initializer conventions each match needs and whether it is disposable. For a generated scan registration whose metadata lacks that record, the container goes by the type the factory returns, as for any factory.
 - For a type a module builds into an instance handle, the container sets an `[InjectProperty]` entry through a member that returns the instance from the handle. A module whose metadata lacks that member makes the entry [AWT178](../../09-diagnostics.md#awt178).
+- A deferred `[Inject]` property that takes a collection of a variant interface, which holds an internal service of the module through variance, is set through a generated setter that takes the public members and the handles of that service apart. A container of an older Awaiten version doesn't recognize that setter and never sets the property, without a diagnostic, so a container that imports such a library needs an Awaiten version at least as new as the library's.
 
 Rebuild such a library with the Awaiten version the container uses.
 

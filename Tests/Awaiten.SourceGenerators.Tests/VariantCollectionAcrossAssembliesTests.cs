@@ -692,6 +692,18 @@ public class VariantCollectionAcrossAssembliesTests
 		}
 
 		[Test]
+		public async Task AnOpenGenericRegistration_InTheModulesAssembly_AddsAVariantClosingTheGraphRequestsAfterTheInternalOne()
+		{
+			string library = Library(registrations: Registrations + "\n[Singleton(typeof(AnyHandler<>), typeof(IHandler<>))]")
+				.Replace("public interface IBrew { }", "public interface IBrew { } public sealed class AnyHandler<T> : IHandler<T> { } public sealed class Probe { public Probe(IHandler<object> handler) { } }");
+
+			GeneratorResult result = Generator.Run(OwnAssembly(library).Replace("[Import(typeof(Lib.BrewModule))]", "[Import(typeof(Lib.BrewModule))]\n[Singleton<Lib.Probe>]"));
+
+			await That(Container(result)).Contains("new global::Lib.Reader(new global::Lib.IHandler<global::Lib.Derived>[] { Root.ResolveDerivedHandler(__s.__root), Root.ResolveOtherDerivedHandler(__s.__root), Root.ResolveAnyHandler2(__s.__root), Root.ResolveSecretHandler(__s.__root), Root.ResolveAnyHandler(__s.__root) })")
+				.Because("besides the exact closing 'AnyHandler<Derived>', the collection holds the closing 'AnyHandler<object>' that another consumer of the graph requests, after the internal 'SecretHandler', so AWT237 rightly reports an unconstrained open generic registration, which a consuming container cannot place there");
+		}
+
+		[Test]
 		public async Task AnImplementationAScanRegistersUnderTheExactService_IsReportedInTheModulesBuild()
 		{
 			GeneratorResult result = Generator.Run(Library(registrations: """
