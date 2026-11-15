@@ -344,11 +344,11 @@ A singleton captures a shorter-lived scoped dependency.
 <ApplyFix id="AWT105">
 
 ```csharp expect=AWT105
-// highlight-next-line
-public sealed class EspressoMachine(Order order);   // singleton needs a scoped Order
+public sealed class EspressoMachine(Order order);
 
 [Container]
-[Singleton<EspressoMachine>]
+// highlight-next-line
+[Singleton<EspressoMachine>]   // a singleton that needs a scoped Order
 [Scoped<Order>]
 public static partial class CoffeeShop;
 ```
@@ -503,13 +503,13 @@ Two overridable default registrations provide the same service ambiguously.
 public static partial class TimeModuleA;
 
 [Module]
-[Singleton<MockTimeSystem, ITimeSystem>(Fallback = Fallback.Warn)]
+// highlight-next-line
+[Singleton<MockTimeSystem, ITimeSystem>(Fallback = Fallback.Warn)]   // a second default for ITimeSystem; neither overrides the other
 public static partial class TimeModuleB;
 
 [Container]
 [Import(typeof(TimeModuleA))]
-// highlight-next-line
-[Import(typeof(TimeModuleB))]   // two defaults for ITimeSystem, neither wins
+[Import(typeof(TimeModuleB))]
 public static partial class CoffeeShop;
 ```
 
@@ -556,6 +556,8 @@ AWT216 remains in these cases:
 - **A struct.** Making a struct `internal` does not help: an implementation must be a class, and the compiler also reports CS0452. Wrap the struct in a class, or register an interface it implements with a `Factory` or `Instance` that returns it.
 - **A module member that produces a private type.** A module registers a type private to it, or to a class containing it, with `Factory` or `Instance`. No container can name it to hold the instance, so the library's build reports it, whichever container imports the module. Register the member under its service, such as `[Singleton<IKettle>(Factory = nameof(Make))]`, which works even when the member returns the private type, or make the type `internal`.
 
+<ApplyFix id="AWT216">
+
 ```csharp expect=AWT216
 [Container]
 [Singleton<FakeTimeSystem, ITimeSystem>]
@@ -567,7 +569,20 @@ public static partial class CoffeeShop
 }
 ```
 
-**Fix:** Follow the remedy the message names for its case. Here, give `FakeTimeSystem` an accessible base type that implements both services, register it under one service, or make it `internal`.
+```csharp isolated
+[Container]
+[Singleton<FakeTimeSystem, ITimeSystem>]
+[Singleton<FakeTimeSystem, IClock>]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    internal sealed class FakeTimeSystem : ITimeSystem, IClock;   // the resolvers can name it now
+}
+```
+
+</ApplyFix>
+
+**Fix:** Follow the remedy the message names for its case. Here, make `FakeTimeSystem` `internal`, register it under one service, or give it an accessible base type that implements both services.
 
 ### AWT218: Typed resolve names a service the container does not provide \{#awt218\}
 
@@ -1117,9 +1132,9 @@ public static partial class CoffeeShop;
 ```csharp isolated
 public interface IWarmable
 {
-    Task PreheatAsync();
     // highlight-next-line
-    Task WarmUpAsync(CancellationToken ct);   // the only WarmUpAsync
+    Task PreheatAsync();   // renamed, so WarmUpAsync is unique
+    Task WarmUpAsync(CancellationToken ct);
 }
 
 [Container]
@@ -1214,10 +1229,10 @@ public static partial class CoffeeShop
 ```csharp isolated
 [Container]
 // highlight-next-line
-[Singleton<Grinder>(Instance = nameof(Shared))]   // Shared is a property of the service type
+[Singleton<Grinder>(Factory = nameof(MakeGrinder))]   // a method is a Factory
 public static partial class CoffeeShop
 {
-    private static Grinder Shared { get; } = new();
+    private static Grinder MakeGrinder() => new();
 }
 ```
 
@@ -1225,7 +1240,7 @@ public static partial class CoffeeShop
 
 An internal field or property of a module in another assembly isn't visible to the container either, unless the module generated a public wrapper for it (see [modules](./05-registration/08-modules/02-library-module-rules.md#non-public-members)). When the module generated none, the message names why, as for [AWT108](#awt108): for example the module isn't `partial`, or the member's type isn't public and the module has no single public service to expose it as.
 
-**Fix:** Point `Instance` at a field or property of the service type, such as `private static Grinder Shared { get; } = new();`, or switch to `Factory = nameof(MakeGrinder)` to keep the method.
+**Fix:** Switch to `Factory = nameof(MakeGrinder)` to keep the method, or point `Instance` at a field or property of the service type, such as `private static Grinder Shared { get; } = new();`.
 
 ### AWT110: Conflicting production directives \{#awt110\}
 
@@ -1332,18 +1347,31 @@ public static partial class CoffeeShop
 A factory has both a `[RequestingType]` parameter and an `[Arg]` runtime-argument parameter.
 :::
 
+<ApplyFix id="AWT163">
+
 ```csharp expect=AWT163
 [Container]
 [Transient<ILogger>(Factory = nameof(CreateLogger))]
 public static partial class CoffeeShop
 {
     // highlight-next-line
-    private static Logger CreateLogger([RequestingType] Type consumer, [Arg] string name)
-        => new(consumer, name);
+    private static Logger CreateLogger([RequestingType] Type? consumer, [Arg] string prefix) => new($"{prefix}{consumer?.Name}");
 }
 ```
 
-**Fix:** Remove one of the two: drop `[Arg]` to keep the per-consumer factory, or drop `[RequestingType]` to make it a parameterized factory reached through `Func<string, ILogger>`.
+```csharp isolated
+[Container]
+[Transient<ILogger>(Factory = nameof(CreateLogger))]
+public static partial class CoffeeShop
+{
+    // highlight-next-line
+    private static Logger CreateLogger([RequestingType] Type? consumer) => new(consumer?.Name ?? "<root>");   // per consumer, no runtime argument
+}
+```
+
+</ApplyFix>
+
+**Fix:** Remove one of the two parameters: drop the `[Arg]` parameter to keep the per-consumer factory, or drop the `[RequestingType]` parameter to make it a parameterized factory reached through `Func<string, ILogger>`. Removing only the attribute leaves a parameter the graph must resolve ([AWT101](#awt101)).
 
 ### AWT186: `Owned<T>` over a requesting-type factory \{#awt186\}
 
@@ -1475,12 +1503,12 @@ An `OnActivated`/`OnRelease` lifecycle hook is set on a pre-built `Instance` reg
 
 ```csharp expect=AWT165
 [Container]
-[Singleton<MenuBoard>(Instance = nameof(Menu), OnRelease = nameof(Archive))]
+// highlight-next-line
+[Singleton<MenuBoard>(Instance = nameof(Menu), OnRelease = nameof(Archive))]   // the container does not own an Instance, so it runs no hook
 public static partial class CoffeeShop
 {
     private static MenuBoard Menu { get; } = new();
-    // highlight-next-line
-    private static void Archive(object board) { }   // the container does not own an Instance
+    private static void Archive(object board) { }
 }
 ```
 
@@ -1725,6 +1753,7 @@ public static partial class CoffeeShop
 {
     // highlight-next-line
     private static Task<bool> ConnectAsync(PaymentTerminal terminal) => Task.FromResult(true);   // the result has nowhere to go
+    // highlight-next-line
     private static Task DisconnectAsync(PaymentTerminal terminal, CancellationToken cancellationToken) => Task.CompletedTask;   // DisposeAsync has no token
 }
 ```
