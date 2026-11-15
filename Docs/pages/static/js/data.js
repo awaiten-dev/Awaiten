@@ -2070,6 +2070,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
         "message": "docs: give the MS.DI bridge package its own readme (#452)"
+      },
+      {
+        "sha": "6c6390926ec9bb1960163a2ccf76f865b41fb96a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
+        "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
       }
     ],
     "labels": [
@@ -2417,7 +2423,8 @@ window.BENCHMARK_DATA = {
       "3f0f5847",
       "07cfe8c2",
       "05bb7e4b",
-      "26d2b827"
+      "26d2b827",
+      "6c639092"
     ],
     "datasets": [
       {
@@ -2768,7 +2775,8 @@ window.BENCHMARK_DATA = {
           3.613962657749653,
           4.493054451154811,
           4.885869432489077,
-          5.36995926896731
+          5.36995926896731,
+          3.1309515833854675
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2780,6 +2788,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3483,7 +3492,8 @@ window.BENCHMARK_DATA = {
           4.28559078325828,
           10.18953454941511,
           5.183230943481127,
-          4.953431856135527
+          4.953431856135527,
+          3.8676047133547917
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3495,6 +3505,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4198,7 +4209,8 @@ window.BENCHMARK_DATA = {
           59.33983593781789,
           81.9806181532996,
           83.3758025487264,
-          90.54128817717235
+          90.54128817717235,
+          55.290693807601926
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4210,6 +4222,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -4909,7 +4922,8 @@ window.BENCHMARK_DATA = {
           5.468502915898958,
           6.495318057139714,
           7.270933516323566,
-          7.050607152283192
+          7.050607152283192,
+          4.885108144581318
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4921,6 +4935,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5616,7 +5631,8 @@ window.BENCHMARK_DATA = {
           6.397512823343277,
           8.196108097831408,
           9.306074449419976,
-          9.314715558290482
+          9.314715558290482,
+          6.4760489123208185
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5628,6 +5644,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8052,6 +8069,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
         "message": "docs: give the MS.DI bridge package its own readme (#452)"
+      },
+      {
+        "sha": "6c6390926ec9bb1960163a2ccf76f865b41fb96a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
+        "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
       }
     ],
     "labels": [
@@ -8399,7 +8422,8 @@ window.BENCHMARK_DATA = {
       "3f0f5847",
       "07cfe8c2",
       "05bb7e4b",
-      "26d2b827"
+      "26d2b827",
+      "6c639092"
     ],
     "datasets": [
       {
@@ -8750,7 +8774,8 @@ window.BENCHMARK_DATA = {
           3.505540642639001,
           5.643168432513873,
           5.433435425162315,
-          5.4860353092352545
+          5.4860353092352545,
+          3.012202424498705
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8762,6 +8787,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9465,7 +9491,8 @@ window.BENCHMARK_DATA = {
           4.084409437009266,
           6.492936626076698,
           5.183690492312113,
-          4.929526242117087
+          4.929526242117087,
+          3.849089041352272
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9477,6 +9504,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10180,7 +10208,8 @@ window.BENCHMARK_DATA = {
           57.31076587097986,
           83.60974811656135,
           91.9871676603953,
-          94.22805569001606
+          94.22805569001606,
+          54.32514867385228
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10192,6 +10221,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -10891,7 +10921,8 @@ window.BENCHMARK_DATA = {
           5.153056103984515,
           6.304063688715299,
           7.321986206372579,
-          7.042978735764821
+          7.042978735764821,
+          4.6546314691503845
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -10903,6 +10934,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11598,7 +11630,8 @@ window.BENCHMARK_DATA = {
           6.176099208990733,
           11.190335395080703,
           9.380757914235195,
-          9.431027582713536
+          9.431027582713536,
+          7.715936244527499
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11610,6 +11643,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14034,6 +14068,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
         "message": "docs: give the MS.DI bridge package its own readme (#452)"
+      },
+      {
+        "sha": "6c6390926ec9bb1960163a2ccf76f865b41fb96a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
+        "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
       }
     ],
     "labels": [
@@ -14381,7 +14421,8 @@ window.BENCHMARK_DATA = {
       "3f0f5847",
       "07cfe8c2",
       "05bb7e4b",
-      "26d2b827"
+      "26d2b827",
+      "6c639092"
     ],
     "datasets": [
       {
@@ -14732,7 +14773,8 @@ window.BENCHMARK_DATA = {
           15.197190183401108,
           16.84804885515145,
           19.739927955468495,
-          20.8931482454141
+          20.8931482454141,
+          24.267798242966332
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15004,6 +15046,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15447,7 +15490,8 @@ window.BENCHMARK_DATA = {
           1105.969940321786,
           1321.3346879323324,
           1385.9273497263591,
-          1579.0168847304124
+          1579.0168847304124,
+          1695.9831771850586
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15459,6 +15503,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16162,7 +16207,8 @@ window.BENCHMARK_DATA = {
           26063.35580851237,
           26656.57560511998,
           28577.445922851562,
-          23945.750130208333
+          23945.750130208333,
+          30882.25197753906
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16518,7 +16564,8 @@ window.BENCHMARK_DATA = {
           32477,
           32478,
           32477,
-          32476
+          32476,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16873,7 +16920,8 @@ window.BENCHMARK_DATA = {
           562.8104838643756,
           606.3419670422871,
           666.4399871144976,
-          675.7931944773748
+          675.7931944773748,
+          781.2806811650594
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -16903,6 +16951,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17580,7 +17629,8 @@ window.BENCHMARK_DATA = {
           8493.332765851703,
           9241.650056966146,
           11059.049945576986,
-          11847.880068097797
+          11847.880068097797,
+          13596.654512532552
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -17932,7 +17982,8 @@ window.BENCHMARK_DATA = {
           24761,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20016,6 +20067,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
         "message": "docs: give the MS.DI bridge package its own readme (#452)"
+      },
+      {
+        "sha": "6c6390926ec9bb1960163a2ccf76f865b41fb96a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
+        "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
       }
     ],
     "labels": [
@@ -20363,7 +20420,8 @@ window.BENCHMARK_DATA = {
       "3f0f5847",
       "07cfe8c2",
       "05bb7e4b",
-      "26d2b827"
+      "26d2b827",
+      "6c639092"
     ],
     "datasets": [
       {
@@ -20714,7 +20772,8 @@ window.BENCHMARK_DATA = {
           112.88182388884681,
           123.00668654441833,
           176.68948692541855,
-          223.20657223065695
+          223.20657223065695,
+          225.2023660024007
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -20986,6 +21045,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21429,7 +21489,8 @@ window.BENCHMARK_DATA = {
           10477.38352915446,
           11880.2013865153,
           14049.012476094564,
-          13735.502510579427
+          13735.502510579427,
+          16643.872123209636
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21441,6 +21502,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22144,7 +22206,8 @@ window.BENCHMARK_DATA = {
           626558.4642857143,
           643417.9010184152,
           677428.160295759,
-          584623.1793619791
+          584623.1793619791,
+          776785.7880208333
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22500,7 +22563,8 @@ window.BENCHMARK_DATA = {
           740080,
           719712,
           719048,
-          718361
+          718361,
+          741734
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -22855,7 +22919,8 @@ window.BENCHMARK_DATA = {
           34266.18303629557,
           37138.6849609375,
           41569.062272135416,
-          42113.82793317522
+          42113.82793317522,
+          45804.29245867048
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23207,7 +23272,8 @@ window.BENCHMARK_DATA = {
           80006,
           80967,
           80351,
-          80502
+          80502,
+          80304
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23562,7 +23628,8 @@ window.BENCHMARK_DATA = {
           257944.15345982142,
           291763.38636997767,
           331213.7118326823,
-          352992.81865234376
+          352992.81865234376,
+          385335.5640950521
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -23914,7 +23981,8 @@ window.BENCHMARK_DATA = {
           573123,
           573155,
           572979,
-          572319
+          572319,
+          573058
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25974,6 +26042,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 08:41:29 2026 \u002B0100",
         "message": "docs: give the MS.DI bridge package its own readme (#452)"
+      },
+      {
+        "sha": "6c6390926ec9bb1960163a2ccf76f865b41fb96a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 08:41:47 2026 \u002B0100",
+        "message": "fix: resolve Sonar findings and the regex timeout in the tests (#451)"
       }
     ],
     "labels": [
@@ -26317,7 +26391,8 @@ window.BENCHMARK_DATA = {
       "3f0f5847",
       "07cfe8c2",
       "05bb7e4b",
-      "26d2b827"
+      "26d2b827",
+      "6c639092"
     ],
     "datasets": [
       {
@@ -26664,7 +26739,8 @@ window.BENCHMARK_DATA = {
           221.50644157727558,
           209.17865710258485,
           240.83710476557414,
-          215.61416826248168
+          215.61416826248168,
+          251.07527208328247
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -26699,6 +26775,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27371,7 +27448,8 @@ window.BENCHMARK_DATA = {
           494.42184925079346,
           450.5077077070872,
           537.5160094774686,
-          472.11740328470864
+          472.11740328470864,
+          563.6497727907621
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -27383,6 +27461,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28078,7 +28157,8 @@ window.BENCHMARK_DATA = {
           3902.6728037516277,
           4643.940037536621,
           3957.097930399577,
-          4959.9291056315105
+          4959.9291056315105,
+          4161.550901285807
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28162,6 +28242,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -28785,7 +28866,8 @@ window.BENCHMARK_DATA = {
           328.9941456476847,
           334.9437454859416,
           342.23865235646565,
-          344.49069452285767
+          344.49069452285767,
+          360.19007431666057
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -28797,6 +28879,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -29492,7 +29575,8 @@ window.BENCHMARK_DATA = {
           547.9262587865194,
           527.8662853240967,
           551.2304685592651,
-          547.2115219751994
+          547.2115219751994,
+          560.2264629364014
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -29504,6 +29588,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
