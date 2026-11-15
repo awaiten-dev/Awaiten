@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "009f7ed07d7e2af221f53576cf661390a60f0ad9",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
-        "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
-      },
-      {
         "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 18:52:21 2026 \u002B0100",
         "message": "docs: keep the apply fix button on the start page visible on phones (#461)"
+      },
+      {
+        "sha": "3feda36e74fff3551fa5c3e993bf261e7c221c19",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
+        "message": "docs: use Recursive as the font of the documentation site (#462)"
       }
     ],
     "labels": [
-      "009f7ed0",
       "e0151207",
       "b5c83863",
       "d8bac02e",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "7f28496a",
       "b2989a3f",
       "8080761d",
-      "7d969598"
+      "7d969598",
+      "3feda36e"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          6.828966619712966,
           6.447218766169889,
           6.757366170103733,
           3.4132429510354996,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.45959644416968,
           5.493897254977908,
           5.273599725216627,
-          4.594290785988172
+          4.594290785988172,
+          6.412371891049238
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.560703294475873,
           7.500096421975356,
           6.695313321550687,
           4.182680657009284,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.381175364057223,
           7.676724751408283,
           5.127432613500527,
-          6.712948050882135
+          6.712948050882135,
+          7.506841893379505
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          145.16703917298997,
           124.33896012306214,
           127.79357104301452,
           62.88186379273733,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           116.61729702949523,
           153.60318970680237,
           121.04618404706319,
-          82.63833994070689
+          82.63833994070689,
+          106.20822076002757
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.295375420578889,
           8.810002580285072,
           9.107129331145968,
           4.976306225572314,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.560977884133656,
           7.058628069857757,
           6.826436249273164,
-          5.8843856682380045
+          5.8843856682380045,
+          8.772458646694819
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12.703755187136787,
           10.965610186258951,
           11.540314421057701,
           6.37540391087532,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.695165998169355,
           10.011832524091005,
           9.021919673042637,
-          8.220830806096394
+          8.220830806096394,
+          11.060370393594106
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "009f7ed07d7e2af221f53576cf661390a60f0ad9",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
-        "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
-      },
-      {
         "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 18:52:21 2026 \u002B0100",
         "message": "docs: keep the apply fix button on the start page visible on phones (#461)"
+      },
+      {
+        "sha": "3feda36e74fff3551fa5c3e993bf261e7c221c19",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
+        "message": "docs: use Recursive as the font of the documentation site (#462)"
       }
     ],
     "labels": [
-      "009f7ed0",
       "e0151207",
       "b5c83863",
       "d8bac02e",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "7f28496a",
       "b2989a3f",
       "8080761d",
-      "7d969598"
+      "7d969598",
+      "3feda36e"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.355308528129871,
           7.130707523475091,
           6.816932302713394,
           3.3276499681747875,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.446444692356246,
           6.119948010891676,
           5.6680038203795755,
-          5.352143332362175
+          5.352143332362175,
+          7.105574084179742
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          6.623251500725746,
           7.450944925347964,
           6.77188468667177,
           4.0995806604623795,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.260914143174887,
           7.735215707619985,
           5.087050244212151,
-          6.479862007498741
+          6.479862007498741,
+          7.3558018418649835
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          144.71617903312048,
           133.39592753923856,
           128.49380480448406,
           61.01889252662659,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           115.50207410653432,
           149.07192371686298,
           121.25687257448833,
-          81.47315758069357
+          81.47315758069357,
+          128.64881353378297
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.315972051450185,
           8.924493367473284,
           9.018629960219066,
           4.993574793636799,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.69056950722422,
           7.1305940470525195,
           6.859553051988284,
-          5.796097112695376
+          5.796097112695376,
+          8.741474691246237
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          12.644412888930393,
           14.712151935696602,
           11.567813004766192,
           6.4013731777668,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.414421653747558,
           13.234943156441053,
           8.996550671259563,
-          11.439618368561451
+          11.439618368561451,
+          14.626087157772137
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "009f7ed07d7e2af221f53576cf661390a60f0ad9",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
-        "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
-      },
-      {
         "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 20:33:30 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 18:52:21 2026 \u002B0100",
         "message": "docs: keep the apply fix button on the start page visible on phones (#461)"
+      },
+      {
+        "sha": "3feda36e74fff3551fa5c3e993bf261e7c221c19",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
+        "message": "docs: use Recursive as the font of the documentation site (#462)"
       }
     ],
     "labels": [
-      "009f7ed0",
       "e0151207",
       "b5c83863",
       "d8bac02e",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "7f28496a",
       "b2989a3f",
       "8080761d",
-      "7d969598"
+      "7d969598",
+      "3feda36e"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          12.246485344568889,
           19.16673678358396,
           19.685137575864793,
           15.965986266732216,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           28.964905460675556,
           16.942977609237037,
           19.940868512789407,
-          30.41230981349945
+          30.41230981349945,
+          19.55771740277608
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          848.9520992914836,
           1478.833124923706,
           1482.8013188680013,
           1201.7093800136022,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1428.8253724416097,
           1235.0869812284197,
           1452.5125645228795,
-          1736.1670432771955
+          1736.1670432771955,
+          1481.695293017796
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          18974.952052815755,
           30090.764811197918,
           33477.21045735677,
           26352.368054199218,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           19679.38916015625,
           21158.49082438151,
           29674.686881510417,
-          24620.277313232422
+          24620.277313232422,
+          29572.93669433594
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32477,
           32482,
           32482,
           32478,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32474,
           32476,
           32482,
-          32474
+          32474,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          418.7236991564433,
           708.3776025136311,
           711.4499312082927,
           565.6097396850586,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           558.6419350941976,
           587.2011609395345,
           710.1017275537763,
-          717.6851230768057
+          717.6851230768057,
+          719.6521082605634
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6601.49125289917,
           11398.01439412435,
           11414.651120503744,
           9953.945464070637,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           9534.123675755092,
           9429.258019002278,
           11685.86079624721,
-          12136.620262654622
+          12136.620262654622,
+          11303.696039472308
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2886,7 +2886,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          24760,
           24761,
           24761,
           24761,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760
+          24760,
+          24761
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "009f7ed07d7e2af221f53576cf661390a60f0ad9",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
-        "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
-      },
       {
         "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 18:52:21 2026 \u002B0100",
         "message": "docs: keep the apply fix button on the start page visible on phones (#461)"
+      },
+      {
+        "sha": "3feda36e74fff3551fa5c3e993bf261e7c221c19",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
+        "message": "docs: use Recursive as the font of the documentation site (#462)"
       }
     ],
     "labels": [
-      "009f7ed0",
       "e0151207",
       "b5c83863",
       "d8bac02e",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "7f28496a",
       "b2989a3f",
       "8080761d",
-      "7d969598"
+      "7d969598",
+      "3feda36e"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          82.41390550931295,
           176.8744782924652,
           149.27300153459822,
           129.05652453218187,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           212.54042260987418,
           181.63950233459474,
           193.31650570722726,
-          366.95504525729586
+          366.95504525729586,
+          192.9763754435948
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7591.001345498221,
           14352.705903116863,
           13629.864998372395,
           11864.136309814454,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           12413.500618489583,
           10251.407950846355,
           14911.726713053386,
-          14511.367421831403
+          14511.367421831403,
+          14535.396358235677
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          454625.4781901042,
           739809.3088727678,
           816227.3568638393,
           661173.6964285715,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           469993.2900390625,
           498750.82163783483,
           741644.4654017857,
-          589815.6205679086
+          589815.6205679086,
+          710760.8997628348
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          718356,
           740460,
           741779,
           739163,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           737382,
           741732,
           738540,
-          738487
+          738487,
+          740449
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          24812.39584350586,
           42988.993168131514,
           46857.05039876302,
           38238.38661702474,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           33226.94885253906,
           32516.71357014974,
           44969.8021118164,
-          40595.05811418806
+          40595.05811418806,
+          43051.100085449216
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80348,
           80009,
           80301,
           80860,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           79924,
           80293,
           80083,
-          80261
+          80261,
+          80008
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          196908.29109700522,
           353805.6998046875,
           352081.00959660456,
           326626.1856770833,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           270459.9739583333,
           278026.8831705729,
           350023.7149135045,
-          346986.36495535716
+          346986.36495535716,
+          355063.6173377404
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          572961,
           573026,
           573074,
           573057,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           571190,
           571206,
           573110,
-          571192
+          571192,
+          573172
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "009f7ed07d7e2af221f53576cf661390a60f0ad9",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 17:29:03 2026 \u002B0100",
-        "message": "fix!: skip scan matches of another assembly the container cannot construct and report scan hooks on an instance a registration owns (#408)"
-      },
       {
         "sha": "e015120798dbf411fd40bae3da9539ede8ef6b94",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 18:52:21 2026 \u002B0100",
         "message": "docs: keep the apply fix button on the start page visible on phones (#461)"
+      },
+      {
+        "sha": "3feda36e74fff3551fa5c3e993bf261e7c221c19",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
+        "message": "docs: use Recursive as the font of the documentation site (#462)"
       }
     ],
     "labels": [
-      "009f7ed0",
       "e0151207",
       "b5c83863",
       "d8bac02e",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "7f28496a",
       "b2989a3f",
       "8080761d",
-      "7d969598"
+      "7d969598",
+      "3feda36e"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          282.3499278655419,
           275.52255256359393,
           169.20086812973022,
           271.2630590756734,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           269.4216096242269,
           301.0997473512377,
           280.38156692186993,
-          242.4812522570292
+          242.4812522570292,
+          269.24325922557284
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          713.5978768666586,
           620.611712052272,
           410.27340926442827,
           631.2596435546875,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           718.6849763576801,
           723.7802462211022,
           602.7038943608602,
-          512.4654156821115
+          512.4654156821115,
+          626.2055263519287
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6853.560237121582,
           6921.489273616246,
           3697.0315144856772,
           6942.2471043904625,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           6547.482480367024,
           6705.375603812082,
           4602.808544158936,
-          4156.771395365397
+          4156.771395365397,
+          6892.802871195475
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          432.6525168759482,
           437.5529160499573,
           262.276526927948,
           425.93246304194133,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           414.79872903823855,
           449.1674390939566,
           398.1138206550053,
-          331.30022242863976
+          331.30022242863976,
+          406.97437353134154
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          751.8187510808309,
           754.0539578119914,
           414.63128692763195,
           755.9604560852051,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           723.7572080748422,
           778.219951248169,
           600.8106736455645,
-          532.6616527557374
+          532.6616527557374,
+          727.928784942627
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
