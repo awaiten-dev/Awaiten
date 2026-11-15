@@ -2118,6 +2118,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
         "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
+      },
+      {
+        "sha": "8080761d894e39707ec150c814de84e0d97e7b1a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:38:30 2026 \u002B0100",
+        "message": "fix: report a type the generated container cannot name because another referenced assembly declares its full name (AWT260) (#455)"
       }
     ],
     "labels": [
@@ -2473,7 +2479,8 @@ window.BENCHMARK_DATA = {
       "a3e03104",
       "01d88b94",
       "7f28496a",
-      "b2989a3f"
+      "b2989a3f",
+      "8080761d"
     ],
     "datasets": [
       {
@@ -2832,7 +2839,8 @@ window.BENCHMARK_DATA = {
           4.607786413530508,
           6.093704267271927,
           6.45959644416968,
-          5.493897254977908
+          5.493897254977908,
+          5.273599725216627
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2844,6 +2852,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3563,7 +3572,8 @@ window.BENCHMARK_DATA = {
           6.70681179372164,
           7.420413282513619,
           7.381175364057223,
-          7.676724751408283
+          7.676724751408283,
+          5.127432613500527
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3575,6 +3585,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4294,7 +4305,8 @@ window.BENCHMARK_DATA = {
           111.45567421913147,
           114.69360857350486,
           116.61729702949523,
-          153.60318970680237
+          153.60318970680237,
+          121.04618404706319
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4306,6 +4318,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5021,7 +5034,8 @@ window.BENCHMARK_DATA = {
           6.852937843402227,
           8.79134801030159,
           8.560977884133656,
-          7.058628069857757
+          7.058628069857757,
+          6.826436249273164
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5033,6 +5047,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5744,7 +5759,8 @@ window.BENCHMARK_DATA = {
           8.497764383043561,
           11.214144220948219,
           10.695165998169355,
-          10.011832524091005
+          10.011832524091005,
+          9.021919673042637
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5756,6 +5772,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8236,6 +8253,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
         "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
+      },
+      {
+        "sha": "8080761d894e39707ec150c814de84e0d97e7b1a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:38:30 2026 \u002B0100",
+        "message": "fix: report a type the generated container cannot name because another referenced assembly declares its full name (AWT260) (#455)"
       }
     ],
     "labels": [
@@ -8591,7 +8614,8 @@ window.BENCHMARK_DATA = {
       "a3e03104",
       "01d88b94",
       "7f28496a",
-      "b2989a3f"
+      "b2989a3f",
+      "8080761d"
     ],
     "datasets": [
       {
@@ -8950,7 +8974,8 @@ window.BENCHMARK_DATA = {
           5.772331357995669,
           7.111666173736254,
           7.446444692356246,
-          6.119948010891676
+          6.119948010891676,
+          5.6680038203795755
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -8962,6 +8987,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9681,7 +9707,8 @@ window.BENCHMARK_DATA = {
           6.7797162511519025,
           7.3016666024923325,
           7.260914143174887,
-          7.735215707619985
+          7.735215707619985,
+          5.087050244212151
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9693,6 +9720,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10412,7 +10440,8 @@ window.BENCHMARK_DATA = {
           90.15753780092511,
           115.12882250944773,
           115.50207410653432,
-          149.07192371686298
+          149.07192371686298,
+          121.25687257448833
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10424,6 +10453,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11139,7 +11169,8 @@ window.BENCHMARK_DATA = {
           6.711707663536072,
           8.808945283293724,
           8.69056950722422,
-          7.1305940470525195
+          7.1305940470525195,
+          6.859553051988284
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11151,6 +11182,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11862,7 +11894,8 @@ window.BENCHMARK_DATA = {
           11.473200420183796,
           14.658022839824358,
           14.414421653747558,
-          13.234943156441053
+          13.234943156441053,
+          8.996550671259563
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11874,6 +11907,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14354,6 +14388,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
         "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
+      },
+      {
+        "sha": "8080761d894e39707ec150c814de84e0d97e7b1a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:38:30 2026 \u002B0100",
+        "message": "fix: report a type the generated container cannot name because another referenced assembly declares its full name (AWT260) (#455)"
       }
     ],
     "labels": [
@@ -14709,7 +14749,8 @@ window.BENCHMARK_DATA = {
       "a3e03104",
       "01d88b94",
       "7f28496a",
-      "b2989a3f"
+      "b2989a3f",
+      "8080761d"
     ],
     "datasets": [
       {
@@ -15068,7 +15109,8 @@ window.BENCHMARK_DATA = {
           20.02487032688581,
           26.091725317637124,
           28.964905460675556,
-          16.942977609237037
+          16.942977609237037,
+          19.940868512789407
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15340,6 +15382,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15799,7 +15842,8 @@ window.BENCHMARK_DATA = {
           1446.0559182848249,
           1744.8394143031194,
           1428.8253724416097,
-          1235.0869812284197
+          1235.0869812284197,
+          1452.5125645228795
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15811,6 +15855,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16530,7 +16575,8 @@ window.BENCHMARK_DATA = {
           29914.16717936198,
           24527.711933680945,
           19679.38916015625,
-          21158.49082438151
+          21158.49082438151,
+          29674.686881510417
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -16894,7 +16940,8 @@ window.BENCHMARK_DATA = {
           32482,
           32476,
           32474,
-          32476
+          32476,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17257,7 +17304,8 @@ window.BENCHMARK_DATA = {
           717.1185344696045,
           702.3361131032308,
           558.6419350941976,
-          587.2011609395345
+          587.2011609395345,
+          710.1017275537763
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17287,6 +17335,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -17980,7 +18029,8 @@ window.BENCHMARK_DATA = {
           12071.343186442058,
           12632.519585745675,
           9534.123675755092,
-          9429.258019002278
+          9429.258019002278,
+          11685.86079624721
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18335,6 +18385,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760,
@@ -20472,6 +20523,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
         "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
+      },
+      {
+        "sha": "8080761d894e39707ec150c814de84e0d97e7b1a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:38:30 2026 \u002B0100",
+        "message": "fix: report a type the generated container cannot name because another referenced assembly declares its full name (AWT260) (#455)"
       }
     ],
     "labels": [
@@ -20827,7 +20884,8 @@ window.BENCHMARK_DATA = {
       "a3e03104",
       "01d88b94",
       "7f28496a",
-      "b2989a3f"
+      "b2989a3f",
+      "8080761d"
     ],
     "datasets": [
       {
@@ -21186,7 +21244,8 @@ window.BENCHMARK_DATA = {
           193.98084578514099,
           231.84851010640463,
           212.54042260987418,
-          181.63950233459474
+          181.63950233459474,
+          193.31650570722726
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21458,6 +21517,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -21917,7 +21977,8 @@ window.BENCHMARK_DATA = {
           14795.455138070243,
           14595.544774373373,
           12413.500618489583,
-          10251.407950846355
+          10251.407950846355,
+          14911.726713053386
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -21929,6 +21990,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22648,7 +22710,8 @@ window.BENCHMARK_DATA = {
           727184.6685546875,
           580111.6348031851,
           469993.2900390625,
-          498750.82163783483
+          498750.82163783483,
+          741644.4654017857
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23012,7 +23075,8 @@ window.BENCHMARK_DATA = {
           739888,
           735966,
           737382,
-          741732
+          741732,
+          738540
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23375,7 +23439,8 @@ window.BENCHMARK_DATA = {
           44390.18093167819,
           44402.54018961589,
           33226.94885253906,
-          32516.71357014974
+          32516.71357014974,
+          44969.8021118164
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23735,7 +23800,8 @@ window.BENCHMARK_DATA = {
           79600,
           79669,
           79924,
-          80293
+          80293,
+          80083
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24098,7 +24164,8 @@ window.BENCHMARK_DATA = {
           366986.8137044271,
           364932.3745768229,
           270459.9739583333,
-          278026.8831705729
+          278026.8831705729,
+          350023.7149135045
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24458,7 +24525,8 @@ window.BENCHMARK_DATA = {
           573105,
           572254,
           571190,
-          571206
+          571206,
+          573110
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26566,6 +26634,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 14:35:59 2026 \u002B0100",
         "message": "ci: keep running the unit tests on the other platforms when one fails (#460)"
+      },
+      {
+        "sha": "8080761d894e39707ec150c814de84e0d97e7b1a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 15 14:38:30 2026 \u002B0100",
+        "message": "fix: report a type the generated container cannot name because another referenced assembly declares its full name (AWT260) (#455)"
       }
     ],
     "labels": [
@@ -26917,7 +26991,8 @@ window.BENCHMARK_DATA = {
       "a3e03104",
       "01d88b94",
       "7f28496a",
-      "b2989a3f"
+      "b2989a3f",
+      "8080761d"
     ],
     "datasets": [
       {
@@ -27272,7 +27347,8 @@ window.BENCHMARK_DATA = {
           304.4780270258586,
           292.2314308166504,
           269.4216096242269,
-          301.0997473512377
+          301.0997473512377,
+          280.38156692186993
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27307,6 +27383,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -27995,7 +28072,8 @@ window.BENCHMARK_DATA = {
           479.9282199382782,
           693.1580897649129,
           718.6849763576801,
-          723.7802462211022
+          723.7802462211022,
+          602.7038943608602
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -28007,6 +28085,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28718,7 +28797,8 @@ window.BENCHMARK_DATA = {
           5024.044424947103,
           6613.568184443882,
           6547.482480367024,
-          6705.375603812082
+          6705.375603812082,
+          4602.808544158936
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -28802,6 +28882,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -29441,7 +29522,8 @@ window.BENCHMARK_DATA = {
           344.24076855977376,
           423.65775464375815,
           414.79872903823855,
-          449.1674390939566
+          449.1674390939566,
+          398.1138206550053
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -29453,6 +29535,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -30164,7 +30247,8 @@ window.BENCHMARK_DATA = {
           557.6261625971113,
           778.0527131398519,
           723.7572080748422,
-          778.219951248169
+          778.219951248169,
+          600.8106736455645
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -30176,6 +30260,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
