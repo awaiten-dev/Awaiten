@@ -20,7 +20,7 @@ namespace Awaiten.Docs.Tests;
 /// <remarks>
 ///     All blocks of a page share the namespace <c>Snippets</c>, so that a type or a <c>using</c> directive that a page
 ///     shows once applies to all of its blocks, like it does for a reader. A type that several blocks declare, e.g. to
-///     show variants of the same container, or that a block with an <c>expect=</c> marker declares to show a mistake,
+///     show variants of the same container, or that a block with an <c>expect=</c> or <c>isolated</c> marker declares,
 ///     stays local to each of them, nested in the <c>partial</c> class of its block so that a nested <c>[Container]</c>
 ///     still generates. A block that declares no variants derives from the block before, so that it uses the variants
 ///     declared there. The statements of each block become the body of an async method, and its members the members of
@@ -60,7 +60,7 @@ internal static partial class SnippetCompiler
 				OmittedInitializer().Replace(block.Code, "= default!; //..."), ParseOptions).GetCompilationUnitRoot()))
 			.ToList();
 		List<(CodeBlock Block, CompilationUnitSyntax Root)> unmarked = parsed
-			.Where(x => x.Block.Expect.Length == 0)
+			.Where(x => !x.Block.IsMarked)
 			.ToList();
 		HashSet<string> sharedTypes = unmarked
 			.SelectMany(x => x.Root.Members.Select(GetTypeName).OfType<string>().Distinct())
@@ -83,15 +83,16 @@ internal static partial class SnippetCompiler
 		}
 
 		errors.AddRange(reported.Where(x => !attributed.Contains(x)).Select(x => x.Text));
-		foreach ((CodeBlock block, _) in parsed.Where(x => x.Block.Expect.Length > 0))
+		foreach ((CodeBlock block, _) in parsed.Where(x => x.Block.IsMarked))
 		{
-			List<Reported> ofBlock = Compile(parsed.Where(x => x.Block.Expect.Length == 0 || x.Block == block).ToList(),
+			List<Reported> ofBlock = Compile(parsed.Where(x => !x.Block.IsMarked || x.Block == block).ToList(),
 					sharedTypes, scaffold)
 				.Where(x => x.IsIn(block) || (!x.IsInAny(blocks) && !reported.Contains(x)))
 				.ToList();
 			if (!ofBlock.Select(x => x.Id).ToHashSet().SetEquals(block.ExpectedIds))
 			{
-				errors.Add($"{block.Page}({block.Line}): expected exactly {block.Expect}, but found " +
+				errors.Add($"{block.Page}({block.Line}): expected " +
+				           (block.Expect.Length == 0 ? "nothing" : $"exactly {block.Expect}") + ", but found " +
 				           (ofBlock.Count == 0
 					           ? "nothing"
 					           : Environment.NewLine + string.Join(Environment.NewLine, ofBlock.Select(x => "  " + x.Text))));
@@ -115,7 +116,7 @@ internal static partial class SnippetCompiler
 		for (int i = 0; i < parsed.Count; i++)
 		{
 			if (AppendBlock(source, parsed[i].Block, parsed[i].Root, i,
-				    parsed[i].Block.Expect.Length == 0 ? sharedTypes : [], previous))
+				    parsed[i].Block.IsMarked ? [] : sharedTypes, previous))
 			{
 				previous = $"Block{i}";
 			}

@@ -64,10 +64,11 @@ Every id has one section in `09-diagnostics.md`, under the topic it belongs to:
 - The heading is `### AWTnnn: Short title \{#awtnnn\}`. The title is the descriptor title from `Diagnostics.cs` word for word (code names may be put in backticks), because the IDE shows that title next to the help link; improve the descriptor title instead of rewording it on the page. Escape the braces of the heading id: the site enables `future.v4`, which turns off the unescaped MDX 1 syntax.
 - An admonition with the severity (`:::danger[Error]` or `:::warning[Warning]`) and a one-sentence summary.
 - An `expect=AWTnnn` example that triggers it, with `// highlight-next-line` on the trigger.
-- A `**Fix:**` paragraph, followed by a fixed example where that helps.
+- Where the fix is one code change, the fixed example right after it as a `csharp isolated` block, the same code with that change and `// highlight-next-line` on it, and both blocks wrapped in `<ApplyFix id="AWTnnn">` (blank lines around the blocks), which shows the fixed one behind an "Apply fix" button.
+- A `**Fix:**` paragraph.
 - A row in the `## Index` table at the top of the page, sorted by id.
 
-Every descriptor in `Diagnostics.cs` passes `helpLinkUri: HelpLink("AWTnnn")`, so the id in the IDE links to its section. An id that is no longer reported moves to `## Reserved ids` and is never reused. The page keeps `toc_max_heading_level: 2`: the index table, not the table of contents, lists the ids.
+Every descriptor in `Diagnostics.cs` passes `helpLinkUri: HelpLink("AWTnnn")`, so the id in the IDE links to its section. An id that is no longer reported leaves the page; its comment in `AnalyzerReleases.Unshipped.md` keeps it from being reused. The page keeps `toc_max_heading_level: 2`: the index table, not the table of contents, lists the ids.
 
 ## Before you push
 
