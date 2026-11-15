@@ -1,4 +1,4 @@
-import React, {type ReactElement, type ReactNode} from 'react';
+import React, {useState, type ReactElement, type ReactNode} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -25,6 +25,50 @@ const Type = ({children}: {children: ReactNode}) => <span className={styles.type
 const Comment = ({children}: {children: ReactNode}) => <span className={styles.comment}>{children}</span>;
 
 const diagnostics = ['AWT119', 'AWT101', 'AWT102', 'AWT105'];
+
+function BuildCheck(): ReactElement {
+  const [fixed, setFixed] = useState(false);
+  return (
+    <div className={styles.errorCard}>
+      <pre className={styles.code}>
+        {fixed ? (
+          <>
+            <Comment>{'// the cup waits for the warm machine'}</Comment>
+            {'\n'}
+            <Kw>public sealed class</Kw> <Type>Cup</Type>(Func&lt;<span className={styles.added}>Task&lt;</span>
+            EspressoMachine<span className={styles.added}>&gt;</span>&gt; machine);
+          </>
+        ) : (
+          <>
+            <Comment>{'// the cup grabs the machine without waiting for it'}</Comment>
+            {'\n'}
+            <Kw>public sealed class</Kw> <Type>Cup</Type>(
+            <span className={styles.squiggle}>Func&lt;EspressoMachine&gt;</span> machine);
+          </>
+        )}
+      </pre>
+      <div className={clsx(styles.error, fixed && styles.success)} aria-live="polite">
+        {fixed ? (
+          <>
+            <span className={styles.successId}>BUILD</span>
+            <span>Succeeded. The cup awaits the machine, so it never gets a cold one.</span>
+          </>
+        ) : (
+          <>
+            <span className={styles.errorId}>AWT119</span>
+            <span>
+              A synchronous Func relationship targets an async-initialized service. Take{' '}
+              <code>Func&lt;Task&lt;EspressoMachine&gt;&gt;</code> and await it.
+            </span>
+          </>
+        )}
+        <button type="button" className={styles.fix} onClick={() => setFixed(!fixed)}>
+          {fixed ? 'Undo' : 'Apply fix'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Home(): ReactElement {
   const {siteConfig} = useDocusaurusContext();
@@ -106,21 +150,7 @@ export default function Home(): ReactElement {
               </div>
             </div>
             <div className={styles.stepVisual}>
-              <div className={styles.errorCard}>
-                <pre className={styles.code}>
-                  <Comment>{'// the cup grabs the machine without waiting for it'}</Comment>
-                  {'\n'}
-                  <Kw>public sealed class</Kw> <Type>Cup</Type>(
-                  <span className={styles.squiggle}>Func&lt;EspressoMachine&gt;</span> machine);
-                </pre>
-                <div className={styles.error}>
-                  <span className={styles.errorId}>AWT119</span>
-                  <span>
-                    A synchronous Func relationship targets an async-initialized service. Take{' '}
-                    <code>Func&lt;Task&lt;EspressoMachine&gt;&gt;</code> and await it.
-                  </span>
-                </div>
-              </div>
+              <BuildCheck />
             </div>
           </Step>
 
