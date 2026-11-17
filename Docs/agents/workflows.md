@@ -22,7 +22,7 @@ Commands run from the repository root. On Linux and macOS use `./build.sh` inste
 
 `Tests/Awaiten.Api.Tests/ApiApprovalTests.cs` reads the public API of `Awaiten` and `Awaiten.Extensions.DependencyInjection` for every framework in `Source/Directory.Build.props` with `aweXpect.Snapshots.PublicApi` and compares it to `ApiApprovalTests.<assembly>.<framework>.awexpect-snapshot.txt`. The test project builds all target frameworks of the referenced projects, so a plain `dotnet test --project Tests/Awaiten.Api.Tests` is enough.
 
-To accept an intentional change, run the tests with the environment variable `AWEXPECT_ACCEPT_SNAPSHOTS` set to `all` (PowerShell: `$env:AWEXPECT_ACCEPT_SNAPSHOTS = 'all'; dotnet test --project Tests/Awaiten.Api.Tests`), or run the explicit `AcceptApiChanges` test (`--treenode-filter "/*/*/*/AcceptApiChanges"` or from the IDE), then review and commit the snapshot diff.
+To accept an intentional change, run the tests with the environment variable `AWEXPECT_ACCEPT_SNAPSHOTS` set to `all` (PowerShell: `$env:AWEXPECT_ACCEPT_SNAPSHOTS = 'all'; dotnet test --project Tests/Awaiten.Api.Tests`), or run the explicit `AcceptApiChanges` test (`--treenode-filter "/*/*/*/AcceptApiChanges"` or from the IDE), then review and commit the snapshot diff. Locally, a failing test also opens a diff tool through `aweXpect.Snapshots.DiffEngine` (e.g. Rider, Visual Studio or VS Code) that compares the pending file with the snapshot, so the change can be taken over there; it never opens on a build server, and `DiffEngine_Disabled=true` turns it off.
 
 ## Native AOT
 

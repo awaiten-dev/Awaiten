@@ -10,6 +10,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="aweXpect.Snapshots.DiffEngine"/>
 		<PackageReference Include="aweXpect.Snapshots.PublicApi"/>
 		<!-- Carried so the dependency assemblies of Awaiten.Extensions.DependencyInjection land in this test's
 		     output, where the public API resolves the references of the assemblies. -->
