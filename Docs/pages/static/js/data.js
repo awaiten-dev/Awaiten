@@ -2136,6 +2136,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
         "message": "docs: use Recursive as the font of the documentation site (#462)"
+      },
+      {
+        "sha": "4f492208b9d3c4d064afd0572abab90114966bd6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
+        "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
       }
     ],
     "labels": [
@@ -2494,7 +2500,8 @@ window.BENCHMARK_DATA = {
       "b2989a3f",
       "8080761d",
       "7d969598",
-      "3feda36e"
+      "3feda36e",
+      "4f492208"
     ],
     "datasets": [
       {
@@ -2856,7 +2863,8 @@ window.BENCHMARK_DATA = {
           5.493897254977908,
           5.273599725216627,
           4.594290785988172,
-          6.412371891049238
+          6.412371891049238,
+          5.877999532681245
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2868,6 +2876,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3593,7 +3602,8 @@ window.BENCHMARK_DATA = {
           7.676724751408283,
           5.127432613500527,
           6.712948050882135,
-          7.506841893379505
+          7.506841893379505,
+          5.521024401982626
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3605,6 +3615,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4330,7 +4341,8 @@ window.BENCHMARK_DATA = {
           153.60318970680237,
           121.04618404706319,
           82.63833994070689,
-          106.20822076002757
+          106.20822076002757,
+          125.11481987635294
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4342,6 +4354,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5063,7 +5076,8 @@ window.BENCHMARK_DATA = {
           7.058628069857757,
           6.826436249273164,
           5.8843856682380045,
-          8.772458646694819
+          8.772458646694819,
+          8.662643502538021
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5075,6 +5089,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5792,7 +5807,8 @@ window.BENCHMARK_DATA = {
           10.011832524091005,
           9.021919673042637,
           8.220830806096394,
-          11.060370393594106
+          11.060370393594106,
+          10.923449488622802
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5804,6 +5820,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8305,6 +8322,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
         "message": "docs: use Recursive as the font of the documentation site (#462)"
+      },
+      {
+        "sha": "4f492208b9d3c4d064afd0572abab90114966bd6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
+        "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
       }
     ],
     "labels": [
@@ -8663,7 +8686,8 @@ window.BENCHMARK_DATA = {
       "b2989a3f",
       "8080761d",
       "7d969598",
-      "3feda36e"
+      "3feda36e",
+      "4f492208"
     ],
     "datasets": [
       {
@@ -9025,7 +9049,8 @@ window.BENCHMARK_DATA = {
           6.119948010891676,
           5.6680038203795755,
           5.352143332362175,
-          7.105574084179742
+          7.105574084179742,
+          5.8100350856781
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -9037,6 +9062,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9762,7 +9788,8 @@ window.BENCHMARK_DATA = {
           7.735215707619985,
           5.087050244212151,
           6.479862007498741,
-          7.3558018418649835
+          7.3558018418649835,
+          5.614496714793718
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9774,6 +9801,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10499,7 +10527,8 @@ window.BENCHMARK_DATA = {
           149.07192371686298,
           121.25687257448833,
           81.47315758069357,
-          128.64881353378297
+          128.64881353378297,
+          129.55133986473083
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10511,6 +10540,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11232,7 +11262,8 @@ window.BENCHMARK_DATA = {
           7.1305940470525195,
           6.859553051988284,
           5.796097112695376,
-          8.741474691246237
+          8.741474691246237,
+          8.799820037824768
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11244,6 +11275,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11961,7 +11993,8 @@ window.BENCHMARK_DATA = {
           13.234943156441053,
           8.996550671259563,
           11.439618368561451,
-          14.626087157772137
+          14.626087157772137,
+          10.945310243538447
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -11973,6 +12006,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14474,6 +14508,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
         "message": "docs: use Recursive as the font of the documentation site (#462)"
+      },
+      {
+        "sha": "4f492208b9d3c4d064afd0572abab90114966bd6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
+        "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
       }
     ],
     "labels": [
@@ -14832,7 +14872,8 @@ window.BENCHMARK_DATA = {
       "b2989a3f",
       "8080761d",
       "7d969598",
-      "3feda36e"
+      "3feda36e",
+      "4f492208"
     ],
     "datasets": [
       {
@@ -15194,7 +15235,8 @@ window.BENCHMARK_DATA = {
           16.942977609237037,
           19.940868512789407,
           30.41230981349945,
-          19.55771740277608
+          19.55771740277608,
+          29.39211206038793
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15466,6 +15508,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15931,7 +15974,8 @@ window.BENCHMARK_DATA = {
           1235.0869812284197,
           1452.5125645228795,
           1736.1670432771955,
-          1481.695293017796
+          1481.695293017796,
+          1877.7518379211426
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15943,6 +15987,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16668,7 +16713,8 @@ window.BENCHMARK_DATA = {
           21158.49082438151,
           29674.686881510417,
           24620.277313232422,
-          29572.93669433594
+          29572.93669433594,
+          24534.193980625696
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17035,7 +17081,8 @@ window.BENCHMARK_DATA = {
           32476,
           32482,
           32474,
-          32482
+          32482,
+          32476
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17401,7 +17448,8 @@ window.BENCHMARK_DATA = {
           587.2011609395345,
           710.1017275537763,
           717.6851230768057,
-          719.6521082605634
+          719.6521082605634,
+          736.3390431404114
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17431,6 +17479,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -18130,7 +18179,8 @@ window.BENCHMARK_DATA = {
           9429.258019002278,
           11685.86079624721,
           12136.620262654622,
-          11303.696039472308
+          11303.696039472308,
+          14107.46230061849
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18493,6 +18543,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
+          24761,
           24761
         ],
         "borderColor": "#43A047",
@@ -20643,6 +20694,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
         "message": "docs: use Recursive as the font of the documentation site (#462)"
+      },
+      {
+        "sha": "4f492208b9d3c4d064afd0572abab90114966bd6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
+        "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
       }
     ],
     "labels": [
@@ -21001,7 +21058,8 @@ window.BENCHMARK_DATA = {
       "b2989a3f",
       "8080761d",
       "7d969598",
-      "3feda36e"
+      "3feda36e",
+      "4f492208"
     ],
     "datasets": [
       {
@@ -21363,7 +21421,8 @@ window.BENCHMARK_DATA = {
           181.63950233459474,
           193.31650570722726,
           366.95504525729586,
-          192.9763754435948
+          192.9763754435948,
+          369.4907265076271
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21635,6 +21694,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -22100,7 +22160,8 @@ window.BENCHMARK_DATA = {
           10251.407950846355,
           14911.726713053386,
           14511.367421831403,
-          14535.396358235677
+          14535.396358235677,
+          16180.12861328125
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -22112,6 +22173,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22837,7 +22899,8 @@ window.BENCHMARK_DATA = {
           498750.82163783483,
           741644.4654017857,
           589815.6205679086,
-          710760.8997628348
+          710760.8997628348,
+          595036.8484375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23204,7 +23267,8 @@ window.BENCHMARK_DATA = {
           741732,
           738540,
           738487,
-          740449
+          740449,
+          736118
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23570,7 +23634,8 @@ window.BENCHMARK_DATA = {
           32516.71357014974,
           44969.8021118164,
           40595.05811418806,
-          43051.100085449216
+          43051.100085449216,
+          43287.99935302734
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23933,7 +23998,8 @@ window.BENCHMARK_DATA = {
           80293,
           80083,
           80261,
-          80008
+          80008,
+          79668
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24299,7 +24365,8 @@ window.BENCHMARK_DATA = {
           278026.8831705729,
           350023.7149135045,
           346986.36495535716,
-          355063.6173377404
+          355063.6173377404,
+          391921.5583984375
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24662,7 +24729,8 @@ window.BENCHMARK_DATA = {
           571206,
           573110,
           571192,
-          573172
+          573172,
+          572349
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26788,6 +26856,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 15 19:35:44 2026 \u002B0100",
         "message": "docs: use Recursive as the font of the documentation site (#462)"
+      },
+      {
+        "sha": "4f492208b9d3c4d064afd0572abab90114966bd6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
+        "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
       }
     ],
     "labels": [
@@ -27142,7 +27216,8 @@ window.BENCHMARK_DATA = {
       "b2989a3f",
       "8080761d",
       "7d969598",
-      "3feda36e"
+      "3feda36e",
+      "4f492208"
     ],
     "datasets": [
       {
@@ -27500,7 +27575,8 @@ window.BENCHMARK_DATA = {
           301.0997473512377,
           280.38156692186993,
           242.4812522570292,
-          269.24325922557284
+          269.24325922557284,
+          304.1921817143758
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27535,6 +27611,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -28229,7 +28306,8 @@ window.BENCHMARK_DATA = {
           723.7802462211022,
           602.7038943608602,
           512.4654156821115,
-          626.2055263519287
+          626.2055263519287,
+          648.4617186273847
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -28241,6 +28319,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -28958,7 +29037,8 @@ window.BENCHMARK_DATA = {
           6705.375603812082,
           4602.808544158936,
           4156.771395365397,
-          6892.802871195475
+          6892.802871195475,
+          5146.434989929199
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -29042,6 +29122,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -29687,7 +29768,8 @@ window.BENCHMARK_DATA = {
           449.1674390939566,
           398.1138206550053,
           331.30022242863976,
-          406.97437353134154
+          406.97437353134154,
+          422.0126686414083
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -29699,6 +29781,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -30416,7 +30499,8 @@ window.BENCHMARK_DATA = {
           778.219951248169,
           600.8106736455645,
           532.6616527557374,
-          727.928784942627
+          727.928784942627,
+          725.043112550463
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -30428,6 +30512,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
