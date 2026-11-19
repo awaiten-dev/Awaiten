@@ -2142,6 +2142,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
         "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
+      },
+      {
+        "sha": "3108fbc6d806d06305f1cb3d2cbe5164f700b4c4",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 19 22:22:43 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#464)"
       }
     ],
     "labels": [
@@ -2501,7 +2507,8 @@ window.BENCHMARK_DATA = {
       "8080761d",
       "7d969598",
       "3feda36e",
-      "4f492208"
+      "4f492208",
+      "3108fbc6"
     ],
     "datasets": [
       {
@@ -2864,7 +2871,8 @@ window.BENCHMARK_DATA = {
           5.273599725216627,
           4.594290785988172,
           6.412371891049238,
-          5.877999532681245
+          5.877999532681245,
+          5.493777843622061
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2876,6 +2884,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3603,7 +3612,8 @@ window.BENCHMARK_DATA = {
           5.127432613500527,
           6.712948050882135,
           7.506841893379505,
-          5.521024401982626
+          5.521024401982626,
+          5.854861083626747
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3615,6 +3625,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4342,7 +4353,8 @@ window.BENCHMARK_DATA = {
           121.04618404706319,
           82.63833994070689,
           106.20822076002757,
-          125.11481987635294
+          125.11481987635294,
+          117.30770203272502
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4354,6 +4366,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5077,7 +5090,8 @@ window.BENCHMARK_DATA = {
           6.826436249273164,
           5.8843856682380045,
           8.772458646694819,
-          8.662643502538021
+          8.662643502538021,
+          8.284788826337227
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5089,6 +5103,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5808,7 +5823,8 @@ window.BENCHMARK_DATA = {
           9.021919673042637,
           8.220830806096394,
           11.060370393594106,
-          10.923449488622802
+          10.923449488622802,
+          11.134967929124832
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5820,6 +5836,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8328,6 +8345,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
         "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
+      },
+      {
+        "sha": "3108fbc6d806d06305f1cb3d2cbe5164f700b4c4",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 19 22:22:43 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#464)"
       }
     ],
     "labels": [
@@ -8687,7 +8710,8 @@ window.BENCHMARK_DATA = {
       "8080761d",
       "7d969598",
       "3feda36e",
-      "4f492208"
+      "4f492208",
+      "3108fbc6"
     ],
     "datasets": [
       {
@@ -9050,7 +9074,8 @@ window.BENCHMARK_DATA = {
           5.6680038203795755,
           5.352143332362175,
           7.105574084179742,
-          5.8100350856781
+          5.8100350856781,
+          6.10755974650383
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -9062,6 +9087,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9789,7 +9815,8 @@ window.BENCHMARK_DATA = {
           5.087050244212151,
           6.479862007498741,
           7.3558018418649835,
-          5.614496714793718
+          5.614496714793718,
+          5.902465884884198
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9801,6 +9828,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10528,7 +10556,8 @@ window.BENCHMARK_DATA = {
           121.25687257448833,
           81.47315758069357,
           128.64881353378297,
-          129.55133986473083
+          129.55133986473083,
+          115.92077070474625
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10540,6 +10569,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11263,7 +11293,8 @@ window.BENCHMARK_DATA = {
           6.859553051988284,
           5.796097112695376,
           8.741474691246237,
-          8.799820037824768
+          8.799820037824768,
+          8.32582760155201
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11275,6 +11306,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -11994,7 +12026,8 @@ window.BENCHMARK_DATA = {
           8.996550671259563,
           11.439618368561451,
           14.626087157772137,
-          10.945310243538447
+          10.945310243538447,
+          11.167890925492559
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12006,6 +12039,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14514,6 +14548,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
         "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
+      },
+      {
+        "sha": "3108fbc6d806d06305f1cb3d2cbe5164f700b4c4",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 19 22:22:43 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#464)"
       }
     ],
     "labels": [
@@ -14873,7 +14913,8 @@ window.BENCHMARK_DATA = {
       "8080761d",
       "7d969598",
       "3feda36e",
-      "4f492208"
+      "4f492208",
+      "3108fbc6"
     ],
     "datasets": [
       {
@@ -15236,7 +15277,8 @@ window.BENCHMARK_DATA = {
           19.940868512789407,
           30.41230981349945,
           19.55771740277608,
-          29.39211206038793
+          29.39211206038793,
+          21.606822870175044
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15508,6 +15550,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -15975,7 +16018,8 @@ window.BENCHMARK_DATA = {
           1452.5125645228795,
           1736.1670432771955,
           1481.695293017796,
-          1877.7518379211426
+          1877.7518379211426,
+          1554.0934700012208
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -15987,6 +16031,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16714,7 +16759,8 @@ window.BENCHMARK_DATA = {
           29674.686881510417,
           24620.277313232422,
           29572.93669433594,
-          24534.193980625696
+          24534.193980625696,
+          30457.95412190755
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17082,7 +17128,8 @@ window.BENCHMARK_DATA = {
           32482,
           32474,
           32482,
-          32476
+          32476,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17449,7 +17496,8 @@ window.BENCHMARK_DATA = {
           710.1017275537763,
           717.6851230768057,
           719.6521082605634,
-          736.3390431404114
+          736.3390431404114,
+          747.8123151143392
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17479,6 +17527,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -18180,7 +18229,8 @@ window.BENCHMARK_DATA = {
           11685.86079624721,
           12136.620262654622,
           11303.696039472308,
-          14107.46230061849
+          14107.46230061849,
+          12392.857033865792
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18544,7 +18594,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -20700,6 +20751,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
         "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
+      },
+      {
+        "sha": "3108fbc6d806d06305f1cb3d2cbe5164f700b4c4",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 19 22:22:43 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#464)"
       }
     ],
     "labels": [
@@ -21059,7 +21116,8 @@ window.BENCHMARK_DATA = {
       "8080761d",
       "7d969598",
       "3feda36e",
-      "4f492208"
+      "4f492208",
+      "3108fbc6"
     ],
     "datasets": [
       {
@@ -21422,7 +21480,8 @@ window.BENCHMARK_DATA = {
           193.31650570722726,
           366.95504525729586,
           192.9763754435948,
-          369.4907265076271
+          369.4907265076271,
+          221.93969801266988
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21694,6 +21753,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -22161,7 +22221,8 @@ window.BENCHMARK_DATA = {
           14911.726713053386,
           14511.367421831403,
           14535.396358235677,
-          16180.12861328125
+          16180.12861328125,
+          15717.350867716472
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -22173,6 +22234,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -22900,7 +22962,8 @@ window.BENCHMARK_DATA = {
           741644.4654017857,
           589815.6205679086,
           710760.8997628348,
-          595036.8484375
+          595036.8484375,
+          750212.540234375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23268,7 +23331,8 @@ window.BENCHMARK_DATA = {
           738540,
           738487,
           740449,
-          736118
+          736118,
+          721146
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23635,7 +23699,8 @@ window.BENCHMARK_DATA = {
           44969.8021118164,
           40595.05811418806,
           43051.100085449216,
-          43287.99935302734
+          43287.99935302734,
+          45840.771772112166
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -23999,7 +24064,8 @@ window.BENCHMARK_DATA = {
           80083,
           80261,
           80008,
-          79668
+          79668,
+          80966
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24366,7 +24432,8 @@ window.BENCHMARK_DATA = {
           350023.7149135045,
           346986.36495535716,
           355063.6173377404,
-          391921.5583984375
+          391921.5583984375,
+          360865.0365835336
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24730,7 +24797,8 @@ window.BENCHMARK_DATA = {
           573110,
           571192,
           573172,
-          572349
+          572349,
+          572980
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -26862,6 +26930,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 17 16:46:54 2026 \u002B0100",
         "message": "test: update aweXpect to 4.2.0 and open a diff tool for failing API snapshots (#463)"
+      },
+      {
+        "sha": "3108fbc6d806d06305f1cb3d2cbe5164f700b4c4",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 19 22:22:43 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#464)"
       }
     ],
     "labels": [
@@ -27217,7 +27291,8 @@ window.BENCHMARK_DATA = {
       "8080761d",
       "7d969598",
       "3feda36e",
-      "4f492208"
+      "4f492208",
+      "3108fbc6"
     ],
     "datasets": [
       {
@@ -27576,7 +27651,8 @@ window.BENCHMARK_DATA = {
           280.38156692186993,
           242.4812522570292,
           269.24325922557284,
-          304.1921817143758
+          304.1921817143758,
+          295.3948667049408
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27611,6 +27687,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -28307,7 +28384,8 @@ window.BENCHMARK_DATA = {
           602.7038943608602,
           512.4654156821115,
           626.2055263519287,
-          648.4617186273847
+          648.4617186273847,
+          637.5374252612775
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -28319,6 +28397,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -29038,7 +29117,8 @@ window.BENCHMARK_DATA = {
           4602.808544158936,
           4156.771395365397,
           6892.802871195475,
-          5146.434989929199
+          5146.434989929199,
+          4967.479955037435
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -29122,6 +29202,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -29769,7 +29850,8 @@ window.BENCHMARK_DATA = {
           398.1138206550053,
           331.30022242863976,
           406.97437353134154,
-          422.0126686414083
+          422.0126686414083,
+          421.4726723988851
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -29781,6 +29863,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -30500,7 +30583,8 @@ window.BENCHMARK_DATA = {
           600.8106736455645,
           532.6616527557374,
           727.928784942627,
-          725.043112550463
+          725.043112550463,
+          715.9146165847778
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -30512,6 +30596,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
