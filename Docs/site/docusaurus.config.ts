@@ -81,6 +81,9 @@ const config: Config = {
           {from: '/docs/lifetime/lifetime-safety', to: '/docs/core-concepts/lifetime-safety'},
           {from: '/docs/lifetime/owned', to: '/docs/core-concepts/owned'},
           {from: '/docs/lifetime/lifecycle-hooks', to: '/docs/registration/lifecycle-hooks'},
+          {from: '/docs/category/core-concepts', to: '/docs/core-concepts/'},
+          {from: '/docs/category/registration', to: '/docs/registration/'},
+          {from: '/docs/category/hosting', to: '/docs/hosting/'},
         ],
         createRedirects: (path: string) =>
           path.startsWith('/docs/') && path.length > '/docs/'.length ? [path.slice('/docs'.length)] : undefined,
