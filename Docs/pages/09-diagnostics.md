@@ -28,161 +28,161 @@ Every reported id with its default severity.
 
 | Id | Severity | Title |
 | --- | --- | --- |
-| [AWT101](#awt101) | Error | Missing dependency |
-| [AWT102](#awt102) | Error | Dependency cycle |
-| [AWT103](#awt103) | Error | Implementation is not instantiable |
-| [AWT104](#awt104) | Error | No accessible constructor |
-| [AWT105](#awt105) | Error | Captive dependency |
-| [AWT106](#awt106) | Warning | Factory hides asynchronous initialization behind its declared return type |
-| [AWT107](#awt107) | Error | Conflicting lifetime |
-| [AWT108](#awt108) | Error | Invalid factory |
-| [AWT109](#awt109) | Error | Invalid instance member |
-| [AWT110](#awt110) | Error | Conflicting production directives |
-| [AWT111](#awt111) | Error | Conflicting production |
-| [AWT112](#awt112) | Error | Ambiguous factory |
-| [AWT113](#awt113) | Error | Runtime argument mismatch |
-| [AWT114](#awt114) | Error | Parameterized service must be transient |
-| [AWT115](#awt115) | Error | Parameterized service requires a `Func` factory |
-| [AWT116](#awt116) | Error | Container must be static |
-| [AWT117](#awt117) | Error | Duplicate keyed registration |
-| [AWT118](#awt118) | Error, or Warning under `LifetimeSafety.Loose` | Factory accumulates disposables on the container root |
-| [AWT119](#awt119) | Error | Synchronous resolution of an async-initialized service |
-| [AWT120](#awt120) | Error | Async-tainted service reached synchronously |
-| [AWT121](#awt121) | Error | `Owned<T>` handle requested through `Lazy` |
-| [AWT122](#awt122) | Error | Async-tainted service reached synchronously through a collection |
-| [AWT123](#awt123) | Error | Decorator has nothing to decorate |
-| [AWT124](#awt124) | Error | Decorator has no single inner parameter |
-| [AWT125](#awt125) | Error | Open generic arity mismatch |
-| [AWT126](#awt126) | Error | Open generic constraint violation |
-| [AWT127](#awt127) | Error | Open generic registration is not an unbound generic |
-| [AWT128](#awt128) | Error | Open generic type parameters are remapped |
-| [AWT129](#awt129) | Error | Open generic expansion is too deep |
-| [AWT130](#awt130) | Error | Composite has no collection parameter |
-| [AWT131](#awt131) | Warning | Composite is also registered as a member of its own service |
-| [AWT132](#awt132) | Error | Multiple composites for one service |
-| [AWT133](#awt133) | Error | Composite collection parameter is not of the composed service |
-| [AWT134](#awt134) | Warning | Composition attribute outside a composition root |
-| [AWT135](#awt135) | Warning | Service locator: a resolver interface is injected into a service |
-| [AWT136](#awt136) | Error | Injected property is not settable |
-| [AWT138](#awt138) | Warning | Assembly scan matched nothing |
-| [AWT139](#awt139) | Warning | Assembly scan matched a type with no interface assignable to the marker |
-| [AWT140](#awt140) | Warning | Assembly scan target has no candidate types |
-| [AWT141](#awt141) | Warning | Assembly scan skipped an unconstructable match |
-| [AWT142](#awt142) | Warning | Scans register one implementation with conflicting lifetimes |
-| [AWT143](#awt143) | Error | Assembly scan names no assembly |
-| [AWT144](#awt144) | Error | Deferred property is init-only or required |
-| [AWT145](#awt145) | Error | Non-terminating deferred transient cycle |
-| [AWT146](#awt146) | Error | Non-terminating deferred async cycle |
-| [AWT147](#awt147) | Error | Deferred cycle retains a construction edge |
-| [AWT148](#awt148) | Warning | Ambiguous default registration |
-| [AWT149](#awt149) | Error | Import target is not a module |
-| [AWT150](#awt150) | Error | Nested module import not followed |
-| [AWT151](#awt151) | Warning | Imported module has no registrations |
-| [AWT152](#awt152) | Error | Module must be static |
-| [AWT153](#awt153) | Error | Module `Factory` or `Instance` member not accessible |
-| [AWT154](#awt154) | Error | Module has no generated code the container can read |
-| [AWT155](#awt155) | Warning | Imported modules register the same service |
-| [AWT156](#awt156) | Warning | Synchronous dispose of a container that requires asynchronous disposal |
-| [AWT157](#awt157) | Error | Optional injected property is required |
-| [AWT158](#awt158) | Warning | Optional injected property is init-only |
-| [AWT159](#awt159) | Error | Unsupported keyed-collection key type |
-| [AWT160](#awt160) | Error | `[FromKey]` on a keyed collection |
-| [AWT161](#awt161) | Error, or Warning in a module's own build | Eager async-initialized singleton |
-| [AWT162](#awt162) | Error | Invalid requesting-type parameter |
-| [AWT163](#awt163) | Error | Requesting-type factory cannot take runtime arguments |
-| [AWT164](#awt164) | Error | Invalid lifecycle hook |
-| [AWT165](#awt165) | Error | Lifecycle hook on a pre-built instance |
-| [AWT166](#awt166) | Error | Conflicting lifecycle directives |
-| [AWT167](#awt167) | Warning | Contextual binding never applies |
-| [AWT168](#awt168) | Error | Contextual binding with a key |
-| [AWT169](#awt169) | Error | Duplicate contextual binding |
-| [AWT170](#awt170) | Error | Unsupported key type |
-| [AWT171](#awt171) | Warning | Decorator or composite skips a constraint-violating closing |
-| [AWT172](#awt172) | Warning | Assembly scan filters removed every match |
-| [AWT173](#awt173) | Warning | Scan exclusion never matched |
-| [AWT174](#awt174) | Warning | Scan pattern matches every candidate |
-| [AWT175](#awt175) | Error | External service is also registered |
-| [AWT177](#awt177) | Error | Injected property not found |
-| [AWT178](#awt178) | Error | `[InjectProperty]` on a non-constructed implementation |
-| [AWT179](#awt179) | Warning | Duplicate `[InjectProperty]` entry |
-| [AWT180](#awt180) | Warning | `[InjectProperty]` implementation is not registered |
-| [AWT181](#awt181) | Warning | `[InjectProperty]` duplicates an `[Inject]` property |
-| [AWT182](#awt182) | Warning | Assembly scan matched a type with no matching interface |
-| [AWT183](#awt183) | Error | Markerless scan is invalid |
-| [AWT184](#awt184) | Warning | Markerless scan registered nothing |
-| [AWT185](#awt185) | Error | Scan exposes matches nowhere |
-| [AWT186](#awt186) | Error | `Owned<T>` over a requesting-type factory |
-| [AWT187](#awt187) | Warning | Scan matched several same-named interfaces |
-| [AWT188](#awt188) | Warning | Scan matched a type whose interface is inaccessible |
-| [AWT189](#awt189) | Error | Lifecycle hook parameter cannot be a runtime argument |
-| [AWT190](#awt190) | Error | Ambiguous lifecycle hook |
-| [AWT191](#awt191) | Error | Release hook parameter cannot defer resolution |
-| [AWT192](#awt192) | Error | `SuppressDisposal` on a pre-built instance |
-| [AWT193](#awt193) | Warning | Scan matched an inaccessible type |
-| [AWT194](#awt194) | Error | Self-compiled module is not partial |
-| [AWT195](#awt195) | Error | Self-compiled implementation has an inaccessible constructor or factory parameter |
-| [AWT196](#awt196) | Warning | Module scan match has no accessible exposure |
-| [AWT197](#awt197) | Error | Self-compiled implementation has multiple exposures |
-| [AWT198](#awt198) | Error | Ambiguous generic hook marker |
-| [AWT199](#awt199) | Warning | Scans register one implementation with conflicting lifecycle hooks |
-| [AWT200](#awt200) | Error | Self-compiled implementation uses injection metadata |
-| [AWT201](#awt201) | Error | Self-compiled module is generic |
-| [AWT202](#awt202) | Error | Module scan names other assemblies |
-| [AWT203](#awt203) | Error | Self-compiled hook has an inaccessible parameter |
-| [AWT204](#awt204) | Error | Self-compiled hook uses injection metadata |
-| [AWT205](#awt205) | Warning | `Owned<T>` is constructed by hand |
-| [AWT206](#awt206) | Error | `typeof` registration's implementation does not implement its service |
-| [AWT207](#awt207) | Error | `Eager` or `Instance` on an open generic registration |
-| [AWT208](#awt208) | Error | Generic factory has the wrong number of type parameters |
-| [AWT209](#awt209) | Error | Generic factory constraint violation |
-| [AWT210](#awt210) | Error | Decorated key not registered |
-| [AWT211](#awt211) | Error | Decorator sets both `Keys` and `AllKeys` |
-| [AWT212](#awt212) | Error | Composite key not registered |
-| [AWT213](#awt213) | Error | Unsupported runtime-type dispatch dictionary |
-| [AWT214](#awt214) | Error | Suppressed disposal in a container projected into MS.DI |
-| [AWT215](#awt215) | Error | `typeof` argument is neither a closed type nor an unbound generic definition |
-| [AWT216](#awt216) | Error | Registered type is less accessible than the generated container |
-| [AWT218](#awt218) | Warning | Typed resolve names a service the container does not provide |
-| [AWT219](#awt219) | Warning | Typed resolve names a service the container withholds from that call |
-| [AWT222](#awt222) | Error | `Extends` target is not a container |
-| [AWT223](#awt223) | Error | Container extends itself |
-| [AWT224](#awt224) | Error | Base container extends another container |
-| [AWT225](#awt225) | Error | Container with `Extends` sets an inherited option |
-| [AWT226](#awt226) | Error | Inherited member is not accessible |
-| [AWT230](#awt230) | Error | Module contribution cannot be constructed |
-| [AWT231](#awt231) | Error | Module registration has no generated factory or hook wrapper |
-| [AWT232](#awt232) | Error | Unsupported asynchronous lifecycle hook |
-| [AWT233](#awt233) | Error | Invalid async initializer |
-| [AWT234](#awt234) | Error | Inaccessible async initializer |
-| [AWT235](#awt235) | Error | Reserved member name `Internals` |
-| [AWT236](#awt236) | Error | Internal service registered in another module |
-| [AWT237](#awt237) | Error | Internal service in an unsupported shape |
-| [AWT238](#awt238) | Error | Module that provides an internal service not imported |
-| [AWT240](#awt240) | Error | Scan match of another assembly cannot share its implementation's instance |
-| [AWT241](#awt241) | Error | Registration cannot share the instance of a generated handle |
-| [AWT242](#awt242) | Error | Relationship over an imported service |
-| [AWT243](#awt243) | Error | Language version too old for the generated code |
-| [AWT244](#awt244) | Error | Injected property not visible to the container |
-| [AWT245](#awt245) | Warning | `Factory` or `Instance` member may produce null |
-| [AWT246](#awt246) | Error | Invalid predicate |
-| [AWT247](#awt247) | Error | Predicate not accessible |
-| [AWT248](#awt248) | Error | Invalid predicate parameter |
-| [AWT249](#awt249) | Warning | Open decorator or composite applies to no closing |
-| [AWT250](#awt250) | Warning | Collection over an imported service is empty |
-| [AWT252](#awt252) | Error | Collection fixed empty by a module of another assembly |
-| [AWT253](#awt253) | Error | Closing over an internal type cannot be served |
-| [AWT254](#awt254) | Error | Collection of relationships |
-| [AWT255](#awt255) | Error | Generator inconsistency |
-| [AWT256](#awt256) | Error | Relationship over a collection |
-| [AWT257](#awt257) | Error | Collection misses a registration served through a handle |
-| [AWT258](#awt258) | Error | Collection imported from the external resolver |
-| [AWT259](#awt259) | Error | Relationship type registered as a service |
-| [AWT260](#awt260) | Error | Type the container cannot name |
-| [AWT261](#awt261) | Error | Consumer cannot own what its Func builds |
-| [AWT262](#awt262) | Warning | `ConsumerOwned` entry never applies |
-| [AWT263](#awt263) | Error | `Eager` and `EagerWhen` on one registration |
-| [AWT264](#awt264) | Error | Invalid `[Inherited]` parameter |
-| [AWT265](#awt265) | Error | Variant collection ordered differently than in the module's assembly |
+| [AWT101](#awt101) | <span className="severity severity--error">Error</span> | Missing dependency |
+| [AWT102](#awt102) | <span className="severity severity--error">Error</span> | Dependency cycle |
+| [AWT103](#awt103) | <span className="severity severity--error">Error</span> | Implementation is not instantiable |
+| [AWT104](#awt104) | <span className="severity severity--error">Error</span> | No accessible constructor |
+| [AWT105](#awt105) | <span className="severity severity--error">Error</span> | Captive dependency |
+| [AWT106](#awt106) | <span className="severity severity--warning">Warning</span> | Factory hides asynchronous initialization behind its declared return type |
+| [AWT107](#awt107) | <span className="severity severity--error">Error</span> | Conflicting lifetime |
+| [AWT108](#awt108) | <span className="severity severity--error">Error</span> | Invalid factory |
+| [AWT109](#awt109) | <span className="severity severity--error">Error</span> | Invalid instance member |
+| [AWT110](#awt110) | <span className="severity severity--error">Error</span> | Conflicting production directives |
+| [AWT111](#awt111) | <span className="severity severity--error">Error</span> | Conflicting production |
+| [AWT112](#awt112) | <span className="severity severity--error">Error</span> | Ambiguous factory |
+| [AWT113](#awt113) | <span className="severity severity--error">Error</span> | Runtime argument mismatch |
+| [AWT114](#awt114) | <span className="severity severity--error">Error</span> | Parameterized service must be transient |
+| [AWT115](#awt115) | <span className="severity severity--error">Error</span> | Parameterized service requires a `Func` factory |
+| [AWT116](#awt116) | <span className="severity severity--error">Error</span> | Container must be static |
+| [AWT117](#awt117) | <span className="severity severity--error">Error</span> | Duplicate keyed registration |
+| [AWT118](#awt118) | <span className="severity severity--error">Error</span>, or Warning under `LifetimeSafety.Loose` | Factory accumulates disposables on the container root |
+| [AWT119](#awt119) | <span className="severity severity--error">Error</span> | Synchronous resolution of an async-initialized service |
+| [AWT120](#awt120) | <span className="severity severity--error">Error</span> | Async-tainted service reached synchronously |
+| [AWT121](#awt121) | <span className="severity severity--error">Error</span> | `Owned<T>` handle requested through `Lazy` |
+| [AWT122](#awt122) | <span className="severity severity--error">Error</span> | Async-tainted service reached synchronously through a collection |
+| [AWT123](#awt123) | <span className="severity severity--error">Error</span> | Decorator has nothing to decorate |
+| [AWT124](#awt124) | <span className="severity severity--error">Error</span> | Decorator has no single inner parameter |
+| [AWT125](#awt125) | <span className="severity severity--error">Error</span> | Open generic arity mismatch |
+| [AWT126](#awt126) | <span className="severity severity--error">Error</span> | Open generic constraint violation |
+| [AWT127](#awt127) | <span className="severity severity--error">Error</span> | Open generic registration is not an unbound generic |
+| [AWT128](#awt128) | <span className="severity severity--error">Error</span> | Open generic type parameters are remapped |
+| [AWT129](#awt129) | <span className="severity severity--error">Error</span> | Open generic expansion is too deep |
+| [AWT130](#awt130) | <span className="severity severity--error">Error</span> | Composite has no collection parameter |
+| [AWT131](#awt131) | <span className="severity severity--warning">Warning</span> | Composite is also registered as a member of its own service |
+| [AWT132](#awt132) | <span className="severity severity--error">Error</span> | Multiple composites for one service |
+| [AWT133](#awt133) | <span className="severity severity--error">Error</span> | Composite collection parameter is not of the composed service |
+| [AWT134](#awt134) | <span className="severity severity--warning">Warning</span> | Composition attribute outside a composition root |
+| [AWT135](#awt135) | <span className="severity severity--warning">Warning</span> | Service locator: a resolver interface is injected into a service |
+| [AWT136](#awt136) | <span className="severity severity--error">Error</span> | Injected property is not settable |
+| [AWT138](#awt138) | <span className="severity severity--warning">Warning</span> | Assembly scan matched nothing |
+| [AWT139](#awt139) | <span className="severity severity--warning">Warning</span> | Assembly scan matched a type with no interface assignable to the marker |
+| [AWT140](#awt140) | <span className="severity severity--warning">Warning</span> | Assembly scan target has no candidate types |
+| [AWT141](#awt141) | <span className="severity severity--warning">Warning</span> | Assembly scan skipped an unconstructable match |
+| [AWT142](#awt142) | <span className="severity severity--warning">Warning</span> | Scans register one implementation with conflicting lifetimes |
+| [AWT143](#awt143) | <span className="severity severity--error">Error</span> | Assembly scan names no assembly |
+| [AWT144](#awt144) | <span className="severity severity--error">Error</span> | Deferred property is init-only or required |
+| [AWT145](#awt145) | <span className="severity severity--error">Error</span> | Non-terminating deferred transient cycle |
+| [AWT146](#awt146) | <span className="severity severity--error">Error</span> | Non-terminating deferred async cycle |
+| [AWT147](#awt147) | <span className="severity severity--error">Error</span> | Deferred cycle retains a construction edge |
+| [AWT148](#awt148) | <span className="severity severity--warning">Warning</span> | Ambiguous default registration |
+| [AWT149](#awt149) | <span className="severity severity--error">Error</span> | Import target is not a module |
+| [AWT150](#awt150) | <span className="severity severity--error">Error</span> | Nested module import not followed |
+| [AWT151](#awt151) | <span className="severity severity--warning">Warning</span> | Imported module has no registrations |
+| [AWT152](#awt152) | <span className="severity severity--error">Error</span> | Module must be static |
+| [AWT153](#awt153) | <span className="severity severity--error">Error</span> | Module `Factory` or `Instance` member not accessible |
+| [AWT154](#awt154) | <span className="severity severity--error">Error</span> | Module has no generated code the container can read |
+| [AWT155](#awt155) | <span className="severity severity--warning">Warning</span> | Imported modules register the same service |
+| [AWT156](#awt156) | <span className="severity severity--warning">Warning</span> | Synchronous dispose of a container that requires asynchronous disposal |
+| [AWT157](#awt157) | <span className="severity severity--error">Error</span> | Optional injected property is required |
+| [AWT158](#awt158) | <span className="severity severity--warning">Warning</span> | Optional injected property is init-only |
+| [AWT159](#awt159) | <span className="severity severity--error">Error</span> | Unsupported keyed-collection key type |
+| [AWT160](#awt160) | <span className="severity severity--error">Error</span> | `[FromKey]` on a keyed collection |
+| [AWT161](#awt161) | <span className="severity severity--error">Error</span>, or Warning in a module's own build | Eager async-initialized singleton |
+| [AWT162](#awt162) | <span className="severity severity--error">Error</span> | Invalid requesting-type parameter |
+| [AWT163](#awt163) | <span className="severity severity--error">Error</span> | Requesting-type factory cannot take runtime arguments |
+| [AWT164](#awt164) | <span className="severity severity--error">Error</span> | Invalid lifecycle hook |
+| [AWT165](#awt165) | <span className="severity severity--error">Error</span> | Lifecycle hook on a pre-built instance |
+| [AWT166](#awt166) | <span className="severity severity--error">Error</span> | Conflicting lifecycle directives |
+| [AWT167](#awt167) | <span className="severity severity--warning">Warning</span> | Contextual binding never applies |
+| [AWT168](#awt168) | <span className="severity severity--error">Error</span> | Contextual binding with a key |
+| [AWT169](#awt169) | <span className="severity severity--error">Error</span> | Duplicate contextual binding |
+| [AWT170](#awt170) | <span className="severity severity--error">Error</span> | Unsupported key type |
+| [AWT171](#awt171) | <span className="severity severity--warning">Warning</span> | Decorator or composite skips a constraint-violating closing |
+| [AWT172](#awt172) | <span className="severity severity--warning">Warning</span> | Assembly scan filters removed every match |
+| [AWT173](#awt173) | <span className="severity severity--warning">Warning</span> | Scan exclusion never matched |
+| [AWT174](#awt174) | <span className="severity severity--warning">Warning</span> | Scan pattern matches every candidate |
+| [AWT175](#awt175) | <span className="severity severity--error">Error</span> | External service is also registered |
+| [AWT177](#awt177) | <span className="severity severity--error">Error</span> | Injected property not found |
+| [AWT178](#awt178) | <span className="severity severity--error">Error</span> | `[InjectProperty]` on a non-constructed implementation |
+| [AWT179](#awt179) | <span className="severity severity--warning">Warning</span> | Duplicate `[InjectProperty]` entry |
+| [AWT180](#awt180) | <span className="severity severity--warning">Warning</span> | `[InjectProperty]` implementation is not registered |
+| [AWT181](#awt181) | <span className="severity severity--warning">Warning</span> | `[InjectProperty]` duplicates an `[Inject]` property |
+| [AWT182](#awt182) | <span className="severity severity--warning">Warning</span> | Assembly scan matched a type with no matching interface |
+| [AWT183](#awt183) | <span className="severity severity--error">Error</span> | Markerless scan is invalid |
+| [AWT184](#awt184) | <span className="severity severity--warning">Warning</span> | Markerless scan registered nothing |
+| [AWT185](#awt185) | <span className="severity severity--error">Error</span> | Scan exposes matches nowhere |
+| [AWT186](#awt186) | <span className="severity severity--error">Error</span> | `Owned<T>` over a requesting-type factory |
+| [AWT187](#awt187) | <span className="severity severity--warning">Warning</span> | Scan matched several same-named interfaces |
+| [AWT188](#awt188) | <span className="severity severity--warning">Warning</span> | Scan matched a type whose interface is inaccessible |
+| [AWT189](#awt189) | <span className="severity severity--error">Error</span> | Lifecycle hook parameter cannot be a runtime argument |
+| [AWT190](#awt190) | <span className="severity severity--error">Error</span> | Ambiguous lifecycle hook |
+| [AWT191](#awt191) | <span className="severity severity--error">Error</span> | Release hook parameter cannot defer resolution |
+| [AWT192](#awt192) | <span className="severity severity--error">Error</span> | `SuppressDisposal` on a pre-built instance |
+| [AWT193](#awt193) | <span className="severity severity--warning">Warning</span> | Scan matched an inaccessible type |
+| [AWT194](#awt194) | <span className="severity severity--error">Error</span> | Self-compiled module is not partial |
+| [AWT195](#awt195) | <span className="severity severity--error">Error</span> | Self-compiled implementation has an inaccessible constructor or factory parameter |
+| [AWT196](#awt196) | <span className="severity severity--warning">Warning</span> | Module scan match has no accessible exposure |
+| [AWT197](#awt197) | <span className="severity severity--error">Error</span> | Self-compiled implementation has multiple exposures |
+| [AWT198](#awt198) | <span className="severity severity--error">Error</span> | Ambiguous generic hook marker |
+| [AWT199](#awt199) | <span className="severity severity--warning">Warning</span> | Scans register one implementation with conflicting lifecycle hooks |
+| [AWT200](#awt200) | <span className="severity severity--error">Error</span> | Self-compiled implementation uses injection metadata |
+| [AWT201](#awt201) | <span className="severity severity--error">Error</span> | Self-compiled module is generic |
+| [AWT202](#awt202) | <span className="severity severity--error">Error</span> | Module scan names other assemblies |
+| [AWT203](#awt203) | <span className="severity severity--error">Error</span> | Self-compiled hook has an inaccessible parameter |
+| [AWT204](#awt204) | <span className="severity severity--error">Error</span> | Self-compiled hook uses injection metadata |
+| [AWT205](#awt205) | <span className="severity severity--warning">Warning</span> | `Owned<T>` is constructed by hand |
+| [AWT206](#awt206) | <span className="severity severity--error">Error</span> | `typeof` registration's implementation does not implement its service |
+| [AWT207](#awt207) | <span className="severity severity--error">Error</span> | `Eager` or `Instance` on an open generic registration |
+| [AWT208](#awt208) | <span className="severity severity--error">Error</span> | Generic factory has the wrong number of type parameters |
+| [AWT209](#awt209) | <span className="severity severity--error">Error</span> | Generic factory constraint violation |
+| [AWT210](#awt210) | <span className="severity severity--error">Error</span> | Decorated key not registered |
+| [AWT211](#awt211) | <span className="severity severity--error">Error</span> | Decorator sets both `Keys` and `AllKeys` |
+| [AWT212](#awt212) | <span className="severity severity--error">Error</span> | Composite key not registered |
+| [AWT213](#awt213) | <span className="severity severity--error">Error</span> | Unsupported runtime-type dispatch dictionary |
+| [AWT214](#awt214) | <span className="severity severity--error">Error</span> | Suppressed disposal in a container projected into MS.DI |
+| [AWT215](#awt215) | <span className="severity severity--error">Error</span> | `typeof` argument is neither a closed type nor an unbound generic definition |
+| [AWT216](#awt216) | <span className="severity severity--error">Error</span> | Registered type is less accessible than the generated container |
+| [AWT218](#awt218) | <span className="severity severity--warning">Warning</span> | Typed resolve names a service the container does not provide |
+| [AWT219](#awt219) | <span className="severity severity--warning">Warning</span> | Typed resolve names a service the container withholds from that call |
+| [AWT222](#awt222) | <span className="severity severity--error">Error</span> | `Extends` target is not a container |
+| [AWT223](#awt223) | <span className="severity severity--error">Error</span> | Container extends itself |
+| [AWT224](#awt224) | <span className="severity severity--error">Error</span> | Base container extends another container |
+| [AWT225](#awt225) | <span className="severity severity--error">Error</span> | Container with `Extends` sets an inherited option |
+| [AWT226](#awt226) | <span className="severity severity--error">Error</span> | Inherited member is not accessible |
+| [AWT230](#awt230) | <span className="severity severity--error">Error</span> | Module contribution cannot be constructed |
+| [AWT231](#awt231) | <span className="severity severity--error">Error</span> | Module registration has no generated factory or hook wrapper |
+| [AWT232](#awt232) | <span className="severity severity--error">Error</span> | Unsupported asynchronous lifecycle hook |
+| [AWT233](#awt233) | <span className="severity severity--error">Error</span> | Invalid async initializer |
+| [AWT234](#awt234) | <span className="severity severity--error">Error</span> | Inaccessible async initializer |
+| [AWT235](#awt235) | <span className="severity severity--error">Error</span> | Reserved member name `Internals` |
+| [AWT236](#awt236) | <span className="severity severity--error">Error</span> | Internal service registered in another module |
+| [AWT237](#awt237) | <span className="severity severity--error">Error</span> | Internal service in an unsupported shape |
+| [AWT238](#awt238) | <span className="severity severity--error">Error</span> | Module that provides an internal service not imported |
+| [AWT240](#awt240) | <span className="severity severity--error">Error</span> | Scan match of another assembly cannot share its implementation's instance |
+| [AWT241](#awt241) | <span className="severity severity--error">Error</span> | Registration cannot share the instance of a generated handle |
+| [AWT242](#awt242) | <span className="severity severity--error">Error</span> | Relationship over an imported service |
+| [AWT243](#awt243) | <span className="severity severity--error">Error</span> | Language version too old for the generated code |
+| [AWT244](#awt244) | <span className="severity severity--error">Error</span> | Injected property not visible to the container |
+| [AWT245](#awt245) | <span className="severity severity--warning">Warning</span> | `Factory` or `Instance` member may produce null |
+| [AWT246](#awt246) | <span className="severity severity--error">Error</span> | Invalid predicate |
+| [AWT247](#awt247) | <span className="severity severity--error">Error</span> | Predicate not accessible |
+| [AWT248](#awt248) | <span className="severity severity--error">Error</span> | Invalid predicate parameter |
+| [AWT249](#awt249) | <span className="severity severity--warning">Warning</span> | Open decorator or composite applies to no closing |
+| [AWT250](#awt250) | <span className="severity severity--warning">Warning</span> | Collection over an imported service is empty |
+| [AWT252](#awt252) | <span className="severity severity--error">Error</span> | Collection fixed empty by a module of another assembly |
+| [AWT253](#awt253) | <span className="severity severity--error">Error</span> | Closing over an internal type cannot be served |
+| [AWT254](#awt254) | <span className="severity severity--error">Error</span> | Collection of relationships |
+| [AWT255](#awt255) | <span className="severity severity--error">Error</span> | Generator inconsistency |
+| [AWT256](#awt256) | <span className="severity severity--error">Error</span> | Relationship over a collection |
+| [AWT257](#awt257) | <span className="severity severity--error">Error</span> | Collection misses a registration served through a handle |
+| [AWT258](#awt258) | <span className="severity severity--error">Error</span> | Collection imported from the external resolver |
+| [AWT259](#awt259) | <span className="severity severity--error">Error</span> | Relationship type registered as a service |
+| [AWT260](#awt260) | <span className="severity severity--error">Error</span> | Type the container cannot name |
+| [AWT261](#awt261) | <span className="severity severity--error">Error</span> | Consumer cannot own what its Func builds |
+| [AWT262](#awt262) | <span className="severity severity--warning">Warning</span> | `ConsumerOwned` entry never applies |
+| [AWT263](#awt263) | <span className="severity severity--error">Error</span> | `Eager` and `EagerWhen` on one registration |
+| [AWT264](#awt264) | <span className="severity severity--error">Error</span> | Invalid `[Inherited]` parameter |
+| [AWT265](#awt265) | <span className="severity severity--error">Error</span> | Variant collection ordered differently than in the module's assembly |
 
 ## Graph correctness
 
