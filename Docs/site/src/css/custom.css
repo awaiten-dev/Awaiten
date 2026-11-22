@@ -23,7 +23,7 @@
   --ifm-color-primary-light: #52bfb8;
   --ifm-color-primary-lighter: #5cc3bc;
   --ifm-color-primary-lightest: #79cdc8;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* Recursive switches between sans, casual and mono through its MONO and CASL axes, and a font-variation-settings value replaces rather than merges, so each role lists both. */
@@ -37,6 +37,86 @@ h1, h2, h3, h4, h5, h6 {
 code, pre, kbd, samp {
   font-variation-settings: 'MONO' 1, 'CASL' 1;
   letter-spacing: normal;
+}
+
+/* Infima fills callouts with saturated colors that shout in dark mode; a faint tint of the border keeps them calm. */
+.alert:is(.alert--secondary, .alert--success, .alert--info, .alert--warning, .alert--danger) {
+  --ifm-alert-background-color: color-mix(in srgb, var(--ifm-alert-border-color) 8%, transparent);
+  --ifm-alert-background-color-highlight: color-mix(in srgb, var(--ifm-alert-border-color) 14%, transparent);
+  --ifm-alert-foreground-color: var(--ifm-font-color-base);
+}
+.alert:is(.alert--success, .alert--info) {
+  --ifm-alert-border-color: var(--ifm-color-primary);
+}
+details.alert.alert--info {
+  --ifm-alert-border-color: var(--ifm-color-emphasis-300);
+  --docusaurus-details-decoration-color: var(--ifm-color-emphasis-600);
+}
+
+/* Infima's blue-grey clashes with the green-black of the start page hero, which the footer takes instead. */
+.footer--dark {
+  --ifm-footer-background-color: #0c1313;
+  --ifm-footer-link-color: #a3b8b8;
+  --ifm-footer-link-hover-color: #ffffff;
+  --ifm-footer-title-color: #f4f8f8;
+  border-top: 1px solid #1f2e2e;
+}
+/* As wide as the start page content, so the footer lines up with it. */
+.footer > .container {
+  max-width: 68rem;
+  padding: 0 1.5rem;
+}
+.footer__links {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, max-content);
+  gap: 2rem 4rem;
+  margin-bottom: 2.5rem;
+}
+.footer__links .footer__col {
+  margin-bottom: 0;
+}
+.footer__brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+/* The mark fills only y 19 to 109 and x 17.5 to 107 of the logo's 128-unit canvas; the margins take back that empty
+   edge, so the mark is placed by its own size instead of the canvas. */
+.footer__brand-logo img {
+  margin: -13px -14px -13px -12px;
+}
+.footer__brand-logo:hover {
+  text-decoration: none;
+}
+.footer__brand-name {
+  display: block;
+  color: #f4f8f8;
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variation-settings: 'MONO' 0, 'CASL' 1;
+  line-height: 1.1;
+}
+.footer__tagline {
+  display: block;
+  max-width: 20rem;
+  color: #a3b8b8;
+  font-size: 0.875rem;
+  text-wrap: balance;
+}
+.footer__copyright {
+  padding-top: 1.5rem;
+  border-top: 1px solid #1f2e2e;
+  color: #6e8c8c;
+  font-size: 0.8125rem;
+}
+@media (max-width: 996px) {
+  .footer__links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem 1rem;
+  }
+  .footer__brand {
+    grid-column: 1 / -1;
+  }
 }
 
 .docs-doc-id-benchmarks article,
