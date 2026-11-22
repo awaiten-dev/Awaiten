@@ -2160,6 +2160,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 19 22:39:02 2026 \u002B0000",
         "message": "chore: Bump the awexpect group with 4 updates (#465)"
+      },
+      {
+        "sha": "8933383a4f547231e7fab2f638fe77dc9111f575",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:38:41 2026 \u002B0100",
+        "message": "docs: give core concepts, registration and hosting a landing page (#473)"
       }
     ],
     "labels": [
@@ -2522,7 +2528,8 @@ window.BENCHMARK_DATA = {
       "4f492208",
       "3108fbc6",
       "581fc444",
-      "07e7b064"
+      "07e7b064",
+      "8933383a"
     ],
     "datasets": [
       {
@@ -2888,7 +2895,8 @@ window.BENCHMARK_DATA = {
           5.877999532681245,
           5.493777843622061,
           4.652387334654729,
-          4.496802933514118
+          4.496802933514118,
+          6.469040537873904
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2900,6 +2908,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3633,7 +3642,8 @@ window.BENCHMARK_DATA = {
           5.521024401982626,
           5.854861083626747,
           6.767168436447779,
-          6.497622765027559
+          6.497622765027559,
+          7.356989132506507
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3645,6 +3655,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4378,7 +4389,8 @@ window.BENCHMARK_DATA = {
           125.11481987635294,
           117.30770203272502,
           91.20690438577107,
-          96.26886933644613
+          96.26886933644613,
+          123.92808386484782
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4390,6 +4402,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5119,7 +5132,8 @@ window.BENCHMARK_DATA = {
           8.662643502538021,
           8.284788826337227,
           7.141939339538415,
-          5.964683057864507
+          5.964683057864507,
+          8.902722501329013
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5131,6 +5145,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5856,7 +5871,8 @@ window.BENCHMARK_DATA = {
           10.923449488622802,
           11.134967929124832,
           9.505344744523367,
-          8.710357956588268
+          8.710357956588268,
+          11.099738982319831
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5868,6 +5884,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8397,6 +8414,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 19 22:39:02 2026 \u002B0000",
         "message": "chore: Bump the awexpect group with 4 updates (#465)"
+      },
+      {
+        "sha": "8933383a4f547231e7fab2f638fe77dc9111f575",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:38:41 2026 \u002B0100",
+        "message": "docs: give core concepts, registration and hosting a landing page (#473)"
       }
     ],
     "labels": [
@@ -8759,7 +8782,8 @@ window.BENCHMARK_DATA = {
       "4f492208",
       "3108fbc6",
       "581fc444",
-      "07e7b064"
+      "07e7b064",
+      "8933383a"
     ],
     "datasets": [
       {
@@ -9125,7 +9149,8 @@ window.BENCHMARK_DATA = {
           5.8100350856781,
           6.10755974650383,
           5.829132758577665,
-          5.416928435010569
+          5.416928435010569,
+          7.524991997083029
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -9137,6 +9162,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9870,7 +9896,8 @@ window.BENCHMARK_DATA = {
           5.614496714793718,
           5.902465884884198,
           7.144490047792593,
-          6.462416710952918
+          6.462416710952918,
+          7.315821319818497
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9882,6 +9909,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10615,7 +10643,8 @@ window.BENCHMARK_DATA = {
           129.55133986473083,
           115.92077070474625,
           89.20538640817007,
-          94.97453393936158
+          94.97453393936158,
+          122.83189533551534
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10627,6 +10656,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11356,7 +11386,8 @@ window.BENCHMARK_DATA = {
           8.799820037824768,
           8.32582760155201,
           7.036748826503754,
-          6.031267901616437
+          6.031267901616437,
+          8.96267167131106
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11368,6 +11399,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12093,7 +12125,8 @@ window.BENCHMARK_DATA = {
           10.945310243538447,
           11.167890925492559,
           9.545316587273891,
-          8.488124536616462
+          8.488124536616462,
+          14.496155063311258
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12105,6 +12138,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14634,6 +14668,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 19 22:39:02 2026 \u002B0000",
         "message": "chore: Bump the awexpect group with 4 updates (#465)"
+      },
+      {
+        "sha": "8933383a4f547231e7fab2f638fe77dc9111f575",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:38:41 2026 \u002B0100",
+        "message": "docs: give core concepts, registration and hosting a landing page (#473)"
       }
     ],
     "labels": [
@@ -14996,7 +15036,8 @@ window.BENCHMARK_DATA = {
       "4f492208",
       "3108fbc6",
       "581fc444",
-      "07e7b064"
+      "07e7b064",
+      "8933383a"
     ],
     "datasets": [
       {
@@ -15362,7 +15403,8 @@ window.BENCHMARK_DATA = {
           29.39211206038793,
           21.606822870175044,
           12.465583971568517,
-          22.320725679397583
+          22.320725679397583,
+          17.966463521122932
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15634,6 +15676,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -16107,7 +16150,8 @@ window.BENCHMARK_DATA = {
           1877.7518379211426,
           1554.0934700012208,
           813.1341127982506,
-          1635.7334495544433
+          1635.7334495544433,
+          1497.0920506990874
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16119,6 +16163,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16852,7 +16897,8 @@ window.BENCHMARK_DATA = {
           24534.193980625696,
           30457.95412190755,
           18347.276432291666,
-          24321.566549447867
+          24321.566549447867,
+          29333.225240071613
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17223,7 +17269,8 @@ window.BENCHMARK_DATA = {
           32476,
           32478,
           32476,
-          32476
+          32476,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17593,7 +17640,8 @@ window.BENCHMARK_DATA = {
           736.3390431404114,
           747.8123151143392,
           417.7308535235269,
-          698.2221551895142
+          698.2221551895142,
+          708.2473947525025
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17623,6 +17671,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -18330,7 +18379,8 @@ window.BENCHMARK_DATA = {
           14107.46230061849,
           12392.857033865792,
           6318.912501743862,
-          12542.877682495116
+          12542.877682495116,
+          11949.075698852539
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18695,6 +18745,7 @@ window.BENCHMARK_DATA = {
           24760,
           24761,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -20871,6 +20922,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 19 22:39:02 2026 \u002B0000",
         "message": "chore: Bump the awexpect group with 4 updates (#465)"
+      },
+      {
+        "sha": "8933383a4f547231e7fab2f638fe77dc9111f575",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:38:41 2026 \u002B0100",
+        "message": "docs: give core concepts, registration and hosting a landing page (#473)"
       }
     ],
     "labels": [
@@ -21233,7 +21290,8 @@ window.BENCHMARK_DATA = {
       "4f492208",
       "3108fbc6",
       "581fc444",
-      "07e7b064"
+      "07e7b064",
+      "8933383a"
     ],
     "datasets": [
       {
@@ -21599,7 +21657,8 @@ window.BENCHMARK_DATA = {
           369.4907265076271,
           221.93969801266988,
           83.19869292699374,
-          229.65779091517132
+          229.65779091517132,
+          166.83549066384634
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -21871,6 +21930,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -22344,7 +22404,8 @@ window.BENCHMARK_DATA = {
           16180.12861328125,
           15717.350867716472,
           7384.272239176432,
-          14107.943184407552
+          14107.943184407552,
+          15588.81410522461
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -22356,6 +22417,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -23089,7 +23151,8 @@ window.BENCHMARK_DATA = {
           595036.8484375,
           750212.540234375,
           429108.04910714284,
-          581493.7744466146
+          581493.7744466146,
+          753803.9150065104
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23460,7 +23523,8 @@ window.BENCHMARK_DATA = {
           736118,
           721146,
           719045,
-          738519
+          738519,
+          741586
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23830,7 +23894,8 @@ window.BENCHMARK_DATA = {
           43287.99935302734,
           45840.771772112166,
           25397.520505632674,
-          42800.02949829101
+          42800.02949829101,
+          44696.91378173828
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24197,7 +24262,8 @@ window.BENCHMARK_DATA = {
           79668,
           80966,
           80967,
-          80264
+          80264,
+          80300
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24567,7 +24633,8 @@ window.BENCHMARK_DATA = {
           391921.5583984375,
           360865.0365835336,
           205075.38087565106,
-          366945.8708984375
+          366945.8708984375,
+          379975.0589518229
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -24934,7 +25001,8 @@ window.BENCHMARK_DATA = {
           572349,
           572980,
           573119,
-          572294
+          572294,
+          573040
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27084,6 +27152,12 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 19 22:39:02 2026 \u002B0000",
         "message": "chore: Bump the awexpect group with 4 updates (#465)"
+      },
+      {
+        "sha": "8933383a4f547231e7fab2f638fe77dc9111f575",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:38:41 2026 \u002B0100",
+        "message": "docs: give core concepts, registration and hosting a landing page (#473)"
       }
     ],
     "labels": [
@@ -27442,7 +27516,8 @@ window.BENCHMARK_DATA = {
       "4f492208",
       "3108fbc6",
       "581fc444",
-      "07e7b064"
+      "07e7b064",
+      "8933383a"
     ],
     "datasets": [
       {
@@ -27804,7 +27879,8 @@ window.BENCHMARK_DATA = {
           304.1921817143758,
           295.3948667049408,
           239.7696375687917,
-          315.93403464953104
+          315.93403464953104,
+          270.79432589213053
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -27839,6 +27915,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -28541,7 +28618,8 @@ window.BENCHMARK_DATA = {
           648.4617186273847,
           637.5374252612775,
           504.99502884546916,
-          462.4526316165924
+          462.4526316165924,
+          600.2172277450561
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -28553,6 +28631,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -29278,7 +29357,8 @@ window.BENCHMARK_DATA = {
           5146.434989929199,
           4967.479955037435,
           4992.810934339251,
-          5034.3499499729705
+          5034.3499499729705,
+          6581.206472269694
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -29362,6 +29442,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -30015,7 +30096,8 @@ window.BENCHMARK_DATA = {
           422.0126686414083,
           421.4726723988851,
           369.82626428604124,
-          337.2272774378459
+          337.2272774378459,
+          418.58422803878784
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -30027,6 +30109,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -30752,7 +30835,8 @@ window.BENCHMARK_DATA = {
           725.043112550463,
           715.9146165847778,
           588.9717670440674,
-          532.763112953731
+          532.763112953731,
+          736.558545811971
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -30764,6 +30848,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
