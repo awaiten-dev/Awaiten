@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
-        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
-      },
-      {
         "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:39:35 2026 \u002B0100",
         "message": "docs: merge the benchmark charts and table into one list and calm the changelog (#469)"
+      },
+      {
+        "sha": "4a021466f277763a4efc4e8c02166bef62326b5a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
+        "message": "ci: name the API tests job after the docs tests it also runs (#474)"
       }
     ],
     "labels": [
-      "4ff14319",
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "581fc444",
       "07e7b064",
       "8933383a",
-      "16cdf519"
+      "16cdf519",
+      "4a021466"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.4165409992138547,
           4.5963264014571905,
           6.4518549084663395,
           6.410465348225373,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           4.652387334654729,
           4.496802933514118,
           6.469040537873904,
-          5.3363121231397
+          5.3363121231397,
+          6.70814576993386
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.517427754721472,
           4.945658499995868,
           7.348202620561306,
           7.3835196026733945,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           6.767168436447779,
           6.497622765027559,
           7.356989132506507,
-          5.410976027448972
+          5.410976027448972,
+          7.414809722453356
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          61.169273201624556,
           95.074138991038,
           115.46278628281185,
           118.02654321193695,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           91.20690438577107,
           96.26886933644613,
           123.92808386484782,
-          113.53857929706574
+          113.53857929706574,
+          107.0477574127061
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.7492339462041855,
           6.930765362886282,
           8.77653970917066,
           8.160058703805719,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           7.141939339538415,
           5.964683057864507,
           8.902722501329013,
-          7.5014572819074
+          7.5014572819074,
+          8.769011444770372
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          5.914621799190839,
           8.414764946469894,
           10.471442191551128,
           10.815988838672638,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           9.505344744523367,
           8.710357956588268,
           11.099738982319831,
-          9.306278148932117
+          9.306278148932117,
+          10.984179549415906
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
-        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
-      },
-      {
         "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:39:35 2026 \u002B0100",
         "message": "docs: merge the benchmark charts and table into one list and calm the changelog (#469)"
+      },
+      {
+        "sha": "4a021466f277763a4efc4e8c02166bef62326b5a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
+        "message": "ci: name the API tests job after the docs tests it also runs (#474)"
       }
     ],
     "labels": [
-      "4ff14319",
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "581fc444",
       "07e7b064",
       "8933383a",
-      "16cdf519"
+      "16cdf519",
+      "4a021466"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.2680617873867353,
           5.216412094732125,
           7.470406376322111,
           7.1187488448161345,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           5.829132758577665,
           5.416928435010569,
           7.524991997083029,
-          5.9576952320834
+          5.9576952320834,
+          7.101441452545779
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.032714696334941,
           4.979012201038691,
           7.450334317982197,
           7.415997161315038,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.144490047792593,
           6.462416710952918,
           7.315821319818497,
-          5.402257417639096
+          5.402257417639096,
+          7.404476270079613
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          60.94717906202589,
           98.84719137350719,
           115.90498822927475,
           118.54704763208117,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           89.20538640817007,
           94.97453393936158,
           122.83189533551534,
-          105.52753012180328
+          105.52753012180328,
+          108.37317158494677
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.694003797535386,
           6.923169678875378,
           8.755137924637113,
           8.179793765502316,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           7.036748826503754,
           6.031267901616437,
           8.96267167131106,
-          7.463247560461363
+          7.463247560461363,
+          8.775361304481825
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6.109184411168099,
           8.322915487564527,
           14.460491799314816,
           14.236101270715396,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           9.545316587273891,
           8.488124536616462,
           14.496155063311258,
-          9.400502686699232
+          9.400502686699232,
+          14.406610142971788
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
-        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
-      },
-      {
         "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
         "author": "Valentin Breu\u00DF",
         "date": "Tue Nov 10 22:22:25 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:39:35 2026 \u002B0100",
         "message": "docs: merge the benchmark charts and table into one list and calm the changelog (#469)"
+      },
+      {
+        "sha": "4a021466f277763a4efc4e8c02166bef62326b5a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
+        "message": "ci: name the API tests job after the docs tests it also runs (#474)"
       }
     ],
     "labels": [
-      "4ff14319",
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "581fc444",
       "07e7b064",
       "8933383a",
-      "16cdf519"
+      "16cdf519",
+      "4a021466"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          11.808953966697057,
           10.44590131342411,
           19.71780617747988,
           11.52754828929901,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           12.465583971568517,
           22.320725679397583,
           17.966463521122932,
-          20.518004528681438
+          20.518004528681438,
+          17.279396655162177
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          804.2227521260579,
           734.9772127151489,
           1486.9857045491538,
           768.4238410790762,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           813.1341127982506,
           1635.7334495544433,
           1497.0920506990874,
-          1594.7788351694742
+          1594.7788351694742,
+          1306.6735063699575
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          19004.872647798977,
           16701.950929768882,
           29752.48732910156,
           18211.298185076033,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           18347.276432291666,
           24321.566549447867,
           29333.225240071613,
-          24143.06598154704
+          24143.06598154704,
+          21402.98210797991
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32477,
           32478,
           32482,
           32477,
@@ -2685,6 +2684,7 @@ window.BENCHMARK_DATA = {
           32476,
           32476,
           32482,
+          32476,
           32476
         ],
         "borderColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          414.9904132229941,
           376.33048669497174,
           731.805255762736,
           400.63640257517494,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           417.7308535235269,
           698.2221551895142,
           708.2473947525025,
-          683.8594568888346
+          683.8594568888346,
+          614.3756188074748
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          6540.898446219308,
           6021.6035761515295,
           11476.777734375,
           6702.440636189779,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           6318.912501743862,
           12542.877682495116,
           11949.075698852539,
-          12153.221676635741
+          12153.221676635741,
+          10303.39826558431
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2887,7 +2887,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           24760,
-          24760,
           24761,
           24760,
           24760,
@@ -2935,7 +2934,8 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24761
+          24761,
+          24760
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
-        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
-      },
       {
         "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:39:35 2026 \u002B0100",
         "message": "docs: merge the benchmark charts and table into one list and calm the changelog (#469)"
+      },
+      {
+        "sha": "4a021466f277763a4efc4e8c02166bef62326b5a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
+        "message": "ci: name the API tests job after the docs tests it also runs (#474)"
       }
     ],
     "labels": [
-      "4ff14319",
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "581fc444",
       "07e7b064",
       "8933383a",
-      "16cdf519"
+      "16cdf519",
+      "4a021466"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          82.82254164417584,
           77.00042856534323,
           206.57615625858307,
           82.75009784331688,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           83.19869292699374,
           229.65779091517132,
           166.83549066384634,
-          212.20560677846274
+          212.20560677846274,
+          180.1509664853414
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7508.414882914225,
           6998.672753470285,
           17313.10478922526,
           7951.057633463542,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           7384.272239176432,
           14107.943184407552,
           15588.81410522461,
-          13597.592097981771
+          13597.592097981771,
+          11212.779113769531
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          450677.1612079327,
           405089.9648786272,
           760093.9734235491,
           440933.144921875,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           429108.04910714284,
           581493.7744466146,
           753803.9150065104,
-          575514.8777204241
+          575514.8777204241,
+          505856.8251953125
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          719042,
           739753,
           736997,
           718986,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           719045,
           738519,
           741586,
-          741755
+          741755,
+          741558
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          24771.5873819987,
           22128.722208658855,
           48470.235347493486,
           25241.117407226564,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           25397.520505632674,
           42800.02949829101,
           44696.91378173828,
-          42121.985522460935
+          42121.985522460935,
+          35934.50774739583
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80967,
           80001,
           81576,
           80306,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80967,
           80264,
           80300,
-          80296
+          80296,
+          80297
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          188520.31978665866,
           178665.31946614583,
           374819.1278971354,
           228469.2885091146,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           205075.38087565106,
           366945.8708984375,
           379975.0589518229,
-          357751.4000325521
+          357751.4000325521,
+          290990.0040108817
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573011,
           573102,
           573059,
           573057,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573119,
           572294,
           573040,
-          572254
+          572254,
+          571203
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "4ff14319c0511a7c742d3f133e0fe268d0233689",
-        "author": "Valentin Breu\u00DF",
-        "date": "Tue Nov 10 21:29:07 2026 \u002B0100",
-        "message": "fix: share one generated factory between modules of two other assemblies and report handle conflicts as in the module\u0027s own assembly (#416)"
-      },
       {
         "sha": "9819d48007b21084d3b8a502607c3fd2917fcc52",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:39:35 2026 \u002B0100",
         "message": "docs: merge the benchmark charts and table into one list and calm the changelog (#469)"
+      },
+      {
+        "sha": "4a021466f277763a4efc4e8c02166bef62326b5a",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
+        "message": "ci: name the API tests job after the docs tests it also runs (#474)"
       }
     ],
     "labels": [
-      "4ff14319",
       "9819d480",
       "86ec5fa3",
       "c37f6b39",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "581fc444",
       "07e7b064",
       "8933383a",
-      "16cdf519"
+      "16cdf519",
+      "4a021466"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          296.38644273464496,
           180.8727978547414,
           280.94428649315466,
           213.5381868839264,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           239.7696375687917,
           315.93403464953104,
           270.79432589213053,
-          258.57481609072005
+          258.57481609072005,
+          235.50515894889833
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          713.4027742658343,
           397.41793060302734,
           620.5625213214329,
           458.56047808329265,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           504.99502884546916,
           462.4526316165924,
           600.2172277450561,
-          603.5274588902791
+          603.5274588902791,
+          515.9563350041707
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6525.125470297678,
           3493.996276537577,
           7038.988597361246,
           4880.887506757464,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4992.810934339251,
           5034.3499499729705,
           6581.206472269694,
-          6722.7899169921875
+          6722.7899169921875,
+          4133.243437703451
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          443.08358507156373,
           265.21666701634723,
           431.88220472335814,
           338.6951224644979,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           369.82626428604124,
           337.2272774378459,
           418.58422803878784,
-          416.0170794487
+          416.0170794487,
+          382.9686619758606
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          778.2687403996786,
           461.1343176205953,
           731.5424861907959,
           551.8118749459585,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           588.9717670440674,
           532.763112953731,
           736.558545811971,
-          722.1837707928249
+          722.1837707928249,
+          573.1249498639788
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
