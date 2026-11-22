@@ -127,7 +127,7 @@ export default function Home(): ReactElement {
               </pre>
             </div>
             <div className={styles.install}>
-              <PackageInstall package="Awaiten" showLatestVersion={false} />
+              <PackageInstall package="Awaiten" />
             </div>
           </Step>
 
@@ -190,7 +190,9 @@ export default function Home(): ReactElement {
               <pre className={styles.code}>
                 <Kw>await using</Kw> IAwaitenScope order = shop.CreateScope();
                 {'\n'}
-                Cup cup = <Kw>await</Kw> order.ResolveAsync&lt;Cup&gt;();  <Comment>{'// a fresh cup, ready'}</Comment>
+                <Comment>{'// a fresh cup, ready'}</Comment>
+                {'\n'}
+                Cup cup = <Kw>await</Kw> order.ResolveAsync&lt;Cup&gt;();
               </pre>
               <div className={styles.services}>
                 <div className={styles.service}>
