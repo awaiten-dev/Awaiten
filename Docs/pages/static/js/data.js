@@ -2178,6 +2178,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
         "message": "ci: name the API tests job after the docs tests it also runs (#474)"
+      },
+      {
+        "sha": "48a3b1a7a4a005807656e7361afe87bada96f0e6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:44 2026 \u002B0100",
+        "message": "docs: lighten the tables and mark the severity of each diagnostic (#470)"
       }
     ],
     "labels": [
@@ -2543,7 +2549,8 @@ window.BENCHMARK_DATA = {
       "07e7b064",
       "8933383a",
       "16cdf519",
-      "4a021466"
+      "4a021466",
+      "48a3b1a7"
     ],
     "datasets": [
       {
@@ -2912,7 +2919,8 @@ window.BENCHMARK_DATA = {
           4.496802933514118,
           6.469040537873904,
           5.3363121231397,
-          6.70814576993386
+          6.70814576993386,
+          4.829427598913511
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2924,6 +2932,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -3663,7 +3672,8 @@ window.BENCHMARK_DATA = {
           6.497622765027559,
           7.356989132506507,
           5.410976027448972,
-          7.414809722453356
+          7.414809722453356,
+          6.490874555706978
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3675,6 +3685,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -4414,7 +4425,8 @@ window.BENCHMARK_DATA = {
           96.26886933644613,
           123.92808386484782,
           113.53857929706574,
-          107.0477574127061
+          107.0477574127061,
+          88.69589021205903
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4426,6 +4438,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -5161,7 +5174,8 @@ window.BENCHMARK_DATA = {
           5.964683057864507,
           8.902722501329013,
           7.5014572819074,
-          8.769011444770372
+          8.769011444770372,
+          6.741371363401413
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -5173,6 +5187,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -5904,7 +5919,8 @@ window.BENCHMARK_DATA = {
           8.710357956588268,
           11.099738982319831,
           9.306278148932117,
-          10.984179549415906
+          10.984179549415906,
+          8.207974329094093
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -5916,6 +5932,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -8466,6 +8483,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
         "message": "ci: name the API tests job after the docs tests it also runs (#474)"
+      },
+      {
+        "sha": "48a3b1a7a4a005807656e7361afe87bada96f0e6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:44 2026 \u002B0100",
+        "message": "docs: lighten the tables and mark the severity of each diagnostic (#470)"
       }
     ],
     "labels": [
@@ -8831,7 +8854,8 @@ window.BENCHMARK_DATA = {
       "07e7b064",
       "8933383a",
       "16cdf519",
-      "4a021466"
+      "4a021466",
+      "48a3b1a7"
     ],
     "datasets": [
       {
@@ -9200,7 +9224,8 @@ window.BENCHMARK_DATA = {
           5.416928435010569,
           7.524991997083029,
           5.9576952320834,
-          7.101441452545779
+          7.101441452545779,
+          5.367936872442564
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -9212,6 +9237,7 @@ window.BENCHMARK_DATA = {
         "label": "Awaiten memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -9951,7 +9977,8 @@ window.BENCHMARK_DATA = {
           6.462416710952918,
           7.315821319818497,
           5.402257417639096,
-          7.404476270079613
+          7.404476270079613,
+          6.5327766718608995
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -9963,6 +9990,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -10702,7 +10730,8 @@ window.BENCHMARK_DATA = {
           94.97453393936158,
           122.83189533551534,
           105.52753012180328,
-          108.37317158494677
+          108.37317158494677,
+          86.7440130074819
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -10714,6 +10743,7 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
+          656,
           656,
           656,
           656,
@@ -11449,7 +11479,8 @@ window.BENCHMARK_DATA = {
           6.031267901616437,
           8.96267167131106,
           7.463247560461363,
-          8.775361304481825
+          8.775361304481825,
+          6.7776154811893194
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -11461,6 +11492,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -12192,7 +12224,8 @@ window.BENCHMARK_DATA = {
           8.488124536616462,
           14.496155063311258,
           9.400502686699232,
-          14.406610142971788
+          14.406610142971788,
+          9.078543443764959
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -12204,6 +12237,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          0,
           0,
           0,
           0,
@@ -14754,6 +14788,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
         "message": "ci: name the API tests job after the docs tests it also runs (#474)"
+      },
+      {
+        "sha": "48a3b1a7a4a005807656e7361afe87bada96f0e6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:44 2026 \u002B0100",
+        "message": "docs: lighten the tables and mark the severity of each diagnostic (#470)"
       }
     ],
     "labels": [
@@ -15119,7 +15159,8 @@ window.BENCHMARK_DATA = {
       "07e7b064",
       "8933383a",
       "16cdf519",
-      "4a021466"
+      "4a021466",
+      "48a3b1a7"
     ],
     "datasets": [
       {
@@ -15488,7 +15529,8 @@ window.BENCHMARK_DATA = {
           22.320725679397583,
           17.966463521122932,
           20.518004528681438,
-          17.279396655162177
+          17.279396655162177,
+          18.966952046751977
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -15760,6 +15802,7 @@ window.BENCHMARK_DATA = {
           208,
           208,
           208,
+          216,
           216,
           216,
           216,
@@ -16239,7 +16282,8 @@ window.BENCHMARK_DATA = {
           1635.7334495544433,
           1497.0920506990874,
           1594.7788351694742,
-          1306.6735063699575
+          1306.6735063699575,
+          1459.6779526301793
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -16251,6 +16295,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          5688,
           5688,
           5688,
           5688,
@@ -16990,7 +17035,8 @@ window.BENCHMARK_DATA = {
           24321.566549447867,
           29333.225240071613,
           24143.06598154704,
-          21402.98210797991
+          21402.98210797991,
+          33696.404357910156
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17364,7 +17410,8 @@ window.BENCHMARK_DATA = {
           32476,
           32482,
           32476,
-          32476
+          32476,
+          32482
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -17737,7 +17784,8 @@ window.BENCHMARK_DATA = {
           698.2221551895142,
           708.2473947525025,
           683.8594568888346,
-          614.3756188074748
+          614.3756188074748,
+          722.3090051651001
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -17767,6 +17815,7 @@ window.BENCHMARK_DATA = {
           1472,
           1472,
           1472,
+          1528,
           1528,
           1528,
           1528,
@@ -18480,7 +18529,8 @@ window.BENCHMARK_DATA = {
           12542.877682495116,
           11949.075698852539,
           12153.221676635741,
-          10303.39826558431
+          10303.39826558431,
+          11393.972088405064
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -18850,6 +18900,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -21042,6 +21093,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
         "message": "ci: name the API tests job after the docs tests it also runs (#474)"
+      },
+      {
+        "sha": "48a3b1a7a4a005807656e7361afe87bada96f0e6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:44 2026 \u002B0100",
+        "message": "docs: lighten the tables and mark the severity of each diagnostic (#470)"
       }
     ],
     "labels": [
@@ -21407,7 +21464,8 @@ window.BENCHMARK_DATA = {
       "07e7b064",
       "8933383a",
       "16cdf519",
-      "4a021466"
+      "4a021466",
+      "48a3b1a7"
     ],
     "datasets": [
       {
@@ -21776,7 +21834,8 @@ window.BENCHMARK_DATA = {
           229.65779091517132,
           166.83549066384634,
           212.20560677846274,
-          180.1509664853414
+          180.1509664853414,
+          139.4036315404452
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -22048,6 +22107,7 @@ window.BENCHMARK_DATA = {
           4176,
           4176,
           4176,
+          4432,
           4432,
           4432,
           4432,
@@ -22527,7 +22587,8 @@ window.BENCHMARK_DATA = {
           14107.943184407552,
           15588.81410522461,
           13597.592097981771,
-          11212.779113769531
+          11212.779113769531,
+          13323.720652988979
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -22539,6 +22600,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          61016,
           61016,
           61016,
           61016,
@@ -23278,7 +23340,8 @@ window.BENCHMARK_DATA = {
           581493.7744466146,
           753803.9150065104,
           575514.8777204241,
-          505856.8251953125
+          505856.8251953125,
+          818496.9814127604
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -23652,7 +23715,8 @@ window.BENCHMARK_DATA = {
           738519,
           741586,
           741755,
-          741558
+          741558,
+          719726
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -24025,7 +24089,8 @@ window.BENCHMARK_DATA = {
           42800.02949829101,
           44696.91378173828,
           42121.985522460935,
-          35934.50774739583
+          35934.50774739583,
+          45323.90938313802
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24395,7 +24460,8 @@ window.BENCHMARK_DATA = {
           80264,
           80300,
           80296,
-          80297
+          80297,
+          80976
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -24768,7 +24834,8 @@ window.BENCHMARK_DATA = {
           366945.8708984375,
           379975.0589518229,
           357751.4000325521,
-          290990.0040108817
+          290990.0040108817,
+          340056.56325120194
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -25138,7 +25205,8 @@ window.BENCHMARK_DATA = {
           572294,
           573040,
           572254,
-          571203
+          571203,
+          573042
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -27306,6 +27374,12 @@ window.BENCHMARK_DATA = {
         "author": "Valentin Breu\u00DF",
         "date": "Sun Nov 22 07:54:25 2026 \u002B0100",
         "message": "ci: name the API tests job after the docs tests it also runs (#474)"
+      },
+      {
+        "sha": "48a3b1a7a4a005807656e7361afe87bada96f0e6",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sun Nov 22 07:54:44 2026 \u002B0100",
+        "message": "docs: lighten the tables and mark the severity of each diagnostic (#470)"
       }
     ],
     "labels": [
@@ -27667,7 +27741,8 @@ window.BENCHMARK_DATA = {
       "07e7b064",
       "8933383a",
       "16cdf519",
-      "4a021466"
+      "4a021466",
+      "48a3b1a7"
     ],
     "datasets": [
       {
@@ -28032,7 +28107,8 @@ window.BENCHMARK_DATA = {
           315.93403464953104,
           270.79432589213053,
           258.57481609072005,
-          235.50515894889833
+          235.50515894889833,
+          210.09476560751597
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -28067,6 +28143,7 @@ window.BENCHMARK_DATA = {
           560,
           560,
           560,
+          568,
           568,
           568,
           568,
@@ -28775,7 +28852,8 @@ window.BENCHMARK_DATA = {
           462.4526316165924,
           600.2172277450561,
           603.5274588902791,
-          515.9563350041707
+          515.9563350041707,
+          454.86368595759075
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -28787,6 +28865,7 @@ window.BENCHMARK_DATA = {
         "label": "MsDI memory",
         "unit": "b",
         "data": [
+          1104,
           1104,
           1104,
           1104,
@@ -29518,7 +29597,8 @@ window.BENCHMARK_DATA = {
           5034.3499499729705,
           6581.206472269694,
           6722.7899169921875,
-          4133.243437703451
+          4133.243437703451,
+          4871.203804016113
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -29602,6 +29682,7 @@ window.BENCHMARK_DATA = {
           13696,
           13696,
           13696,
+          10784,
           10784,
           10784,
           10784,
@@ -30261,7 +30342,8 @@ window.BENCHMARK_DATA = {
           337.2272774378459,
           418.58422803878784,
           416.0170794487,
-          382.9686619758606
+          382.9686619758606,
+          342.76162495613096
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -30273,6 +30355,7 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
+          944,
           944,
           944,
           944,
@@ -31004,7 +31087,8 @@ window.BENCHMARK_DATA = {
           532.763112953731,
           736.558545811971,
           722.1837707928249,
-          573.1249498639788
+          573.1249498639788,
+          570.6458468803993
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -31016,6 +31100,7 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
+          1096,
           1096,
           1096,
           1096,
