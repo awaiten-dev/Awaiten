@@ -1,11 +1,12 @@
 /**
  * Renders the latest Awaiten-vs-other-DI-containers snapshot: one picker over every scenario and container size, a
- * headline number, time and memory charts and a scoreboard with versions and the trend over the recent runs. Reads
+ * headline number and one row per container with its version, time and memory bars and the trend over the recent runs. Reads
  * from `src/data/benchmarks.json`, which the `DocsData` build target refreshes before each deployment from the
  * `benchmarks` branch. The committed file doubles as a fallback so `npm start`/`npm run build` work in a clean
  * checkout.
  */
 import React, {type ReactElement, useEffect, useRef, useState} from 'react';
+import useIsBrowser from '@docusaurus/useIsBrowser';
 import benchmarks from '@site/src/data/benchmarks.json';
 import styles from './styles.module.css';
 
@@ -225,8 +226,10 @@ function useRaceClock(running: boolean, end: number): number {
     const start = performance.now();
     let frame = 0;
     const tick = (now: number) => {
-      setElapsed(now - start);
-      if (now - start < end) frame = requestAnimationFrame(tick);
+      // The first frame's timestamp can lie before `start`, which would count the values below zero.
+      const time = Math.max(0, now - start);
+      setElapsed(time);
+      if (time < end) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
@@ -235,12 +238,10 @@ function useRaceClock(running: boolean, end: number): number {
 }
 
 /**
- * The cut of a chart and when its slowest bar finishes, or `undefined` when a container lacks the metric.
+ * The cut of a metric's bars and when its slowest bar finishes, over the containers that have the metric.
  */
-function scaleOf(rows: Row[], metric: Metric): {cap: number; end: number} | undefined {
-  const values = rows.map(row => row.sample[metric]);
-  if (values.some(v => v === undefined)) return undefined;
-  const positive = (values as number[]).filter(v => v > 0);
+function scaleOf(rows: Row[], metric: Metric): {cap: number; end: number} {
+  const positive = rows.map(row => row.sample[metric]).filter((v): v is number => v !== undefined && v > 0);
   // Bars beyond four times the smallest value are cut, so one slow container does not flatten all the others.
   const cap = positive.length > 0 ? Math.min(...positive) * 4 : 1;
   const end = Math.max(0, ...positive.map(v => {
@@ -250,54 +251,104 @@ function scaleOf(rows: Row[], metric: Metric): {cap: number; end: number} | unde
   return {cap, end};
 }
 
-function Chart({title, metric, rows, baseline, racing, finished}: {title: string; metric: Metric; rows: Row[]; baseline: Sample; racing: boolean; finished: boolean}): ReactElement | null {
-  const scale = scaleOf(rows, metric);
-  const clock = useRaceClock(racing && !finished, scale?.end ?? 0);
-  if (!scale) return null;
-  const {cap} = scale;
-  const elapsed = finished ? Infinity : clock;
-  const sorted = [...rows].sort((a, b) => a.sample[metric]! - b.sample[metric]!);
+type MeasureProps = {metric: Metric; row: Row; baseline: Sample; cap: number; elapsed: number};
+
+function Measure({metric, row, baseline, cap, elapsed}: MeasureProps): ReactElement {
+  const value = row.sample[metric];
+  const area = metric === 'timeNs' ? 'time' : 'memory';
+  if (value === undefined) {
+    return (
+      <>
+        <span role="cell" className={styles.track} style={{gridArea: `${area}Bar`}} />
+        <span role="cell" className={styles.chartValue} style={{gridArea: `${area}Value`}} title={`${row.name}: not measured`}>
+          —
+        </span>
+        <span role="cell" style={{gridArea: `${area}Factor`}} />
+      </>
+    );
+  }
+  const baselineValue = baseline[metric]!;
+  const isBaseline = row.library === BASELINE_LIBRARY;
+  const race = raceOf(value, cap);
+  const comparison = compare(baselineValue, value, metric, row.name);
+  const raw = value > 0 ? valueAt(value, cap, race, elapsed) : value;
+  const shown = metric === 'memoryBytes' ? Math.round(raw) : raw;
+  const slides = Math.max(1, Math.round(race.overtime / (2 * SLIDE_MS)));
+  const sweep = Math.min(1, race.overtime / slides / (2 * SLIDE_MS)) * SLIDE_PX;
+  const barStyle = {
+    width: `${race.width}%`,
+    animationDuration: `${race.grow}ms`,
+    '--grow': `${race.grow}ms`,
+    '--slide': `${race.overtime / slides}ms`,
+    '--slides': slides,
+    '--sweep': `${sweep}px`,
+  } as React.CSSProperties;
+  const title = isBaseline ? `${row.name}: ${FORMAT[metric](value)}` : comparison.title;
+  const barClass = [styles.bar, race.cut && styles.barCut, metric === 'memoryBytes' && styles.barHatched].filter(Boolean).join(' ');
 
   return (
-    <div className={styles.chart}>
-      <div className={styles.chartHeader}>
-        <h3>{title}</h3>
-        <span>lower is better</span>
+    <>
+      <span role="cell" className={styles.track} style={{gridArea: `${area}Bar`}} title={title}>
+        {value > 0 && <span className={barClass} style={barStyle} />}
+      </span>
+      <span role="cell" className={styles.chartValue} style={{gridArea: `${area}Value`}} title={title}>
+        {FORMAT[metric](shown)}
+      </span>
+      <span role="cell" className={styles.chartFactor} style={{gridArea: `${area}Factor`}} title={title}>
+        {isBaseline ? '' : shown === value ? comparison.text : compare(baselineValue, shown, metric, row.name).text}
+      </span>
+    </>
+  );
+}
+
+type BoardProps = {rows: Row[]; baseline: Sample; racing: boolean; finished: boolean};
+
+/**
+ * One row per container, sorted by time, with its version, the time and memory bars and the time trend side by side.
+ */
+function Board({rows, baseline, racing, finished}: BoardProps): ReactElement {
+  const time = scaleOf(rows, 'timeNs');
+  const memory = baseline.memoryBytes === undefined ? undefined : scaleOf(rows, 'memoryBytes');
+  const clock = useRaceClock(racing && !finished, Math.max(time.end, memory?.end ?? 0));
+  const isBrowser = useIsBrowser();
+  // The static render shows the final values; the race only starts once the page is interactive.
+  const elapsed = finished || !isBrowser ? Infinity : clock;
+  const sorted = [...rows].sort((a, b) => a.sample.timeNs - b.sample.timeNs);
+
+  return (
+    <div role="table" aria-label="Benchmark results per container" className={memory ? styles.board : `${styles.board} ${styles.boardWithoutMemory}`}>
+      <div role="row" className={styles.boardHeader}>
+        <span role="columnheader" aria-label="Container" className={styles.boardHeaderName} />
+        <span role="columnheader" aria-colspan={4} style={{gridArea: 'time'}}>
+          <span className={styles.swatch} />
+          Time
+        </span>
+        {memory && (
+          <span role="columnheader" aria-colspan={3} style={{gridArea: 'memory'}}>
+            <span className={`${styles.swatch} ${styles.barHatched}`} />
+            Memory
+          </span>
+        )}
       </div>
-      <div className={styles.chartRows}>
-        {sorted.map(row => {
-          const value = row.sample[metric]!;
-          const isBaseline = row.library === BASELINE_LIBRARY;
-          const race = raceOf(value, cap);
-          const comparison = compare(baseline[metric]!, value, metric, row.name);
-          const raw = value > 0 ? valueAt(value, cap, race, elapsed) : value;
-          const shown = metric === 'memoryBytes' ? Math.round(raw) : raw;
-          const slides = Math.max(1, Math.round(race.overtime / (2 * SLIDE_MS)));
-          const sweep = Math.min(1, race.overtime / slides / (2 * SLIDE_MS)) * SLIDE_PX;
-          const barStyle = {
-            width: `${race.width}%`,
-            animationDuration: `${race.grow}ms`,
-            '--grow': `${race.grow}ms`,
-            '--slide': `${race.overtime / slides}ms`,
-            '--slides': slides,
-            '--sweep': `${sweep}px`,
-          } as React.CSSProperties;
-          return (
-            <div key={row.library} className={isBaseline ? `${styles.chartRow} ${styles.chartRowBaseline}` : styles.chartRow} title={isBaseline ? `Awaiten: ${FORMAT[metric](value)}` : comparison.title}>
-              <span className={styles.chartName}>{row.name}</span>
-              <span className={styles.track}>
-                {value > 0 && (
-                  <span className={race.cut ? `${styles.bar} ${styles.barCut}` : styles.bar} style={barStyle} />
-                )}
-              </span>
-              <span className={styles.chartValue}>{FORMAT[metric](shown)}</span>
-              <span className={styles.chartFactor}>
-                {isBaseline ? '' : shown === value ? comparison.text : compare(baseline[metric]!, shown, metric, row.name).text}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {sorted.map(row => {
+        const isBaseline = row.library === BASELINE_LIBRARY;
+        const ratios = ratioHistory(baseline.history?.timeNs, row.sample.history?.timeNs);
+        return (
+          <div role="row" key={row.library} className={isBaseline ? `${styles.boardRow} ${styles.boardRowBaseline}` : styles.boardRow}>
+            <span role="rowheader" className={styles.chartName}>
+              <span>{row.name}</span>
+              {row.version && <span className={styles.version}>{row.version}</span>}
+            </span>
+            <Measure metric="timeNs" row={row} baseline={baseline} cap={time.cap} elapsed={elapsed} />
+            <span role="cell" className={styles.chartTrend}>
+              {!isBaseline && (
+                <Sparkline values={ratios} title={`${row.name} compared to Awaiten over the last ${ratios.length} runs; the dashed line marks equal time`} />
+              )}
+            </span>
+            {memory && <Measure metric="memoryBytes" row={row} baseline={baseline} cap={memory.cap} elapsed={elapsed} />}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -341,63 +392,6 @@ function Headline({rows, baseline, info}: {rows: Row[]; baseline: Sample; info: 
         <span>{info.unit} with Awaiten</span>
       </div>
       <p>{sentence}</p>
-    </div>
-  );
-}
-
-function Scoreboard({rows, baseline}: {rows: Row[]; baseline: Sample}): ReactElement {
-  const sorted = [...rows].sort((a, b) => a.sample.timeNs - b.sample.timeNs);
-  const hasMemory = baseline.memoryBytes !== undefined;
-  return (
-    <div className={styles.tableWrapper}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Container</th>
-            <th className={styles.number}>Time</th>
-            <th className={styles.trend}>recent runs</th>
-            <th>vs Awaiten</th>
-            {hasMemory && <th className={styles.number}>Memory</th>}
-            {hasMemory && <th>vs Awaiten</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map(row => {
-            const isBaseline = row.library === BASELINE_LIBRARY;
-            const time = compare(baseline.timeNs, row.sample.timeNs, 'timeNs', row.name);
-            const memory =
-              hasMemory && row.sample.memoryBytes !== undefined
-                ? compare(baseline.memoryBytes!, row.sample.memoryBytes, 'memoryBytes', row.name)
-                : undefined;
-            const ratios = ratioHistory(baseline.history?.timeNs, row.sample.history?.timeNs);
-            return (
-              <tr key={row.library} className={isBaseline ? styles.baselineRow : undefined}>
-                <td>
-                  <span className={styles.tableName}>{row.name}</span>
-                  {row.version && <span className={styles.version}>{row.version}</span>}
-                </td>
-                <td className={styles.number}>{formatNs(row.sample.timeNs)}</td>
-                <td className={styles.trend}>
-                  {!isBaseline && (
-                    <Sparkline values={ratios} title={`${row.name} compared to Awaiten over the last ${ratios.length} runs; the dashed line marks equal time`} />
-                  )}
-                </td>
-                <td title={isBaseline ? undefined : time.title}>{isBaseline ? <span className={styles.baselineTag}>baseline</span> : time.text}</td>
-                {hasMemory && (
-                  <td className={styles.number}>
-                    {row.sample.memoryBytes === undefined ? '—' : formatBytes(row.sample.memoryBytes)}
-                  </td>
-                )}
-                {hasMemory && (
-                  <td title={isBaseline ? undefined : memory?.title}>
-                    {isBaseline ? <span className={styles.baselineTag}>baseline</span> : (memory?.text ?? '—')}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
     </div>
   );
 }
@@ -498,26 +492,23 @@ export default function AwaitenBenchmarkResult(): ReactElement {
       {baseline ? (
         <>
           <Headline rows={rows} baseline={baseline} info={info} />
-          <div
-            key={raceKey}
-            className={`${styles.charts} ${inView ? styles.racing : ''} ${skipped ? styles.finished : ''}`}>
-            <Chart title="Time" metric="timeNs" rows={rows} baseline={baseline} racing={inView} finished={skipped} />
-            <Chart title="Memory" metric="memoryBytes" rows={rows} baseline={baseline} racing={inView} finished={skipped} />
+          <div key={raceKey} className={`${styles.charts} ${inView ? styles.racing : ''} ${skipped ? styles.finished : ''}`}>
+            <Board rows={rows} baseline={baseline} racing={inView} finished={skipped} />
           </div>
           <div className={styles.noteRow}>
             <p className={styles.note}>
-              Bars longer than four times the fastest container are cut so the others stay comparable. Hover a bar or
-              a multiple for the exact comparison.
+              Lower is better. Bars longer than four times the fastest container are cut so the others stay comparable.
+              The line after each time shows the last runs compared to Awaiten. Hover a bar, a multiple or a line for
+              the exact comparison.
             </p>
             <RaceButton
               key={raceKey}
               running={inView && !skipped}
-              end={Math.max(scaleOf(rows, 'timeNs')?.end ?? 0, scaleOf(rows, 'memoryBytes')?.end ?? 0)}
+              end={Math.max(scaleOf(rows, 'timeNs').end, scaleOf(rows, 'memoryBytes').end)}
               onSkip={() => setSkippedRace(raceKey)}
               onReplay={() => setRace(r => r + 1)}
             />
           </div>
-          <Scoreboard rows={rows} baseline={baseline} />
         </>
       ) : (
         <div className={styles.error}>No Awaiten measurement for this scenario.</div>

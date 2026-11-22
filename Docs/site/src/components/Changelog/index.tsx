@@ -285,7 +285,7 @@ export default function Changelog({changelog: {releases}}: Props): ReactElement 
           const to = formatDate(last.date, {month: 'short', year: 'numeric'});
           return (
             <React.Fragment key={major}>
-              <div className={clsx(styles.when, styles.chapterWhen)}>{last.date.substring(0, 4)}</div>
+              <div className={styles.when} />
               <div className={clsx(styles.body, styles.chapter)}>
                 <span className={styles.medal} aria-hidden="true" />
                 <h2 id={`version-${major}`}>Version {major}</h2>

@@ -43,13 +43,6 @@
   color: var(--ifm-font-color-base);
 }
 
-/* Clears the medal on the line and centers the text on the chapter headline. */
-.chapterWhen {
-  padding-top: 0.25rem;
-  padding-right: 2rem;
-  line-height: 2.5rem;
-}
-
 .body {
   position: relative;
   display: grid;
@@ -142,7 +135,7 @@
 .breakingBadge {
   border-color: var(--ifm-color-danger);
   color: var(--ifm-color-danger);
-  background: var(--ifm-color-danger-contrast-background);
+  background: color-mix(in srgb, var(--ifm-color-danger) 10%, transparent);
 }
 
 .span {
@@ -191,6 +184,15 @@
 
 .performanceText {
   color: var(--ifm-color-info-dark);
+}
+
+/* The dark shades lack contrast on the dark background. */
+:global([data-theme='dark']) .featureText {
+  color: var(--ifm-color-success-lightest);
+}
+
+:global([data-theme='dark']) .performanceText {
+  color: var(--ifm-color-info-lightest);
 }
 
 .stats {
@@ -268,20 +270,21 @@
   color: var(--ifm-color-emphasis-800);
 }
 
+/* A faint tint like the callouts, as Infima's contrast backgrounds are saturated in the dark theme. */
 .breakingPill {
-  background: var(--ifm-color-danger-contrast-background);
-  color: var(--ifm-color-danger-contrast-foreground);
+  background: color-mix(in srgb, var(--ifm-color-danger) 14%, transparent);
+  color: var(--ifm-font-color-base);
   font-weight: var(--ifm-font-weight-semibold);
 }
 
 .featurePill {
-  background: var(--ifm-color-success-contrast-background);
-  color: var(--ifm-color-success-contrast-foreground);
+  background: color-mix(in srgb, var(--ifm-color-success) 14%, transparent);
+  color: var(--ifm-font-color-base);
 }
 
 .performancePill {
-  background: var(--ifm-color-info-contrast-background);
-  color: var(--ifm-color-info-contrast-foreground);
+  background: color-mix(in srgb, var(--ifm-color-info) 14%, transparent);
+  color: var(--ifm-font-color-base);
 }
 
 .latestCard,
@@ -299,11 +302,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  background: var(--ifm-color-primary-contrast-background);
-}
-
-[data-theme='dark'] .latestTop {
-  background: rgba(63, 184, 176, 0.1);
+  /* Derived from the primary color, as Infima's contrast background stays its default blue. */
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
 }
 
 .latestTitle {
@@ -336,19 +336,19 @@
   gap: 0.6rem;
 }
 
+/* An outline like the secondary buttons of the start page; a solid fill outweighed the release it links from. */
 .primaryAction,
 .primaryAction:hover {
   padding: 0.55rem 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
   border-radius: 8px;
-  background: var(--ifm-color-primary);
-  color: #ffffff;
+  color: var(--ifm-color-primary);
   font-weight: var(--ifm-font-weight-semibold);
   text-decoration: none;
 }
 
-[data-theme='dark'] .primaryAction,
-[data-theme='dark'] .primaryAction:hover {
-  color: #062020;
+.primaryAction:hover {
+  border-color: var(--ifm-color-primary);
 }
 
 .latestChanges {
@@ -369,9 +369,11 @@
   margin-bottom: 1.25rem;
   padding: 0.85rem 1.1rem;
   border-radius: 10px;
-  border: 1px solid var(--ifm-color-warning-contrast-background);
-  background: var(--ifm-color-warning-contrast-background);
-  color: var(--ifm-color-warning-contrast-foreground);
+  /* A tint with a warning border like the callouts, instead of Infima's saturated warning fill. */
+  border: 1px solid color-mix(in srgb, var(--ifm-color-warning) 45%, transparent);
+  border-left-width: 5px;
+  background: color-mix(in srgb, var(--ifm-color-warning) 8%, transparent);
+  color: var(--ifm-font-color-base);
   font-size: 0.95rem;
 }
 
@@ -438,8 +440,10 @@
 }
 
 @media (max-width: 600px) {
+  /* Room for the medals, which stick out to the left of the line. */
   .timeline {
     grid-template-columns: minmax(0, 1fr);
+    padding-left: 1.3rem;
   }
 
   .when {
@@ -453,9 +457,4 @@
     margin-right: 0.35rem;
   }
 
-  .chapterWhen {
-    padding-top: 0;
-    padding-left: 2rem;
-    line-height: 1.3;
-  }
 }
