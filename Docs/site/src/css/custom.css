@@ -38,6 +38,15 @@ code, pre, kbd, samp {
   font-variation-settings: 'MONO' 1, 'CASL' 1;
   letter-spacing: normal;
 }
+/* The full weight suits the start page and page titles, but on every section heading of a long page it shouts. */
+.markdown :is(h2, h3, h4) {
+  font-weight: 700;
+}
+
+/* Three external-link icons in a row cluttered the right side of the navbar. */
+.navbar__items [class*='iconExternalLink_'] {
+  display: none;
+}
 
 /* Infima fills callouts with saturated colors that shout in dark mode; a faint tint of the border keeps them calm. */
 .alert:is(.alert--secondary, .alert--success, .alert--info, .alert--warning, .alert--danger) {

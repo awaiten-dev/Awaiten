@@ -1,5 +1,15 @@
-.versions {
-  margin-top: -0.5rem;
-  font-size: 0.875rem;
-  color: var(--ifm-color-emphasis-700);
+/* Squeezed side by side, the labels wrapped onto two or three lines on phones; one row that scrolls sideways keeps them whole. */
+.tabs {
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+}
+
+.tabs :global(.tabs__item) {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .tabs :global(.tabs__item) {
+    padding: 0.5rem 0.75rem;
+  }
 }

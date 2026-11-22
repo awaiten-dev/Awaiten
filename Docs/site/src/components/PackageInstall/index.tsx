@@ -3,7 +3,7 @@
  * Management, filled with the latest version from NuGet (see the `nuget-versions` plugin). Pages without a
  * stable release, or with `prerelease`, get the latest pre-release.
  */
-import React, {type ReactElement} from 'react';
+import {type ReactElement} from 'react';
 import {usePluginData} from '@docusaurus/useGlobalData';
 import CodeBlock from '@theme/CodeBlock';
 import TabItem from '@theme/TabItem';
@@ -15,7 +15,6 @@ type Props = {
   package: string | string[];
   prerelease?: boolean;
   developmentDependency?: boolean;
-  showLatestVersion?: boolean;
 };
 
 type ResolvedPackage = {id: string; version: string; prerelease: boolean};
@@ -35,7 +34,6 @@ export default function PackageInstall({
   package: packageIds,
   prerelease = false,
   developmentDependency = false,
-  showLatestVersion = true,
 }: Props): ReactElement {
   const versions = usePluginData('nuget-versions') as PackageVersions;
   const packages = resolve(Array.isArray(packageIds) ? packageIds : [packageIds], versions, prerelease);
@@ -55,32 +53,17 @@ export default function PackageInstall({
     .join('\n');
 
   return (
-    <>
-      <Tabs groupId="install">
-        <TabItem value="cli" label=".NET CLI" default>
-          <CodeBlock language="bash">{cli}</CodeBlock>
-        </TabItem>
-        <TabItem value="packagereference" label="PackageReference">
-          <CodeBlock language="xml">{packageReferences}</CodeBlock>
-        </TabItem>
-        <TabItem value="cpm" label="Central Package Management">
-          <CodeBlock language="xml" title="Directory.Packages.props">{packageVersions}</CodeBlock>
-          <CodeBlock language="xml" title="Project file">{centralReferences}</CodeBlock>
-        </TabItem>
-      </Tabs>
-      {showLatestVersion && (
-        <p className={styles.versions}>
-          Latest version:{' '}
-          {packages.map((p, index) => (
-            <React.Fragment key={p.id}>
-              {index > 0 && ', '}
-              <a href={`https://www.nuget.org/packages/${p.id}/${p.version}`}>
-                {packages.length > 1 ? `${p.id} ${p.version}` : p.version}
-              </a>
-            </React.Fragment>
-          ))}
-        </p>
-      )}
-    </>
+    <Tabs groupId="install" className={styles.tabs}>
+      <TabItem value="cli" label=".NET CLI" default>
+        <CodeBlock language="bash">{cli}</CodeBlock>
+      </TabItem>
+      <TabItem value="packagereference" label="PackageReference">
+        <CodeBlock language="xml">{packageReferences}</CodeBlock>
+      </TabItem>
+      <TabItem value="cpm" label="Central Package Management">
+        <CodeBlock language="xml" title="Directory.Packages.props">{packageVersions}</CodeBlock>
+        <CodeBlock language="xml" title="Project file">{centralReferences}</CodeBlock>
+      </TabItem>
+    </Tabs>
   );
 }
