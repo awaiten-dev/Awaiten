@@ -88,6 +88,39 @@ th {
   background: var(--ifm-color-warning);
 }
 
+/* The search plugin's dropdown is blue-grey with a solid primary bar on the selected hit. */
+:root {
+  --search-local-modal-background: #f6f8f8;
+  --search-local-modal-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --search-local-hit-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --search-local-muted-color: var(--ifm-color-emphasis-600);
+  --search-local-hit-active-color: var(--ifm-font-color-base);
+}
+[data-theme='dark'] {
+  --search-local-modal-background: #162020;
+  --search-local-modal-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+/* Its module classes are hashed, so they are matched by prefix; the selected hit needs its own background, because the
+   plugin uses the highlight color for it and for the matched words alike. */
+:root .navbar [class*='dropdownMenu_'] [class*='suggestion_'][class*='cursor_'] {
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, var(--search-local-modal-background));
+}
+/* The whole hit is the link, so neither the document icon nor the enter icon adds anything. */
+.navbar [class*='dropdownMenu_'] :is([class*='hitIcon_'], [class*='hitAction_']) {
+  display: none;
+}
+/* The search page separates its results with a fixed light grey that glares in the dark theme. */
+:root [class*='searchResultItem_'] {
+  border-bottom-color: var(--ifm-color-emphasis-200);
+}
+:root [class*='searchResultItemPath_'] {
+  margin-top: 0.125rem;
+}
+:root [class*='searchResultItem_'] mark {
+  background: color-mix(in srgb, var(--ifm-color-primary) 22%, transparent);
+  color: inherit;
+}
+
 /* The full weight suits the start page and page titles, but on every section heading of a long page it shouts. */
 .markdown :is(h2, h3, h4) {
   font-weight: 700;
