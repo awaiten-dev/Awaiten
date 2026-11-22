@@ -66,7 +66,7 @@ Every id has one section in `09-diagnostics.md`, under the topic it belongs to:
 - An `expect=AWTnnn` example that triggers it, with `// highlight-next-line` on the trigger.
 - Where the fix is one code change, the fixed example right after it as a `csharp isolated` block, the same code with that change and `// highlight-next-line` on it, and both blocks wrapped in `<ApplyFix id="AWTnnn">` (blank lines around the blocks), which shows the fixed one behind an "Apply fix" button.
 - A `**Fix:**` paragraph.
-- A row in the `## Index` table at the top of the page, sorted by id.
+- A row in the `## Index` table at the top of the page, sorted by id. Its severity is wrapped in `<span className="severity severity--error">Error</span>` or `<span className="severity severity--warning">Warning</span>`, which draws the colored dot in front of it.
 
 Every descriptor in `Diagnostics.cs` passes `helpLinkUri: HelpLink("AWTnnn")`, so the id in the IDE links to its section. An id that is no longer reported leaves the page; its comment in `AnalyzerReleases.Unshipped.md` keeps it from being reused. The page keeps `toc_max_heading_level: 2`: the index table, not the table of contents, lists the ids.
 
