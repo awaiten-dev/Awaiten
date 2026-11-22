@@ -19,6 +19,9 @@ public sealed partial class DiagnosticsPageTests
 	[GeneratedRegex("`[^`]*`")]
 	private static partial Regex InlineCode();
 
+	[GeneratedRegex("</?span[^>]*>")]
+	private static partial Regex SeverityMarker();
+
 	[GeneratedRegex(@"(?<!\be\.g|\bi\.e)[.!?] +[A-Z\[]")]
 	private static partial Regex SentenceBreak();
 
@@ -65,7 +68,7 @@ public sealed partial class DiagnosticsPageTests
 			.Because("the admonition summarizes the diagnostic in one sentence, and the details follow it");
 		string? indexRow = Lines.FirstOrDefault(line => line.StartsWith($"| [{id}](#{anchor}) |"));
 		await That(indexRow).IsNotNull().Because($"{id} needs a row in the index");
-		string[] row = indexRow!.Replace("`", "").Split('|').Select(cell => cell.Trim()).ToArray();
+		string[] row = SeverityMarker().Replace(indexRow!.Replace("`", ""), "").Split('|').Select(cell => cell.Trim()).ToArray();
 		await That(row[3]).IsEqualTo(title);
 		await That(severities).Contains(severity => row[2].StartsWith(severity))
 			.Because("the index row may add when another severity applies, as for AWT118 under loose lifetime safety");

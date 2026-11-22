@@ -38,6 +38,56 @@ code, pre, kbd, samp {
   font-variation-settings: 'MONO' 1, 'CASL' 1;
   letter-spacing: normal;
 }
+/* A tint instead of a box, so tables full of inline code do not turn into a grid of outlines; translucent, so it also
+   shows on striped rows. */
+:root {
+  --ifm-code-background: rgba(31, 45, 45, 0.07);
+}
+[data-theme='dark'] {
+  --ifm-code-background: rgba(255, 255, 255, 0.1);
+}
+code {
+  border: 0;
+}
+/* Browsers center header cells, while the cells below them are left-aligned. */
+th {
+  text-align: start;
+}
+/* Hairlines between rows and columns, instead of a box around every cell, striped rows and a grey header; the columns
+   keep a line, because cells that wrap need it to be read across. */
+.markdown table {
+  --ifm-table-stripe-background: transparent;
+  --ifm-table-border-color: var(--ifm-color-emphasis-200);
+}
+.markdown :is(th, td) {
+  border-left: 0;
+  border-right: 0;
+}
+.markdown :is(th, td) + :is(th, td) {
+  border-left: 1px solid var(--ifm-table-border-color);
+}
+/* On the cells, as their own borders win over the row's in a collapsed table. */
+.markdown thead th {
+  border-top: 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-400);
+}
+/* A colored dot before the severity of a diagnostic, so errors and warnings can be told apart at a glance. */
+.severity::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  vertical-align: 0.1em;
+}
+.severity--error::before {
+  background: var(--ifm-color-danger);
+}
+.severity--warning::before {
+  background: var(--ifm-color-warning);
+}
+
 /* The full weight suits the start page and page titles, but on every section heading of a long page it shouts. */
 .markdown :is(h2, h3, h4) {
   font-weight: 700;
