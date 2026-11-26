@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "ce9ecfb565606bce35dcfbae6de45f08dc14afb2",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
-        "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
-      },
-      {
         "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:30:03 2026 \u002B0000",
         "message": "chore: Bump DryIoc.dll from 5.4.3 to 6.0.0 (#476)"
+      },
+      {
+        "sha": "990d676fd75ac563410cfca7639b3aebbf13be0c",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 26 22:30:38 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#475)"
       }
     ],
     "labels": [
-      "ce9ecfb5",
       "30a00e9a",
       "b54bb515",
       "8a229ae0",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "4a021466",
       "48a3b1a7",
       "56633b2e",
-      "88d3363b"
+      "88d3363b",
+      "990d676f"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          6.837650951284629,
           6.453162997961044,
           3.1932616287044118,
           4.7026525601744655,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           6.70814576993386,
           4.829427598913511,
           3.1712182238698006,
-          3.224852732781853
+          3.224852732781853,
+          6.746699871761458
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.3014683700524845,
           7.34710636309215,
           4.021192003289858,
           6.874369817475478,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           7.414809722453356,
           6.490874555706978,
           4.025421895086765,
-          4.138748126370566
+          4.138748126370566,
+          7.42721546122006
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          106.33706315074649,
           118.95536343256633,
           55.956197106838225,
           83.80781107743582,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           107.0477574127061,
           88.69589021205903,
           58.989853298664094,
-          59.8518634557724
+          59.8518634557724,
+          120.0292746103727
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.415262934565543,
           8.62201384504636,
           4.7488465543304175,
           6.291251955429713,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           8.769011444770372,
           6.741371363401413,
           4.457324968775113,
-          5.694382184743882
+          5.694382184743882,
+          11.132173853261131
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11.828046315908432,
           10.745442123285361,
           5.763252373536428,
           8.511599918561322,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           10.984179549415906,
           8.207974329094093,
           6.0214549249836375,
-          6.181182798284751
+          6.181182798284751,
+          10.679494043955437
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "ce9ecfb565606bce35dcfbae6de45f08dc14afb2",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
-        "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
-      },
-      {
         "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:30:03 2026 \u002B0000",
         "message": "chore: Bump DryIoc.dll from 5.4.3 to 6.0.0 (#476)"
+      },
+      {
+        "sha": "990d676fd75ac563410cfca7639b3aebbf13be0c",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 26 22:30:38 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#475)"
       }
     ],
     "labels": [
-      "ce9ecfb5",
       "30a00e9a",
       "b54bb515",
       "8a229ae0",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "4a021466",
       "48a3b1a7",
       "56633b2e",
-      "88d3363b"
+      "88d3363b",
+      "990d676f"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          7.142867971743856,
           7.114375508257321,
           3.215576774839844,
           5.477856195889986,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           7.101441452545779,
           5.367936872442564,
           3.160817785331836,
-          3.3861452048378333
+          3.3861452048378333,
+          7.123296128852027
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          7.393030782540639,
           7.279958751339179,
           3.8497279306252796,
           6.213786235877445,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           7.404476270079613,
           6.5327766718608995,
           3.8357919509212177,
-          4.066553129752477
+          4.066553129752477,
+          7.378965527883598
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          107.27079871067635,
           112.32119168440501,
           56.20116950784411,
           82.33007622559866,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           108.37317158494677,
           86.7440130074819,
           55.68326883656638,
-          67.16374848683675
+          67.16374848683675,
+          121.04195489883423
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          9.325838334858418,
           8.578923922777175,
           4.855583379666011,
           6.223821550607681,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           8.775361304481825,
           6.7776154811893194,
           4.509169237315655,
-          5.408568000564208
+          5.408568000564208,
+          11.157549022563867
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          15.811277836561203,
           14.295671287391867,
           5.736058213389837,
           8.502467448512713,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           14.406610142971788,
           9.078543443764959,
           5.820082964499791,
-          6.139609082387044
+          6.139609082387044,
+          14.049211091796558
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "ce9ecfb565606bce35dcfbae6de45f08dc14afb2",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
-        "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
-      },
-      {
         "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:43:42 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:30:03 2026 \u002B0000",
         "message": "chore: Bump DryIoc.dll from 5.4.3 to 6.0.0 (#476)"
+      },
+      {
+        "sha": "990d676fd75ac563410cfca7639b3aebbf13be0c",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 26 22:30:38 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#475)"
       }
     ],
     "labels": [
-      "ce9ecfb5",
       "30a00e9a",
       "b54bb515",
       "8a229ae0",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "4a021466",
       "48a3b1a7",
       "56633b2e",
-      "88d3363b"
+      "88d3363b",
+      "990d676f"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          23.146042368809383,
           14.585193351904552,
           19.64391533732414,
           15.557439165455955,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           17.279396655162177,
           18.966952046751977,
           19.587291906986916,
-          20.549223938813576
+          20.549223938813576,
+          16.119745133178576
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1481.7826442718506,
           1084.0555604298909,
           1445.5916565486364,
           1148.7089395523071,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1306.6735063699575,
           1459.6779526301793,
           1486.8606305440267,
-          1537.3128646850587
+          1537.3128646850587,
+          1262.349114554269
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          23729.08624674479,
           17656.17772623698,
           29441.407470703125,
           25393.573470052084,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           21402.98210797991,
           33696.404357910156,
           29769.276934814454,
-          30500.253981526694
+          30500.253981526694,
+          26672.61318359375
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2637,7 +2637,6 @@ window.BENCHMARK_DATA = {
         "unit": "b",
         "data": [
           32474,
-          32474,
           32482,
           32478,
           32477,
@@ -2685,7 +2684,8 @@ window.BENCHMARK_DATA = {
           32476,
           32482,
           32477,
-          32477
+          32477,
+          32478
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          654.7056528971746,
           500.85677235921224,
           739.0012366612752,
           593.8563266118367,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           614.3756188074748,
           722.3090051651001,
           727.7059146881104,
-          742.2722925186157
+          742.2722925186157,
+          561.3200523376465
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2809,7 +2809,7 @@ window.BENCHMARK_DATA = {
           1528,
           1528,
           1528,
-          1528,
+          1520,
           1520
         ],
         "borderColor": "#1565C0",
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11359.17233988444,
           7634.864342825754,
           11426.161483764648,
           8671.359736633302,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           10303.39826558431,
           11393.972088405064,
           12614.796951293945,
-          11928.814278738839
+          11928.814278738839,
+          9558.852263387043
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2893,7 +2893,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24760,
           24760,
@@ -2935,6 +2934,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760
         ],
         "borderColor": "#43A047",
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "ce9ecfb565606bce35dcfbae6de45f08dc14afb2",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
-        "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
-      },
       {
         "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:30:03 2026 \u002B0000",
         "message": "chore: Bump DryIoc.dll from 5.4.3 to 6.0.0 (#476)"
+      },
+      {
+        "sha": "990d676fd75ac563410cfca7639b3aebbf13be0c",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 26 22:30:38 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#475)"
       }
     ],
     "labels": [
-      "ce9ecfb5",
       "30a00e9a",
       "b54bb515",
       "8a229ae0",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "4a021466",
       "48a3b1a7",
       "56633b2e",
-      "88d3363b"
+      "88d3363b",
+      "990d676f"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          265.73778940836587,
           192.5329233209292,
           188.64801398913065,
           114.27332612673442,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           180.1509664853414,
           139.4036315404452,
           182.52907670338948,
-          172.72307488123576
+          172.72307488123576,
+          116.5813502243587
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          12528.038243611654,
           9507.407737731934,
           14008.42696271624,
           10430.717340087891,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           11212.779113769531,
           13323.720652988979,
           14730.55377960205,
-          14926.3416015625
+          14926.3416015625,
+          11778.888712565104
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          560000.541796875,
           394126.6001627604,
           712105.1259068081,
           621811.2106584822,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           505856.8251953125,
           818496.9814127604,
           729272.0622907366,
-          752304.6938476562
+          752304.6938476562,
+          668589.7491536458
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          721116,
           739364,
           740465,
           740032,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           741558,
           719726,
           741609,
-          741182
+          741182,
+          738827
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          38781.97849934896,
           26342.693806966145,
           43691.56388636998,
           35598.92927769252,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           35934.50774739583,
           45323.90938313802,
           45456.80836385091,
-          47821.73849487305
+          47821.73849487305,
+          38489.33882359096
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80958,
           79995,
           80005,
           81186,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80297,
           80976,
           80302,
-          72965
+          72965,
+          73329
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          324942.6096191406,
           210358.19663492838,
           347664.7892578125,
           261639.61725260416,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           290990.0040108817,
           340056.56325120194,
           370095.341796875,
-          359539.56145833334
+          359539.56145833334,
+          290305.9544154576
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          571187,
           571194,
           573119,
           573091,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           571203,
           573042,
           573122,
-          573011
+          573011,
+          573121
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "ce9ecfb565606bce35dcfbae6de45f08dc14afb2",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 00:07:56 2026 \u002B0100",
-        "message": "fix!: report a dependency on a relationship type that the container registers or imports as a service (AWT259) (#420)"
-      },
       {
         "sha": "30a00e9ad267811299e0942b9a47a0f28c2bcd1d",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:30:03 2026 \u002B0000",
         "message": "chore: Bump DryIoc.dll from 5.4.3 to 6.0.0 (#476)"
+      },
+      {
+        "sha": "990d676fd75ac563410cfca7639b3aebbf13be0c",
+        "author": "dependabot[bot]",
+        "date": "Thu Nov 26 22:30:38 2026 \u002B0000",
+        "message": "chore: Bump the tunit group with 1 update (#475)"
       }
     ],
     "labels": [
-      "ce9ecfb5",
       "30a00e9a",
       "b54bb515",
       "8a229ae0",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "4a021466",
       "48a3b1a7",
       "56633b2e",
-      "88d3363b"
+      "88d3363b",
+      "990d676f"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          274.9899413245065,
           265.6405601160867,
           165.46614317893983,
           289.290744415919,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           235.50515894889833,
           210.09476560751597,
           323.02752164999646,
-          167.79410169521967
+          167.79410169521967,
+          215.1070254723231
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          647.2682706197103,
           631.0021968841553,
           369.99908157984413,
           473.21136239369713,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           515.9563350041707,
           454.86368595759075,
           469.95560380390714,
-          383.39460750988553
+          383.39460750988553,
+          453.13629217147826
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          6974.25558980306,
           6783.377737778884,
           3268.7833377838133,
           5052.519259897867,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           4133.243437703451,
           4871.203804016113,
           5218.583325195313,
-          3779.916147672213
+          3779.916147672213,
+          4756.983715820313
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          417.57864967981976,
           413.0334866523743,
           237.13019029910748,
           347.4860536893209,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           382.9686619758606,
           342.76162495613096,
           349.3438272635142,
-          267.15140997568767
+          267.15140997568767,
+          346.1525818188985
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4775,7 +4775,7 @@ window.BENCHMARK_DATA = {
           944,
           944,
           944,
-          944,
+          936,
           936
         ],
         "borderColor": "#1565C0",
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          780.964310391744,
           763.0884423622718,
           364.5124552726746,
           529.6110659917196,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           573.1249498639788,
           570.6458468803993,
           547.1147333780924,
-          420.94617125193275
+          420.94617125193275,
+          537.5928956985474
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
