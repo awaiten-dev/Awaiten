@@ -2,12 +2,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=8)": {
     "commits": [
       {
-        "sha": "b54bb51549127e4cad5e2c3861a63c76f0b4685d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
-        "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
-      },
-      {
         "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
@@ -300,10 +294,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:36:03 2026 \u002B0000",
         "message": "chore: Bump SharpCompress from 0.50.10 to 0.50.12 (#477)"
+      },
+      {
+        "sha": "252983a549ae32e38a8a57844d474f63b35cfd0c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sat Nov 28 08:58:49 2026 \u002B0100",
+        "message": "ci: cancel superseded CI runs of a pull request (#478)"
       }
     ],
     "labels": [
-      "b54bb515",
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
@@ -352,14 +351,14 @@ window.BENCHMARK_DATA = {
       "56633b2e",
       "88d3363b",
       "990d676f",
-      "13bbd13d"
+      "13bbd13d",
+      "252983a5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.1932616287044118,
           4.7026525601744655,
           3.3774269952305724,
           4.569760790963968,
@@ -408,7 +407,8 @@ window.BENCHMARK_DATA = {
           3.1712182238698006,
           3.224852732781853,
           6.746699871761458,
-          5.430452560002987
+          5.430452560002987,
+          3.1766197656591735
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -484,7 +484,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          4.021192003289858,
           6.874369817475478,
           3.855277065932751,
           6.680790423200681,
@@ -533,7 +532,8 @@ window.BENCHMARK_DATA = {
           4.025421895086765,
           4.138748126370566,
           7.42721546122006,
-          6.816748391304698
+          6.816748391304698,
+          4.286440461377302
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -609,7 +609,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          55.956197106838225,
           83.80781107743582,
           60.522289379437765,
           86.36527078151703,
@@ -658,7 +657,8 @@ window.BENCHMARK_DATA = {
           58.989853298664094,
           59.8518634557724,
           120.0292746103727,
-          87.04512764612834
+          87.04512764612834,
+          55.29929484526316
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -734,7 +734,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.7488465543304175,
           6.291251955429713,
           4.7459359303116795,
           6.094791850873402,
@@ -783,7 +782,8 @@ window.BENCHMARK_DATA = {
           4.457324968775113,
           5.694382184743882,
           11.132173853261131,
-          8.52723336815834
+          8.52723336815834,
+          5.1746622031288485
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -859,7 +859,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          5.763252373536428,
           8.511599918561322,
           6.302549221685955,
           8.502746078584876,
@@ -908,7 +907,8 @@ window.BENCHMARK_DATA = {
           6.0214549249836375,
           6.181182798284751,
           10.679494043955437,
-          9.216630940636
+          9.216630940636,
+          6.038703707548288
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -985,12 +985,6 @@ window.BENCHMARK_DATA = {
   "Resolve (Size=256)": {
     "commits": [
       {
-        "sha": "b54bb51549127e4cad5e2c3861a63c76f0b4685d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
-        "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
-      },
-      {
         "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
@@ -1283,10 +1277,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:36:03 2026 \u002B0000",
         "message": "chore: Bump SharpCompress from 0.50.10 to 0.50.12 (#477)"
+      },
+      {
+        "sha": "252983a549ae32e38a8a57844d474f63b35cfd0c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sat Nov 28 08:58:49 2026 \u002B0100",
+        "message": "ci: cancel superseded CI runs of a pull request (#478)"
       }
     ],
     "labels": [
-      "b54bb515",
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
@@ -1335,14 +1334,14 @@ window.BENCHMARK_DATA = {
       "56633b2e",
       "88d3363b",
       "990d676f",
-      "13bbd13d"
+      "13bbd13d",
+      "252983a5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          3.215576774839844,
           5.477856195889986,
           3.258035199344158,
           6.022801181444755,
@@ -1391,7 +1390,8 @@ window.BENCHMARK_DATA = {
           3.160817785331836,
           3.3861452048378333,
           7.123296128852027,
-          5.475199117263158
+          5.475199117263158,
+          3.2067187050978343
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -1467,7 +1467,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          3.8497279306252796,
           6.213786235877445,
           3.8555272902761186,
           6.7907362924172325,
@@ -1516,7 +1515,8 @@ window.BENCHMARK_DATA = {
           3.8357919509212177,
           4.066553129752477,
           7.378965527883598,
-          6.5053966025511425
+          6.5053966025511425,
+          4.071994896233082
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -1592,7 +1592,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          56.20116950784411,
           82.33007622559866,
           57.58755241121565,
           83.82006335258484,
@@ -1641,7 +1640,8 @@ window.BENCHMARK_DATA = {
           55.68326883656638,
           67.16374848683675,
           121.04195489883423,
-          87.41174778938293
+          87.41174778938293,
+          65.67386748240544
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -1717,7 +1717,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          4.855583379666011,
           6.223821550607681,
           4.629209374742849,
           6.213790068030358,
@@ -1766,7 +1765,8 @@ window.BENCHMARK_DATA = {
           4.509169237315655,
           5.408568000564208,
           11.157549022563867,
-          8.236145017238764
+          8.236145017238764,
+          4.973998202727391
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -1842,7 +1842,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          5.736058213389837,
           8.502467448512713,
           6.045997931559881,
           8.48157165486079,
@@ -1891,7 +1890,8 @@ window.BENCHMARK_DATA = {
           5.820082964499791,
           6.139609082387044,
           14.049211091796558,
-          9.162340520819027
+          9.162340520819027,
+          6.102229859431585
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -1968,12 +1968,6 @@ window.BENCHMARK_DATA = {
   "Build (Size=8)": {
     "commits": [
       {
-        "sha": "b54bb51549127e4cad5e2c3861a63c76f0b4685d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
-        "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
-      },
-      {
         "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
         "author": "Valentin Breu\u00DF",
         "date": "Wed Nov 11 05:44:46 2026 \u002B0100",
@@ -2266,10 +2260,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:36:03 2026 \u002B0000",
         "message": "chore: Bump SharpCompress from 0.50.10 to 0.50.12 (#477)"
+      },
+      {
+        "sha": "252983a549ae32e38a8a57844d474f63b35cfd0c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sat Nov 28 08:58:49 2026 \u002B0100",
+        "message": "ci: cancel superseded CI runs of a pull request (#478)"
       }
     ],
     "labels": [
-      "b54bb515",
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
@@ -2318,14 +2317,14 @@ window.BENCHMARK_DATA = {
       "56633b2e",
       "88d3363b",
       "990d676f",
-      "13bbd13d"
+      "13bbd13d",
+      "252983a5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          19.64391533732414,
           15.557439165455955,
           12.588376453518867,
           22.922509256998698,
@@ -2374,7 +2373,8 @@ window.BENCHMARK_DATA = {
           19.587291906986916,
           20.549223938813576,
           16.119745133178576,
-          18.598887739273216
+          18.598887739273216,
+          19.188183269898097
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -2450,7 +2450,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          1445.5916565486364,
           1148.7089395523071,
           829.447088094858,
           1591.446944645473,
@@ -2499,7 +2498,8 @@ window.BENCHMARK_DATA = {
           1486.8606305440267,
           1537.3128646850587,
           1262.349114554269,
-          1412.7259937286376
+          1412.7259937286376,
+          1487.855231221517
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -2575,7 +2575,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          29441.407470703125,
           25393.573470052084,
           19293.274759145883,
           30715.92072753906,
@@ -2624,7 +2623,8 @@ window.BENCHMARK_DATA = {
           29769.276934814454,
           30500.253981526694,
           26672.61318359375,
-          29421.543888346354
+          29421.543888346354,
+          30904.24965256911
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -2636,7 +2636,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          32482,
           32478,
           32477,
           32482,
@@ -2685,6 +2684,7 @@ window.BENCHMARK_DATA = {
           32477,
           32477,
           32478,
+          32482,
           32482
         ],
         "borderColor": "#5E2750",
@@ -2700,7 +2700,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          739.0012366612752,
           593.8563266118367,
           448.39477183024087,
           775.625108273824,
@@ -2749,7 +2748,8 @@ window.BENCHMARK_DATA = {
           727.7059146881104,
           742.2722925186157,
           561.3200523376465,
-          709.8413666211642
+          709.8413666211642,
+          721.4890614827474
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -2807,7 +2807,7 @@ window.BENCHMARK_DATA = {
           1528,
           1528,
           1528,
-          1528,
+          1520,
           1520,
           1520,
           1520
@@ -2825,7 +2825,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          11426.161483764648,
           8671.359736633302,
           7685.035360209147,
           12770.108057462252,
@@ -2874,7 +2873,8 @@ window.BENCHMARK_DATA = {
           12614.796951293945,
           11928.814278738839,
           9558.852263387043,
-          11730.629941667828
+          11730.629941667828,
+          11768.691186758188
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -2891,7 +2891,6 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24760,
-          24760,
           24761,
           24760,
           24760,
@@ -2933,6 +2932,7 @@ window.BENCHMARK_DATA = {
           24760,
           24760,
           24761,
+          24760,
           24760,
           24760,
           24760
@@ -2950,12 +2950,6 @@ window.BENCHMARK_DATA = {
   },
   "Build (Size=256)": {
     "commits": [
-      {
-        "sha": "b54bb51549127e4cad5e2c3861a63c76f0b4685d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
-        "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
-      },
       {
         "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
         "author": "Valentin Breu\u00DF",
@@ -3249,10 +3243,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:36:03 2026 \u002B0000",
         "message": "chore: Bump SharpCompress from 0.50.10 to 0.50.12 (#477)"
+      },
+      {
+        "sha": "252983a549ae32e38a8a57844d474f63b35cfd0c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sat Nov 28 08:58:49 2026 \u002B0100",
+        "message": "ci: cancel superseded CI runs of a pull request (#478)"
       }
     ],
     "labels": [
-      "b54bb515",
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
@@ -3301,14 +3300,14 @@ window.BENCHMARK_DATA = {
       "56633b2e",
       "88d3363b",
       "990d676f",
-      "13bbd13d"
+      "13bbd13d",
+      "252983a5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          188.64801398913065,
           114.27332612673442,
           88.15125351746877,
           295.86944624582924,
@@ -3357,7 +3356,8 @@ window.BENCHMARK_DATA = {
           182.52907670338948,
           172.72307488123576,
           116.5813502243587,
-          170.20360584259032
+          170.20360584259032,
+          178.50738364855448
         ],
         "borderColor": "#63A2AC",
         "backgroundColor": "#63A2AC",
@@ -3433,7 +3433,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          14008.42696271624,
           10430.717340087891,
           8179.538434709822,
           16370.880337524413,
@@ -3482,7 +3481,8 @@ window.BENCHMARK_DATA = {
           14730.55377960205,
           14926.3416015625,
           11778.888712565104,
-          14163.512405395508
+          14163.512405395508,
+          15826.015196228027
         ],
         "borderColor": "#A052B0",
         "backgroundColor": "#A052B0",
@@ -3558,7 +3558,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          712105.1259068081,
           621811.2106584822,
           467888.838671875,
           770288.6768229167,
@@ -3607,7 +3606,8 @@ window.BENCHMARK_DATA = {
           729272.0622907366,
           752304.6938476562,
           668589.7491536458,
-          723143.1571568081
+          723143.1571568081,
+          747668.0797200521
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3619,7 +3619,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac memory",
         "unit": "b",
         "data": [
-          740465,
           740032,
           735812,
           741745,
@@ -3668,7 +3667,8 @@ window.BENCHMARK_DATA = {
           741609,
           741182,
           738827,
-          739027
+          739027,
+          739190
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -3683,7 +3683,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          43691.56388636998,
           35598.92927769252,
           25428.433173043388,
           45966.31479492188,
@@ -3732,7 +3731,8 @@ window.BENCHMARK_DATA = {
           45456.80836385091,
           47821.73849487305,
           38489.33882359096,
-          47284.98932756697
+          47284.98932756697,
+          49347.65836995443
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3744,7 +3744,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc memory",
         "unit": "b",
         "data": [
-          80005,
           81186,
           81165,
           80302,
@@ -3793,7 +3792,8 @@ window.BENCHMARK_DATA = {
           80302,
           72965,
           73329,
-          74768
+          74768,
+          73697
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -3808,7 +3808,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          347664.7892578125,
           261639.61725260416,
           222363.59921875,
           380953.9745117187,
@@ -3857,7 +3856,8 @@ window.BENCHMARK_DATA = {
           370095.341796875,
           359539.56145833334,
           290305.9544154576,
-          353584.2248046875
+          353584.2248046875,
+          366717.6955078125
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3869,7 +3869,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector memory",
         "unit": "b",
         "data": [
-          573119,
           573091,
           573056,
           572962,
@@ -3918,7 +3917,8 @@ window.BENCHMARK_DATA = {
           573122,
           573011,
           573121,
-          573202
+          573202,
+          573027
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
@@ -3933,12 +3933,6 @@ window.BENCHMARK_DATA = {
   },
   "Realistic": {
     "commits": [
-      {
-        "sha": "b54bb51549127e4cad5e2c3861a63c76f0b4685d",
-        "author": "Valentin Breu\u00DF",
-        "date": "Wed Nov 11 05:44:14 2026 \u002B0100",
-        "message": "docs: document that default values do not make a dependency optional, the remedies for several variant services and the analyzer-only checks (#422)"
-      },
       {
         "sha": "8a229ae0017b82e06b864f1b22931079f65ca4b0",
         "author": "Valentin Breu\u00DF",
@@ -4232,10 +4226,15 @@ window.BENCHMARK_DATA = {
         "author": "dependabot[bot]",
         "date": "Thu Nov 26 22:36:03 2026 \u002B0000",
         "message": "chore: Bump SharpCompress from 0.50.10 to 0.50.12 (#477)"
+      },
+      {
+        "sha": "252983a549ae32e38a8a57844d474f63b35cfd0c",
+        "author": "Valentin Breu\u00DF",
+        "date": "Sat Nov 28 08:58:49 2026 \u002B0100",
+        "message": "ci: cancel superseded CI runs of a pull request (#478)"
       }
     ],
     "labels": [
-      "b54bb515",
       "8a229ae0",
       "8b613a55",
       "8fd557e3",
@@ -4284,14 +4283,14 @@ window.BENCHMARK_DATA = {
       "56633b2e",
       "88d3363b",
       "990d676f",
-      "13bbd13d"
+      "13bbd13d",
+      "252983a5"
     ],
     "datasets": [
       {
         "label": "Awaiten time",
         "unit": "ns",
         "data": [
-          165.46614317893983,
           289.290744415919,
           284.72612229983014,
           214.40004153251647,
@@ -4340,7 +4339,8 @@ window.BENCHMARK_DATA = {
           323.02752164999646,
           167.79410169521967,
           215.1070254723231,
-          153.94675726890563
+          153.94675726890563,
+          254.67537158330282
         ],
         "borderColor": "#3949AB",
         "backgroundColor": "#3949AB",
@@ -4416,7 +4416,6 @@ window.BENCHMARK_DATA = {
         "label": "MsDI time",
         "unit": "ns",
         "data": [
-          369.99908157984413,
           473.21136239369713,
           606.2042676485502,
           458.0186004638672,
@@ -4465,7 +4464,8 @@ window.BENCHMARK_DATA = {
           469.95560380390714,
           383.39460750988553,
           453.13629217147826,
-          374.8133605957031
+          374.8133605957031,
+          614.675334040324
         ],
         "borderColor": "#512BD4",
         "backgroundColor": "#512BD4",
@@ -4541,7 +4541,6 @@ window.BENCHMARK_DATA = {
         "label": "Autofac time",
         "unit": "ns",
         "data": [
-          3268.7833377838133,
           5052.519259897867,
           6877.787338256836,
           5005.859122975668,
@@ -4590,7 +4589,8 @@ window.BENCHMARK_DATA = {
           5218.583325195313,
           3779.916147672213,
           4756.983715820313,
-          3313.0033510648286
+          3313.0033510648286,
+          6573.99996478741
         ],
         "borderColor": "#5E2750",
         "backgroundColor": "#5E2750",
@@ -4666,7 +4666,6 @@ window.BENCHMARK_DATA = {
         "label": "DryIoc time",
         "unit": "ns",
         "data": [
-          237.13019029910748,
           347.4860536893209,
           442.738272190094,
           351.03126567204794,
@@ -4715,7 +4714,8 @@ window.BENCHMARK_DATA = {
           349.3438272635142,
           267.15140997568767,
           346.1525818188985,
-          238.02969939892108
+          238.02969939892108,
+          410.6182226794107
         ],
         "borderColor": "#1565C0",
         "backgroundColor": "#1565C0",
@@ -4773,7 +4773,7 @@ window.BENCHMARK_DATA = {
           944,
           944,
           944,
-          944,
+          936,
           936,
           936,
           936
@@ -4791,7 +4791,6 @@ window.BENCHMARK_DATA = {
         "label": "SimpleInjector time",
         "unit": "ns",
         "data": [
-          364.5124552726746,
           529.6110659917196,
           746.5196462631226,
           553.0438563028971,
@@ -4840,7 +4839,8 @@ window.BENCHMARK_DATA = {
           547.1147333780924,
           420.94617125193275,
           537.5928956985474,
-          370.2265498161316
+          370.2265498161316,
+          696.5752665446355
         ],
         "borderColor": "#43A047",
         "backgroundColor": "#43A047",
